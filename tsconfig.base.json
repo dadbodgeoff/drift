@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+
+    /* Modules */
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+
+    /* Emit */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    /* Type Checking - Strict Mode (Requirement 1.6) */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+
+    /* Completeness */
+    "skipLibCheck": true,
+
+    /* Composite Project References */
+    "composite": true,
+    "incremental": true,
+
+    /* Path Aliases for @drift/* packages */
+    "baseUrl": ".",
+    "paths": {
+      "@drift/core": ["packages/core/src/index.ts"],
+      "@drift/core/*": ["packages/core/src/*"],
+      "@drift/detectors": ["packages/detectors/src/index.ts"],
+      "@drift/detectors/*": ["packages/detectors/src/*"],
+      "@drift/lsp": ["packages/lsp/src/index.ts"],
+      "@drift/lsp/*": ["packages/lsp/src/*"],
+      "@drift/cli": ["packages/cli/src/index.ts"],
+      "@drift/cli/*": ["packages/cli/src/*"],
+      "@drift/ai": ["packages/ai/src/index.ts"],
+      "@drift/ai/*": ["packages/ai/src/*"],
+      "@drift/vscode": ["packages/vscode/src/index.ts"],
+      "@drift/vscode/*": ["packages/vscode/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]
+}

@@ -1,0 +1,11 @@
+# Drift V2 pnpm workspace configuration
+# Defines the packages that are part of the monorepo
+
+packages:
+  # Core packages
+  - "packages/core"
+  - "packages/detectors"
+  - "packages/lsp"
+  - "packages/cli"
+  - "packages/ai"
+  - "packages/vscode"

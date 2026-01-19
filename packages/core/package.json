@@ -1,0 +1,41 @@
+{
+  "name": "@drift/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Core pattern detection and analysis engine for Drift",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ignore": "^5.3.1",
+    "minimatch": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/minimatch": "^5.1.2",
+    "@vitest/coverage-v8": "^1.0.0",
+    "fast-check": "^3.15.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

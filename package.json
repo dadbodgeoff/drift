@@ -1,0 +1,52 @@
+{
+  "name": "drift-v2",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Drift V2 - AI-augmented architectural drift detection system",
+  "keywords": [
+    "drift",
+    "architecture",
+    "patterns",
+    "linting",
+    "typescript",
+    "monorepo"
+  ],
+  "license": "MIT",
+  "author": "Drift Team",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage",
+    "typecheck": "turbo run typecheck",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "husky": "^8.0.3",
+    "prettier": "^3.1.0",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^1.0.0"
+  },
+  "packageManager": "pnpm@8.10.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
