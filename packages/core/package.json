@@ -1,13 +1,19 @@
 {
   "name": "driftdetect-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Core pattern detection and analysis engine for Drift",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/gfernald/drift"
   },
-  "keywords": ["architecture", "drift", "patterns", "code-quality", "static-analysis"],
+  "keywords": [
+    "architecture",
+    "drift",
+    "patterns",
+    "code-quality",
+    "static-analysis"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
