@@ -42,7 +42,7 @@ export interface ScanCommandOptions {
   manifest?: boolean;
   /** Incremental scan (only changed files) */
   incremental?: boolean;
-  /** Scan for BE↔FE contracts */
+  /** Skip BE↔FE contract scanning (contracts enabled by default) */
   contracts?: boolean;
 }
 
@@ -509,8 +509,8 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Contract scanning (BE↔FE mismatch detection)
-  if (options.contracts) {
+  // Contract scanning (BE↔FE mismatch detection) - enabled by default
+  if (options.contracts !== false) {
     console.log();
     const contractSpinner = createSpinner('Scanning for BE↔FE contracts...');
     contractSpinner.start();
@@ -631,5 +631,5 @@ export const scanCommand = new Command('scan')
   .option('-c, --categories <categories...>', 'Filter by categories (api, auth, security, etc.)')
   .option('--manifest', 'Generate manifest with semantic locations')
   .option('--incremental', 'Only scan changed files')
-  .option('--contracts', 'Scan for BE↔FE contracts and detect mismatches')
+  .option('--no-contracts', 'Skip BE↔FE contract scanning')
   .action(scanAction);

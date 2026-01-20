@@ -2,6 +2,8 @@
  * Files Command - Show patterns in a file
  *
  * Show what patterns are found in a specific file.
+ * Now reads from BOTH ManifestStore and PatternStore to ensure
+ * all 15 categories are available.
  *
  * Usage:
  *   drift files src/auth/middleware.py
@@ -13,6 +15,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import {
   ManifestStore,
+  PatternStore,
   type FileQuery,
   type PatternCategory,
 } from 'driftdetect-core';
@@ -29,8 +32,13 @@ export const filesCommand = new Command('files')
     const manifestStore = new ManifestStore(cwd);
     const manifest = await manifestStore.load();
 
-    if (!manifest) {
-      console.error(chalk.red('No manifest found. Run `drift scan` first.'));
+    // Also load from PatternStore to get ALL 15 categories
+    const patternStore = new PatternStore({ rootDir: cwd });
+    await patternStore.initialize();
+    const allPatterns = patternStore.getAll();
+
+    if (!manifest && allPatterns.length === 0) {
+      console.error(chalk.red('No patterns found. Run `drift scan` first.'));
       process.exit(1);
     }
 
@@ -42,42 +50,136 @@ export const filesCommand = new Command('files')
       query.category = options.category as PatternCategory;
     }
 
-    // Query file
-    const result = manifestStore.queryFile(query);
+    // Query file from manifest
+    let result = manifest ? manifestStore.queryFile(query) : null;
 
-    if (!result) {
+    // Also search in PatternStore for patterns in this file
+    // This ensures all 15 categories are searched
+    const patternStoreResults: Array<{
+      id: string;
+      name: string;
+      category: PatternCategory;
+      locations: Array<{
+        range: { start: number; end: number };
+        type: string;
+        name: string;
+      }>;
+    }> = [];
+
+    // Match file path (supports glob-like patterns)
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    const isGlob = normalizedPath.includes('*');
+    
+    for (const pattern of allPatterns) {
+      // Filter by category if specified
+      if (options.category && pattern.category !== options.category) {
+        continue;
+      }
+
+      // Find locations in this file
+      const matchingLocations = pattern.locations.filter(loc => {
+        const locPath = loc.file.replace(/\\/g, '/');
+        if (isGlob) {
+          return matchGlob(locPath, normalizedPath);
+        }
+        return locPath === normalizedPath || locPath.endsWith(normalizedPath) || locPath.includes(normalizedPath);
+      });
+
+      if (matchingLocations.length > 0) {
+        patternStoreResults.push({
+          id: pattern.id,
+          name: pattern.name,
+          category: pattern.category,
+          locations: matchingLocations.map(loc => ({
+            range: { start: loc.line, end: loc.endLine || loc.line },
+            type: 'block',
+            name: `line-${loc.line}`,
+          })),
+        });
+      }
+    }
+
+    // Merge results
+    const mergedPatterns = new Map<string, {
+      id: string;
+      name: string;
+      category: PatternCategory;
+      locations: Array<{
+        range: { start: number; end: number };
+        type: string;
+        name: string;
+      }>;
+    }>();
+
+    // Add manifest results
+    if (result) {
+      for (const p of result.patterns) {
+        mergedPatterns.set(p.id, p);
+      }
+    }
+
+    // Add PatternStore results (may add new categories)
+    for (const p of patternStoreResults) {
+      if (!mergedPatterns.has(p.id)) {
+        mergedPatterns.set(p.id, p);
+      }
+    }
+
+    const finalPatterns = Array.from(mergedPatterns.values());
+
+    if (finalPatterns.length === 0) {
       console.log(chalk.yellow(`No patterns found in "${filePath}"`));
       
-      // Show available files
-      const allFiles = Object.keys(manifest.files).slice(0, 10);
-      if (allFiles.length > 0) {
-        console.log(chalk.dim('\nAvailable files:'));
-        for (const f of allFiles) {
+      // Show available files from PatternStore
+      const allFiles = new Set<string>();
+      for (const pattern of allPatterns) {
+        for (const loc of pattern.locations) {
+          allFiles.add(loc.file);
+        }
+      }
+      
+      const fileList = Array.from(allFiles).slice(0, 10);
+      if (fileList.length > 0) {
+        console.log(chalk.dim('\nFiles with patterns:'));
+        for (const f of fileList) {
           console.log(chalk.dim(`  ${f}`));
         }
-        if (Object.keys(manifest.files).length > 10) {
-          console.log(chalk.dim(`  ... and ${Object.keys(manifest.files).length - 10} more`));
+        if (allFiles.size > 10) {
+          console.log(chalk.dim(`  ... and ${allFiles.size - 10} more`));
         }
       }
       
       process.exit(0);
     }
 
+    // Build final result
+    const finalResult = {
+      file: result?.file || filePath,
+      patterns: finalPatterns,
+      metadata: result?.metadata || {
+        hash: '',
+        patterns: finalPatterns.map(p => p.id),
+        lastScanned: new Date().toISOString(),
+      },
+    };
+
     // Output
     if (options.json) {
-      console.log(JSON.stringify(result, null, 2));
+      console.log(JSON.stringify(finalResult, null, 2));
     } else {
-      console.log(chalk.bold(`\n📄 Patterns in ${result.file}:\n`));
-      console.log(chalk.dim(`  Hash: ${result.metadata.hash}`));
-      console.log(chalk.dim(`  Last scanned: ${result.metadata.lastScanned}`));
+      console.log(chalk.bold(`\n📄 Patterns in ${finalResult.file}:\n`));
+      if (finalResult.metadata.hash) {
+        console.log(chalk.dim(`  Hash: ${finalResult.metadata.hash}`));
+      }
+      console.log(chalk.dim(`  Last scanned: ${finalResult.metadata.lastScanned}`));
       console.log('');
 
-      if (result.patterns.length === 0) {
+      if (finalResult.patterns.length === 0) {
         console.log(chalk.yellow('  No patterns found'));
       } else {
         // Group by category
-        const byCategory = new Map<string, typeof result.patterns>();
-        for (const p of result.patterns) {
+        const byCategory = new Map<string, typeof finalResult.patterns>();
+        for (const p of finalResult.patterns) {
           if (!byCategory.has(p.category)) {
             byCategory.set(p.category, []);
           }
@@ -100,6 +202,20 @@ export const filesCommand = new Command('files')
         }
       }
 
-      console.log(chalk.dim(`Total: ${result.patterns.length} patterns`));
+      console.log(chalk.dim(`Total: ${finalResult.patterns.length} patterns`));
     }
   });
+
+/**
+ * Simple glob matching
+ */
+function matchGlob(filePath: string, pattern: string): boolean {
+  const regexPattern = pattern
+    .replace(/\*\*/g, '{{GLOBSTAR}}')
+    .replace(/\*/g, '[^/]*')
+    .replace(/{{GLOBSTAR}}/g, '.*')
+    .replace(/\?/g, '.');
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(filePath);
+}

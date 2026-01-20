@@ -29,7 +29,8 @@
     "test:watch": "turbo run test:watch",
     "test:coverage": "turbo run test:coverage",
     "typecheck": "turbo run typecheck",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "drift": "node packages/cli/dist/bin/drift.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

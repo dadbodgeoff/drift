@@ -65,7 +65,9 @@
       "@drift/vscode": ["packages/vscode/src/index.ts"],
       "@drift/vscode/*": ["packages/vscode/src/*"],
       "@drift/dashboard": ["packages/dashboard/src/server/index.ts"],
-      "@drift/dashboard/*": ["packages/dashboard/src/server/*"]
+      "@drift/dashboard/*": ["packages/dashboard/src/server/*"],
+      "@drift/mcp": ["packages/mcp/src/index.ts"],
+      "@drift/mcp/*": ["packages/mcp/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]

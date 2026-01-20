@@ -2,6 +2,8 @@
  * Export Command - Export manifest in various formats
  *
  * Exports the pattern manifest for AI consumption or reporting.
+ * Now reads from BOTH ManifestStore and PatternStore to ensure
+ * all 15 categories are available.
  *
  * Usage:
  *   drift export                    # Export as JSON to stdout
@@ -16,11 +18,13 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import {
   ManifestStore,
+  PatternStore,
   exportManifest,
   estimateTokens,
   type ExportFormat,
   type ExportOptions,
   type PatternCategory,
+  type ManifestPattern,
 } from 'driftdetect-core';
 
 const VALID_FORMATS: ExportFormat[] = ['json', 'ai-context', 'summary', 'markdown'];
@@ -50,14 +54,110 @@ export const exportCommand = new Command('export')
       process.exit(1);
     }
 
-    // Load manifest
+    // Load manifest from ManifestStore
     const manifestStore = new ManifestStore(cwd);
-    const manifest = await manifestStore.load();
+    let manifest = await manifestStore.load();
 
-    if (!manifest) {
-      console.error(chalk.red('No manifest found. Run `drift scan` first.'));
+    // Also load from PatternStore to get ALL 15 categories
+    // The PatternStore has the complete data, ManifestStore may be incomplete
+    const patternStore = new PatternStore({ rootDir: cwd });
+    await patternStore.initialize();
+    const allPatterns = patternStore.getAll();
+
+    // If no manifest exists but we have patterns, create a synthetic manifest
+    if (!manifest && allPatterns.length === 0) {
+      console.error(chalk.red('No patterns found. Run `drift scan` first.'));
       process.exit(1);
     }
+
+    // Create or enhance manifest with PatternStore data
+    if (!manifest) {
+      manifest = {
+        version: '2.0.0',
+        generated: new Date().toISOString(),
+        codebaseHash: '',
+        projectRoot: cwd,
+        summary: {
+          totalPatterns: 0,
+          patternsByStatus: { discovered: 0, approved: 0, ignored: 0 },
+          patternsByCategory: {},
+          totalFiles: 0,
+          totalLocations: 0,
+          totalOutliers: 0,
+        },
+        patterns: {},
+        files: {},
+      };
+    }
+
+    // Merge PatternStore patterns into manifest
+    // This ensures all 15 categories are available for export
+    for (const pattern of allPatterns) {
+      const manifestKey = `${pattern.category}/${pattern.subcategory}/${pattern.id}`;
+      
+      // Skip if already in manifest with same or more data
+      if (manifest.patterns[manifestKey]) {
+        continue;
+      }
+
+      // Convert Pattern to ManifestPattern format
+      const manifestPattern: ManifestPattern = {
+        id: manifestKey,
+        name: pattern.name,
+        category: pattern.category,
+        subcategory: pattern.subcategory,
+        status: pattern.status,
+        confidence: pattern.confidence.score,
+        locations: pattern.locations.map(loc => ({
+          file: loc.file,
+          hash: '',
+          range: { start: loc.line, end: loc.endLine || loc.line },
+          type: 'block' as const,
+          name: `line-${loc.line}`,
+          confidence: 0.9,
+          snippet: '',
+          language: getLanguageFromFile(loc.file),
+        })),
+        outliers: pattern.outliers.map(outlier => ({
+          file: outlier.file,
+          hash: '',
+          range: { start: outlier.line, end: outlier.endLine || outlier.line },
+          type: 'block' as const,
+          name: outlier.reason,
+          confidence: 0.5,
+          snippet: '',
+          language: getLanguageFromFile(outlier.file),
+        })),
+        description: pattern.description,
+        firstSeen: pattern.metadata.firstSeen,
+        lastSeen: pattern.metadata.lastSeen,
+      };
+
+      manifest.patterns[manifestKey] = manifestPattern;
+    }
+
+    // Recalculate summary
+    const patterns = Object.values(manifest.patterns);
+    const patternsByStatus = { discovered: 0, approved: 0, ignored: 0 };
+    const patternsByCategory: Record<string, number> = {};
+    let totalLocations = 0;
+    let totalOutliers = 0;
+
+    for (const pattern of patterns) {
+      patternsByStatus[pattern.status]++;
+      patternsByCategory[pattern.category] = (patternsByCategory[pattern.category] || 0) + 1;
+      totalLocations += pattern.locations.length;
+      totalOutliers += pattern.outliers.length;
+    }
+
+    manifest.summary = {
+      totalPatterns: patterns.length,
+      patternsByStatus,
+      patternsByCategory,
+      totalFiles: Object.keys(manifest.files).length || new Set(patterns.flatMap(p => p.locations.map(l => l.file))).size,
+      totalLocations,
+      totalOutliers,
+    };
 
     // Parse categories
     let categories: PatternCategory[] | undefined;
@@ -125,3 +225,24 @@ export const exportCommand = new Command('export')
       console.log(output);
     }
   });
+
+/**
+ * Get language from file extension
+ */
+function getLanguageFromFile(file: string): string {
+  const ext = path.extname(file).slice(1).toLowerCase();
+  const langMap: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    py: 'python',
+    css: 'css',
+    scss: 'css',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    md: 'markdown',
+  };
+  return langMap[ext] || 'unknown';
+}
