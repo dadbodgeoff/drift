@@ -33,4 +33,14 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Test repositories (user's actual codebases)
 test-repos/
+
+# Build artifacts
+*.timestamp-*.mjs
+
+# Internal dev scripts (not for public repo)
+analyze-*.ts
+detect-*.ts
+fix-*.js
