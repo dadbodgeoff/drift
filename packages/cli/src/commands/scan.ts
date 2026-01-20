@@ -1,7 +1,8 @@
 /**
  * Scan Command - drift scan
  *
- * Perform a full codebase scan to discover patterns.
+ * Perform a full codebase scan to discover patterns using
+ * enterprise-grade detectors from driftdetect-detectors.
  *
  * @requirements 29.2
  */
@@ -9,14 +10,22 @@
 import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 import chalk from 'chalk';
 import {
   PatternStore,
   FileWalker,
   type ScanOptions,
-} from '@drift/core';
+  type Pattern,
+  type PatternCategory,
+  type PatternLocation,
+  type ConfidenceInfo,
+  type DetectorConfig,
+} from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
+import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
+import { createContractScanner } from '../services/contract-scanner.js';
 
 export interface ScanCommandOptions {
   /** Specific paths to scan */
@@ -25,6 +34,16 @@ export interface ScanCommandOptions {
   verbose?: boolean;
   /** Force rescan even if cache is valid */
   force?: boolean;
+  /** Only run critical detectors */
+  critical?: boolean;
+  /** Filter by categories */
+  categories?: string[];
+  /** Generate manifest with semantic locations */
+  manifest?: boolean;
+  /** Incremental scan (only changed files) */
+  incremental?: boolean;
+  /** Scan for BE↔FE contracts */
+  contracts?: boolean;
 }
 
 /** Directory name for drift configuration */
@@ -53,6 +72,9 @@ async function loadIgnorePatterns(rootDir: string): Promise<string[]> {
     'build/**',
     'coverage/**',
     '.drift/**',
+    '__pycache__/**',
+    '.venv/**',
+    'venv/**',
   ];
 
   try {
@@ -106,6 +128,116 @@ function groupFilesByType(files: string[]): Map<string, number> {
 }
 
 /**
+ * Map detector category to PatternCategory
+ */
+function mapToPatternCategory(category: string): PatternCategory {
+  const mapping: Record<string, PatternCategory> = {
+    'api': 'api',
+    'auth': 'auth',
+    'security': 'security',
+    'errors': 'errors',
+    'structural': 'structural',
+    'components': 'components',
+    'styling': 'styling',
+    'logging': 'logging',
+    'testing': 'testing',
+    'data-access': 'data-access',
+    'config': 'config',
+    'types': 'types',
+    'performance': 'performance',
+    'accessibility': 'accessibility',
+    'documentation': 'documentation',
+  };
+  return mapping[category] || 'structural';
+}
+
+/**
+ * Convert aggregated pattern to Pattern for storage
+ */
+function convertToPattern(
+  aggPattern: AggregatedPattern,
+  violations: AggregatedViolation[],
+  rootDir: string,
+  isFirstPatternForDetector: boolean
+): Pattern {
+  const now = new Date().toISOString();
+  
+  // Generate unique ID
+  const id = crypto.createHash('sha256')
+    .update(`${aggPattern.patternId}-${rootDir}`)
+    .digest('hex')
+    .slice(0, 16);
+
+  // Calculate confidence
+  const spread = new Set(aggPattern.locations.map(l => l.file)).size;
+  const confidenceScore = Math.min(0.95, aggPattern.confidence);
+  const confidenceInfo: ConfidenceInfo = {
+    frequency: Math.min(1, aggPattern.occurrences / 100),
+    consistency: 0.9,
+    age: 0,
+    spread,
+    score: confidenceScore,
+    level: confidenceScore >= 0.85 ? 'high' : confidenceScore >= 0.65 ? 'medium' : confidenceScore >= 0.45 ? 'low' : 'uncertain',
+  };
+
+  // Create detector config
+  const detectorConfig: DetectorConfig = {
+    type: 'regex', // Most detectors are regex-based
+    config: { 
+      detectorId: aggPattern.detectorId,
+      patternId: aggPattern.patternId,
+    },
+  };
+
+  // Only attach violations to the FIRST pattern for each detector
+  // This prevents the same violations from appearing multiple times
+  let outliers: Array<{
+    file: string;
+    line: number;
+    column: number;
+    reason: string;
+    deviationScore: number;
+  }> = [];
+  
+  if (isFirstPatternForDetector) {
+    const patternViolations = violations.filter(v => v.detectorId === aggPattern.detectorId);
+    outliers = patternViolations.map(v => ({
+      file: v.file,
+      line: v.line,
+      column: v.column,
+      reason: v.message,
+      deviationScore: v.severity === 'error' ? 1.0 : v.severity === 'warning' ? 0.7 : 0.4,
+    }));
+  }
+
+  // Limit locations to prevent huge files
+  const locations: PatternLocation[] = aggPattern.locations.slice(0, 100);
+
+  return {
+    id,
+    category: mapToPatternCategory(aggPattern.category),
+    subcategory: aggPattern.subcategory,
+    name: aggPattern.name,
+    description: aggPattern.description,
+    detector: detectorConfig,
+    confidence: confidenceInfo,
+    locations,
+    outliers,
+    metadata: {
+      firstSeen: now,
+      lastSeen: now,
+      source: 'auto-detected',
+      tags: [aggPattern.category, aggPattern.subcategory],
+    },
+    severity: outliers.length > 0 ? 
+      (outliers.some(o => o.deviationScore >= 1.0) ? 'error' : 'warning') : 
+      'info',
+    autoFixable: false,
+    status: 'discovered',
+  };
+}
+
+/**
  * Scan command implementation
  */
 async function scanAction(options: ScanCommandOptions): Promise<void> {
@@ -113,7 +245,7 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
   const verbose = options.verbose ?? false;
 
   console.log();
-  console.log(chalk.bold('🔍 Drift - Scanning Codebase'));
+  console.log(chalk.bold('🔍 Drift - Enterprise Pattern Scanner'));
   console.log();
 
   // Check if initialized
@@ -191,62 +323,256 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
     console.log();
   }
 
+  // Initialize scanner service with real detectors
+  const scannerService = createScannerService({ 
+    rootDir, 
+    verbose,
+    criticalOnly: options.critical ?? false,
+    categories: options.categories ?? [],
+    generateManifest: options.manifest ?? false,
+    incremental: options.incremental ?? false,
+  });
+  
+  const initSpinner = createSpinner('Loading detectors...');
+  initSpinner.start();
+  
+  try {
+    await scannerService.initialize();
+    const counts = scannerService.getDetectorCounts();
+    initSpinner.succeed(`Loaded ${scannerService.getDetectorCount()} detectors (${counts.total} available)`);
+  } catch (error) {
+    initSpinner.fail('Failed to load detectors');
+    console.error(chalk.red((error as Error).message));
+    process.exit(1);
+  }
+
+  // Create project context
+  const projectContext: ProjectContext = {
+    rootDir,
+    files,
+    config: {},
+  };
+
   // Scan files with progress
-  const scanSpinner = createSpinner('Analyzing patterns...');
+  const scanSpinner = createSpinner('Analyzing patterns with enterprise detectors...');
   scanSpinner.start();
 
-  let processedFiles = 0;
   const startTime = Date.now();
 
   try {
-    // Process files in batches
-    const batchSize = 50;
-    for (let i = 0; i < files.length; i += batchSize) {
-      const batch = files.slice(i, i + batchSize);
-      
-      for (const file of batch) {
-        processedFiles++;
-        
-        // Update spinner text periodically
-        if (processedFiles % 10 === 0) {
-          scanSpinner.text(`Analyzing patterns... (${processedFiles}/${files.length})`);
-        }
+    const scanResults = await scannerService.scanFiles(files, projectContext);
+    
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    scanSpinner.succeed(
+      `Analyzed ${scanResults.totalFiles} files in ${duration}s ` +
+      `(${scanResults.patterns.length} pattern types, ${scanResults.totalViolations} violations)`
+    );
 
-        // Read file content
-        try {
-          const filePath = path.join(rootDir, file);
-          await fs.readFile(filePath, 'utf-8');
-          
-          // Pattern detection would happen here with detectors
-          // For now, we just track the files
-        } catch {
-          // Failed to read file, skip
-          if (verbose) {
-            console.log(chalk.gray(`  Skipped unreadable file: ${file}`));
-          }
+    if (verbose) {
+      console.log(chalk.gray(`  Detectors ran: ${scanResults.detectorStats.ran}`));
+      console.log(chalk.gray(`  Detectors skipped: ${scanResults.detectorStats.skipped}`));
+      if (scanResults.errors.length > 0) {
+        console.log(chalk.yellow(`  Warnings: ${scanResults.errors.length}`));
+      }
+    }
+
+    // Show detected patterns by category
+    if (scanResults.patterns.length > 0) {
+      console.log();
+      console.log(chalk.bold('Patterns detected by category:'));
+      
+      const byCategory = new Map<string, number>();
+      for (const pattern of scanResults.patterns) {
+        byCategory.set(pattern.category, (byCategory.get(pattern.category) ?? 0) + pattern.occurrences);
+      }
+      
+      for (const [category, count] of Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1])) {
+        console.log(`  ${chalk.cyan(category)}: ${count} occurrences`);
+      }
+    }
+
+    // Show violations (HIGH VALUE)
+    if (scanResults.violations.length > 0) {
+      console.log();
+      console.log(chalk.bold.red(`⚠️  ${scanResults.violations.length} Violations Found:`));
+      
+      // Group by severity
+      const errors = scanResults.violations.filter(v => v.severity === 'error');
+      const warnings = scanResults.violations.filter(v => v.severity === 'warning');
+      const infos = scanResults.violations.filter(v => v.severity === 'info');
+      
+      if (errors.length > 0) {
+        console.log();
+        console.log(chalk.red(`  Errors (${errors.length}):`));
+        for (const v of errors.slice(0, 5)) {
+          console.log(chalk.red(`    ${v.file}:${v.line} - ${v.message}`));
+        }
+        if (errors.length > 5) {
+          console.log(chalk.gray(`    ... and ${errors.length - 5} more errors`));
+        }
+      }
+      
+      if (warnings.length > 0) {
+        console.log();
+        console.log(chalk.yellow(`  Warnings (${warnings.length}):`));
+        for (const v of warnings.slice(0, 5)) {
+          console.log(chalk.yellow(`    ${v.file}:${v.line} - ${v.message}`));
+        }
+        if (warnings.length > 5) {
+          console.log(chalk.gray(`    ... and ${warnings.length - 5} more warnings`));
+        }
+      }
+      
+      if (verbose && infos.length > 0) {
+        console.log();
+        console.log(chalk.blue(`  Info (${infos.length}):`));
+        for (const v of infos.slice(0, 3)) {
+          console.log(chalk.blue(`    ${v.file}:${v.line} - ${v.message}`));
+        }
+        if (infos.length > 3) {
+          console.log(chalk.gray(`    ... and ${infos.length - 3} more`));
         }
       }
     }
 
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    scanSpinner.succeed(`Analyzed ${processedFiles} files in ${duration}s`);
+    // Convert and store patterns
+    const saveSpinner = createSpinner('Saving patterns...');
+    saveSpinner.start();
+
+    let addedCount = 0;
+    let skippedCount = 0;
+    
+    // Track which detectors we've already attached violations to
+    const detectorsWithViolations = new Set<string>();
+
+    for (const aggPattern of scanResults.patterns) {
+      const isFirstPatternForDetector = !detectorsWithViolations.has(aggPattern.detectorId);
+      if (isFirstPatternForDetector) {
+        detectorsWithViolations.add(aggPattern.detectorId);
+      }
+      
+      const pattern = convertToPattern(aggPattern, scanResults.violations, rootDir, isFirstPatternForDetector);
+      
+      // Check if pattern already exists
+      if (store.has(pattern.id)) {
+        // Update existing pattern with fresh locations and outliers
+        try {
+          store.update(pattern.id, {
+            locations: pattern.locations,
+            outliers: pattern.outliers,
+            confidence: pattern.confidence,
+            metadata: {
+              ...pattern.metadata,
+              lastSeen: new Date().toISOString(),
+            },
+          });
+        } catch (e) {
+          if (verbose) {
+            console.log(chalk.yellow(`  Warning: Could not update pattern ${aggPattern.patternId}: ${(e as Error).message}`));
+          }
+        }
+        skippedCount++;
+        continue;
+      }
+      
+      try {
+        store.add(pattern);
+        addedCount++;
+      } catch (e) {
+        if (verbose) {
+          console.log(chalk.yellow(`  Warning: Could not add pattern ${aggPattern.patternId}: ${(e as Error).message}`));
+        }
+      }
+    }
+
+    await store.saveAll();
+    saveSpinner.succeed(`Saved ${addedCount} new patterns (${skippedCount} already existed)`);
+
+    // Show manifest info if generated
+    if (options.manifest && scanResults.manifest) {
+      console.log();
+      console.log(chalk.bold('📋 Manifest Generated:'));
+      console.log(chalk.gray(`  Location: .drift/index/manifest.json`));
+      console.log(chalk.gray(`  Patterns: ${scanResults.manifest.summary.totalPatterns}`));
+      console.log(chalk.gray(`  Files: ${scanResults.manifest.summary.totalFiles}`));
+      console.log(chalk.gray(`  Locations: ${scanResults.manifest.summary.totalLocations}`));
+      console.log();
+      console.log(chalk.gray('Use these commands to explore:'));
+      console.log(chalk.cyan('  drift export --format ai-context'));
+      console.log(chalk.cyan('  drift where <pattern>'));
+      console.log(chalk.cyan('  drift files <path>'));
+    }
+
   } catch (error) {
     scanSpinner.fail('Scan failed');
     console.error(chalk.red((error as Error).message));
     process.exit(1);
   }
 
-  // Save patterns
-  const saveSpinner = createSpinner('Saving patterns...');
-  saveSpinner.start();
+  // Contract scanning (BE↔FE mismatch detection)
+  if (options.contracts) {
+    console.log();
+    const contractSpinner = createSpinner('Scanning for BE↔FE contracts...');
+    contractSpinner.start();
 
-  try {
-    await store.saveAll();
-    saveSpinner.succeed('Patterns saved');
-  } catch (error) {
-    saveSpinner.fail('Failed to save patterns');
-    console.error(chalk.red((error as Error).message));
-    process.exit(1);
+    try {
+      const contractScanner = createContractScanner({ rootDir, verbose });
+      await contractScanner.initialize();
+      const contractResult = await contractScanner.scanFiles(files);
+
+      contractSpinner.succeed(
+        `Found ${contractResult.stats.matchedContracts} contracts ` +
+        `(${contractResult.stats.backendEndpoints} BE endpoints, ${contractResult.stats.frontendCalls} FE calls)`
+      );
+
+      if (contractResult.stats.mismatches > 0) {
+        console.log();
+        console.log(chalk.bold.red(`⚠️  ${contractResult.stats.mismatches} Contract Mismatches Found:`));
+        
+        for (const contract of contractResult.contracts.filter(c => c.mismatches.length > 0).slice(0, 5)) {
+          console.log();
+          console.log(chalk.yellow(`  ${contract.method} ${contract.endpoint}`));
+          for (const mismatch of contract.mismatches.slice(0, 3)) {
+            const icon = mismatch.severity === 'error' ? '🔴' : mismatch.severity === 'warning' ? '🟡' : '🔵';
+            console.log(chalk.gray(`    ${icon} ${mismatch.fieldPath}: ${mismatch.description}`));
+          }
+          if (contract.mismatches.length > 3) {
+            console.log(chalk.gray(`    ... and ${contract.mismatches.length - 3} more`));
+          }
+        }
+
+        const contractsWithMismatches = contractResult.contracts.filter(c => c.mismatches.length > 0);
+        if (contractsWithMismatches.length > 5) {
+          console.log(chalk.gray(`\n  ... and ${contractsWithMismatches.length - 5} more contracts with mismatches`));
+        }
+      }
+
+      if (contractResult.unmatchedBackend.length > 0 && verbose) {
+        console.log();
+        console.log(chalk.gray(`  Unmatched backend endpoints: ${contractResult.unmatchedBackend.length}`));
+        for (const ep of contractResult.unmatchedBackend.slice(0, 3)) {
+          console.log(chalk.gray(`    ${ep.method} ${ep.path} (${ep.file}:${ep.line})`));
+        }
+      }
+
+      if (contractResult.unmatchedFrontend.length > 0 && verbose) {
+        console.log();
+        console.log(chalk.gray(`  Unmatched frontend calls: ${contractResult.unmatchedFrontend.length}`));
+        for (const call of contractResult.unmatchedFrontend.slice(0, 3)) {
+          console.log(chalk.gray(`    ${call.method} ${call.path} (${call.file}:${call.line})`));
+        }
+      }
+
+      console.log();
+      console.log(chalk.gray('View contracts in the dashboard:'));
+      console.log(chalk.cyan('  drift dashboard'));
+
+    } catch (error) {
+      contractSpinner.fail('Contract scanning failed');
+      if (verbose) {
+        console.error(chalk.red((error as Error).message));
+      }
+    }
   }
 
   // Summary
@@ -255,7 +581,7 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
   
   console.log(chalk.bold('Scan Summary'));
   console.log(chalk.gray('─'.repeat(40)));
-  console.log(`  Files scanned:      ${chalk.cyan(processedFiles)}`);
+  console.log(`  Files scanned:      ${chalk.cyan(files.length)}`);
   console.log(`  Total patterns:     ${chalk.cyan(stats.totalPatterns)}`);
   console.log(`    Discovered:       ${chalk.yellow(stats.byStatus.discovered)}`);
   console.log(`    Approved:         ${chalk.green(stats.byStatus.approved)}`);
@@ -297,8 +623,13 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
 }
 
 export const scanCommand = new Command('scan')
-  .description('Scan codebase for patterns')
+  .description('Scan codebase for patterns using enterprise detectors')
   .option('-p, --paths <paths...>', 'Specific paths to scan')
   .option('--force', 'Force rescan even if cache is valid')
   .option('--verbose', 'Enable verbose output')
+  .option('--critical', 'Only run critical/high-value detectors')
+  .option('-c, --categories <categories...>', 'Filter by categories (api, auth, security, etc.)')
+  .option('--manifest', 'Generate manifest with semantic locations')
+  .option('--incremental', 'Only scan changed files')
+  .option('--contracts', 'Scan for BE↔FE contracts and detect mismatches')
   .action(scanAction);

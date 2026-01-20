@@ -5,7 +5,7 @@
  */
 
 import type { Reporter, ReportData } from './types.js';
-import type { Severity } from '@drift/core';
+import type { Severity } from 'driftdetect-core';
 
 /**
  * Map severity to GitHub annotation level

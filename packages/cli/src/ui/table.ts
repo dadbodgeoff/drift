@@ -8,7 +8,7 @@
 
 import Table from 'cli-table3';
 import chalk from 'chalk';
-import type { Severity } from '@drift/core';
+import type { Severity } from 'driftdetect-core';
 
 /**
  * Table style presets

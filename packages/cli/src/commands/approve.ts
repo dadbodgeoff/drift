@@ -14,7 +14,7 @@ import {
   PatternStore,
   InvalidStateTransitionError,
   type PatternCategory,
-} from '@drift/core';
+} from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptBatchPatternApproval, type PatternChoice } from '../ui/prompts.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';

@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import type { Violation, Severity } from '@drift/core';
+import type { Violation, Severity } from 'driftdetect-core';
 
 /**
  * Severity order for comparison

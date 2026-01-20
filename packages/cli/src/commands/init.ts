@@ -11,7 +11,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import { PatternStore } from '@drift/core';
+import { PatternStore } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { promptInitOptions, confirmPrompt } from '../ui/prompts.js';
 
@@ -209,7 +209,7 @@ async function loadCheatcode2026Presets(
     const now = new Date().toISOString();
     const pattern = {
       id: preset.id,
-      category: preset.category as import('@drift/core').PatternCategory,
+      category: preset.category as import('driftdetect-core').PatternCategory,
       subcategory: 'cheatcode2026',
       name: preset.name,
       description: `Cheatcode2026 enterprise pattern: ${preset.name}`,

@@ -18,6 +18,11 @@ import {
   approveCommand,
   ignoreCommand,
   reportCommand,
+  exportCommand,
+  whereCommand,
+  filesCommand,
+  watchCommand,
+  dashboardCommand,
 } from '../commands/index.js';
 
 /**
@@ -41,6 +46,11 @@ function createProgram(): Command {
   program.addCommand(approveCommand);
   program.addCommand(ignoreCommand);
   program.addCommand(reportCommand);
+  program.addCommand(exportCommand);
+  program.addCommand(whereCommand);
+  program.addCommand(filesCommand);
+  program.addCommand(watchCommand);
+  program.addCommand(dashboardCommand);
 
   // Add help examples
   program.addHelpText(
@@ -50,6 +60,7 @@ Examples:
   $ drift init                    Initialize Drift in current directory
   $ drift init --from-scaffold    Initialize with Cheatcode2026 presets
   $ drift scan                    Scan codebase for patterns
+  $ drift scan --manifest         Generate manifest with semantic locations
   $ drift check                   Check for violations
   $ drift check --staged          Check only staged files
   $ drift check --ci              Run in CI mode
@@ -58,6 +69,15 @@ Examples:
   $ drift ignore <pattern-id>     Ignore a pattern
   $ drift report                  Generate a report
   $ drift report --format json    Generate JSON report
+  $ drift export                  Export manifest as JSON
+  $ drift export --format ai-context  Export for AI consumption
+  $ drift where <pattern>         Find pattern locations
+  $ drift files <path>            Show patterns in a file
+  $ drift watch                   Watch for changes in real-time
+  $ drift watch --verbose         Watch with detailed output
+  $ drift watch --context .drift-context.md  Auto-update AI context file
+  $ drift dashboard               Launch the web dashboard
+  $ drift dashboard --port 8080   Launch on a custom port
 
 Documentation:
   https://github.com/drift/drift

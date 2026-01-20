@@ -63,7 +63,9 @@
       "@drift/ai": ["packages/ai/src/index.ts"],
       "@drift/ai/*": ["packages/ai/src/*"],
       "@drift/vscode": ["packages/vscode/src/index.ts"],
-      "@drift/vscode/*": ["packages/vscode/src/*"]
+      "@drift/vscode/*": ["packages/vscode/src/*"],
+      "@drift/dashboard": ["packages/dashboard/src/server/index.ts"],
+      "@drift/dashboard/*": ["packages/dashboard/src/server/*"]
     }
   },
   "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]

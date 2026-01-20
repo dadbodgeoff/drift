@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import type { Violation, Pattern, Severity } from '@drift/core';
+import type { Violation, Pattern, Severity } from 'driftdetect-core';
 import {
   TextReporter,
   JsonReporter,

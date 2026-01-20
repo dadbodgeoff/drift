@@ -7,7 +7,7 @@
  */
 
 import { confirm, select, input, checkbox } from '@inquirer/prompts';
-import type { Severity } from '@drift/core';
+import type { Severity } from 'driftdetect-core';
 
 /**
  * Pattern approval choice

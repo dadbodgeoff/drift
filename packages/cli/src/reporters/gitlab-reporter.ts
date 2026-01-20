@@ -6,7 +6,7 @@
 
 import * as crypto from 'node:crypto';
 import type { Reporter, ReportData } from './types.js';
-import type { Severity } from '@drift/core';
+import type { Severity } from 'driftdetect-core';
 
 /**
  * GitLab Code Quality severity levels

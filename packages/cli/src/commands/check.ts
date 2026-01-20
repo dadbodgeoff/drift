@@ -14,7 +14,7 @@ import {
   PatternStore,
   type Violation,
   type Severity,
-} from '@drift/core';
+} from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { getStagedFiles } from '../git/staged-files.js';
 import {

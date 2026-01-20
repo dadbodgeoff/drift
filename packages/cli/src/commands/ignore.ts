@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import {
   PatternStore,
   InvalidStateTransitionError,
-} from '@drift/core';
+} from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptIgnoreReason } from '../ui/prompts.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';

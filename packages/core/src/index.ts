@@ -95,6 +95,11 @@ export { CacheManager } from './store/cache-manager.js';
 export type { CacheManagerOptions, CacheEntry, CacheStats } from './store/cache-manager.js';
 export { PatternStore, PatternNotFoundError, InvalidStateTransitionError, PatternStoreError } from './store/pattern-store.js';
 
+// Contract exports (BE↔FE mismatch detection)
+export * from './types/contracts.js';
+export { ContractStore, ContractNotFoundError, InvalidContractTransitionError, ContractStoreError } from './store/contract-store.js';
+export type { ContractStoreConfig, ContractStoreEvent, ContractStoreEventType } from './store/contract-store.js';
+
 // Rules exports (selective to avoid conflicts)
 export type { Position as RulePosition, Violation, QuickFix, Range, Severity, ViolationInput, RuleEvaluationResult, RuleEvaluationSummary, RuleEvaluationError } from './rules/types.js';
 export { Evaluator, createEvaluator, createEvaluatorWithConfig, createEvaluatorWithAI, type EvaluatorConfig, type EvaluationInput, type EvaluationResult, type EvaluationSummary } from './rules/evaluator.js';
@@ -103,3 +108,6 @@ export { VariantManager, VariantNotFoundError, VariantManagerError, InvalidVaria
 
 // Config exports
 export * from './config/index.js';
+
+// Manifest exports (pattern location discovery)
+export * from './manifest/index.js';

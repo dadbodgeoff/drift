@@ -1,8 +1,13 @@
 {
-  "name": "@drift/core",
-  "version": "0.0.1",
-  "private": true,
+  "name": "driftdetect-core",
+  "version": "0.1.1",
   "description": "Core pattern detection and analysis engine for Drift",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gfernald/drift"
+  },
+  "keywords": ["architecture", "drift", "patterns", "code-quality", "static-analysis"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,7 +33,8 @@
   },
   "dependencies": {
     "ignore": "^5.3.1",
-    "minimatch": "^9.0.3"
+    "minimatch": "^9.0.3",
+    "typescript": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

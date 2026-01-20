@@ -11,3 +11,8 @@ export { statusCommand } from './status.js';
 export { approveCommand } from './approve.js';
 export { ignoreCommand } from './ignore.js';
 export { reportCommand } from './report.js';
+export { exportCommand } from './export.js';
+export { whereCommand } from './where.js';
+export { filesCommand } from './files.js';
+export { watchCommandDef as watchCommand } from './watch.js';
+export { dashboardCommand } from './dashboard.js';

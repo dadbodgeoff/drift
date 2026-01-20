@@ -9,3 +9,4 @@ packages:
   - "packages/cli"
   - "packages/ai"
   - "packages/vscode"
+  - "packages/dashboard"

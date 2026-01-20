@@ -2,7 +2,7 @@
  * Reporter type definitions
  */
 
-import type { Violation, Pattern } from '@drift/core';
+import type { Violation, Pattern } from 'driftdetect-core';
 
 /**
  * Summary of violations

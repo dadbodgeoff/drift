@@ -10,7 +10,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import { PatternStore, type PatternCategory } from '@drift/core';
+import { PatternStore, type PatternCategory } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import {
   createPatternsTable,

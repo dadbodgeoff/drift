@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import {
   PatternStore,
   type Violation,
-} from '@drift/core';
+} from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { promptReportFormat, promptCategorySelection } from '../ui/prompts.js';
 import {
