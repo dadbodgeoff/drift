@@ -111,3 +111,6 @@ export * from './config/index.js';
 
 // Manifest exports (pattern location discovery)
 export * from './manifest/index.js';
+
+// Learning exports (pattern learning system)
+export * from './learning/index.js';
