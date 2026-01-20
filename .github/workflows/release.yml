@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to release'
+        required: true
+        type: choice
+        options:
+          - cli
+          - core
+          - detectors
+          - mcp
+          - dashboard
+          - all
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build
+        run: pnpm build
+        
+      - name: Test
+        run: pnpm test
+        
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: Publish packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+        run: |
+          if [ "${{ inputs.package }}" = "all" ]; then
+            pnpm --filter driftdetect-core publish --access public --no-git-checks
+            pnpm --filter driftdetect-detectors publish --access public --no-git-checks
+            pnpm --filter driftdetect-dashboard publish --access public --no-git-checks
+            pnpm --filter driftdetect-mcp publish --access public --no-git-checks
+            pnpm --filter driftdetect publish --access public --no-git-checks
+          else
+            pnpm --filter driftdetect-${{ inputs.package }} publish --access public --no-git-checks
+          fi

@@ -333,8 +333,8 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Clone the repo
-git clone https://github.com/dadbodgeoff/driftscan.git
-cd driftscan
+git clone https://github.com/dadbodgeoff/drift.git
+cd drift
 
 # Install dependencies
 pnpm install
@@ -356,7 +356,8 @@ MIT © Geoffrey Fernald
 
 ## Support
 
-- 📖 [Documentation](https://github.com/dadbodgeoff/driftscan/wiki)
-- 🐛 [Report a bug](https://github.com/dadbodgeoff/driftscan/issues)
-- 💬 [Discussions](https://github.com/dadbodgeoff/driftscan/discussions)
+- 📖 [Documentation](https://github.com/dadbodgeoff/drift/wiki)
+- 🐛 [Report a bug](https://github.com/dadbodgeoff/drift/issues)
+- 💬 [Discussions](https://github.com/dadbodgeoff/drift/discussions)
+- 🔒 [Security Policy](SECURITY.md)
 - ⭐ Star the repo if you find it useful!
