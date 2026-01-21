@@ -40,8 +40,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "driftdetect-core": "^0.1.1",
-    "driftdetect-detectors": "^0.1.3"
+    "driftdetect-core": "^0.3.0",
+    "driftdetect-detectors": "^0.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
