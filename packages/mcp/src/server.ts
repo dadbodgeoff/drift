@@ -14,8 +14,15 @@ import {
   PatternStore,
   ManifestStore,
   HistoryStore,
+  DNAStore,
+  PlaybookGenerator,
+  AIContextBuilder,
+  GENE_IDS,
   type PatternCategory,
   type Pattern,
+  type GeneId,
+  type MutationImpact,
+  type ContextLevel,
 } from 'driftdetect-core';
 import { PackManager, type PackDefinition } from './packs.js';
 import { FeedbackManager } from './feedback.js';
@@ -280,6 +287,113 @@ const TOOLS: Tool[] = [
       required: [],
     },
   },
+  {
+    name: 'drift_parser_info',
+    description: 'Get information about parser capabilities and status. Shows which parsers are available (tree-sitter vs regex), their features, and supported frameworks. Use this to understand parsing capabilities before analyzing Python, C#, or TypeScript code.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        language: {
+          type: 'string',
+          enum: ['python', 'csharp', 'typescript', 'all'],
+          description: 'Language to get parser info for (default: all)',
+        },
+      },
+      required: [],
+    },
+  },
+  // DNA Tools
+  {
+    name: 'drift_dna',
+    description: 'Get the styling DNA profile for the codebase. Shows how components are styled (variants, responsive, states, theming, spacing, animation) with confidence scores and exemplar files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        gene: {
+          type: 'string',
+          enum: ['variant-handling', 'responsive-approach', 'state-styling', 'theming', 'spacing-philosophy', 'animation-approach'],
+          description: 'Specific gene to query (optional)',
+        },
+        format: {
+          type: 'string',
+          enum: ['full', 'summary', 'ai-context'],
+          description: 'Output format (default: ai-context)',
+        },
+        level: {
+          type: 'number',
+          enum: [1, 2, 3, 4],
+          description: 'AI context detail level 1-4 (default: 3)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'drift_playbook',
+    description: 'Generate or retrieve the styling playbook documentation. Contains conventions, code examples, and patterns to avoid for each styling concern.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        regenerate: {
+          type: 'boolean',
+          description: 'Force regeneration of playbook (default: false)',
+        },
+        section: {
+          type: 'string',
+          enum: ['variant-handling', 'responsive-approach', 'state-styling', 'theming', 'spacing-philosophy', 'animation-approach'],
+          description: 'Specific section to retrieve (optional)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'drift_mutations',
+    description: 'Get files that deviate from established styling patterns. Mutations are styling inconsistencies that fragment AI context.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        gene: {
+          type: 'string',
+          enum: ['variant-handling', 'responsive-approach', 'state-styling', 'theming', 'spacing-philosophy', 'animation-approach'],
+          description: 'Filter by gene (optional)',
+        },
+        impact: {
+          type: 'string',
+          enum: ['low', 'medium', 'high'],
+          description: 'Filter by impact level (optional)',
+        },
+        suggest: {
+          type: 'boolean',
+          description: 'Include resolution suggestions (default: false)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'drift_dna_check',
+    description: 'Check if code follows the established styling DNA. Use before generating component code to ensure consistency.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'Code snippet to check against DNA',
+        },
+        file: {
+          type: 'string',
+          description: 'File path to check (alternative to code)',
+        },
+        genes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Specific genes to check (optional, defaults to all)',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 export function createDriftMCPServer(config: DriftMCPConfig): Server {
@@ -291,6 +405,7 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
   const patternStore = new PatternStore({ rootDir: config.projectRoot });
   const manifestStore = new ManifestStore(config.projectRoot);
   const historyStore = new HistoryStore({ rootDir: config.projectRoot });
+  const dnaStore = new DNAStore({ rootDir: config.projectRoot });
   const packManager = new PackManager(config.projectRoot, patternStore);
   const feedbackManager = new FeedbackManager(config.projectRoot);
 
@@ -376,6 +491,38 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
             category?: string;
             severity?: 'all' | 'critical' | 'warning';
             type?: 'all' | 'regressions' | 'improvements';
+          });
+
+        case 'drift_parser_info':
+          return await handleParserInfo(args as {
+            language?: string;
+          });
+
+        case 'drift_dna':
+          return await handleDNA(config.projectRoot, dnaStore, args as {
+            gene?: string;
+            format?: string;
+            level?: number;
+          });
+
+        case 'drift_playbook':
+          return await handlePlaybook(config.projectRoot, dnaStore, args as {
+            regenerate?: boolean;
+            section?: string;
+          });
+
+        case 'drift_mutations':
+          return await handleMutations(dnaStore, args as {
+            gene?: string;
+            impact?: string;
+            suggest?: boolean;
+          });
+
+        case 'drift_dna_check':
+          return await handleDNACheck(config.projectRoot, dnaStore, args as {
+            code?: string;
+            file?: string;
+            genes?: string[];
           });
 
         default:
@@ -1351,4 +1498,556 @@ async function handleTrends(
   return {
     content: [{ type: 'text', text: output }],
   };
+}
+
+/**
+ * Handle drift_parser_info tool
+ * 
+ * Returns information about parser capabilities and status.
+ */
+async function handleParserInfo(args: { language?: string }) {
+  const language = args.language ?? 'all';
+  
+  interface ParserInfo {
+    treeSitterAvailable: boolean;
+    activeParser: string;
+    capabilities: Record<string, boolean>;
+    supportedFrameworks: string[];
+    expectedConfidence?: string | undefined;
+    loadingError?: string | undefined;
+  }
+  
+  const info: {
+    python?: ParserInfo;
+    csharp?: ParserInfo;
+    typescript?: ParserInfo;
+  } = {};
+  
+  // Python parser info
+  if (language === 'python' || language === 'all') {
+    let treeSitterAvailable = false;
+    let loadingError: string | undefined;
+    
+    try {
+      const core = await import('driftdetect-core');
+      // Check if the functions exist (they may not be exported yet)
+      if ('isTreeSitterAvailable' in core && 'getLoadingError' in core) {
+        treeSitterAvailable = (core as { isTreeSitterAvailable: () => boolean }).isTreeSitterAvailable();
+        loadingError = (core as { getLoadingError: () => string | null }).getLoadingError() ?? undefined;
+      }
+    } catch {
+      loadingError = 'driftdetect-core not available';
+    }
+    
+    info.python = {
+      treeSitterAvailable,
+      activeParser: treeSitterAvailable ? 'tree-sitter' : 'regex',
+      capabilities: {
+        basicRouteDetection: true,
+        simplePydanticModels: true,
+        pydanticModels: treeSitterAvailable,
+        nestedTypes: treeSitterAvailable,
+        fieldConstraints: treeSitterAvailable,
+        inheritance: treeSitterAvailable,
+        generics: treeSitterAvailable,
+        django: treeSitterAvailable,
+        typeHints: treeSitterAvailable,
+      },
+      supportedFrameworks: treeSitterAvailable 
+        ? ['fastapi', 'flask', 'django', 'starlette']
+        : ['fastapi', 'flask'],
+      expectedConfidence: treeSitterAvailable ? 'high (0.7-0.9)' : 'low (0.3-0.5)',
+      loadingError,
+    };
+  }
+  
+  // C# parser info
+  if (language === 'csharp' || language === 'all') {
+    let treeSitterAvailable = false;
+    let loadingError: string | undefined;
+    
+    try {
+      const { isCSharpTreeSitterAvailable, getCSharpLoadingError } = await import('driftdetect-core');
+      treeSitterAvailable = isCSharpTreeSitterAvailable();
+      loadingError = getCSharpLoadingError() ?? undefined;
+    } catch {
+      loadingError = 'C# parser not available';
+    }
+    
+    info.csharp = {
+      treeSitterAvailable,
+      activeParser: treeSitterAvailable ? 'tree-sitter' : 'regex',
+      capabilities: {
+        basicParsing: true,
+        classExtraction: treeSitterAvailable,
+        methodExtraction: treeSitterAvailable,
+        attributeExtraction: treeSitterAvailable,
+        aspNetControllers: treeSitterAvailable,
+        minimalApis: treeSitterAvailable,
+        recordTypes: treeSitterAvailable,
+      },
+      supportedFrameworks: treeSitterAvailable 
+        ? ['asp.net-core', 'minimal-apis', 'web-api']
+        : [],
+      loadingError,
+    };
+  }
+  
+  // TypeScript parser info
+  if (language === 'typescript' || language === 'all') {
+    info.typescript = {
+      treeSitterAvailable: true, // TypeScript uses compiler API, always available
+      activeParser: 'typescript-compiler-api',
+      capabilities: {
+        fullAST: true,
+        typeInference: true,
+        interfaces: true,
+        generics: true,
+        decorators: true,
+      },
+      supportedFrameworks: ['express', 'nestjs', 'fastify'],
+    };
+  }
+  
+  // Build human-readable output
+  let output = '# Parser Information\n\n';
+  
+  if (info.python) {
+    const py = info.python;
+    output += '## Python\n\n';
+    output += `- **Active Parser:** ${py.activeParser}\n`;
+    output += `- **Tree-sitter:** ${py.treeSitterAvailable ? '✓ available' : '✗ not installed'}\n`;
+    output += `- **Expected Confidence:** ${py.expectedConfidence}\n`;
+    output += `- **Supported Frameworks:** ${py.supportedFrameworks.join(', ')}\n\n`;
+    
+    output += '### Capabilities\n\n';
+    for (const [cap, enabled] of Object.entries(py.capabilities)) {
+      const emoji = enabled ? '✓' : '✗';
+      const capName = cap.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      output += `- ${emoji} ${capName}\n`;
+    }
+    output += '\n';
+    
+    if (py.loadingError) {
+      output += `> ⚠️ Loading error: ${py.loadingError}\n\n`;
+    }
+  }
+  
+  if (info.csharp) {
+    const cs = info.csharp;
+    output += '## C#\n\n';
+    output += `- **Active Parser:** ${cs.activeParser}\n`;
+    output += `- **Tree-sitter:** ${cs.treeSitterAvailable ? '✓ available' : '✗ not installed'}\n`;
+    
+    if (cs.supportedFrameworks.length > 0) {
+      output += `- **Supported Frameworks:** ${cs.supportedFrameworks.join(', ')}\n`;
+    }
+    output += '\n';
+    
+    output += '### Capabilities\n\n';
+    for (const [cap, enabled] of Object.entries(cs.capabilities)) {
+      const emoji = enabled ? '✓' : '✗';
+      const capName = cap.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      output += `- ${emoji} ${capName}\n`;
+    }
+    output += '\n';
+    
+    if (cs.loadingError) {
+      output += `> ⚠️ Loading error: ${cs.loadingError}\n\n`;
+    }
+  }
+  
+  if (info.typescript) {
+    const ts = info.typescript;
+    output += '## TypeScript/JavaScript\n\n';
+    output += `- **Active Parser:** ${ts.activeParser}\n\n`;
+    
+    output += '### Capabilities\n\n';
+    for (const [cap, enabled] of Object.entries(ts.capabilities)) {
+      const emoji = enabled ? '✓' : '✗';
+      const capName = cap.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      output += `- ${emoji} ${capName}\n`;
+    }
+    output += '\n';
+  }
+  
+  // Installation tips
+  if ((info.python && !info.python.treeSitterAvailable) || (info.csharp && !info.csharp.treeSitterAvailable)) {
+    output += '## Installation Tips\n\n';
+    
+    if (info.python && !info.python.treeSitterAvailable) {
+      output += 'To enable full Python support (Pydantic, Django, nested types):\n';
+      output += '```bash\npnpm add tree-sitter tree-sitter-python\n```\n\n';
+    }
+    
+    if (info.csharp && !info.csharp.treeSitterAvailable) {
+      output += 'To enable full C# support (ASP.NET, attributes, records):\n';
+      output += '```bash\npnpm add tree-sitter tree-sitter-c-sharp\n```\n\n';
+    }
+  }
+  
+  return {
+    content: [{ type: 'text', text: output }],
+  };
+}
+
+// ============================================================================
+// DNA Handler Functions
+// ============================================================================
+
+/**
+ * Handle drift_dna tool - Get styling DNA profile
+ */
+async function handleDNA(
+  _projectRoot: string,
+  store: DNAStore,
+  args: { gene?: string; format?: string; level?: number }
+) {
+  await store.initialize();
+  const profile = await store.load();
+
+  if (!profile) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No DNA Profile Found\n\n' +
+          'Run `drift dna scan` to analyze your codebase styling patterns.\n\n' +
+          'The DNA profile captures how your codebase handles:\n' +
+          '- Variant handling (primary/secondary buttons, sizes)\n' +
+          '- Responsive design (mobile-first, breakpoints)\n' +
+          '- State styling (hover, focus, disabled)\n' +
+          '- Theming (dark mode, CSS variables)\n' +
+          '- Spacing philosophy (design tokens, scales)\n' +
+          '- Animation approach (transitions, motion)',
+      }],
+    };
+  }
+
+  const format = args.format ?? 'ai-context';
+
+  // Filter by specific gene if requested
+  if (args.gene && GENE_IDS.includes(args.gene as GeneId)) {
+    const gene = profile.genes[args.gene as GeneId];
+    const mutations = profile.mutations.filter(m => m.gene === args.gene);
+
+    let output = `# Gene: ${gene.name}\n\n`;
+    output += `${gene.description}\n\n`;
+    output += `## Summary\n`;
+    output += `- **Dominant Allele:** ${gene.dominant?.name ?? 'None established'}\n`;
+    output += `- **Confidence:** ${Math.round(gene.confidence * 100)}%\n`;
+    output += `- **Consistency:** ${Math.round(gene.consistency * 100)}%\n\n`;
+
+    if (gene.alleles.length > 0) {
+      output += `## Alleles Detected\n\n`;
+      for (const allele of gene.alleles) {
+        const marker = allele.isDominant ? ' ← DOMINANT' : '';
+        output += `### ${allele.name}${marker}\n`;
+        output += `- Frequency: ${Math.round(allele.frequency * 100)}% (${allele.fileCount} files)\n`;
+        if (allele.examples.length > 0) {
+          const ex = allele.examples[0];
+          if (ex) {
+            output += `- Example: \`${ex.file}:${ex.line}\`\n`;
+            output += `\`\`\`\n${ex.code}\n\`\`\`\n`;
+          }
+        }
+        output += '\n';
+      }
+    }
+
+    if (gene.exemplars.length > 0) {
+      output += `## Exemplar Files\n`;
+      for (const f of gene.exemplars) {
+        output += `- ${f}\n`;
+      }
+      output += '\n';
+    }
+
+    if (mutations.length > 0) {
+      output += `## Mutations (${mutations.length})\n\n`;
+      for (const m of mutations.slice(0, 5)) {
+        output += `- **${m.file}:${m.line}** - ${m.actual} (expected: ${m.expected})\n`;
+      }
+      if (mutations.length > 5) {
+        output += `- ... and ${mutations.length - 5} more\n`;
+      }
+    }
+
+    return { content: [{ type: 'text', text: output }] };
+  }
+
+  // Full profile output
+  if (format === 'full' || format === 'json') {
+    return {
+      content: [{ type: 'text', text: JSON.stringify(profile, null, 2) }],
+    };
+  }
+
+  if (format === 'summary') {
+    let output = `# Styling DNA Summary\n\n`;
+    output += `- **Health Score:** ${profile.summary.healthScore}/100\n`;
+    output += `- **Framework:** ${profile.summary.dominantFramework}\n`;
+    output += `- **Genetic Diversity:** ${profile.summary.geneticDiversity.toFixed(2)}\n`;
+    output += `- **Components Analyzed:** ${profile.summary.totalComponentsAnalyzed}\n`;
+    output += `- **Mutations:** ${profile.mutations.length}\n\n`;
+
+    output += `## Genes\n\n`;
+    output += `| Gene | Dominant | Confidence |\n`;
+    output += `|------|----------|------------|\n`;
+    for (const geneId of GENE_IDS) {
+      const gene = profile.genes[geneId];
+      output += `| ${gene.name} | ${gene.dominant?.name ?? 'None'} | ${Math.round(gene.confidence * 100)}% |\n`;
+    }
+
+    return { content: [{ type: 'text', text: output }] };
+  }
+
+  // AI context format (default)
+  const level = (args.level ?? 3) as ContextLevel;
+  const builder = new AIContextBuilder();
+  const context = builder.build(profile, level);
+
+  return { content: [{ type: 'text', text: context }] };
+}
+
+/**
+ * Handle drift_playbook tool - Generate styling playbook
+ */
+async function handlePlaybook(
+  _projectRoot: string,
+  store: DNAStore,
+  args: { regenerate?: boolean; section?: string }
+) {
+  await store.initialize();
+  const profile = await store.load();
+
+  if (!profile) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No DNA Profile Found\n\n' +
+          'Run `drift dna scan` first to analyze your codebase styling patterns.',
+      }],
+    };
+  }
+
+  const generator = new PlaybookGenerator();
+  const playbook = generator.generate(profile);
+
+  // Filter to specific section if requested
+  if (args.section && GENE_IDS.includes(args.section as GeneId)) {
+    const gene = profile.genes[args.section as GeneId];
+    const sectionRegex = new RegExp(`## ${gene.name}[\\s\\S]*?(?=\\n## |$)`, 'i');
+    const match = playbook.match(sectionRegex);
+
+    if (match) {
+      return { content: [{ type: 'text', text: match[0] }] };
+    }
+  }
+
+  return { content: [{ type: 'text', text: playbook }] };
+}
+
+/**
+ * Handle drift_mutations tool - Get styling mutations
+ */
+async function handleMutations(
+  store: DNAStore,
+  args: { gene?: string; impact?: string; suggest?: boolean }
+) {
+  await store.initialize();
+  const profile = await store.load();
+
+  if (!profile) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No DNA Profile Found\n\n' +
+          'Run `drift dna scan` first to analyze your codebase styling patterns.',
+      }],
+    };
+  }
+
+  let mutations = profile.mutations;
+
+  // Filter by gene
+  if (args.gene && GENE_IDS.includes(args.gene as GeneId)) {
+    mutations = mutations.filter(m => m.gene === args.gene);
+  }
+
+  // Filter by impact
+  if (args.impact) {
+    const validImpacts: MutationImpact[] = ['low', 'medium', 'high'];
+    if (validImpacts.includes(args.impact as MutationImpact)) {
+      mutations = mutations.filter(m => m.impact === args.impact);
+    }
+  }
+
+  if (mutations.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No Mutations Found\n\n' +
+          '✓ Your codebase styling is consistent with the established DNA patterns.',
+      }],
+    };
+  }
+
+  // Group by impact
+  const byImpact = { high: [] as typeof mutations, medium: [] as typeof mutations, low: [] as typeof mutations };
+  for (const m of mutations) byImpact[m.impact].push(m);
+
+  let output = `# Styling Mutations (${mutations.length})\n\n`;
+  output += 'Mutations are files that deviate from the established styling DNA.\n\n';
+
+  if (byImpact.high.length > 0) {
+    output += `## ⚠️ High Impact (${byImpact.high.length})\n\n`;
+    for (const m of byImpact.high) {
+      output += `### ${m.file}:${m.line}\n`;
+      output += `- **Gene:** ${m.gene}\n`;
+      output += `- **Found:** ${m.actual}\n`;
+      output += `- **Expected:** ${m.expected}\n`;
+      if (args.suggest && m.suggestion) {
+        output += `- **Suggestion:** ${m.suggestion}\n`;
+      }
+      output += '\n';
+    }
+  }
+
+  if (byImpact.medium.length > 0) {
+    output += `## ⚡ Medium Impact (${byImpact.medium.length})\n\n`;
+    for (const m of byImpact.medium.slice(0, 10)) {
+      output += `- **${m.file}:${m.line}** - ${m.actual} → ${m.expected}\n`;
+      if (args.suggest && m.suggestion) {
+        output += `  - 💡 ${m.suggestion}\n`;
+      }
+    }
+    if (byImpact.medium.length > 10) {
+      output += `- ... and ${byImpact.medium.length - 10} more\n`;
+    }
+    output += '\n';
+  }
+
+  if (byImpact.low.length > 0) {
+    output += `## Low Impact (${byImpact.low.length})\n\n`;
+    for (const m of byImpact.low.slice(0, 5)) {
+      output += `- ${m.file}:${m.line} - ${m.actual}\n`;
+    }
+    if (byImpact.low.length > 5) {
+      output += `- ... and ${byImpact.low.length - 5} more\n`;
+    }
+  }
+
+  return { content: [{ type: 'text', text: output }] };
+}
+
+/**
+ * Handle drift_dna_check tool - Check code against DNA
+ */
+async function handleDNACheck(
+  projectRoot: string,
+  store: DNAStore,
+  args: { code?: string; file?: string; genes?: string[] }
+) {
+  await store.initialize();
+  const profile = await store.load();
+
+  if (!profile) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No DNA Profile Found\n\n' +
+          'Run `drift dna scan` first to establish styling patterns.',
+      }],
+    };
+  }
+
+  if (!args.code && !args.file) {
+    // Return DNA conventions for code generation
+    const builder = new AIContextBuilder();
+    const context = builder.build(profile, 3);
+
+    return {
+      content: [{
+        type: 'text',
+        text: '# Styling DNA Conventions\n\n' +
+          'Use these conventions when generating component code:\n\n' +
+          context,
+      }],
+    };
+  }
+
+  // If file is provided, read it
+  let code = args.code ?? '';
+  if (args.file) {
+    try {
+      const fs = await import('node:fs/promises');
+      const path = await import('node:path');
+      code = await fs.readFile(path.join(projectRoot, args.file), 'utf-8');
+    } catch {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: Could not read file "${args.file}"`,
+        }],
+        isError: true,
+      };
+    }
+  }
+
+  // Simple pattern matching check against DNA
+  const issues: Array<{ gene: string; issue: string; suggestion: string }> = [];
+  const genesToCheck = args.genes?.filter(g => GENE_IDS.includes(g as GeneId)) ?? [...GENE_IDS];
+
+  for (const geneId of genesToCheck) {
+    const gene = profile.genes[geneId as GeneId];
+    if (!gene.dominant) continue;
+
+    // Check for non-dominant alleles in the code
+    for (const allele of gene.alleles) {
+      if (allele.isDominant) continue;
+
+      // Simple heuristic checks based on allele patterns
+      const patterns: Record<string, RegExp[]> = {
+        'styled-variants': [/styled\.\w+/, /\$\{props\s*=>/],
+        'inline-conditionals': [/className=\{[^}]*\?[^}]*\}/],
+        'tailwind-desktop-first': [/className="[^"]*\b(lg|xl|2xl):[^"]*\bsm:/],
+        'js-responsive': [/useMediaQuery|useBreakpoint/],
+        'hardcoded': [/style=\{\{[^}]*padding:\s*['"]?\d+px/],
+        'framer-motion': [/<motion\./],
+      };
+
+      const allelePatterns = patterns[allele.id];
+      if (allelePatterns) {
+        for (const pattern of allelePatterns) {
+          if (pattern.test(code)) {
+            issues.push({
+              gene: gene.name,
+              issue: `Found ${allele.name} pattern`,
+              suggestion: `Consider using ${gene.dominant.name} instead`,
+            });
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (issues.length === 0) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# DNA Check: ✓ Passed\n\n' +
+          'The code appears to follow the established styling DNA patterns.',
+      }],
+    };
+  }
+
+  let output = `# DNA Check: ⚠️ ${issues.length} Issue(s) Found\n\n`;
+  for (const issue of issues) {
+    output += `## ${issue.gene}\n`;
+    output += `- **Issue:** ${issue.issue}\n`;
+    output += `- **Suggestion:** ${issue.suggestion}\n\n`;
+  }
+
+  return { content: [{ type: 'text', text: output }] };
 }

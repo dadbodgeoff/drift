@@ -7,7 +7,11 @@
  * @requirements 3.5 - Unified AST query interface
  */
 
+import { createRequire } from 'node:module';
 import type { TreeSitterParser, TreeSitterLanguage } from './types.js';
+
+// Create require function for ESM compatibility
+const require = createRequire(import.meta.url);
 
 // ============================================
 // Module State
