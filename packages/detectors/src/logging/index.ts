@@ -255,3 +255,14 @@ export {
   HealthChecksSemanticDetector,
   createHealthChecksSemanticDetector,
 } from './health-checks-semantic.js';
+
+// ============================================================================
+// ASP.NET Core Detectors (C#)
+// ============================================================================
+
+export {
+  ILoggerPatternsDetector,
+  createILoggerPatternsDetector,
+  type ILoggerPatternInfo,
+  type ILoggerAnalysis,
+} from './aspnet/ilogger-patterns-detector.js';

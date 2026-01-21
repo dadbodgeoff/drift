@@ -259,3 +259,14 @@ export {
   SecretManagementSemanticDetector,
   createSecretManagementSemanticDetector,
 } from './secret-management-semantic.js';
+
+// ============================================================================
+// ASP.NET Core Detectors (C#)
+// ============================================================================
+
+export {
+  InputValidationDetector as AspNetInputValidationDetector,
+  createInputValidationDetector as createAspNetInputValidationDetector,
+  type InputValidationPatternInfo as AspNetInputValidationPatternInfo,
+  type InputValidationAnalysis as AspNetInputValidationAnalysis,
+} from './aspnet/input-validation-detector.js';

@@ -265,3 +265,14 @@ export {
   SetupTeardownSemanticDetector,
   createSetupTeardownSemanticDetector,
 } from './setup-teardown-semantic.js';
+
+// ============================================================================
+// ASP.NET Core Detectors (C#)
+// ============================================================================
+
+export {
+  XUnitPatternsDetector,
+  createXUnitPatternsDetector,
+  type XUnitPatternInfo,
+  type XUnitAnalysis,
+} from './aspnet/xunit-patterns-detector.js';
