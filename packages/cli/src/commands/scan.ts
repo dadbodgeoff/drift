@@ -14,6 +14,7 @@ import * as crypto from 'node:crypto';
 import chalk from 'chalk';
 import {
   PatternStore,
+  HistoryStore,
   FileWalker,
   type ScanOptions,
   type Pattern,
@@ -487,6 +488,56 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
 
     await store.saveAll();
     saveSpinner.succeed(`Saved ${addedCount} new patterns (${skippedCount} already existed)`);
+
+    // Create history snapshot for trend tracking
+    try {
+      const historyStore = new HistoryStore({ rootDir });
+      await historyStore.initialize();
+      const allPatterns = store.getAll();
+      if (verbose) {
+        console.log(chalk.gray(`  Creating history snapshot with ${allPatterns.length} patterns...`));
+      }
+      await historyStore.createSnapshot(allPatterns);
+      
+      // Check for regressions
+      const trends = await historyStore.getTrendSummary('7d');
+      if (trends && trends.regressions.length > 0) {
+        console.log();
+        console.log(chalk.bold.yellow(`📉 ${trends.regressions.length} Pattern Regressions Detected:`));
+        
+        const criticalRegressions = trends.regressions.filter(r => r.severity === 'critical');
+        const warningRegressions = trends.regressions.filter(r => r.severity === 'warning');
+        
+        if (criticalRegressions.length > 0) {
+          console.log();
+          console.log(chalk.red(`  Critical (${criticalRegressions.length}):`));
+          for (const r of criticalRegressions.slice(0, 3)) {
+            console.log(chalk.red(`    ${r.patternName}: ${r.details}`));
+          }
+        }
+        
+        if (warningRegressions.length > 0) {
+          console.log();
+          console.log(chalk.yellow(`  Warning (${warningRegressions.length}):`));
+          for (const r of warningRegressions.slice(0, 3)) {
+            console.log(chalk.yellow(`    ${r.patternName}: ${r.details}`));
+          }
+        }
+        
+        if (trends.regressions.length > 6) {
+          console.log(chalk.gray(`    ... and ${trends.regressions.length - 6} more`));
+        }
+      }
+      
+      if (trends && trends.improvements.length > 0 && verbose) {
+        console.log();
+        console.log(chalk.green(`📈 ${trends.improvements.length} patterns improved since last week`));
+      }
+    } catch (historyError) {
+      if (verbose) {
+        console.log(chalk.yellow(`  Warning: Could not create history snapshot: ${(historyError as Error).message}`));
+      }
+    }
 
     // Show manifest info if generated
     if (options.manifest && scanResults.manifest) {

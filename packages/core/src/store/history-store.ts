@@ -1,191 +1,143 @@
 /**
- * History Store - Pattern change tracking and approval history
+ * History Store - Pattern snapshot and trend tracking
  *
- * Tracks pattern changes over time and stores approval history.
- * History entries are stored in .drift/history/ directory.
+ * Captures pattern state over time to detect regressions and improvements.
+ * Stores daily snapshots in .drift/history/snapshots/
  *
- * @requirements 4.4 - THE Pattern_Store SHALL maintain history of pattern changes in .drift/history/
+ * @requirements 4.4 - Pattern history SHALL be tracked in .drift/history/
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { EventEmitter } from 'node:events';
-
-import type {
-  PatternCategory,
-  PatternHistoryEvent,
-  PatternHistory,
-  HistoryFile,
-  HistoryEventType,
-  Pattern,
-} from './types.js';
-
-import { HISTORY_FILE_VERSION } from './types.js';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Directory name for drift configuration */
-const DRIFT_DIR = '.drift';
-
-/** Directory name for history */
-const HISTORY_DIR = 'history';
-
-/** Main history file name */
-const HISTORY_FILE = 'patterns.json';
-
-/** Default maximum history entries per pattern */
-const DEFAULT_MAX_ENTRIES_PER_PATTERN = 100;
-
-/** Default maximum age for history entries in days */
-const DEFAULT_MAX_AGE_DAYS = 365;
-
-// ============================================================================
-// Error Classes
-// ============================================================================
-
-/**
- * Error thrown when a history operation fails
- */
-export class HistoryStoreError extends Error {
-  public readonly errorCause: Error | undefined;
-
-  constructor(message: string, errorCause?: Error) {
-    super(message);
-    this.name = 'HistoryStoreError';
-    this.errorCause = errorCause;
-  }
-}
-
-/**
- * Error thrown when a pattern history is not found
- */
-export class PatternHistoryNotFoundError extends Error {
-  constructor(public readonly patternId: string) {
-    super(`Pattern history not found: ${patternId}`);
-    this.name = 'PatternHistoryNotFoundError';
-  }
-}
+import type { Pattern, PatternCategory } from './types.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 /**
- * Configuration options for the history store
+ * A snapshot of a single pattern's state at a point in time
+ */
+export interface PatternSnapshot {
+  patternId: string;
+  patternName: string;
+  category: PatternCategory;
+  confidence: number;
+  locationCount: number;
+  outlierCount: number;
+  complianceRate: number; // locations / (locations + outliers)
+  status: 'discovered' | 'approved' | 'ignored';
+}
+
+/**
+ * A full snapshot of all patterns at a point in time
+ */
+export interface HistorySnapshot {
+  timestamp: string;
+  date: string; // YYYY-MM-DD for grouping
+  patterns: PatternSnapshot[];
+  summary: {
+    totalPatterns: number;
+    avgConfidence: number;
+    totalLocations: number;
+    totalOutliers: number;
+    overallComplianceRate: number;
+    byCategory: Record<string, CategorySummary>;
+  };
+}
+
+/**
+ * Summary for a single category
+ */
+export interface CategorySummary {
+  patternCount: number;
+  avgConfidence: number;
+  totalLocations: number;
+  totalOutliers: number;
+  complianceRate: number;
+}
+
+/**
+ * A detected regression or improvement
+ */
+export interface PatternTrend {
+  patternId: string;
+  patternName: string;
+  category: PatternCategory;
+  type: 'regression' | 'improvement' | 'stable';
+  metric: 'confidence' | 'compliance' | 'outliers';
+  previousValue: number;
+  currentValue: number;
+  change: number; // Absolute change
+  changePercent: number; // Percentage change
+  severity: 'critical' | 'warning' | 'info';
+  firstSeen: string; // When the trend started
+  details: string;
+}
+
+/**
+ * Aggregated trends for the dashboard
+ */
+export interface TrendSummary {
+  period: '7d' | '30d' | '90d';
+  startDate: string;
+  endDate: string;
+  regressions: PatternTrend[];
+  improvements: PatternTrend[];
+  stable: number;
+  overallTrend: 'improving' | 'declining' | 'stable';
+  healthDelta: number; // Change in overall health score
+  categoryTrends: Record<string, {
+    trend: 'improving' | 'declining' | 'stable';
+    avgConfidenceChange: number;
+    complianceChange: number;
+  }>;
+}
+
+/**
+ * Configuration for the history store
  */
 export interface HistoryStoreConfig {
-  /** Root directory for .drift folder (defaults to project root) */
   rootDir: string;
-
-  /** Maximum number of history entries per pattern */
-  maxEntriesPerPattern: number;
-
-  /** Maximum age for history entries in days */
-  maxAgeDays: number;
-
-  /** Whether to auto-save changes */
-  autoSave: boolean;
-
-  /** Debounce time for auto-save in milliseconds */
-  autoSaveDebounce: number;
+  maxSnapshots: number; // Maximum snapshots to keep (default: 90 days)
+  snapshotInterval: 'scan' | 'daily'; // When to create snapshots
 }
 
-/**
- * Default history store configuration
- */
-export const DEFAULT_HISTORY_STORE_CONFIG: HistoryStoreConfig = {
+const DEFAULT_CONFIG: HistoryStoreConfig = {
   rootDir: '.',
-  maxEntriesPerPattern: DEFAULT_MAX_ENTRIES_PER_PATTERN,
-  maxAgeDays: DEFAULT_MAX_AGE_DAYS,
-  autoSave: false,
-  autoSaveDebounce: 1000,
+  maxSnapshots: 90,
+  snapshotInterval: 'scan',
 };
 
-/**
- * Query options for filtering history events
- */
-export interface HistoryQuery {
-  /** Filter by pattern ID */
-  patternId?: string;
+// ============================================================================
+// Constants
+// ============================================================================
 
-  /** Filter by pattern IDs */
-  patternIds?: string[];
+const DRIFT_DIR = '.drift';
+const HISTORY_DIR = 'history';
+const SNAPSHOTS_DIR = 'snapshots';
 
-  /** Filter by event type */
-  eventType?: HistoryEventType | HistoryEventType[];
+// Thresholds for detecting significant changes
+const REGRESSION_THRESHOLDS = {
+  confidence: -0.05, // 5% drop in confidence
+  compliance: -0.10, // 10% drop in compliance
+  outliers: 3, // 3+ new outliers
+};
 
-  /** Filter by category */
-  category?: PatternCategory | PatternCategory[];
-
-  /** Filter by user */
-  user?: string;
-
-  /** Filter events after this date (ISO string) */
-  after?: string;
-
-  /** Filter events before this date (ISO string) */
-  before?: string;
-
-  /** Maximum number of results */
-  limit?: number;
-
-  /** Number of results to skip */
-  offset?: number;
-}
-
-/**
- * Result of a history query
- */
-export interface HistoryQueryResult {
-  /** Matching history events */
-  events: PatternHistoryEvent[];
-
-  /** Total count (before pagination) */
-  total: number;
-
-  /** Whether there are more results */
-  hasMore: boolean;
-
-  /** Query execution time in milliseconds */
-  executionTime: number;
-}
-
-/**
- * Events emitted by the history store
- */
-export type HistoryStoreEventType =
-  | 'event:recorded'
-  | 'history:pruned'
-  | 'file:loaded'
-  | 'file:saved'
-  | 'error';
-
-/**
- * Event payload for history store events
- */
-export interface HistoryStoreEvent {
-  /** Event type */
-  type: HistoryStoreEventType;
-
-  /** Pattern ID (if applicable) */
-  patternId?: string;
-
-  /** Additional event data */
-  data?: Record<string, unknown>;
-
-  /** ISO timestamp of the event */
-  timestamp: string;
-}
+const CRITICAL_THRESHOLDS = {
+  confidence: -0.15, // 15% drop = critical
+  compliance: -0.20, // 20% drop = critical
+};
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-/**
- * Check if a file exists
- */
+async function ensureDir(dirPath: string): Promise<void> {
+  await fs.mkdir(dirPath, { recursive: true });
+}
+
 async function fileExists(filePath: string): Promise<boolean> {
   try {
     await fs.access(filePath);
@@ -195,792 +147,366 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-/**
- * Ensure a directory exists
- */
-async function ensureDir(dirPath: string): Promise<void> {
-  await fs.mkdir(dirPath, { recursive: true });
+function getDateString(date: Date = new Date()): string {
+  return date.toISOString().split('T')[0]!;
+}
+
+function calculateComplianceRate(locations: number, outliers: number): number {
+  const total = locations + outliers;
+  return total > 0 ? locations / total : 1;
 }
 
 // ============================================================================
 // History Store Class
 // ============================================================================
 
-/**
- * History Store - Manages pattern change history
- *
- * Tracks all pattern changes including:
- * - Pattern created
- * - Pattern updated
- * - Pattern approved
- * - Pattern ignored
- * - Pattern deleted
- * - Confidence changed
- * - Locations changed
- * - Severity changed
- *
- * History is stored in .drift/history/patterns.json
- *
- * @requirements 4.4 - Pattern history tracked in .drift/history/
- */
 export class HistoryStore extends EventEmitter {
   private readonly config: HistoryStoreConfig;
   private readonly historyDir: string;
-  private readonly historyFilePath: string;
-  private histories: Map<string, PatternHistory> = new Map();
-  private loaded: boolean = false;
-  private dirty: boolean = false;
-  private saveTimeout: NodeJS.Timeout | null = null;
+  private readonly snapshotsDir: string;
 
   constructor(config: Partial<HistoryStoreConfig> = {}) {
     super();
-    this.config = { ...DEFAULT_HISTORY_STORE_CONFIG, ...config };
+    this.config = { ...DEFAULT_CONFIG, ...config };
     this.historyDir = path.join(this.config.rootDir, DRIFT_DIR, HISTORY_DIR);
-    this.historyFilePath = path.join(this.historyDir, HISTORY_FILE);
+    this.snapshotsDir = path.join(this.historyDir, SNAPSHOTS_DIR);
   }
-
-  // ==========================================================================
-  // Initialization
-  // ==========================================================================
 
   /**
    * Initialize the history store
-   *
-   * Creates necessary directories and loads existing history.
    */
   async initialize(): Promise<void> {
-    // Create directory structure
-    await ensureDir(this.historyDir);
-
-    // Load existing history
-    await this.load();
-
-    this.loaded = true;
+    await ensureDir(this.snapshotsDir);
   }
 
-  // ==========================================================================
-  // Loading
-  // ==========================================================================
+  /**
+   * Create a snapshot from current patterns
+   */
+  async createSnapshot(patterns: Pattern[]): Promise<HistorySnapshot> {
+    const now = new Date();
+    const timestamp = now.toISOString();
+    const date = getDateString(now);
+
+    // Convert patterns to snapshots
+    const patternSnapshots: PatternSnapshot[] = patterns.map(p => ({
+      patternId: p.id,
+      patternName: p.name,
+      category: p.category,
+      confidence: p.confidence.score,
+      locationCount: p.locations.length,
+      outlierCount: p.outliers.length,
+      complianceRate: calculateComplianceRate(p.locations.length, p.outliers.length),
+      status: p.status,
+    }));
+
+    // Calculate summary
+    const summary = this.calculateSummary(patternSnapshots);
+
+    const snapshot: HistorySnapshot = {
+      timestamp,
+      date,
+      patterns: patternSnapshots,
+      summary,
+    };
+
+    // Save snapshot
+    await this.saveSnapshot(snapshot);
+
+    // Cleanup old snapshots
+    await this.cleanupOldSnapshots();
+
+    this.emit('snapshot:created', snapshot);
+    return snapshot;
+  }
 
   /**
-   * Load history from disk
-   *
-   * @requirements 4.4 - Load history from .drift/history/
+   * Get snapshots for a date range
    */
-  async load(): Promise<void> {
-    this.histories.clear();
+  async getSnapshots(startDate?: string, endDate?: string): Promise<HistorySnapshot[]> {
+    const snapshots: HistorySnapshot[] = [];
 
-    if (!(await fileExists(this.historyFilePath))) {
-      this.emitEvent('file:loaded', undefined, { count: 0 });
-      return;
+    if (!(await fileExists(this.snapshotsDir))) {
+      return snapshots;
+    }
+
+    const files = await fs.readdir(this.snapshotsDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json')).sort();
+
+    for (const file of jsonFiles) {
+      const date = file.replace('.json', '');
+      
+      // Filter by date range
+      if (startDate && date < startDate) continue;
+      if (endDate && date > endDate) continue;
+
+      try {
+        const content = await fs.readFile(path.join(this.snapshotsDir, file), 'utf-8');
+        const snapshot = JSON.parse(content) as HistorySnapshot;
+        snapshots.push(snapshot);
+      } catch (error) {
+        console.error(`Error reading snapshot ${file}:`, error);
+      }
+    }
+
+    return snapshots;
+  }
+
+  /**
+   * Get the most recent snapshot
+   */
+  async getLatestSnapshot(): Promise<HistorySnapshot | null> {
+    const snapshots = await this.getSnapshots();
+    return snapshots.length > 0 ? snapshots[snapshots.length - 1]! : null;
+  }
+
+  /**
+   * Get snapshot from N days ago
+   */
+  async getSnapshotFromDaysAgo(days: number): Promise<HistorySnapshot | null> {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - days);
+    const dateStr = getDateString(targetDate);
+
+    const filePath = path.join(this.snapshotsDir, `${dateStr}.json`);
+    
+    if (!(await fileExists(filePath))) {
+      // Find closest snapshot before target date
+      const snapshots = await this.getSnapshots(undefined, dateStr);
+      return snapshots.length > 0 ? snapshots[snapshots.length - 1]! : null;
     }
 
     try {
-      const content = await fs.readFile(this.historyFilePath, 'utf-8');
-      const data = JSON.parse(content) as HistoryFile;
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content) as HistorySnapshot;
+    } catch {
+      return null;
+    }
+  }
 
-      // Load pattern histories into map
-      for (const history of data.patterns) {
-        this.histories.set(history.patternId, history);
+  /**
+   * Calculate trends between two snapshots
+   */
+  calculateTrends(
+    current: HistorySnapshot,
+    previous: HistorySnapshot
+  ): PatternTrend[] {
+    const trends: PatternTrend[] = [];
+    const previousMap = new Map(previous.patterns.map(p => [p.patternId, p]));
+
+    for (const currentPattern of current.patterns) {
+      const prevPattern = previousMap.get(currentPattern.patternId);
+      
+      if (!prevPattern) {
+        // New pattern, skip for now
+        continue;
       }
 
-      this.emitEvent('file:loaded', undefined, { count: this.histories.size });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return; // File doesn't exist, skip
+      // Check confidence change
+      const confidenceChange = currentPattern.confidence - prevPattern.confidence;
+      if (Math.abs(confidenceChange) >= Math.abs(REGRESSION_THRESHOLDS.confidence)) {
+        const isRegression = confidenceChange < 0;
+        const isCritical = confidenceChange <= CRITICAL_THRESHOLDS.confidence;
+        
+        trends.push({
+          patternId: currentPattern.patternId,
+          patternName: currentPattern.patternName,
+          category: currentPattern.category,
+          type: isRegression ? 'regression' : 'improvement',
+          metric: 'confidence',
+          previousValue: prevPattern.confidence,
+          currentValue: currentPattern.confidence,
+          change: confidenceChange,
+          changePercent: (confidenceChange / prevPattern.confidence) * 100,
+          severity: isCritical ? 'critical' : isRegression ? 'warning' : 'info',
+          firstSeen: previous.timestamp,
+          details: `Confidence ${isRegression ? 'dropped' : 'improved'} from ${(prevPattern.confidence * 100).toFixed(0)}% to ${(currentPattern.confidence * 100).toFixed(0)}%`,
+        });
       }
-      throw new HistoryStoreError(
-        `Failed to load history file: ${this.historyFilePath}`,
-        error as Error
-      );
-    }
-  }
 
-  // ==========================================================================
-  // Saving
-  // ==========================================================================
-
-  /**
-   * Save history to disk
-   *
-   * @requirements 4.4 - Persist history in .drift/history/
-   */
-  async save(): Promise<void> {
-    const historyFile: HistoryFile = {
-      version: HISTORY_FILE_VERSION,
-      patterns: Array.from(this.histories.values()),
-      lastUpdated: new Date().toISOString(),
-    };
-
-    // Ensure directory exists
-    await ensureDir(this.historyDir);
-
-    // Write file
-    await fs.writeFile(this.historyFilePath, JSON.stringify(historyFile, null, 2));
-
-    this.dirty = false;
-    this.emitEvent('file:saved', undefined, { count: this.histories.size });
-  }
-
-  /**
-   * Schedule an auto-save if enabled
-   */
-  private scheduleAutoSave(): void {
-    if (!this.config.autoSave) {
-      return;
-    }
-
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-
-    this.saveTimeout = setTimeout(async () => {
-      if (this.dirty) {
-        await this.save();
+      // Check compliance change
+      const complianceChange = currentPattern.complianceRate - prevPattern.complianceRate;
+      if (Math.abs(complianceChange) >= Math.abs(REGRESSION_THRESHOLDS.compliance)) {
+        const isRegression = complianceChange < 0;
+        const isCritical = complianceChange <= CRITICAL_THRESHOLDS.compliance;
+        
+        trends.push({
+          patternId: currentPattern.patternId,
+          patternName: currentPattern.patternName,
+          category: currentPattern.category,
+          type: isRegression ? 'regression' : 'improvement',
+          metric: 'compliance',
+          previousValue: prevPattern.complianceRate,
+          currentValue: currentPattern.complianceRate,
+          change: complianceChange,
+          changePercent: prevPattern.complianceRate > 0 
+            ? (complianceChange / prevPattern.complianceRate) * 100 
+            : 0,
+          severity: isCritical ? 'critical' : isRegression ? 'warning' : 'info',
+          firstSeen: previous.timestamp,
+          details: `Compliance ${isRegression ? 'dropped' : 'improved'} from ${(prevPattern.complianceRate * 100).toFixed(0)}% to ${(currentPattern.complianceRate * 100).toFixed(0)}%`,
+        });
       }
-    }, this.config.autoSaveDebounce);
-  }
 
-  // ==========================================================================
-  // Recording Events
-  // ==========================================================================
-
-  /**
-   * Record a history event for a pattern
-   *
-   * @param patternId - Pattern ID
-   * @param category - Pattern category
-   * @param eventType - Type of event
-   * @param options - Additional event options
-   */
-  recordEvent(
-    patternId: string,
-    category: PatternCategory,
-    eventType: HistoryEventType,
-    options: {
-      user?: string;
-      previousValue?: unknown;
-      newValue?: unknown;
-      details?: Record<string, unknown>;
-    } = {}
-  ): PatternHistoryEvent {
-    const now = new Date().toISOString();
-
-    // Create the event
-    const event: PatternHistoryEvent = {
-      timestamp: now,
-      type: eventType,
-      patternId,
-      ...(options.user && { user: options.user }),
-      ...(options.previousValue !== undefined && { previousValue: options.previousValue }),
-      ...(options.newValue !== undefined && { newValue: options.newValue }),
-      ...(options.details && { details: options.details }),
-    };
-
-    // Get or create pattern history
-    let history = this.histories.get(patternId);
-    if (!history) {
-      history = {
-        patternId,
-        category,
-        events: [],
-        createdAt: now,
-        lastModified: now,
-      };
-      this.histories.set(patternId, history);
-    }
-
-    // Add event to history
-    history.events.push(event);
-    history.lastModified = now;
-
-    // Prune if needed
-    this.prunePatternHistory(patternId);
-
-    this.dirty = true;
-    this.emitEvent('event:recorded', patternId, { eventType });
-    this.scheduleAutoSave();
-
-    return event;
-  }
-
-  /**
-   * Record a pattern creation event
-   */
-  recordCreated(pattern: Pattern, user?: string): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      newValue?: unknown;
-    } = {
-      newValue: {
-        name: pattern.name,
-        description: pattern.description,
-        confidence: pattern.confidence.score,
-        severity: pattern.severity,
-      },
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'created', options);
-  }
-
-  /**
-   * Record a pattern update event
-   */
-  recordUpdated(
-    pattern: Pattern,
-    previousPattern: Pattern,
-    user?: string
-  ): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      previousValue?: unknown;
-      newValue?: unknown;
-    } = {
-      previousValue: {
-        name: previousPattern.name,
-        description: previousPattern.description,
-      },
-      newValue: {
-        name: pattern.name,
-        description: pattern.description,
-      },
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'updated', options);
-  }
-
-  /**
-   * Record a pattern approval event
-   */
-  recordApproved(pattern: Pattern, user?: string): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      details?: Record<string, unknown>;
-    } = {
-      details: {
-        confidence: pattern.confidence.score,
-        severity: pattern.severity,
-      },
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'approved', options);
-  }
-
-  /**
-   * Record a pattern ignore event
-   */
-  recordIgnored(pattern: Pattern, user?: string): PatternHistoryEvent {
-    const options: { user?: string } = {};
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'ignored', options);
-  }
-
-  /**
-   * Record a pattern deletion event
-   */
-  recordDeleted(pattern: Pattern, user?: string): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      previousValue?: unknown;
-    } = {
-      previousValue: {
-        name: pattern.name,
-        status: pattern.status,
-      },
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'deleted', options);
-  }
-
-  /**
-   * Record a confidence change event
-   */
-  recordConfidenceChanged(
-    pattern: Pattern,
-    previousScore: number,
-    user?: string
-  ): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      previousValue?: unknown;
-      newValue?: unknown;
-    } = {
-      previousValue: previousScore,
-      newValue: pattern.confidence.score,
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'confidence_changed', options);
-  }
-
-  /**
-   * Record a locations change event
-   */
-  recordLocationsChanged(
-    pattern: Pattern,
-    previousCount: number,
-    user?: string
-  ): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      previousValue?: unknown;
-      newValue?: unknown;
-      details?: Record<string, unknown>;
-    } = {
-      previousValue: previousCount,
-      newValue: pattern.locations.length,
-      details: {
-        added: Math.max(0, pattern.locations.length - previousCount),
-        removed: Math.max(0, previousCount - pattern.locations.length),
-      },
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'locations_changed', options);
-  }
-
-  /**
-   * Record a severity change event
-   */
-  recordSeverityChanged(
-    pattern: Pattern,
-    previousSeverity: string,
-    user?: string
-  ): PatternHistoryEvent {
-    const options: {
-      user?: string;
-      previousValue?: unknown;
-      newValue?: unknown;
-    } = {
-      previousValue: previousSeverity,
-      newValue: pattern.severity,
-    };
-    if (user !== undefined) {
-      options.user = user;
-    }
-    return this.recordEvent(pattern.id, pattern.category, 'severity_changed', options);
-  }
-
-  // ==========================================================================
-  // Querying
-  // ==========================================================================
-
-  /**
-   * Get history for a specific pattern
-   *
-   * @param patternId - Pattern ID
-   * @returns Pattern history or undefined if not found
-   */
-  getPatternHistory(patternId: string): PatternHistory | undefined {
-    return this.histories.get(patternId);
-  }
-
-  /**
-   * Get history for a specific pattern, throwing if not found
-   *
-   * @param patternId - Pattern ID
-   * @returns Pattern history
-   * @throws PatternHistoryNotFoundError if not found
-   */
-  getPatternHistoryOrThrow(patternId: string): PatternHistory {
-    const history = this.histories.get(patternId);
-    if (!history) {
-      throw new PatternHistoryNotFoundError(patternId);
-    }
-    return history;
-  }
-
-  /**
-   * Check if history exists for a pattern
-   *
-   * @param patternId - Pattern ID
-   * @returns True if history exists
-   */
-  hasPatternHistory(patternId: string): boolean {
-    return this.histories.has(patternId);
-  }
-
-  /**
-   * Query history events with filtering and pagination
-   *
-   * @param query - Query options
-   * @returns Query result with matching events
-   */
-  query(query: HistoryQuery = {}): HistoryQueryResult {
-    const startTime = Date.now();
-
-    // Collect all events from relevant histories
-    let events: PatternHistoryEvent[] = [];
-
-    // Filter by pattern ID(s)
-    if (query.patternId) {
-      const history = this.histories.get(query.patternId);
-      if (history) {
-        events = [...history.events];
-      }
-    } else if (query.patternIds && query.patternIds.length > 0) {
-      for (const patternId of query.patternIds) {
-        const history = this.histories.get(patternId);
-        if (history) {
-          events.push(...history.events);
-        }
-      }
-    } else {
-      // Get all events
-      for (const history of this.histories.values()) {
-        events.push(...history.events);
+      // Check outlier increase
+      const outlierChange = currentPattern.outlierCount - prevPattern.outlierCount;
+      if (outlierChange >= REGRESSION_THRESHOLDS.outliers) {
+        trends.push({
+          patternId: currentPattern.patternId,
+          patternName: currentPattern.patternName,
+          category: currentPattern.category,
+          type: 'regression',
+          metric: 'outliers',
+          previousValue: prevPattern.outlierCount,
+          currentValue: currentPattern.outlierCount,
+          change: outlierChange,
+          changePercent: prevPattern.outlierCount > 0 
+            ? (outlierChange / prevPattern.outlierCount) * 100 
+            : 100,
+          severity: outlierChange >= 10 ? 'critical' : 'warning',
+          firstSeen: previous.timestamp,
+          details: `${outlierChange} new outliers detected (${prevPattern.outlierCount} → ${currentPattern.outlierCount})`,
+        });
       }
     }
 
-    // Apply filters
-    events = this.applyFilters(events, query);
+    return trends;
+  }
 
-    // Sort by timestamp descending (most recent first)
-    events.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+  /**
+   * Get trend summary for a period
+   */
+  async getTrendSummary(period: '7d' | '30d' | '90d' = '7d'): Promise<TrendSummary | null> {
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+    
+    const current = await this.getLatestSnapshot();
+    const previous = await this.getSnapshotFromDaysAgo(days);
 
-    // Get total before pagination
-    const total = events.length;
+    if (!current || !previous) {
+      return null;
+    }
 
-    // Apply pagination
-    const offset = query.offset ?? 0;
-    const limit = query.limit ?? events.length;
-    const hasMore = offset + limit < total;
-    events = events.slice(offset, offset + limit);
+    const trends = this.calculateTrends(current, previous);
+    const regressions = trends.filter(t => t.type === 'regression');
+    const improvements = trends.filter(t => t.type === 'improvement');
+
+    // Calculate category trends
+    const categoryTrends: TrendSummary['categoryTrends'] = {};
+    const categories = new Set([
+      ...current.patterns.map(p => p.category),
+      ...previous.patterns.map(p => p.category),
+    ]);
+
+    for (const category of categories) {
+      const currentCat = current.summary.byCategory[category];
+      const prevCat = previous.summary.byCategory[category];
+
+      if (currentCat && prevCat) {
+        const avgConfidenceChange = currentCat.avgConfidence - prevCat.avgConfidence;
+        const complianceChange = currentCat.complianceRate - prevCat.complianceRate;
+
+        categoryTrends[category] = {
+          trend: avgConfidenceChange > 0.02 ? 'improving' 
+               : avgConfidenceChange < -0.02 ? 'declining' 
+               : 'stable',
+          avgConfidenceChange,
+          complianceChange,
+        };
+      }
+    }
+
+    // Calculate overall trend
+    const healthDelta = current.summary.overallComplianceRate - previous.summary.overallComplianceRate;
+    const overallTrend = healthDelta > 0.02 ? 'improving' 
+                       : healthDelta < -0.02 ? 'declining' 
+                       : 'stable';
+
+    // Count stable patterns
+    const changedPatternIds = new Set(trends.map(t => t.patternId));
+    const stableCount = current.patterns.filter(p => !changedPatternIds.has(p.patternId)).length;
 
     return {
-      events,
-      total,
-      hasMore,
-      executionTime: Date.now() - startTime,
+      period,
+      startDate: previous.date,
+      endDate: current.date,
+      regressions,
+      improvements,
+      stable: stableCount,
+      overallTrend,
+      healthDelta,
+      categoryTrends,
     };
   }
 
-  /**
-   * Apply filters to events
-   */
-  private applyFilters(
-    events: PatternHistoryEvent[],
-    query: HistoryQuery
-  ): PatternHistoryEvent[] {
-    return events.filter((event) => {
-      // Filter by event type
-      if (query.eventType) {
-        const types = Array.isArray(query.eventType)
-          ? query.eventType
-          : [query.eventType];
-        if (!types.includes(event.type)) {
-          return false;
-        }
-      }
-
-      // Filter by category
-      if (query.category) {
-        const categories = Array.isArray(query.category)
-          ? query.category
-          : [query.category];
-        const history = this.histories.get(event.patternId);
-        if (!history || !categories.includes(history.category)) {
-          return false;
-        }
-      }
-
-      // Filter by user
-      if (query.user && event.user !== query.user) {
-        return false;
-      }
-
-      // Filter by date range
-      if (query.after) {
-        const eventTime = new Date(event.timestamp).getTime();
-        const afterTime = new Date(query.after).getTime();
-        if (eventTime < afterTime) {
-          return false;
-        }
-      }
-
-      if (query.before) {
-        const eventTime = new Date(event.timestamp).getTime();
-        const beforeTime = new Date(query.before).getTime();
-        if (eventTime > beforeTime) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
   // ==========================================================================
-  // Convenience Query Methods
+  // Private Methods
   // ==========================================================================
 
-  /**
-   * Get all history events
-   */
-  getAllEvents(): PatternHistoryEvent[] {
-    return this.query().events;
-  }
+  private calculateSummary(patterns: PatternSnapshot[]): HistorySnapshot['summary'] {
+    const byCategory: Record<string, CategorySummary> = {};
 
-  /**
-   * Get events by type
-   */
-  getEventsByType(eventType: HistoryEventType): PatternHistoryEvent[] {
-    return this.query({ eventType }).events;
-  }
+    let totalLocations = 0;
+    let totalOutliers = 0;
+    let totalConfidence = 0;
 
-  /**
-   * Get events by category
-   */
-  getEventsByCategory(category: PatternCategory): PatternHistoryEvent[] {
-    return this.query({ category }).events;
-  }
+    for (const pattern of patterns) {
+      totalLocations += pattern.locationCount;
+      totalOutliers += pattern.outlierCount;
+      totalConfidence += pattern.confidence;
 
-  /**
-   * Get events in date range
-   */
-  getEventsInDateRange(after: string, before: string): PatternHistoryEvent[] {
-    return this.query({ after, before }).events;
-  }
+      // Aggregate by category
+      if (!byCategory[pattern.category]) {
+        byCategory[pattern.category] = {
+          patternCount: 0,
+          avgConfidence: 0,
+          totalLocations: 0,
+          totalOutliers: 0,
+          complianceRate: 0,
+        };
+      }
 
-  /**
-   * Get recent events
-   *
-   * @param limit - Maximum number of events to return
-   */
-  getRecentEvents(limit: number = 50): PatternHistoryEvent[] {
-    return this.query({ limit }).events;
-  }
-
-  /**
-   * Get approval history
-   */
-  getApprovalHistory(): PatternHistoryEvent[] {
-    return this.getEventsByType('approved');
-  }
-
-  /**
-   * Get events by user
-   */
-  getEventsByUser(user: string): PatternHistoryEvent[] {
-    return this.query({ user }).events;
-  }
-
-  // ==========================================================================
-  // Pruning
-  // ==========================================================================
-
-  /**
-   * Prune history for a specific pattern
-   *
-   * Removes old entries based on maxEntriesPerPattern and maxAgeDays config.
-   *
-   * @param patternId - Pattern ID to prune
-   */
-  private prunePatternHistory(patternId: string): void {
-    const history = this.histories.get(patternId);
-    if (!history) {
-      return;
+      const cat = byCategory[pattern.category]!;
+      cat.patternCount++;
+      cat.avgConfidence += pattern.confidence;
+      cat.totalLocations += pattern.locationCount;
+      cat.totalOutliers += pattern.outlierCount;
     }
 
-    const now = Date.now();
-    const maxAgeMs = this.config.maxAgeDays * 24 * 60 * 60 * 1000;
-
-    // Filter out old events
-    history.events = history.events.filter((event) => {
-      const eventTime = new Date(event.timestamp).getTime();
-      return now - eventTime < maxAgeMs;
-    });
-
-    // Limit number of entries
-    if (history.events.length > this.config.maxEntriesPerPattern) {
-      // Keep most recent events
-      history.events = history.events
-        .sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        )
-        .slice(0, this.config.maxEntriesPerPattern);
-    }
-  }
-
-  /**
-   * Prune all history
-   *
-   * Removes old entries based on maxEntriesPerPattern and maxAgeDays config.
-   */
-  prune(): void {
-    for (const patternId of this.histories.keys()) {
-      this.prunePatternHistory(patternId);
-    }
-
-    // Remove empty histories
-    for (const [patternId, history] of this.histories.entries()) {
-      if (history.events.length === 0) {
-        this.histories.delete(patternId);
+    // Finalize category averages
+    for (const cat of Object.values(byCategory)) {
+      if (cat.patternCount > 0) {
+        cat.avgConfidence /= cat.patternCount;
       }
-    }
-
-    this.dirty = true;
-    this.emitEvent('history:pruned', undefined, { count: this.histories.size });
-    this.scheduleAutoSave();
-  }
-
-  /**
-   * Delete history for a specific pattern
-   *
-   * @param patternId - Pattern ID
-   * @returns True if history was deleted
-   */
-  deletePatternHistory(patternId: string): boolean {
-    const deleted = this.histories.delete(patternId);
-    if (deleted) {
-      this.dirty = true;
-      this.scheduleAutoSave();
-    }
-    return deleted;
-  }
-
-  // ==========================================================================
-  // Statistics
-  // ==========================================================================
-
-  /**
-   * Get statistics about the history store
-   */
-  getStats(): {
-    totalPatterns: number;
-    totalEvents: number;
-    eventsByType: Record<HistoryEventType, number>;
-    oldestEvent: string | null;
-    newestEvent: string | null;
-  } {
-    const eventsByType: Record<HistoryEventType, number> = {
-      created: 0,
-      approved: 0,
-      ignored: 0,
-      updated: 0,
-      deleted: 0,
-      confidence_changed: 0,
-      locations_changed: 0,
-      severity_changed: 0,
-    };
-
-    let totalEvents = 0;
-    let oldestEvent: string | null = null;
-    let newestEvent: string | null = null;
-
-    for (const history of this.histories.values()) {
-      for (const event of history.events) {
-        totalEvents++;
-        eventsByType[event.type]++;
-
-        if (!oldestEvent || event.timestamp < oldestEvent) {
-          oldestEvent = event.timestamp;
-        }
-        if (!newestEvent || event.timestamp > newestEvent) {
-          newestEvent = event.timestamp;
-        }
-      }
+      cat.complianceRate = calculateComplianceRate(cat.totalLocations, cat.totalOutliers);
     }
 
     return {
-      totalPatterns: this.histories.size,
-      totalEvents,
-      eventsByType,
-      oldestEvent,
-      newestEvent,
+      totalPatterns: patterns.length,
+      avgConfidence: patterns.length > 0 ? totalConfidence / patterns.length : 0,
+      totalLocations,
+      totalOutliers,
+      overallComplianceRate: calculateComplianceRate(totalLocations, totalOutliers),
+      byCategory,
     };
   }
 
-  // ==========================================================================
-  // Event Handling
-  // ==========================================================================
+  private async saveSnapshot(snapshot: HistorySnapshot): Promise<void> {
+    const filePath = path.join(this.snapshotsDir, `${snapshot.date}.json`);
+    await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2));
+  }
 
-  /**
-   * Emit a history store event
-   */
-  private emitEvent(
-    type: HistoryStoreEventType,
-    patternId?: string,
-    data?: Record<string, unknown>
-  ): void {
-    const event: HistoryStoreEvent = {
-      type,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (patternId !== undefined) {
-      event.patternId = patternId;
-    }
-    if (data !== undefined) {
-      event.data = data;
+  private async cleanupOldSnapshots(): Promise<void> {
+    if (!(await fileExists(this.snapshotsDir))) {
+      return;
     }
 
-    this.emit(type, event);
-    this.emit('*', event); // Wildcard for all events
-  }
+    const files = await fs.readdir(this.snapshotsDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json')).sort();
 
-  // ==========================================================================
-  // Utility Methods
-  // ==========================================================================
-
-  /**
-   * Get the number of patterns with history
-   */
-  get size(): number {
-    return this.histories.size;
-  }
-
-  /**
-   * Check if the store has been loaded
-   */
-  get isLoaded(): boolean {
-    return this.loaded;
-  }
-
-  /**
-   * Check if there are unsaved changes
-   */
-  get isDirty(): boolean {
-    return this.dirty;
-  }
-
-  /**
-   * Get the history directory path
-   */
-  get path(): string {
-    return this.historyDir;
-  }
-
-  /**
-   * Clear all history from memory (does not affect disk)
-   */
-  clear(): void {
-    this.histories.clear();
-    this.dirty = true;
-  }
-
-  /**
-   * Dispose of the history store
-   */
-  dispose(): void {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-      this.saveTimeout = null;
+    // Remove oldest files if over limit
+    const toRemove = jsonFiles.slice(0, Math.max(0, jsonFiles.length - this.config.maxSnapshots));
+    
+    for (const file of toRemove) {
+      await fs.unlink(path.join(this.snapshotsDir, file));
     }
-    this.removeAllListeners();
   }
 }

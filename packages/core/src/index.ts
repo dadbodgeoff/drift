@@ -95,6 +95,10 @@ export { CacheManager } from './store/cache-manager.js';
 export type { CacheManagerOptions, CacheEntry, CacheStats } from './store/cache-manager.js';
 export { PatternStore, PatternNotFoundError, InvalidStateTransitionError, PatternStoreError } from './store/pattern-store.js';
 
+// History store exports (pattern regression tracking)
+export { HistoryStore } from './store/history-store.js';
+export type { PatternSnapshot, HistorySnapshot, PatternTrend, TrendSummary, CategorySummary, HistoryStoreConfig } from './store/history-store.js';
+
 // Contract exports (BE↔FE mismatch detection)
 export * from './types/contracts.js';
 export { ContractStore, ContractNotFoundError, InvalidContractTransitionError, ContractStoreError } from './store/contract-store.js';

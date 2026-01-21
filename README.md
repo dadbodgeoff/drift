@@ -92,6 +92,7 @@ Once approved, Drift will flag any code that deviates from the pattern.
 | `drift status` | Show pattern summary |
 | `drift check` | Check for violations (CI-friendly) |
 | `drift dashboard` | Open web dashboard |
+| `drift trends` | View pattern regressions over time |
 | `drift approve <id>` | Approve a pattern |
 | `drift ignore <id>` | Ignore a pattern |
 | `drift where <pattern>` | Find where a pattern is used |
@@ -109,7 +110,7 @@ drift dashboard
 ```
 
 Opens at `http://localhost:3847` with:
-- **Overview**: Health score and violation summary
+- **Overview**: Health score, violation summary, and pattern trends
 - **Patterns**: Browse by category, approve/ignore patterns
 - **Violations**: See all deviations with code context
 - **Files**: Explore patterns by file
@@ -123,6 +124,53 @@ For high-confidence patterns (≥95%), use Quick Review to bulk-approve:
 2. Review patterns one by one
 3. Exclude any you're unsure about
 4. Click "Approve All" to approve the rest
+
+---
+
+## Pattern Regression Detection
+
+Drift tracks pattern health over time and alerts you when patterns regress:
+
+```bash
+# View trends from the CLI
+drift trends
+
+# View trends for the last 30 days
+drift trends --period 30d
+```
+
+After each scan, Drift creates a snapshot of your pattern state. It then compares snapshots to detect:
+
+- **Confidence drops**: Pattern confidence fell below threshold
+- **Compliance drops**: More outliers appeared, reducing compliance rate
+- **New outliers**: Significant increase in code deviating from patterns
+
+### Example Output
+
+```
+📊 Pattern Trends
+
+Overall: 📉 DECLINING
+Period: 2026-01-13 → 2026-01-20
+
+──────────────────────────────────────────────────
+  Regressions:   3
+  Improvements:  1
+  Stable:        42
+──────────────────────────────────────────────────
+
+📉 Regressions (3):
+
+  Critical:
+    • api/response-envelope (api)
+      Compliance dropped from 95% to 78% (-18%)
+
+  Warning:
+    • auth/middleware-usage (auth)
+      Confidence dropped from 92% to 85% (-8%)
+```
+
+The dashboard also shows trends in the Overview tab with visual indicators.
 
 ---
 

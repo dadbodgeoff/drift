@@ -16,3 +16,4 @@ export { whereCommand } from './where.js';
 export { filesCommand } from './files.js';
 export { watchCommandDef as watchCommand } from './watch.js';
 export { dashboardCommand } from './dashboard.js';
+export { trendsCommand } from './trends.js';

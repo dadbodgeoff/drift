@@ -23,6 +23,7 @@ import {
   filesCommand,
   watchCommand,
   dashboardCommand,
+  trendsCommand,
 } from '../commands/index.js';
 
 /**
@@ -51,6 +52,7 @@ function createProgram(): Command {
   program.addCommand(filesCommand);
   program.addCommand(watchCommand);
   program.addCommand(dashboardCommand);
+  program.addCommand(trendsCommand);
 
   // Add help examples
   program.addHelpText(
@@ -78,6 +80,8 @@ Examples:
   $ drift watch --context .drift-context.md  Auto-update AI context file
   $ drift dashboard               Launch the web dashboard
   $ drift dashboard --port 8080   Launch on a custom port
+  $ drift trends                  View pattern regressions over time
+  $ drift trends --period 30d    View trends for last 30 days
 
 Documentation:
   https://github.com/drift/drift
