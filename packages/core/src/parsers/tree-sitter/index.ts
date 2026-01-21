@@ -61,6 +61,57 @@ export {
 } from './csharp-loader.js';
 
 // ============================================
+// Java Parser Exports
+// ============================================
+
+export { TreeSitterJavaParser } from './tree-sitter-java-parser.js';
+
+// ============================================
+// Java Loader Exports
+// ============================================
+
+export {
+  isJavaTreeSitterAvailable,
+  getJavaLanguage,
+  getJavaTreeSitter,
+  createJavaParser,
+  getJavaLoadingError,
+  resetJavaLoader,
+} from './java-loader.js';
+
+// ============================================
+// PHP Parser Exports
+// ============================================
+
+export { TreeSitterPhpParser } from './tree-sitter-php-parser.js';
+export type {
+  PhpParseResult,
+  PhpNamespaceInfo,
+  PhpUseStatementInfo,
+  PhpAttributeInfo,
+  PhpParameterInfo,
+  PhpMethodInfo,
+  PhpPropertyInfo,
+  PhpClassInfo,
+  PhpInterfaceInfo,
+  PhpTraitInfo,
+  PhpEnumInfo,
+} from './tree-sitter-php-parser.js';
+
+// ============================================
+// PHP Loader Exports
+// ============================================
+
+export {
+  isPhpTreeSitterAvailable,
+  getPhpLanguage,
+  getPhpTreeSitter,
+  createPhpParser,
+  getPhpLoadingError,
+  resetPhpLoader,
+} from './php-loader.js';
+
+// ============================================
 // Configuration Exports
 // ============================================
 

@@ -1,6 +1,6 @@
 {
   "name": "driftdetect",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "AI-augmented architectural drift detection - learn and enforce codebase patterns",
   "license": "MIT",
   "author": "Geoffrey Fernald",
@@ -46,7 +46,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "driftdetect-core": "^0.3.0",
+    "driftdetect-core": "^0.4.0",
     "driftdetect-detectors": "^0.3.0",
     "driftdetect-dashboard": "^0.3.0",
     "@inquirer/prompts": "^7.0.0",

@@ -41,10 +41,18 @@ export { MarkdownParser } from './parsers/markdown-parser.js';
 export {
   TreeSitterPythonParser,
   TreeSitterCSharpParser,
+  TreeSitterJavaParser,
+  TreeSitterPhpParser,
   isTreeSitterAvailable,
   getLoadingError,
   isCSharpTreeSitterAvailable,
   getCSharpLoadingError,
+  isJavaTreeSitterAvailable,
+  getJavaLoadingError,
+  resetJavaLoader,
+  isPhpTreeSitterAvailable,
+  getPhpLoadingError,
+  resetPhpLoader,
 } from './parsers/tree-sitter/index.js';
 export type {
   TreeSitterPythonParseResult,
@@ -62,6 +70,32 @@ export type {
   CSharpStructInfo,
   CSharpInterfaceInfo,
   CSharpEnumInfo,
+  // Java types
+  JavaParseResult,
+  JavaClassInfo,
+  JavaInterfaceInfo,
+  JavaEnumInfo,
+  JavaRecordInfo,
+  JavaMethodInfo,
+  JavaFieldInfo,
+  JavaConstructorInfo,
+  JavaParameterInfo,
+  AnnotationUsage,
+  AnnotationArgument,
+  PackageInfo,
+  JavaImportInfo,
+  // PHP types
+  PhpParseResult,
+  PhpNamespaceInfo,
+  PhpUseStatementInfo,
+  PhpAttributeInfo,
+  PhpParameterInfo,
+  PhpMethodInfo,
+  PhpPropertyInfo,
+  PhpClassInfo,
+  PhpInterfaceInfo,
+  PhpTraitInfo,
+  PhpEnumInfo,
 } from './parsers/tree-sitter/index.js';
 
 // Java type mapping exports

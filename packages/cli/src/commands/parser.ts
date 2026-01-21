@@ -181,6 +181,54 @@ async function getJavaParserInfo(): Promise<{
 }
 
 /**
+ * Get PHP parser information
+ * 
+ * PHP uses regex-based detection by default.
+ * Tree-sitter support is available when tree-sitter-php is installed.
+ */
+async function getPhpParserInfo(): Promise<{
+  treeSitterAvailable: boolean;
+  activeParser: string;
+  capabilities: Record<string, boolean>;
+  supportedFrameworks: string[];
+  loadingError: string | undefined;
+}> {
+  let treeSitterAvailable = false;
+  let loadingError: string | undefined;
+  
+  try {
+    const core = await import('driftdetect-core');
+    if ('isPhpTreeSitterAvailable' in core) {
+      treeSitterAvailable = (core as { isPhpTreeSitterAvailable: () => boolean }).isPhpTreeSitterAvailable();
+      if ('getPhpLoadingError' in core) {
+        loadingError = (core as { getPhpLoadingError: () => string | null }).getPhpLoadingError() ?? undefined;
+      }
+    }
+  } catch {
+    loadingError = undefined;
+  }
+  
+  return {
+    treeSitterAvailable,
+    activeParser: treeSitterAvailable ? 'tree-sitter' : 'regex',
+    capabilities: {
+      basicParsing: true,
+      classExtraction: treeSitterAvailable,
+      methodExtraction: treeSitterAvailable,
+      attributeExtraction: treeSitterAvailable,
+      laravelControllers: treeSitterAvailable,
+      laravelModels: treeSitterAvailable,
+      traitExtraction: treeSitterAvailable,
+      enumExtraction: treeSitterAvailable,
+    },
+    supportedFrameworks: treeSitterAvailable 
+      ? ['laravel', 'symfony', 'php8']
+      : ['laravel'],
+    loadingError,
+  };
+}
+
+/**
  * Get TypeScript parser information
  */
 function getTypeScriptParserInfo(): {
@@ -247,6 +295,8 @@ async function testFileParsing(
     language = 'csharp';
   } else if (['.java'].includes(ext)) {
     language = 'java';
+  } else if (['.php'].includes(ext)) {
+    language = 'php';
   } else {
     return {
       success: false,
@@ -389,6 +439,56 @@ async function testFileParsing(
     };
   }
   
+  if (language === 'php') {
+    try {
+      const core = await import('driftdetect-core');
+      
+      if ('isPhpTreeSitterAvailable' in core && (core as { isPhpTreeSitterAvailable: () => boolean }).isPhpTreeSitterAvailable()) {
+        const { TreeSitterPhpParser } = core as { TreeSitterPhpParser: new () => { parse: (content: string, filePath: string) => { success: boolean; ast: unknown; errors: { message: string }[] } } };
+        const parser = new TreeSitterPhpParser();
+        const result = parser.parse(content, filePath);
+        
+        if (result.success && result.ast) {
+          return {
+            success: true,
+            language,
+            parser: 'tree-sitter',
+            nodeCount: countASTNodes(result.ast),
+            pydanticModels: undefined,
+            errors: undefined,
+          };
+        } else {
+          return {
+            success: false,
+            language,
+            parser: 'tree-sitter',
+            nodeCount: undefined,
+            pydanticModels: undefined,
+            errors: result.errors.map(e => e.message),
+          };
+        }
+      } else {
+        return {
+          success: true,
+          language,
+          parser: 'regex',
+          nodeCount: undefined,
+          pydanticModels: undefined,
+          errors: undefined,
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+        language,
+        parser: 'unknown',
+        nodeCount: undefined,
+        pydanticModels: undefined,
+        errors: [err instanceof Error ? err.message : String(err)],
+      };
+    }
+  }
+  
   // TypeScript/JavaScript - just report success
   return {
     success: true,
@@ -411,6 +511,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
   const pythonInfo = await getPythonParserInfo();
   const csharpInfo = await getCSharpParserInfo();
   const javaInfo = await getJavaParserInfo();
+  const phpInfo = await getPhpParserInfo();
   const tsInfo = getTypeScriptParserInfo();
   
   // JSON output
@@ -419,6 +520,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
       python: pythonInfo,
       csharp: csharpInfo,
       java: javaInfo,
+      php: phpInfo,
       typescript: tsInfo,
     };
     
@@ -518,6 +620,36 @@ async function parserAction(options: ParserOptions): Promise<void> {
     console.log(`  Frameworks:        ${javaInfo.supportedFrameworks.join(', ')}`);
   }
   
+  // PHP
+  console.log();
+  console.log(chalk.bold('PHP:'));
+  console.log(`  Active parser:     ${phpInfo.treeSitterAvailable ? chalk.green('tree-sitter') : chalk.yellow('regex')}`);
+  console.log(`  Tree-sitter:       ${phpInfo.treeSitterAvailable ? chalk.green('✓ available') : chalk.red('✗ not installed')}`);
+  
+  if (phpInfo.treeSitterAvailable) {
+    console.log(chalk.green('  Capabilities:'));
+    console.log(chalk.green('    ✓ Class extraction'));
+    console.log(chalk.green('    ✓ Method extraction'));
+    console.log(chalk.green('    ✓ Attribute extraction (PHP 8+)'));
+    console.log(chalk.green('    ✓ Laravel Controllers'));
+    console.log(chalk.green('    ✓ Laravel Models'));
+    console.log(chalk.green('    ✓ Trait extraction'));
+    console.log(chalk.green('    ✓ Enum extraction (PHP 8.1+)'));
+  } else {
+    console.log(chalk.yellow('  Limited capabilities (regex-based):'));
+    console.log(chalk.yellow('    ✓ Basic parsing'));
+    console.log(chalk.yellow('    ✓ Laravel patterns'));
+    console.log(chalk.red('    ✗ Full AST analysis'));
+    console.log(chalk.red('    ✗ PHP 8 attributes'));
+    console.log();
+    console.log(chalk.gray('  To enable full PHP support:'));
+    console.log(chalk.cyan('    pnpm add tree-sitter tree-sitter-php'));
+  }
+  
+  if (phpInfo.supportedFrameworks.length > 0) {
+    console.log(`  Frameworks:        ${phpInfo.supportedFrameworks.join(', ')}`);
+  }
+  
   // TypeScript
   console.log();
   console.log(chalk.bold('TypeScript/JavaScript:'));
@@ -566,7 +698,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
   console.log();
   console.log(chalk.gray('─'.repeat(50)));
   
-  const allTreeSitterAvailable = pythonInfo.treeSitterAvailable && csharpInfo.treeSitterAvailable;
+  const allTreeSitterAvailable = pythonInfo.treeSitterAvailable && csharpInfo.treeSitterAvailable && phpInfo.treeSitterAvailable;
   if (allTreeSitterAvailable) {
     console.log(chalk.green('All tree-sitter parsers available. Full parsing capabilities enabled.'));
     console.log(chalk.green('Java: Using semantic detectors (tree-sitter optional).'));
@@ -574,6 +706,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
     const missing: string[] = [];
     if (!pythonInfo.treeSitterAvailable) missing.push('Python');
     if (!csharpInfo.treeSitterAvailable) missing.push('C#');
+    if (!phpInfo.treeSitterAvailable) missing.push('PHP');
     if (missing.length > 0) {
       console.log(chalk.yellow(`Tree-sitter not available for: ${missing.join(', ')}`));
       console.log(chalk.gray('Install tree-sitter packages for improved parsing accuracy.'));

@@ -1560,6 +1560,7 @@ async function handleParserInfo(args: { language?: string }) {
     csharp?: ParserInfo;
     typescript?: ParserInfo;
     java?: ParserInfo;
+    php?: ParserInfo;
   } = {};
   
   // Python parser info
@@ -1686,6 +1687,44 @@ async function handleParserInfo(args: { language?: string }) {
     };
   }
   
+  // PHP parser info
+  if (language === 'php' || language === 'all') {
+    let phpTreeSitterAvailable = false;
+    let phpLoadingError: string | undefined;
+    
+    try {
+      const core = await import('driftdetect-core');
+      // Check if the functions exist
+      if ('isPhpTreeSitterAvailable' in core && 'getPhpLoadingError' in core) {
+        phpTreeSitterAvailable = (core as { isPhpTreeSitterAvailable: () => boolean }).isPhpTreeSitterAvailable();
+        phpLoadingError = (core as { getPhpLoadingError: () => string | null }).getPhpLoadingError() ?? undefined;
+      } else {
+        phpLoadingError = 'PHP parser functions not yet available in driftdetect-core';
+      }
+    } catch {
+      phpLoadingError = 'PHP parser not available';
+    }
+    
+    info.php = {
+      treeSitterAvailable: phpTreeSitterAvailable,
+      activeParser: phpTreeSitterAvailable ? 'tree-sitter' : 'regex',
+      capabilities: {
+        basicParsing: true,
+        classExtraction: phpTreeSitterAvailable,
+        methodExtraction: phpTreeSitterAvailable,
+        attributeExtraction: phpTreeSitterAvailable,
+        laravelControllers: phpTreeSitterAvailable,
+        laravelModels: phpTreeSitterAvailable,
+        traitExtraction: phpTreeSitterAvailable,
+        enumExtraction: phpTreeSitterAvailable,
+      },
+      supportedFrameworks: phpTreeSitterAvailable 
+        ? ['laravel', 'symfony', 'php8']
+        : ['laravel'],
+      loadingError: phpLoadingError,
+    };
+  }
+  
   // Build human-readable output
   let output = '# Parser Information\n\n';
   
@@ -1772,8 +1811,32 @@ async function handleParserInfo(args: { language?: string }) {
     }
   }
   
+  if (info.php) {
+    const php = info.php;
+    output += '## PHP\n\n';
+    output += `- **Active Parser:** ${php.activeParser}\n`;
+    output += `- **Tree-sitter:** ${php.treeSitterAvailable ? '✓ available' : '✗ not installed'}\n`;
+    
+    if (php.supportedFrameworks.length > 0) {
+      output += `- **Supported Frameworks:** ${php.supportedFrameworks.join(', ')}\n`;
+    }
+    output += '\n';
+    
+    output += '### Capabilities\n\n';
+    for (const [cap, enabled] of Object.entries(php.capabilities)) {
+      const emoji = enabled ? '✓' : '✗';
+      const capName = cap.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      output += `- ${emoji} ${capName}\n`;
+    }
+    output += '\n';
+    
+    if (php.loadingError) {
+      output += `> ⚠️ Loading error: ${php.loadingError}\n\n`;
+    }
+  }
+  
   // Installation tips
-  if ((info.python && !info.python.treeSitterAvailable) || (info.csharp && !info.csharp.treeSitterAvailable) || (info.java && !info.java.treeSitterAvailable)) {
+  if ((info.python && !info.python.treeSitterAvailable) || (info.csharp && !info.csharp.treeSitterAvailable) || (info.java && !info.java.treeSitterAvailable) || (info.php && !info.php.treeSitterAvailable)) {
     output += '## Installation Tips\n\n';
     
     if (info.python && !info.python.treeSitterAvailable) {
@@ -1789,6 +1852,11 @@ async function handleParserInfo(args: { language?: string }) {
     if (info.java && !info.java.treeSitterAvailable) {
       output += 'To enable full Java support (Spring Boot, annotations, records):\n';
       output += '```bash\npnpm add tree-sitter tree-sitter-java\n```\n\n';
+    }
+    
+    if (info.php && !info.php.treeSitterAvailable) {
+      output += 'To enable full PHP support (Laravel, Symfony, PHP 8 attributes):\n';
+      output += '```bash\npnpm add tree-sitter tree-sitter-php\n```\n\n';
     }
   }
   
