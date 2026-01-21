@@ -24,6 +24,8 @@ import {
   watchCommand,
   dashboardCommand,
   trendsCommand,
+  parserCommand,
+  dnaCommand,
 } from '../commands/index.js';
 
 /**
@@ -53,6 +55,8 @@ function createProgram(): Command {
   program.addCommand(watchCommand);
   program.addCommand(dashboardCommand);
   program.addCommand(trendsCommand);
+  program.addCommand(parserCommand);
+  program.addCommand(dnaCommand);
 
   // Add help examples
   program.addHelpText(
@@ -81,7 +85,12 @@ Examples:
   $ drift dashboard               Launch the web dashboard
   $ drift dashboard --port 8080   Launch on a custom port
   $ drift trends                  View pattern regressions over time
-  $ drift trends --period 30d    View trends for last 30 days
+  $ drift trends --period 30d     View trends for last 30 days
+  $ drift parser                  Show parser status and capabilities
+  $ drift parser --test file.py   Test parsing a specific file
+  $ drift dna                     Show styling DNA status
+  $ drift dna scan                Analyze codebase styling DNA
+  $ drift dna playbook            Generate styling playbook
 
 Documentation:
   https://github.com/drift/drift

@@ -17,3 +17,5 @@ export { filesCommand } from './files.js';
 export { watchCommandDef as watchCommand } from './watch.js';
 export { dashboardCommand } from './dashboard.js';
 export { trendsCommand } from './trends.js';
+export { parserCommand } from './parser.js';
+export { dnaCommand } from './dna/index.js';
