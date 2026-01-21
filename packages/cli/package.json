@@ -1,6 +1,6 @@
 {
   "name": "driftdetect",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "AI-augmented architectural drift detection - learn and enforce codebase patterns",
   "license": "MIT",
   "author": "Geoffrey Fernald",
