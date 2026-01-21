@@ -85,6 +85,33 @@ const SUPPORTED_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.cs', '.css'
 const IGNORE_PATTERNS = ['node_modules', '.git', 'dist', 'build', 'coverage', '.turbo', '.drift'];
 
 // ============================================================================
+// Location Deduplication
+// ============================================================================
+
+/**
+ * Create a unique key for a location to enable deduplication
+ */
+function locationKey(loc: { file: string; line: number; column: number }): string {
+  return `${loc.file}:${loc.line}:${loc.column}`;
+}
+
+/**
+ * Add a location to an array only if it doesn't already exist
+ */
+function addUniqueLocation<T extends { file: string; line: number; column: number }>(
+  locations: T[],
+  location: T
+): boolean {
+  const key = locationKey(location);
+  const existingKeys = new Set(locations.map(locationKey));
+  if (existingKeys.has(key)) {
+    return false;
+  }
+  locations.push(location);
+  return true;
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -378,7 +405,7 @@ async function detectPatternsInFile(
           if (match.location?.endColumn !== undefined) {
             loc.endColumn = match.location.endColumn;
           }
-          pattern.locations.push(loc);
+          addUniqueLocation(pattern.locations, loc);
         }
       }
       

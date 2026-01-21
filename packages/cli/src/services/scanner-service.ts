@@ -126,6 +126,60 @@ export interface ScanResults {
 }
 
 // ============================================================================
+// Location Deduplication
+// ============================================================================
+
+/**
+ * Create a unique key for a basic location to enable deduplication
+ */
+function locationKey(loc: { file: string; line: number; column: number }): string {
+  return `${loc.file}:${loc.line}:${loc.column}`;
+}
+
+/**
+ * Create a unique key for a semantic location to enable deduplication
+ */
+function semanticLocationKey(loc: SemanticLocation): string {
+  return `${loc.file}:${loc.range.start}:${loc.range.end}:${loc.name}`;
+}
+
+/**
+ * Add a basic location to an array only if it doesn't already exist
+ */
+function addUniqueLocation<T extends { file: string; line: number; column: number }>(
+  locations: T[],
+  location: T,
+  seenKeys?: Set<string>
+): boolean {
+  const key = locationKey(location);
+  const seen = seenKeys || new Set(locations.map(locationKey));
+  if (seen.has(key)) {
+    return false;
+  }
+  seen.add(key);
+  locations.push(location);
+  return true;
+}
+
+/**
+ * Add a semantic location to an array only if it doesn't already exist
+ */
+function addUniqueSemanticLocation(
+  locations: SemanticLocation[],
+  location: SemanticLocation,
+  seenKeys?: Set<string>
+): boolean {
+  const key = semanticLocationKey(location);
+  const seen = seenKeys || new Set(locations.map(semanticLocationKey));
+  if (seen.has(key)) {
+    return false;
+  }
+  seen.add(key);
+  locations.push(location);
+  return true;
+}
+
+// ============================================================================
 // Language Detection
 // ============================================================================
 
@@ -365,7 +419,7 @@ export class ScannerService {
               const key = match.patternId;
               const existing = patternMap.get(key);
               if (existing) {
-                existing.locations.push(match.location);
+                addUniqueLocation(existing.locations, match.location);
                 existing.occurrences++;
                 existing.confidence = Math.max(existing.confidence, match.confidence);
               } else {
@@ -395,7 +449,7 @@ export class ScannerService {
                 const existingManifest = manifestPatternMap.get(manifestKey);
                 
                 if (existingManifest) {
-                  existingManifest.locations.push(semanticLoc);
+                  addUniqueSemanticLocation(existingManifest.locations, semanticLoc);
                   existingManifest.confidence = Math.max(existingManifest.confidence, match.confidence);
                   existingManifest.lastSeen = new Date().toISOString();
                 } else {
