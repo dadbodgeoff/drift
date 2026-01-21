@@ -13,6 +13,7 @@ import {
 import {
   PatternStore,
   ManifestStore,
+  HistoryStore,
   type PatternCategory,
   type Pattern,
 } from 'driftdetect-core';
@@ -250,6 +251,35 @@ const TOOLS: Tool[] = [
       required: [],
     },
   },
+  {
+    name: 'drift_trends',
+    description: 'Get pattern trend analysis and regression alerts. Shows how patterns have changed over time. Use this to check codebase health before generating code or to identify patterns that need attention.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        period: {
+          type: 'string',
+          enum: ['7d', '30d', '90d'],
+          description: 'Time period to analyze (default: 7d)',
+        },
+        category: {
+          type: 'string',
+          description: `Filter trends by category. Valid: ${PATTERN_CATEGORIES.join(', ')}`,
+        },
+        severity: {
+          type: 'string',
+          enum: ['all', 'critical', 'warning'],
+          description: 'Filter by severity level (default: all)',
+        },
+        type: {
+          type: 'string',
+          enum: ['all', 'regressions', 'improvements'],
+          description: 'Filter by trend type (default: all)',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 export function createDriftMCPServer(config: DriftMCPConfig): Server {
@@ -260,6 +290,7 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
 
   const patternStore = new PatternStore({ rootDir: config.projectRoot });
   const manifestStore = new ManifestStore(config.projectRoot);
+  const historyStore = new HistoryStore({ rootDir: config.projectRoot });
   const packManager = new PackManager(config.projectRoot, patternStore);
   const feedbackManager = new FeedbackManager(config.projectRoot);
 
@@ -337,6 +368,14 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
             line?: number;
             rating?: 'good' | 'bad' | 'irrelevant';
             reason?: string;
+          });
+
+        case 'drift_trends':
+          return await handleTrends(historyStore, args as {
+            period?: '7d' | '30d' | '90d';
+            category?: string;
+            severity?: 'all' | 'critical' | 'warning';
+            type?: 'all' | 'regressions' | 'improvements';
           });
 
         default:
@@ -1204,4 +1243,112 @@ async function handleFeedback(
         isError: true,
       };
   }
+}
+
+
+async function handleTrends(
+  historyStore: HistoryStore,
+  args: {
+    period?: '7d' | '30d' | '90d';
+    category?: string;
+    severity?: 'all' | 'critical' | 'warning';
+    type?: 'all' | 'regressions' | 'improvements';
+  }
+) {
+  await historyStore.initialize();
+
+  const period = args.period ?? '7d';
+  const summary = await historyStore.getTrendSummary(period);
+
+  if (!summary) {
+    return {
+      content: [{
+        type: 'text',
+        text: '# No Trend Data Available\n\n' +
+          'Pattern trends require at least 2 snapshots. Snapshots are created automatically when you run `drift scan`.\n\n' +
+          'Run a few scans over time to start tracking trends.',
+      }],
+    };
+  }
+
+  // Filter by category if specified
+  let regressions = summary.regressions;
+  let improvements = summary.improvements;
+
+  if (args.category) {
+    regressions = regressions.filter(t => t.category === args.category);
+    improvements = improvements.filter(t => t.category === args.category);
+  }
+
+  // Filter by severity
+  if (args.severity && args.severity !== 'all') {
+    regressions = regressions.filter(t => t.severity === args.severity);
+  }
+
+  // Filter by type
+  if (args.type === 'regressions') {
+    improvements = [];
+  } else if (args.type === 'improvements') {
+    regressions = [];
+  }
+
+  // Build output
+  let output = `# Pattern Trends (${period})\n\n`;
+  output += `Period: ${summary.startDate} → ${summary.endDate}\n`;
+  output += `Overall trend: **${summary.overallTrend.toUpperCase()}** (${summary.healthDelta >= 0 ? '+' : ''}${(summary.healthDelta * 100).toFixed(1)}% health)\n\n`;
+
+  // Summary stats
+  output += `## Summary\n`;
+  output += `- Regressions: ${regressions.length}\n`;
+  output += `- Improvements: ${improvements.length}\n`;
+  output += `- Stable patterns: ${summary.stable}\n\n`;
+
+  // Critical regressions first
+  const criticalRegressions = regressions.filter(t => t.severity === 'critical');
+  if (criticalRegressions.length > 0) {
+    output += `## ⚠️ Critical Regressions\n\n`;
+    for (const t of criticalRegressions) {
+      output += `### ${t.patternName} (${t.category})\n`;
+      output += `- ${t.details}\n`;
+      output += `- Metric: ${t.metric}\n`;
+      output += `- Change: ${t.changePercent >= 0 ? '+' : ''}${t.changePercent.toFixed(1)}%\n\n`;
+    }
+  }
+
+  // Warning regressions
+  const warningRegressions = regressions.filter(t => t.severity === 'warning');
+  if (warningRegressions.length > 0) {
+    output += `## ⚡ Warning Regressions\n\n`;
+    for (const t of warningRegressions) {
+      output += `### ${t.patternName} (${t.category})\n`;
+      output += `- ${t.details}\n`;
+      output += `- Metric: ${t.metric}\n`;
+      output += `- Change: ${t.changePercent >= 0 ? '+' : ''}${t.changePercent.toFixed(1)}%\n\n`;
+    }
+  }
+
+  // Improvements
+  if (improvements.length > 0) {
+    output += `## ✅ Improvements\n\n`;
+    for (const t of improvements) {
+      output += `### ${t.patternName} (${t.category})\n`;
+      output += `- ${t.details}\n`;
+      output += `- Metric: ${t.metric}\n`;
+      output += `- Change: +${t.changePercent.toFixed(1)}%\n\n`;
+    }
+  }
+
+  // Category breakdown
+  const categoryEntries = Object.entries(summary.categoryTrends);
+  if (categoryEntries.length > 0) {
+    output += `## Category Trends\n\n`;
+    for (const [category, trend] of categoryEntries) {
+      const emoji = trend.trend === 'improving' ? '📈' : trend.trend === 'declining' ? '📉' : '➡️';
+      output += `- ${emoji} **${category}**: ${trend.trend} (confidence: ${trend.avgConfidenceChange >= 0 ? '+' : ''}${(trend.avgConfidenceChange * 100).toFixed(1)}%, compliance: ${trend.complianceChange >= 0 ? '+' : ''}${(trend.complianceChange * 100).toFixed(1)}%)\n`;
+    }
+  }
+
+  return {
+    content: [{ type: 'text', text: output }],
+  };
 }
