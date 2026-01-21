@@ -37,6 +37,33 @@ export { CSSParser } from './parsers/css-parser.js';
 export { JSONParser } from './parsers/json-parser.js';
 export { MarkdownParser } from './parsers/markdown-parser.js';
 
+// Tree-sitter parser exports
+export {
+  TreeSitterPythonParser,
+  TreeSitterCSharpParser,
+  isTreeSitterAvailable,
+  getLoadingError,
+  isCSharpTreeSitterAvailable,
+  getCSharpLoadingError,
+} from './parsers/tree-sitter/index.js';
+export type {
+  TreeSitterPythonParseResult,
+  TreeSitterCSharpParseResult,
+  CSharpUsingInfo,
+  CSharpNamespaceInfo,
+  CSharpAttributeInfo,
+  CSharpParameterInfo,
+  CSharpMethodInfo,
+  CSharpPropertyInfo,
+  CSharpFieldInfo,
+  CSharpConstructorInfo,
+  CSharpClassInfo,
+  CSharpRecordInfo,
+  CSharpStructInfo,
+  CSharpInterfaceInfo,
+  CSharpEnumInfo,
+} from './parsers/tree-sitter/index.js';
+
 // Analyzer exports
 export * from './analyzers/index.js';
 
@@ -118,3 +145,6 @@ export * from './manifest/index.js';
 
 // Learning exports (pattern learning system)
 export * from './learning/index.js';
+
+// DNA exports (Styling DNA analysis system)
+export * from './dna/index.js';

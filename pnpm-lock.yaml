@@ -79,13 +79,13 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: ^0.1.1
+        specifier: ^0.1.2
         version: link:../core
       driftdetect-dashboard:
         specifier: ^0.1.0
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: ^0.1.3
+        specifier: ^0.2.0
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -121,6 +121,10 @@ importers:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+    optionalDependencies:
+      tree-sitter-python:
+        specifier: ^0.21.0
+        version: 0.21.0(tree-sitter@0.21.1)
     devDependencies:
       '@types/minimatch':
         specifier: ^5.1.2
@@ -134,6 +138,12 @@ importers:
       fast-check:
         specifier: ^3.15.0
         version: 3.23.2
+      tree-sitter:
+        specifier: ^0.21.1
+        version: 0.21.1
+      tree-sitter-c-sharp:
+        specifier: ^0.21.3
+        version: 0.21.3(tree-sitter@0.21.1)
       vitest:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.30)
@@ -289,7 +299,7 @@ importers:
         version: link:../core
       driftdetect-detectors:
         specifier: ^0.1.3
-        version: link:../detectors
+        version: 0.1.3
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -3187,6 +3197,20 @@ packages:
       domhandler: 5.0.3
     dev: true
 
+  /driftdetect-core@0.1.3:
+    resolution: {integrity: sha512-WarJ6Tqlqfn5oe7LqpV1enYfJkV5Lg/nHDKdN002P4AZE6SDisrLKhcM4QmtIl94zTQRJuc4Hf19p07bfhJzpg==}
+    dependencies:
+      ignore: 5.3.2
+      minimatch: 9.0.5
+      typescript: 5.9.3
+    dev: false
+
+  /driftdetect-detectors@0.1.3:
+    resolution: {integrity: sha512-iRFbTYRUr6HFKbgxeJ0HgT0UkVd9CAIMpLsOnE8vhOcEzz6ork2qNlwIIkRDy/3hv0QQspVHbysxSqR/UDBGBQ==}
+    dependencies:
+      driftdetect-core: 0.1.3
+    dev: false
+
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -4981,6 +5005,20 @@ packages:
     dev: true
     optional: true
 
+  /node-addon-api@7.1.1:
+    resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /node-addon-api@8.5.0:
+    resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
+    engines: {node: ^18 || ^20 || >= 21}
+
+  /node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
+
   /node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
     dev: true
@@ -6222,6 +6260,44 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
     dev: true
+
+  /tree-sitter-c-sharp@0.21.3(tree-sitter@0.21.1):
+    resolution: {integrity: sha512-TVsl5EhmqetO/mhzDPVnMK6TPFnpNMKP0OTNuAQIprshk5Hx672ODRxoIoG5WqvUUlsnBu8J0zmn35hmJqelsA==}
+    requiresBuild: true
+    peerDependencies:
+      tree-sitter: ^0.21.0
+      tree_sitter: '*'
+    peerDependenciesMeta:
+      tree_sitter:
+        optional: true
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+      tree-sitter: 0.21.1
+    dev: true
+
+  /tree-sitter-python@0.21.0(tree-sitter@0.21.1):
+    resolution: {integrity: sha512-IUKx7JcTVbByUx1iHGFS/QsIjx7pqwTMHL9bl/NGyhyyydbfNrpruo2C7W6V4KZrbkkCOlX8QVrCoGOFW5qecg==}
+    requiresBuild: true
+    peerDependencies:
+      tree-sitter: ^0.21.0
+      tree_sitter: '*'
+    peerDependenciesMeta:
+      tree_sitter:
+        optional: true
+    dependencies:
+      node-addon-api: 7.1.1
+      node-gyp-build: 4.8.4
+      tree-sitter: 0.21.1
+    dev: false
+    optional: true
+
+  /tree-sitter@0.21.1:
+    resolution: {integrity: sha512-7dxoA6kYvtgWw80265MyqJlkRl4yawIjO7S5MigytjELkX43fV2WsAXzsNfO7sBpPPCF5Gp0+XzHk0DwLCq3xQ==}
+    requiresBuild: true
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
 
   /ts-api-utils@2.4.0(typescript@5.9.3):
     resolution: {integrity: sha512-3TaVTaAv2gTiMB35i3FiGJaRfwb3Pyn/j3m/bfAvGe8FB7CF6u+LMYqYlDh7reQf7UNvoTvdfAqHGmPGOSsPmA==}

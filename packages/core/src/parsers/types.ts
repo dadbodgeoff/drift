@@ -8,6 +8,7 @@ export type Language =
   | 'typescript'
   | 'javascript'
   | 'python'
+  | 'csharp'
   | 'css'
   | 'scss'
   | 'json'

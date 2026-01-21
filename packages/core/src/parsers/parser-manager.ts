@@ -120,6 +120,8 @@ const EXTENSION_TO_LANGUAGE: Record<string, Language> = {
   '.py': 'python',
   '.pyw': 'python',
   '.pyi': 'python',
+  // C#
+  '.cs': 'csharp',
   // CSS
   '.css': 'css',
   // SCSS
