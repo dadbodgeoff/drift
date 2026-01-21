@@ -38,20 +38,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ignore": "^5.3.1",
-    "minimatch": "^9.0.3",
+    "ignore": "^7.0.5",
+    "minimatch": "^10.1.1",
     "typescript": "^5.3.0"
   },
   "optionalDependencies": {
-    "tree-sitter-python": "^0.21.0"
+    "tree-sitter-python": "^0.25.0"
   },
   "devDependencies": {
     "@types/minimatch": "^5.1.2",
     "@types/node": "^20.10.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "fast-check": "^3.15.0",
-    "tree-sitter": "^0.21.1",
-    "tree-sitter-c-sharp": "^0.21.3",
+    "@vitest/coverage-v8": "^4.0.17",
+    "fast-check": "^4.5.3",
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-c-sharp": "^0.23.1",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   }
