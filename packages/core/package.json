@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Core pattern detection and analysis engine for Drift",
   "license": "MIT",
   "repository": {
@@ -43,7 +43,9 @@
     "typescript": "^5.3.0"
   },
   "optionalDependencies": {
-    "tree-sitter-python": "^0.21.0"
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-java": "^0.21.0",
+    "tree-sitter-php": "^0.22.0"
   },
   "devDependencies": {
     "@types/minimatch": "^5.1.2",

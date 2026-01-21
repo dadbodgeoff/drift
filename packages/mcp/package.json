@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP (Model Context Protocol) server for Drift - enables AI agents to query codebase patterns",
   "license": "MIT",
   "author": "Geoffrey Fernald",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "driftdetect-core": "^0.3.0",
+    "driftdetect-core": "^0.4.0",
     "driftdetect-detectors": "^0.3.0"
   },
   "devDependencies": {
