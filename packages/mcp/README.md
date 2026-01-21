@@ -78,9 +78,43 @@ Get frontend/backend API contract status and mismatches.
 **Parameters:**
 - `status` (optional): `all`, `verified`, `mismatch`, or `discovered`
 
-## Categories
+### `drift_trends`
+Get pattern trend analysis and regression alerts. Shows how patterns have changed over time.
 
-Drift tracks 15 pattern categories:
+**Parameters:**
+- `period` (optional): Time period - `7d`, `30d`, or `90d` (default: `7d`)
+- `category` (optional): Filter trends by category
+- `severity` (optional): `all`, `critical`, or `warning`
+- `type` (optional): `all`, `regressions`, or `improvements`
+
+### `drift_examples`
+Get actual code examples for patterns. Returns real code snippets from the codebase.
+
+**Parameters:**
+- `categories` (optional): Categories to get examples for
+- `pattern` (optional): Specific pattern name or ID
+- `maxExamples` (optional): Maximum examples per pattern (default: 3)
+- `contextLines` (optional): Lines of context around each match (default: 10)
+- `includeDeprecated` (optional): Include deprecated code examples (default: false)
+
+### `drift_pack`
+Get pre-defined pattern packs for common development tasks.
+
+**Parameters:**
+- `action` (optional): `get`, `list`, `suggest`, `create`, `delete`, or `infer`
+- `name` (optional): Pack name for get/create/delete actions
+- `refresh` (optional): Force regenerate the pack
+
+### `drift_feedback`
+Provide feedback on pattern examples to improve future suggestions.
+
+**Parameters:**
+- `action` (optional): `rate`, `stats`, or `clear`
+- `file` (required for rate): File path of the example
+- `rating` (required for rate): `good`, `bad`, or `irrelevant`
+- `reason` (optional): Reason for the rating
+
+## Categories
 - `api` - API route patterns, response formats
 - `auth` - Authentication and authorization
 - `security` - Security patterns and practices
@@ -110,6 +144,12 @@ Agent: "Show me the API patterns before I add a new endpoint"
 
 Agent: "Are there any API contract mismatches?"
 → Uses drift_contracts with status: "mismatch"
+
+Agent: "Has code quality regressed recently?"
+→ Uses drift_trends with period: "7d" and severity: "critical"
+
+Agent: "Show me how error handling is done in this codebase"
+→ Uses drift_examples with categories: ["errors"]
 ```
 
 ## Prerequisites
