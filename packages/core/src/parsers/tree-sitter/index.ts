@@ -141,3 +141,84 @@ export type {
   ConfigValue,
   BaseClassInfo,
 } from './pydantic/index.js';
+
+// ============================================
+// Java Module Exports
+// ============================================
+
+export {
+  // Annotation utilities
+  extractAnnotations,
+  extractParameterAnnotations,
+  resolveAnnotationFullName,
+  buildImportMap,
+  findChildrenByType,
+  hasAnnotationArgument,
+  getAnnotationArgument,
+  getAnnotationValue,
+  isWebMappingAnnotation,
+  isStereotypeAnnotation,
+  isValidationAnnotation,
+  // Class extraction
+  extractModifiers,
+  deriveAccessibility,
+  extractClasses,
+  extractInterfaces,
+  extractEnums,
+  extractRecords,
+  extractAnnotationDefinitions,
+  // Method extraction
+  extractMethod,
+  extractConstructor,
+  extractField,
+  hasAnnotation,
+  getAnnotation,
+  isRequestHandler,
+  isTransactional,
+  hasSecurityAnnotation,
+  getHttpMethod,
+  getRequestPath,
+  getPathVariables,
+  getRequestBody,
+  getQueryParameters,
+  // Constants
+  DEFAULT_ANNOTATION_OPTIONS,
+  COMMON_SPRING_ANNOTATIONS,
+} from './java/index.js';
+
+export type {
+  // Modifiers
+  JavaModifier,
+  JavaAccessibility,
+  // Package and Imports
+  PackageInfo,
+  JavaImportInfo,
+  // Annotations
+  AnnotationValueType,
+  AnnotationArgument,
+  AnnotationTarget,
+  AnnotationUsage,
+  // Methods and Parameters
+  JavaParameterInfo,
+  JavaMethodInfo,
+  JavaConstructorInfo,
+  // Fields
+  JavaFieldInfo,
+  // Classes
+  JavaClassInfo,
+  // Interfaces
+  JavaInterfaceInfo,
+  // Enums
+  JavaEnumConstant,
+  JavaEnumInfo,
+  // Records
+  JavaRecordComponent,
+  JavaRecordInfo,
+  // Annotation Definitions
+  AnnotationElement,
+  AnnotationDefinition,
+  // Parse Result
+  JavaParseResult,
+  // Options
+  AnnotationExtractionOptions,
+} from './java/index.js';

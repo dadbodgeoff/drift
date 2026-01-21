@@ -131,6 +131,56 @@ async function getCSharpParserInfo(): Promise<{
 }
 
 /**
+ * Get Java parser information
+ * 
+ * Java uses semantic detectors for pattern detection.
+ * Tree-sitter support can be added when tree-sitter-java is installed.
+ */
+async function getJavaParserInfo(): Promise<{
+  treeSitterAvailable: boolean;
+  activeParser: string;
+  capabilities: Record<string, boolean>;
+  supportedFrameworks: string[];
+  loadingError: string | undefined;
+}> {
+  // Check if Java tree-sitter is available (future support)
+  let treeSitterAvailable = false;
+  let loadingError: string | undefined;
+  
+  try {
+    // Try to dynamically check for Java tree-sitter support
+    // This will be available when tree-sitter-java is installed
+    const core = await import('driftdetect-core');
+    if ('isJavaTreeSitterAvailable' in core) {
+      treeSitterAvailable = (core as { isJavaTreeSitterAvailable: () => boolean }).isJavaTreeSitterAvailable();
+      if ('getJavaLoadingError' in core) {
+        loadingError = (core as { getJavaLoadingError: () => string | null }).getJavaLoadingError() ?? undefined;
+      }
+    }
+  } catch {
+    // Java tree-sitter not yet available - use semantic detectors
+    loadingError = undefined; // Not an error, just not available yet
+  }
+  
+  return {
+    treeSitterAvailable,
+    activeParser: treeSitterAvailable ? 'tree-sitter' : 'semantic',
+    capabilities: {
+      basicParsing: true,
+      classExtraction: true,  // Via semantic detectors
+      methodExtraction: true, // Via semantic detectors
+      annotationExtraction: true, // Via semantic detectors
+      springControllers: true, // Via Spring semantic detectors
+      springData: true,
+      springSecurity: true,
+      recordTypes: treeSitterAvailable,
+    },
+    supportedFrameworks: ['spring-boot', 'spring-mvc', 'spring-data', 'spring-security'],
+    loadingError,
+  };
+}
+
+/**
  * Get TypeScript parser information
  */
 function getTypeScriptParserInfo(): {
@@ -195,6 +245,8 @@ async function testFileParsing(
     language = 'javascript';
   } else if (['.cs'].includes(ext)) {
     language = 'csharp';
+  } else if (['.java'].includes(ext)) {
+    language = 'java';
   } else {
     return {
       success: false,
@@ -325,6 +377,18 @@ async function testFileParsing(
     }
   }
   
+  if (language === 'java') {
+    // Java uses semantic detectors for pattern detection
+    return {
+      success: true,
+      language,
+      parser: 'semantic',
+      nodeCount: undefined,
+      pydanticModels: undefined,
+      errors: undefined,
+    };
+  }
+  
   // TypeScript/JavaScript - just report success
   return {
     success: true,
@@ -346,6 +410,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
   // Gather parser info
   const pythonInfo = await getPythonParserInfo();
   const csharpInfo = await getCSharpParserInfo();
+  const javaInfo = await getJavaParserInfo();
   const tsInfo = getTypeScriptParserInfo();
   
   // JSON output
@@ -353,6 +418,7 @@ async function parserAction(options: ParserOptions): Promise<void> {
     const output: Record<string, unknown> = {
       python: pythonInfo,
       csharp: csharpInfo,
+      java: javaInfo,
       typescript: tsInfo,
     };
     
@@ -429,6 +495,29 @@ async function parserAction(options: ParserOptions): Promise<void> {
     console.log(`  Frameworks:        ${csharpInfo.supportedFrameworks.join(', ')}`);
   }
   
+  // Java
+  console.log();
+  console.log(chalk.bold('Java:'));
+  console.log(`  Active parser:     ${javaInfo.treeSitterAvailable ? chalk.green('tree-sitter') : chalk.green('semantic')}`);
+  console.log(`  Tree-sitter:       ${javaInfo.treeSitterAvailable ? chalk.green('✓ available') : chalk.gray('○ optional')}`);
+  
+  console.log(chalk.green('  Capabilities (via semantic detectors):'));
+  console.log(chalk.green('    ✓ Class extraction'));
+  console.log(chalk.green('    ✓ Method extraction'));
+  console.log(chalk.green('    ✓ Annotation extraction'));
+  console.log(chalk.green('    ✓ Spring Controllers'));
+  console.log(chalk.green('    ✓ Spring Data'));
+  console.log(chalk.green('    ✓ Spring Security'));
+  if (javaInfo.treeSitterAvailable) {
+    console.log(chalk.green('    ✓ Record types (tree-sitter)'));
+  } else {
+    console.log(chalk.gray('    ○ Record types (requires tree-sitter)'));
+  }
+  
+  if (javaInfo.supportedFrameworks.length > 0) {
+    console.log(`  Frameworks:        ${javaInfo.supportedFrameworks.join(', ')}`);
+  }
+  
   // TypeScript
   console.log();
   console.log(chalk.bold('TypeScript/JavaScript:'));
@@ -477,15 +566,19 @@ async function parserAction(options: ParserOptions): Promise<void> {
   console.log();
   console.log(chalk.gray('─'.repeat(50)));
   
-  const allAvailable = pythonInfo.treeSitterAvailable && csharpInfo.treeSitterAvailable;
-  if (allAvailable) {
+  const allTreeSitterAvailable = pythonInfo.treeSitterAvailable && csharpInfo.treeSitterAvailable;
+  if (allTreeSitterAvailable) {
     console.log(chalk.green('All tree-sitter parsers available. Full parsing capabilities enabled.'));
+    console.log(chalk.green('Java: Using semantic detectors (tree-sitter optional).'));
   } else {
     const missing: string[] = [];
     if (!pythonInfo.treeSitterAvailable) missing.push('Python');
     if (!csharpInfo.treeSitterAvailable) missing.push('C#');
-    console.log(chalk.yellow(`Tree-sitter not available for: ${missing.join(', ')}`));
-    console.log(chalk.gray('Install tree-sitter packages for improved parsing accuracy.'));
+    if (missing.length > 0) {
+      console.log(chalk.yellow(`Tree-sitter not available for: ${missing.join(', ')}`));
+      console.log(chalk.gray('Install tree-sitter packages for improved parsing accuracy.'));
+    }
+    console.log(chalk.green('Java: Using semantic detectors (tree-sitter optional).'));
   }
   
   console.log();

@@ -138,6 +138,9 @@ const EXTENSION_TO_LANGUAGE: Record<string, Language> = {
   cjs: 'javascript',
   py: 'python',
   pyw: 'python',
+  cs: 'csharp',
+  java: 'java',
+  php: 'php',
   css: 'css',
   scss: 'css',
   sass: 'css',
@@ -227,7 +230,7 @@ export class ScannerService {
     if (this.initialized) return;
 
     // Create all detectors
-    this.detectors = createAllDetectorsArray();
+    this.detectors = await createAllDetectorsArray();
 
     // Filter by category if specified
     if (this.config.categories && this.config.categories.length > 0) {
@@ -674,6 +677,39 @@ export class ScannerService {
       const decoratorMatch = trimmed.match(/^@(\w+)/);
       if (decoratorMatch && decoratorMatch[1]) {
         return { type: 'decorator', name: decoratorMatch[1], signature: trimmed };
+      }
+    }
+
+    // PHP patterns
+    if (language === 'php') {
+      // Class
+      const classMatch = trimmed.match(/^(?:abstract\s+|final\s+)?class\s+(\w+)/);
+      if (classMatch && classMatch[1]) {
+        return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
+      }
+
+      // Interface
+      const interfaceMatch = trimmed.match(/^interface\s+(\w+)/);
+      if (interfaceMatch && interfaceMatch[1]) {
+        return { type: 'interface', name: interfaceMatch[1], signature: trimmed.substring(0, 80) };
+      }
+
+      // Trait
+      const traitMatch = trimmed.match(/^trait\s+(\w+)/);
+      if (traitMatch && traitMatch[1]) {
+        return { type: 'class', name: traitMatch[1], signature: trimmed.substring(0, 80) };
+      }
+
+      // Function/method
+      const funcMatch = trimmed.match(/^(?:public|protected|private)?\s*(?:static\s+)?function\s+(\w+)/);
+      if (funcMatch && funcMatch[1]) {
+        return { type: 'function', name: funcMatch[1], signature: trimmed.substring(0, 80) };
+      }
+
+      // PHP 8 Attribute
+      const attrMatch = trimmed.match(/^#\[(\w+)/);
+      if (attrMatch && attrMatch[1]) {
+        return { type: 'decorator', name: attrMatch[1], signature: trimmed };
       }
     }
 

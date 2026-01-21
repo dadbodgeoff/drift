@@ -26,6 +26,7 @@ import {
   trendsCommand,
   parserCommand,
   dnaCommand,
+  boundariesCommand,
 } from '../commands/index.js';
 
 /**
@@ -57,6 +58,7 @@ function createProgram(): Command {
   program.addCommand(trendsCommand);
   program.addCommand(parserCommand);
   program.addCommand(dnaCommand);
+  program.addCommand(boundariesCommand);
 
   // Add help examples
   program.addHelpText(
@@ -91,6 +93,9 @@ Examples:
   $ drift dna                     Show styling DNA status
   $ drift dna scan                Analyze codebase styling DNA
   $ drift dna playbook            Generate styling playbook
+  $ drift boundaries              Show data access boundaries
+  $ drift boundaries tables       List discovered tables
+  $ drift boundaries check        Check for boundary violations
 
 Documentation:
   https://github.com/drift/drift

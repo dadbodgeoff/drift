@@ -18,6 +18,7 @@ import {
   PlaybookGenerator,
   AIContextBuilder,
   GENE_IDS,
+  BoundaryStore,
   type PatternCategory,
   type Pattern,
   type GeneId,
@@ -289,13 +290,13 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'drift_parser_info',
-    description: 'Get information about parser capabilities and status. Shows which parsers are available (tree-sitter vs regex), their features, and supported frameworks. Use this to understand parsing capabilities before analyzing Python, C#, or TypeScript code.',
+    description: 'Get information about parser capabilities and status. Shows which parsers are available (tree-sitter vs regex), their features, and supported frameworks. Use this to understand parsing capabilities before analyzing Python, C#, TypeScript, or Java code.',
     inputSchema: {
       type: 'object',
       properties: {
         language: {
           type: 'string',
-          enum: ['python', 'csharp', 'typescript', 'all'],
+          enum: ['python', 'csharp', 'typescript', 'java', 'all'],
           description: 'Language to get parser info for (default: all)',
         },
       },
@@ -394,6 +395,34 @@ const TOOLS: Tool[] = [
       required: [],
     },
   },
+  // Data Boundaries Tool
+  {
+    name: 'drift_boundaries',
+    description: 'Get data access boundaries and check for violations. Shows which code accesses which database tables/fields. Use this before generating data access code to understand access rules and restrictions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['overview', 'table', 'file', 'sensitive', 'check', 'rules'],
+          description: 'Action to perform (default: overview). "overview" shows summary, "table" shows specific table access, "file" shows what data a file accesses, "sensitive" shows sensitive field access, "check" validates against rules, "rules" shows configured boundaries',
+        },
+        table: {
+          type: 'string',
+          description: 'Table name (required for "table" action)',
+        },
+        file: {
+          type: 'string',
+          description: 'File path or glob pattern (required for "file" action)',
+        },
+        includeViolations: {
+          type: 'boolean',
+          description: 'Include boundary violations in response (default: true)',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 export function createDriftMCPServer(config: DriftMCPConfig): Server {
@@ -406,6 +435,7 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
   const manifestStore = new ManifestStore(config.projectRoot);
   const historyStore = new HistoryStore({ rootDir: config.projectRoot });
   const dnaStore = new DNAStore({ rootDir: config.projectRoot });
+  const boundaryStore = new BoundaryStore({ rootDir: config.projectRoot });
   const packManager = new PackManager(config.projectRoot, patternStore);
   const feedbackManager = new FeedbackManager(config.projectRoot);
 
@@ -523,6 +553,14 @@ export function createDriftMCPServer(config: DriftMCPConfig): Server {
             code?: string;
             file?: string;
             genes?: string[];
+          });
+
+        case 'drift_boundaries':
+          return await handleBoundaries(boundaryStore, args as {
+            action?: string;
+            table?: string;
+            file?: string;
+            includeViolations?: boolean;
           });
 
         default:
@@ -1521,6 +1559,7 @@ async function handleParserInfo(args: { language?: string }) {
     python?: ParserInfo;
     csharp?: ParserInfo;
     typescript?: ParserInfo;
+    java?: ParserInfo;
   } = {};
   
   // Python parser info
@@ -1609,6 +1648,44 @@ async function handleParserInfo(args: { language?: string }) {
     };
   }
   
+  // Java parser info
+  if (language === 'java' || language === 'all') {
+    let javaTreeSitterAvailable = false;
+    let javaLoadingError: string | undefined;
+    
+    try {
+      const core = await import('driftdetect-core');
+      // Check if the functions exist (they may not be exported yet)
+      if ('isJavaTreeSitterAvailable' in core && 'getJavaLoadingError' in core) {
+        javaTreeSitterAvailable = (core as { isJavaTreeSitterAvailable: () => boolean }).isJavaTreeSitterAvailable();
+        javaLoadingError = (core as { getJavaLoadingError: () => string | null }).getJavaLoadingError() ?? undefined;
+      } else {
+        javaLoadingError = 'Java parser functions not yet available in driftdetect-core';
+      }
+    } catch {
+      javaLoadingError = 'Java parser not available';
+    }
+    
+    info.java = {
+      treeSitterAvailable: javaTreeSitterAvailable,
+      activeParser: javaTreeSitterAvailable ? 'tree-sitter' : 'regex',
+      capabilities: {
+        basicParsing: true,
+        classExtraction: javaTreeSitterAvailable,
+        methodExtraction: javaTreeSitterAvailable,
+        annotationExtraction: javaTreeSitterAvailable,
+        springControllers: javaTreeSitterAvailable,
+        springData: javaTreeSitterAvailable,
+        springSecurity: javaTreeSitterAvailable,
+        recordTypes: javaTreeSitterAvailable,
+      },
+      supportedFrameworks: javaTreeSitterAvailable 
+        ? ['spring-boot', 'spring-mvc', 'spring-data', 'spring-security']
+        : [],
+      loadingError: javaLoadingError,
+    };
+  }
+  
   // Build human-readable output
   let output = '# Parser Information\n\n';
   
@@ -1671,8 +1748,32 @@ async function handleParserInfo(args: { language?: string }) {
     output += '\n';
   }
   
+  if (info.java) {
+    const java = info.java;
+    output += '## Java\n\n';
+    output += `- **Active Parser:** ${java.activeParser}\n`;
+    output += `- **Tree-sitter:** ${java.treeSitterAvailable ? '✓ available' : '✗ not installed'}\n`;
+    
+    if (java.supportedFrameworks.length > 0) {
+      output += `- **Supported Frameworks:** ${java.supportedFrameworks.join(', ')}\n`;
+    }
+    output += '\n';
+    
+    output += '### Capabilities\n\n';
+    for (const [cap, enabled] of Object.entries(java.capabilities)) {
+      const emoji = enabled ? '✓' : '✗';
+      const capName = cap.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      output += `- ${emoji} ${capName}\n`;
+    }
+    output += '\n';
+    
+    if (java.loadingError) {
+      output += `> ⚠️ Loading error: ${java.loadingError}\n\n`;
+    }
+  }
+  
   // Installation tips
-  if ((info.python && !info.python.treeSitterAvailable) || (info.csharp && !info.csharp.treeSitterAvailable)) {
+  if ((info.python && !info.python.treeSitterAvailable) || (info.csharp && !info.csharp.treeSitterAvailable) || (info.java && !info.java.treeSitterAvailable)) {
     output += '## Installation Tips\n\n';
     
     if (info.python && !info.python.treeSitterAvailable) {
@@ -1683,6 +1784,11 @@ async function handleParserInfo(args: { language?: string }) {
     if (info.csharp && !info.csharp.treeSitterAvailable) {
       output += 'To enable full C# support (ASP.NET, attributes, records):\n';
       output += '```bash\npnpm add tree-sitter tree-sitter-c-sharp\n```\n\n';
+    }
+    
+    if (info.java && !info.java.treeSitterAvailable) {
+      output += 'To enable full Java support (Spring Boot, annotations, records):\n';
+      output += '```bash\npnpm add tree-sitter tree-sitter-java\n```\n\n';
     }
   }
   
@@ -2050,4 +2156,350 @@ async function handleDNACheck(
   }
 
   return { content: [{ type: 'text', text: output }] };
+}
+
+/**
+ * Handle drift_boundaries tool - Data access boundaries
+ */
+async function handleBoundaries(
+  store: BoundaryStore,
+  args: {
+    action?: string;
+    table?: string;
+    file?: string;
+    includeViolations?: boolean;
+  }
+) {
+  await store.initialize();
+
+  const action = args.action ?? 'overview';
+  const includeViolations = args.includeViolations ?? true;
+
+  switch (action) {
+    case 'overview': {
+      const accessMap = store.getAccessMap();
+      const sensitiveFields = store.getSensitiveAccess();
+
+      let output = '# Data Boundaries Overview\n\n';
+      output += `- **Tables:** ${accessMap.stats.totalTables}\n`;
+      output += `- **Access Points:** ${accessMap.stats.totalAccessPoints}\n`;
+      output += `- **Sensitive Fields:** ${accessMap.stats.totalSensitiveFields}\n`;
+      output += `- **ORM Models:** ${accessMap.stats.totalModels}\n\n`;
+
+      if (accessMap.stats.totalTables > 0) {
+        output += '## Tables\n\n';
+        const tableEntries = Object.entries(accessMap.tables)
+          .map(([name, info]) => ({
+            name,
+            accessCount: info.accessedBy.length,
+            hasSensitive: info.sensitiveFields.length > 0,
+          }))
+          .sort((a, b) => b.accessCount - a.accessCount)
+          .slice(0, 10);
+
+        for (const table of tableEntries) {
+          const sensitive = table.hasSensitive ? ' ⚠️' : '';
+          output += `- **${table.name}**${sensitive}: ${table.accessCount} access points\n`;
+        }
+        output += '\n';
+      }
+
+      if (sensitiveFields.length > 0) {
+        output += '## Sensitive Fields\n\n';
+        const fieldCounts = new Map<string, number>();
+        for (const field of sensitiveFields) {
+          const key = field.table ? `${field.table}.${field.field}` : field.field;
+          fieldCounts.set(key, (fieldCounts.get(key) ?? 0) + 1);
+        }
+
+        const sortedFields = Array.from(fieldCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        for (const [fieldName, count] of sortedFields) {
+          output += `- **${fieldName}**: ${count} locations\n`;
+        }
+        output += '\n';
+      }
+
+      if (includeViolations) {
+        const rules = store.getRules();
+        if (rules) {
+          const violations = store.checkAllViolations();
+          if (violations.length > 0) {
+            output += `## ⚠️ Violations (${violations.length})\n\n`;
+            for (const v of violations.slice(0, 5)) {
+              output += `- **${v.file}:${v.line}** - ${v.message}\n`;
+            }
+            if (violations.length > 5) {
+              output += `- ... and ${violations.length - 5} more\n`;
+            }
+          } else {
+            output += '## ✓ No Violations\n\nAll data access follows configured boundaries.\n';
+          }
+        } else {
+          output += '## No Rules Configured\n\n';
+          output += 'Create `.drift/boundaries/rules.json` to enable boundary enforcement.\n';
+          output += 'Run `drift boundaries init-rules` to generate a starter config.\n';
+        }
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    case 'table': {
+      if (!args.table) {
+        return {
+          content: [{ type: 'text', text: 'Error: table parameter required for "table" action' }],
+          isError: true,
+        };
+      }
+
+      const tableInfo = store.getTableAccess(args.table);
+      if (!tableInfo) {
+        return {
+          content: [{ type: 'text', text: `Table '${args.table}' not found in access map.` }],
+        };
+      }
+
+      let output = `# Table: ${args.table}\n\n`;
+      if (tableInfo.model) {
+        output += `**Model:** ${tableInfo.model}\n`;
+      }
+      output += `**Fields:** ${tableInfo.fields.join(', ') || 'none detected'}\n`;
+      output += `**Access Points:** ${tableInfo.accessedBy.length}\n\n`;
+
+      if (tableInfo.sensitiveFields.length > 0) {
+        output += '## ⚠️ Sensitive Fields\n\n';
+        for (const sf of tableInfo.sensitiveFields) {
+          output += `- **${sf.field}** (${sf.sensitivityType})\n`;
+        }
+        output += '\n';
+      }
+
+      output += '## Access Points\n\n';
+      const byFile = new Map<string, typeof tableInfo.accessedBy>();
+      for (const ap of tableInfo.accessedBy) {
+        if (!byFile.has(ap.file)) byFile.set(ap.file, []);
+        byFile.get(ap.file)!.push(ap);
+      }
+
+      for (const [file, accessPoints] of byFile) {
+        output += `### ${file}\n`;
+        for (const ap of accessPoints) {
+          output += `- Line ${ap.line}: **${ap.operation}** ${ap.fields.join(', ')}\n`;
+        }
+        output += '\n';
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    case 'file': {
+      if (!args.file) {
+        return {
+          content: [{ type: 'text', text: 'Error: file parameter required for "file" action' }],
+          isError: true,
+        };
+      }
+
+      const fileAccess = store.getFileAccess(args.file);
+
+      let output = `# Data Access: ${args.file}\n\n`;
+
+      if (fileAccess.length === 0) {
+        output += 'No data access detected for this file/pattern.\n';
+      } else {
+        for (const fileInfo of fileAccess) {
+          output += `## ${fileInfo.file}\n\n`;
+          output += `**Tables:** ${fileInfo.tables.join(', ')}\n`;
+          output += `**Access Points:** ${fileInfo.accessPoints.length}\n\n`;
+
+          for (const ap of fileInfo.accessPoints) {
+            output += `- Line ${ap.line}: **${ap.operation}** ${ap.table} ${ap.fields.join(', ')}\n`;
+          }
+          output += '\n';
+        }
+      }
+
+      // Include boundary rules context if available
+      const rules = store.getRules();
+      if (rules && fileAccess.length > 0) {
+        const allTables = new Set(fileAccess.flatMap(f => f.tables));
+        const applicableRules = rules.boundaries.filter(b =>
+          b.tables?.some(t => allTables.has(t)) ||
+          b.fields?.some(f => allTables.has(f.split('.')[0] || ''))
+        );
+
+        if (applicableRules.length > 0) {
+          output += '## Applicable Boundaries\n\n';
+          for (const rule of applicableRules) {
+            output += `- **${rule.id}**: ${rule.description}\n`;
+            output += `  - Allowed: ${rule.allowedPaths.join(', ')}\n`;
+          }
+        }
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    case 'sensitive': {
+      const sensitiveFields = store.getSensitiveAccess();
+
+      let output = '# Sensitive Data Access\n\n';
+
+      if (sensitiveFields.length === 0) {
+        output += 'No sensitive fields detected.\n';
+        return { content: [{ type: 'text', text: output }] };
+      }
+
+      // Group by sensitivity type
+      const byType = new Map<string, typeof sensitiveFields>();
+      for (const field of sensitiveFields) {
+        const type = field.sensitivityType;
+        if (!byType.has(type)) byType.set(type, []);
+        byType.get(type)!.push(field);
+      }
+
+      for (const [type, fields] of byType) {
+        output += `## ${type.toUpperCase()} (${fields.length})\n\n`;
+        for (const f of fields) {
+          const fieldName = f.table ? `${f.table}.${f.field}` : f.field;
+          output += `- **${fieldName}**\n`;
+          output += `  - ${f.file}:${f.line}\n`;
+        }
+        output += '\n';
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    case 'check': {
+      const rules = store.getRules();
+
+      if (!rules) {
+        return {
+          content: [{
+            type: 'text',
+            text: '# No Boundary Rules Configured\n\n' +
+              'Create `.drift/boundaries/rules.json` to enable boundary enforcement.\n' +
+              'Run `drift boundaries init-rules` to generate a starter config.',
+          }],
+        };
+      }
+
+      const violations = store.checkAllViolations();
+
+      if (violations.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: '# ✓ No Boundary Violations\n\n' +
+              `Checked ${rules.boundaries.length} rules. All data access follows configured boundaries.`,
+          }],
+        };
+      }
+
+      let output = `# ⚠️ Boundary Violations (${violations.length})\n\n`;
+
+      // Group by severity
+      const errors = violations.filter(v => v.severity === 'error');
+      const warnings = violations.filter(v => v.severity === 'warning');
+      const infos = violations.filter(v => v.severity === 'info');
+
+      if (errors.length > 0) {
+        output += `## 🔴 Errors (${errors.length})\n\n`;
+        for (const v of errors) {
+          output += `### ${v.file}:${v.line}\n`;
+          output += `- **Rule:** ${v.ruleId}\n`;
+          output += `- **Message:** ${v.message}\n`;
+          if (v.suggestion) {
+            output += `- **Suggestion:** ${v.suggestion}\n`;
+          }
+          output += '\n';
+        }
+      }
+
+      if (warnings.length > 0) {
+        output += `## 🟡 Warnings (${warnings.length})\n\n`;
+        for (const v of warnings) {
+          output += `- **${v.file}:${v.line}** - ${v.message}\n`;
+        }
+        output += '\n';
+      }
+
+      if (infos.length > 0) {
+        output += `## ℹ️ Info (${infos.length})\n\n`;
+        for (const v of infos.slice(0, 5)) {
+          output += `- ${v.file}:${v.line} - ${v.message}\n`;
+        }
+        if (infos.length > 5) {
+          output += `- ... and ${infos.length - 5} more\n`;
+        }
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    case 'rules': {
+      const rules = store.getRules();
+
+      if (!rules) {
+        return {
+          content: [{
+            type: 'text',
+            text: '# No Boundary Rules Configured\n\n' +
+              'Create `.drift/boundaries/rules.json` to define data access boundaries.\n\n' +
+              '## Example Rules\n\n' +
+              '```json\n' +
+              '{\n' +
+              '  "version": "1.0",\n' +
+              '  "sensitivity": {\n' +
+              '    "critical": ["users.password_hash", "users.ssn"],\n' +
+              '    "sensitive": ["users.email", "users.phone"],\n' +
+              '    "general": []\n' +
+              '  },\n' +
+              '  "boundaries": [\n' +
+              '    {\n' +
+              '      "id": "auth-owns-credentials",\n' +
+              '      "description": "Only auth module can access credentials",\n' +
+              '      "fields": ["users.password_hash"],\n' +
+              '      "allowedPaths": ["**/auth/**"],\n' +
+              '      "severity": "error"\n' +
+              '    }\n' +
+              '  ]\n' +
+              '}\n' +
+              '```',
+          }],
+        };
+      }
+
+      let output = '# Data Boundary Rules\n\n';
+
+      output += '## Sensitivity Tiers\n\n';
+      output += `- **Critical:** ${rules.sensitivity.critical.join(', ') || 'none'}\n`;
+      output += `- **Sensitive:** ${rules.sensitivity.sensitive.join(', ') || 'none'}\n`;
+      output += '\n';
+
+      output += `## Boundaries (${rules.boundaries.length})\n\n`;
+      for (const b of rules.boundaries) {
+        const enabled = b.enabled !== false ? '✓' : '○';
+        output += `### ${enabled} ${b.id}\n`;
+        output += `${b.description}\n\n`;
+        if (b.tables) output += `- **Tables:** ${b.tables.join(', ')}\n`;
+        if (b.fields) output += `- **Fields:** ${b.fields.join(', ')}\n`;
+        if (b.operations) output += `- **Operations:** ${b.operations.join(', ')}\n`;
+        output += `- **Allowed:** ${b.allowedPaths.join(', ')}\n`;
+        output += `- **Severity:** ${b.severity}\n\n`;
+      }
+
+      return { content: [{ type: 'text', text: output }] };
+    }
+
+    default:
+      return {
+        content: [{ type: 'text', text: `Unknown action: ${action}` }],
+        isError: true,
+      };
+  }
 }

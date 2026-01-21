@@ -1,9 +1,42 @@
+/**
+ * Base Gene Extractor
+ */
 import type { Gene, GeneId, Allele, AlleleId, AlleleExample } from '../types.js';
 
-export interface AlleleDefinition { id: AlleleId; name: string; description: string; patterns: RegExp[]; keywords?: string[]; importPatterns?: RegExp[]; priority?: number; }
-export interface DetectedAllele { alleleId: AlleleId; line: number; code: string; confidence: number; context?: string; }
-export interface FileExtractionResult { file: string; detectedAlleles: DetectedAllele[]; isComponent: boolean; errors?: string[]; }
-export interface AggregatedExtractionResult { geneId: GeneId; totalFiles: number; componentFiles: number; alleleCounts: Map<AlleleId, number>; alleleFiles: Map<AlleleId, Set<string>>; alleleExamples: Map<AlleleId, AlleleExample[]>; errors: string[]; }
+export interface AlleleDefinition {
+  id: AlleleId;
+  name: string;
+  description: string;
+  patterns: RegExp[];
+  keywords?: string[];
+  importPatterns?: RegExp[];
+  priority?: number;
+}
+
+export interface DetectedAllele {
+  alleleId: AlleleId;
+  line: number;
+  code: string;
+  confidence: number;
+  context?: string;
+}
+
+export interface FileExtractionResult {
+  file: string;
+  detectedAlleles: DetectedAllele[];
+  isComponent: boolean;
+  errors?: string[];
+}
+
+export interface AggregatedExtractionResult {
+  geneId: GeneId;
+  totalFiles: number;
+  componentFiles: number;
+  alleleCounts: Map<AlleleId, number>;
+  alleleFiles: Map<AlleleId, Set<string>>;
+  alleleExamples: Map<AlleleId, AlleleExample[]>;
+  errors: string[];
+}
 
 export abstract class BaseGeneExtractor {
   abstract readonly geneId: GeneId;
@@ -12,18 +45,29 @@ export abstract class BaseGeneExtractor {
   abstract getAlleleDefinitions(): AlleleDefinition[];
   abstract extractFromFile(fp: string, c: string, i: string[]): FileExtractionResult;
 
-  async analyze(files: Map<string, string>): Promise<Gene> { return this.buildGene(this.aggregateResults(files)); }
+  async analyze(files: Map<string, string>): Promise<Gene> {
+    return this.buildGene(this.aggregateResults(files));
+  }
 
   isComponentFile(fp: string, c: string): boolean {
     if (!['.tsx', '.jsx', '.vue', '.svelte'].some(e => fp.endsWith(e))) return false;
     return [/export\s+(default\s+)?function\s+\w+/, /<template>/].some(p => p.test(c));
   }
 
-  extractImports(c: string): string[] { return c.match(/^import\s+.+$/gm) ?? []; }
+  extractImports(c: string): string[] {
+    return c.match(/^import\s+.+$/gm) ?? [];
+  }
 
   protected aggregateResults(files: Map<string, string>): AggregatedExtractionResult {
-    const r: AggregatedExtractionResult = { geneId: this.geneId, totalFiles: 0, componentFiles: 0, alleleCounts: new Map(), alleleFiles: new Map(), alleleExamples: new Map(), errors: [] };
-    for (const d of this.getAlleleDefinitions()) { r.alleleCounts.set(d.id, 0); r.alleleFiles.set(d.id, new Set()); r.alleleExamples.set(d.id, []); }
+    const r: AggregatedExtractionResult = {
+      geneId: this.geneId, totalFiles: 0, componentFiles: 0,
+      alleleCounts: new Map(), alleleFiles: new Map(), alleleExamples: new Map(), errors: []
+    };
+    for (const d of this.getAlleleDefinitions()) {
+      r.alleleCounts.set(d.id, 0);
+      r.alleleFiles.set(d.id, new Set());
+      r.alleleExamples.set(d.id, []);
+    }
     for (const [fp, c] of files) {
       r.totalFiles++;
       const imp = this.extractImports(c);

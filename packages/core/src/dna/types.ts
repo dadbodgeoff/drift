@@ -1,3 +1,7 @@
+/**
+ * DNA Type Definitions
+ */
+
 export type StylingFramework = 'tailwind' | 'css-modules' | 'styled-components' | 'emotion' | 'vanilla-css' | 'scss' | 'mixed';
 export type GeneId = 'variant-handling' | 'responsive-approach' | 'state-styling' | 'theming' | 'spacing-philosophy' | 'animation-approach';
 export type AlleleId = string;

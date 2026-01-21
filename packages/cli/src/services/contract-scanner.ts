@@ -11,6 +11,7 @@ import * as path from 'node:path';
 import {
   extractBackendEndpoints,
   extractFrontendApiCalls,
+  extractSpringEndpoints,
   matchContracts,
   type ExtractedEndpoint,
   type ExtractedApiCall,
@@ -43,7 +44,7 @@ export interface ContractScanResult {
 // Language Detection
 // ============================================================================
 
-function getLanguage(filePath: string): 'python' | 'typescript' | 'javascript' | null {
+function getLanguage(filePath: string): 'python' | 'typescript' | 'javascript' | 'java' | 'csharp' | null {
   const ext = path.extname(filePath).toLowerCase();
   switch (ext) {
     case '.py':
@@ -57,6 +58,10 @@ function getLanguage(filePath: string): 'python' | 'typescript' | 'javascript' |
     case '.mjs':
     case '.cjs':
       return 'javascript';
+    case '.java':
+      return 'java';
+    case '.cs':
+      return 'csharp';
     default:
       return null;
   }
@@ -68,6 +73,26 @@ function isBackendFile(filePath: string, content: string): boolean {
     if (content.includes('from fastapi') || content.includes('from flask') || 
         content.includes('from django') || content.includes('@app.route') ||
         content.includes('@router.')) {
+      return true;
+    }
+  }
+  
+  // Java files with Spring patterns
+  if (filePath.endsWith('.java')) {
+    if (content.includes('@RestController') || content.includes('@Controller') ||
+        content.includes('@RequestMapping') || content.includes('@GetMapping') ||
+        content.includes('@PostMapping') || content.includes('@PutMapping') ||
+        content.includes('@DeleteMapping') || content.includes('@PatchMapping')) {
+      return true;
+    }
+  }
+  
+  // C# files with ASP.NET patterns
+  if (filePath.endsWith('.cs')) {
+    if (content.includes('[ApiController]') || content.includes('[Controller]') ||
+        content.includes('[HttpGet]') || content.includes('[HttpPost]') ||
+        content.includes('[HttpPut]') || content.includes('[HttpDelete]') ||
+        content.includes('[Route(') || content.includes('ControllerBase')) {
       return true;
     }
   }
@@ -167,6 +192,33 @@ export class ContractScanner {
           } else if (language === 'typescript' || language === 'javascript') {
             const result = extractBackendEndpoints(content, file, language);
             backendEndpoints.push(...result.endpoints);
+          } else if (language === 'java') {
+            // Use Spring endpoint detector for Java files
+            const result = extractSpringEndpoints(content, file);
+            // Convert Spring endpoints to ExtractedEndpoint format
+            for (const endpoint of result.endpoints) {
+              const extractedEndpoint: ExtractedEndpoint = {
+                method: endpoint.method,
+                path: endpoint.path,
+                normalizedPath: endpoint.normalizedPath || endpoint.path,
+                file: endpoint.file,
+                line: endpoint.line,
+                responseFields: endpoint.responseFields,
+                framework: 'spring-mvc',
+              };
+              
+              if (endpoint.requestFields && endpoint.requestFields.length > 0) {
+                extractedEndpoint.requestFields = endpoint.requestFields;
+              }
+              if (endpoint.responseTypeName) {
+                extractedEndpoint.responseTypeName = endpoint.responseTypeName;
+              }
+              if (endpoint.requestTypeName) {
+                extractedEndpoint.requestTypeName = endpoint.requestTypeName;
+              }
+              
+              backendEndpoints.push(extractedEndpoint);
+            }
           }
         }
 
@@ -210,7 +262,7 @@ export class ContractScanner {
 
     // Calculate stats
     const mismatchCount = matchResult.contracts.reduce(
-      (sum, c) => sum + c.mismatches.length,
+      (sum: number, c: { mismatches: unknown[] }) => sum + c.mismatches.length,
       0
     );
 

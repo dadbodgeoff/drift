@@ -25,3 +25,6 @@ export * from './analysis.js';
 export type { Severity, PatternCategory, PatternStatus } from './common.js';
 export type { Language } from '../parsers/types.js';
 export type { Location, ConfidenceLevel, ConfidenceScore } from '../matcher/types.js';
+
+// Java type mapping
+export * from './java-type-mapping.js';

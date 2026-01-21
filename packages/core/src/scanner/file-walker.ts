@@ -48,6 +48,9 @@ const EXTENSION_LANGUAGE_MAP: Record<string, Language> = {
   '.cjs': 'javascript',
   '.py': 'python',
   '.pyw': 'python',
+  '.cs': 'csharp',
+  '.java': 'java',
+  '.php': 'php',
   '.css': 'css',
   '.scss': 'scss',
   '.sass': 'scss',
@@ -132,6 +135,8 @@ export class FileWalker {
       if (!rootStat.isDirectory()) {
         throw new Error(`Root path is not a directory: ${this.rootDir}`);
       }
+      // Resolve to real path to handle symlinks (e.g., /var -> /private/var on macOS)
+      this.rootDir = await fs.realpath(this.rootDir);
     } catch (error) {
       return this.createErrorResult(
         `Cannot access root directory: ${this.rootDir}`,

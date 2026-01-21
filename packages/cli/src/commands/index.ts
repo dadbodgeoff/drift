@@ -19,3 +19,4 @@ export { dashboardCommand } from './dashboard.js';
 export { trendsCommand } from './trends.js';
 export { parserCommand } from './parser.js';
 export { dnaCommand } from './dna/index.js';
+export { boundariesCommand } from './boundaries.js';

@@ -27,6 +27,7 @@ import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
 import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
 import { createContractScanner } from '../services/contract-scanner.js';
+import { createBoundaryScanner } from '../services/boundary-scanner.js';
 
 export interface ScanCommandOptions {
   /** Specific paths to scan */
@@ -45,6 +46,8 @@ export interface ScanCommandOptions {
   incremental?: boolean;
   /** Skip BE↔FE contract scanning (contracts enabled by default) */
   contracts?: boolean;
+  /** Skip data boundary scanning (boundaries enabled by default) */
+  boundaries?: boolean;
 }
 
 /** Directory name for drift configuration */
@@ -106,6 +109,9 @@ function isScannableFile(filePath: string): boolean {
   const scannableExtensions = [
     'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
     'py', 'pyw',
+    'cs', // C#
+    'java', // Java/Spring Boot
+    'php', // PHP/Laravel
     'css', 'scss', 'sass', 'less',
     'json', 'yaml', 'yml',
     'md', 'mdx',
@@ -626,6 +632,77 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
     }
   }
 
+  // Data boundary scanning (Backend ↔ Database access tracking) - enabled by default
+  if (options.boundaries !== false) {
+    console.log();
+    const boundarySpinner = createSpinner('Scanning for data boundaries...');
+    boundarySpinner.start();
+
+    try {
+      const boundaryScanner = createBoundaryScanner({ rootDir, verbose });
+      await boundaryScanner.initialize();
+      const boundaryResult = await boundaryScanner.scanFiles(files);
+
+      boundarySpinner.succeed(
+        `Found ${boundaryResult.stats.tablesFound} tables, ` +
+        `${boundaryResult.stats.accessPointsFound} access points`
+      );
+
+      // Show sensitive field access warnings
+      if (boundaryResult.stats.sensitiveFieldsFound > 0) {
+        console.log();
+        console.log(chalk.bold.yellow(`⚠️  ${boundaryResult.stats.sensitiveFieldsFound} Sensitive Field Access Detected:`));
+        
+        const sensitiveFields = boundaryResult.accessMap.sensitiveFields.slice(0, 5);
+        for (const field of sensitiveFields) {
+          const fieldName = field.table ? `${field.table}.${field.field}` : field.field;
+          console.log(chalk.yellow(`    ${fieldName} (${field.sensitivityType}) - ${field.file}:${field.line}`));
+        }
+        if (boundaryResult.accessMap.sensitiveFields.length > 5) {
+          console.log(chalk.gray(`    ... and ${boundaryResult.accessMap.sensitiveFields.length - 5} more`));
+        }
+      }
+
+      // Check violations if rules exist
+      if (boundaryResult.stats.violationsFound > 0) {
+        console.log();
+        console.log(chalk.bold.red(`🚫 ${boundaryResult.stats.violationsFound} Boundary Violations:`));
+        
+        for (const violation of boundaryResult.violations.slice(0, 5)) {
+          const icon = violation.severity === 'error' ? '🔴' : violation.severity === 'warning' ? '🟡' : '🔵';
+          console.log(chalk.red(`    ${icon} ${violation.file}:${violation.line} - ${violation.message}`));
+        }
+        if (boundaryResult.violations.length > 5) {
+          console.log(chalk.gray(`    ... and ${boundaryResult.violations.length - 5} more`));
+        }
+      }
+
+      // Show top accessed tables in verbose mode
+      if (verbose && boundaryResult.stats.tablesFound > 0) {
+        console.log();
+        console.log(chalk.gray('  Top accessed tables:'));
+        const tableEntries = Object.entries(boundaryResult.accessMap.tables)
+          .map(([name, info]) => ({ name, count: info.accessedBy.length }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+        for (const table of tableEntries) {
+          console.log(chalk.gray(`    ${table.name}: ${table.count} access points`));
+        }
+      }
+
+      console.log();
+      console.log(chalk.gray('View data boundaries:'));
+      console.log(chalk.cyan('  drift boundaries'));
+      console.log(chalk.cyan('  drift boundaries table <name>'));
+
+    } catch (error) {
+      boundarySpinner.fail('Boundary scanning failed');
+      if (verbose) {
+        console.error(chalk.red((error as Error).message));
+      }
+    }
+  }
+
   // Summary
   console.log();
   const stats = store.getStats();
@@ -675,7 +752,7 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
 
 export const scanCommand = new Command('scan')
   .description('Scan codebase for patterns using enterprise detectors')
-  .option('-p, --paths <paths...>', 'Specific paths to scan')
+  .argument('[paths...]', 'Paths to scan (defaults to current directory)')
   .option('--force', 'Force rescan even if cache is valid')
   .option('--verbose', 'Enable verbose output')
   .option('--critical', 'Only run critical/high-value detectors')
@@ -683,4 +760,11 @@ export const scanCommand = new Command('scan')
   .option('--manifest', 'Generate manifest with semantic locations')
   .option('--incremental', 'Only scan changed files')
   .option('--no-contracts', 'Skip BE↔FE contract scanning')
-  .action(scanAction);
+  .option('--no-boundaries', 'Skip data boundary scanning')
+  .action((paths: string[], options: ScanCommandOptions) => {
+    // Merge positional paths with options
+    if (paths && paths.length > 0) {
+      options.paths = paths;
+    }
+    return scanAction(options);
+  });

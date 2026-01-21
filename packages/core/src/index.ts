@@ -64,6 +64,20 @@ export type {
   CSharpEnumInfo,
 } from './parsers/tree-sitter/index.js';
 
+// Java type mapping exports
+export {
+  JAVA_TYPE_MAP,
+  JAVA_COLLECTION_TYPES,
+  JAVA_MAP_TYPES,
+  mapJavaType,
+  extractGenericType,
+  isCollectionType,
+  isMapType,
+  isOptionalType,
+  isWrapperType,
+  unwrapType,
+} from './types/java-type-mapping.js';
+
 // Analyzer exports
 export * from './analyzers/index.js';
 
@@ -148,3 +162,6 @@ export * from './learning/index.js';
 
 // DNA exports (Styling DNA analysis system)
 export * from './dna/index.js';
+
+// Boundaries exports (Data access boundary tracking)
+export * from './boundaries/index.js';

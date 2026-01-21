@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-21
+
+### Added
+
+#### Multi-Language Support
+- **C# / ASP.NET Core** - Full pattern detection for .NET ecosystem
+  - Auth: `[Authorize]` attributes, JWT, Identity, resource-based authorization
+  - Data Access: Entity Framework Core, repository pattern, DbContext
+  - Security: Input validation, SQL injection prevention
+  - Errors: Exception patterns, `Result<T>` pattern
+  - Logging: ILogger patterns, structured logging
+  - Testing: xUnit patterns, test fixtures
+
+- **PHP / Laravel** - Comprehensive Laravel framework support
+  - Auth: Policies, Gates, middleware, Sanctum/Passport
+  - Data Access: Eloquent ORM, relationships, query scopes
+  - Security: Form Requests, CSRF, mass assignment protection
+  - API: Resource controllers, API resources
+  - Errors: Exception handlers, custom exceptions
+  - Logging: Laravel logging channels
+
+- **Java / Spring Boot** - Spring ecosystem pattern detection
+  - Auth: Spring Security, `@PreAuthorize`, SecurityConfig
+  - Data Access: Spring Data JPA, repositories, `@Transactional`
+  - Security: Bean Validation (`@NotBlank`, `@Email`, `@Size`)
+  - API: `@RestController`, `@RequestMapping` patterns
+  - Errors: `@ControllerAdvice`, exception handlers
+
+#### Data Boundaries System
+- Track which code accesses which database tables/fields
+- Detect sensitive field access patterns (passwords, tokens, PII)
+- Boundary violation detection and reporting
+- New CLI command: `drift boundaries`
+- Dashboard visualization for data access patterns
+
+#### Demo Repositories
+- `demo/csharp-backend` - ASP.NET Core Web API example
+- `demo/laravel-backend` - Laravel API example
+- `demo/spring-backend` - Spring Boot example
+- All demos validated with scanner for accuracy testing
+
+### Fixed
+- Symlink resolution on macOS (`/var` -> `/private/var` causing workspace detection failures)
+- Design-tokens regex incorrectly matching CSS `color:` property
+- History-store tests aligned with actual implementation API
+- Laravel security detector constructor initialization
+
+### Changed
+- Detector count increased from 101 to 150+
+- Improved tree-sitter parser support for Java
+
 ## [0.2.2] - 2025-01-20
 
 ### Added
@@ -62,9 +113,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **0.3.x** - Multi-language support (C#, PHP/Laravel, Java/Spring), data boundaries
 - **0.2.x** - MCP integration, semantic detectors, contract detection
 - **0.1.x** - Initial release, core functionality
 
-[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/dadbodgeoff/drift/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/dadbodgeoff/drift/compare/v0.1.8...v0.2.2
 [0.1.8]: https://github.com/dadbodgeoff/drift/releases/tag/v0.1.8

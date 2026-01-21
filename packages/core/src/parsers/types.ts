@@ -9,6 +9,8 @@ export type Language =
   | 'javascript'
   | 'python'
   | 'csharp'
+  | 'java'
+  | 'php'
   | 'css'
   | 'scss'
   | 'json'

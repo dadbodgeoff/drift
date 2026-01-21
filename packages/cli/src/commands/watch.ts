@@ -15,7 +15,7 @@ import * as fsPromises from 'node:fs/promises';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import chalk from 'chalk';
-import { createAllDetectorsArray } from 'driftdetect-detectors';
+import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
 import { PatternStore } from 'driftdetect-core';
 import type { Pattern, PatternCategory } from 'driftdetect-core';
 
@@ -81,7 +81,7 @@ const FILE_MAP_PATH = 'index/file-map.json';
 const LOCK_FILE_PATH = 'index/.lock';
 const LOCK_TIMEOUT_MS = 10000; // 10 seconds max lock hold time
 const LOCK_RETRY_MS = 100; // Retry every 100ms
-const SUPPORTED_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.css', '.scss', '.json', '.md'];
+const SUPPORTED_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.cs', '.css', '.scss', '.json', '.md'];
 const IGNORE_PATTERNS = ['node_modules', '.git', 'dist', 'build', 'coverage', '.turbo', '.drift'];
 
 // ============================================================================
@@ -286,7 +286,7 @@ async function saveFileMap(rootDir: string, fileMap: FileMap): Promise<void> {
 async function detectPatternsInFile(
   filePath: string,
   content: string,
-  detectors: ReturnType<typeof createAllDetectorsArray>,
+  detectors: BaseDetector[],
   categories: string[] | null,
   rootDir: string
 ): Promise<{ patterns: DetectedPattern[]; violations: DetectedViolation[] }> {
@@ -649,7 +649,7 @@ async function watchCommand(options: WatchOptions): Promise<void> {
   }
   
   // Load detectors
-  const detectors = createAllDetectorsArray();
+  const detectors = await createAllDetectorsArray();
   console.log(`${timestamp()} Loaded ${chalk.cyan(String(detectors.length))} detectors`);
   
   // Track pending scans (for debouncing)

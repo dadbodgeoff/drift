@@ -203,6 +203,14 @@ export const DEFAULT_PACKS: PackDefinition[] = [
     maxExamples: 2,
     contextLines: 15,
   },
+  {
+    name: 'spring_boot',
+    description: 'Patterns for Spring Boot API development',
+    categories: ['api', 'auth', 'data-access', 'errors', 'config', 'testing'],
+    patterns: ['controller', 'service', 'repository', 'entity', 'dto', 'validation', 'security', 'transaction'],
+    maxExamples: 2,
+    contextLines: 15,
+  },
 ];
 
 // ============================================================================
