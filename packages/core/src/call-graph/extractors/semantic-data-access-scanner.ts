@@ -1,6 +1,13 @@
 /**
  * Semantic Data Access Scanner
  *
+ * @deprecated This file is deprecated. Use the unified provider system instead:
+ * - Import from 'driftdetect-core' or '../unified-provider/compat/index.js'
+ * - Use UnifiedScanner from '../unified-provider/integration/unified-scanner.js'
+ * 
+ * This file is kept for reference but is no longer exported from the main index.
+ * All data access extraction should go through the unified provider.
+ *
  * Unified scanner that uses tree-sitter extractors for accurate data access detection.
  * Features:
  * - Auto-detection of project stack from package files

@@ -2,8 +2,13 @@
  * Call Graph Extractors
  *
  * Language-specific extractors for building call graphs.
+ * 
+ * NOTE: Data access extraction now uses the unified provider system.
+ * The legacy *DataAccessExtractor classes are re-exported from the compat layer
+ * for backward compatibility, but internally delegate to UnifiedLanguageProvider.
  */
 
+// Call Graph Extractors (still language-specific - needed for function/call extraction)
 export { BaseCallGraphExtractor } from './base-extractor.js';
 export { TypeScriptCallGraphExtractor } from './typescript-extractor.js';
 export { PythonCallGraphExtractor } from './python-extractor.js';
@@ -11,55 +16,31 @@ export { CSharpCallGraphExtractor } from './csharp-extractor.js';
 export { JavaCallGraphExtractor } from './java-extractor.js';
 export { PhpCallGraphExtractor } from './php-extractor.js';
 
-// Data Access Extractors (semantic parsing with tree-sitter)
+// Data Access Extractors - now use unified provider via compat layer
 export { 
   BaseDataAccessExtractor,
   type DataAccessExtractionResult,
 } from './data-access-extractor.js';
+
+// Re-export from compat layer (delegates to UnifiedLanguageProvider)
 export { 
   TypeScriptDataAccessExtractor,
   createTypeScriptDataAccessExtractor,
-} from './typescript-data-access-extractor.js';
-export { 
   PythonDataAccessExtractor,
   createPythonDataAccessExtractor,
-} from './python-data-access-extractor.js';
-export {
   CSharpDataAccessExtractor,
   createCSharpDataAccessExtractor,
-} from './csharp-data-access-extractor.js';
-export {
   JavaDataAccessExtractor,
   createJavaDataAccessExtractor,
-} from './java-data-access-extractor.js';
-export {
   PhpDataAccessExtractor,
   createPhpDataAccessExtractor,
-} from './php-data-access-extractor.js';
-
-// Semantic Data Access Scanner (unified scanner using tree-sitter extractors)
-export {
+  createDataAccessExtractors,
   SemanticDataAccessScanner,
   createSemanticDataAccessScanner,
-  detectProjectStack,
   type SemanticScannerConfig,
   type SemanticScanResult,
   type DetectedStack,
-} from './semantic-data-access-scanner.js';
+} from '../../unified-provider/compat/index.js';
 
-// Convenience factory for all data access extractors
-import { createTypeScriptDataAccessExtractor } from './typescript-data-access-extractor.js';
-import { createPythonDataAccessExtractor } from './python-data-access-extractor.js';
-import { createCSharpDataAccessExtractor } from './csharp-data-access-extractor.js';
-import { createJavaDataAccessExtractor } from './java-data-access-extractor.js';
-import { createPhpDataAccessExtractor } from './php-data-access-extractor.js';
-
-export function createDataAccessExtractors() {
-  return {
-    typescript: createTypeScriptDataAccessExtractor(),
-    python: createPythonDataAccessExtractor(),
-    csharp: createCSharpDataAccessExtractor(),
-    java: createJavaDataAccessExtractor(),
-    php: createPhpDataAccessExtractor(),
-  };
-}
+// Also export detectProjectStack from unified provider
+export { detectProjectStack } from '../../unified-provider/integration/unified-scanner.js';

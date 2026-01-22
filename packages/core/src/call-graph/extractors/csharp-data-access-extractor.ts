@@ -1,6 +1,13 @@
 /**
  * C# Semantic Data Access Extractor
  *
+ * @deprecated This file is deprecated. Use the unified provider system instead:
+ * - Import from 'driftdetect-core' or '../unified-provider/compat/index.js'
+ * - The compat layer provides the same API but delegates to UnifiedLanguageProvider
+ * 
+ * This file is kept for reference but is no longer exported from the main index.
+ * All data access extraction should go through the unified provider.
+ *
  * Extracts data access points from C# using tree-sitter.
  * Provides accurate, semantic-aware detection of database operations.
  * 
@@ -22,6 +29,7 @@ import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter
 
 /**
  * C# data access extractor using tree-sitter
+ * @deprecated Use UnifiedDataAccessAdapter from unified-provider instead
  */
 export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
   readonly language: CallGraphLanguage = 'csharp';
