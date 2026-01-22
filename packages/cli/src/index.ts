@@ -11,8 +11,12 @@
  * - drift report: Generate reports
  */
 
-// Export version
-export const VERSION = '0.1.0';
+import { createRequire } from 'node:module';
+
+// Read version from package.json to avoid hardcoding
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
+export const VERSION = pkg.version;
 
 // Type exports
 export * from './types/index.js';

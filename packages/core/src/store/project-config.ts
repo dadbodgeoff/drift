@@ -81,7 +81,13 @@ export interface ProjectConfig {
   project: ProjectMetadata;
   /** Severity overrides by pattern category */
   severity: Record<string, string>;
-  /** Glob patterns to ignore */
+  /**
+   * Glob patterns to include (allowlist).
+   * If specified, ONLY these directories/files will be scanned.
+   * Takes precedence over ignore patterns.
+   */
+  include?: string[];
+  /** Glob patterns to ignore (denylist) */
   ignore: string[];
   /** CI/CD settings */
   ci: CIConfig;
@@ -140,6 +146,7 @@ export function createDefaultConfig(
       initializedAt: now,
     },
     severity: {},
+    // include is undefined by default - when set, ONLY these paths are scanned
     ignore: [
       'node_modules/**',
       'dist/**',

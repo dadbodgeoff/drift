@@ -17,6 +17,7 @@ import {
   HistoryStore,
   FileWalker,
   createDataLake,
+  loadProjectConfig,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
@@ -272,6 +273,20 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
     status.info(`Loaded ${ignorePatterns.length} ignore patterns`);
   }
 
+  // Load project config for include patterns (allowlist)
+  let includePatterns: string[] | undefined;
+  try {
+    const projectConfig = await loadProjectConfig(rootDir);
+    if (projectConfig.include && projectConfig.include.length > 0) {
+      includePatterns = projectConfig.include;
+      if (verbose) {
+        status.info(`Using allowlist: ${includePatterns.join(', ')}`);
+      }
+    }
+  } catch {
+    // Config not found or invalid - continue without include patterns
+  }
+
   // Initialize file walker
   const walker = new FileWalker();
 
@@ -289,6 +304,11 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
       followSymlinks: false,
       maxDepth: 50,
     };
+
+    // Add include patterns if configured (allowlist mode)
+    if (includePatterns && includePatterns.length > 0) {
+      scanOptions.includePatterns = includePatterns;
+    }
 
     // If specific paths provided, use those
     if (options.paths && options.paths.length > 0) {
