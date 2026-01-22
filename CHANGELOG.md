@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-01-22
+
+### Fixed
+- **CLI version mismatch**: `drift -v` now correctly reports the installed version instead of hardcoded `0.1.0` (thanks [@Carter003](https://github.com/Carter003) for the bug report!)
+- Version now dynamically read from `package.json` in both CLI and VS Code extension
+
+### Added
+- **Include allowlist config**: New `include` option in `.drift/config.json` to specify directories to scan (thanks [@Carter003](https://github.com/Carter003) for the feature request!)
+  - When set, only matching paths are scanned - much simpler than maintaining long ignore lists
+  - Perfect for AI-heavy projects with many generated folders
+  - Example: `"include": ["frontend/**", "backend/**"]`
+
 ## [0.4.0] - 2026-01-21
 
 ### 🚀 Major Release: Call Graph Analysis, Galaxy Visualization & Enterprise Architecture
