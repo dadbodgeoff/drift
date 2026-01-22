@@ -1,6 +1,12 @@
 /**
  * Pattern Shard Store
  *
+ * @deprecated This class is part of the legacy data lake storage system.
+ * Use `UnifiedFilePatternRepository` from `@drift/core/patterns` instead,
+ * which provides unified storage with both category-based sharding AND status tracking.
+ *
+ * Migration: Run `drift migrate-storage` to convert to the new format.
+ *
  * Manages sharded pattern storage - one file per category.
  * This allows loading only the patterns you need instead of all patterns.
  *

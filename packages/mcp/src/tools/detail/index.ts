@@ -195,8 +195,8 @@ export const DETAIL_TOOLS: Tool[] = [
 ];
 
 // Handler exports
-export { handlePatternGet } from './pattern-get.js';
-export { handleCodeExamples } from './code-examples.js';
+export { handlePatternGet, handlePatternGetWithService } from './pattern-get.js';
+export { handleCodeExamples, handleCodeExamplesWithService } from './code-examples.js';
 export { handleFilesList } from './files-list.js';
 export { handleFilePatterns } from './file-patterns.js';
 export { handleImpactAnalysis } from './impact-analysis.js';
@@ -204,8 +204,8 @@ export { handleReachability } from './reachability.js';
 export { handleDNAProfile } from './dna-profile.js';
 
 // Re-export types
-export type { PatternGetData, PatternLocation, PatternOutlier } from './pattern-get.js';
-export type { CodeExamplesData, CodeExample } from './code-examples.js';
+export type { PatternGetData, PatternLocation, PatternOutlier, PatternGetArgs } from './pattern-get.js';
+export type { CodeExamplesData, CodeExample, CodeExamplesArgs } from './code-examples.js';
 export type { FilesListData, FileEntry } from './files-list.js';
 export type { FilePatternData, FilePattern, FilePatternLocation } from './file-patterns.js';
 export type { ImpactData, AffectedCaller, SensitivePath } from './impact-analysis.js';

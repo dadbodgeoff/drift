@@ -29,6 +29,8 @@ import {
   boundariesCommand,
   callgraphCommand,
   projectsCommand,
+  skillsCommand,
+  migrateStorageCommand,
 } from '../commands/index.js';
 
 /**
@@ -63,6 +65,8 @@ function createProgram(): Command {
   program.addCommand(boundariesCommand);
   program.addCommand(callgraphCommand);
   program.addCommand(projectsCommand);
+  program.addCommand(skillsCommand);
+  program.addCommand(migrateStorageCommand);
 
   // Add help examples
   program.addHelpText(
@@ -107,6 +111,11 @@ Examples:
   $ drift projects                List all registered projects
   $ drift projects switch <name>  Switch active project
   $ drift projects info           Show current project details
+  $ drift skills                  List available Agent Skills
+  $ drift skills install <name>   Install a skill to your project
+  $ drift skills info <name>      Show skill details
+  $ drift migrate-storage         Migrate to unified storage format
+  $ drift migrate-storage status  Check current storage format
 
 Documentation:
   https://github.com/drift/drift

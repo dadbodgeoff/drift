@@ -1,0 +1,406 @@
+/**
+ * Migrate Storage Command - drift migrate-storage
+ *
+ * Migrates pattern storage from legacy status-based format to unified
+ * category-based format (Phase 3 of Pattern System Consolidation).
+ *
+ * Legacy format:
+ * .drift/patterns/
+ *   ├── discovered/
+ *   │   ├── api.json
+ *   │   └── security.json
+ *   ├── approved/
+ *   └── ignored/
+ *
+ * Unified format:
+ * .drift/patterns/
+ *   ├── api.json        # Contains all statuses
+ *   ├── security.json
+ *   └── ...
+ */
+
+import { Command } from 'commander';
+import chalk from 'chalk';
+import * as fs from 'fs';
+import * as path from 'path';
+import { createSpinner, status } from '../ui/spinner.js';
+import { confirmPrompt } from '../ui/prompts.js';
+import { UnifiedFilePatternRepository } from 'driftdetect-core';
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function hasLegacyFormat(rootDir: string): boolean {
+  const patternsDir = path.join(rootDir, '.drift', 'patterns');
+  const legacyDirs = ['discovered', 'approved', 'ignored'];
+
+  for (const dir of legacyDirs) {
+    const statusDir = path.join(patternsDir, dir);
+    if (fs.existsSync(statusDir) && fs.statSync(statusDir).isDirectory()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasUnifiedFormat(rootDir: string): boolean {
+  const patternsDir = path.join(rootDir, '.drift', 'patterns');
+  const categories = ['api', 'auth', 'security', 'errors', 'logging', 'data-access', 'config', 'testing', 'performance', 'components', 'styling', 'structural', 'types', 'accessibility', 'documentation'];
+
+  for (const category of categories) {
+    const filePath = path.join(patternsDir, `${category}.json`);
+    if (fs.existsSync(filePath)) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(content);
+        if (data.version?.startsWith('2.')) {
+          return true;
+        }
+      } catch {
+        // Not valid unified format
+      }
+    }
+  }
+  return false;
+}
+
+async function createBackup(rootDir: string): Promise<string> {
+  const patternsDir = path.join(rootDir, '.drift', 'patterns');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupDir = path.join(rootDir, '.drift', 'backups', `patterns-${timestamp}`);
+
+  fs.mkdirSync(backupDir, { recursive: true });
+
+  // Copy entire patterns directory
+  copyDirSync(patternsDir, backupDir);
+
+  return backupDir;
+}
+
+function copyDirSync(src: string, dest: string): void {
+  if (!fs.existsSync(src)) return;
+
+  fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+// ============================================================================
+// Migration Action
+// ============================================================================
+
+interface MigrateOptions {
+  force?: boolean;
+  backup?: boolean;
+  keepLegacy?: boolean;
+  dryRun?: boolean;
+}
+
+async function migrateAction(options: MigrateOptions): Promise<void> {
+  const rootDir = process.cwd();
+
+  console.log();
+  console.log(chalk.bold('🔄 Pattern Storage Migration'));
+  console.log();
+
+  // Check if drift is initialized
+  if (!fs.existsSync(path.join(rootDir, '.drift'))) {
+    status.error('Drift is not initialized in this directory.');
+    console.log(chalk.gray('Run `drift init` first.'));
+    process.exit(1);
+  }
+
+  // Check current format
+  const hasLegacy = hasLegacyFormat(rootDir);
+  const hasUnified = hasUnifiedFormat(rootDir);
+
+  if (!hasLegacy && !hasUnified) {
+    status.info('No patterns found. Nothing to migrate.');
+    return;
+  }
+
+  if (hasUnified && !hasLegacy) {
+    status.success('Already using unified format. No migration needed.');
+    return;
+  }
+
+  if (hasUnified && hasLegacy) {
+    console.log(chalk.yellow('⚠️  Both legacy and unified formats detected.'));
+    console.log(chalk.gray('This may indicate a partial migration.'));
+    console.log();
+
+    if (!options.force) {
+      const proceed = await confirmPrompt('Continue with migration? (will merge patterns)', false);
+      if (!proceed) {
+        status.info('Migration cancelled.');
+        return;
+      }
+    }
+  }
+
+  // Dry run mode
+  if (options.dryRun) {
+    console.log(chalk.cyan('🔍 Dry run mode - no changes will be made'));
+    console.log();
+
+    // Count patterns in legacy format
+    let totalPatterns = 0;
+    const categories = new Set<string>();
+
+    for (const statusDir of ['discovered', 'approved', 'ignored']) {
+      const dir = path.join(rootDir, '.drift', 'patterns', statusDir);
+      if (!fs.existsSync(dir)) continue;
+
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+      for (const file of files) {
+        try {
+          const content = fs.readFileSync(path.join(dir, file), 'utf-8');
+          const data = JSON.parse(content);
+          totalPatterns += data.patterns?.length || 0;
+          categories.add(file.replace('.json', ''));
+        } catch {
+          // Skip invalid files
+        }
+      }
+    }
+
+    console.log(`  Patterns to migrate: ${chalk.cyan(totalPatterns)}`);
+    console.log(`  Categories: ${chalk.cyan(Array.from(categories).join(', '))}`);
+    console.log();
+    console.log(chalk.gray('Run without --dry-run to perform migration.'));
+    return;
+  }
+
+  // Create backup if requested
+  let backupPath: string | undefined;
+  if (options.backup !== false) {
+    const backupSpinner = createSpinner('Creating backup...');
+    backupSpinner.start();
+
+    try {
+      backupPath = await createBackup(rootDir);
+      backupSpinner.succeed(`Backup created: ${chalk.gray(path.relative(rootDir, backupPath))}`);
+    } catch (error) {
+      backupSpinner.fail('Failed to create backup');
+      console.error(chalk.red((error as Error).message));
+
+      if (!options.force) {
+        status.error('Migration aborted. Use --force to skip backup.');
+        process.exit(1);
+      }
+    }
+  }
+
+  // Perform migration
+  const migrateSpinner = createSpinner('Migrating patterns...');
+  migrateSpinner.start();
+
+  try {
+    const repository = new UnifiedFilePatternRepository({
+      rootDir,
+      autoSave: false,
+      autoMigrate: true,
+      keepLegacyFiles: options.keepLegacy ?? false,
+    });
+
+    await repository.initialize();
+    await repository.saveAll();
+
+    const stats = await repository.getStorageStats();
+    await repository.close();
+
+    migrateSpinner.succeed(`Migrated ${chalk.cyan(stats.totalPatterns)} patterns`);
+
+    // Show summary
+    console.log();
+    console.log(chalk.bold('📊 Migration Summary'));
+    console.log();
+    console.log(`  Total patterns: ${chalk.cyan(stats.totalPatterns)}`);
+    console.log(`  Categories: ${chalk.cyan(stats.fileCount)}`);
+    console.log();
+    console.log('  By status:');
+    console.log(`    Discovered: ${chalk.yellow(stats.byStatus.discovered)}`);
+    console.log(`    Approved: ${chalk.green(stats.byStatus.approved)}`);
+    console.log(`    Ignored: ${chalk.gray(stats.byStatus.ignored)}`);
+
+    if (backupPath) {
+      console.log();
+      console.log(chalk.gray(`Backup saved to: ${path.relative(rootDir, backupPath)}`));
+    }
+
+    if (!options.keepLegacy) {
+      console.log();
+      console.log(chalk.green('✓ Legacy format directories removed.'));
+    } else {
+      console.log();
+      console.log(chalk.yellow('⚠️  Legacy format directories preserved (--keep-legacy).'));
+      console.log(chalk.gray('  You can manually remove them after verifying the migration.'));
+    }
+
+  } catch (error) {
+    migrateSpinner.fail('Migration failed');
+    console.error(chalk.red((error as Error).message));
+
+    if (backupPath) {
+      console.log();
+      console.log(chalk.yellow(`Restore from backup: ${path.relative(rootDir, backupPath)}`));
+    }
+
+    process.exit(1);
+  }
+
+  console.log();
+  status.success('Migration complete!');
+  console.log();
+}
+
+// ============================================================================
+// Rollback Action
+// ============================================================================
+
+async function rollbackAction(): Promise<void> {
+  const rootDir = process.cwd();
+
+  console.log();
+  console.log(chalk.bold('⏪ Rollback Pattern Storage'));
+  console.log();
+
+  // Find backups
+  const backupsDir = path.join(rootDir, '.drift', 'backups');
+  if (!fs.existsSync(backupsDir)) {
+    status.error('No backups found.');
+    return;
+  }
+
+  const backups = fs.readdirSync(backupsDir)
+    .filter(d => d.startsWith('patterns-'))
+    .sort()
+    .reverse();
+
+  if (backups.length === 0) {
+    status.error('No pattern backups found.');
+    return;
+  }
+
+  console.log('Available backups:');
+  for (const backup of backups.slice(0, 5)) {
+    console.log(`  ${chalk.cyan(backup)}`);
+  }
+  if (backups.length > 5) {
+    console.log(chalk.gray(`  ... and ${backups.length - 5} more`));
+  }
+  console.log();
+
+  const latestBackup = backups[0];
+  if (!latestBackup) {
+    status.error('No pattern backups found.');
+    return;
+  }
+  
+  const confirmed = await confirmPrompt(`Restore from ${latestBackup}?`, false);
+
+  if (!confirmed) {
+    status.info('Rollback cancelled.');
+    return;
+  }
+
+  const rollbackSpinner = createSpinner('Rolling back...');
+  rollbackSpinner.start();
+
+  try {
+    const patternsDir = path.join(rootDir, '.drift', 'patterns');
+    const backupPath = path.join(backupsDir, latestBackup);
+
+    // Remove current patterns
+    if (fs.existsSync(patternsDir)) {
+      fs.rmSync(patternsDir, { recursive: true });
+    }
+
+    // Restore from backup
+    copyDirSync(backupPath, patternsDir);
+
+    rollbackSpinner.succeed('Rollback complete');
+    console.log();
+    console.log(chalk.gray(`Restored from: ${latestBackup}`));
+
+  } catch (error) {
+    rollbackSpinner.fail('Rollback failed');
+    console.error(chalk.red((error as Error).message));
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// Status Action
+// ============================================================================
+
+async function statusAction(): Promise<void> {
+  const rootDir = process.cwd();
+
+  console.log();
+  console.log(chalk.bold('📦 Pattern Storage Status'));
+  console.log();
+
+  if (!fs.existsSync(path.join(rootDir, '.drift'))) {
+    status.error('Drift is not initialized in this directory.');
+    return;
+  }
+
+  const hasLegacy = hasLegacyFormat(rootDir);
+  const hasUnified = hasUnifiedFormat(rootDir);
+
+  if (!hasLegacy && !hasUnified) {
+    console.log('  Format: ' + chalk.gray('No patterns stored'));
+    return;
+  }
+
+  if (hasUnified && !hasLegacy) {
+    console.log('  Format: ' + chalk.green('Unified (v2.0)'));
+    console.log('  Status: ' + chalk.green('Up to date'));
+  } else if (hasLegacy && !hasUnified) {
+    console.log('  Format: ' + chalk.yellow('Legacy (v1.0)'));
+    console.log('  Status: ' + chalk.yellow('Migration available'));
+    console.log();
+    console.log(chalk.gray('  Run `drift migrate-storage` to upgrade.'));
+  } else {
+    console.log('  Format: ' + chalk.red('Mixed (legacy + unified)'));
+    console.log('  Status: ' + chalk.red('Needs cleanup'));
+    console.log();
+    console.log(chalk.gray('  Run `drift migrate-storage --force` to complete migration.'));
+  }
+
+  console.log();
+}
+
+// ============================================================================
+// Command Registration
+// ============================================================================
+
+export const migrateStorageCommand = new Command('migrate-storage')
+  .description('Migrate pattern storage to unified format')
+  .option('-f, --force', 'Force migration without confirmation')
+  .option('--no-backup', 'Skip creating backup')
+  .option('--keep-legacy', 'Keep legacy format files after migration')
+  .option('--dry-run', 'Show what would be migrated without making changes')
+  .action(migrateAction);
+
+migrateStorageCommand
+  .command('rollback')
+  .description('Rollback to previous pattern storage backup')
+  .action(rollbackAction);
+
+migrateStorageCommand
+  .command('status')
+  .description('Show current storage format status')
+  .action(statusAction);

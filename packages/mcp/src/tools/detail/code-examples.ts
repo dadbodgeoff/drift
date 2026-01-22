@@ -3,9 +3,12 @@
  * 
  * Detail tool that returns actual code snippets demonstrating patterns.
  * Essential before generating new code to match codebase conventions.
+ * 
+ * MIGRATION: Now supports both legacy PatternStore and new IPatternService.
+ * The service-based approach is preferred for new code.
  */
 
-import type { PatternStore, PatternCategory } from 'driftdetect-core';
+import type { PatternStore, PatternCategory, IPatternService } from 'driftdetect-core';
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -26,6 +29,13 @@ export interface CodeExamplesData {
   examplesReturned: number;
 }
 
+export interface CodeExamplesArgs {
+  categories?: string[];
+  pattern?: string;
+  maxExamples?: number;
+  contextLines?: number;
+}
+
 const VALID_CATEGORIES: PatternCategory[] = [
   'api', 'auth', 'security', 'errors', 'logging',
   'data-access', 'config', 'testing', 'performance',
@@ -36,15 +46,131 @@ const VALID_CATEGORIES: PatternCategory[] = [
 const DEFAULT_MAX_EXAMPLES = 3;
 const DEFAULT_CONTEXT_LINES = 10;
 
+/**
+ * Handle code examples using IPatternService (preferred)
+ */
+export async function handleCodeExamplesWithService(
+  service: IPatternService,
+  projectRoot: string,
+  args: CodeExamplesArgs
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const builder = createResponseBuilder<CodeExamplesData>();
+  
+  // Validate categories
+  if (args.categories) {
+    for (const cat of args.categories) {
+      if (!VALID_CATEGORIES.includes(cat as PatternCategory)) {
+        throw Errors.invalidCategory(cat, VALID_CATEGORIES);
+      }
+    }
+  }
+  
+  const maxExamples = args.maxExamples ?? DEFAULT_MAX_EXAMPLES;
+  const contextLines = args.contextLines ?? DEFAULT_CONTEXT_LINES;
+  
+  // Get patterns to show examples for
+  const result = await service.query({
+    filter: {
+      categories: args.categories as PatternCategory[] | undefined,
+      search: args.pattern,
+    },
+    sort: {
+      field: 'confidence',
+      direction: 'desc',
+    },
+    pagination: {
+      offset: 0,
+      limit: 10, // Limit patterns to process
+    },
+  });
+  
+  let patterns = result.patterns;
+  
+  // If searching by specific pattern ID, also check exact match
+  if (args.pattern && !patterns.some(p => p.id === args.pattern)) {
+    const exactMatch = await service.getPattern(args.pattern);
+    if (exactMatch) {
+      patterns = [exactMatch, ...patterns];
+    }
+  }
+  
+  const examples: CodeExample[] = [];
+  
+  for (const pattern of patterns) {
+    // Get best locations (highest confidence, not outliers)
+    const outlierFiles = new Set(pattern.outliers.map(o => `${o.file}:${o.line}`));
+    const goodLocations = pattern.locations
+      .filter(loc => !outlierFiles.has(`${loc.file}:${loc.line}`))
+      .slice(0, maxExamples);
+    
+    for (const loc of goodLocations) {
+      try {
+        const code = await extractCodeSnippet(
+          path.join(projectRoot, loc.file),
+          loc.line,
+          contextLines
+        );
+        
+        if (code) {
+          examples.push({
+            patternId: pattern.id,
+            patternName: pattern.name,
+            category: pattern.category,
+            file: loc.file,
+            line: loc.line,
+            code,
+            explanation: pattern.description,
+          });
+        }
+      } catch {
+        // Skip files that can't be read
+        continue;
+      }
+      
+      // Limit total examples
+      if (examples.length >= maxExamples * 5) break;
+    }
+    
+    if (examples.length >= maxExamples * 5) break;
+  }
+  
+  const data: CodeExamplesData = {
+    examples,
+    patternsFound: patterns.length,
+    examplesReturned: examples.length,
+  };
+  
+  // Build summary
+  let summary = `${examples.length} code examples from ${patterns.length} patterns.`;
+  if (args.categories?.length) {
+    summary = `${args.categories.join(', ')}: ${summary}`;
+  }
+  
+  return builder
+    .withSummary(summary)
+    .withData(data)
+    .withHints({
+      nextActions: examples.length > 0
+        ? [
+            'Use these examples as templates for new code',
+            'Use drift_pattern_get for more details on specific patterns',
+          ]
+        : [
+            'Try different categories or run drift scan',
+          ],
+      relatedTools: ['drift_pattern_get', 'drift_patterns_list'],
+    })
+    .buildContent();
+}
+
+/**
+ * Handle code examples using legacy PatternStore (backward compatibility)
+ * @deprecated Use handleCodeExamplesWithService instead
+ */
 export async function handleCodeExamples(
   store: PatternStore,
   projectRoot: string,
-  args: {
-    categories?: string[];
-    pattern?: string;
-    maxExamples?: number;
-    contextLines?: number;
-  }
+  args: CodeExamplesArgs
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<CodeExamplesData>();
   

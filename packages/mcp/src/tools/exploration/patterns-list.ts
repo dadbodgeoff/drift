@@ -6,9 +6,17 @@
  * 
  * OPTIMIZED: Uses data lake pattern shards for category-specific queries,
  * and pattern index view for full listings.
+ * 
+ * MIGRATION: Now supports both legacy PatternStore and new IPatternService.
+ * The service-based approach is preferred for new code.
  */
 
-import type { PatternStore, PatternCategory, DataLake } from 'driftdetect-core';
+import type { 
+  PatternStore, 
+  PatternCategory, 
+  DataLake,
+  IPatternService,
+} from 'driftdetect-core';
 import { 
   createResponseBuilder, 
   cursorManager,
@@ -31,7 +39,7 @@ export interface PatternSummary {
 export interface PatternsListData {
   patterns: PatternSummary[];
   /** Response source for debugging */
-  _source?: 'lake' | 'store';
+  _source?: 'lake' | 'store' | 'service';
 }
 
 const VALID_CATEGORIES: PatternCategory[] = [
@@ -44,16 +52,104 @@ const VALID_CATEGORIES: PatternCategory[] = [
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
+export interface PatternsListArgs {
+  categories?: string[];
+  status?: string;
+  minConfidence?: number;
+  search?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+/**
+ * Handle patterns list using IPatternService (preferred)
+ */
+export async function handlePatternsListWithService(
+  service: IPatternService,
+  args: PatternsListArgs,
+  dataLake?: DataLake
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const builder = createResponseBuilder<PatternsListData>();
+  
+  // Validate categories
+  if (args.categories) {
+    for (const cat of args.categories) {
+      if (!VALID_CATEGORIES.includes(cat as PatternCategory)) {
+        throw Errors.invalidCategory(cat, VALID_CATEGORIES);
+      }
+    }
+  }
+  
+  // Parse cursor if provided
+  let startOffset = 0;
+  if (args.cursor) {
+    const cursorData = cursorManager.decode(args.cursor);
+    if (!cursorData) {
+      throw Errors.invalidCursor();
+    }
+    startOffset = cursorData.offset ?? 0;
+  }
+
+  const limit = Math.min(args.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+
+  // OPTIMIZATION: Try data lake first
+  if (dataLake) {
+    const lakeResult = await tryGetPatternsFromLake(dataLake, args, startOffset, limit);
+    if (lakeResult) {
+      return buildResponse(builder, lakeResult, args, startOffset, limit, 'lake');
+    }
+  }
+  
+  // Use the pattern service
+  const result = await service.query({
+    filter: {
+      categories: args.categories as PatternCategory[] | undefined,
+      statuses: args.status && args.status !== 'all' 
+        ? [args.status as 'discovered' | 'approved' | 'ignored'] 
+        : undefined,
+      minConfidence: args.minConfidence,
+      search: args.search,
+    },
+    sort: {
+      field: 'confidence',
+      direction: 'desc',
+    },
+    pagination: {
+      offset: startOffset,
+      limit,
+    },
+  });
+  
+  // Map to summaries
+  const summaries: PatternSummary[] = result.patterns.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    subcategory: p.subcategory,
+    confidence: Math.round(p.confidence * 100) / 100,
+    confidenceLevel: p.confidenceLevel,
+    status: p.status,
+    locationCount: p.locations.length,
+    outlierCount: p.outliers.length,
+  }));
+  
+  return buildResponse(
+    builder, 
+    { summaries, totalCount: result.total }, 
+    args, 
+    startOffset, 
+    limit, 
+    'service'
+  );
+}
+
+/**
+ * Handle patterns list using legacy PatternStore (backward compatibility)
+ * @deprecated Use handlePatternsListWithService instead
+ */
 export async function handlePatternsList(
   store: PatternStore,
-  args: {
-    categories?: string[];
-    status?: string;
-    minConfidence?: number;
-    search?: string;
-    limit?: number;
-    cursor?: string;
-  },
+  args: PatternsListArgs,
   dataLake?: DataLake
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<PatternsListData>();
@@ -214,7 +310,7 @@ function buildResponse(
   },
   startOffset: number,
   limit: number,
-  source: 'lake' | 'store'
+  source: 'lake' | 'store' | 'service'
 ): { content: Array<{ type: string; text: string }> } {
   const { summaries, totalCount } = data;
   

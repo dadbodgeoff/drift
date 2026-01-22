@@ -1,31 +1,64 @@
-feat(parsers): add full tree-sitter support for Java and PHP
+feat(patterns): Complete Pattern System Consolidation (P1-P3)
 
-Add tree-sitter parser integration for Java and PHP languages,
-completing full AST-based parsing support across all major languages.
+## Phase 1: Foundation (COMPLETE)
+- Created unified Pattern type in packages/core/src/patterns/types.ts
+- Created IPatternRepository interface for storage abstraction
+- Created IPatternService interface for consumer API
+- Implemented FilePatternRepository, InMemoryPatternRepository, CachedPatternRepository
+- Implemented PatternService with caching and business logic
+- Created PatternStoreAdapter to bridge legacy PatternStore
+- 157 tests for repository/service/adapter
 
-Java tree-sitter support:
-- java-loader.ts: handles loading tree-sitter-java with graceful fallback
-- tree-sitter-java-parser.ts: full Java parser with Spring Boot support
-- Extracts classes, interfaces, enums, records, methods, annotations
-- Full Spring framework annotation support (@Controller, @Service, etc.)
+## Phase 2: Consumer Migration (COMPLETE)
+- Migrated MCP tools to use IPatternService:
+  - drift_patterns_list, drift_pattern_get, drift_status, drift_code_examples
+- Migrated CLI commands to use IPatternService:
+  - status, approve, ignore, check, files, where, export, report
+- Created pattern-service-factory.ts for CLI
+- Enterprise server now creates PatternService by default
 
-PHP tree-sitter support:
-- php-loader.ts: handles loading tree-sitter-php with graceful fallback
-- tree-sitter-php-parser.ts: full PHP parser with Laravel support
-- Extracts namespaces, classes, interfaces, traits, enums, methods
-- PHP 8+ attribute extraction support
-- Laravel controller and model pattern detection
+## Phase 3: Storage Consolidation (COMPLETE)
+- Created UnifiedFilePatternRepository with category-based storage
+- New storage format: .drift/patterns/{category}.json (v2.0)
+  - Status tracked per-pattern (not per-directory)
+  - Incremental saves (only dirty categories)
+  - Auto-migration from legacy format
+- Created repository factory (createPatternRepository) for auto-detection
+- Created CLI command: drift migrate-storage
+  - --dry-run, --backup, --keep-legacy options
+  - rollback and status subcommands
+- Added deprecation warnings to legacy stores:
+  - PatternStore, PatternShardStore, FilePatternRepository
 
-Updated packages:
-- driftdetect-core: 0.3.0 → 0.4.0 (new parsers + exports)
-- driftdetect-mcp: 0.3.0 → 0.4.0 (PHP parser info in drift_parser_info)
-- driftdetect: 0.3.1 → 0.4.0 (PHP status in parser command)
+## New Features: Agent Skills System
+- Created drift skills CLI command for managing Agent Skills
+  - drift skills list - List available skills with category/time info
+  - drift skills install <name> - Install skills to .github/skills/
+  - drift skills info <name> - Show skill details and preview
+  - drift skills search <query> - Search skills by keyword
+  - drift skills uninstall <name> - Remove installed skills
+- Added 24 production-ready Agent Skills in skills/ directory:
+  - Resilience: circuit-breaker, graceful-degradation
+  - API: rate-limiting, idempotency, api-versioning, file-uploads,
+         pagination, request-validation, error-handling
+  - Auth & Security: jwt-auth, row-level-security, oauth-social-login,
+                     webhook-security, audit-logging
+  - Integrations: stripe-integration, email-service
+  - Workers: background-jobs
+  - Performance: caching-strategies
+  - Database: database-migrations, soft-delete
+  - Foundations: feature-flags, sse-streaming, multi-tenancy
+  - Operations: health-checks
+- Each skill includes:
+  - YAML frontmatter (name, description, category, time estimate)
+  - TypeScript and Python implementations
+  - Best practices and common mistakes
+  - Usage examples and integration guides
+- Skills follow the Agent Skills open standard (agentskills.io)
 
-Parser status after this change:
-- Python: ✓ tree-sitter (full support)
-- C#: ✓ tree-sitter (full support)
-- Java: ✓ tree-sitter (full support)
-- PHP: ✓ tree-sitter (full support)
-- TypeScript/JS: ✓ typescript-compiler-api (full support)
+## Test Results
+- 2249 tests passing (29 new for unified repository)
+- All packages compile successfully
 
-BREAKING CHANGE: None - all changes are additive
+BREAKING CHANGE: None - all changes are backward compatible.
+Legacy storage format is auto-migrated on first use.

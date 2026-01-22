@@ -2,8 +2,8 @@
  * Files Command - Show patterns in a file
  *
  * Show what patterns are found in a specific file.
- * Now reads from BOTH ManifestStore and PatternStore to ensure
- * all 15 categories are available.
+ *
+ * MIGRATION: Now uses IPatternService for pattern operations.
  *
  * Usage:
  *   drift files src/auth/middleware.py
@@ -13,12 +13,8 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import {
-  ManifestStore,
-  PatternStore,
-  type FileQuery,
-  type PatternCategory,
-} from 'driftdetect-core';
+import type { PatternCategory } from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 
 export const filesCommand = new Command('files')
   .description('Show patterns in a file')
@@ -28,34 +24,30 @@ export const filesCommand = new Command('files')
   .action(async (filePath, options) => {
     const cwd = process.cwd();
 
-    // Load manifest
-    const manifestStore = new ManifestStore(cwd);
-    const manifest = await manifestStore.load();
+    // Initialize pattern service
+    const service = createCLIPatternService(cwd);
 
-    // Also load from PatternStore to get ALL 15 categories
-    const patternStore = new PatternStore({ rootDir: cwd });
-    await patternStore.initialize();
-    const allPatterns = patternStore.getAll();
+    // Get all patterns (service auto-initializes)
+    const allPatternsResult = await service.listPatterns({ limit: 10000 });
+    
+    // Fetch full pattern details
+    const allPatterns = await Promise.all(
+      allPatternsResult.items.map(async (summary) => {
+        const pattern = await service.getPattern(summary.id);
+        return pattern;
+      })
+    );
+    
+    // Filter out nulls
+    const validPatterns = allPatterns.filter((p): p is NonNullable<typeof p> => p !== null);
 
-    if (!manifest && allPatterns.length === 0) {
+    if (validPatterns.length === 0) {
       console.error(chalk.red('No patterns found. Run `drift scan` first.'));
       process.exit(1);
     }
 
-    // Build query
-    const query: FileQuery = {
-      path: filePath,
-    };
-    if (options.category) {
-      query.category = options.category as PatternCategory;
-    }
-
-    // Query file from manifest
-    let result = manifest ? manifestStore.queryFile(query) : null;
-
-    // Also search in PatternStore for patterns in this file
-    // This ensures all 15 categories are searched
-    const patternStoreResults: Array<{
+    // Search for patterns in this file
+    const patternResults: Array<{
       id: string;
       name: string;
       category: PatternCategory;
@@ -70,7 +62,7 @@ export const filesCommand = new Command('files')
     const normalizedPath = filePath.replace(/\\/g, '/');
     const isGlob = normalizedPath.includes('*');
     
-    for (const pattern of allPatterns) {
+    for (const pattern of validPatterns) {
       // Filter by category if specified
       if (options.category && pattern.category !== options.category) {
         continue;
@@ -86,12 +78,12 @@ export const filesCommand = new Command('files')
       });
 
       if (matchingLocations.length > 0) {
-        patternStoreResults.push({
+        patternResults.push({
           id: pattern.id,
           name: pattern.name,
           category: pattern.category,
           locations: matchingLocations.map(loc => ({
-            range: { start: loc.line, end: loc.endLine || loc.line },
+            range: { start: loc.line, end: loc.endLine ?? loc.line },
             type: 'block',
             name: `line-${loc.line}`,
           })),
@@ -99,40 +91,12 @@ export const filesCommand = new Command('files')
       }
     }
 
-    // Merge results
-    const mergedPatterns = new Map<string, {
-      id: string;
-      name: string;
-      category: PatternCategory;
-      locations: Array<{
-        range: { start: number; end: number };
-        type: string;
-        name: string;
-      }>;
-    }>();
-
-    // Add manifest results
-    if (result) {
-      for (const p of result.patterns) {
-        mergedPatterns.set(p.id, p);
-      }
-    }
-
-    // Add PatternStore results (may add new categories)
-    for (const p of patternStoreResults) {
-      if (!mergedPatterns.has(p.id)) {
-        mergedPatterns.set(p.id, p);
-      }
-    }
-
-    const finalPatterns = Array.from(mergedPatterns.values());
-
-    if (finalPatterns.length === 0) {
+    if (patternResults.length === 0) {
       console.log(chalk.yellow(`No patterns found in "${filePath}"`));
       
-      // Show available files from PatternStore
+      // Show available files from patterns
       const allFiles = new Set<string>();
-      for (const pattern of allPatterns) {
+      for (const pattern of validPatterns) {
         for (const loc of pattern.locations) {
           allFiles.add(loc.file);
         }
@@ -154,11 +118,11 @@ export const filesCommand = new Command('files')
 
     // Build final result
     const finalResult = {
-      file: result?.file || filePath,
-      patterns: finalPatterns,
-      metadata: result?.metadata || {
+      file: filePath,
+      patterns: patternResults,
+      metadata: {
         hash: '',
-        patterns: finalPatterns.map(p => p.id),
+        patterns: patternResults.map(p => p.id),
         lastScanned: new Date().toISOString(),
       },
     };
