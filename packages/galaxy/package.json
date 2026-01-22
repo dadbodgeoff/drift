@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-galaxy",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "3D database galaxy visualization for Drift",
   "license": "MIT",
   "author": "Geoffrey Fernald",

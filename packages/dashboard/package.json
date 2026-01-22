@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-dashboard",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "Local web dashboard for Drift architectural drift detection",
   "license": "MIT",
   "repository": {
