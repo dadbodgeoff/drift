@@ -9,9 +9,10 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
 /**
  * Extract HTTP method from NestJS decorator
  * Note: NestJS @All() decorator matches all methods - we return undefined to indicate "any method"
+ * The decorator string may or may not have the @ prefix depending on the extractor
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
-  const match = raw.match(/@(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i);
+  const match = raw.match(/^@?(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i);
   if (match && match[1]) {
     const method = match[1].toUpperCase();
     // 'ALL', 'HEAD', 'OPTIONS' are not in our HttpMethod type - return undefined
@@ -42,7 +43,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
   decoratorMappings: [
     // HTTP Endpoint decorators
     {
-      pattern: /@(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i,
+      pattern: /^(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i,
       semantic: {
         category: 'routing',
         intent: 'HTTP endpoint handler',
@@ -62,7 +63,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Controller
     {
-      pattern: /@Controller\s*\(/,
+      pattern: /^Controller\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'HTTP controller class',
@@ -78,7 +79,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Dependency Injection
     {
-      pattern: /@Injectable\s*\(/,
+      pattern: /^Injectable\s*\(/,
       semantic: {
         category: 'di',
         intent: 'Injectable service',
@@ -96,7 +97,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       },
     },
     {
-      pattern: /@Inject\s*\(/,
+      pattern: /^Inject\s*\(/,
       semantic: {
         category: 'di',
         intent: 'Dependency injection token',
@@ -109,7 +110,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Module
     {
-      pattern: /@Module\s*\(/,
+      pattern: /^Module\s*\(/,
       semantic: {
         category: 'di',
         intent: 'NestJS module definition',
@@ -122,7 +123,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Guards (Auth)
     {
-      pattern: /@UseGuards\s*\(/,
+      pattern: /^UseGuards\s*\(/,
       semantic: {
         category: 'auth',
         intent: 'Route guard (authentication/authorization)',
@@ -138,7 +139,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Pipes (Validation)
     {
-      pattern: /@UsePipes\s*\(/,
+      pattern: /^UsePipes\s*\(/,
       semantic: {
         category: 'validation',
         intent: 'Validation pipe',
@@ -151,7 +152,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Interceptors
     {
-      pattern: /@UseInterceptors\s*\(/,
+      pattern: /^UseInterceptors\s*\(/,
       semantic: {
         category: 'middleware',
         intent: 'Request/response interceptor',
@@ -164,7 +165,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Parameter decorators
     {
-      pattern: /@Body\s*\(/,
+      pattern: /^Body\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'Request body parameter',
@@ -175,7 +176,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       extractArgs: (): DecoratorArguments => ({}),
     },
     {
-      pattern: /@Param\s*\(/,
+      pattern: /^Param\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'Route parameter',
@@ -186,7 +187,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       extractArgs: (): DecoratorArguments => ({}),
     },
     {
-      pattern: /@Query\s*\(/,
+      pattern: /^Query\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'Query parameter',
@@ -199,7 +200,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // WebSocket
     {
-      pattern: /@WebSocketGateway\s*\(/,
+      pattern: /^WebSocketGateway\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'WebSocket gateway',
@@ -210,7 +211,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       extractArgs: (): DecoratorArguments => ({}),
     },
     {
-      pattern: /@SubscribeMessage\s*\(/,
+      pattern: /^SubscribeMessage\s*\(/,
       semantic: {
         category: 'routing',
         intent: 'WebSocket message handler',
@@ -226,7 +227,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Scheduling
     {
-      pattern: /@Cron\s*\(/,
+      pattern: /^Cron\s*\(/,
       semantic: {
         category: 'scheduling',
         intent: 'Cron job',
@@ -240,7 +241,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       },
     },
     {
-      pattern: /@Interval\s*\(/,
+      pattern: /^Interval\s*\(/,
       semantic: {
         category: 'scheduling',
         intent: 'Interval task',
@@ -253,7 +254,7 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
 
     // Testing
     {
-      pattern: /@Test\s*\(/,
+      pattern: /^Test\s*\(/,
       semantic: {
         category: 'test',
         intent: 'Test method',
