@@ -170,6 +170,40 @@ export { CacheManager } from './store/cache-manager.js';
 export type { CacheManagerOptions, CacheEntry, CacheStats } from './store/cache-manager.js';
 export { PatternStore, PatternNotFoundError, InvalidStateTransitionError, PatternStoreError } from './store/pattern-store.js';
 
+// Project Registry exports (multi-project management)
+export {
+  ProjectRegistry,
+  getProjectRegistry,
+  createProjectRegistry,
+} from './store/project-registry.js';
+export type {
+  RegisteredProject,
+  ProjectRegistryFile,
+  ProjectRegistryConfig,
+  ProjectRegistrationOptions,
+  ProjectFramework,
+  ProjectLanguage,
+  ProjectHealth,
+  RegistryEventType,
+  RegistryEvent,
+} from './store/project-registry.js';
+
+// Project Config exports (enhanced project configuration)
+export {
+  ProjectConfigManager,
+  createProjectConfigManager,
+  loadProjectConfig,
+  createDefaultConfig,
+} from './store/project-config.js';
+export type {
+  ProjectConfig,
+  ProjectMetadata,
+  CIConfig,
+  LearningConfig,
+  PerformanceConfig,
+  LegacyConfig,
+} from './store/project-config.js';
+
 // History store exports (pattern regression tracking)
 export { HistoryStore } from './store/history-store.js';
 export type { PatternSnapshot, HistorySnapshot, PatternTrend, TrendSummary, CategorySummary, HistoryStoreConfig } from './store/history-store.js';
@@ -199,3 +233,95 @@ export * from './dna/index.js';
 
 // Boundaries exports (Data access boundary tracking)
 export * from './boundaries/index.js';
+
+// Data Lake exports (Enterprise data storage with materialized views)
+export * from './lake/index.js';
+
+// Call Graph exports (Call graph analysis and reachability)
+export {
+  CallGraphAnalyzer,
+  createCallGraphAnalyzer,
+  BaseCallGraphExtractor,
+  TypeScriptCallGraphExtractor,
+  PythonCallGraphExtractor,
+  CSharpCallGraphExtractor,
+  JavaCallGraphExtractor,
+  PhpCallGraphExtractor,
+  GraphBuilder,
+  ReachabilityEngine,
+  CallGraphStore,
+  createCallGraphStore,
+  ImpactAnalyzer,
+  createImpactAnalyzer,
+  DeadCodeDetector,
+  createDeadCodeDetector,
+  CoverageAnalyzer,
+  createCoverageAnalyzer,
+  // Data Access Extractors (semantic parsing)
+  BaseDataAccessExtractor,
+  TypeScriptDataAccessExtractor,
+  createTypeScriptDataAccessExtractor,
+  PythonDataAccessExtractor,
+  createPythonDataAccessExtractor,
+  createDataAccessExtractors,
+  // Semantic Data Access Scanner (unified scanner)
+  SemanticDataAccessScanner,
+  createSemanticDataAccessScanner,
+  detectProjectStack,
+} from './call-graph/index.js';
+export type {
+  // Semantic scanner types
+  SemanticScannerConfig,
+  SemanticScanResult,
+  DetectedStack,
+} from './call-graph/index.js';
+export type {
+  CallGraph,
+  CallGraphLanguage,
+  FunctionNode,
+  CallSite,
+  CallGraphStats,
+  FileExtractionResult,
+  FunctionExtraction,
+  CallExtraction,
+  ImportExtraction as CallGraphImportExtraction,
+  ExportExtraction,
+  ClassExtraction as CallGraphClassExtraction,
+  ReachabilityResult,
+  ReachabilityOptions,
+  ReachableDataAccess,
+  CallPathNode,
+  CodeLocation,
+  SensitiveFieldAccess,
+  InverseReachabilityOptions,
+  InverseReachabilityResult,
+  InverseAccessPath,
+  SerializedCallGraph,
+  CallGraphStoreConfig,
+  CallGraphAnalyzerConfig,
+  ParameterInfo as CallGraphParameterInfo,
+  // Enrichment types
+  PriorityTier,
+  DataRegulation,
+  // Impact analysis types
+  ImpactRisk,
+  AffectedFunction,
+  AffectedDataPath,
+  ImpactAnalysisResult,
+  ImpactAnalysisOptions,
+  // Dead code types
+  DeadCodeConfidence,
+  FalsePositiveReason,
+  DeadCodeCandidate,
+  DeadCodeResult,
+  DeadCodeOptions,
+  // Coverage types
+  CoverageStatus,
+  SensitiveAccessPath,
+  FieldCoverage,
+  CoverageAnalysisResult,
+  CoverageAnalysisOptions,
+  SensitivityPatternConfig,
+  // Data Access Extraction types
+  DataAccessExtractionResult,
+} from './call-graph/index.js';

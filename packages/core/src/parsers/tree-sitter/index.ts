@@ -112,6 +112,25 @@ export {
 } from './php-loader.js';
 
 // ============================================
+// TypeScript/JavaScript Loader Exports
+// ============================================
+
+export {
+  isTypeScriptTreeSitterAvailable,
+  isJavaScriptTreeSitterAvailable,
+  getTypeScriptLanguage,
+  getTsxLanguage,
+  getJavaScriptLanguage,
+  getTypeScriptTreeSitter,
+  createTypeScriptParser,
+  createTsxParser,
+  createJavaScriptParser,
+  createParserForFile,
+  getTypeScriptLoadingError,
+  resetTypeScriptLoader,
+} from './typescript-loader.js';
+
+// ============================================
 // Configuration Exports
 // ============================================
 

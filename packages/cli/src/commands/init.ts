@@ -10,8 +10,9 @@
 import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 import chalk from 'chalk';
-import { PatternStore } from 'driftdetect-core';
+import { PatternStore, getProjectRegistry } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { promptInitOptions, confirmPrompt } from '../ui/prompts.js';
 
@@ -68,10 +69,19 @@ async function createDriftDirectory(rootDir: string, verbose: boolean): Promise<
     }
   }
 
-  // Create default config file
+  // Create default config file with project metadata
   const configPath = path.join(driftDir, 'config.json');
+  const projectId = crypto.randomUUID();
+  const projectName = path.basename(rootDir);
+  const now = new Date().toISOString();
+  
   const defaultConfig = {
-    version: '1.0.0',
+    version: '2.0.0',
+    project: {
+      id: projectId,
+      name: projectName,
+      initializedAt: now,
+    },
     severity: {},
     ignore: [
       'node_modules/**',
@@ -81,6 +91,12 @@ async function createDriftDirectory(rootDir: string, verbose: boolean): Promise<
       'coverage/**',
       '*.min.js',
       '*.bundle.js',
+      'vendor/**',
+      '__pycache__/**',
+      '.venv/**',
+      'target/**',
+      'bin/**',
+      'obj/**',
     ],
     ci: {
       failOn: 'error',
@@ -89,11 +105,19 @@ async function createDriftDirectory(rootDir: string, verbose: boolean): Promise<
     learning: {
       autoApproveThreshold: 0.95,
       minOccurrences: 3,
+      semanticLearning: true,
     },
     performance: {
       maxWorkers: 4,
       cacheEnabled: true,
       incrementalAnalysis: true,
+      cacheTTL: 3600,
+    },
+    features: {
+      callGraph: true,
+      boundaries: true,
+      dna: true,
+      contracts: true,
     },
   };
 
@@ -352,6 +376,33 @@ async function initAction(options: InitOptions): Promise<void> {
   console.log(chalk.gray('Patterns: .drift/patterns/'));
   console.log(chalk.gray('Ignore rules: .driftignore'));
   console.log();
+
+  // Register project in global registry
+  const registrySpinner = createSpinner('Registering project...');
+  registrySpinner.start();
+
+  try {
+    const registry = await getProjectRegistry();
+    const project = await registry.register(rootDir);
+    await registry.setActive(project.id);
+    registrySpinner.succeed(`Registered as ${chalk.cyan(project.name)}`);
+    
+    if (verbose) {
+      console.log(chalk.gray(`  ID: ${project.id}`));
+      console.log(chalk.gray(`  Language: ${project.language}`));
+      console.log(chalk.gray(`  Framework: ${project.framework}`));
+    }
+    
+    console.log();
+    console.log(chalk.gray('Manage projects with:'));
+    console.log(chalk.cyan('  drift projects list'));
+    console.log();
+  } catch (error) {
+    registrySpinner.warn('Could not register project in global registry');
+    if (verbose) {
+      console.error(chalk.gray((error as Error).message));
+    }
+  }
 }
 
 export const initCommand = new Command('init')

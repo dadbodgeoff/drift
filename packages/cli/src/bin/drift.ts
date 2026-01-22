@@ -27,6 +27,8 @@ import {
   parserCommand,
   dnaCommand,
   boundariesCommand,
+  callgraphCommand,
+  projectsCommand,
 } from '../commands/index.js';
 
 /**
@@ -59,6 +61,8 @@ function createProgram(): Command {
   program.addCommand(parserCommand);
   program.addCommand(dnaCommand);
   program.addCommand(boundariesCommand);
+  program.addCommand(callgraphCommand);
+  program.addCommand(projectsCommand);
 
   // Add help examples
   program.addHelpText(
@@ -96,6 +100,13 @@ Examples:
   $ drift boundaries              Show data access boundaries
   $ drift boundaries tables       List discovered tables
   $ drift boundaries check        Check for boundary violations
+  $ drift callgraph               Show call graph status
+  $ drift callgraph build         Build call graph from source
+  $ drift callgraph reach <loc>   What data can this code reach?
+  $ drift callgraph inverse <tbl> Who can reach this data?
+  $ drift projects                List all registered projects
+  $ drift projects switch <name>  Switch active project
+  $ drift projects info           Show current project details
 
 Documentation:
   https://github.com/drift/drift

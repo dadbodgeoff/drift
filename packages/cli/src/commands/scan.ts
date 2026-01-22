@@ -16,6 +16,7 @@ import {
   PatternStore,
   HistoryStore,
   FileWalker,
+  createDataLake,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
@@ -700,6 +701,52 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
       if (verbose) {
         console.error(chalk.red((error as Error).message));
       }
+    }
+  }
+
+  // Materialize data lake views for fast queries
+  const lakeSpinner = createSpinner('Building data lake views...');
+  lakeSpinner.start();
+
+  try {
+    const dataLake = createDataLake({ rootDir });
+    await dataLake.initialize();
+    
+    // Get all patterns for materialization
+    const allPatterns = store.getAll();
+    
+    // Build scan info for the manifest
+    const lastScanInfo = {
+      timestamp: new Date().toISOString(),
+      duration: Date.now() - startTime,
+      filesScanned: files.length,
+      patternsFound: allPatterns.length,
+      errors: 0,
+    };
+    
+    // Materialize views, indexes, and shards
+    const materializeResult = await dataLake.materializer.materialize(
+      allPatterns,
+      { force: options.force ?? false },
+      { lastScan: lastScanInfo }
+    );
+    
+    // Also save patterns to shards for category-based queries
+    await dataLake.patternShards.saveAll(allPatterns);
+    
+    lakeSpinner.succeed(
+      `Built ${materializeResult.viewsRebuilt.length} views, ` +
+      `${materializeResult.indexesRebuilt.length} indexes in ${materializeResult.duration}ms`
+    );
+    
+    if (verbose) {
+      console.log(chalk.gray(`  Views: ${materializeResult.viewsRebuilt.join(', ')}`));
+      console.log(chalk.gray(`  Indexes: ${materializeResult.indexesRebuilt.join(', ')}`));
+    }
+  } catch (lakeError) {
+    lakeSpinner.fail('Data lake materialization failed');
+    if (verbose) {
+      console.error(chalk.red((lakeError as Error).message));
     }
   }
 

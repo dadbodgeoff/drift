@@ -9,6 +9,55 @@ Drift learns your codebase patterns and catches inconsistencies before they beco
 
 ---
 
+## 🚀 What's New in v0.4.0
+
+> **Major Release**: Call Graph Analysis, Galaxy Visualization & Enterprise Architecture
+
+### ⭐ Headline Features
+
+| Feature | Description |
+|---------|-------------|
+| 🌌 **Galaxy Visualization** | 3D visualization of database access patterns - tables as planets, APIs as space stations, data flows as hyperspace lanes |
+| 📊 **Call Graph Analysis** | Static analysis engine answering "What data can this code access?" across Python, TypeScript, C#, Java, PHP |
+| 🔒 **Security Enrichment** | Connect vulnerabilities to actual data exposure with P0-P4 priority tiers and remediation guidance |
+| 🏢 **Enterprise MCP v2** | Layered tool architecture with rate limiting, caching, and token-budget awareness |
+| 🗄️ **Data Lake** | Optimized storage with materialized views for instant queries |
+
+### New Commands
+
+```bash
+# Call graph analysis
+drift callgraph build              # Build call graph
+drift callgraph reach src/api.ts:42  # What data can line 42 access?
+drift callgraph inverse users.password_hash  # Who can access passwords?
+drift callgraph impact src/auth/   # What breaks if auth changes?
+drift callgraph dead               # Find dead code
+drift callgraph coverage           # Sensitive data test coverage
+
+# Multi-project support
+drift projects list                # List registered projects
+drift projects add ./backend       # Register a project
+drift projects switch backend      # Switch active project
+```
+
+### Galaxy Visualization
+
+Launch the dashboard and click the **Galaxy** tab to explore your data access patterns in 3D:
+
+```bash
+drift dashboard
+```
+
+- 🪐 **Tables** = Planets (sized by importance, colored by sensitivity)
+- 🌙 **Fields** = Moons orbiting tables
+- 🛸 **API Endpoints** = Space stations
+- ✨ **Data Paths** = Animated hyperspace lanes
+- 🔴 **P0-P4 Tiers** = Security priority indicators
+
+[See full changelog →](CHANGELOG.md)
+
+---
+
 ## Why Drift?
 
 Every codebase develops conventions over time:
@@ -263,6 +312,111 @@ build/
 
 ---
 
+## Call Graph Analysis
+
+Drift builds a complete call graph of your codebase to answer security-critical questions:
+
+### What data can this code access?
+
+```bash
+drift callgraph reach src/api/users.ts:42
+```
+
+```
+📍 Starting from: src/api/users.ts:42 (getUserProfile)
+
+🗄️ Reachable Tables:
+  • users (via UserService.findById)
+  • sessions (via SessionManager.validate)
+  • audit_logs (via AuditService.log)
+
+🔐 Sensitive Fields Reachable:
+  • users.password_hash (credentials) - depth 2
+  • users.email (pii) - depth 2
+  • users.ssn (financial) - depth 3
+
+📊 Attack Surface: 12 functions, max depth 4
+```
+
+### Who can access this sensitive data?
+
+```bash
+drift callgraph inverse users.password_hash
+```
+
+```
+🎯 Target: users.password_hash
+
+🚪 Entry Points That Can Reach This Data:
+  • POST /api/auth/login (public)
+  • POST /api/auth/register (public)
+  • PUT /api/users/:id/password (authenticated)
+
+⚠️ Security Concern: 2 public endpoints can reach credential data
+```
+
+### Sensitive Data Test Coverage
+
+```bash
+drift callgraph coverage
+```
+
+```
+📊 Sensitive Data Coverage Analysis
+
+Summary:
+  Total Sensitive Fields: 24
+  Total Access Paths: 156
+  Tested Paths: 89 (57%)
+
+By Sensitivity:
+  credentials: 8 fields, 23% coverage ⚠️
+  financial: 6 fields, 45% coverage
+  pii: 10 fields, 72% coverage
+
+🔴 Uncovered Critical Paths:
+  1. POST /api/auth/reset → users.password_hash
+  2. GET /api/admin/export → users.ssn
+```
+
+---
+
+## Galaxy Visualization
+
+The Galaxy view transforms your database access patterns into an interactive 3D space visualization:
+
+```bash
+drift dashboard
+# Click "Galaxy" tab
+```
+
+### Visual Elements
+
+| Element | Represents | Visual Cues |
+|---------|------------|-------------|
+| 🪐 Planets | Database tables | Size = row count, Color = sensitivity |
+| 🌙 Moons | Table fields | Orbit sensitive tables, glow if untested |
+| 🛸 Stations | API endpoints | Shape indicates auth level |
+| ✨ Lanes | Data access paths | Animated particles show data flow |
+| 🔴 Rings | Security tiers | P0 (red) → P4 (green) |
+
+### View Modes
+
+- **Overview**: Full galaxy view
+- **Security**: Highlight sensitive data paths
+- **Coverage**: Show tested vs untested paths
+- **Blast Radius**: Impact analysis for selected item
+
+### Controls
+
+- **Click** planet/station to inspect
+- **Scroll** to zoom
+- **Drag** to rotate
+- **Search** to find tables/endpoints
+- **Filter** by sensitivity level
+
+---
+
 ## BE↔FE Contract Detection
 
 Drift can detect mismatches between your backend API and frontend code:
@@ -366,9 +520,11 @@ Drift is a monorepo with these packages:
 | Package | Description |
 |---------|-------------|
 | `driftdetect` | CLI and main entry point |
-| `driftdetect-core` | Core pattern matching engine |
-| `driftdetect-detectors` | Pattern detectors |
-| `driftdetect-dashboard` | Web dashboard |
+| `driftdetect-core` | Core pattern matching engine, call graph, data lake |
+| `driftdetect-detectors` | Pattern detectors (150+) |
+| `driftdetect-dashboard` | Web dashboard with Galaxy visualization |
+| `driftdetect-galaxy` | 3D database access visualization (React Three Fiber) |
+| `driftdetect-mcp` | MCP server for AI agent integration |
 | `driftdetect-ai` | AI-powered explanations (optional) |
 | `driftdetect-lsp` | Language Server Protocol |
 | `driftdetect-vscode` | VS Code extension |

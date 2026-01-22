@@ -3,8 +3,10 @@
  * Drift MCP Server Entry Point
  * 
  * Usage:
- *   drift-mcp                    # Run in current directory
- *   drift-mcp /path/to/project   # Run for specific project
+ *   drift-mcp                       # Run server in current directory
+ *   drift-mcp /path/to/project      # Run for specific project
+ *   drift-mcp --no-cache            # Disable response caching
+ *   drift-mcp --no-rate-limit       # Disable rate limiting
  * 
  * MCP Config (add to mcp.json):
  * {
@@ -15,17 +17,37 @@
  *     }
  *   }
  * }
+ * 
+ * Features:
+ * - DataLake as central source of truth (pre-computed views, sharded storage)
+ * - Layered tool architecture (orchestration → discovery → exploration → detail)
+ * - Intent-aware context synthesis via drift_context
+ * - Token budget awareness and cursor-based pagination
+ * - Structured error handling with recovery hints
+ * - Response caching, rate limiting, and metrics
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createDriftMCPServer } from '../server.js';
+import { createEnterpriseMCPServer } from '../enterprise-server.js';
 
 async function main() {
-  const projectRoot = process.argv[2] ?? process.cwd();
+  const args = process.argv.slice(2);
+  
+  // Parse flags
+  const noCache = args.includes('--no-cache');
+  const noRateLimit = args.includes('--no-rate-limit');
+  
+  // Get project root (first non-flag argument, or cwd)
+  const projectRoot = args.find(arg => !arg.startsWith('--')) ?? process.cwd();
 
-  const server = createDriftMCPServer({ projectRoot });
+  const server = createEnterpriseMCPServer({
+    projectRoot,
+    enableCache: !noCache,
+    enableRateLimiting: !noRateLimit,
+    enableMetrics: true,
+  });
+  
   const transport = new StdioServerTransport();
-
   await server.connect(transport);
 
   // Handle graceful shutdown

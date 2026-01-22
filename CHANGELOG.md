@@ -7,6 +7,217 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-21
+
+### 🚀 Major Release: Call Graph Analysis, Galaxy Visualization & Enterprise Architecture
+
+This release transforms Drift from a pattern detection tool into a comprehensive **security-aware code intelligence platform**. With 104 files changed across 8 packages, this is our largest release yet.
+
+---
+
+### ⭐ Headline Features
+
+#### 🌌 Galaxy Visualization (`driftdetect-galaxy`)
+A stunning 3D visualization of your database access patterns, built with React Three Fiber:
+
+- **Tables as Planets**: Database tables rendered as planets, sized by row count and colored by sensitivity
+- **Fields as Moons**: Sensitive fields orbit their parent tables with visual indicators
+- **Entry Points as Space Stations**: API endpoints shown as stations with auth level indicators
+- **Data Paths as Hyperspace Lanes**: Animated connections showing data flow from APIs to tables
+- **Security Tiers (P0-P4)**: Visual priority classification for security-critical paths
+- **Interactive Controls**: Zoom, pan, filter by sensitivity, search, and click-to-inspect
+- **Sound Effects**: Optional audio feedback for interactions (jsfxr-based)
+- **Real-time Access Stream**: Watch data access events flow through the galaxy
+
+#### 📊 Call Graph Analysis Engine
+Complete static analysis of function calls and data flow:
+
+- **Multi-Language Extractors**: Python, TypeScript/JS, C#, Java, PHP
+- **Data Access Detection**: Automatically finds database queries across ORMs
+  - SQLAlchemy, Django ORM, Prisma, TypeORM, Sequelize
+  - Entity Framework Core, Dapper
+  - Spring Data JPA, JDBC
+  - Eloquent, Laravel Query Builder
+- **Reachability Analysis**: "What data can this line of code access?"
+- **Inverse Reachability**: "Who can reach this sensitive data?"
+- **Impact Analysis**: "What breaks if I change this function?"
+- **Dead Code Detection**: Find functions that are never called
+- **Sensitive Data Coverage**: Which access paths to PII/credentials are tested?
+
+#### 🔒 Security Enrichment Engine
+Enterprise-grade security finding enrichment:
+
+- **Data Impact Scoring**: Connect vulnerabilities to actual data exposure
+- **Blast Radius Analysis**: Understand the full scope of a security issue
+- **Priority Tiers (P0-P4)**: Automatic prioritization based on data sensitivity
+- **Remediation Guidance**: Step-by-step fix instructions with code examples
+- **Regulatory Mapping**: GDPR, HIPAA, PCI-DSS, SOX implications
+- **Sensitivity Classification**: Credentials, Financial, Health, PII detection
+
+#### 🏢 Enterprise MCP Server v2.0
+Complete rewrite with layered architecture:
+
+- **Discovery Layer**: `drift_status`, `drift_capabilities` - lightweight health checks
+- **Exploration Layer**: `drift_patterns_list`, `drift_security_summary`, `drift_trends` - paginated listings
+- **Detail Layer**: `drift_pattern_get`, `drift_code_examples`, `drift_reachability`, `drift_impact_analysis`
+- **Orchestration Layer**: `drift_context` - smart context assembly for AI agents
+- **Infrastructure**: Rate limiting, caching, metrics, cursor-based pagination
+- **Token Budget Awareness**: Responses sized for AI context windows
+
+#### 🗄️ Data Lake Architecture
+Optimized storage for instant queries:
+
+- **Manifest Store**: Single-file index for instant `drift_status`
+- **Materialized Views**: Pre-computed responses for common queries
+- **Sharded Storage**: Patterns, security data, call graphs partitioned by category
+- **Index Store**: Fast lookups by file, category, table, entry point
+- **Query Engine**: Unified interface for all data access
+- **Incremental Updates**: Only rebuild what changed
+
+---
+
+### Added
+
+#### Call Graph System (`packages/core/src/call-graph/`)
+- `types.ts` - Core types: FunctionNode, CallSite, CallGraph, ReachabilityResult
+- `analysis/graph-builder.ts` - Build call graphs from extracted functions
+- `analysis/reachability.ts` - Forward reachability from code to data
+- `analysis/path-finder.ts` - Find all paths between functions
+- `analysis/impact-analyzer.ts` - Analyze change impact
+- `analysis/dead-code-detector.ts` - Find unreachable functions
+- `analysis/coverage-analyzer.ts` - Sensitive data test coverage
+- `extractors/python-extractor.ts` - Python function/call extraction
+- `extractors/typescript-extractor.ts` - TS/JS function/call extraction
+- `extractors/csharp-extractor.ts` - C# function/call extraction
+- `extractors/java-extractor.ts` - Java function/call extraction
+- `extractors/php-extractor.ts` - PHP function/call extraction
+- `extractors/*-data-access-extractor.ts` - ORM query detection per language
+- `extractors/semantic-data-access-scanner.ts` - Cross-language data access
+- `enrichment/enrichment-engine.ts` - Security finding enrichment
+- `enrichment/impact-scorer.ts` - Data impact scoring (0-100)
+- `enrichment/sensitivity-classifier.ts` - PII/credential detection
+- `enrichment/remediation-generator.ts` - Fix guidance generation
+- `store/call-graph-store.ts` - Persistent call graph storage
+
+#### Galaxy Visualization (`packages/galaxy/`)
+- `components/canvas/GalaxyCanvas.tsx` - Main 3D canvas with React Three Fiber
+- `components/nodes/TablePlanet.tsx` - Database table visualization
+- `components/nodes/FieldMoon.tsx` - Field visualization orbiting tables
+- `components/nodes/EntryPointStation.tsx` - API endpoint visualization
+- `components/connections/DataPath.tsx` - Animated data flow lines
+- `components/ui/ControlsPanel.tsx` - View mode and filter controls
+- `components/ui/SecurityPanel.tsx` - Security tier breakdown
+- `components/ui/DetailsPanel.tsx` - Selected item details
+- `components/ui/SearchOverlay.tsx` - Galaxy search interface
+- `store/galaxy-store.ts` - Zustand state management
+- `utils/layout-engine.ts` - Force-directed 3D layout
+- `utils/color-utils.ts` - Sensitivity-based coloring
+- `utils/geometry-utils.ts` - 3D math utilities
+- `audio/sound-effects.ts` - jsfxr sound generation
+- `hooks/useGalaxyData.ts` - Data fetching hook
+- `hooks/useAccessStream.ts` - Real-time event stream
+
+#### Data Lake (`packages/core/src/lake/`)
+- `types.ts` - Manifest, View, Index, Shard type definitions
+- `manifest-store.ts` - Quick-load project manifest
+- `view-store.ts` - Pre-computed view storage
+- `view-materializer.ts` - View generation and refresh
+- `index-store.ts` - Fast lookup indexes
+- `pattern-shard-store.ts` - Sharded pattern storage
+- `security-shard-store.ts` - Sharded security data
+- `callgraph-shard-store.ts` - Sharded call graph data
+- `examples-store.ts` - Code example storage
+- `query-engine.ts` - Unified query interface
+
+#### Enterprise MCP Server (`packages/mcp/`)
+- `enterprise-server.ts` - New layered server architecture
+- `infrastructure/cache.ts` - Response caching
+- `infrastructure/rate-limiter.ts` - Request rate limiting
+- `infrastructure/metrics.ts` - Usage metrics collection
+- `infrastructure/error-handler.ts` - Structured error responses
+- `infrastructure/cursor-manager.ts` - Pagination cursors
+- `infrastructure/response-builder.ts` - Token-aware responses
+- `tools/discovery/status.ts` - Health check tool
+- `tools/discovery/capabilities.ts` - Tool discovery
+- `tools/exploration/patterns-list.ts` - Paginated pattern listing
+- `tools/exploration/security-summary.ts` - Security overview
+- `tools/exploration/trends.ts` - Pattern trend analysis
+- `tools/detail/pattern-get.ts` - Single pattern details
+- `tools/detail/code-examples.ts` - Real code examples
+- `tools/detail/reachability.ts` - Data reachability queries
+- `tools/detail/impact-analysis.ts` - Change impact analysis
+- `tools/orchestration/context.ts` - Smart context assembly
+
+#### VS Code Extension Rewrite (`packages/vscode/`)
+- `activation/activation-controller.ts` - Lazy activation management
+- `client/connection-manager.ts` - LSP connection handling
+- `client/request-middleware.ts` - Request/response middleware
+- `commands/command-definitions.ts` - Declarative command registry
+- `commands/handlers/pattern-handlers.ts` - Pattern command handlers
+- `commands/handlers/ui-handlers.ts` - UI command handlers
+- `state/selectors.ts` - State selectors for UI
+- `ui/decorations/decoration-controller.ts` - Code decorations
+- `ui/status-bar/status-bar-controller.ts` - Status bar management
+- `views/patterns-tree-provider.ts` - Pattern explorer tree
+- `views/violations-tree-provider.ts` - Violations tree
+- `webview/webview-manager.ts` - Webview lifecycle management
+
+#### CLI Commands
+- `drift callgraph` - Build and query call graphs
+- `drift callgraph build` - Build call graph for project
+- `drift callgraph reach <location>` - Query data reachability
+- `drift callgraph inverse <table>` - Find who accesses data
+- `drift callgraph impact <file>` - Analyze change impact
+- `drift callgraph dead` - Find dead code
+- `drift callgraph coverage` - Sensitive data test coverage
+- `drift projects` - Multi-project management
+- `drift projects list` - List registered projects
+- `drift projects add <path>` - Register a project
+- `drift projects remove <name>` - Unregister a project
+- `drift projects switch <name>` - Switch active project
+
+#### Tree-Sitter Parsers
+- Full Java tree-sitter support with Spring Boot annotations
+- Full PHP tree-sitter support with Laravel patterns
+- TypeScript loader for tree-sitter-typescript
+
+#### Dashboard Enhancements
+- `GalaxyTab.tsx` - Galaxy visualization tab
+- `ProjectSwitcher.tsx` - Multi-project dropdown
+- `galaxy-data-transformer.ts` - Transform call graph to galaxy format
+
+#### Design Documents
+- `DATA-ARCHITECTURE.md` - Data lake architecture design
+- `DATA-STORAGE-OPTIMIZATION.md` - Storage optimization strategies
+- `ENTERPRISE-DATA-STORAGE.md` - Enterprise storage patterns
+- `ENTERPRISE-MCP-SERVER.md` - MCP server v2 design
+- `ENTERPRISE-VSCODE-EXTENSION.md` - VS Code extension architecture
+- `SEMANTIC-DATA-ACCESS-ROADMAP.md` - Data access detection roadmap
+
+---
+
+### Changed
+
+- **Package Versions**: All packages bumped to 0.4.0
+- **MCP Server**: Complete rewrite with layered architecture
+- **VS Code Extension**: Modular architecture with lazy activation
+- **Dashboard**: Added Galaxy tab and project switcher
+- **Core Exports**: Added call-graph, lake, and boundary modules
+
+### Fixed
+
+- Laravel auth detector constructor initialization
+- Design-tokens regex matching CSS `color:` property incorrectly
+- History-store test alignment with implementation API
+- Various detector test improvements
+
+### Breaking Changes
+
+- MCP tool names changed (prefixed with `drift_`)
+- VS Code extension internal architecture (no user-facing changes)
+
+---
+
 ## [0.3.0] - 2026-01-21
 
 ### Added
@@ -113,11 +324,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **0.4.x** - Call graph analysis, Galaxy visualization, Enterprise MCP v2, Data Lake
 - **0.3.x** - Multi-language support (C#, PHP/Laravel, Java/Spring), data boundaries
 - **0.2.x** - MCP integration, semantic detectors, contract detection
 - **0.1.x** - Initial release, core functionality
 
-[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/dadbodgeoff/drift/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dadbodgeoff/drift/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/dadbodgeoff/drift/compare/v0.1.8...v0.2.2
 [0.1.8]: https://github.com/dadbodgeoff/drift/releases/tag/v0.1.8

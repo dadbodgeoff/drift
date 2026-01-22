@@ -11,3 +11,4 @@ packages:
   - "packages/vscode"
   - "packages/dashboard"
   - "packages/mcp"
+  - "packages/galaxy"

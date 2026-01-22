@@ -67,7 +67,9 @@
       "@drift/dashboard": ["packages/dashboard/src/server/index.ts"],
       "@drift/dashboard/*": ["packages/dashboard/src/server/*"],
       "@drift/mcp": ["packages/mcp/src/index.ts"],
-      "@drift/mcp/*": ["packages/mcp/src/*"]
+      "@drift/mcp/*": ["packages/mcp/src/*"],
+      "@drift/galaxy": ["packages/galaxy/src/index.ts"],
+      "@drift/galaxy/*": ["packages/galaxy/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]
