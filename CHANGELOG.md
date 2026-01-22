@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Worker Threads parallelization**: New `ThreadedWorkerPool` using Piscina for true multi-threaded file processing (thanks [@Carter003](https://github.com/Carter003) for the feature request!)
+  - Offloads CPU-bound AST parsing and regex matching to worker threads
+  - Near-linear scaling with CPU cores for large repositories
+  - Main thread stays responsive for progress reporting
+  - Memory isolation prevents one bad file from crashing everything
+  - New exports: `ThreadedWorkerPool`, `createThreadedPool`, `getModuleDir`
+  - Worker script template: `FileProcessorTask` and `FileProcessorResult` types
+
 ## [0.4.4] - 2026-01-22
 
 ### Fixed

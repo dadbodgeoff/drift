@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-core",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Core pattern detection and analysis engine for Drift",
   "license": "MIT",
   "repository": {
@@ -37,21 +37,25 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=18 <25"
+  },
   "dependencies": {
     "ignore": "^5.3.1",
     "minimatch": "^9.0.3",
-    "typescript": "^5.3.0",
+    "piscina": "^5.1.4",
     "tree-sitter": "^0.21.1",
-    "tree-sitter-python": "^0.21.0",
-    "tree-sitter-java": "^0.21.0",
-    "tree-sitter-php": "^0.22.0",
     "tree-sitter-c-sharp": "^0.21.3",
+    "tree-sitter-java": "^0.21.0",
+    "tree-sitter-javascript": "^0.21.4",
+    "tree-sitter-php": "^0.22.0",
+    "tree-sitter-python": "^0.21.0",
     "tree-sitter-typescript": "^0.21.2",
-    "tree-sitter-javascript": "^0.21.4"
+    "typescript": "^5.3.0"
   },
   "devDependencies": {
     "@types/minimatch": "^5.1.2",
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.19.30",
     "@vitest/coverage-v8": "^1.0.0",
     "fast-check": "^3.15.0",
     "typescript": "^5.3.0",

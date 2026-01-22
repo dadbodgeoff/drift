@@ -39,3 +39,20 @@ export {
   type WorkerPoolEvents,
   type TaskProcessor,
 } from './worker-pool.js';
+
+// Threaded Worker Pool (true multi-threading with Piscina)
+export {
+  ThreadedWorkerPool,
+  createThreadedPool,
+  getModuleDir,
+  type ThreadedWorkerPoolOptions,
+  type ThreadedWorkerPoolStats,
+  type BatchResult,
+  type ThreadedWorkerPoolEvents,
+} from './threaded-worker-pool.js';
+
+// File Processor Worker types (for worker thread tasks)
+export type {
+  FileProcessorTask,
+  FileProcessorResult,
+} from './file-processor-worker.js';
