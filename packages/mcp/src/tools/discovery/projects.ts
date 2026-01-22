@@ -8,19 +8,26 @@
 import {
   getProjectRegistry,
   type RegisteredProject,
+  type ProjectRegistrationOptions,
 } from 'driftdetect-core';
 
 export interface ProjectsArgs {
   /** Action to perform */
-  action?: 'list' | 'info' | 'switch' | 'recent';
+  action?: 'list' | 'info' | 'switch' | 'recent' | 'register';
   /** Project name or ID (for info/switch) */
   project?: string;
+  /** Project path (for register) */
+  path?: string;
   /** Filter by language */
   language?: string;
   /** Filter by framework */
   framework?: string;
   /** Limit results */
   limit?: number;
+  /** Project description (for register) */
+  description?: string;
+  /** Tags (for register) */
+  tags?: string[];
 }
 
 interface ProjectSummary {
@@ -254,6 +261,62 @@ export async function handleProjects(
         };
       }
 
+      case 'register': {
+        if (!args.path) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  error: 'Project path required',
+                  hint: 'Provide path="<project-path>" to register',
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Check if already registered
+        const existing = registry.findByPath(args.path);
+        if (existing) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  message: `Project already registered: ${existing.name}`,
+                  project: summarizeProject(existing, registry.getActive()?.id),
+                }),
+              },
+            ],
+          };
+        }
+
+        // Register new project
+        const options: ProjectRegistrationOptions = {};
+        if (args.project) options.name = args.project;
+        if (args.description) options.description = args.description;
+        if (args.tags) options.tags = args.tags;
+
+        const project = await registry.register(args.path, options);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                message: `Registered ${project.name}`,
+                project: summarizeProject(project, registry.getActive()?.id),
+                hint: 'Use action="switch" to make this the active project',
+              }),
+            },
+          ],
+        };
+      }
+
       default:
         return {
           content: [
@@ -261,7 +324,7 @@ export async function handleProjects(
               type: 'text',
               text: JSON.stringify({
                 error: `Unknown action: ${action}`,
-                validActions: ['list', 'info', 'switch', 'recent'],
+                validActions: ['list', 'info', 'switch', 'recent', 'register'],
               }),
             },
           ],

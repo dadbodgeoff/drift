@@ -8,6 +8,7 @@
  * - Caching with invalidation
  * - Rate limiting
  * - Metrics collection
+ * - Multi-project resolution
  */
 
 // Response Building
@@ -71,3 +72,12 @@ export {
   type MetricLabels,
   type HistogramBuckets,
 } from './metrics.js';
+
+// Project Resolution
+export {
+  resolveProject,
+  formatProjectContext,
+  ProjectNotFoundError,
+  ProjectInvalidError,
+  type ProjectResolution,
+} from './project-resolver.js';

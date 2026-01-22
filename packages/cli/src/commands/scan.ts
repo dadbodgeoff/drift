@@ -18,6 +18,7 @@ import {
   FileWalker,
   createDataLake,
   loadProjectConfig,
+  getProjectRegistry,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
@@ -50,6 +51,10 @@ export interface ScanCommandOptions {
   contracts?: boolean;
   /** Skip data boundary scanning (boundaries enabled by default) */
   boundaries?: boolean;
+  /** Scan a specific registered project by name */
+  project?: string;
+  /** Scan all registered projects */
+  allProjects?: boolean;
 }
 
 /** Directory name for drift configuration */
@@ -250,12 +255,120 @@ function convertToPattern(
  * Scan command implementation
  */
 async function scanAction(options: ScanCommandOptions): Promise<void> {
-  const rootDir = process.cwd();
+  // Handle --all-projects: scan each registered project
+  if (options.allProjects) {
+    await scanAllProjects(options);
+    return;
+  }
+
+  // Resolve root directory (--project flag or cwd)
+  let rootDir = process.cwd();
+  
+  if (options.project) {
+    const registry = await getProjectRegistry();
+    const project = registry.findByName(options.project) ?? registry.findByPath(options.project);
+    
+    if (!project) {
+      status.error(`Project not found: ${options.project}`);
+      console.log(chalk.gray('Run `drift projects list` to see registered projects.'));
+      process.exit(1);
+    }
+    
+    if (project.isValid === false) {
+      status.error(`Project path no longer exists: ${project.path}`);
+      process.exit(1);
+    }
+    
+    rootDir = project.path;
+    await registry.updateLastAccessed(project.id);
+  }
+
+  await scanSingleProject(rootDir, options);
+}
+
+/**
+ * Scan all registered projects
+ */
+async function scanAllProjects(options: ScanCommandOptions): Promise<void> {
+  const registry = await getProjectRegistry();
+  const projects = registry.getValid();
+  
+  if (projects.length === 0) {
+    status.error('No projects registered.');
+    console.log(chalk.gray('Run `drift projects add <path>` to register projects.'));
+    process.exit(1);
+  }
+  
+  console.log();
+  console.log(chalk.bold(`🔍 Drift - Scanning ${projects.length} Projects`));
+  console.log();
+  
+  const results: Array<{ name: string; patterns: number; violations: number; duration: number; error?: string }> = [];
+  
+  for (const project of projects) {
+    console.log(chalk.cyan(`\n━━━ ${project.name} ━━━`));
+    console.log(chalk.gray(`    ${project.path}`));
+    
+    try {
+      const startTime = Date.now();
+      // Create a copy of options without allProjects to avoid recursion
+      const { allProjects: _, project: __, ...projectOptions } = options;
+      await scanSingleProject(project.path, projectOptions, true);
+      
+      // Update registry with last scan time
+      await registry.updateLastAccessed(project.id);
+      
+      results.push({
+        name: project.name,
+        patterns: 0, // Would need to capture from scan
+        violations: 0,
+        duration: Date.now() - startTime,
+      });
+    } catch (error) {
+      results.push({
+        name: project.name,
+        patterns: 0,
+        violations: 0,
+        duration: 0,
+        error: (error as Error).message,
+      });
+    }
+  }
+  
+  // Summary
+  console.log();
+  console.log(chalk.bold('━━━ All Projects Summary ━━━'));
+  console.log();
+  
+  const successful = results.filter(r => !r.error);
+  const failed = results.filter(r => r.error);
+  
+  console.log(`  Projects scanned: ${chalk.cyan(successful.length)}/${projects.length}`);
+  
+  if (failed.length > 0) {
+    console.log(chalk.red(`  Failed: ${failed.length}`));
+    for (const f of failed) {
+      console.log(chalk.red(`    - ${f.name}: ${f.error}`));
+    }
+  }
+  
+  console.log();
+}
+
+/**
+ * Scan a single project
+ */
+async function scanSingleProject(rootDir: string, options: ScanCommandOptions, quiet = false): Promise<void> {
   const verbose = options.verbose ?? false;
 
-  console.log();
-  console.log(chalk.bold('🔍 Drift - Enterprise Pattern Scanner'));
-  console.log();
+  if (!quiet) {
+    console.log();
+    console.log(chalk.bold('🔍 Drift - Enterprise Pattern Scanner'));
+    if (options.project) {
+      console.log(chalk.gray(`    Project: ${options.project}`));
+    }
+    console.log();
+  }
 
   // Check if initialized
   if (!(await isDriftInitialized(rootDir))) {
@@ -831,6 +944,8 @@ export const scanCommand = new Command('scan')
   .option('--incremental', 'Only scan changed files')
   .option('--no-contracts', 'Skip BE↔FE contract scanning')
   .option('--no-boundaries', 'Skip data boundary scanning')
+  .option('-p, --project <name>', 'Scan a specific registered project by name')
+  .option('--all-projects', 'Scan all registered projects')
   .action((paths: string[], options: ScanCommandOptions) => {
     // Merge positional paths with options
     if (paths && paths.length > 0) {

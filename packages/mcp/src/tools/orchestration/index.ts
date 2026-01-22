@@ -24,9 +24,17 @@ WHEN TO USE:
 - Before making changes to unfamiliar code
 - When you need to understand how something is done in this codebase
 
+MULTI-PROJECT SUPPORT:
+- Use the optional "project" parameter to target a specific registered project
+- Projects are registered via "drift projects add <path>"
+- Use drift_projects action="list" to see available projects
+
 EXAMPLE:
   intent: "add_feature", focus: "user authentication"
-  → Returns auth patterns, example code, files to modify, security warnings`,
+  → Returns auth patterns, example code, files to modify, security warnings
+  
+  intent: "fix_bug", focus: "payment", project: "backend"
+  → Returns context from the "backend" project specifically`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -48,6 +56,10 @@ EXAMPLE:
         question: {
           type: 'string',
           description: 'Optional: A specific question you need answered. This helps tailor the guidance.',
+        },
+        project: {
+          type: 'string',
+          description: 'Optional: Target a specific registered project by name. Use drift_projects action="list" to see available projects.',
         },
       },
       required: ['intent', 'focus'],
