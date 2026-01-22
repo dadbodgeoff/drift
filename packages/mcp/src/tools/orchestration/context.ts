@@ -832,32 +832,50 @@ function buildSummary(
 /**
  * Generate semantic insights using the Language Intelligence Layer
  * 
- * Analyzes suggested files to extract cross-language semantic information
+ * Analyzes files to extract cross-language semantic information
  * about entry points, data accessors, services, and frameworks.
+ * 
+ * Works in two modes:
+ * 1. If suggestedFiles are provided, analyzes those
+ * 2. Otherwise, searches for files matching the focus term
  */
 async function generateSemanticInsights(
   projectRoot: string,
   suggestedFiles: SuggestedFile[],
-  _focus: string
+  focus: string
 ): Promise<SemanticInsights | undefined> {
-  // Don't process if no files
-  if (suggestedFiles.length === 0) {
-    return undefined;
-  }
-  
   try {
     // Create Language Intelligence instance
     const intelligence = createLanguageIntelligence({ rootDir: projectRoot });
     
-    // Normalize each suggested file
+    // Collect files to analyze
+    const filesToAnalyze: string[] = [];
+    
+    // Add suggested files
+    for (const sf of suggestedFiles) {
+      filesToAnalyze.push(sf.file);
+    }
+    
+    // If no suggested files, search for files matching the focus term
+    if (filesToAnalyze.length === 0 && focus) {
+      const focusFiles = await findFilesMatchingFocus(projectRoot, focus);
+      filesToAnalyze.push(...focusFiles);
+    }
+    
+    // Don't process if no files
+    if (filesToAnalyze.length === 0) {
+      return undefined;
+    }
+    
+    // Normalize each file
     const normalizedFiles: NormalizedExtractionResult[] = [];
     
-    for (const suggestedFile of suggestedFiles) {
-      const filePath = path.join(projectRoot, suggestedFile.file);
+    for (const relativeFile of filesToAnalyze.slice(0, 10)) { // Limit to 10 files
+      const filePath = path.join(projectRoot, relativeFile);
       
       try {
         const source = await fs.readFile(filePath, 'utf-8');
-        const normalized = intelligence.normalizeFile(source, suggestedFile.file);
+        const normalized = intelligence.normalizeFile(source, relativeFile);
         
         if (normalized) {
           normalizedFiles.push(normalized);
@@ -943,4 +961,51 @@ async function generateSemanticInsights(
     // Language Intelligence not available or error - return undefined
     return undefined;
   }
+}
+
+/**
+ * Find source files matching the focus term
+ */
+async function findFilesMatchingFocus(projectRoot: string, focus: string): Promise<string[]> {
+  const focusLower = focus.toLowerCase();
+  const results: string[] = [];
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php'];
+  
+  async function searchDir(dir: string, depth: number = 0): Promise<void> {
+    if (depth > 5) return; // Limit depth
+    if (results.length >= 10) return; // Limit results
+    
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (results.length >= 10) break;
+        
+        const fullPath = path.join(dir, entry.name);
+        const relativePath = path.relative(projectRoot, fullPath);
+        
+        // Skip common non-source directories
+        if (entry.isDirectory()) {
+          if (['node_modules', '.git', 'dist', 'build', '.drift', '__pycache__', 'vendor'].includes(entry.name)) {
+            continue;
+          }
+          await searchDir(fullPath, depth + 1);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (extensions.includes(ext)) {
+            // Check if file path or name matches focus
+            if (relativePath.toLowerCase().includes(focusLower) || 
+                entry.name.toLowerCase().includes(focusLower)) {
+              results.push(relativePath);
+            }
+          }
+        }
+      }
+    } catch {
+      // Directory read error - skip
+    }
+  }
+  
+  await searchDir(projectRoot);
+  return results;
 }
