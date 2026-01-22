@@ -215,7 +215,8 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'efcore',
+      tableFromLiteral: false, // Table name inferred from DbSet property name
     });
   }
 
@@ -293,7 +294,8 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.9,
+      framework: 'dapper',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 
@@ -336,7 +338,8 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.7,
+      framework: 'raw-sql',
+      tableFromLiteral: false, // Table name unknown for ADO.NET without SQL parsing
     });
   }
 
@@ -386,7 +389,8 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.85,
+      framework: 'efcore',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 
@@ -421,7 +425,8 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'efcore',
+      tableFromLiteral: false, // Table name inferred from LINQ source
     });
 
     const exists = result.accessPoints.some(ap => ap.id === accessPoint.id);

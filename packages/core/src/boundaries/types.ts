@@ -23,15 +23,62 @@ export type SensitivityType = 'pii' | 'credentials' | 'financial' | 'health' | '
  * ORM framework identifier
  */
 export type ORMFramework = 
-  | 'efcore' 
+  // C#
+  | 'efcore'
+  | 'dapper'
+  // Python
   | 'django' 
-  | 'sqlalchemy' 
+  | 'sqlalchemy'
+  | 'tortoise'
+  | 'peewee'
+  // TypeScript/JavaScript
   | 'prisma' 
   | 'typeorm' 
   | 'sequelize'
   | 'drizzle'
   | 'knex'
+  | 'mongoose'
+  | 'supabase'
+  // Java
+  | 'spring-data'
+  | 'hibernate'
+  | 'jooq'
+  | 'mybatis'
+  // PHP
+  | 'eloquent'
+  | 'doctrine'
+  // Generic
+  | 'raw-sql'
   | 'unknown';
+
+/**
+ * Confidence breakdown for data access detection
+ * 
+ * Each factor contributes to the overall confidence score.
+ * This provides transparency into WHY a detection has a certain confidence.
+ */
+export interface ConfidenceBreakdown {
+  /** Was the table name explicitly found (not inferred)? */
+  tableNameFound: boolean;
+  /** Were specific fields detected? */
+  fieldsFound: boolean;
+  /** Was the operation type clearly identified? */
+  operationClear: boolean;
+  /** Did the pattern match a known ORM/framework? */
+  frameworkMatched: boolean;
+  /** Was this from a string literal (high confidence) vs variable (lower)? */
+  fromLiteral: boolean;
+  /** Individual factor scores (0-1) */
+  factors: {
+    tableName: number;    // 0.3 weight - most important
+    fields: number;       // 0.2 weight
+    operation: number;    // 0.2 weight
+    framework: number;    // 0.2 weight
+    literal: number;      // 0.1 weight
+  };
+  /** Human-readable explanation */
+  explanation: string;
+}
 
 /**
  * A detected ORM model/entity
@@ -93,8 +140,12 @@ export interface DataAccessPoint {
   context: string;
   /** Whether this is raw SQL vs ORM */
   isRawSql: boolean;
-  /** Detection confidence */
+  /** Detection confidence (0-1) */
   confidence: number;
+  /** Detected ORM/framework (optional) */
+  framework?: ORMFramework;
+  /** Confidence breakdown explaining the score (optional) */
+  confidenceBreakdown?: ConfidenceBreakdown;
 }
 
 /**

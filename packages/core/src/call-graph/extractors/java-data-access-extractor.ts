@@ -251,7 +251,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'spring-data',
+      tableFromLiteral: false, // Table name inferred from repository name
     });
   }
 
@@ -353,7 +354,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'hibernate',
+      tableFromLiteral: false, // Table name inferred from entity class
     });
   }
 
@@ -419,7 +421,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'hibernate',
+      tableFromLiteral: false, // Table name inferred from entity class
     });
   }
 
@@ -483,7 +486,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.85,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 
@@ -550,7 +554,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'jooq',
+      tableFromLiteral: false, // Table name from jOOQ constant
     });
   }
 
@@ -625,7 +630,8 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: `@${annotationName}("${sqlText.slice(0, 100)}...")`,
       isRawSql: true,
-      confidence: 0.9,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL annotation
     });
 
     const exists = result.accessPoints.some(ap => ap.id === accessPoint.id);

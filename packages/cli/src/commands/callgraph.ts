@@ -18,7 +18,7 @@ import {
   createImpactAnalyzer,
   createDeadCodeDetector,
   createCoverageAnalyzer,
-  createSemanticDataAccessScanner,
+  createUnifiedScanner,
   detectProjectStack,
   type ReachabilityResult,
   type InverseReachabilityResult,
@@ -177,14 +177,14 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
       '**/*.php',
     ];
 
-    // Step 1: Run semantic data access scanner (tree-sitter based)
+    // Step 1: Run unified data access scanner (tree-sitter based)
     spinner?.text('🌳 Scanning with tree-sitter (semantic analysis)...');
-    const semanticScanner = createSemanticDataAccessScanner({ 
+    const unifiedScanner = createUnifiedScanner({ 
       rootDir, 
       verbose: options.verbose ?? false,
       autoDetect: true,
     });
-    const semanticResult = await semanticScanner.scanDirectory({ patterns: filePatterns });
+    const semanticResult = await unifiedScanner.scanDirectory({ patterns: filePatterns });
 
     // Use semantic results as primary source
     const dataAccessPoints = semanticResult.accessPoints;

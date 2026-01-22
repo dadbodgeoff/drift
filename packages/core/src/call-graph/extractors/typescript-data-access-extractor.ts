@@ -295,7 +295,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'supabase',
+      tableFromLiteral: true, // Table name comes from string literal in .from('table')
     });
   }
 
@@ -392,7 +393,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'prisma',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -433,7 +435,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.85,
+      framework: 'typeorm',
+      tableFromLiteral: false, // Table name inferred from repository/entity name
     });
   }
 
@@ -474,7 +477,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.85,
+      framework: 'sequelize',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -503,11 +507,16 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     if (!tableArg) return null;
 
     let table = 'unknown';
+    let tableFromLiteral = false;
     if (tableArg.type === 'identifier') {
       table = this.inferTableFromName(tableArg.text);
+      tableFromLiteral = false; // Variable reference
     } else {
       const strVal = this.extractStringValue(tableArg);
-      if (strVal) table = strVal;
+      if (strVal) {
+        table = strVal;
+        tableFromLiteral = true; // String literal
+      }
     }
 
     let operation: DataOperation = 'read';
@@ -523,7 +532,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'drizzle',
+      tableFromLiteral,
     });
   }
 
@@ -567,7 +577,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'knex',
+      tableFromLiteral: true, // Table name from string literal in knex('table')
     });
   }
 
@@ -634,7 +645,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.85,
+      framework: 'mongoose',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -677,7 +689,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.8,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 
@@ -724,7 +737,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.8,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL template
     });
 
     const exists = result.accessPoints.some(ap => ap.id === accessPoint.id);

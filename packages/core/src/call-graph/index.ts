@@ -58,30 +58,40 @@ export { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
 export { JavaCallGraphExtractor } from './extractors/java-extractor.js';
 export { PhpCallGraphExtractor } from './extractors/php-extractor.js';
 
-// Data Access Extractors (semantic parsing)
+// Data Access Extractors base class
 export { 
   BaseDataAccessExtractor,
   type DataAccessExtractionResult,
 } from './extractors/data-access-extractor.js';
+
+// Unified Provider (main extraction pipeline)
+export {
+  UnifiedScanner,
+  createUnifiedScanner,
+  detectProjectStack,
+  type UnifiedScannerConfig,
+  type UnifiedScanResult,
+  type DetectedStack,
+} from '../unified-provider/integration/index.js';
+
+// Backward compatibility aliases (old API names)
 export { 
   TypeScriptDataAccessExtractor,
   createTypeScriptDataAccessExtractor,
-} from './extractors/typescript-data-access-extractor.js';
-export { 
   PythonDataAccessExtractor,
   createPythonDataAccessExtractor,
-} from './extractors/python-data-access-extractor.js';
-export { createDataAccessExtractors } from './extractors/index.js';
-
-// Semantic Data Access Scanner (unified scanner using semantic extractors)
-export {
+  CSharpDataAccessExtractor,
+  createCSharpDataAccessExtractor,
+  JavaDataAccessExtractor,
+  createJavaDataAccessExtractor,
+  PhpDataAccessExtractor,
+  createPhpDataAccessExtractor,
+  createDataAccessExtractors,
   SemanticDataAccessScanner,
   createSemanticDataAccessScanner,
-  detectProjectStack,
   type SemanticScannerConfig,
   type SemanticScanResult,
-  type DetectedStack,
-} from './extractors/semantic-data-access-scanner.js';
+} from '../unified-provider/compat/index.js';
 
 export { GraphBuilder } from './analysis/graph-builder.js';
 export { ReachabilityEngine } from './analysis/reachability.js';

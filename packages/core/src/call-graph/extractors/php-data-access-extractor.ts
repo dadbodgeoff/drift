@@ -339,7 +339,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'eloquent',
+      tableFromLiteral: false, // Table name inferred from model class name
     });
   }
 
@@ -430,7 +431,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
         line: node.startPosition.row + 1,
         column: node.startPosition.column,
         context: node.text.slice(0, 200),
-        confidence: 0.95,
+        framework: 'eloquent',
+        tableFromLiteral: true, // Table name from string literal in DB::table('name')
       });
     }
 
@@ -468,7 +470,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.85,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 
@@ -514,7 +517,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.8,
+      framework: 'eloquent',
+      tableFromLiteral: false, // Table name inferred from variable name
     });
   }
 
@@ -566,7 +570,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'doctrine',
+      tableFromLiteral: false, // Table name inferred from entity class
     });
   }
 
@@ -626,7 +631,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.8,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 

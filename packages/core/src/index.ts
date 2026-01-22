@@ -257,23 +257,28 @@ export {
   createDeadCodeDetector,
   CoverageAnalyzer,
   createCoverageAnalyzer,
-  // Data Access Extractors (semantic parsing)
   BaseDataAccessExtractor,
+  // Unified Provider (main extraction pipeline)
+  UnifiedScanner,
+  createUnifiedScanner,
+  detectProjectStack,
+  // Backward compatibility aliases
   TypeScriptDataAccessExtractor,
   createTypeScriptDataAccessExtractor,
   PythonDataAccessExtractor,
   createPythonDataAccessExtractor,
   createDataAccessExtractors,
-  // Semantic Data Access Scanner (unified scanner)
   SemanticDataAccessScanner,
   createSemanticDataAccessScanner,
-  detectProjectStack,
 } from './call-graph/index.js';
 export type {
-  // Semantic scanner types
+  // Unified scanner types
+  UnifiedScannerConfig,
+  UnifiedScanResult,
+  DetectedStack,
+  // Backward compatibility type aliases
   SemanticScannerConfig,
   SemanticScanResult,
-  DetectedStack,
 } from './call-graph/index.js';
 export type {
   CallGraph,

@@ -241,7 +241,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'django',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -295,7 +296,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.9,
+      framework: 'sqlalchemy',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -368,7 +370,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.95,
+      framework: 'supabase',
+      tableFromLiteral: true, // Table name from string literal in .table('name')
     });
   }
 
@@ -456,7 +459,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.8,
+      framework: 'tortoise',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -495,7 +499,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       line: node.startPosition.row + 1,
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
-      confidence: 0.8,
+      framework: 'peewee',
+      tableFromLiteral: false, // Table name inferred from model name
     });
   }
 
@@ -543,7 +548,8 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       column: node.startPosition.column,
       context: node.text.slice(0, 200),
       isRawSql: true,
-      confidence: 0.8,
+      framework: 'raw-sql',
+      tableFromLiteral: true, // Table name extracted from SQL string
     });
   }
 

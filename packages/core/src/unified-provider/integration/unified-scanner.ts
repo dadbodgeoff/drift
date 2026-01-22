@@ -1,36 +1,38 @@
 /**
- * Semantic Data Access Scanner
+ * Unified Scanner
  *
- * Unified scanner that uses tree-sitter extractors for accurate data access detection.
+ * A drop-in replacement for SemanticDataAccessScanner that uses
+ * the new UnifiedLanguageProvider for extraction.
+ *
  * Features:
  * - Auto-detection of project stack from package files
  * - Smart scanning based on detected ORMs/frameworks
  * - Support for TypeScript/JavaScript, Python, C#, Java, PHP
+ * - Compatible with existing SemanticScanResult interface
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { minimatch } from 'minimatch';
 import type { DataAccessPoint } from '../../boundaries/types.js';
-import { TypeScriptDataAccessExtractor } from './typescript-data-access-extractor.js';
-import { PythonDataAccessExtractor } from './python-data-access-extractor.js';
-import { CSharpDataAccessExtractor } from './csharp-data-access-extractor.js';
-import { JavaDataAccessExtractor } from './java-data-access-extractor.js';
-import { PhpDataAccessExtractor } from './php-data-access-extractor.js';
-import type { BaseDataAccessExtractor } from './data-access-extractor.js';
+import { UnifiedLanguageProvider, createUnifiedProvider } from '../provider/unified-language-provider.js';
+import { toDataAccessPoint } from './unified-data-access-adapter.js';
+import type { UnifiedLanguage } from '../types.js';
 
 // ============================================================================
-// Types
+// Types (compatible with SemanticDataAccessScanner)
 // ============================================================================
 
-export interface SemanticScannerConfig {
+export interface UnifiedScannerConfig {
   rootDir: string;
   verbose?: boolean;
   /** Auto-detect project stack from package files */
   autoDetect?: boolean;
+  /** Languages to scan (default: all) */
+  languages?: UnifiedLanguage[];
 }
 
-export interface SemanticScanResult {
+export interface UnifiedScanResult {
   /** All detected data access points */
   accessPoints: Map<string, DataAccessPoint[]>;
   /** Statistics about the scan */
@@ -52,7 +54,6 @@ export interface DetectedStack {
   orms: string[];
   frameworks: string[];
 }
-
 
 // ============================================================================
 // Project Stack Detector
@@ -92,8 +93,6 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
     if (allDeps['express']) stack.frameworks.push('express');
     if (allDeps['fastify']) stack.frameworks.push('fastify');
     if (allDeps['@nestjs/core']) stack.frameworks.push('nestjs');
-    if (allDeps['react']) stack.frameworks.push('react');
-    if (allDeps['vue']) stack.frameworks.push('vue');
   } catch {
     // No package.json
   }
@@ -117,13 +116,6 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       if (pythonDeps.includes('django')) stack.orms.push('django');
       if (pythonDeps.includes('sqlalchemy')) stack.orms.push('sqlalchemy');
       if (pythonDeps.includes('supabase')) stack.orms.push('supabase-python');
-      if (pythonDeps.includes('tortoise')) stack.orms.push('tortoise');
-      if (pythonDeps.includes('peewee')) stack.orms.push('peewee');
-      if (pythonDeps.includes('psycopg') || pythonDeps.includes('pymysql')) stack.orms.push('raw-sql');
-
-      if (pythonDeps.includes('fastapi')) stack.frameworks.push('fastapi');
-      if (pythonDeps.includes('flask')) stack.frameworks.push('flask');
-      if (pythonDeps.includes('django')) stack.frameworks.push('django');
     }
   } catch {
     // No Python deps
@@ -167,10 +159,6 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
         stack.orms.push('spring-data-jpa');
       }
       if (javaDeps.includes('hibernate')) stack.orms.push('hibernate');
-      if (javaDeps.includes('mybatis')) stack.orms.push('mybatis');
-      if (javaDeps.includes('jooq')) stack.orms.push('jooq');
-      if (javaDeps.includes('jdbc')) stack.orms.push('jdbc');
-
       if (javaDeps.includes('spring-boot')) stack.frameworks.push('spring-boot');
     }
   } catch {
@@ -191,7 +179,6 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       stack.orms.push('eloquent');
     }
     if (allDeps['doctrine/orm']) stack.orms.push('doctrine');
-    if (allDeps['illuminate/database']) stack.orms.push('eloquent');
   } catch {
     // No composer.json
   }
@@ -199,38 +186,34 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
   return stack;
 }
 
-
 // ============================================================================
-// Semantic Data Access Scanner
+// Unified Scanner
 // ============================================================================
 
 /**
- * Semantic Data Access Scanner
+ * Unified Scanner
  *
- * Uses tree-sitter for all supported languages for accurate data access detection.
- * Features auto-detection of project stack for smarter scanning.
+ * Uses the UnifiedLanguageProvider for all extraction, providing
+ * a consistent interface compatible with SemanticDataAccessScanner.
  */
-export class SemanticDataAccessScanner {
-  private readonly config: SemanticScannerConfig;
-  private readonly extractors: BaseDataAccessExtractor[];
+export class UnifiedScanner {
+  private readonly config: UnifiedScannerConfig;
+  private readonly provider: UnifiedLanguageProvider;
 
-  constructor(config: SemanticScannerConfig) {
+  constructor(config: UnifiedScannerConfig) {
     this.config = config;
-
-    // Initialize all extractors - all use tree-sitter
-    this.extractors = [
-      new TypeScriptDataAccessExtractor(),
-      new PythonDataAccessExtractor(),
-      new CSharpDataAccessExtractor(),
-      new JavaDataAccessExtractor(),
-      new PhpDataAccessExtractor(),
-    ];
+    this.provider = createUnifiedProvider({
+      projectRoot: config.rootDir,
+      languages: config.languages,
+      extractDataAccess: true,
+      extractCallGraph: false, // Only extract data access for scanning
+    });
   }
 
   /**
-   * Scan files for data access patterns using semantic parsing
+   * Scan files for data access patterns
    */
-  async scanFiles(files: string[]): Promise<SemanticScanResult> {
+  async scanFiles(files: string[]): Promise<UnifiedScanResult> {
     const accessPoints = new Map<string, DataAccessPoint[]>();
     const errors: Array<{ file: string; error: string }> = [];
     const stats = {
@@ -252,37 +235,35 @@ export class SemanticDataAccessScanner {
     }
 
     for (const file of files) {
-      // Skip type definition files - they don't contain runtime data access
+      // Skip type definition files
       if (file.endsWith('.d.ts')) continue;
 
-      // Skip test files by filename pattern
+      // Skip test files
       if (this.isTestFile(file)) continue;
-
-      const extractor = this.getExtractor(file);
-      if (!extractor) continue;
 
       try {
         const filePath = path.join(this.config.rootDir, file);
         const source = await fs.readFile(filePath, 'utf-8');
 
-        // Skip files that don't look like they have data access
+        // Quick check if file might have data access
         if (!this.mightHaveDataAccess(source, detectedStack)) continue;
 
         stats.filesScanned++;
 
-        const result = extractor.extract(source, file);
+        const result = await this.provider.extract(source, file);
 
-        if (result.accessPoints.length > 0) {
-          accessPoints.set(file, result.accessPoints);
-          stats.accessPointsFound += result.accessPoints.length;
+        if (result.dataAccess.length > 0) {
+          const points = result.dataAccess.map(toDataAccessPoint);
+          accessPoints.set(file, points);
+          stats.accessPointsFound += points.length;
 
           // Track by language
           const lang = result.language;
-          stats.byLanguage[lang] = (stats.byLanguage[lang] ?? 0) + result.accessPoints.length;
+          stats.byLanguage[lang] = (stats.byLanguage[lang] ?? 0) + points.length;
 
-          // Track by ORM (infer from context)
-          for (const ap of result.accessPoints) {
-            const orm = this.inferOrm(ap.context);
+          // Track by ORM
+          for (const access of result.dataAccess) {
+            const orm = access.orm;
             if (orm) {
               stats.byOrm[orm] = (stats.byOrm[orm] ?? 0) + 1;
             }
@@ -310,78 +291,22 @@ export class SemanticDataAccessScanner {
   }
 
   /**
-   * Check if a file is a test file based on filename patterns
-   */
-  private isTestFile(file: string): boolean {
-    const lowerFile = file.toLowerCase();
-    
-    // Common test file patterns
-    const testPatterns = [
-      // JavaScript/TypeScript
-      /\.test\.[jt]sx?$/,
-      /\.spec\.[jt]sx?$/,
-      /_test\.[jt]sx?$/,
-      /_spec\.[jt]sx?$/,
-      /\/__tests__\//,
-      /\/test\//,
-      /\/tests\//,
-      /\.stories\.[jt]sx?$/, // Storybook
-      
-      // Python
-      /test_.*\.py$/,
-      /_test\.py$/,
-      /\/tests?\//,
-      /conftest\.py$/,
-      
-      // Java
-      /Test\.java$/,
-      /Tests\.java$/,
-      /IT\.java$/, // Integration tests
-      /\/test\//,
-      
-      // C#
-      /Tests?\.cs$/,
-      /\.Tests?\//,
-      /Spec\.cs$/,
-      
-      // PHP
-      /Test\.php$/,
-      /\/tests?\//,
-    ];
-    
-    return testPatterns.some(pattern => pattern.test(lowerFile));
-  }
-
-  /**
    * Scan directory with glob patterns
    */
   async scanDirectory(options: {
     patterns?: string[];
     ignorePatterns?: string[];
-  } = {}): Promise<SemanticScanResult> {
+  } = {}): Promise<UnifiedScanResult> {
     const patterns = options.patterns ?? [
-      '**/*.ts',
-      '**/*.tsx',
-      '**/*.js',
-      '**/*.jsx',
+      '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx',
       '**/*.py',
       '**/*.cs',
       '**/*.java',
       '**/*.php',
     ];
     const ignorePatterns = options.ignorePatterns ?? [
-      'node_modules',
-      '.git',
-      'dist',
-      'build',
-      '__pycache__',
-      '.drift',
-      '.venv',
-      'venv',
-      'bin',
-      'obj',
-      'target',
-      'vendor',
+      'node_modules', '.git', 'dist', 'build', '__pycache__',
+      '.drift', '.venv', 'venv', 'bin', 'obj', 'target', 'vendor',
     ];
 
     const files = await this.findFiles(patterns, ignorePatterns);
@@ -389,35 +314,26 @@ export class SemanticDataAccessScanner {
   }
 
   /**
-   * Get the appropriate extractor for a file
+   * Check if a file is a test file
    */
-  private getExtractor(file: string): BaseDataAccessExtractor | null {
-    for (const extractor of this.extractors) {
-      if (extractor.canHandle(file)) {
-        return extractor;
-      }
-    }
-    return null;
+  private isTestFile(file: string): boolean {
+    const lowerFile = file.toLowerCase();
+    const testPatterns = [
+      /\.test\.[jt]sx?$/, /\.spec\.[jt]sx?$/, /_test\.[jt]sx?$/, /_spec\.[jt]sx?$/,
+      /\/__tests__\//, /\/test\//, /\/tests\//,
+      /test_.*\.py$/, /_test\.py$/, /conftest\.py$/,
+      /Test\.java$/, /Tests\.java$/, /IT\.java$/,
+      /Tests?\.cs$/, /\.Tests?\//, /Spec\.cs$/,
+      /Test\.php$/,
+    ];
+    return testPatterns.some(pattern => pattern.test(lowerFile));
   }
 
-
   /**
-   * Quick check if file might have data access (avoid parsing everything)
+   * Quick check if file might have data access
    */
   private mightHaveDataAccess(content: string, stack?: DetectedStack): boolean {
-    // Skip test files - check both filename patterns and content
-    const testPatterns = ['@pytest', 'describe(', 'it(', 'test(', '[Fact]', '[Theory]',
-                         '@Test', '@Before', '@After', 'PHPUnit', 'jest.mock', 'vi.mock',
-                         'unittest.TestCase', 'TestCase', '@pytest.fixture', 'mock.patch',
-                         'sinon.stub', 'expect(', 'assert.', 'assertEquals'];
-    if (testPatterns.some(p => content.includes(p))) {
-      // But allow if they also have actual data access
-      const hasDataAccess = ['.from(', '.query(', 'SELECT', 'prisma.', 'DbContext', '.Where(']
-        .some(p => content.includes(p));
-      if (!hasDataAccess) return false;
-    }
-
-    // If we detected specific ORMs, prioritize those patterns
+    // ORM-specific patterns based on detected stack
     if (stack && stack.orms.length > 0) {
       const ormPatterns: Record<string, string[]> = {
         'supabase': ['.from(', 'supabase', 'createClient'],
@@ -430,11 +346,8 @@ export class SemanticDataAccessScanner {
         'knex': ['knex(', '.table('],
         'mongoose': ['mongoose', '.find(', '.findOne(', 'Schema'],
         'ef-core': ['DbContext', '.Where(', '.ToList', '.SaveChanges'],
-        'dapper': ['.Query<', '.QueryAsync<', '.Execute('],
         'spring-data-jpa': ['Repository', '@Query', 'JpaRepository'],
-        'hibernate': ['Session', 'EntityManager', 'createQuery'],
         'eloquent': ['::where(', '::find(', '->save(', 'DB::'],
-        'doctrine': ['getRepository', 'EntityManager', 'persist'],
       };
 
       for (const orm of stack.orms) {
@@ -445,88 +358,18 @@ export class SemanticDataAccessScanner {
       }
     }
 
-    // Generic ORM/database patterns
+    // Generic patterns
     const patterns = [
-      // Supabase
       '.from(', '.select(', '.insert(', '.update(', '.delete(',
-      // Prisma
-      'prisma.', '@prisma/client',
-      // Django
-      '.objects.', 'models.Model',
-      // SQLAlchemy
-      '.query(', 'session.add', 'session.delete',
-      // TypeORM
-      '@Entity', 'getRepository', 'Repository',
-      // Sequelize
-      'sequelize.', '.findAll(', '.findOne(',
-      // Drizzle
-      'drizzle-orm', 'db.select', 'db.insert',
-      // Knex
-      'knex(', '.table(',
-      // Mongoose
-      'mongoose', 'Schema(',
-      // Entity Framework Core
-      'DbContext', '.Where(', '.FirstOrDefault', '.ToList', '.ToListAsync',
-      '.Add(', '.AddRange(', '.Remove(', '.SaveChanges',
-      // Dapper
-      '.Query<', '.QueryAsync<', '.Execute(', '.ExecuteAsync(',
-      // ADO.NET
-      'ExecuteReader', 'ExecuteNonQuery', 'SqlCommand',
-      // Spring Data JPA
-      'JpaRepository', 'CrudRepository', '@Query',
-      // Hibernate
-      'EntityManager', 'Session', 'createQuery',
-      // Laravel Eloquent
-      '::where(', '::find(', '::all(', '->save(', 'DB::table',
-      // Doctrine
-      'getRepository(', 'EntityManager', '->persist(',
-      // Raw SQL
+      'prisma.', '.objects.', '.query(', 'session.add',
+      '@Entity', 'getRepository', 'sequelize.', '.findAll(',
+      'drizzle-orm', 'knex(', 'mongoose', 'Schema(',
+      'DbContext', '.Where(', '.ToList', '.SaveChanges',
+      'JpaRepository', 'EntityManager', '::where(', '::find(',
       'SELECT ', 'INSERT ', 'UPDATE ', 'DELETE ',
-      'execute(', 'query(',
     ];
 
     return patterns.some(p => content.includes(p));
-  }
-
-  /**
-   * Infer ORM from context string
-   */
-  private inferOrm(context: string): string | null {
-    const lower = context.toLowerCase();
-
-    // JavaScript/TypeScript ORMs
-    if (lower.includes('supabase') || (lower.includes('.from(') && lower.includes('.select('))) return 'supabase';
-    if (lower.includes('prisma')) return 'prisma';
-    if (lower.includes('repository') && !lower.includes('jpa')) return 'typeorm';
-    if (lower.includes('sequelize') || lower.includes('.findall(')) return 'sequelize';
-    if (lower.includes('drizzle')) return 'drizzle';
-    if (lower.includes('knex')) return 'knex';
-    if (lower.includes('mongoose') || lower.includes('schema(')) return 'mongoose';
-
-    // Python ORMs
-    if (lower.includes('.objects.')) return 'django';
-    if (lower.includes('session.query') || lower.includes('sqlalchemy')) return 'sqlalchemy';
-
-    // C# ORMs
-    if (lower.includes('dbcontext') || lower.includes('.tolistasync(')) return 'ef-core';
-    if (lower.includes('.query<') || lower.includes('.queryasync<')) return 'dapper';
-    if (lower.includes('executereader') || lower.includes('executenonquery')) return 'ado-net';
-
-    // Java ORMs
-    if (lower.includes('jparepository') || lower.includes('crudrepository')) return 'spring-data-jpa';
-    if (lower.includes('entitymanager') || lower.includes('session.get')) return 'hibernate';
-    if (lower.includes('@select') || lower.includes('@insert')) return 'mybatis';
-    if (lower.includes('dsl.select') || lower.includes('insertinto')) return 'jooq';
-
-    // PHP ORMs
-    if (lower.includes('::where(') || lower.includes('::find(') || lower.includes('eloquent')) return 'eloquent';
-    if (lower.includes('db::table') || lower.includes('db::select')) return 'laravel-db';
-    if (lower.includes('getrepository(') || lower.includes('->persist(')) return 'doctrine';
-
-    // Raw SQL
-    if (/\b(select|insert|update|delete)\b/i.test(context)) return 'raw-sql';
-
-    return null;
   }
 
   /**
@@ -572,13 +415,10 @@ export class SemanticDataAccessScanner {
 // ============================================================================
 
 /**
- * Create a new SemanticDataAccessScanner instance
+ * Create a new UnifiedScanner instance
  */
-export function createSemanticDataAccessScanner(config: SemanticScannerConfig): SemanticDataAccessScanner {
-  return new SemanticDataAccessScanner(config);
+export function createUnifiedScanner(config: UnifiedScannerConfig): UnifiedScanner {
+  return new UnifiedScanner(config);
 }
 
-/**
- * Detect project stack from package files
- */
 export { detectProjectStack };

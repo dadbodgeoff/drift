@@ -45,7 +45,7 @@ export class GraphBuilder {
   constructor(options: GraphBuilderOptions) {
     this.options = {
       includeUnresolved: true,
-      minConfidence: 0.5,
+      minConfidence: 0.7, // Raised from 0.5 to reduce false positives
       ...options,
     };
   }
@@ -207,6 +207,13 @@ export class GraphBuilder {
 
       for (const { call, containingFunction } of pending) {
         const resolved = this.resolveCall(call, file, fileImports, containingFunction);
+        
+        // Skip uncertain resolutions (fuzzy matches) if below minimum confidence
+        // This reduces false positive call paths
+        if (resolved.confidence < this.options.minConfidence! && resolved.reason.includes('fuzzy')) {
+          continue;
+        }
+        
         const callSite = this.createCallSite(call, file, containingFunction, resolved);
 
         // Add to caller's calls
@@ -215,8 +222,8 @@ export class GraphBuilder {
           caller.calls.push(callSite);
         }
 
-        // Add to callee's calledBy (if resolved)
-        if (resolved.resolved && resolved.candidates.length > 0) {
+        // Add to callee's calledBy (if resolved with sufficient confidence)
+        if (resolved.resolved && resolved.candidates.length > 0 && resolved.confidence >= this.options.minConfidence!) {
           for (const candidateId of resolved.candidates) {
             const callee = this.functions.get(candidateId);
             if (callee) {
@@ -279,13 +286,16 @@ export class GraphBuilder {
       }
     }
 
-    // Strategy 5: Fuzzy match by name
+    // Strategy 5: Fuzzy match by name (low confidence - only use when no other option)
+    // Mark as 'uncertain' to filter from high-confidence reports
     if (candidates.length === 0) {
       const fuzzyMatches = this.findByName(call.calleeName);
       if (fuzzyMatches.length > 0) {
         candidates.push(...fuzzyMatches.slice(0, 3)); // Limit to top 3
-        confidence = fuzzyMatches.length === 1 ? 0.5 : 0.3;
-        reason = 'fuzzy-match';
+        // Significantly lower confidence for fuzzy matches to reduce false positives
+        // Single match: 0.4 (below default threshold), multiple: 0.2 (very uncertain)
+        confidence = fuzzyMatches.length === 1 ? 0.4 : 0.2;
+        reason = 'fuzzy-match-uncertain';
       }
     }
 
@@ -680,6 +690,9 @@ export class GraphBuilder {
    * - PHP Laravel controllers (public methods in classes extending Controller)
    * - Ruby Rails controllers
    * - Other MVC frameworks
+   * 
+   * We're conservative here to avoid false positives - only mark methods
+   * that are likely to be actual route handlers.
    */
   private isControllerMethod(func: FunctionNode): boolean {
     // Must be a public method in a class
@@ -699,27 +712,86 @@ export class GraphBuilder {
 
     if (!isControllerClass) return false;
 
-    // Exclude common non-route methods
+    // Exclude common non-route methods (expanded list to reduce false positives)
     const excludedMethods = [
-      'constructor', '__construct', '__destruct',
-      'middleware', 'authorize', 'rules', 'messages',
-      'boot', 'register', 'handle',
+      // Constructors/destructors
+      'constructor', '__construct', '__destruct', '__init__',
+      // Lifecycle methods
+      'boot', 'register', 'handle', 'init', 'initialize', 'setup', 'teardown',
+      // Middleware/auth
+      'middleware', 'authorize', 'rules', 'messages', 'validate', 'validateRequest',
+      // Helper/utility patterns
+      'get', 'set', 'has', 'is', 'can', 'should', 'will', 'did',
+      'find', 'fetch', 'load', 'save', 'delete', 'remove', 'add', 'update',
+      'format', 'transform', 'convert', 'parse', 'serialize', 'deserialize',
+      'build', 'create', 'make', 'generate', 'render', 'prepare',
+      'check', 'verify', 'ensure', 'assert', 'guard',
+      'log', 'debug', 'info', 'warn', 'error',
+      'toArray', 'toJson', 'toString', 'toResponse',
+      // Private/protected indicators (even if marked exported by parser)
+      '__call', '__get', '__set', '__isset', '__unset',
+      // Common internal methods
+      'callAction', 'getMiddleware', 'getValidationRules',
+      'beforeAction', 'afterAction', 'beforeFilter', 'afterFilter',
     ];
 
-    if (excludedMethods.includes(func.name.toLowerCase())) return false;
+    const lowerName = func.name.toLowerCase();
+    if (excludedMethods.some(m => lowerName === m.toLowerCase())) return false;
 
-    // For PHP, check if it's a standard CRUD method or custom action
-    // Laravel convention: index, show, store, update, destroy, create, edit
+    // Exclude methods starting with common helper prefixes
+    const excludedPrefixes = [
+      'get', 'set', 'is', 'has', 'can', 'should', 'will', 'did',
+      'find', 'fetch', 'load', 'build', 'make', 'create', 'prepare',
+      'validate', 'check', 'verify', 'ensure', 'guard',
+      'format', 'transform', 'convert', 'parse', 'render',
+      'handle', 'process', 'dispatch', // These are often internal
+      '_', // Private convention
+    ];
+
+    // Only exclude if the method name is longer than the prefix
+    // (e.g., "get" is excluded but "getUser" might be a route)
+    // Actually, be more conservative - exclude all helper-prefixed methods
+    // unless they match known route patterns
+    const startsWithExcludedPrefix = excludedPrefixes.some(prefix => 
+      lowerName.startsWith(prefix.toLowerCase()) && lowerName !== prefix.toLowerCase()
+    );
+
+    // For PHP Laravel, check if it's a standard CRUD method
+    // These are the ONLY methods we confidently mark as entry points
+    // for controllers without explicit route decorators
     const laravelCrudMethods = ['index', 'show', 'store', 'update', 'destroy', 'create', 'edit'];
     
-    // If it's a Laravel CRUD method, it's definitely an entry point
-    if (func.language === 'php' && laravelCrudMethods.includes(func.name.toLowerCase())) {
+    if (laravelCrudMethods.includes(lowerName)) {
       return true;
     }
 
-    // For other public methods in controllers, they're likely entry points
-    // This is a heuristic - in real apps, routes are defined in route files
-    return true;
+    // For methods with helper prefixes, don't mark as entry points
+    // This is conservative but reduces false positives significantly
+    if (startsWithExcludedPrefix) {
+      return false;
+    }
+
+    // For other public methods in controllers, only mark as entry points
+    // if they look like action methods (short, action-like names)
+    // This is a heuristic to reduce false positives
+    const actionLikePatterns = [
+      /^(list|view|detail|details|search|filter|sort|export|import|download|upload)$/i,
+      /^(login|logout|register|signup|signin|signout|authenticate|verify|confirm)$/i,
+      /^(submit|cancel|approve|reject|accept|decline|process|execute|run)$/i,
+      /^(send|receive|notify|broadcast|publish|subscribe)$/i,
+      /^(activate|deactivate|enable|disable|toggle|switch)$/i,
+      /^(archive|restore|trash|recover|duplicate|clone|copy)$/i,
+      /^(attach|detach|link|unlink|associate|dissociate)$/i,
+      /^(sync|refresh|reload|reset|clear|flush)$/i,
+    ];
+
+    if (actionLikePatterns.some(pattern => pattern.test(func.name))) {
+      return true;
+    }
+
+    // Default: don't mark as entry point to avoid false positives
+    // Real entry points should be detected via route decorators or explicit patterns
+    return false;
   }
 
   /**

@@ -95,46 +95,250 @@ function isDataAccessFile(filePath: string, content: string): boolean {
 // Sensitive Field Detection
 // ============================================================================
 
-const SENSITIVE_PATTERNS: Record<string, RegExp[]> = {
+/**
+ * Sensitivity patterns with specificity scores
+ * Higher specificity = more confident the match is actually sensitive data
+ */
+interface SensitivePattern {
+  pattern: RegExp;
+  specificity: number; // 0.0-1.0, how specific/unambiguous this pattern is
+}
+
+const SENSITIVE_PATTERNS: Record<string, SensitivePattern[]> = {
   pii: [
-    /\bssn\b/i, /\bsocial_security\b/i, /\bdate_of_birth\b/i,
-    /\bdob\b/i, /\baddress\b/i, /\bphone\b/i, /\bphone_number\b/i,
-    /\bemail\b/i, /\bfull_name\b/i, /\bfirst_name\b/i, /\blast_name\b/i,
+    // High specificity - very likely to be actual sensitive fields
+    { pattern: /\bssn\b/i, specificity: 0.95 },
+    { pattern: /\bsocial_security(?:_number)?\b/i, specificity: 0.95 },
+    { pattern: /\bdate_of_birth\b/i, specificity: 0.9 },
+    { pattern: /\bdob\b/i, specificity: 0.85 },
+    { pattern: /\bphone_number\b/i, specificity: 0.85 },
+    { pattern: /\bfull_name\b/i, specificity: 0.8 },
+    { pattern: /\bfirst_name\b/i, specificity: 0.75 },
+    { pattern: /\blast_name\b/i, specificity: 0.75 },
+    // Lower specificity - could be false positives
+    { pattern: /\baddress\b/i, specificity: 0.5 }, // Could be memory address, IP address, etc.
+    { pattern: /\bphone\b/i, specificity: 0.6 },
+    { pattern: /\bemail\b/i, specificity: 0.65 },
   ],
   credentials: [
-    /\bpassword\b/i, /\bpassword_hash\b/i, /\bsecret\b/i, /\btoken\b/i,
-    /\bapi_key\b/i, /\bprivate_key\b/i, /\bhash\b/i, /\bsalt\b/i,
-    /\brefresh_token\b/i, /\baccess_token\b/i,
+    // High specificity
+    { pattern: /\bpassword_hash\b/i, specificity: 0.95 },
+    { pattern: /\bhashed_password\b/i, specificity: 0.95 },
+    { pattern: /\bapi_key\b/i, specificity: 0.9 },
+    { pattern: /\bprivate_key\b/i, specificity: 0.9 },
+    { pattern: /\bsecret_key\b/i, specificity: 0.9 },
+    { pattern: /\brefresh_token\b/i, specificity: 0.9 },
+    { pattern: /\baccess_token\b/i, specificity: 0.85 },
+    { pattern: /\bauth_token\b/i, specificity: 0.85 },
+    // Medium specificity
+    { pattern: /\bpassword\b/i, specificity: 0.75 },
+    { pattern: /\bsalt\b/i, specificity: 0.7 },
+    // Lower specificity - common false positives
+    { pattern: /\bsecret\b/i, specificity: 0.5 }, // Could be "secret santa", etc.
+    { pattern: /\btoken\b/i, specificity: 0.5 }, // Could be parsing token, etc.
+    { pattern: /\bhash\b/i, specificity: 0.4 }, // Could be hash table, URL hash, etc.
   ],
   financial: [
-    /\bcredit_card\b/i, /\bcard_number\b/i, /\bcvv\b/i,
-    /\bbank_account\b/i, /\bsalary\b/i, /\bincome\b/i,
-    /\bpayment\b/i, /\bbalance\b/i,
+    // High specificity
+    { pattern: /\bcredit_card(?:_number)?\b/i, specificity: 0.95 },
+    { pattern: /\bcard_number\b/i, specificity: 0.9 },
+    { pattern: /\bcvv\b/i, specificity: 0.95 },
+    { pattern: /\bbank_account(?:_number)?\b/i, specificity: 0.9 },
+    { pattern: /\brouting_number\b/i, specificity: 0.9 },
+    { pattern: /\bsalary\b/i, specificity: 0.85 },
+    { pattern: /\bincome\b/i, specificity: 0.8 },
+    // Lower specificity
+    { pattern: /\bpayment\b/i, specificity: 0.5 }, // Could be payment method, payment status
+    { pattern: /\bbalance\b/i, specificity: 0.5 }, // Could be load balance, balance check
   ],
   health: [
-    /\bdiagnosis\b/i, /\bprescription\b/i, /\bmedical\b/i, /\bhealth\b/i,
+    // High specificity
+    { pattern: /\bdiagnosis\b/i, specificity: 0.9 },
+    { pattern: /\bprescription\b/i, specificity: 0.9 },
+    { pattern: /\bmedical_record\b/i, specificity: 0.95 },
+    { pattern: /\bhealth_record\b/i, specificity: 0.95 },
+    // Lower specificity
+    { pattern: /\bmedical\b/i, specificity: 0.6 }, // Could be "medical" in comments
+    { pattern: /\bhealth\b/i, specificity: 0.5 }, // Could be "health check", "health endpoint"
   ],
 };
+
+/**
+ * Context indicators that boost confidence (field is likely a real data field)
+ */
+const FIELD_CONTEXT_PATTERNS = [
+  // ORM/Schema definitions
+  /Column\s*\(/i,
+  /Field\s*\(/i,
+  /CharField\s*\(/i,
+  /TextField\s*\(/i,
+  /IntegerField\s*\(/i,
+  /DecimalField\s*\(/i,
+  /BooleanField\s*\(/i,
+  /ForeignKey\s*\(/i,
+  /property\s+/i,
+  /@Column/i,
+  /@Field/i,
+  /DbSet</i,
+  // Type annotations suggesting data fields
+  /:\s*string\b/i,
+  /:\s*number\b/i,
+  /:\s*boolean\b/i,
+  /:\s*int\b/i,
+  /:\s*varchar/i,
+  /:\s*text\b/i,
+  // Database operations
+  /\.select\s*\(/i,
+  /\.insert\s*\(/i,
+  /\.update\s*\(/i,
+  /\.where\s*\(/i,
+  /\.eq\s*\(/i,
+  // Object property definitions
+  /^\s*\w+\s*:/,
+  /^\s*['"]?\w+['"]?\s*:/,
+];
+
+/**
+ * Context indicators that reduce confidence (likely not a real sensitive field)
+ */
+const FALSE_POSITIVE_PATTERNS = [
+  // Variable names that happen to contain sensitive words
+  /(?:get|set|is|has|check|validate|verify|update|create|delete|fetch|load|save|find|parse|format|render|display|show|hide|toggle|enable|disable)(?:Password|Email|Phone|Address|Token|Secret|Hash)/i,
+  // Function/method names
+  /function\s+\w*(?:password|email|phone|address|token|secret|hash)\w*\s*\(/i,
+  /(?:async\s+)?(?:function|const|let|var)\s+\w*(?:Password|Email|Phone|Address|Token|Secret|Hash)\w*\s*[=:]/i,
+  // Import/require statements
+  /(?:import|require|from)\s+.*(?:password|email|phone|address|token|secret|hash)/i,
+  // Comments (inline)
+  /\/\/.*(?:password|email|phone|address|token|secret|hash)/i,
+  /\/\*.*(?:password|email|phone|address|token|secret|hash)/i,
+  /#.*(?:password|email|phone|address|token|secret|hash)/i,
+  // String literals in logs/messages (not actual field access)
+  /(?:log|console|print|error|warn|info|debug)\s*\(.*['"].*(?:password|email|phone|address|token|secret|hash)/i,
+  /['"].*(?:password|email|phone|address|token|secret|hash).*['"]/i,
+  // Test/mock data indicators
+  /(?:mock|fake|test|dummy|sample|example)(?:Password|Email|Phone|Address|Token|Secret|Hash)/i,
+  // URL/path patterns
+  /\/(?:password|email|phone|address|token|secret|hash)\//i,
+  // Health check endpoints (not health data)
+  /health[_-]?check/i,
+  /health[_-]?endpoint/i,
+  /health[_-]?status/i,
+  // Load balancer patterns
+  /load[_-]?balance/i,
+];
+
+/**
+ * Check if a line is inside a comment block
+ */
+function isInCommentBlock(lines: string[], lineIndex: number): boolean {
+  let inBlockComment = false;
+  
+  for (let i = 0; i <= lineIndex; i++) {
+    const line = lines[i] ?? '';
+    
+    // Check for block comment start/end
+    if (line.includes('/*') && !line.includes('*/')) {
+      inBlockComment = true;
+    } else if (line.includes('*/')) {
+      inBlockComment = false;
+    }
+    
+    // Handle single-line block comments
+    if (line.includes('/*') && line.includes('*/')) {
+      // Check if the comment spans the whole line
+      const commentStart = line.indexOf('/*');
+      const commentEnd = line.indexOf('*/');
+      if (commentStart === 0 && commentEnd === line.length - 2) {
+        continue; // This line is a complete block comment
+      }
+    }
+  }
+  
+  return inBlockComment;
+}
+
+/**
+ * Calculate confidence score for a sensitive field detection
+ */
+function calculateSensitiveFieldConfidence(
+  line: string,
+  patternSpecificity: number,
+  hasFieldContext: boolean,
+  hasFalsePositiveIndicator: boolean
+): number {
+  let confidence = patternSpecificity;
+  
+  // Boost confidence if we have field context
+  if (hasFieldContext) {
+    confidence = Math.min(1.0, confidence + 0.15);
+  }
+  
+  // Reduce confidence for false positive indicators
+  if (hasFalsePositiveIndicator) {
+    confidence = Math.max(0.1, confidence - 0.4);
+  }
+  
+  // Reduce confidence for very short lines (likely not real field definitions)
+  if (line.trim().length < 10) {
+    confidence = Math.max(0.1, confidence - 0.2);
+  }
+  
+  return Math.round(confidence * 100) / 100; // Round to 2 decimal places
+}
 
 function detectSensitiveFields(content: string, file: string): SensitiveField[] {
   const fields: SensitiveField[] = [];
   const lines = content.split('\n');
+  const seenFields = new Set<string>(); // Deduplicate by field+line
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!line) continue;
     
-    // Skip comments
     const trimmed = line.trim();
+    
+    // Skip empty lines
+    if (!trimmed) continue;
+    
+    // Skip single-line comments
     if (trimmed.startsWith('//') || trimmed.startsWith('#') || 
-        trimmed.startsWith('*') || trimmed.startsWith('/*')) {
+        trimmed.startsWith('*') || trimmed.startsWith('/*') ||
+        trimmed.startsWith('"""') || trimmed.startsWith("'''")) {
+      continue;
+    }
+    
+    // Skip if inside a block comment
+    if (isInCommentBlock(lines, i)) {
       continue;
     }
 
+    // Check for field context (boosts confidence)
+    const hasFieldContext = FIELD_CONTEXT_PATTERNS.some(p => p.test(line));
+    
+    // Check for false positive indicators (reduces confidence)
+    const hasFalsePositiveIndicator = FALSE_POSITIVE_PATTERNS.some(p => p.test(line));
+
     for (const [type, patterns] of Object.entries(SENSITIVE_PATTERNS)) {
-      for (const pattern of patterns) {
+      for (const { pattern, specificity } of patterns) {
         const match = line.match(pattern);
         if (match) {
+          const fieldKey = `${match[0].toLowerCase()}:${i + 1}`;
+          
+          // Skip duplicates
+          if (seenFields.has(fieldKey)) continue;
+          
+          // Calculate confidence
+          const confidence = calculateSensitiveFieldConfidence(
+            line,
+            specificity,
+            hasFieldContext,
+            hasFalsePositiveIndicator
+          );
+          
+          // Skip low-confidence detections (below 0.5 threshold)
+          if (confidence < 0.5) continue;
+          
           // Try to extract table name from context
           let table: string | null = null;
           
@@ -154,15 +358,16 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
             if (fromMatch?.[1]) table = fromMatch[1];
           }
 
+          seenFields.add(fieldKey);
           fields.push({
             field: match[0],
             table,
             sensitivityType: type as SensitiveField['sensitivityType'],
             file,
             line: i + 1,
-            confidence: 0.8,
+            confidence,
           });
-          break;
+          break; // Only match one pattern per type per line
         }
       }
     }

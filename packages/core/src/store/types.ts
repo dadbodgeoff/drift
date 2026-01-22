@@ -121,9 +121,12 @@ export const SEVERITY_ORDER: Record<Severity, number> = {
  * Confidence level classification based on score thresholds
  *
  * @requirements 5.3 - High confidence: score >= 0.85
- * @requirements 5.4 - Medium confidence: score >= 0.65 and < 0.85
- * @requirements 5.5 - Low confidence: score >= 0.45 and < 0.65
- * @requirements 5.6 - Uncertain: score < 0.45
+ * @requirements 5.4 - Medium confidence: score >= 0.70 and < 0.85
+ * @requirements 5.5 - Low confidence: score >= 0.50 and < 0.70
+ * @requirements 5.6 - Uncertain: score < 0.50 (fuzzy matches, guesses)
+ * 
+ * Note: Thresholds raised in v1.1 to reduce false positives.
+ * Uncertain level now explicitly excludes from high-confidence reports.
  */
 export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'uncertain';
 

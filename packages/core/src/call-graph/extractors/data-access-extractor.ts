@@ -17,7 +17,7 @@
  * - Raw SQL queries
  */
 
-import type { DataAccessPoint, DataOperation } from '../../boundaries/types.js';
+import type { DataAccessPoint, DataOperation, ORMFramework, ConfidenceBreakdown } from '../../boundaries/types.js';
 import type { CallGraphLanguage } from '../types.js';
 
 // ============================================================================
@@ -189,7 +189,7 @@ export abstract class BaseDataAccessExtractor {
   }
 
   /**
-   * Create a data access point
+   * Create a data access point with dynamic confidence scoring
    */
   protected createAccessPoint(opts: {
     table: string;
@@ -201,18 +201,146 @@ export abstract class BaseDataAccessExtractor {
     context: string;
     isRawSql?: boolean;
     confidence?: number;
+    framework?: ORMFramework;
+    /** Whether table name came from a string literal (vs inferred) */
+    tableFromLiteral?: boolean;
   }): DataAccessPoint {
-    return {
+    const framework = opts.framework ?? 'unknown';
+    const isRawSql = opts.isRawSql ?? false;
+    const tableFromLiteral = opts.tableFromLiteral ?? false;
+    const fields = opts.fields ?? [];
+    
+    // Calculate dynamic confidence based on what we found
+    const breakdown = this.calculateConfidenceBreakdown({
+      table: opts.table,
+      fields,
+      operation: opts.operation,
+      framework,
+      tableFromLiteral,
+      isRawSql,
+    });
+    
+    // Use calculated confidence unless explicitly overridden
+    const confidence = opts.confidence ?? breakdown.factors.tableName * 0.3 +
+                                          breakdown.factors.fields * 0.2 +
+                                          breakdown.factors.operation * 0.2 +
+                                          breakdown.factors.framework * 0.2 +
+                                          breakdown.factors.literal * 0.1;
+
+    const result: DataAccessPoint = {
       id: `${opts.file}:${opts.line}:${opts.column}:${opts.table}`,
       table: opts.table,
-      fields: opts.fields ?? [],
+      fields,
       operation: opts.operation,
       file: opts.file,
       line: opts.line,
       column: opts.column,
       context: opts.context.slice(0, 200),
-      isRawSql: opts.isRawSql ?? false,
-      confidence: opts.confidence ?? 0.9,
+      isRawSql,
+      confidence: Math.round(confidence * 100) / 100, // Round to 2 decimal places
+      confidenceBreakdown: breakdown,
+    };
+    
+    // Only add framework if it's known
+    if (framework !== 'unknown') {
+      result.framework = framework;
+    }
+    
+    return result;
+  }
+
+  /**
+   * Calculate confidence breakdown based on detection quality
+   */
+  protected calculateConfidenceBreakdown(opts: {
+    table: string;
+    fields: string[];
+    operation: DataOperation;
+    framework: ORMFramework;
+    tableFromLiteral: boolean;
+    isRawSql: boolean;
+  }): ConfidenceBreakdown {
+    // Table name factor (0.3 weight)
+    // - 1.0: Explicit table name from string literal
+    // - 0.7: Table name inferred from model/variable name
+    // - 0.3: Unknown table
+    let tableNameScore = 0.3;
+    let tableNameFound = false;
+    if (opts.table && opts.table !== 'unknown') {
+      tableNameFound = true;
+      tableNameScore = opts.tableFromLiteral ? 1.0 : 0.7;
+    }
+
+    // Fields factor (0.2 weight)
+    // - 1.0: Multiple specific fields found
+    // - 0.7: Single field found
+    // - 0.5: No fields but that's expected (e.g., delete)
+    // - 0.3: No fields when we'd expect them
+    let fieldsScore = 0.3;
+    let fieldsFound = false;
+    if (opts.fields.length > 1) {
+      fieldsScore = 1.0;
+      fieldsFound = true;
+    } else if (opts.fields.length === 1) {
+      fieldsScore = 0.7;
+      fieldsFound = true;
+    } else if (opts.operation === 'delete') {
+      fieldsScore = 0.5; // Fields not expected for delete
+    }
+
+    // Operation factor (0.2 weight)
+    // - 1.0: Clear operation (read/write/delete)
+    // - 0.3: Unknown operation
+    let operationScore = opts.operation !== 'unknown' ? 1.0 : 0.3;
+    let operationClear = opts.operation !== 'unknown';
+
+    // Framework factor (0.2 weight)
+    // - 1.0: Known ORM/framework matched
+    // - 0.5: Raw SQL (valid but less structured)
+    // - 0.3: Unknown framework
+    let frameworkScore = 0.3;
+    let frameworkMatched = false;
+    if (opts.framework && opts.framework !== 'unknown') {
+      frameworkMatched = true;
+      frameworkScore = opts.isRawSql ? 0.5 : 1.0;
+    }
+
+    // Literal factor (0.1 weight)
+    // - 1.0: Table name from string literal
+    // - 0.5: Table name from variable/inference
+    let literalScore = opts.tableFromLiteral ? 1.0 : 0.5;
+
+    // Build explanation
+    const explanationParts: string[] = [];
+    if (tableNameFound) {
+      explanationParts.push(opts.tableFromLiteral ? 'table name from literal' : 'table name inferred');
+    } else {
+      explanationParts.push('table name unknown');
+    }
+    if (fieldsFound) {
+      explanationParts.push(`${opts.fields.length} field(s) detected`);
+    }
+    if (operationClear) {
+      explanationParts.push(`${opts.operation} operation`);
+    }
+    if (frameworkMatched) {
+      explanationParts.push(`${opts.framework} pattern`);
+    }
+
+    return {
+      tableNameFound,
+      fieldsFound,
+      operationClear,
+      frameworkMatched,
+      fromLiteral: opts.tableFromLiteral,
+      factors: {
+        tableName: tableNameScore,
+        fields: fieldsScore,
+        operation: operationScore,
+        framework: frameworkScore,
+        literal: literalScore,
+      },
+      explanation: explanationParts.join(', '),
     };
   }
 
