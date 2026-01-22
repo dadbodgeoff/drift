@@ -2,8 +2,8 @@
  * Where Command - Find pattern locations
  *
  * Quickly find where patterns are located in the codebase.
- * Now reads from BOTH ManifestStore and PatternStore to ensure
- * all 15 categories are available.
+ *
+ * MIGRATION: Now uses IPatternService for pattern operations.
  *
  * Usage:
  *   drift where auth           # Find patterns matching "auth"
@@ -13,12 +13,8 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import {
-  ManifestStore,
-  PatternStore,
-  type PatternQuery,
-  type PatternCategory,
-} from 'driftdetect-core';
+import type { PatternCategory, PatternStatus } from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 
 export const whereCommand = new Command('where')
   .description('Find pattern locations')
@@ -31,99 +27,54 @@ export const whereCommand = new Command('where')
   .action(async (pattern, options) => {
     const cwd = process.cwd();
 
-    // Load manifest
-    const manifestStore = new ManifestStore(cwd);
-    const manifest = await manifestStore.load();
+    // Initialize pattern service
+    const service = createCLIPatternService(cwd);
 
-    // Also load from PatternStore to get ALL 15 categories
-    const patternStore = new PatternStore({ rootDir: cwd });
-    await patternStore.initialize();
-    const allPatterns = patternStore.getAll();
-
-    if (!manifest && allPatterns.length === 0) {
-      console.error(chalk.red('No patterns found. Run `drift scan` first.'));
-      process.exit(1);
-    }
-
-    // Build query
-    const query: PatternQuery = {
-      pattern,
-      limit: parseInt(options.limit, 10),
+    // Search for patterns using the service
+    const searchOptions: {
+      categories?: PatternCategory[];
+      statuses?: PatternStatus[];
+      minConfidence?: number;
+      limit?: number;
+    } = {
+      limit: 100, // Get more results for filtering
     };
+
     if (options.category) {
-      query.category = options.category as PatternCategory;
+      searchOptions.categories = [options.category as PatternCategory];
     }
     if (options.status) {
-      query.status = options.status;
+      searchOptions.statuses = [options.status as PatternStatus];
     }
     if (options.minConfidence) {
-      query.minConfidence = parseFloat(options.minConfidence);
+      searchOptions.minConfidence = parseFloat(options.minConfidence);
     }
 
-    // Query patterns from manifest
-    const manifestResults = manifest ? manifestStore.queryPatterns(query) : [];
+    // Use the search method to find matching patterns
+    const searchResults = await service.search(pattern, searchOptions);
 
-    // Also search in PatternStore for patterns matching the query
-    // This ensures all 15 categories are searched
-    const patternStoreResults: Array<{
-      patternId: string;
-      patternName: string;
-      category: PatternCategory;
-      locations: Array<{
-        file: string;
-        range: { start: number; end: number };
-        type: string;
-        name: string;
-        signature?: string;
-      }>;
-      totalCount: number;
-    }> = [];
+    if (searchResults.length === 0) {
+      // Get all patterns to show available categories
+      const allPatternsResult = await service.listPatterns({ limit: 1000 });
+      
+      console.log(chalk.yellow(`No patterns found matching "${pattern}"`));
+      
+      // Show available categories
+      const categories = new Set(allPatternsResult.items.map(p => p.category));
+      if (categories.size > 0) {
+        console.log(chalk.dim('\nAvailable categories:'));
+        for (const cat of categories) {
+          const count = allPatternsResult.items.filter(p => p.category === cat).length;
+          console.log(chalk.dim(`  ${cat}: ${count} patterns`));
+        }
+      }
+      
+      process.exit(0);
+    }
 
-    const searchTerm = pattern.toLowerCase();
+    // Fetch full pattern details for results
     const limit = parseInt(options.limit, 10);
-
-    for (const p of allPatterns) {
-      // Filter by pattern name/id
-      if (!p.id.toLowerCase().includes(searchTerm) &&
-          !p.name.toLowerCase().includes(searchTerm) &&
-          !p.category.toLowerCase().includes(searchTerm) &&
-          !p.subcategory.toLowerCase().includes(searchTerm)) {
-        continue;
-      }
-
-      // Filter by category
-      if (options.category && p.category !== options.category) {
-        continue;
-      }
-
-      // Filter by status
-      if (options.status && p.status !== options.status) {
-        continue;
-      }
-
-      // Filter by confidence
-      if (options.minConfidence && p.confidence.score < parseFloat(options.minConfidence)) {
-        continue;
-      }
-
-      const locations = p.locations.slice(0, limit).map(loc => ({
-        file: loc.file,
-        range: { start: loc.line, end: loc.endLine || loc.line },
-        type: 'block' as const,
-        name: `line-${loc.line}`,
-      }));
-
-      patternStoreResults.push({
-        patternId: p.id,
-        patternName: p.name,
-        category: p.category,
-        locations,
-        totalCount: p.locations.length,
-      });
-    }
-
-    // Merge results (dedupe by pattern ID)
-    const mergedResults = new Map<string, {
+    const results: Array<{
       patternId: string;
       patternName: string;
       category: PatternCategory;
@@ -134,46 +85,30 @@ export const whereCommand = new Command('where')
         type: string;
         name: string;
         confidence: number;
-        signature?: string;
       }>;
       totalCount: number;
-    }>();
+    }> = [];
 
-    for (const r of manifestResults) {
-      mergedResults.set(r.patternId, r);
-    }
+    for (const summary of searchResults) {
+      const fullPattern = await service.getPattern(summary.id);
+      if (!fullPattern) continue;
 
-    for (const r of patternStoreResults) {
-      if (!mergedResults.has(r.patternId)) {
-        // Add required fields for SemanticLocation compatibility
-        const locationsWithHash = r.locations.map(loc => ({
-          ...loc,
-          hash: '',
-          confidence: 0.9,
-        }));
-        mergedResults.set(r.patternId, {
-          ...r,
-          locations: locationsWithHash,
-        });
-      }
-    }
+      const locations = fullPattern.locations.slice(0, limit).map(loc => ({
+        file: loc.file,
+        hash: '',
+        range: { start: loc.line, end: loc.endLine ?? loc.line },
+        type: 'block' as const,
+        name: `line-${loc.line}`,
+        confidence: fullPattern.confidence,
+      }));
 
-    const results = Array.from(mergedResults.values());
-
-    if (results.length === 0) {
-      console.log(chalk.yellow(`No patterns found matching "${pattern}"`));
-      
-      // Show available categories
-      const categories = new Set(allPatterns.map(p => p.category));
-      if (categories.size > 0) {
-        console.log(chalk.dim('\nAvailable categories:'));
-        for (const cat of categories) {
-          const count = allPatterns.filter(p => p.category === cat).length;
-          console.log(chalk.dim(`  ${cat}: ${count} patterns`));
-        }
-      }
-      
-      process.exit(0);
+      results.push({
+        patternId: fullPattern.id,
+        patternName: fullPattern.name,
+        category: fullPattern.category,
+        locations,
+        totalCount: fullPattern.locations.length,
+      });
     }
 
     // Output
@@ -195,10 +130,6 @@ export const whereCommand = new Command('where')
           
           if (loc.type !== 'file' && loc.type !== 'block') {
             console.log(`    ${chalk.dim(loc.type)}: ${chalk.white(loc.name)}`);
-          }
-          
-          if (loc.signature) {
-            console.log(`    ${chalk.dim(loc.signature.substring(0, 60))}`);
           }
         }
 

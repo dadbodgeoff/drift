@@ -2,8 +2,8 @@
  * Export Command - Export manifest in various formats
  *
  * Exports the pattern manifest for AI consumption or reporting.
- * Now reads from BOTH ManifestStore and PatternStore to ensure
- * all 15 categories are available.
+ *
+ * MIGRATION: Now uses IPatternService for pattern operations.
  *
  * Usage:
  *   drift export                    # Export as JSON to stdout
@@ -17,15 +17,15 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
 import {
-  ManifestStore,
-  PatternStore,
   exportManifest,
   estimateTokens,
   type ExportFormat,
   type ExportOptions,
   type PatternCategory,
   type ManifestPattern,
+  type Manifest,
 } from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 
 const VALID_FORMATS: ExportFormat[] = ['json', 'ai-context', 'summary', 'markdown'];
 const VALID_CATEGORIES: PatternCategory[] = [
@@ -54,51 +54,49 @@ export const exportCommand = new Command('export')
       process.exit(1);
     }
 
-    // Load manifest from ManifestStore
-    const manifestStore = new ManifestStore(cwd);
-    let manifest = await manifestStore.load();
+    // Initialize pattern service
+    const service = createCLIPatternService(cwd);
 
-    // Also load from PatternStore to get ALL 15 categories
-    // The PatternStore has the complete data, ManifestStore may be incomplete
-    const patternStore = new PatternStore({ rootDir: cwd });
-    await patternStore.initialize();
-    const allPatterns = patternStore.getAll();
+    // Get all patterns (service auto-initializes)
+    const allPatternsResult = await service.listPatterns({ limit: 10000 });
+    
+    // Fetch full pattern details
+    const allPatterns = await Promise.all(
+      allPatternsResult.items.map(async (summary) => {
+        const pattern = await service.getPattern(summary.id);
+        return pattern;
+      })
+    );
+    
+    // Filter out nulls
+    const validPatterns = allPatterns.filter((p): p is NonNullable<typeof p> => p !== null);
 
-    // If no manifest exists but we have patterns, create a synthetic manifest
-    if (!manifest && allPatterns.length === 0) {
+    if (validPatterns.length === 0) {
       console.error(chalk.red('No patterns found. Run `drift scan` first.'));
       process.exit(1);
     }
 
-    // Create or enhance manifest with PatternStore data
-    if (!manifest) {
-      manifest = {
-        version: '2.0.0',
-        generated: new Date().toISOString(),
-        codebaseHash: '',
-        projectRoot: cwd,
-        summary: {
-          totalPatterns: 0,
-          patternsByStatus: { discovered: 0, approved: 0, ignored: 0 },
-          patternsByCategory: {},
-          totalFiles: 0,
-          totalLocations: 0,
-          totalOutliers: 0,
-        },
-        patterns: {},
-        files: {},
-      };
-    }
+    // Build manifest from patterns
+    const manifest: Manifest = {
+      version: '2.0.0',
+      generated: new Date().toISOString(),
+      codebaseHash: '',
+      projectRoot: cwd,
+      summary: {
+        totalPatterns: 0,
+        patternsByStatus: { discovered: 0, approved: 0, ignored: 0 },
+        patternsByCategory: {},
+        totalFiles: 0,
+        totalLocations: 0,
+        totalOutliers: 0,
+      },
+      patterns: {},
+      files: {},
+    };
 
-    // Merge PatternStore patterns into manifest
-    // This ensures all 15 categories are available for export
-    for (const pattern of allPatterns) {
+    // Convert patterns to manifest format
+    for (const pattern of validPatterns) {
       const manifestKey = `${pattern.category}/${pattern.subcategory}/${pattern.id}`;
-      
-      // Skip if already in manifest with same or more data
-      if (manifest.patterns[manifestKey]) {
-        continue;
-      }
 
       // Convert Pattern to ManifestPattern format
       const manifestPattern: ManifestPattern = {
@@ -107,36 +105,36 @@ export const exportCommand = new Command('export')
         category: pattern.category,
         subcategory: pattern.subcategory,
         status: pattern.status,
-        confidence: pattern.confidence.score,
+        confidence: pattern.confidence,
         locations: pattern.locations.map(loc => ({
           file: loc.file,
           hash: '',
-          range: { start: loc.line, end: loc.endLine || loc.line },
+          range: { start: loc.line, end: loc.endLine ?? loc.line },
           type: 'block' as const,
           name: `line-${loc.line}`,
-          confidence: 0.9,
-          snippet: '',
+          confidence: pattern.confidence,
+          snippet: loc.snippet ?? '',
           language: getLanguageFromFile(loc.file),
         })),
         outliers: pattern.outliers.map(outlier => ({
           file: outlier.file,
           hash: '',
-          range: { start: outlier.line, end: outlier.endLine || outlier.line },
+          range: { start: outlier.line, end: outlier.endLine ?? outlier.line },
           type: 'block' as const,
-          name: outlier.reason,
+          name: outlier.reason ?? `line-${outlier.line}`,
           confidence: 0.5,
-          snippet: '',
+          snippet: outlier.snippet ?? '',
           language: getLanguageFromFile(outlier.file),
         })),
         description: pattern.description,
-        firstSeen: pattern.metadata.firstSeen,
-        lastSeen: pattern.metadata.lastSeen,
+        firstSeen: pattern.firstSeen,
+        lastSeen: pattern.lastSeen,
       };
 
       manifest.patterns[manifestKey] = manifestPattern;
     }
 
-    // Recalculate summary
+    // Calculate summary
     const patterns = Object.values(manifest.patterns);
     const patternsByStatus = { discovered: 0, approved: 0, ignored: 0 };
     const patternsByCategory: Record<string, number> = {};
@@ -154,7 +152,7 @@ export const exportCommand = new Command('export')
       totalPatterns: patterns.length,
       patternsByStatus,
       patternsByCategory,
-      totalFiles: Object.keys(manifest.files).length || new Set(patterns.flatMap(p => p.locations.map(l => l.file))).size,
+      totalFiles: new Set(patterns.flatMap(p => p.locations.map(l => l.file))).size,
       totalLocations,
       totalOutliers,
     };

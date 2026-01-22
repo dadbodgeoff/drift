@@ -120,13 +120,13 @@ export const EXPLORATION_TOOLS: Tool[] = [
 ];
 
 // Handler exports
-export { handlePatternsList } from './patterns-list.js';
+export { handlePatternsList, handlePatternsListWithService } from './patterns-list.js';
 export { handleSecuritySummary } from './security-summary.js';
 export { handleContractsList } from './contracts-list.js';
 export { handleTrends } from './trends.js';
 
 // Re-export types
-export type { PatternSummary, PatternsListData } from './patterns-list.js';
+export type { PatternSummary, PatternsListData, PatternsListArgs } from './patterns-list.js';
 export type { SecuritySummaryData } from './security-summary.js';
 export type { ContractSummary, ContractsListData } from './contracts-list.js';
 export type { TrendItem, TrendsData } from './trends.js';

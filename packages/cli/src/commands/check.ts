@@ -3,6 +3,8 @@
  *
  * Check for violations against approved patterns.
  *
+ * MIGRATION: Now uses IPatternService for pattern operations.
+ *
  * @requirements 29.3
  */
 
@@ -10,11 +12,8 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import {
-  PatternStore,
-  type Violation,
-  type Severity,
-} from 'driftdetect-core';
+import type { Violation, Severity } from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { getStagedFiles } from '../git/staged-files.js';
 import {
@@ -139,14 +138,24 @@ async function checkAction(options: CheckOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Initialize pattern store
-  const store = new PatternStore({ rootDir });
-  await store.initialize();
+  // Initialize pattern service
+  const service = createCLIPatternService(rootDir);
 
-  // Get approved patterns
-  const approvedPatterns = store.getApproved();
+  // Get approved patterns (service auto-initializes)
+  const approvedResult = await service.listByStatus('approved', { limit: 10000 });
+  
+  // Fetch full pattern details for each approved pattern
+  const approvedPatterns = await Promise.all(
+    approvedResult.items.map(async (summary) => {
+      const pattern = await service.getPattern(summary.id);
+      return pattern;
+    })
+  );
+  
+  // Filter out any null patterns
+  const validPatterns = approvedPatterns.filter((p): p is NonNullable<typeof p> => p !== null);
 
-  if (approvedPatterns.length === 0) {
+  if (validPatterns.length === 0) {
     if (showProgress) {
       status.info('No approved patterns to check against.');
       console.log(chalk.gray('Run `drift scan` to discover patterns, then `drift approve` to approve them.'));
@@ -185,7 +194,7 @@ async function checkAction(options: CheckOptions): Promise<void> {
   } else {
     // Get all files from pattern locations
     const allFiles = new Set<string>();
-    for (const pattern of approvedPatterns) {
+    for (const pattern of validPatterns) {
       for (const location of pattern.locations) {
         allFiles.add(location.file);
       }
@@ -214,7 +223,7 @@ async function checkAction(options: CheckOptions): Promise<void> {
       }
 
       // Check against each approved pattern
-      for (const pattern of approvedPatterns) {
+      for (const pattern of validPatterns) {
         // Check if this file has outliers for this pattern
         const outliers = pattern.outliers.filter((o) => o.file === file);
         
@@ -258,7 +267,8 @@ async function checkAction(options: CheckOptions): Promise<void> {
   const infoCount = violations.filter((v) => v.severity === 'info').length;
   const hintCount = violations.filter((v) => v.severity === 'hint').length;
 
-  // Prepare report data
+  // Prepare report data - convert unified Pattern to legacy format for reporters
+  // The reporters expect the legacy Pattern type with confidence as an object
   const reportData: ReportData = {
     violations,
     summary: {
@@ -268,7 +278,8 @@ async function checkAction(options: CheckOptions): Promise<void> {
       infos: infoCount,
       hints: hintCount,
     },
-    patterns: approvedPatterns,
+    // Cast to unknown first since the types are structurally different
+    patterns: validPatterns as unknown as ReportData['patterns'],
     timestamp: new Date().toISOString(),
     rootDir,
   };

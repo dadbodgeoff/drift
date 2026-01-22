@@ -13,6 +13,9 @@
  * - Response caching
  * - Rate limiting
  * - Metrics collection
+ * 
+ * MIGRATION: Now uses IPatternService for pattern operations.
+ * The service provides a unified interface with caching and business logic.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -29,7 +32,9 @@ import {
   ContractStore,
   CallGraphStore,
   createDataLake,
+  createPatternServiceFromStore,
   type DataLake,
+  type IPatternService,
 } from 'driftdetect-core';
 
 // Infrastructure
@@ -44,18 +49,18 @@ import {
 import { ALL_TOOLS, TOOL_CATEGORIES } from './tools/registry.js';
 
 // Discovery handlers
-import { handleStatus } from './tools/discovery/status.js';
+import { handleStatus, handleStatusWithService } from './tools/discovery/status.js';
 import { handleCapabilities } from './tools/discovery/capabilities.js';
 
 // Exploration handlers
-import { handlePatternsList } from './tools/exploration/patterns-list.js';
+import { handlePatternsList, handlePatternsListWithService } from './tools/exploration/patterns-list.js';
 import { handleSecuritySummary } from './tools/exploration/security-summary.js';
 import { handleContractsList } from './tools/exploration/contracts-list.js';
 import { handleTrends } from './tools/exploration/trends.js';
 
 // Detail handlers
-import { handlePatternGet } from './tools/detail/pattern-get.js';
-import { handleCodeExamples } from './tools/detail/code-examples.js';
+import { handlePatternGet, handlePatternGetWithService } from './tools/detail/pattern-get.js';
+import { handleCodeExamples, handleCodeExamplesWithService } from './tools/detail/code-examples.js';
 import { handleFilesList } from './tools/detail/files-list.js';
 import { handleFilePatterns } from './tools/detail/file-patterns.js';
 import { handleImpactAnalysis } from './tools/detail/impact-analysis.js';
@@ -71,6 +76,8 @@ export interface EnterpriseMCPConfig {
   enableRateLimiting?: boolean;
   enableMetrics?: boolean;
   maxRequestsPerMinute?: number;
+  /** Use the new IPatternService instead of direct PatternStore access */
+  usePatternService?: boolean;
 }
 
 export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
@@ -89,6 +96,15 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
     contract: new ContractStore({ rootDir: config.projectRoot }),
     callGraph: new CallGraphStore({ rootDir: config.projectRoot }),
   };
+
+  // Initialize pattern service (wraps PatternStore with unified interface)
+  // Default to using the new service for better abstraction
+  const usePatternService = config.usePatternService !== false;
+  const patternService: IPatternService | null = usePatternService
+    ? createPatternServiceFromStore(stores.pattern, config.projectRoot, {
+        enableCache: config.enableCache !== false,
+      })
+    : null;
 
   // Initialize data lake for optimized queries
   const dataLake = createDataLake({ rootDir: config.projectRoot });
@@ -141,7 +157,14 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       }
 
       // Route to handler
-      const result = await routeToolCall(name, args, stores, config.projectRoot, dataLake);
+      const result = await routeToolCall(
+        name, 
+        args, 
+        stores, 
+        config.projectRoot, 
+        dataLake,
+        patternService
+      );
 
       // Cache result
       if (cache && cacheKey && result && !('isError' in result && result.isError)) {
@@ -176,7 +199,8 @@ async function routeToolCall(
     callGraph: CallGraphStore;
   },
   projectRoot: string,
-  dataLake: DataLake
+  dataLake: DataLake,
+  patternService: IPatternService | null
 ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
   
   // ============================================================================
@@ -202,6 +226,10 @@ async function routeToolCall(
   // ============================================================================
   switch (name) {
     case 'drift_status':
+      // Use new service if available, otherwise fall back to legacy store
+      if (patternService) {
+        return handleStatusWithService(patternService, args, dataLake);
+      }
       return handleStatus(stores.pattern, args, dataLake);
       
     case 'drift_capabilities':
@@ -213,7 +241,19 @@ async function routeToolCall(
   // ============================================================================
   switch (name) {
     case 'drift_patterns_list':
-      return handlePatternsList(stores.pattern, args as Parameters<typeof handlePatternsList>[1], dataLake);
+      // Use new service if available, otherwise fall back to legacy store
+      if (patternService) {
+        return handlePatternsListWithService(
+          patternService, 
+          args as Parameters<typeof handlePatternsListWithService>[1], 
+          dataLake
+        );
+      }
+      return handlePatternsList(
+        stores.pattern, 
+        args as Parameters<typeof handlePatternsList>[1], 
+        dataLake
+      );
       
     case 'drift_security_summary':
       return handleSecuritySummary(stores.boundary, args as Parameters<typeof handleSecuritySummary>[1]);
@@ -231,9 +271,24 @@ async function routeToolCall(
   switch (name) {
     // Pattern detail tools
     case 'drift_pattern_get':
-      return handlePatternGet(stores.pattern, args as Parameters<typeof handlePatternGet>[1]);
+      // Use new service if available, otherwise fall back to legacy store
+      if (patternService) {
+        return handlePatternGetWithService(
+          patternService, 
+          args as unknown as Parameters<typeof handlePatternGetWithService>[1]
+        );
+      }
+      return handlePatternGet(stores.pattern, args as unknown as Parameters<typeof handlePatternGet>[1]);
       
     case 'drift_code_examples':
+      // Use new service if available, otherwise fall back to legacy store
+      if (patternService) {
+        return handleCodeExamplesWithService(
+          patternService,
+          projectRoot,
+          args as Parameters<typeof handleCodeExamplesWithService>[2]
+        );
+      }
       return handleCodeExamples(
         stores.pattern, 
         projectRoot, 

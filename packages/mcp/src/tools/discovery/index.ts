@@ -27,7 +27,7 @@ export const DISCOVERY_TOOLS: Tool[] = [
 ];
 
 // Handler exports
-export { handleStatus } from './status.js';
+export { handleStatus, handleStatusWithService } from './status.js';
 export { handleCapabilities } from './capabilities.js';
 
 // Re-export types

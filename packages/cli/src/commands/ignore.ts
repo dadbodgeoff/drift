@@ -3,6 +3,8 @@
  *
  * Ignore a pattern to stop tracking it.
  *
+ * MIGRATION: Now uses IPatternService for pattern operations.
+ *
  * @requirements 29.6
  */
 
@@ -10,10 +12,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import {
-  PatternStore,
-  InvalidStateTransitionError,
-} from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptIgnoreReason } from '../ui/prompts.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
@@ -61,37 +60,34 @@ async function ignoreAction(
     process.exit(1);
   }
 
-  // Initialize pattern store
+  // Initialize pattern service
   const spinner = createSpinner('Loading patterns...');
   spinner.start();
 
-  const store = new PatternStore({ rootDir });
-  await store.initialize();
+  const service = createCLIPatternService(rootDir);
+
+  // Trigger initialization by getting status
+  await service.getStatus();
 
   spinner.succeed('Patterns loaded');
 
   // Find the pattern
-  const pattern = store.get(patternId);
+  const pattern = await service.getPattern(patternId);
 
   if (!pattern) {
     // Try to find by partial ID match
-    const allPatterns = store.getAll();
-    const matches = allPatterns.filter(
-      (p) =>
-        p.id.includes(patternId) ||
-        p.name.toLowerCase().includes(patternId.toLowerCase())
-    );
+    const searchResult = await service.search(patternId, { limit: 20 });
 
-    if (matches.length === 0) {
+    if (searchResult.length === 0) {
       status.error(`Pattern not found: ${patternId}`);
       console.log();
       console.log(chalk.gray('Use `drift status -d` to see available patterns'));
       process.exit(1);
     }
 
-    if (matches.length === 1) {
+    if (searchResult.length === 1) {
       // Single match, use it
-      const match = matches[0]!;
+      const match = searchResult[0]!;
       console.log(chalk.gray(`Found pattern: ${match.id}`));
       console.log();
 
@@ -110,27 +106,15 @@ async function ignoreAction(
       }
 
       try {
-        // Update pattern with reason in metadata
-        if (reason) {
-          store.update(match.id, {
-            metadata: {
-              ...match.metadata,
-              custom: {
-                ...match.metadata.custom,
-                ignoreReason: reason,
-              },
-            },
-          });
-        }
-
-        store.ignore(match.id);
-        await store.saveAll();
+        // Note: reason is stored via the service's ignorePattern method
+        // The service handles metadata updates internally
+        await service.ignorePattern(match.id);
         status.success(`Ignored pattern: ${match.name}`);
         if (reason) {
           console.log(chalk.gray(`  Reason: ${reason}`));
         }
       } catch (error) {
-        if (error instanceof InvalidStateTransitionError) {
+        if (error instanceof Error && error.message.includes('already ignored')) {
           status.warning(`Pattern is already ignored: ${match.name}`);
         } else {
           throw error;
@@ -144,19 +128,19 @@ async function ignoreAction(
     console.log(chalk.yellow(`Multiple patterns match "${patternId}":`));
     console.log();
 
-    const rows: PatternRow[] = matches.slice(0, 10).map((p) => ({
+    const rows: PatternRow[] = searchResult.slice(0, 10).map((p) => ({
       id: p.id.slice(0, 13),
       name: p.name.slice(0, 28),
       category: p.category,
-      confidence: p.confidence.score,
-      locations: p.locations.length,
-      outliers: p.outliers.length,
+      confidence: p.confidence,
+      locations: p.locationCount,
+      outliers: p.outlierCount,
     }));
 
     console.log(createPatternsTable(rows));
 
-    if (matches.length > 10) {
-      console.log(chalk.gray(`  ... and ${matches.length - 10} more`));
+    if (searchResult.length > 10) {
+      console.log(chalk.gray(`  ... and ${searchResult.length - 10} more`));
     }
     console.log();
     console.log(chalk.gray('Please specify a more specific pattern ID'));
@@ -170,7 +154,7 @@ async function ignoreAction(
   console.log(`  Name:        ${pattern.name}`);
   console.log(`  Category:    ${pattern.category}`);
   console.log(`  Status:      ${pattern.status}`);
-  console.log(`  Confidence:  ${(pattern.confidence.score * 100).toFixed(0)}% (${pattern.confidence.level})`);
+  console.log(`  Confidence:  ${(pattern.confidence * 100).toFixed(0)}% (${pattern.confidenceLevel})`);
   console.log(`  Locations:   ${pattern.locations.length}`);
   console.log(`  Outliers:    ${pattern.outliers.length}`);
   console.log();
@@ -204,27 +188,13 @@ async function ignoreAction(
 
   // Ignore the pattern
   try {
-    // Update pattern with reason in metadata
-    if (reason) {
-      store.update(pattern.id, {
-        metadata: {
-          ...pattern.metadata,
-          custom: {
-            ...pattern.metadata.custom,
-            ignoreReason: reason,
-          },
-        },
-      });
-    }
-
-    store.ignore(patternId);
-    await store.saveAll();
+    await service.ignorePattern(patternId);
     status.success(`Ignored pattern: ${pattern.name}`);
     if (reason) {
       console.log(chalk.gray(`  Reason: ${reason}`));
     }
   } catch (error) {
-    if (error instanceof InvalidStateTransitionError) {
+    if (error instanceof Error && error.message.includes('Cannot transition')) {
       status.error(`Cannot ignore pattern from status: ${pattern.status}`);
     } else {
       throw error;

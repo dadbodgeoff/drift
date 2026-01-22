@@ -3,6 +3,8 @@
  *
  * Generate reports in various formats.
  *
+ * MIGRATION: Now uses IPatternService for pattern operations.
+ *
  * @requirements 29.7
  */
 
@@ -10,10 +12,8 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import {
-  PatternStore,
-  type Violation,
-} from 'driftdetect-core';
+import type { Violation } from 'driftdetect-core';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { promptReportFormat, promptCategorySelection } from '../ui/prompts.js';
 import {
@@ -100,12 +100,14 @@ async function reportAction(options: ReportOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Initialize pattern store
+  // Initialize pattern service
   const spinner = createSpinner('Loading patterns...');
   spinner.start();
 
-  const store = new PatternStore({ rootDir });
-  await store.initialize();
+  const service = createCLIPatternService(rootDir);
+
+  // Get status to understand available categories (auto-initializes)
+  const systemStatus = await service.getStatus();
 
   spinner.succeed('Patterns loaded');
 
@@ -118,8 +120,7 @@ async function reportAction(options: ReportOptions): Promise<void> {
   // Get categories to include
   let categories = options.categories;
   if (!categories || categories.length === 0) {
-    const stats = store.getStats();
-    const availableCategories = Object.entries(stats.byCategory)
+    const availableCategories = Object.entries(systemStatus.byCategory)
       .filter(([_, count]) => count > 0)
       .map(([category]) => category);
 
@@ -131,8 +132,19 @@ async function reportAction(options: ReportOptions): Promise<void> {
     }
   }
 
-  // Filter patterns by category
-  let patterns = store.getApproved();
+  // Get approved patterns
+  const approvedResult = await service.listByStatus('approved', { limit: 10000 });
+  
+  // Fetch full pattern details
+  const approvedPatterns = await Promise.all(
+    approvedResult.items.map(async (summary) => {
+      const pattern = await service.getPattern(summary.id);
+      return pattern;
+    })
+  );
+  
+  // Filter out nulls and by category
+  let patterns = approvedPatterns.filter((p): p is NonNullable<typeof p> => p !== null);
   if (categories && categories.length > 0) {
     patterns = patterns.filter((p) => categories!.includes(p.category));
   }
@@ -175,7 +187,7 @@ async function reportAction(options: ReportOptions): Promise<void> {
   const infoCount = violations.filter((v) => v.severity === 'info').length;
   const hintCount = violations.filter((v) => v.severity === 'hint').length;
 
-  // Prepare report data
+  // Prepare report data - cast patterns to legacy format
   const reportData: ReportData = {
     violations,
     summary: {
@@ -185,7 +197,7 @@ async function reportAction(options: ReportOptions): Promise<void> {
       infos: infoCount,
       hints: hintCount,
     },
-    patterns,
+    patterns: patterns as unknown as ReportData['patterns'],
     timestamp: new Date().toISOString(),
     rootDir,
   };

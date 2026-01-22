@@ -380,3 +380,97 @@ export type {
   QueryResult,
   LanguageIntelligenceConfig,
 } from './language-intelligence/index.js';
+
+// ============================================================================
+// Unified Pattern System (NEW - Phase 1 of Pattern System Consolidation)
+// ============================================================================
+
+// Pattern types and utilities
+export type {
+  // Core pattern types (unified)
+  Pattern as UnifiedPattern,
+  PatternSummary as UnifiedPatternSummary,
+  PatternLocation as UnifiedPatternLocation,
+  OutlierLocation as UnifiedOutlierLocation,
+  PatternMetadata as UnifiedPatternMetadata,
+  DetectorConfig as UnifiedDetectorConfig,
+  CreatePatternInput,
+  // Type aliases (for disambiguation from existing types)
+  PatternCategory as UnifiedPatternCategory,
+  PatternStatus as UnifiedPatternStatus,
+  ConfidenceLevel as UnifiedConfidenceLevel,
+  Severity as UnifiedSeverity,
+  DetectionMethod,
+} from './patterns/index.js';
+
+export {
+  // Constants
+  PATTERN_CATEGORIES as UNIFIED_PATTERN_CATEGORIES,
+  VALID_STATUS_TRANSITIONS,
+  CONFIDENCE_THRESHOLDS as UNIFIED_CONFIDENCE_THRESHOLDS,
+  SEVERITY_ORDER,
+  // Utility functions
+  computeConfidenceLevel,
+  toPatternSummary,
+  createPattern,
+} from './patterns/index.js';
+
+// Pattern repository interface and implementations
+export type {
+  IPatternRepository,
+  PatternFilter,
+  PatternSort,
+  PatternPagination,
+  PatternQueryOptions as UnifiedPatternQueryOptions,
+  PatternQueryResult as UnifiedPatternQueryResult,
+  PatternRepositoryEventType,
+  PatternRepositoryEventHandler,
+  PatternRepositoryConfig,
+} from './patterns/index.js';
+
+export {
+  DEFAULT_REPOSITORY_CONFIG,
+  FilePatternRepository,
+  InMemoryPatternRepository,
+  CachedPatternRepository,
+  UnifiedFilePatternRepository,
+  createUnifiedFilePatternRepository,
+  createPatternRepository,
+  createPatternRepositorySync,
+  detectStorageFormat,
+  PatternNotFoundError as UnifiedPatternNotFoundError,
+  InvalidStatusTransitionError as UnifiedInvalidStatusTransitionError,
+  PatternAlreadyExistsError,
+} from './patterns/index.js';
+
+export type {
+  UnifiedRepositoryConfig,
+  StorageFormat,
+  RepositoryFactoryConfig,
+} from './patterns/index.js';
+
+// Pattern service interface and implementation
+export type {
+  IPatternService,
+  PatternSystemStatus,
+  CategorySummary as PatternCategorySummary,
+  PatternWithExamples,
+  CodeExample,
+  ListOptions,
+  PaginatedResult,
+  SearchOptions,
+  PatternServiceConfig,
+} from './patterns/index.js';
+
+export {
+  DEFAULT_SERVICE_CONFIG,
+  PatternService,
+  createPatternService,
+} from './patterns/index.js';
+
+// Pattern store adapter (for backward compatibility during migration)
+export {
+  PatternStoreAdapter,
+  createPatternStoreAdapter,
+  createPatternServiceFromStore,
+} from './patterns/index.js';
