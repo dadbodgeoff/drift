@@ -268,8 +268,8 @@ importers:
   packages/detectors:
     dependencies:
       driftdetect-core:
-        specifier: ^0.3.0
-        version: 0.3.0(tree-sitter@0.21.1)
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -364,10 +364,10 @@ importers:
         specifier: ^1.0.0
         version: 1.25.3(hono@4.11.4)(zod@4.3.5)
       driftdetect-core:
-        specifier: ^0.4.0
+        specifier: workspace:*
         version: link:../core
       driftdetect-detectors:
-        specifier: ^0.3.0
+        specifier: workspace:*
         version: link:../detectors
     devDependencies:
       '@types/node':
@@ -380,7 +380,7 @@ importers:
   packages/vscode:
     dependencies:
       driftdetect-lsp:
-        specifier: workspace:*
+        specifier: ^0.4.2
         version: link:../lsp
       vscode-languageclient:
         specifier: ^9.0.1
@@ -3501,19 +3501,6 @@ packages:
 
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
-
-  /driftdetect-core@0.3.0(tree-sitter@0.21.1):
-    resolution: {integrity: sha512-cM9DuJr96uqTBjGgUPhRCyd0S2sk6Pvylb0eOqeKyI8SyATCPkHD9RAxc3G7BCylDTvZs6wco47dm5p1EDzPFg==}
-    dependencies:
-      ignore: 5.3.2
-      minimatch: 9.0.5
-      typescript: 5.9.3
-    optionalDependencies:
-      tree-sitter-python: 0.21.0(tree-sitter@0.21.1)
-    transitivePeerDependencies:
-      - tree-sitter
-      - tree_sitter
-    dev: false
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}

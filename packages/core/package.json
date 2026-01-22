@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-core",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Core pattern detection and analysis engine for Drift",
   "license": "MIT",
   "repository": {
