@@ -1,14 +1,16 @@
 /**
- * Scanner Service - Enterprise-grade pattern detection
+ * Scanner Service - Enterprise-grade pattern detection with Worker Threads
  *
  * Uses the real detectors from driftdetect-detectors to find
  * high-value architectural patterns and violations.
  *
- * Now includes manifest generation for pattern location discovery.
+ * Now uses Piscina worker threads for parallel CPU-bound processing.
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import {
   createAllDetectorsArray,
   getDetectorCounts,
@@ -24,6 +26,31 @@ import {
   type ManifestPattern,
   type Manifest,
 } from 'driftdetect-core';
+import type {
+  DetectorWorkerTask,
+  DetectorWorkerResult,
+  WorkerPatternMatch,
+} from '../workers/detector-worker.js';
+
+
+// Get the directory of this module for worker path resolution
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Piscina types (dynamic import)
+interface Piscina {
+  run<T>(task: unknown): Promise<T>;
+  destroy(): Promise<void>;
+  readonly threads: unknown[];
+  readonly queueSize: number;
+  readonly completed: number;
+}
+
+type PiscinaConstructor = new (options: {
+  filename: string;
+  minThreads?: number;
+  maxThreads?: number;
+  idleTimeout?: number;
+}) => Piscina;
 
 // ============================================================================
 // Types
@@ -51,7 +78,12 @@ export interface ScannerServiceConfig {
   generateManifest?: boolean;
   /** Only scan changed files (incremental) */
   incremental?: boolean;
+  /** Use worker threads for parallel processing */
+  useWorkerThreads?: boolean;
+  /** Number of worker threads (default: CPU cores - 1) */
+  workerThreads?: number;
 }
+
 
 /**
  * Aggregated pattern match across files
@@ -101,8 +133,9 @@ export interface FileScanResult {
   }>;
   violations: AggregatedViolation[];
   duration: number;
-  error?: string;
+  error?: string | undefined;
 }
+
 
 /**
  * Overall scan results
@@ -122,30 +155,26 @@ export interface ScanResults {
     skipped: number;
   };
   /** Manifest with semantic locations (if generateManifest is true) */
-  manifest?: Manifest;
+  manifest?: Manifest | undefined;
+  /** Worker thread stats (if useWorkerThreads is true) */
+  workerStats?: {
+    threadsUsed: number;
+    tasksCompleted: number;
+  } | undefined;
 }
 
 // ============================================================================
 // Location Deduplication
 // ============================================================================
 
-/**
- * Create a unique key for a basic location to enable deduplication
- */
 function locationKey(loc: { file: string; line: number; column: number }): string {
   return `${loc.file}:${loc.line}:${loc.column}`;
 }
 
-/**
- * Create a unique key for a semantic location to enable deduplication
- */
 function semanticLocationKey(loc: SemanticLocation): string {
   return `${loc.file}:${loc.range.start}:${loc.range.end}:${loc.name}`;
 }
 
-/**
- * Add a basic location to an array only if it doesn't already exist
- */
 function addUniqueLocation<T extends { file: string; line: number; column: number }>(
   locations: T[],
   location: T,
@@ -161,9 +190,6 @@ function addUniqueLocation<T extends { file: string; line: number; column: numbe
   return true;
 }
 
-/**
- * Add a semantic location to an array only if it doesn't already exist
- */
 function addUniqueSemanticLocation(
   locations: SemanticLocation[],
   location: SemanticLocation,
@@ -178,6 +204,7 @@ function addUniqueSemanticLocation(
   locations.push(location);
   return true;
 }
+
 
 // ============================================================================
 // Language Detection
@@ -218,41 +245,29 @@ function isDetectorApplicable(detector: BaseDetector, language: Language | null)
 }
 
 // ============================================================================
-// Critical Detectors (highest value)
+// Critical Detectors
 // ============================================================================
 
 const CRITICAL_DETECTOR_IDS = new Set([
-  // Security - CRITICAL
   'security/sql-injection',
   'security/xss-prevention',
   'security/secret-management',
   'security/input-sanitization',
   'security/csrf-protection',
-  
-  // Auth - CRITICAL
   'auth/middleware-usage',
   'auth/token-handling',
-  
-  // API - HIGH
   'api/route-structure',
   'api/error-format',
   'api/response-envelope',
-  
-  // Data Access - HIGH
   'data-access/n-plus-one',
   'data-access/query-patterns',
-  
-  // Structural - HIGH
   'structural/circular-deps',
   'structural/module-boundaries',
-  
-  // Errors - HIGH
   'errors/exception-hierarchy',
   'errors/try-catch-placement',
-  
-  // Logging - HIGH
   'logging/pii-redaction',
 ]);
+
 
 // ============================================================================
 // Scanner Service
@@ -261,29 +276,36 @@ const CRITICAL_DETECTOR_IDS = new Set([
 /**
  * Scanner Service
  *
- * Orchestrates pattern detection across files using real detectors
- * from driftdetect-detectors package.
+ * Orchestrates pattern detection across files using real detectors.
+ * Supports both single-threaded and multi-threaded (Piscina) modes.
  */
 export class ScannerService {
   private config: ScannerServiceConfig;
   private detectors: BaseDetector[] = [];
   private initialized = false;
   private manifestStore: ManifestStore | null = null;
+  private pool: Piscina | null = null;
+  private PiscinaClass: PiscinaConstructor | null = null;
 
   constructor(config: ScannerServiceConfig) {
-    this.config = config;
+    this.config = {
+      ...config,
+      // Default to using worker threads
+      useWorkerThreads: config.useWorkerThreads ?? true,
+      workerThreads: config.workerThreads ?? Math.max(1, os.cpus().length - 1),
+    };
     if (config.generateManifest) {
       this.manifestStore = new ManifestStore(config.rootDir);
     }
   }
 
   /**
-   * Initialize the scanner service - loads all detectors
+   * Initialize the scanner service
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Create all detectors
+    // Create all detectors (needed for counts even in worker mode)
     this.detectors = await createAllDetectorsArray();
 
     // Filter by category if specified
@@ -300,12 +322,86 @@ export class ScannerService {
       this.detectors = this.detectors.filter(d => CRITICAL_DETECTOR_IDS.has(d.id));
     }
 
+    // Initialize worker pool if using threads
+    if (this.config.useWorkerThreads) {
+      try {
+        const piscinaModule = await import('piscina');
+        // Piscina exports as named export, not default
+        this.PiscinaClass = (piscinaModule.Piscina || piscinaModule.default) as unknown as PiscinaConstructor;
+        
+        if (!this.PiscinaClass || typeof this.PiscinaClass !== 'function') {
+          throw new Error(`Piscina class not found. Module exports: ${Object.keys(piscinaModule).join(', ')}`);
+        }
+        
+        // Worker path - compiled JS in dist
+        const workerPath = path.join(__dirname, '..', 'workers', 'detector-worker.js');
+        
+        if (this.config.verbose) {
+          console.log(`  Worker path: ${workerPath}`);
+        }
+        
+        this.pool = new this.PiscinaClass({
+          filename: workerPath,
+          minThreads: this.config.workerThreads!, // Keep all workers alive
+          maxThreads: this.config.workerThreads!,
+          idleTimeout: 60000, // 60s idle timeout
+        });
+        
+        if (this.config.verbose) {
+          console.log(`  Worker pool initialized with ${this.config.workerThreads} threads`);
+        }
+        
+        // Warm up all workers in parallel - this loads detectors once per worker
+        await this.warmupWorkers();
+        
+      } catch (error) {
+        // Fall back to single-threaded mode
+        console.log(`  Worker threads unavailable, using single-threaded mode: ${(error as Error).message}`);
+        if (this.config.verbose) {
+          console.log(`  Full error: ${(error as Error).stack}`);
+        }
+        this.config.useWorkerThreads = false;
+      }
+    }
+
     // Load existing manifest for incremental scanning
     if (this.manifestStore) {
       await this.manifestStore.load();
     }
 
     this.initialized = true;
+  }
+
+  /**
+   * Warm up all worker threads by preloading detectors
+   * This runs warmup tasks in parallel so all workers load detectors simultaneously
+   */
+  private async warmupWorkers(): Promise<void> {
+    if (!this.pool) return;
+    
+    const numWorkers = this.config.workerThreads!;
+    const warmupTasks = Array(numWorkers).fill(null).map(() => ({
+      type: 'warmup' as const,
+      categories: this.config.categories,
+      criticalOnly: this.config.criticalOnly,
+    }));
+    
+    if (this.config.verbose) {
+      console.log(`  Warming up ${numWorkers} workers...`);
+    }
+    
+    const startTime = Date.now();
+    
+    // Run warmup tasks in parallel - each worker gets one task
+    await Promise.all(
+      warmupTasks.map(task => this.pool!.run(task))
+    );
+    
+    const duration = Date.now() - startTime;
+    
+    if (this.config.verbose) {
+      console.log(`  Workers warmed up in ${duration}ms`);
+    }
   }
 
   /**
@@ -323,18 +419,256 @@ export class ScannerService {
   }
 
   /**
-   * Scan files for patterns using real detectors
+   * Check if worker threads are enabled and initialized
+   */
+  isUsingWorkerThreads(): boolean {
+    return this.config.useWorkerThreads === true && this.pool !== null;
+  }
+
+  /**
+   * Get worker thread count
+   */
+  getWorkerThreadCount(): number {
+    return this.config.workerThreads ?? 0;
+  }
+
+  /**
+   * Scan files for patterns
    */
   async scanFiles(files: string[], projectContext: ProjectContext): Promise<ScanResults> {
+    if (this.config.useWorkerThreads && this.pool) {
+      return this.scanFilesWithWorkers(files, projectContext);
+    }
+    return this.scanFilesSingleThreaded(files, projectContext);
+  }
+
+  /**
+   * Scan files using worker threads (parallel)
+   */
+  private async scanFilesWithWorkers(
+    files: string[],
+    projectContext: ProjectContext
+  ): Promise<ScanResults> {
+    const startTime = Date.now();
+    const errors: string[] = [];
+
+    // Filter to changed files if incremental
+    let filesToScan = files;
+    if (this.config.incremental && this.manifestStore) {
+      const fullPaths = files.map(f => path.join(this.config.rootDir, f));
+      const changedPaths = await this.manifestStore.getChangedFiles(fullPaths);
+      filesToScan = changedPaths.map(f => path.relative(this.config.rootDir, f));
+      
+      for (const file of filesToScan) {
+        this.manifestStore.clearFilePatterns(path.join(this.config.rootDir, file));
+      }
+    }
+
+    // Create tasks for worker pool
+    const tasks: DetectorWorkerTask[] = filesToScan.map(file => ({
+      file,
+      rootDir: this.config.rootDir,
+      projectFiles: projectContext.files,
+      projectConfig: projectContext.config,
+      categories: this.config.categories,
+      criticalOnly: this.config.criticalOnly,
+    }));
+
+    // Run all tasks in parallel
+    const results = await Promise.all(
+      tasks.map(async (task): Promise<DetectorWorkerResult> => {
+        try {
+          return await this.pool!.run<DetectorWorkerResult>(task);
+        } catch (error) {
+          return {
+            file: task.file,
+            language: null,
+            patterns: [],
+            violations: [],
+            detectorsRan: 0,
+            detectorsSkipped: 0,
+            duration: 0,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      })
+    );
+
+    // Aggregate results
+    return this.aggregateWorkerResults(results, files, startTime, errors);
+  }
+
+
+  /**
+   * Aggregate results from worker threads
+   */
+  private async aggregateWorkerResults(
+    results: DetectorWorkerResult[],
+    allFiles: string[],
+    startTime: number,
+    errors: string[]
+  ): Promise<ScanResults> {
+    const fileResults: FileScanResult[] = [];
+    const patternMap = new Map<string, AggregatedPattern>();
+    const allViolations: AggregatedViolation[] = [];
+    const manifestPatternMap = new Map<string, ManifestPattern>();
+    
+    let totalDetectorsRan = 0;
+    let totalDetectorsSkipped = 0;
+
+    for (const result of results) {
+      if (result.error) {
+        errors.push(`Failed to scan ${result.file}: ${result.error}`);
+      }
+
+      totalDetectorsRan += result.detectorsRan;
+      totalDetectorsSkipped += result.detectorsSkipped;
+
+      // Convert to FileScanResult
+      const filePatterns = result.patterns.map(p => ({
+        patternId: p.patternId,
+        detectorId: p.detectorId,
+        confidence: p.confidence,
+        location: p.location,
+      }));
+
+      fileResults.push({
+        file: result.file,
+        patterns: filePatterns,
+        violations: result.violations,
+        duration: result.duration,
+        error: result.error,
+      });
+
+      // Aggregate patterns
+      for (const match of result.patterns) {
+        const key = match.patternId;
+        const existing = patternMap.get(key);
+        if (existing) {
+          addUniqueLocation(existing.locations, match.location);
+          existing.occurrences++;
+          existing.confidence = Math.max(existing.confidence, match.confidence);
+        } else {
+          patternMap.set(key, {
+            patternId: match.patternId,
+            detectorId: match.detectorId,
+            category: match.category,
+            subcategory: match.subcategory,
+            name: match.detectorName,
+            description: match.detectorDescription,
+            locations: [match.location],
+            confidence: match.confidence,
+            occurrences: 1,
+          });
+        }
+
+        // Build manifest pattern
+        if (this.config.generateManifest && result.language) {
+          await this.addToManifest(manifestPatternMap, match, result);
+        }
+      }
+
+      // Aggregate violations
+      for (const violation of result.violations) {
+        allViolations.push(violation);
+      }
+    }
+
+    // Convert pattern map to array
+    const patterns = Array.from(patternMap.values());
+
+    // Build and save manifest
+    let manifest: Manifest | undefined;
+    if (this.config.generateManifest && this.manifestStore) {
+      const manifestPatterns = Array.from(manifestPatternMap.values());
+      this.manifestStore.updatePatterns(manifestPatterns);
+      await this.manifestStore.save();
+      manifest = await this.manifestStore.get();
+    }
+
+    return {
+      files: fileResults,
+      patterns,
+      violations: allViolations,
+      totalPatterns: patterns.reduce((sum, p) => sum + p.occurrences, 0),
+      totalViolations: allViolations.length,
+      totalFiles: allFiles.length,
+      duration: Date.now() - startTime,
+      errors,
+      detectorStats: {
+        total: this.detectors.length,
+        ran: totalDetectorsRan,
+        skipped: totalDetectorsSkipped,
+      },
+      workerStats: this.pool ? {
+        threadsUsed: (this.pool.threads as unknown[]).length,
+        tasksCompleted: this.pool.completed,
+      } : undefined,
+      manifest,
+    };
+  }
+
+
+  /**
+   * Add pattern match to manifest
+   */
+  private async addToManifest(
+    manifestPatternMap: Map<string, ManifestPattern>,
+    match: WorkerPatternMatch,
+    result: DetectorWorkerResult
+  ): Promise<void> {
+    try {
+      const filePath = path.join(this.config.rootDir, result.file);
+      const content = await fs.readFile(filePath, 'utf-8');
+      const contentHash = hashContent(content);
+      const language = result.language as Language;
+
+      const semanticLoc = this.createSemanticLocation(
+        match.location,
+        content,
+        contentHash,
+        language
+      );
+
+      const manifestKey = `${match.category}/${match.subcategory}/${match.patternId}`;
+      const existingManifest = manifestPatternMap.get(manifestKey);
+
+      if (existingManifest) {
+        addUniqueSemanticLocation(existingManifest.locations, semanticLoc);
+        existingManifest.confidence = Math.max(existingManifest.confidence, match.confidence);
+        existingManifest.lastSeen = new Date().toISOString();
+      } else {
+        manifestPatternMap.set(manifestKey, {
+          id: manifestKey,
+          name: match.detectorName,
+          category: match.category as any,
+          subcategory: match.subcategory,
+          status: 'discovered',
+          confidence: match.confidence,
+          locations: [semanticLoc],
+          outliers: [],
+          description: match.detectorDescription,
+          firstSeen: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+        });
+      }
+    } catch {
+      // Ignore manifest errors
+    }
+  }
+
+  /**
+   * Scan files single-threaded (fallback)
+   */
+  private async scanFilesSingleThreaded(
+    files: string[],
+    projectContext: ProjectContext
+  ): Promise<ScanResults> {
     const startTime = Date.now();
     const fileResults: FileScanResult[] = [];
     const errors: string[] = [];
-    
-    // Aggregation maps
     const patternMap = new Map<string, AggregatedPattern>();
     const allViolations: AggregatedViolation[] = [];
-    
-    // Manifest pattern aggregation
     const manifestPatternMap = new Map<string, ManifestPattern>();
     
     let detectorsRan = 0;
@@ -347,7 +681,6 @@ export class ScannerService {
       const changedPaths = await this.manifestStore.getChangedFiles(fullPaths);
       filesToScan = changedPaths.map(f => path.relative(this.config.rootDir, f));
       
-      // Clear patterns for changed files
       for (const file of filesToScan) {
         this.manifestStore.clearFilePatterns(path.join(this.config.rootDir, file));
       }
@@ -358,7 +691,6 @@ export class ScannerService {
       const filePath = path.join(this.config.rootDir, file);
       const language = getLanguage(file);
 
-      // Skip files we can't detect language for
       if (!language) {
         fileResults.push({
           file,
@@ -375,14 +707,13 @@ export class ScannerService {
         const filePatterns: FileScanResult['patterns'] = [];
         const fileViolations: AggregatedViolation[] = [];
 
-        // Create detection context
         const context: DetectionContext = {
           file,
           content,
           language,
-          ast: null, // AST parsing is optional
-          imports: [], // Will be populated by detectors that need it
-          exports: [], // Will be populated by detectors that need it
+          ast: null,
+          imports: [],
+          exports: [],
           extension: path.extname(file),
           isTestFile: /\.(test|spec)\.[jt]sx?$/.test(file) || file.includes('__tests__'),
           isTypeDefinition: file.endsWith('.d.ts'),
@@ -393,7 +724,6 @@ export class ScannerService {
           },
         };
 
-        // Run applicable detectors
         for (const detector of this.detectors) {
           if (!isDetectorApplicable(detector, language)) {
             detectorsSkipped++;
@@ -401,12 +731,11 @@ export class ScannerService {
           }
 
           detectorsRan++;
-          
+
           try {
             const result = await detector.detect(context);
             const info = detector.getInfo();
 
-            // Process patterns
             for (const match of result.patterns) {
               filePatterns.push({
                 patternId: match.patternId,
@@ -415,7 +744,6 @@ export class ScannerService {
                 location: match.location,
               });
 
-              // Aggregate pattern
               const key = match.patternId;
               const existing = patternMap.get(key);
               if (existing) {
@@ -436,7 +764,6 @@ export class ScannerService {
                 });
               }
 
-              // Build manifest pattern with semantic location
               if (this.config.generateManifest) {
                 const semanticLoc = this.createSemanticLocation(
                   match.location,
@@ -444,10 +771,10 @@ export class ScannerService {
                   contentHash,
                   language
                 );
-                
+
                 const manifestKey = `${info.category}/${info.subcategory}/${match.patternId}`;
                 const existingManifest = manifestPatternMap.get(manifestKey);
-                
+
                 if (existingManifest) {
                   addUniqueSemanticLocation(existingManifest.locations, semanticLoc);
                   existingManifest.confidence = Math.max(existingManifest.confidence, match.confidence);
@@ -470,11 +797,8 @@ export class ScannerService {
               }
             }
 
-            // Process violations
-            // First check the standard violations array
+            // Process violations (same as before)
             let violationsToProcess = result.violations;
-            
-            // If empty, check for violations in custom metadata (many detectors store them there)
             if (violationsToProcess.length === 0 && result.metadata?.custom) {
               const customData = result.metadata.custom as Record<string, unknown>;
               const customViolations = customData['violations'] as Array<{
@@ -490,11 +814,10 @@ export class ScannerService {
                 suggestedFix?: string;
                 severity?: string;
               }> | undefined;
-              
+
               if (customViolations && Array.isArray(customViolations)) {
-                // Convert custom violations to standard format
                 violationsToProcess = customViolations.map(cv => {
-                  const violation: typeof result.violations[0] = {
+                  const v: typeof result.violations[0] = {
                     id: `${detector.id}-${cv.file}-${cv.line}-${cv.column}`,
                     patternId: detector.id,
                     severity: (cv.severity as 'error' | 'warning' | 'info' | 'hint') || 'warning',
@@ -512,13 +835,13 @@ export class ScannerService {
                     occurrences: 1,
                   };
                   if (cv.type) {
-                    violation.explanation = `Violation type: ${cv.type}`;
+                    v.explanation = `Violation type: ${cv.type}`;
                   }
-                  return violation;
+                  return v;
                 });
               }
             }
-            
+
             for (const violation of violationsToProcess) {
               const aggViolation: AggregatedViolation = {
                 patternId: violation.patternId,
@@ -529,47 +852,13 @@ export class ScannerService {
                 line: violation.range.start.line + 1,
                 column: violation.range.start.character + 1,
                 message: violation.message,
-                explanation: violation.explanation,
                 suggestedFix: violation.expected,
               };
+              if (violation.explanation) {
+                aggViolation.explanation = violation.explanation;
+              }
               fileViolations.push(aggViolation);
               allViolations.push(aggViolation);
-
-              // Add violation as outlier to manifest
-              if (this.config.generateManifest) {
-                const outlierLoc = this.createSemanticLocation(
-                  {
-                    file: violation.file,
-                    line: violation.range.start.line + 1,
-                    column: violation.range.start.character + 1,
-                  },
-                  content,
-                  contentHash,
-                  language,
-                  violation.message
-                );
-
-                const manifestKey = `${info.category}/${info.subcategory}/${violation.patternId}`;
-                const existingManifest = manifestPatternMap.get(manifestKey);
-                
-                if (existingManifest) {
-                  existingManifest.outliers.push(outlierLoc);
-                } else {
-                  manifestPatternMap.set(manifestKey, {
-                    id: manifestKey,
-                    name: info.name,
-                    category: info.category as any,
-                    subcategory: info.subcategory,
-                    status: 'discovered',
-                    confidence: 0.5,
-                    locations: [],
-                    outliers: [outlierLoc],
-                    description: info.description,
-                    firstSeen: new Date().toISOString(),
-                    lastSeen: new Date().toISOString(),
-                  });
-                }
-              }
             }
           } catch (detectorError) {
             if (this.config.verbose) {
@@ -584,7 +873,6 @@ export class ScannerService {
           violations: fileViolations,
           duration: Date.now() - fileStart,
         });
-
       } catch (e) {
         const error = `Failed to scan ${file}: ${e instanceof Error ? e.message : e}`;
         errors.push(error);
@@ -598,10 +886,8 @@ export class ScannerService {
       }
     }
 
-    // Convert pattern map to array
     const patterns = Array.from(patternMap.values());
 
-    // Build and save manifest
     let manifest: Manifest | undefined;
     if (this.config.generateManifest && this.manifestStore) {
       const manifestPatterns = Array.from(manifestPatternMap.values());
@@ -610,7 +896,7 @@ export class ScannerService {
       manifest = await this.manifestStore.get();
     }
 
-    const result: ScanResults = {
+    return {
       files: fileResults,
       patterns,
       violations: allViolations,
@@ -624,14 +910,10 @@ export class ScannerService {
         ran: detectorsRan,
         skipped: detectorsSkipped,
       },
+      manifest,
     };
-    
-    if (manifest) {
-      result.manifest = manifest;
-    }
-
-    return result;
   }
+
 
   /**
    * Create a semantic location from a basic location
@@ -645,10 +927,8 @@ export class ScannerService {
   ): SemanticLocation {
     const lines = content.split('\n');
     const lineContent = lines[location.line - 1] || '';
-    
-    // Try to extract semantic info from the line
     const semanticInfo = this.extractSemanticInfo(lineContent, language);
-    
+
     const result: SemanticLocation = {
       file: location.file,
       hash,
@@ -662,11 +942,11 @@ export class ScannerService {
       snippet: lineContent.trim().substring(0, 100),
       language,
     };
-    
+
     if (semanticInfo.signature) {
       result.signature = semanticInfo.signature;
     }
-    
+
     return result;
   }
 
@@ -680,102 +960,95 @@ export class ScannerService {
   } {
     const trimmed = line.trim();
 
-    // TypeScript/JavaScript patterns
     if (language === 'typescript' || language === 'javascript') {
-      // Class
       const classMatch = trimmed.match(/^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/);
       if (classMatch && classMatch[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Function
       const funcMatch = trimmed.match(/^(?:export\s+)?(?:async\s+)?function\s+(\w+)/);
       if (funcMatch && funcMatch[1]) {
         return { type: 'function', name: funcMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Arrow function / const
       const arrowMatch = trimmed.match(/^(?:export\s+)?const\s+(\w+)\s*=/);
       if (arrowMatch && arrowMatch[1]) {
         return { type: 'function', name: arrowMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Interface
       const interfaceMatch = trimmed.match(/^(?:export\s+)?interface\s+(\w+)/);
       if (interfaceMatch && interfaceMatch[1]) {
         return { type: 'interface', name: interfaceMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Type
       const typeMatch = trimmed.match(/^(?:export\s+)?type\s+(\w+)/);
       if (typeMatch && typeMatch[1]) {
         return { type: 'type', name: typeMatch[1], signature: trimmed.substring(0, 80) };
       }
     }
 
-    // Python patterns
     if (language === 'python') {
-      // Class
       const classMatch = trimmed.match(/^class\s+(\w+)/);
       if (classMatch && classMatch[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Function/method
       const defMatch = trimmed.match(/^(?:async\s+)?def\s+(\w+)/);
       if (defMatch && defMatch[1]) {
         return { type: 'function', name: defMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Decorator
       const decoratorMatch = trimmed.match(/^@(\w+)/);
       if (decoratorMatch && decoratorMatch[1]) {
         return { type: 'decorator', name: decoratorMatch[1], signature: trimmed };
       }
     }
 
-    // PHP patterns
     if (language === 'php') {
-      // Class
       const classMatch = trimmed.match(/^(?:abstract\s+|final\s+)?class\s+(\w+)/);
       if (classMatch && classMatch[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Interface
       const interfaceMatch = trimmed.match(/^interface\s+(\w+)/);
       if (interfaceMatch && interfaceMatch[1]) {
         return { type: 'interface', name: interfaceMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Trait
       const traitMatch = trimmed.match(/^trait\s+(\w+)/);
       if (traitMatch && traitMatch[1]) {
         return { type: 'class', name: traitMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // Function/method
       const funcMatch = trimmed.match(/^(?:public|protected|private)?\s*(?:static\s+)?function\s+(\w+)/);
       if (funcMatch && funcMatch[1]) {
         return { type: 'function', name: funcMatch[1], signature: trimmed.substring(0, 80) };
       }
 
-      // PHP 8 Attribute
       const attrMatch = trimmed.match(/^#\[(\w+)/);
       if (attrMatch && attrMatch[1]) {
         return { type: 'decorator', name: attrMatch[1], signature: trimmed };
       }
     }
 
-    // Default to block
     return { type: 'block' };
   }
 
   /**
-   * Get the manifest store (for external access)
+   * Get the manifest store
    */
   getManifestStore(): ManifestStore | null {
     return this.manifestStore;
+  }
+
+  /**
+   * Destroy the worker pool
+   */
+  async destroy(): Promise<void> {
+    if (this.pool) {
+      await this.pool.destroy();
+      this.pool = null;
+    }
   }
 }
 

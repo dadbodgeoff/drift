@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Worker Threads parallelization**: New `ThreadedWorkerPool` using Piscina for true multi-threaded file processing (thanks [@Carter003](https://github.com/Carter003) for the feature request!)
   - Offloads CPU-bound AST parsing and regex matching to worker threads
+  - **~40% faster scans** on multi-core machines (9.6s vs 17.3s on 389 files)
+  - Worker warmup phase preloads detectors in parallel for optimal performance
   - Near-linear scaling with CPU cores for large repositories
   - Main thread stays responsive for progress reporting
   - Memory isolation prevents one bad file from crashing everything

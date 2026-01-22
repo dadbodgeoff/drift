@@ -90,6 +90,9 @@ importers:
       ora:
         specifier: ^8.1.0
         version: 8.2.0
+      piscina:
+        specifier: ^5.1.4
+        version: 5.1.4
     devDependencies:
       '@types/cli-progress':
         specifier: ^3.11.6

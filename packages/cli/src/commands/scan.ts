@@ -367,7 +367,10 @@ async function scanAction(options: ScanCommandOptions): Promise<void> {
   try {
     await scannerService.initialize();
     const counts = scannerService.getDetectorCounts();
-    initSpinner.succeed(`Loaded ${scannerService.getDetectorCount()} detectors (${counts.total} available)`);
+    const workerInfo = scannerService.isUsingWorkerThreads() 
+      ? chalk.green(` [${scannerService.getWorkerThreadCount()} worker threads]`)
+      : chalk.yellow(' [single-threaded]');
+    initSpinner.succeed(`Loaded ${scannerService.getDetectorCount()} detectors (${counts.total} available)${workerInfo}`);
   } catch (error) {
     initSpinner.fail('Failed to load detectors');
     console.error(chalk.red((error as Error).message));
