@@ -71,7 +71,6 @@ export const DETAIL_TOOLS: Tool[] = [
           description: 'Lines of context around each match (default: 10)',
         },
       },
-      required: [],
     },
   },
   
@@ -99,7 +98,6 @@ export const DETAIL_TOOLS: Tool[] = [
           description: 'Pagination cursor from previous response',
         },
       },
-      required: [],
     },
   },
   {
@@ -176,7 +174,6 @@ export const DETAIL_TOOLS: Tool[] = [
           description: 'Only show sensitive data access (default: false)',
         },
       },
-      required: [],
     },
   },
   
@@ -193,7 +190,6 @@ export const DETAIL_TOOLS: Tool[] = [
           description: 'Specific gene to query (optional)',
         },
       },
-      required: [],
     },
   },
 ];

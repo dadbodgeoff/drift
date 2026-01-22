@@ -48,7 +48,6 @@ export const EXPLORATION_TOOLS: Tool[] = [
           description: 'Pagination cursor from previous response',
         },
       },
-      required: [],
     },
   },
   {
@@ -67,7 +66,6 @@ export const EXPLORATION_TOOLS: Tool[] = [
           description: 'Max items per section (default: 10)',
         },
       },
-      required: [],
     },
   },
   {
@@ -90,7 +88,6 @@ export const EXPLORATION_TOOLS: Tool[] = [
           description: 'Pagination cursor',
         },
       },
-      required: [],
     },
   },
   {
@@ -118,7 +115,6 @@ export const EXPLORATION_TOOLS: Tool[] = [
           description: 'Max trends to return (default: 20)',
         },
       },
-      required: [],
     },
   },
 ];

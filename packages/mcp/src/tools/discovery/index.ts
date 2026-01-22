@@ -14,7 +14,6 @@ export const DISCOVERY_TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {},
-      required: [],
     },
   },
   {
@@ -23,7 +22,6 @@ export const DISCOVERY_TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {},
-      required: [],
     },
   },
 ];
