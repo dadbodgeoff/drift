@@ -8,6 +8,8 @@
  * This is the recommended starting point for any code generation task.
  * 
  * Supports multi-project workflows via the optional `project` parameter.
+ * 
+ * Enhanced with Language Intelligence for cross-language semantic analysis.
  */
 
 import {
@@ -16,8 +18,10 @@ import {
   BoundaryStore,
   CallGraphStore,
   DNAStore,
+  createLanguageIntelligence,
   type Pattern,
   type PatternCategory,
+  type NormalizedExtractionResult,
 } from 'driftdetect-core';
 import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
 import * as fs from 'fs/promises';
@@ -76,6 +80,38 @@ export interface DeeperDive {
   reason: string;
 }
 
+export interface SemanticInsights {
+  /** Detected frameworks in the focus area */
+  frameworks: string[];
+  /** Entry points (API endpoints, event handlers) in the focus area */
+  entryPoints: Array<{
+    name: string;
+    file: string;
+    type: string;
+    path?: string;
+    methods?: string[];
+  }>;
+  /** Data accessors in the focus area */
+  dataAccessors: Array<{
+    name: string;
+    file: string;
+    tables: string[];
+  }>;
+  /** Injectable services in the focus area */
+  services: Array<{
+    name: string;
+    file: string;
+    dependencies: string[];
+  }>;
+  /** Summary statistics */
+  summary: {
+    totalFunctions: number;
+    entryPointCount: number;
+    dataAccessorCount: number;
+    serviceCount: number;
+  };
+}
+
 export interface ContextPackage {
   summary: string;
   relevantPatterns: RelevantPattern[];
@@ -84,6 +120,8 @@ export interface ContextPackage {
   warnings: Warning[];
   confidence: Confidence;
   deeperDive: DeeperDive[];
+  /** Semantic insights from Language Intelligence */
+  semanticInsights?: SemanticInsights;
   /** Project context when targeting a specific project */
   projectContext?: Record<string, unknown>;
 }
@@ -402,8 +440,15 @@ export async function handleContext(
   // Generate deeper dive suggestions
   const deeperDive = generateDeeperDive(intent, focus, relevantPatterns, suggestedFiles);
   
+  // Generate semantic insights from Language Intelligence
+  const semanticInsights = await generateSemanticInsights(
+    effectiveRoot,
+    suggestedFiles,
+    focus
+  );
+  
   // Build summary
-  let summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings);
+  let summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings, semanticInsights);
   
   // Add project context to summary if using a different project
   if (resolution.fromRegistry && resolution.project) {
@@ -418,6 +463,7 @@ export async function handleContext(
     warnings,
     confidence,
     deeperDive,
+    ...(semanticInsights && { semanticInsights }),
   };
   
   // Add project context to response
@@ -722,7 +768,8 @@ function buildSummary(
   focus: string,
   patterns: RelevantPattern[],
   files: SuggestedFile[],
-  warnings: Warning[]
+  warnings: Warning[],
+  semanticInsights?: SemanticInsights
 ): string {
   const intentLabels: Record<TaskIntent, string> = {
     add_feature: 'Adding feature',
@@ -748,8 +795,152 @@ function buildSummary(
   }
   
   if (patterns.length > 0 && patterns[0]) {
-    summary += `Primary pattern: "${patterns[0].name}" (${Math.round(patterns[0].confidence * 100)}% confidence).`;
+    summary += `Primary pattern: "${patterns[0].name}" (${Math.round(patterns[0].confidence * 100)}% confidence). `;
+  }
+  
+  // Add semantic insights to summary
+  if (semanticInsights && semanticInsights.summary.totalFunctions > 0) {
+    const { summary: stats, frameworks } = semanticInsights;
+    
+    if (frameworks.length > 0) {
+      summary += `Frameworks: ${frameworks.join(', ')}. `;
+    }
+    
+    const semanticParts: string[] = [];
+    if (stats.entryPointCount > 0) {
+      semanticParts.push(`${stats.entryPointCount} entry point(s)`);
+    }
+    if (stats.dataAccessorCount > 0) {
+      semanticParts.push(`${stats.dataAccessorCount} data accessor(s)`);
+    }
+    if (stats.serviceCount > 0) {
+      semanticParts.push(`${stats.serviceCount} service(s)`);
+    }
+    
+    if (semanticParts.length > 0) {
+      summary += `Semantic analysis: ${semanticParts.join(', ')}.`;
+    }
   }
   
   return summary;
+}
+
+// =============================================================================
+// Semantic Insights Generation
+// =============================================================================
+
+/**
+ * Generate semantic insights using the Language Intelligence Layer
+ * 
+ * Analyzes suggested files to extract cross-language semantic information
+ * about entry points, data accessors, services, and frameworks.
+ */
+async function generateSemanticInsights(
+  projectRoot: string,
+  suggestedFiles: SuggestedFile[],
+  _focus: string
+): Promise<SemanticInsights | undefined> {
+  // Don't process if no files
+  if (suggestedFiles.length === 0) {
+    return undefined;
+  }
+  
+  try {
+    // Create Language Intelligence instance
+    const intelligence = createLanguageIntelligence({ rootDir: projectRoot });
+    
+    // Normalize each suggested file
+    const normalizedFiles: NormalizedExtractionResult[] = [];
+    
+    for (const suggestedFile of suggestedFiles) {
+      const filePath = path.join(projectRoot, suggestedFile.file);
+      
+      try {
+        const source = await fs.readFile(filePath, 'utf-8');
+        const normalized = intelligence.normalizeFile(source, suggestedFile.file);
+        
+        if (normalized) {
+          normalizedFiles.push(normalized);
+        }
+      } catch {
+        // File read error - skip this file
+        continue;
+      }
+    }
+    
+    // If no files could be normalized, return undefined
+    if (normalizedFiles.length === 0) {
+      return undefined;
+    }
+    
+    // Extract semantic information
+    const entryPoints = intelligence.findEntryPoints(normalizedFiles);
+    const dataAccessors = intelligence.findDataAccessors(normalizedFiles);
+    const injectables = intelligence.findInjectables(normalizedFiles);
+    
+    // Collect detected frameworks
+    const frameworksSet = new Set<string>();
+    for (const file of normalizedFiles) {
+      for (const fw of file.detectedFrameworks) {
+        frameworksSet.add(fw);
+      }
+    }
+    
+    // Build entry points list
+    const entryPointsList = entryPoints.slice(0, 10).map(fn => {
+      const entry: {
+        name: string;
+        file: string;
+        type: string;
+        path?: string;
+        methods?: string[];
+      } = {
+        name: fn.name,
+        file: normalizedFiles.find(f => f.functions.includes(fn))?.file ?? 'unknown',
+        type: fn.semantics.entryPoint?.type ?? 'unknown',
+      };
+      
+      if (fn.semantics.entryPoint?.path) {
+        entry.path = fn.semantics.entryPoint.path;
+      }
+      if (fn.semantics.entryPoint?.methods && fn.semantics.entryPoint.methods.length > 0) {
+        entry.methods = fn.semantics.entryPoint.methods;
+      }
+      
+      return entry;
+    });
+    
+    // Build data accessors list
+    const dataAccessorsList = dataAccessors.slice(0, 10).map(fn => ({
+      name: fn.name,
+      file: normalizedFiles.find(f => f.functions.includes(fn))?.file ?? 'unknown',
+      tables: fn.semantics.dataAccess.map(da => da.table),
+    }));
+    
+    // Build services list
+    const servicesList = injectables.slice(0, 10).map(fn => ({
+      name: fn.name,
+      file: normalizedFiles.find(f => f.functions.includes(fn))?.file ?? 'unknown',
+      dependencies: fn.semantics.dependencies,
+    }));
+    
+    // Get summary stats
+    const stats = intelligence.getSummary(normalizedFiles);
+    
+    return {
+      frameworks: Array.from(frameworksSet),
+      entryPoints: entryPointsList,
+      dataAccessors: dataAccessorsList,
+      services: servicesList,
+      summary: {
+        totalFunctions: stats.totalFunctions,
+        entryPointCount: stats.entryPoints,
+        dataAccessorCount: stats.dataAccessors,
+        serviceCount: stats.injectables,
+      },
+    };
+  } catch {
+    // Language Intelligence not available or error - return undefined
+    return undefined;
+  }
 }

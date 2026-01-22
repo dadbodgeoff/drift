@@ -32,8 +32,9 @@ export type SemanticCategory =
 
 /**
  * HTTP methods for routing decorators
+ * Note: Aligned with contracts.ts HttpMethod for compatibility
  */
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'ALL';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 /**
  * Data access mode

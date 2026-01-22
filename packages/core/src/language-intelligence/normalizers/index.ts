@@ -7,12 +7,16 @@
 export { JavaNormalizer } from './java-normalizer.js';
 export { PythonNormalizer } from './python-normalizer.js';
 export { TypeScriptNormalizer } from './typescript-normalizer.js';
+export { CSharpNormalizer } from './csharp-normalizer.js';
+export { PhpNormalizer } from './php-normalizer.js';
 
 import type { CallGraphLanguage } from '../../call-graph/types.js';
 import type { LanguageNormalizer } from '../types.js';
 import { JavaNormalizer } from './java-normalizer.js';
 import { PythonNormalizer } from './python-normalizer.js';
 import { TypeScriptNormalizer } from './typescript-normalizer.js';
+import { CSharpNormalizer } from './csharp-normalizer.js';
+import { PhpNormalizer } from './php-normalizer.js';
 
 /**
  * Create a normalizer for a specific language
@@ -26,6 +30,10 @@ export function createNormalizer(language: CallGraphLanguage): LanguageNormalize
     case 'typescript':
     case 'javascript':
       return new TypeScriptNormalizer();
+    case 'csharp':
+      return new CSharpNormalizer();
+    case 'php':
+      return new PhpNormalizer();
     default:
       return null;
   }
@@ -39,6 +47,8 @@ export function createAllNormalizers(): LanguageNormalizer[] {
     new JavaNormalizer(),
     new PythonNormalizer(),
     new TypeScriptNormalizer(),
+    new CSharpNormalizer(),
+    new PhpNormalizer(),
   ];
 }
 

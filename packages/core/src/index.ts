@@ -325,3 +325,53 @@ export type {
   // Data Access Extraction types
   DataAccessExtractionResult,
 } from './call-graph/index.js';
+
+// Language Intelligence exports (Cross-language semantic analysis)
+export {
+  // Main class
+  LanguageIntelligence,
+  createLanguageIntelligence,
+  // Framework registry
+  FrameworkRegistry,
+  getFrameworkRegistry,
+  registerFramework,
+  registerFrameworks,
+  // Framework patterns
+  SPRING_PATTERNS,
+  FASTAPI_PATTERNS,
+  NESTJS_PATTERNS,
+  LARAVEL_PATTERNS,
+  ASPNET_PATTERNS,
+  ALL_FRAMEWORK_PATTERNS,
+  registerAllFrameworks,
+  getFrameworkPattern,
+  getFrameworksForLanguage,
+  // Normalizers
+  BaseLanguageNormalizer,
+  JavaNormalizer,
+  PythonNormalizer,
+  TypeScriptNormalizer,
+  CSharpNormalizer,
+  PhpNormalizer,
+  createNormalizer,
+  createAllNormalizers,
+  getNormalizerForFile,
+} from './language-intelligence/index.js';
+export type {
+  // Core types
+  SemanticCategory,
+  HttpMethod,
+  DataAccessMode,
+  DecoratorSemantics,
+  NormalizedDecorator,
+  DecoratorArguments,
+  FunctionSemantics,
+  NormalizedFunction,
+  NormalizedExtractionResult,
+  DecoratorMapping,
+  FrameworkPattern,
+  LanguageNormalizer,
+  QueryOptions,
+  QueryResult,
+  LanguageIntelligenceConfig,
+} from './language-intelligence/index.js';

@@ -73,6 +73,8 @@ export {
   JavaNormalizer,
   PythonNormalizer,
   TypeScriptNormalizer,
+  CSharpNormalizer,
+  PhpNormalizer,
   createNormalizer,
   createAllNormalizers,
   getNormalizerForFile,

@@ -8,12 +8,17 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
 
 /**
  * Extract HTTP method from NestJS decorator
+ * Note: NestJS @All() decorator matches all methods - we return undefined to indicate "any method"
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
   const match = raw.match(/@(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i);
   if (match && match[1]) {
     const method = match[1].toUpperCase();
-    return method === 'ALL' ? 'ALL' : method as HttpMethod;
+    // 'ALL', 'HEAD', 'OPTIONS' are not in our HttpMethod type - return undefined
+    if (method === 'ALL' || method === 'HEAD' || method === 'OPTIONS') {
+      return undefined;
+    }
+    return method as HttpMethod;
   }
   return undefined;
 }
