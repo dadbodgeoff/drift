@@ -6,6 +6,8 @@
  * returns a curated context package with everything needed for the task.
  * 
  * This is the recommended starting point for any code generation task.
+ * 
+ * Supports multi-project workflows via the optional `project` parameter.
  */
 
 import {
@@ -17,7 +19,7 @@ import {
   type Pattern,
   type PatternCategory,
 } from 'driftdetect-core';
-import { createResponseBuilder } from '../../infrastructure/index.js';
+import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -82,6 +84,8 @@ export interface ContextPackage {
   warnings: Warning[];
   confidence: Confidence;
   deeperDive: DeeperDive[];
+  /** Project context when targeting a specific project */
+  projectContext?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -323,19 +327,36 @@ export async function handleContext(
     intent: TaskIntent;
     focus: string;
     question?: string;
+    /** Optional: Target a specific registered project by name */
+    project?: string;
   }
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<ContextPackage>();
   
-  const { intent, focus, question } = args;
+  const { intent, focus, question, project: projectName } = args;
   const strategy = INTENT_STRATEGIES[intent];
   
+  // Resolve project - allows targeting different registered projects
+  const resolution = await resolveProject(projectName, projectRoot);
+  const effectiveRoot = resolution.projectRoot;
+  
+  // Create stores for the resolved project (may be different from default)
+  const effectiveStores = resolution.fromRegistry
+    ? {
+        pattern: new PatternStore({ rootDir: effectiveRoot }),
+        manifest: new ManifestStore(effectiveRoot),
+        boundary: new BoundaryStore({ rootDir: effectiveRoot }),
+        callGraph: new CallGraphStore({ rootDir: effectiveRoot }),
+        dna: new DNAStore({ rootDir: effectiveRoot }),
+      }
+    : stores;
+  
   // Initialize stores
-  await stores.pattern.initialize();
-  await stores.manifest.load();
+  await effectiveStores.pattern.initialize();
+  await effectiveStores.manifest.load();
   
   // Get all patterns
-  const allPatterns = stores.pattern.getAll();
+  const allPatterns = effectiveStores.pattern.getAll();
   
   // Filter to relevant categories and prioritize
   const categoryPatterns = allPatterns.filter(p => 
@@ -346,14 +367,14 @@ export async function handleContext(
   // Get top patterns with examples
   const relevantPatterns = await getRelevantPatterns(
     prioritizedPatterns.slice(0, 5),
-    projectRoot,
+    effectiveRoot,
     focus
   );
   
   // Find suggested files
   const suggestedFiles = await getSuggestedFiles(
-    stores.manifest,
-    stores.boundary,
+    effectiveStores.manifest,
+    effectiveStores.boundary,
     prioritizedPatterns,
     focus,
     intent
@@ -369,20 +390,25 @@ export async function handleContext(
   
   // Generate warnings
   const warnings = await generateWarnings(
-    stores.boundary,
-    projectRoot,
+    effectiveStores.boundary,
+    effectiveRoot,
     suggestedFiles,
     strategy.getWarningTypes()
   );
   
   // Calculate confidence
-  const confidence = calculateConfidence(stores.pattern, prioritizedPatterns, focus);
+  const confidence = calculateConfidence(effectiveStores.pattern, prioritizedPatterns, focus);
   
   // Generate deeper dive suggestions
   const deeperDive = generateDeeperDive(intent, focus, relevantPatterns, suggestedFiles);
   
   // Build summary
-  const summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings);
+  let summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings);
+  
+  // Add project context to summary if using a different project
+  if (resolution.fromRegistry && resolution.project) {
+    summary = `[Project: ${resolution.project.name}] ${summary}`;
+  }
   
   const contextPackage: ContextPackage = {
     summary,
@@ -394,9 +420,12 @@ export async function handleContext(
     deeperDive,
   };
   
+  // Add project context to response
+  const projectContext = formatProjectContext(resolution);
+  
   return builder
     .withSummary(summary)
-    .withData(contextPackage)
+    .withData({ ...contextPackage, projectContext })
     .withHints({
       nextActions: deeperDive.slice(0, 2).map(d => `${d.tool}: ${d.reason}`),
       relatedTools: ['drift_code_examples', 'drift_impact_analysis', 'drift_reachability'],
