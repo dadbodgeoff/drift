@@ -55,6 +55,140 @@ export interface ScanCommandOptions {
   project?: string;
   /** Scan all registered projects */
   allProjects?: boolean;
+  /** Scan timeout in seconds (default: 300 = 5 minutes) */
+  timeout?: number;
+}
+
+/** Interval for progress updates when scan is slow (10 seconds) */
+const PROGRESS_UPDATE_INTERVAL_MS = 10 * 1000;
+
+/** Time after which we warn about slow scan (30 seconds) */
+const SLOW_SCAN_WARNING_MS = 30 * 1000;
+
+/**
+ * Scan health monitor - tracks progress and detects stalls/timeouts
+ */
+class ScanHealthMonitor {
+  private startTime: number;
+  private timeoutMs: number;
+  private progressInterval: NodeJS.Timeout | null = null;
+  private slowWarningTimeout: NodeJS.Timeout | null = null;
+  private hasWarnedSlow = false;
+  private fileCount: number;
+  private spinner: ReturnType<typeof createSpinner>;
+
+  constructor(
+    fileCount: number,
+    spinner: ReturnType<typeof createSpinner>,
+    timeoutMs: number,
+    _verbose: boolean
+  ) {
+    this.startTime = Date.now();
+    this.timeoutMs = timeoutMs;
+    this.fileCount = fileCount;
+    this.spinner = spinner;
+  }
+
+  start(): void {
+    // Set up slow scan warning
+    this.slowWarningTimeout = setTimeout(() => {
+      if (!this.hasWarnedSlow) {
+        this.hasWarnedSlow = true;
+        this.spinner.text(chalk.yellow(
+          `Analyzing ${this.fileCount} files... (taking longer than expected)`
+        ));
+      }
+    }, SLOW_SCAN_WARNING_MS);
+
+    // Set up progress updates for long scans
+    this.progressInterval = setInterval(() => {
+      const elapsed = Math.round((Date.now() - this.startTime) / 1000);
+      this.spinner.text(`Analyzing ${this.fileCount} files... (${elapsed}s elapsed)`);
+    }, PROGRESS_UPDATE_INTERVAL_MS);
+  }
+
+  stop(): void {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
+    if (this.slowWarningTimeout) {
+      clearTimeout(this.slowWarningTimeout);
+      this.slowWarningTimeout = null;
+    }
+  }
+
+  /**
+   * Wrap a promise with timeout and health monitoring
+   */
+  async withTimeout<T>(promise: Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        this.stop();
+        reject(new ScanTimeoutError(this.fileCount, this.timeoutMs));
+      }, this.timeoutMs);
+
+      promise
+        .then((result) => {
+          clearTimeout(timeoutId);
+          this.stop();
+          resolve(result);
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          this.stop();
+          reject(error);
+        });
+    });
+  }
+}
+
+/**
+ * Custom error for scan timeout with helpful diagnostics
+ */
+class ScanTimeoutError extends Error {
+  constructor(fileCount: number, timeoutMs: number) {
+    const timeoutSec = Math.round(timeoutMs / 1000);
+    const message = `Scan timed out after ${timeoutSec} seconds while processing ${fileCount} files.`;
+    super(message);
+    this.name = 'ScanTimeoutError';
+  }
+
+  getHelpfulMessage(): string {
+    return `
+${chalk.red('⏱️  Scan Timeout')}
+
+The scan took too long and was stopped to prevent hanging.
+
+${chalk.bold('Common causes:')}
+  • Scanning a very large codebase (try scanning a subdirectory first)
+  • node_modules or other large folders not being ignored
+  • A detector encountering problematic code
+
+${chalk.bold('Try these fixes:')}
+  1. Check your ${chalk.cyan('.driftignore')} file excludes large directories:
+     ${chalk.gray('node_modules/')}
+     ${chalk.gray('dist/')}
+     ${chalk.gray('.git/')}
+     ${chalk.gray('vendor/')}
+     ${chalk.gray('__pycache__/')}
+
+  2. Scan a specific directory instead:
+     ${chalk.cyan('drift scan src/')}
+
+  3. Increase the timeout:
+     ${chalk.cyan('drift scan --timeout 600')}  ${chalk.gray('# 10 minutes')}
+
+  4. Run with verbose mode to see what's happening:
+     ${chalk.cyan('drift scan --verbose')}
+
+${chalk.bold('Still stuck?')}
+  Please report this issue with your codebase details:
+  ${chalk.cyan('https://github.com/dadbodgeoff/drift/issues/new')}
+
+  Include: language, framework, approximate file count, and any error messages.
+`;
+  }
 }
 
 /** Directory name for drift configuration */
@@ -497,14 +631,19 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     config: {},
   };
 
-  // Scan files with progress
+  // Scan files with progress and health monitoring
   const scanSpinner = createSpinner('Analyzing patterns with enterprise detectors...');
   scanSpinner.start();
 
   const startTime = Date.now();
+  const timeoutMs = (options.timeout ?? 300) * 1000; // Default 5 minutes
+  const healthMonitor = new ScanHealthMonitor(files.length, scanSpinner, timeoutMs, verbose);
 
   try {
-    const scanResults = await scannerService.scanFiles(files, projectContext);
+    healthMonitor.start();
+    const scanResults = await healthMonitor.withTimeout(
+      scannerService.scanFiles(files, projectContext)
+    );
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     scanSpinner.succeed(
@@ -699,7 +838,16 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
 
   } catch (error) {
     scanSpinner.fail('Scan failed');
-    console.error(chalk.red((error as Error).message));
+    
+    // Show helpful message for timeout errors
+    if (error instanceof ScanTimeoutError) {
+      console.log(error.getHelpfulMessage());
+    } else {
+      console.error(chalk.red((error as Error).message));
+      console.log();
+      console.log(chalk.gray('If this error persists, please report it:'));
+      console.log(chalk.cyan('  https://github.com/dadbodgeoff/drift/issues/new'));
+    }
     process.exit(1);
   }
 
@@ -946,10 +1094,15 @@ export const scanCommand = new Command('scan')
   .option('--no-boundaries', 'Skip data boundary scanning')
   .option('-p, --project <name>', 'Scan a specific registered project by name')
   .option('--all-projects', 'Scan all registered projects')
+  .option('-t, --timeout <seconds>', 'Scan timeout in seconds (default: 300)', '300')
   .action((paths: string[], options: ScanCommandOptions) => {
     // Merge positional paths with options
     if (paths && paths.length > 0) {
       options.paths = paths;
+    }
+    // Parse timeout as number
+    if (typeof options.timeout === 'string') {
+      options.timeout = parseInt(options.timeout, 10);
     }
     return scanAction(options);
   });

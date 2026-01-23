@@ -552,6 +552,73 @@ pnpm run test
 
 ---
 
+## Supported Languages
+
+Drift supports pattern detection across these languages and frameworks:
+
+| Language | Frameworks | File Extensions |
+|----------|------------|-----------------|
+| **TypeScript/JavaScript** | React, Next.js, Express, Node.js | `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` |
+| **Python** | FastAPI, Django, Flask | `.py`, `.pyw` |
+| **C#** | ASP.NET Core, Entity Framework | `.cs` |
+| **Java** | Spring Boot, JPA | `.java` |
+| **PHP** | Laravel, Eloquent | `.php` |
+| **CSS** | Tailwind, SCSS, Sass | `.css`, `.scss`, `.sass`, `.less` |
+| **Config** | JSON, YAML | `.json`, `.yaml`, `.yml` |
+| **Docs** | Markdown | `.md`, `.mdx` |
+
+---
+
+## Troubleshooting
+
+### Scan takes too long or hangs
+
+**Expected performance**: Most codebases scan in under 30 seconds. If your scan takes more than a minute, something may be wrong.
+
+**Common causes:**
+1. **Large directories not ignored** - Check your `.driftignore` file:
+   ```
+   node_modules/
+   dist/
+   build/
+   .git/
+   vendor/
+   __pycache__/
+   .venv/
+   ```
+
+2. **Very large codebase** - Try scanning a subdirectory first:
+   ```bash
+   drift scan src/
+   ```
+
+3. **Increase timeout** if you have a legitimately large codebase:
+   ```bash
+   drift scan --timeout 600  # 10 minutes
+   ```
+
+4. **Run verbose mode** to see what's happening:
+   ```bash
+   drift scan --verbose
+   ```
+
+### Scan fails with errors
+
+If you encounter errors during scanning:
+
+1. Make sure you've run `drift init` first
+2. Check that your code files are valid (no syntax errors)
+3. Try scanning with `--verbose` to see detailed output
+4. Report persistent issues at [GitHub Issues](https://github.com/dadbodgeoff/drift/issues)
+
+When reporting issues, please include:
+- Language/framework you're scanning
+- Approximate number of files
+- Any error messages
+- Your OS and Node.js version (`node --version`)
+
+---
+
 ## License
 
 MIT © Geoffrey Fernald
