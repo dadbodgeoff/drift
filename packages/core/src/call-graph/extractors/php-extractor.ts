@@ -11,7 +11,10 @@
  * - Traits
  * - Namespaces and use statements
  * - Arrow functions (fn =>)
- * - Closures
+ * - Closures (anonymous functions)
+ * - Nested functions within function bodies
+ * - Callback patterns (string callbacks, array callbacks, closures)
+ * - Module-level calls (top-level code)
  * - Laravel controller actions
  * - Static method calls (Class::method())
  */
@@ -21,6 +24,7 @@ import type {
   CallGraphLanguage,
   FileExtractionResult,
   ParameterInfo,
+  CallExtraction,
 } from '../types.js';
 import {
   isPhpTreeSitterAvailable,
@@ -66,6 +70,9 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
       let currentNamespace: string | null = null;
       
       this.visitNode(tree.rootNode, result, source, null, currentNamespace);
+      
+      // Extract module-level calls (top-level code not inside any function or class)
+      this.extractModuleLevelCalls(tree.rootNode, result, source);
 
     } catch (error) {
       result.errors.push(error instanceof Error ? error.message : 'Unknown parse error');
@@ -102,7 +109,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
         break;
 
       case 'function_definition':
-        this.extractFunctionDefinition(node, result, source, currentNamespace);
+        this.extractFunctionDefinition(node, result, source, currentNamespace, null);
         break;
 
       case 'method_declaration':
@@ -134,6 +141,207 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
         for (const child of node.children) {
           this.visitNode(child, result, source, currentClass, currentNamespace);
         }
+    }
+  }
+
+  /**
+   * Extract calls at module level (not inside any function or class)
+   * This catches patterns like: require_once 'file.php'; $app->run();
+   */
+  private extractModuleLevelCalls(
+    rootNode: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string
+  ): void {
+    const moduleCalls: CallExtraction[] = [];
+    
+    const visit = (node: TreeSitterNode): void => {
+      // Skip function and class definitions
+      if (node.type === 'function_definition' || 
+          node.type === 'class_declaration' ||
+          node.type === 'interface_declaration' ||
+          node.type === 'trait_declaration' ||
+          node.type === 'namespace_definition') {
+        return;
+      }
+      
+      // Extract calls from expression statements
+      if (node.type === 'function_call_expression' ||
+          node.type === 'member_call_expression' ||
+          node.type === 'scoped_call_expression' ||
+          node.type === 'object_creation_expression') {
+        this.extractCallToArray(node, moduleCalls, source);
+      }
+      
+      for (const child of node.children) {
+        visit(child);
+      }
+    };
+    
+    // Find the program node (root of PHP file)
+    const programNode = rootNode.children.find(c => c.type === 'program') ?? rootNode;
+    
+    for (const child of programNode.children) {
+      visit(child);
+    }
+    
+    // Add module-level calls to result
+    result.calls.push(...moduleCalls);
+    
+    // If there are module-level calls, create a synthetic module function
+    if (moduleCalls.length > 0) {
+      const moduleFunc = this.createFunction({
+        name: '__module__',
+        startLine: 1,
+        endLine: rootNode.endPosition.row + 1,
+        startColumn: 0,
+        endColumn: 0,
+        parameters: [],
+        isMethod: false,
+        isStatic: false,
+        isExported: false,
+        isConstructor: false,
+        isAsync: false,
+        decorators: [],
+        bodyStartLine: 1,
+        bodyEndLine: rootNode.endPosition.row + 1,
+      });
+      result.functions.push(moduleFunc);
+    }
+  }
+
+  /**
+   * Extract a call to an array (for module-level calls)
+   */
+  private extractCallToArray(
+    node: TreeSitterNode,
+    calls: CallExtraction[],
+    _source: string
+  ): void {
+    if (node.type === 'function_call_expression') {
+      const funcNode = node.childForFieldName('function');
+      if (!funcNode) return;
+
+      let calleeName: string;
+      let receiver: string | undefined;
+
+      if (funcNode.type === 'qualified_name') {
+        const parts = funcNode.text.split('\\').filter(p => p);
+        calleeName = parts.pop() ?? funcNode.text;
+        if (parts.length > 0) {
+          receiver = parts.join('\\');
+        }
+      } else {
+        calleeName = funcNode.text;
+      }
+
+      const argsNode = node.childForFieldName('arguments');
+      let argumentCount = 0;
+      if (argsNode) {
+        for (const child of argsNode.children) {
+          if (child.type === 'argument') {
+            argumentCount++;
+          }
+        }
+      }
+
+      calls.push(this.createCall({
+        calleeName,
+        receiver,
+        fullExpression: node.text,
+        line: node.startPosition.row + 1,
+        column: node.startPosition.column,
+        argumentCount,
+        isMethodCall: false,
+        isConstructorCall: false,
+      }));
+    } else if (node.type === 'member_call_expression') {
+      const nameNode = node.childForFieldName('name');
+      const objectNode = node.childForFieldName('object');
+      if (!nameNode) return;
+
+      const argsNode = node.childForFieldName('arguments');
+      let argumentCount = 0;
+      if (argsNode) {
+        for (const child of argsNode.children) {
+          if (child.type === 'argument') {
+            argumentCount++;
+          }
+        }
+      }
+
+      calls.push(this.createCall({
+        calleeName: nameNode.text,
+        receiver: objectNode?.text,
+        fullExpression: node.text,
+        line: node.startPosition.row + 1,
+        column: node.startPosition.column,
+        argumentCount,
+        isMethodCall: true,
+        isConstructorCall: false,
+      }));
+    } else if (node.type === 'scoped_call_expression') {
+      const nameNode = node.childForFieldName('name');
+      const scopeNode = node.childForFieldName('scope');
+      if (!nameNode) return;
+
+      const argsNode = node.childForFieldName('arguments');
+      let argumentCount = 0;
+      if (argsNode) {
+        for (const child of argsNode.children) {
+          if (child.type === 'argument') {
+            argumentCount++;
+          }
+        }
+      }
+
+      calls.push(this.createCall({
+        calleeName: nameNode.text,
+        receiver: scopeNode?.text,
+        fullExpression: node.text,
+        line: node.startPosition.row + 1,
+        column: node.startPosition.column,
+        argumentCount,
+        isMethodCall: true,
+        isConstructorCall: false,
+      }));
+    } else if (node.type === 'object_creation_expression') {
+      let calleeName: string | undefined;
+      let receiver: string | undefined;
+
+      for (const child of node.children) {
+        if (child.type === 'name' || child.type === 'qualified_name') {
+          const parts = child.text.split('\\').filter(p => p);
+          calleeName = parts.pop();
+          if (parts.length > 0) {
+            receiver = parts.join('\\');
+          }
+          break;
+        }
+      }
+
+      if (!calleeName) return;
+
+      const argsNode = node.childForFieldName('arguments');
+      let argumentCount = 0;
+      if (argsNode) {
+        for (const child of argsNode.children) {
+          if (child.type === 'argument') {
+            argumentCount++;
+          }
+        }
+      }
+
+      calls.push(this.createCall({
+        calleeName,
+        receiver,
+        fullExpression: node.text,
+        line: node.startPosition.row + 1,
+        column: node.startPosition.column,
+        argumentCount,
+        isMethodCall: false,
+        isConstructorCall: true,
+      }));
     }
   }
 
@@ -340,13 +548,19 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     node: TreeSitterNode,
     result: FileExtractionResult,
     source: string,
-    currentNamespace: string | null
+    currentNamespace: string | null,
+    parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
     const name = nameNode.text;
-    const qualifiedName = currentNamespace ? `${currentNamespace}\\${name}` : name;
+    let qualifiedName = currentNamespace ? `${currentNamespace}\\${name}` : name;
+    
+    // Build qualified name including parent function for nested functions
+    if (parentFunction) {
+      qualifiedName = `${parentFunction}.${name}`;
+    }
 
     // Get return type
     const returnTypeNode = node.childForFieldName('return_type');
@@ -373,7 +587,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
       returnType,
       isMethod: false,
       isStatic: false,
-      isExported: true, // PHP functions are always "exported" within their namespace
+      isExported: parentFunction ? false : true, // Nested functions are not exported
       isConstructor: false,
       isAsync: false,
       decorators,
@@ -386,6 +600,192 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     // Extract calls from function body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract nested functions (closures, arrow functions, named functions)
+      this.extractNestedFunctions(bodyNode, result, source, currentNamespace, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract nested functions from a function body
+   * Handles: anonymous functions, arrow functions, and nested named functions
+   */
+  private extractNestedFunctions(
+    bodyNode: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    currentNamespace: string | null,
+    parentFunctionName: string
+  ): void {
+    let closureCounter = 0;
+    
+    const visit = (node: TreeSitterNode): void => {
+      // Named function inside another function (rare in PHP but possible)
+      if (node.type === 'function_definition') {
+        this.extractFunctionDefinition(node, result, source, currentNamespace, parentFunctionName);
+        return; // Don't recurse into this function's children
+      }
+      
+      // Anonymous function: $fn = function($x) { ... }
+      if (node.type === 'anonymous_function_creation_expression') {
+        closureCounter++;
+        this.extractAnonymousFunction(node, result, source, parentFunctionName, closureCounter);
+        return;
+      }
+      
+      // Arrow function: $fn = fn($x) => $x * 2
+      if (node.type === 'arrow_function') {
+        closureCounter++;
+        this.extractArrowFunction(node, result, source, parentFunctionName, closureCounter);
+        return;
+      }
+      
+      // Don't recurse into class declarations
+      if (node.type === 'class_declaration') {
+        return;
+      }
+      
+      for (const child of node.children) {
+        visit(child);
+      }
+    };
+    
+    for (const child of bodyNode.children) {
+      visit(child);
+    }
+  }
+
+  /**
+   * Extract an anonymous function (closure)
+   * e.g., $fn = function($x) use ($y) { return $x + $y; }
+   */
+  private extractAnonymousFunction(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticName = `closure${counter}`;
+    const qualifiedName = `${parentFunctionName}.${syntheticName}`;
+    
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    const parameters = parametersNode ? this.extractParameters(parametersNode) : [];
+    
+    // Get return type
+    const returnTypeNode = node.childForFieldName('return_type');
+    const returnType = returnTypeNode?.text;
+    
+    // Check for static modifier
+    const isStatic = node.children.some(c => c.type === 'static_modifier');
+    
+    // Get body
+    const bodyNode = node.childForFieldName('body');
+    
+    const func = this.createFunction({
+      name: syntheticName,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      returnType,
+      isMethod: false,
+      isStatic,
+      isExported: false,
+      isConstructor: false,
+      isAsync: false,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+    
+    result.functions.push(func);
+    
+    // Extract calls from closure body
+    if (bodyNode) {
+      this.extractCallsFromBody(bodyNode, result, source);
+      // Recursively extract nested functions
+      this.extractNestedFunctions(bodyNode, result, source, null, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract an arrow function
+   * e.g., $fn = fn($x) => $x * 2
+   */
+  private extractArrowFunction(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticName = `arrow${counter}`;
+    const qualifiedName = `${parentFunctionName}.${syntheticName}`;
+    
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    const parameters = parametersNode ? this.extractParameters(parametersNode) : [];
+    
+    // Get return type
+    const returnTypeNode = node.childForFieldName('return_type');
+    const returnType = returnTypeNode?.text;
+    
+    // Check for static modifier
+    const isStatic = node.children.some(c => c.type === 'static_modifier');
+    
+    // Get body (expression for arrow functions)
+    const bodyNode = node.childForFieldName('body');
+    
+    const func = this.createFunction({
+      name: syntheticName,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      returnType,
+      isMethod: false,
+      isStatic,
+      isExported: false,
+      isConstructor: false,
+      isAsync: false,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+    
+    result.functions.push(func);
+    
+    // Extract calls from arrow function body
+    if (bodyNode) {
+      this.extractCallsFromBodyRecursive(bodyNode, result, source);
+    }
+  }
+
+  /**
+   * Extract calls recursively from an expression (for arrow functions)
+   */
+  private extractCallsFromBodyRecursive(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string
+  ): void {
+    if (node.type === 'function_call_expression') {
+      this.extractFunctionCall(node, result, source);
+    } else if (node.type === 'member_call_expression') {
+      this.extractMemberCall(node, result, source);
+    } else if (node.type === 'scoped_call_expression') {
+      this.extractScopedCall(node, result, source);
+    } else if (node.type === 'object_creation_expression') {
+      this.extractObjectCreation(node, result, source);
+    }
+    
+    for (const child of node.children) {
+      this.extractCallsFromBodyRecursive(child, result, source);
     }
   }
 
@@ -421,10 +821,12 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
 
     // Get body
     const bodyNode = node.childForFieldName('body');
+    
+    const qualifiedName = currentClass ? `${currentClass}.${isConstructor ? 'constructor' : name}` : name;
 
     const func = this.createFunction({
       name: isConstructor ? 'constructor' : (isDestructor ? 'destructor' : name),
-      qualifiedName: currentClass ? `${currentClass}.${isConstructor ? 'constructor' : name}` : name,
+      qualifiedName,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
       startColumn: node.startPosition.column,
@@ -447,6 +849,8 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     // Extract calls from method body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract nested functions (closures, arrow functions)
+      this.extractNestedFunctions(bodyNode, result, source, null, qualifiedName);
     }
   }
 
@@ -530,6 +934,140 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     });
 
     result.calls.push(call);
+    
+    // Extract callback references from arguments
+    this.extractCallbackReferences(node, result);
+  }
+
+  /**
+   * Extract callback references from function call arguments
+   * Handles patterns like:
+   * - String callbacks: array_map('strtoupper', $items)
+   * - Array callbacks: array_map([$this, 'process'], $items)
+   * - First-class callable: array_map($this->process(...), $items)
+   */
+  private extractCallbackReferences(
+    node: TreeSitterNode,
+    result: FileExtractionResult
+  ): void {
+    const argsNode = node.childForFieldName('arguments');
+    if (!argsNode) return;
+
+    for (const arg of argsNode.children) {
+      if (arg.type !== 'argument') continue;
+      
+      const argExpr = arg.namedChildren[0];
+      if (!argExpr) continue;
+      
+      // String callback: 'functionName' or "functionName"
+      if (argExpr.type === 'string' || argExpr.type === 'encapsed_string') {
+        const funcName = argExpr.text.replace(/^['"]|['"]$/g, '');
+        // Only treat as callback if it looks like a valid function name
+        if (/^[a-z_][a-z0-9_]*$/i.test(funcName) && !this.isCommonStringValue(funcName)) {
+          result.calls.push(this.createCall({
+            calleeName: funcName,
+            fullExpression: funcName,
+            line: argExpr.startPosition.row + 1,
+            column: argExpr.startPosition.column,
+            argumentCount: 0,
+            isMethodCall: false,
+            isConstructorCall: false,
+          }));
+        }
+      }
+      
+      // Array callback: [$object, 'methodName'] or [ClassName::class, 'methodName']
+      if (argExpr.type === 'array_creation_expression') {
+        this.extractArrayCallback(argExpr, result);
+      }
+      
+      // Variable that might be a callable: $callback
+      if (argExpr.type === 'variable_name') {
+        const varName = argExpr.text.replace(/^\$/, '');
+        // Common callback variable names
+        const callbackVarNames = ['callback', 'handler', 'fn', 'func', 'callable', 'closure'];
+        if (callbackVarNames.some(n => varName.toLowerCase().includes(n))) {
+          result.calls.push(this.createCall({
+            calleeName: varName,
+            fullExpression: argExpr.text,
+            line: argExpr.startPosition.row + 1,
+            column: argExpr.startPosition.column,
+            argumentCount: 0,
+            isMethodCall: false,
+            isConstructorCall: false,
+          }));
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if a string value is a common non-callback string
+   */
+  private isCommonStringValue(value: string): boolean {
+    const commonValues = [
+      'true', 'false', 'null', 'yes', 'no', 'on', 'off',
+      'asc', 'desc', 'id', 'name', 'email', 'password',
+      'get', 'post', 'put', 'delete', 'patch',
+    ];
+    return commonValues.includes(value.toLowerCase());
+  }
+
+  /**
+   * Extract callback from array syntax: [$object, 'method'] or [ClassName::class, 'method']
+   */
+  private extractArrayCallback(
+    node: TreeSitterNode,
+    result: FileExtractionResult
+  ): void {
+    const elements: TreeSitterNode[] = [];
+    
+    for (const child of node.children) {
+      if (child.type === 'array_element_initializer') {
+        const valueNode = child.namedChildren[0];
+        if (valueNode) {
+          elements.push(valueNode);
+        }
+      }
+    }
+    
+    // Need exactly 2 elements: [object/class, method]
+    if (elements.length !== 2) return;
+    
+    const [first, second] = elements;
+    if (!first || !second) return;
+    
+    // Second element should be a string (method name)
+    if (second.type !== 'string' && second.type !== 'encapsed_string') return;
+    
+    const methodName = second.text.replace(/^['"]|['"]$/g, '');
+    let receiver: string | undefined;
+    
+    // First element: $this, $object, ClassName::class, or 'ClassName'
+    if (first.type === 'variable_name') {
+      receiver = first.text;
+    } else if (first.type === 'class_constant_access_expression') {
+      // ClassName::class
+      const classNode = first.childForFieldName('class');
+      if (classNode) {
+        receiver = classNode.text;
+      }
+    } else if (first.type === 'string' || first.type === 'encapsed_string') {
+      receiver = first.text.replace(/^['"]|['"]$/g, '');
+    }
+    
+    if (methodName) {
+      result.calls.push(this.createCall({
+        calleeName: methodName,
+        receiver,
+        fullExpression: node.text,
+        line: node.startPosition.row + 1,
+        column: node.startPosition.column,
+        argumentCount: 0,
+        isMethodCall: true,
+        isConstructorCall: false,
+      }));
+    }
   }
 
   /**

@@ -11,8 +11,11 @@
  * - Class hierarchies
  * - Namespace imports (using statements)
  * - Lambda expressions
+ * - Local functions (C# 7+)
  * - LINQ queries
  * - ASP.NET controller actions
+ * - Top-level statements (C# 9+)
+ * - Callback patterns (Action, Func delegates)
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
@@ -20,6 +23,7 @@ import type {
   CallGraphLanguage,
   FileExtractionResult,
   ParameterInfo,
+  CallExtraction,
 } from '../types.js';
 import {
   isCSharpTreeSitterAvailable,
@@ -61,6 +65,9 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
 
       const tree = this.parser.parse(source);
       this.visitNode(tree.rootNode, result, source, null, null);
+      
+      // Extract top-level statements (C# 9+)
+      this.extractTopLevelStatements(tree.rootNode, result, source);
 
     } catch (error) {
       result.errors.push(error instanceof Error ? error.message : 'Unknown parse error');
@@ -96,11 +103,15 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
         break;
 
       case 'method_declaration':
-        this.extractMethodDeclaration(node, result, source, currentClass, currentNamespace);
+        this.extractMethodDeclaration(node, result, source, currentClass, currentNamespace, null);
         break;
 
       case 'constructor_declaration':
         this.extractConstructorDeclaration(node, result, source, currentClass, currentNamespace);
+        break;
+
+      case 'local_function_statement':
+        // Local functions are handled within method bodies
         break;
 
       case 'using_directive':
@@ -260,7 +271,8 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     result: FileExtractionResult,
     source: string,
     currentClass: string | null,
-    _currentNamespace: string | null
+    _currentNamespace: string | null,
+    parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
@@ -283,10 +295,16 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
 
     // Get body
     const bodyNode = node.childForFieldName('body');
+    
+    // Build qualified name
+    let qualifiedName = currentClass ? `${currentClass}.${name}` : name;
+    if (parentFunction) {
+      qualifiedName = `${parentFunction}.${name}`;
+    }
 
     const func = this.createFunction({
       name,
-      qualifiedName: currentClass ? `${currentClass}.${name}` : name,
+      qualifiedName,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
       startColumn: node.startPosition.column,
@@ -295,7 +313,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
       returnType,
       isMethod: currentClass !== null,
       isStatic,
-      isExported: isPublic,
+      isExported: parentFunction ? false : isPublic,
       isConstructor: false,
       isAsync,
       className: currentClass ?? undefined,
@@ -309,6 +327,426 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     // Extract calls from method body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract local functions and lambdas
+      this.extractNestedFunctions(bodyNode, result, source, currentClass, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract top-level statements (C# 9+)
+   * These are statements outside of any class or namespace
+   */
+  private extractTopLevelStatements(
+    rootNode: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string
+  ): void {
+    const moduleCalls: CallExtraction[] = [];
+    let hasTopLevelStatements = false;
+    
+    const visit = (node: TreeSitterNode): void => {
+      // Skip namespace, class, and method declarations
+      if (node.type === 'namespace_declaration' ||
+          node.type === 'file_scoped_namespace_declaration' ||
+          node.type === 'class_declaration' ||
+          node.type === 'struct_declaration' ||
+          node.type === 'record_declaration' ||
+          node.type === 'interface_declaration' ||
+          node.type === 'using_directive') {
+        return;
+      }
+      
+      // Check for global statements (top-level code)
+      if (node.type === 'global_statement') {
+        hasTopLevelStatements = true;
+        this.extractCallsToArray(node, moduleCalls, source);
+      }
+      
+      // Also check for expression statements at root level
+      if (node.type === 'expression_statement' || 
+          node.type === 'local_declaration_statement') {
+        hasTopLevelStatements = true;
+        this.extractCallsToArray(node, moduleCalls, source);
+      }
+      
+      for (const child of node.children) {
+        visit(child);
+      }
+    };
+    
+    // Find compilation_unit
+    const compilationUnit = rootNode.type === 'compilation_unit' ? rootNode : 
+      rootNode.children.find(c => c.type === 'compilation_unit') ?? rootNode;
+    
+    for (const child of compilationUnit.children) {
+      visit(child);
+    }
+    
+    // Add module-level calls to result
+    result.calls.push(...moduleCalls);
+    
+    // If there are top-level statements, create a synthetic module function
+    if (hasTopLevelStatements && moduleCalls.length > 0) {
+      const moduleFunc = this.createFunction({
+        name: '__module__',
+        startLine: 1,
+        endLine: rootNode.endPosition.row + 1,
+        startColumn: 0,
+        endColumn: 0,
+        parameters: [],
+        isMethod: false,
+        isStatic: false,
+        isExported: false,
+        isConstructor: false,
+        isAsync: false,
+        decorators: [],
+        bodyStartLine: 1,
+        bodyEndLine: rootNode.endPosition.row + 1,
+      });
+      result.functions.push(moduleFunc);
+    }
+  }
+
+  /**
+   * Extract calls to an array (for top-level statements)
+   */
+  private extractCallsToArray(
+    node: TreeSitterNode,
+    calls: CallExtraction[],
+    _source: string
+  ): void {
+    const visit = (n: TreeSitterNode): void => {
+      if (n.type === 'invocation_expression') {
+        const funcNode = n.childForFieldName('function');
+        if (funcNode) {
+          let calleeName: string;
+          let receiver: string | undefined;
+
+          if (funcNode.type === 'member_access_expression') {
+            const objectNode = funcNode.childForFieldName('expression');
+            const nameNode = funcNode.childForFieldName('name');
+            if (objectNode && nameNode) {
+              receiver = objectNode.text;
+              calleeName = nameNode.text;
+            } else {
+              calleeName = funcNode.text;
+            }
+          } else if (funcNode.type === 'identifier') {
+            calleeName = funcNode.text;
+          } else if (funcNode.type === 'generic_name') {
+            const nameNode = funcNode.childForFieldName('name');
+            calleeName = nameNode?.text ?? funcNode.text;
+          } else {
+            calleeName = funcNode.text;
+          }
+
+          const argsNode = n.childForFieldName('arguments');
+          let argumentCount = 0;
+          if (argsNode) {
+            for (const child of argsNode.children) {
+              if (child.type === 'argument') {
+                argumentCount++;
+              }
+            }
+          }
+
+          calls.push(this.createCall({
+            calleeName,
+            receiver,
+            fullExpression: n.text,
+            line: n.startPosition.row + 1,
+            column: n.startPosition.column,
+            argumentCount,
+            isMethodCall: !!receiver,
+            isConstructorCall: false,
+          }));
+        }
+      } else if (n.type === 'object_creation_expression') {
+        const typeNode = n.childForFieldName('type');
+        if (typeNode) {
+          let calleeName: string;
+          let receiver: string | undefined;
+
+          if (typeNode.type === 'qualified_name') {
+            const parts = typeNode.text.split('.');
+            calleeName = parts.pop() ?? typeNode.text;
+            if (parts.length > 0) {
+              receiver = parts.join('.');
+            }
+          } else if (typeNode.type === 'generic_name') {
+            const nameNode = typeNode.childForFieldName('name');
+            calleeName = nameNode?.text ?? typeNode.text;
+          } else {
+            calleeName = typeNode.text;
+          }
+
+          const argsNode = n.childForFieldName('arguments');
+          let argumentCount = 0;
+          if (argsNode) {
+            for (const child of argsNode.children) {
+              if (child.type === 'argument') {
+                argumentCount++;
+              }
+            }
+          }
+
+          calls.push(this.createCall({
+            calleeName,
+            receiver,
+            fullExpression: n.text,
+            line: n.startPosition.row + 1,
+            column: n.startPosition.column,
+            argumentCount,
+            isMethodCall: false,
+            isConstructorCall: true,
+          }));
+        }
+      }
+      
+      for (const child of n.children) {
+        visit(child);
+      }
+    };
+    
+    visit(node);
+  }
+
+  /**
+   * Extract nested functions (local functions and lambdas) from a method body
+   */
+  private extractNestedFunctions(
+    bodyNode: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    currentClass: string | null,
+    parentFunctionName: string
+  ): void {
+    let lambdaCounter = 0;
+    
+    const visit = (node: TreeSitterNode): void => {
+      // Local function: int LocalFunc() { ... }
+      if (node.type === 'local_function_statement') {
+        this.extractLocalFunction(node, result, source, currentClass, parentFunctionName);
+        return; // Don't recurse into this function's children
+      }
+      
+      // Lambda expression: x => x * 2 or (x, y) => x + y
+      if (node.type === 'lambda_expression') {
+        lambdaCounter++;
+        this.extractLambdaExpression(node, result, source, parentFunctionName, lambdaCounter);
+        return;
+      }
+      
+      // Anonymous method: delegate(int x) { return x * 2; }
+      if (node.type === 'anonymous_method_expression') {
+        lambdaCounter++;
+        this.extractAnonymousMethod(node, result, source, parentFunctionName, lambdaCounter);
+        return;
+      }
+      
+      // Don't recurse into nested class declarations
+      if (node.type === 'class_declaration') {
+        return;
+      }
+      
+      for (const child of node.children) {
+        visit(child);
+      }
+    };
+    
+    for (const child of bodyNode.children) {
+      visit(child);
+    }
+  }
+
+  /**
+   * Extract a local function (C# 7+)
+   * e.g., int LocalFunc(int x) => x * 2;
+   */
+  private extractLocalFunction(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    currentClass: string | null,
+    parentFunctionName: string
+  ): void {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const name = nameNode.text;
+    const qualifiedName = `${parentFunctionName}.${name}`;
+    
+    const isStatic = this.hasModifier(node, 'static');
+    const isAsync = this.hasModifier(node, 'async');
+
+    // Get return type
+    const returnTypeNode = node.childForFieldName('type');
+    const returnType = returnTypeNode?.text;
+
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    const parameters = parametersNode ? this.extractParameters(parametersNode) : [];
+
+    // Get body
+    const bodyNode = node.childForFieldName('body');
+
+    const func = this.createFunction({
+      name,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      returnType,
+      isMethod: false,
+      isStatic,
+      isExported: false, // Local functions are never exported
+      isConstructor: false,
+      isAsync,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+
+    result.functions.push(func);
+
+    // Extract calls from local function body
+    if (bodyNode) {
+      this.extractCallsFromBody(bodyNode, result, source);
+      // Recursively extract nested functions
+      this.extractNestedFunctions(bodyNode, result, source, currentClass, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract a lambda expression
+   * e.g., x => x * 2, (x, y) => x + y, async () => await Task.Delay(1000)
+   */
+  private extractLambdaExpression(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticName = `lambda${counter}`;
+    const qualifiedName = `${parentFunctionName}.${syntheticName}`;
+    
+    // Check for async modifier
+    const isAsync = node.children.some(c => c.text === 'async');
+    
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    const parameters = parametersNode ? this.extractParameters(parametersNode) : [];
+    
+    // Single parameter without parentheses
+    if (parameters.length === 0) {
+      for (const child of node.children) {
+        if (child.type === 'identifier' && child !== node.childForFieldName('body')) {
+          parameters.push(this.parseParameter(child.text));
+          break;
+        }
+      }
+    }
+    
+    // Get body
+    const bodyNode = node.childForFieldName('body');
+    
+    const func = this.createFunction({
+      name: syntheticName,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      isMethod: false,
+      isStatic: false,
+      isExported: false,
+      isConstructor: false,
+      isAsync,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+    
+    result.functions.push(func);
+    
+    // Extract calls from lambda body
+    if (bodyNode) {
+      this.extractCallsFromBodyRecursive(bodyNode, result, source);
+    }
+  }
+
+  /**
+   * Extract an anonymous method expression
+   * e.g., delegate(int x) { return x * 2; }
+   */
+  private extractAnonymousMethod(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticName = `delegate${counter}`;
+    const qualifiedName = `${parentFunctionName}.${syntheticName}`;
+    
+    // Check for async modifier
+    const isAsync = node.children.some(c => c.text === 'async');
+    
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    const parameters = parametersNode ? this.extractParameters(parametersNode) : [];
+    
+    // Get body
+    const bodyNode = node.childForFieldName('body');
+    
+    const func = this.createFunction({
+      name: syntheticName,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      isMethod: false,
+      isStatic: false,
+      isExported: false,
+      isConstructor: false,
+      isAsync,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+    
+    result.functions.push(func);
+    
+    // Extract calls from anonymous method body
+    if (bodyNode) {
+      this.extractCallsFromBody(bodyNode, result, source);
+      // Recursively extract nested functions
+      this.extractNestedFunctions(bodyNode, result, source, null, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract calls recursively from an expression (for lambda bodies)
+   */
+  private extractCallsFromBodyRecursive(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string
+  ): void {
+    if (node.type === 'invocation_expression') {
+      this.extractInvocationExpression(node, result, source);
+    } else if (node.type === 'object_creation_expression') {
+      this.extractObjectCreation(node, result, source);
+    }
+    
+    for (const child of node.children) {
+      this.extractCallsFromBodyRecursive(child, result, source);
     }
   }
 
@@ -353,9 +791,13 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
 
     result.functions.push(func);
 
+    const qualifiedName = currentClass ? `${currentClass}.constructor` : 'constructor';
+
     // Extract calls from constructor body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract local functions and lambdas from constructor body
+      this.extractNestedFunctions(bodyNode, result, source, currentClass, qualifiedName);
     }
 
     // Extract calls from constructor initializer (: base(...) or : this(...))

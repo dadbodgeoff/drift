@@ -13,6 +13,7 @@
  * - Method references (::)
  * - Spring annotations (@Controller, @Service, etc.)
  * - Inner classes
+ * - Anonymous classes
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
@@ -272,7 +273,8 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     result: FileExtractionResult,
     source: string,
     currentClass: string | null,
-    _currentPackage: string | null
+    _currentPackage: string | null,
+    parentFunction: string | null = null
   ): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
@@ -295,9 +297,15 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     // Get body
     const bodyNode = node.childForFieldName('body');
 
+    // Build qualified name
+    let qualifiedName = currentClass ? `${currentClass}.${name}` : name;
+    if (parentFunction) {
+      qualifiedName = `${parentFunction}.${name}`;
+    }
+
     const func = this.createFunction({
       name,
-      qualifiedName: currentClass ? `${currentClass}.${name}` : name,
+      qualifiedName,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
       startColumn: node.startPosition.column,
@@ -306,7 +314,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
       returnType,
       isMethod: currentClass !== null,
       isStatic,
-      isExported: isPublic,
+      isExported: parentFunction ? false : isPublic,
       isConstructor: false,
       isAsync: false, // Java doesn't have async keyword
       className: currentClass ?? undefined,
@@ -320,6 +328,8 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     // Extract calls from method body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract lambda expressions and anonymous classes
+      this.extractNestedFunctions(bodyNode, result, source, currentClass, qualifiedName);
     }
   }
 
@@ -343,9 +353,11 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     // Get body
     const bodyNode = node.childForFieldName('body');
 
+    const qualifiedName = currentClass ? `${currentClass}.constructor` : 'constructor';
+
     const func = this.createFunction({
       name: 'constructor',
-      qualifiedName: currentClass ? `${currentClass}.constructor` : 'constructor',
+      qualifiedName,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
       startColumn: node.startPosition.column,
@@ -367,6 +379,8 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     // Extract calls from constructor body
     if (bodyNode) {
       this.extractCallsFromBody(bodyNode, result, source);
+      // Extract lambda expressions and anonymous classes
+      this.extractNestedFunctions(bodyNode, result, source, currentClass, qualifiedName);
     }
   }
 
@@ -544,6 +558,142 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
       });
 
       result.calls.push(call);
+    }
+  }
+
+  /**
+   * Extract nested functions (lambdas and anonymous classes) from a method body
+   */
+  private extractNestedFunctions(
+    bodyNode: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    currentClass: string | null,
+    parentFunctionName: string
+  ): void {
+    let lambdaCounter = 0;
+    let anonClassCounter = 0;
+    
+    const visit = (node: TreeSitterNode): void => {
+      // Lambda expression: (x) -> x * 2 or x -> x * 2
+      if (node.type === 'lambda_expression') {
+        lambdaCounter++;
+        this.extractLambdaExpression(node, result, source, parentFunctionName, lambdaCounter);
+        return; // Don't recurse into lambda body (handled by extractLambdaExpression)
+      }
+      
+      // Anonymous class: new Runnable() { public void run() { ... } }
+      if (node.type === 'object_creation_expression') {
+        const classBody = node.children.find(c => c.type === 'class_body');
+        if (classBody) {
+          anonClassCounter++;
+          this.extractAnonymousClass(classBody, result, source, currentClass, parentFunctionName, anonClassCounter);
+          return;
+        }
+      }
+      
+      // Don't recurse into nested class declarations
+      if (node.type === 'class_declaration') {
+        return;
+      }
+      
+      for (const child of node.children) {
+        visit(child);
+      }
+    };
+    
+    for (const child of bodyNode.children) {
+      visit(child);
+    }
+  }
+
+  /**
+   * Extract a lambda expression
+   * e.g., (x) -> x * 2, x -> x * 2, () -> System.out.println("hello")
+   */
+  private extractLambdaExpression(
+    node: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticName = `lambda${counter}`;
+    const qualifiedName = `${parentFunctionName}.${syntheticName}`;
+    
+    // Get parameters
+    const parametersNode = node.childForFieldName('parameters');
+    let parameters: ParameterInfo[] = [];
+    
+    if (parametersNode) {
+      if (parametersNode.type === 'formal_parameters') {
+        parameters = this.extractParameters(parametersNode);
+      } else if (parametersNode.type === 'inferred_parameters') {
+        // Inferred parameters: (x, y) without types
+        for (const child of parametersNode.children) {
+          if (child.type === 'identifier') {
+            parameters.push(this.parseParameter(child.text));
+          }
+        }
+      } else if (parametersNode.type === 'identifier') {
+        // Single parameter without parentheses: x -> x * 2
+        parameters.push(this.parseParameter(parametersNode.text));
+      }
+    }
+    
+    // Get body
+    const bodyNode = node.childForFieldName('body');
+    
+    const func = this.createFunction({
+      name: syntheticName,
+      qualifiedName,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      startColumn: node.startPosition.column,
+      endColumn: node.endPosition.column,
+      parameters,
+      isMethod: false,
+      isStatic: false,
+      isExported: false,
+      isConstructor: false,
+      isAsync: false,
+      decorators: [],
+      bodyStartLine: bodyNode ? bodyNode.startPosition.row + 1 : node.startPosition.row + 1,
+      bodyEndLine: bodyNode ? bodyNode.endPosition.row + 1 : node.endPosition.row + 1,
+    });
+    
+    result.functions.push(func);
+    
+    // Extract calls from lambda body
+    if (bodyNode) {
+      this.extractCallsFromBody(bodyNode, result, source);
+      // Recursively extract nested lambdas
+      this.extractNestedFunctions(bodyNode, result, source, null, qualifiedName);
+    }
+  }
+
+  /**
+   * Extract methods from an anonymous class
+   * e.g., new Runnable() { public void run() { ... } }
+   */
+  private extractAnonymousClass(
+    classBody: TreeSitterNode,
+    result: FileExtractionResult,
+    source: string,
+    _currentClass: string | null,
+    parentFunctionName: string,
+    counter: number
+  ): void {
+    const syntheticClassName = `${parentFunctionName}.$anon${counter}`;
+    
+    // Extract methods from the anonymous class body
+    for (const member of classBody.children) {
+      if (member.type === 'method_declaration') {
+        this.extractMethodDeclaration(member, result, source, syntheticClassName, null, parentFunctionName);
+      } else if (member.type === 'constructor_declaration') {
+        // Anonymous classes can have instance initializers but not constructors
+        // Skip for now
+      }
     }
   }
 
