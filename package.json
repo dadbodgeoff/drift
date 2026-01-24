@@ -1,6 +1,6 @@
 {
   "name": "drift-v2",
-  "version": "0.0.1",
+  "version": "0.6.0",
   "private": true,
   "description": "Codebase pattern detection for AI agents - scans your code, learns conventions, feeds context via MCP. Multi-language static analysis for TypeScript, Python, C#, Java, PHP.",
   "keywords": [

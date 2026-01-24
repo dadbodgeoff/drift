@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-01-24
+
+### 🚀 New Language & Framework Support
+
+#### Go Language Support
+Complete Go language support with hybrid extraction (tree-sitter + regex fallback):
+
+- **Framework Detectors**: Gin, Echo, Fiber, Chi, net/http - covers ~95% of Go web projects
+- **Data Access Matchers**: GORM, sqlx, database/sql pattern detection
+- **Concurrency Analysis**: Goroutine spawning and channel usage tracking
+- **Interface Detection**: Tracks which structs implement which interfaces
+- **Test Topology**: Go testing package extraction with table-driven test support
+- **CLI Command**: `drift go` with subcommands: status, routes, errors, interfaces, data-access, goroutines
+- **MCP Tool**: `drift_go` with 6 actions for AI agent integration
+
+#### WPF Framework Support
+MVVM-aware analysis for Windows Presentation Foundation:
+
+- **XAML Binding Extraction**: Parses all `{Binding Path}` expressions and maps to ViewModel properties
+- **ViewModel Detection**: INotifyPropertyChanged, ObservableObject, RelayCommand patterns
+- **DataContext Resolution**: Automatically links Views to ViewModels via DataContext
+- **Binding Error Detection**: Finds missing properties, type mismatches before runtime
+- **Resource Dictionary Parsing**: Extracts styles, templates, merged dictionaries
+- **DependencyProperty Extraction**: Tracks custom dependency properties
+- **IValueConverter Analysis**: Detects converter usage and implementations
+- **Call Graph Integration**: MVVM data flow tracing through bindings
+- **CLI Command**: `drift wpf` with subcommands: status, bindings, viewmodels, resources, errors
+- **MCP Tool**: `drift_wpf` with 5 actions
+
+### Added
+
+#### Go Support (`packages/core/src/go/`)
+- `go-analyzer.ts` - Main Go analysis orchestrator
+- `index.ts` - Public exports
+
+#### Go Extractors (`packages/core/src/call-graph/extractors/`)
+- `go-extractor.ts` - Tree-sitter based Go function/call extraction
+- `go-hybrid-extractor.ts` - Hybrid extractor with regex fallback
+- `go-data-access-extractor.ts` - GORM, sqlx, database/sql detection
+- `regex/go-regex.ts` - Regex fallback patterns for Go
+
+#### Go Parsers (`packages/core/src/parsers/tree-sitter/`)
+- `go-loader.ts` - Tree-sitter Go grammar loader
+- `tree-sitter-go-parser.ts` - Go-specific tree-sitter parser
+
+#### Go Test Topology (`packages/core/src/test-topology/extractors/`)
+- `go-test-extractor.ts` - Go test file extraction
+- `regex/go-test-regex.ts` - Regex fallback for Go tests
+
+#### Go Unified Provider (`packages/core/src/unified-provider/`)
+- `normalization/go-normalizer.ts` - Go AST normalization
+- `matching/gorm-matcher.ts` - GORM pattern matching
+- `matching/sqlx-matcher.ts` - sqlx pattern matching
+- `matching/database-sql-matcher.ts` - database/sql pattern matching
+
+#### Go Detectors (`packages/detectors/src/`)
+- `api/go/gin-detector.ts` - Gin framework detection
+- `api/go/echo-detector.ts` - Echo framework detection
+- `api/go/fiber-detector.ts` - Fiber framework detection
+- `api/go/chi-detector.ts` - Chi router detection
+- `api/go/net-http-detector.ts` - net/http detection
+- `auth/go/middleware-detector.ts` - Auth middleware detection
+- `errors/go/error-handling-detector.ts` - Go error handling patterns
+
+#### WPF Support (`packages/core/src/wpf/`)
+- `types.ts` - WPF-specific type definitions
+- `wpf-analyzer.ts` - Main WPF analysis orchestrator
+- `extractors/xaml-hybrid-extractor.ts` - XAML parsing with regex fallback
+- `extractors/viewmodel-hybrid-extractor.ts` - ViewModel extraction
+- `extractors/regex/xaml-regex.ts` - XAML regex patterns
+- `extractors/regex/viewmodel-regex.ts` - ViewModel regex patterns
+- `extractors/binding-error-detector.ts` - Binding validation
+- `extractors/dependency-property-extractor.ts` - DependencyProperty detection
+- `extractors/value-converter-extractor.ts` - IValueConverter detection
+- `extractors/resource-dictionary-parser.ts` - ResourceDictionary parsing
+- `linkers/datacontext-resolver.ts` - View-ViewModel linking
+- `linkers/viewmodel-linker.ts` - ViewModel relationship mapping
+- `integration/wpf-callgraph-adapter.ts` - Call graph integration
+- `integration/wpf-data-flow-tracer.ts` - MVVM data flow tracing
+
+#### CLI Commands
+- `drift go` - Go language analysis (status, routes, errors, interfaces, data-access, goroutines)
+- `drift wpf` - WPF framework analysis (status, bindings, viewmodels, resources, errors)
+
+#### MCP Tools
+- `drift_go` - Go analysis for AI agents (6 actions)
+- `drift_wpf` - WPF analysis for AI agents (5 actions)
+
+#### Demo Projects
+- `demo/go-backend/` - Go Gin API example with GORM
+- `demo/wpf-sample/` - WPF MVVM example
+
+### Changed
+- **Package Versions**: All packages bumped to 0.6.0
+- **Language Support**: Now supports TypeScript, Python, Java, C#, PHP, and Go
+- **Framework Support**: Added WPF to existing React, Angular, Vue, Laravel, Spring Boot support
+
 ## [0.5.1] - 2026-01-24
 
 ### 🐛 Bug Fixes
