@@ -25,3 +25,8 @@ export { projectsCommand } from './projects.js';
 export { skillsCommand } from './skills.js';
 export { migrateStorageCommand } from './migrate-storage.js';
 export { wrappersCommand } from './wrappers.js';
+
+// Analysis commands (L5-L7 layers)
+export { createTestTopologyCommand } from './test-topology.js';
+export { createCouplingCommand } from './coupling.js';
+export { createErrorHandlingCommand } from './error-handling.js';

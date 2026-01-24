@@ -10,6 +10,8 @@ import {
   type WrapperCategory,
 } from 'driftdetect-core/wrappers';
 
+import { createResponseBuilder } from '../../infrastructure/index.js';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -99,7 +101,9 @@ export interface WrapperSummary {
 export async function handleWrappers(
   args: WrappersArgs,
   rootDir: string
-): Promise<WrappersData> {
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const builder = createResponseBuilder<WrappersData>();
+  
   const {
     category,
     minConfidence = 0.5,
@@ -189,7 +193,7 @@ export async function handleWrappers(
     }
   }
 
-  return {
+  const data: WrappersData = {
     summary: {
       totalWrappers: result.analysis.summary.totalWrappers,
       totalClusters: result.analysis.summary.totalClusters,
@@ -207,6 +211,19 @@ export async function handleWrappers(
     byCategory,
     duration: result.duration,
   };
+
+  const summary = `Found ${data.summary.totalWrappers} wrappers in ${data.summary.totalClusters} clusters. Avg depth: ${data.summary.avgDepth.toFixed(1)}`;
+
+  return builder
+    .withSummary(summary)
+    .withData(data)
+    .withHints({
+      nextActions: data.summary.totalWrappers > 0
+        ? ['Review wrapper clusters for potential consolidation']
+        : ['No wrappers detected'],
+      relatedTools: ['drift_patterns_list', 'drift_code_examples'],
+    })
+    .buildContent();
 }
 
 /**
@@ -215,6 +232,6 @@ export async function handleWrappers(
 export async function handleWrappersWithConfig(
   args: WrappersArgs,
   rootDir: string
-): Promise<WrappersData> {
+): Promise<{ content: Array<{ type: string; text: string }> }> {
   return handleWrappers(args, rootDir);
 }

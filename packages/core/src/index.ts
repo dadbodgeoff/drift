@@ -474,3 +474,116 @@ export {
   createPatternStoreAdapter,
   createPatternServiceFromStore,
 } from './patterns/index.js';
+
+
+// ============================================================================
+// Test Topology (L5 - Test-to-code mapping and quality analysis)
+// ============================================================================
+
+export {
+  // Main analyzer
+  TestTopologyAnalyzer,
+  createTestTopologyAnalyzer,
+  // Extractors
+  BaseTestExtractor,
+  TypeScriptTestExtractor,
+  createTypeScriptTestExtractor,
+  PythonTestExtractor,
+  createPythonTestExtractor,
+  JavaTestExtractor,
+  createJavaTestExtractor,
+  CSharpTestExtractor,
+  createCSharpTestExtractor,
+  PHPTestExtractor,
+  createPHPTestExtractor,
+} from './test-topology/index.js';
+
+export type {
+  // Core types
+  TestFramework,
+  ReachType,
+  TestCase,
+  AssertionInfo,
+  TestQualitySignals,
+  MockStatement,
+  MockAnalysis,
+  TestCoverage,
+  TestCoverageInfo,
+  FunctionCoverageInfo,
+  UncoveredFunction,
+  UncoveredReason,
+  TestExtraction,
+  SetupBlock,
+  FixtureInfo,
+  MinimumTestSet,
+  TestTopologySummary,
+  TestTopologyOptions,
+  UncoveredOptions,
+  // Analyzer result type
+  TestTopologyResult,
+} from './test-topology/index.js';
+
+
+// ============================================================================
+// Module Coupling (L6 - Dependency graphs and coupling metrics)
+// ============================================================================
+
+export {
+  // Main analyzer
+  ModuleCouplingAnalyzer,
+  createModuleCouplingAnalyzer,
+} from './module-coupling/index.js';
+
+export type {
+  // Core types
+  ModuleRole,
+  CycleSeverity,
+  BreakEffort,
+  CouplingMetrics,
+  ExportedSymbol,
+  ModuleNode,
+  ImportEdge,
+  CycleBreakSuggestion,
+  DependencyCycle,
+  AggregateCouplingMetrics,
+  ModuleCouplingGraph,
+  ModuleCouplingAnalysis,
+  RefactorImpact,
+  UnusedExportAnalysis,
+  ModuleCouplingOptions,
+  CycleDetectionOptions,
+  HotspotOptions,
+} from './module-coupling/index.js';
+
+
+// ============================================================================
+// Error Handling Coverage (L7 - Error handling patterns and gaps)
+// ============================================================================
+
+export {
+  // Main analyzer
+  ErrorHandlingAnalyzer,
+  createErrorHandlingAnalyzer,
+} from './error-handling/index.js';
+
+export type {
+  // Core types
+  CatchAction,
+  ErrorSeverity,
+  ErrorHandlingQuality,
+  CatchClause,
+  AsyncErrorHandling,
+  ErrorHandlingProfile,
+  ErrorBoundary,
+  UnhandledErrorPath,
+  ErrorTransformation,
+  ErrorPropagationChain,
+  ErrorHandlingTopology,
+  ErrorHandlingMetrics,
+  ErrorHandlingSummary,
+  FunctionErrorAnalysis,
+  ErrorHandlingGap,
+  ErrorHandlingOptions,
+  GapDetectionOptions,
+  BoundaryAnalysisOptions,
+} from './error-handling/index.js';

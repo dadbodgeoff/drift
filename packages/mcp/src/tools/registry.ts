@@ -12,6 +12,8 @@ import { DISCOVERY_TOOLS } from './discovery/index.js';
 import { EXPLORATION_TOOLS } from './exploration/index.js';
 import { DETAIL_TOOLS } from './detail/index.js';
 import { ORCHESTRATION_TOOLS } from './orchestration/index.js';
+import { ANALYSIS_TOOLS } from './analysis/index.js';
+import { GENERATION_TOOLS } from './generation/index.js';
 
 /**
  * All registered tools
@@ -21,12 +23,16 @@ import { ORCHESTRATION_TOOLS } from './orchestration/index.js';
  * 2. Discovery (quick health checks)
  * 3. Exploration (browsing/listing)
  * 4. Detail (deep inspection)
+ * 5. Analysis (deeper analysis)
+ * 6. Generation (AI-powered code intelligence)
  */
 export const ALL_TOOLS: Tool[] = [
   ...ORCHESTRATION_TOOLS,  // Start here
   ...DISCOVERY_TOOLS,
   ...EXPLORATION_TOOLS,
   ...DETAIL_TOOLS,
+  ...ANALYSIS_TOOLS,
+  ...GENERATION_TOOLS,     // AI-powered tools
 ];
 
 /**
@@ -37,6 +43,8 @@ export const TOOL_CATEGORIES = {
   discovery: DISCOVERY_TOOLS.map(t => t.name),
   exploration: EXPLORATION_TOOLS.map(t => t.name),
   detail: DETAIL_TOOLS.map(t => t.name),
+  analysis: ANALYSIS_TOOLS.map(t => t.name),
+  generation: GENERATION_TOOLS.map(t => t.name),
 };
 
 /**
@@ -56,7 +64,7 @@ export function hasTool(name: string): boolean {
 /**
  * Get tools by category
  */
-export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'exploration' | 'detail'): Tool[] {
+export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'exploration' | 'detail' | 'analysis' | 'generation'): Tool[] {
   switch (category) {
     case 'orchestration':
       return ORCHESTRATION_TOOLS;
@@ -66,5 +74,9 @@ export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'ex
       return EXPLORATION_TOOLS;
     case 'detail':
       return DETAIL_TOOLS;
+    case 'analysis':
+      return ANALYSIS_TOOLS;
+    case 'generation':
+      return GENERATION_TOOLS;
   }
 }

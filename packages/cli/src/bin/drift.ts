@@ -32,6 +32,9 @@ import {
   skillsCommand,
   migrateStorageCommand,
   wrappersCommand,
+  createTestTopologyCommand,
+  createCouplingCommand,
+  createErrorHandlingCommand,
 } from '../commands/index.js';
 
 /**
@@ -69,6 +72,11 @@ function createProgram(): Command {
   program.addCommand(skillsCommand);
   program.addCommand(migrateStorageCommand);
   program.addCommand(wrappersCommand);
+  
+  // Analysis commands (L5-L7 layers)
+  program.addCommand(createTestTopologyCommand());
+  program.addCommand(createCouplingCommand());
+  program.addCommand(createErrorHandlingCommand());
 
   // Add help examples
   program.addHelpText(
@@ -121,6 +129,17 @@ Examples:
   $ drift wrappers                Detect framework wrapper patterns
   $ drift wrappers --json         Output wrapper analysis as JSON
   $ drift wrappers --verbose      Show detailed wrapper information
+  $ drift test-topology           Show test topology status
+  $ drift test-topology coverage  Analyze test coverage mapping
+  $ drift test-topology uncovered Find untested code
+  $ drift test-topology affected  Find tests affected by changes
+  $ drift coupling                Show module coupling status
+  $ drift coupling cycles         Detect dependency cycles
+  $ drift coupling hotspots       Find highly coupled modules
+  $ drift coupling analyze <mod>  Analyze specific module
+  $ drift error-handling          Show error handling status
+  $ drift error-handling gaps     Find error handling gaps
+  $ drift error-handling unhandled Find unhandled error paths
 
 Documentation:
   https://github.com/drift/drift

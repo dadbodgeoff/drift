@@ -66,9 +66,23 @@ import { handleFilePatterns } from './tools/detail/file-patterns.js';
 import { handleImpactAnalysis } from './tools/detail/impact-analysis.js';
 import { handleReachability } from './tools/detail/reachability.js';
 import { handleDNAProfile } from './tools/detail/dna-profile.js';
+import { handleWrappers } from './tools/detail/wrappers.js';
+
+// Discovery handlers (additional)
+import { handleProjects } from './tools/discovery/projects.js';
 
 // Orchestration handlers
 import { handleContext } from './tools/orchestration/index.js';
+
+// Generation handlers (new AI-powered tools)
+import { handleSuggestChanges } from './tools/generation/suggest-changes.js';
+import { handleValidateChange } from './tools/generation/validate-change.js';
+import { handleExplain } from './tools/generation/explain.js';
+
+// Analysis handlers (L5-L7 layers)
+import { handleTestTopology } from './tools/analysis/test-topology.js';
+import { handleCoupling } from './tools/analysis/coupling.js';
+import { handleErrorHandling } from './tools/analysis/error-handling.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -234,6 +248,9 @@ async function routeToolCall(
       
     case 'drift_capabilities':
       return handleCapabilities(args);
+      
+    case 'drift_projects':
+      return handleProjects(args as Parameters<typeof handleProjects>[0]);
   }
 
   // ============================================================================
@@ -312,6 +329,55 @@ async function routeToolCall(
     // DNA tools
     case 'drift_dna_profile':
       return handleDNAProfile(stores.dna, args as Parameters<typeof handleDNAProfile>[1]);
+      
+    // Wrapper detection tools
+    case 'drift_wrappers':
+      return handleWrappers(args as Parameters<typeof handleWrappers>[0], projectRoot);
+  }
+
+  // ============================================================================
+  // Analysis Tools (L5-L7 Layers)
+  // ============================================================================
+  switch (name) {
+    case 'drift_test_topology':
+      return handleTestTopology(projectRoot, args as unknown as Parameters<typeof handleTestTopology>[1]);
+      
+    case 'drift_coupling':
+      return handleCoupling(projectRoot, args as unknown as Parameters<typeof handleCoupling>[1]);
+      
+    case 'drift_error_handling':
+      return handleErrorHandling(projectRoot, args as unknown as Parameters<typeof handleErrorHandling>[1]);
+  }
+
+  // ============================================================================
+  // Generation Tools (AI-Powered Code Intelligence)
+  // ============================================================================
+  switch (name) {
+    case 'drift_suggest_changes':
+      return handleSuggestChanges(
+        { pattern: stores.pattern, boundary: stores.boundary },
+        projectRoot,
+        args as unknown as Parameters<typeof handleSuggestChanges>[2]
+      );
+      
+    case 'drift_validate_change':
+      return handleValidateChange(
+        stores.pattern,
+        projectRoot,
+        args as unknown as Parameters<typeof handleValidateChange>[2]
+      );
+      
+    case 'drift_explain':
+      return handleExplain(
+        {
+          pattern: stores.pattern,
+          manifest: stores.manifest,
+          boundary: stores.boundary,
+          callGraph: stores.callGraph,
+        },
+        projectRoot,
+        args as unknown as Parameters<typeof handleExplain>[2]
+      );
   }
 
   // Unknown tool

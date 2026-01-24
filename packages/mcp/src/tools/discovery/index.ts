@@ -24,12 +24,48 @@ export const DISCOVERY_TOOLS: Tool[] = [
       properties: {},
     },
   },
+  {
+    name: 'drift_projects',
+    description: 'List and manage registered drift projects. Enables working across multiple codebases. Actions: list (show all), info (project details), switch (change active), recent (recently used), register (add new).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['list', 'info', 'switch', 'recent', 'register'],
+          description: 'Action to perform (default: list)',
+        },
+        project: {
+          type: 'string',
+          description: 'Project name or ID (for info/switch)',
+        },
+        path: {
+          type: 'string',
+          description: 'Project path (for register)',
+        },
+        language: {
+          type: 'string',
+          description: 'Filter by language (for list)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for list)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit results (default: 10)',
+        },
+      },
+    },
+  },
 ];
 
 // Handler exports
 export { handleStatus, handleStatusWithService } from './status.js';
 export { handleCapabilities } from './capabilities.js';
+export { handleProjects } from './projects.js';
 
 // Re-export types
 export type { StatusData } from './status.js';
 export type { CapabilitiesData } from './capabilities.js';
+export type { ProjectsArgs } from './projects.js';
