@@ -314,10 +314,10 @@ async function routeToolCall(
     
     // File detail tools
     case 'drift_files_list':
-      return handleFilesList(stores.manifest, args as Parameters<typeof handleFilesList>[1]);
+      return handleFilesList(projectRoot, args as Parameters<typeof handleFilesList>[1]);
       
     case 'drift_file_patterns':
-      return handleFilePatterns(stores.manifest, args as Parameters<typeof handleFilePatterns>[1]);
+      return handleFilePatterns(projectRoot, args as Parameters<typeof handleFilePatterns>[1]);
     
     // Call graph analysis tools
     case 'drift_impact_analysis':

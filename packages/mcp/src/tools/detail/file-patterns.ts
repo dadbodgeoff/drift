@@ -3,9 +3,11 @@
  * 
  * Detail tool that returns all patterns found in a specific file.
  * Shows pattern details, locations within the file, and outliers.
+ * 
+ * Uses IndexStore (by-file.json) for file-to-pattern mapping.
  */
 
-import type { ManifestStore } from 'driftdetect-core';
+import { IndexStore, PatternStore } from 'driftdetect-core';
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 export interface FilePatternLocation {
@@ -34,7 +36,7 @@ export interface FilePatternData {
 }
 
 export async function handleFilePatterns(
-  store: ManifestStore,
+  projectRoot: string,
   args: {
     file: string;
     category?: string;
@@ -46,25 +48,32 @@ export async function handleFilePatterns(
     throw Errors.missingParameter('file');
   }
   
-  await store.load();
-  const manifest = await store.get();
+  // Use IndexStore for file-to-pattern mapping
+  const indexStore = new IndexStore({ rootDir: projectRoot });
+  await indexStore.initialize();
+  
+  const fileIndex = await indexStore.getFileIndex();
   
   // Normalize file path
   const filePath = args.file.replace(/^\.\//, '');
   
-  // Check if file exists in manifest
-  const fileEntry = manifest.files[filePath];
-  if (!fileEntry) {
+  // Check if file exists in index
+  const patternIds = fileIndex?.patterns[filePath];
+  if (!patternIds || patternIds.length === 0) {
     throw Errors.notFound('file', filePath);
   }
+  
+  // Load pattern store to get full pattern details
+  const patternStore = new PatternStore({ rootDir: projectRoot });
+  await patternStore.initialize();
   
   // Get patterns for this file
   const patterns: FilePattern[] = [];
   const categories = new Set<string>();
   let outlierCount = 0;
   
-  for (const patternId of fileEntry.patterns) {
-    const pattern = manifest.patterns[patternId];
+  for (const patternId of patternIds) {
+    const pattern = patternStore.get(patternId);
     if (!pattern) continue;
     
     // Filter by category if specified
@@ -79,10 +88,10 @@ export async function handleFilePatterns(
       .filter(loc => loc.file === filePath)
       .map(loc => {
         const result: FilePatternLocation = {
-          line: loc.range.start,
+          line: loc.line,
         };
-        if (loc.snippet) {
-          result.snippet = loc.snippet;
+        if (loc.column) {
+          result.column = loc.column;
         }
         return result;
       });
@@ -98,7 +107,7 @@ export async function handleFilePatterns(
       name: pattern.name,
       category: pattern.category,
       subcategory: pattern.subcategory ?? '',
-      confidence: Math.round(pattern.confidence * 100) / 100,
+      confidence: Math.round(pattern.confidence.score * 100) / 100,
       locations: fileLocations,
       isOutlier: !!outlier,
     };
