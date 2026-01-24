@@ -179,6 +179,15 @@ export {
   createWrapperScanner,
   type WrapperScannerConfig,
   type WrapperScanResult,
+  // Pattern adapter
+  clusterToPattern,
+  wrapperToLocation,
+  clustersToPatterns,
+  generatePatternId,
+  extractPatternMetadata,
+  isWrapperPattern,
+  extractWrapperInfo,
+  type WrapperToPatternOptions,
 } from './integration/index.js';
 
 
