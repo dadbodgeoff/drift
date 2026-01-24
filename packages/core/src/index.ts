@@ -1066,3 +1066,50 @@ export type {
   GoGoroutine,
   GoConcurrencyIssue,
 } from './go/index.js';
+
+
+// ============================================================================
+// Environment Variable Detection (Config access pattern tracking)
+// ============================================================================
+
+export {
+  // Scanner
+  EnvScanner,
+  createEnvScanner,
+  // Store
+  EnvStore,
+  createEnvStore,
+  // Extractors
+  BaseEnvExtractor,
+  TypeScriptEnvExtractor,
+  createTypeScriptEnvExtractor,
+  PythonEnvExtractor,
+  createPythonEnvExtractor,
+  JavaEnvExtractor,
+  createJavaEnvExtractor,
+  CSharpEnvExtractor,
+  createCSharpEnvExtractor,
+  PhpEnvExtractor,
+  createPhpEnvExtractor,
+  GoEnvExtractor,
+  createGoEnvExtractor,
+  // Utilities
+  classifyEnvSensitivity,
+  SENSITIVE_VAR_PATTERNS,
+} from './environment/index.js';
+
+export type {
+  // Core types
+  EnvLanguage,
+  EnvAccessMethod,
+  EnvSensitivity,
+  EnvAccessPoint,
+  EnvVarInfo,
+  FileEnvInfo,
+  EnvAccessMap,
+  EnvExtractionResult,
+  EnvStoreConfig,
+  EnvScanResult,
+  // Scanner config
+  EnvScannerConfig,
+} from './environment/index.js';

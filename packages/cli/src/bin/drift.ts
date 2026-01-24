@@ -39,6 +39,7 @@ import {
   createConstraintsCommand,
   createWpfCommand,
   createGoCommand,
+  envCommand,
 } from '../commands/index.js';
 
 /**
@@ -91,6 +92,9 @@ function createProgram(): Command {
 
   // Go Language Support
   program.addCommand(createGoCommand());
+
+  // Environment Variable Detection
+  program.addCommand(envCommand);
 
   // Add help examples
   program.addHelpText(
@@ -157,6 +161,13 @@ Examples:
   $ drift simulate "add rate limiting"  Simulate implementation approaches
   $ drift simulate "add auth" -v  Simulate with detailed analysis
   $ drift simulate "add caching" --json  Output simulation as JSON
+  $ drift env                     Show environment variable access overview
+  $ drift env scan                Scan for environment variable access
+  $ drift env list                List all discovered env variables
+  $ drift env secrets             Show secret and credential variables
+  $ drift env var <name>          Show details for a specific variable
+  $ drift env required            Show required variables without defaults
+  $ drift env file <pattern>      Show what env vars a file accesses
 
 Documentation:
   https://github.com/drift/drift

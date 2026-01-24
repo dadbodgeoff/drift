@@ -41,3 +41,6 @@ export { createWpfCommand } from './wpf.js';
 
 // Go Language Support
 export { createGoCommand } from './go.js';
+
+// Environment Variable Detection
+export { envCommand } from './env.js';

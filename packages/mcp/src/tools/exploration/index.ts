@@ -117,6 +117,37 @@ export const EXPLORATION_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    name: 'drift_env',
+    description: 'Analyze environment variable access patterns. Shows which code accesses which env vars, sensitivity classification (secrets, credentials, config), and required variables.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['overview', 'list', 'secrets', 'required', 'variable', 'file'],
+          description: 'Action to perform: overview (default), list (all vars), secrets (sensitive vars), required (vars without defaults), variable (specific var details), file (vars accessed by file)',
+        },
+        variable: {
+          type: 'string',
+          description: 'Variable name for action="variable"',
+        },
+        file: {
+          type: 'string',
+          description: 'File pattern for action="file"',
+        },
+        sensitivity: {
+          type: 'string',
+          enum: ['secret', 'credential', 'config'],
+          description: 'Filter by sensitivity for action="list"',
+        },
+        limit: {
+          type: 'number',
+          description: 'Max items to return (default: 10)',
+        },
+      },
+    },
+  },
 ];
 
 // Handler exports
@@ -124,9 +155,11 @@ export { handlePatternsList, handlePatternsListWithService } from './patterns-li
 export { handleSecuritySummary } from './security-summary.js';
 export { handleContractsList } from './contracts-list.js';
 export { handleTrends } from './trends.js';
+export { handleEnv } from './env.js';
 
 // Re-export types
 export type { PatternSummary, PatternsListData, PatternsListArgs } from './patterns-list.js';
 export type { SecuritySummaryData } from './security-summary.js';
 export type { ContractSummary, ContractsListData } from './contracts-list.js';
 export type { TrendItem, TrendsData } from './trends.js';
+export type { EnvData } from './env.js';

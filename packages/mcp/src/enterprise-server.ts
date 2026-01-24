@@ -31,6 +31,7 @@ import {
   BoundaryStore,
   ContractStore,
   CallGraphStore,
+  EnvStore,
   createDataLake,
   createPatternServiceFromStore,
   type DataLake,
@@ -57,6 +58,7 @@ import { handlePatternsList, handlePatternsListWithService } from './tools/explo
 import { handleSecuritySummary } from './tools/exploration/security-summary.js';
 import { handleContractsList } from './tools/exploration/contracts-list.js';
 import { handleTrends } from './tools/exploration/trends.js';
+import { handleEnv } from './tools/exploration/env.js';
 
 // Detail handlers
 import { handlePatternGet, handlePatternGetWithService } from './tools/detail/pattern-get.js';
@@ -114,6 +116,7 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
     boundary: new BoundaryStore({ rootDir: config.projectRoot }),
     contract: new ContractStore({ rootDir: config.projectRoot }),
     callGraph: new CallGraphStore({ rootDir: config.projectRoot }),
+    env: new EnvStore({ rootDir: config.projectRoot }),
   };
 
   // Initialize pattern service (wraps PatternStore with unified interface)
@@ -216,6 +219,7 @@ async function routeToolCall(
     boundary: BoundaryStore;
     contract: ContractStore;
     callGraph: CallGraphStore;
+    env: EnvStore;
   },
   projectRoot: string,
   dataLake: DataLake,
@@ -285,6 +289,9 @@ async function routeToolCall(
       
     case 'drift_trends':
       return handleTrends(stores.history, args as Parameters<typeof handleTrends>[1]);
+      
+    case 'drift_env':
+      return handleEnv(stores.env, args as Parameters<typeof handleEnv>[1]);
   }
 
   // ============================================================================
