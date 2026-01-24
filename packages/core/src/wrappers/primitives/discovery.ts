@@ -6,7 +6,6 @@
 
 import type {
   DetectedPrimitive,
-  PrimitiveSource,
   SupportedLanguage,
   FrameworkDetectionResult,
 } from '../types.js';
@@ -23,14 +22,17 @@ import {
 
 export interface ImportInfo {
   source: string;
-  imported: string[];
-  isDefault?: boolean;
-  isNamespace?: boolean;
+  names: Array<{
+    imported: string;
+    local: string;
+    isDefault: boolean;
+  }>;
+  line: number;
+  isTypeOnly: boolean;
 }
 
 export interface DecoratorUsage {
   name: string;
-  functionName: string;
   file: string;
   line: number;
   arguments?: string[];
@@ -38,8 +40,10 @@ export interface DecoratorUsage {
 
 export interface FunctionUsage {
   name: string;
-  calledFrom: string[];
-  callCount: number;
+  file: string;
+  line: number;
+  isMethodCall?: boolean | undefined;
+  receiver?: string | undefined;
 }
 
 export interface DiscoveryContext {
@@ -119,8 +123,8 @@ export function detectFrameworks(context: DiscoveryContext): FrameworkDetectionR
   // 1. Check package.json dependencies (highest confidence for JS/TS)
   if (context.packageJson && context.language === 'typescript') {
     const deps = {
-      ...(context.packageJson.dependencies as Record<string, string> || {}),
-      ...(context.packageJson.devDependencies as Record<string, string> || {}),
+      ...(context.packageJson['dependencies'] as Record<string, string> || {}),
+      ...(context.packageJson['devDependencies'] as Record<string, string> || {}),
     };
 
     for (const [framework, packages] of Object.entries(FRAMEWORK_PACKAGE_MAP)) {
@@ -321,7 +325,8 @@ function discoverFromImports(context: DiscoveryContext): DetectedPrimitive[] {
     // Skip internal imports
     if (isInternalImport(imp.source)) continue;
 
-    for (const name of imp.imported) {
+    for (const nameInfo of imp.names) {
+      const name = nameInfo.imported;
       // Check if it's a known primitive
       if (knownPrimitives.has(name)) {
         const info = findPrimitiveFramework(name, context.language);
@@ -396,19 +401,26 @@ function discoverFromFrequency(
   const primitives: DetectedPrimitive[] = [];
   const FREQUENCY_THRESHOLD = 15;
 
+  // Count function usages
+  const usageCounts = new Map<string, number>();
   for (const usage of context.functionUsages) {
-    if (alreadySeen.has(usage.name)) continue;
-    if (usage.callCount < FREQUENCY_THRESHOLD) continue;
+    const count = usageCounts.get(usage.name) || 0;
+    usageCounts.set(usage.name, count + 1);
+  }
+
+  for (const [name, count] of usageCounts) {
+    if (alreadySeen.has(name)) continue;
+    if (count < FREQUENCY_THRESHOLD) continue;
 
     // Only consider if it looks like a utility/primitive
-    if (looksLikeUtilityFunction(usage.name)) {
+    if (looksLikeUtilityFunction(name)) {
       primitives.push({
-        name: usage.name,
+        name,
         framework: 'project',
         category: 'inferred',
         source: { type: 'frequency', confidence: 0.6 },
         language: context.language,
-        usageCount: usage.callCount,
+        usageCount: count,
       });
     }
   }
@@ -436,7 +448,8 @@ function extractFrameworkFromImport(source: string): string {
     const parts = source.split('/');
     return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : source;
   }
-  return source.split('/')[0];
+  const firstPart = source.split('/')[0];
+  return firstPart ?? source;
 }
 
 function looksLikeUtilityFunction(name: string): boolean {
@@ -451,8 +464,7 @@ function looksLikeUtilityFunction(name: string): boolean {
 }
 
 function countUsages(name: string, context: DiscoveryContext): number {
-  const usage = context.functionUsages.find((u) => u.name === name);
-  return usage?.callCount || 0;
+  return context.functionUsages.filter((u) => u.name === name).length;
 }
 
 /**

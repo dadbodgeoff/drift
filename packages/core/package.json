@@ -21,6 +21,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./wrappers": {
+      "types": "./dist/wrappers/index.d.ts",
+      "import": "./dist/wrappers/index.js"
     }
   },
   "files": [

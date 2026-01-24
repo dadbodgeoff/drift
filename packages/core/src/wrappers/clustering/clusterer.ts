@@ -16,12 +16,18 @@ import type {
 // =============================================================================
 
 export interface ClusteringOptions {
-  minClusterSize?: number;
-  minTotalUsages?: number;
-  minConfidence?: number;
+  minClusterSize?: number | undefined;
+  minTotalUsages?: number | undefined;
+  minConfidence?: number | undefined;
 }
 
-const DEFAULT_OPTIONS: Required<ClusteringOptions> = {
+interface ClusteringDefaults {
+  minClusterSize: number;
+  minTotalUsages: number;
+  minConfidence: number;
+}
+
+const DEFAULT_OPTIONS: ClusteringDefaults = {
   minClusterSize: 2,
   minTotalUsages: 3,
   minConfidence: 0.5,
@@ -39,7 +45,9 @@ export function clusterWrappers(
   primitives: DetectedPrimitive[],
   options: ClusteringOptions = {}
 ): WrapperCluster[] {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const minClusterSize = options.minClusterSize ?? DEFAULT_OPTIONS.minClusterSize;
+  const minTotalUsages = options.minTotalUsages ?? DEFAULT_OPTIONS.minTotalUsages;
+  const minConfidence = options.minConfidence ?? DEFAULT_OPTIONS.minConfidence;
 
   // Group by primitive signature
   const bySignature = new Map<string, WrapperFunction[]>();
@@ -60,7 +68,7 @@ export function clusterWrappers(
     const totalUsages = members.reduce((sum, m) => sum + m.calledBy.length, 0);
 
     // Apply filters
-    if (members.length < opts.minClusterSize && totalUsages < opts.minTotalUsages) {
+    if (members.length < minClusterSize && totalUsages < minTotalUsages) {
       continue;
     }
 
@@ -69,7 +77,7 @@ export function clusterWrappers(
     const files = new Set(members.map((m) => m.file));
     const confidence = calculateConfidence(members, primitiveList, totalUsages, files.size);
 
-    if (confidence < opts.minConfidence) {
+    if (confidence < minConfidence) {
       continue;
     }
 
@@ -360,10 +368,10 @@ function generateClusterName(
   const namingPatterns = detectNamingPatterns(members);
   if (namingPatterns.length > 0) {
     const pattern = namingPatterns[0];
-    if (pattern.startsWith('use')) return 'Custom Hooks';
-    if (pattern.endsWith('Service')) return 'Service Wrappers';
-    if (pattern.endsWith('Handler')) return 'Event Handlers';
-    if (pattern.endsWith('Query')) return 'Query Hooks';
+    if (pattern && pattern.startsWith('use')) return 'Custom Hooks';
+    if (pattern && pattern.endsWith('Service')) return 'Service Wrappers';
+    if (pattern && pattern.endsWith('Handler')) return 'Event Handlers';
+    if (pattern && pattern.endsWith('Query')) return 'Query Hooks';
   }
 
   // Fall back to category + primitives
@@ -385,7 +393,7 @@ function generateClusterName(
 function generateDescription(
   primitives: string[],
   members: WrapperFunction[],
-  category: WrapperCategory
+  _category: WrapperCategory
 ): string {
   const memberCount = members.length;
   const fileCount = new Set(members.map((m) => m.file)).size;
@@ -422,10 +430,10 @@ function generateNameSuggestions(
   // Based on naming patterns
   const patterns = detectNamingPatterns(members);
   for (const pattern of patterns) {
-    if (pattern.startsWith('use')) suggestions.push('Custom Hooks');
-    if (pattern.endsWith('Service')) suggestions.push('Service Layer');
-    if (pattern.endsWith('Repository')) suggestions.push('Repository Pattern');
-    if (pattern.endsWith('Factory')) suggestions.push('Factory Pattern');
+    if (pattern && pattern.startsWith('use')) suggestions.push('Custom Hooks');
+    if (pattern && pattern.endsWith('Service')) suggestions.push('Service Layer');
+    if (pattern && pattern.endsWith('Repository')) suggestions.push('Repository Pattern');
+    if (pattern && pattern.endsWith('Factory')) suggestions.push('Factory Pattern');
   }
 
   // Based on category

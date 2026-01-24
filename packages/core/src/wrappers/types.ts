@@ -69,10 +69,10 @@ export interface WrapperFunction {
   isAsync: boolean;
 
   /** Inferred return type */
-  returnType?: string;
+  returnType?: string | undefined;
 
   /** Parameter types/names */
-  parameterSignature?: string[];
+  parameterSignature?: string[] | undefined;
 }
 
 
@@ -188,7 +188,7 @@ export interface WrapperAnalysisResult {
 
 export interface FrameworkInfo {
   name: string;
-  version?: string;
+  version?: string | undefined;
   primitiveCount: number;
   language: SupportedLanguage;
 }
