@@ -7,16 +7,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-01-24
+
+### 🚀 Major Release: Unified Language Provider, Framework-Aware Extraction & Enterprise Features
+
+This release brings significant improvements to multi-language support, framework detection, and enterprise-grade analysis capabilities.
+
+---
+
+### ⭐ Headline Features
+
+#### 🔧 Unified Language Provider System
+A complete rewrite of the language intelligence layer:
+
+- **Unified Normalization**: Consistent AST normalization across TypeScript, Python, Java, C#, and PHP
+- **Framework-Aware Matchers**: Specialized matchers for Eloquent, Mongoose, TypeORM, and more
+- **Cross-Language Compatibility**: Same analysis patterns work across all supported languages
+- **Extensible Architecture**: Easy to add new language support
+
+#### 🧪 Test Topology Analysis
+New system for understanding test coverage and structure:
+
+- **Test Extractor Framework**: Language-specific test extractors for all supported languages
+- **Regex Fallback Extractors**: Reliable extraction when tree-sitter isn't available
+- **Test-to-Code Mapping**: Understand which tests cover which code paths
+- **Coverage Gap Detection**: Find untested critical paths
+
+#### 🔗 Module Coupling Analysis
+Understand dependencies between modules:
+
+- **Coupling Analyzer**: Detect tight coupling between modules
+- **Dependency Graphs**: Visualize module relationships
+- **Refactoring Suggestions**: Identify candidates for decoupling
+
+#### ⚠️ Error Handling Analysis
+Comprehensive error handling pattern detection:
+
+- **Error Flow Tracking**: Follow error propagation through code
+- **Missing Handler Detection**: Find unhandled error cases
+- **Best Practice Validation**: Ensure consistent error handling patterns
+
+#### 🎁 Framework Wrapper Detection
+Intelligent detection of framework abstractions:
+
+- **Wrapper Clustering**: Group related wrapper functions
+- **Pattern Adaptation**: Connect wrappers to underlying patterns
+- **Export Analysis**: Understand wrapper exposure and usage
+
+#### 🔄 Hybrid Extractors with Regex Fallback
+Enterprise-grade extraction reliability:
+
+- **Tree-Sitter Primary**: Fast, accurate AST-based extraction
+- **Regex Fallback**: Reliable extraction when parsing fails
+- **Graceful Degradation**: Never lose data due to parse errors
+
 ### Added
-- **Worker Threads parallelization**: New `ThreadedWorkerPool` using Piscina for true multi-threaded file processing (thanks [@Carter003](https://github.com/Carter003) for the feature request!)
-  - Offloads CPU-bound AST parsing and regex matching to worker threads
+
+#### Unified Provider System (`packages/core/src/unified-provider/`)
+- `types.ts` - Unified type definitions for cross-language analysis
+- `provider/unified-language-provider.ts` - Main provider orchestration
+- `normalization/base-normalizer.ts` - Base class for language normalizers
+- `normalization/typescript-normalizer.ts` - TypeScript/JavaScript normalization
+- `normalization/python-normalizer.ts` - Python normalization
+- `normalization/java-normalizer.ts` - Java normalization
+- `normalization/csharp-normalizer.ts` - C# normalization
+- `normalization/php-normalizer.ts` - PHP normalization
+- `matching/eloquent-matcher.ts` - Laravel Eloquent pattern matching
+- `matching/mongoose-matcher.ts` - Mongoose ODM pattern matching
+- `matching/typeorm-matcher.ts` - TypeORM pattern matching
+- `integration/unified-scanner.ts` - Unified scanning interface
+- `integration/unified-data-access-adapter.ts` - Data access layer adapter
+
+#### Test Topology (`packages/core/src/test-topology/`)
+- `types.ts` - Test topology type definitions
+- `test-topology-analyzer.ts` - Main analysis engine
+- `extractors/typescript-test-extractor.ts` - TypeScript test extraction
+- `extractors/python-test-extractor.ts` - Python test extraction
+- `extractors/csharp-test-extractor.ts` - C# test extraction
+- `extractors/php-test-extractor.ts` - PHP test extraction
+- `extractors/regex/typescript-test-regex.ts` - TS regex fallback
+- `extractors/regex/python-test-regex.ts` - Python regex fallback
+- `extractors/regex/java-test-regex.ts` - Java regex fallback
+- `extractors/regex/csharp-test-regex.ts` - C# regex fallback
+- `extractors/regex/php-test-regex.ts` - PHP regex fallback
+
+#### Module Coupling (`packages/core/src/module-coupling/`)
+- `types.ts` - Coupling analysis types
+- `coupling-analyzer.ts` - Module coupling detection
+
+#### Error Handling (`packages/core/src/error-handling/`)
+- `types.ts` - Error handling types
+- `error-handling-analyzer.ts` - Error pattern analysis
+
+#### Wrapper Detection (`packages/core/src/wrappers/`)
+- `primitives/discovery.ts` - Wrapper discovery primitives
+- `clustering/clusterer.ts` - Wrapper clustering algorithm
+- `clustering/exclusions.ts` - Exclusion patterns
+- `integration/scanner.ts` - Wrapper scanning integration
+- `integration/pattern-adapter.ts` - Pattern system adapter
+- `export/json.ts` - JSON export for wrappers
+
+#### Hybrid Extractors (`packages/core/src/call-graph/extractors/`)
+- `hybrid-extractor-base.ts` - Base class for hybrid extraction
+- `typescript-hybrid-extractor.ts` - TS hybrid extractor
+- `python-hybrid-extractor.ts` - Python hybrid extractor
+- `java-hybrid-extractor.ts` - Java hybrid extractor
+- `php-hybrid-extractor.ts` - PHP hybrid extractor
+- `regex/base-regex-extractor.ts` - Base regex extractor
+- `regex/typescript-regex.ts` - TS regex patterns
+- `regex/python-regex.ts` - Python regex patterns
+- `regex/java-regex.ts` - Java regex patterns
+- `regex/csharp-regex.ts` - C# regex patterns
+- `regex/php-regex.ts` - PHP regex patterns
+
+#### CLI Commands
+- `drift test-topology` - Analyze test structure and coverage
+- `drift coupling` - Analyze module coupling
+- `drift error-handling` - Analyze error handling patterns
+- `drift wrappers` - Detect and analyze framework wrappers
+
+#### MCP Tools
+- `drift_test_topology` - Query test topology data
+- `drift_coupling` - Query coupling analysis
+- `drift_error_handling` - Query error handling patterns
+- `drift_wrappers` - Query wrapper detection results
+
+#### Skills Library
+- 70+ new skill definitions for common patterns
+- Comprehensive coverage of auth, data, API, and infrastructure patterns
+
+### Changed
+
+- **Worker Threads parallelization**: New `ThreadedWorkerPool` using Piscina for true multi-threaded file processing
   - **~40% faster scans** on multi-core machines (9.6s vs 17.3s on 389 files)
-  - Worker warmup phase preloads detectors in parallel for optimal performance
+  - Worker warmup phase preloads detectors in parallel
   - Near-linear scaling with CPU cores for large repositories
-  - Main thread stays responsive for progress reporting
-  - Memory isolation prevents one bad file from crashing everything
-  - New exports: `ThreadedWorkerPool`, `createThreadedPool`, `getModuleDir`
-  - Worker script template: `FileProcessorTask` and `FileProcessorResult` types
+- **Package Versions**: All packages bumped to 0.5.0
+- **Unified Detector Base**: New `UnifiedDetector` base class for cross-language detectors
+- **Pattern Repository**: Consolidated pattern storage with `UnifiedFileRepository`
+
+### Fixed
+
+- CLI version mismatch: `drift -v` now correctly reports installed version
+- Include allowlist config for simpler project configuration
+
+---
 
 ## [0.4.4] - 2026-01-22
 
@@ -347,12 +482,15 @@ Optimized storage for instant queries:
 
 ## Version History
 
+- **0.5.x** - Unified Language Provider, Framework-Aware Extraction, Test Topology, Module Coupling
 - **0.4.x** - Call graph analysis, Galaxy visualization, Enterprise MCP v2, Data Lake
 - **0.3.x** - Multi-language support (C#, PHP/Laravel, Java/Spring), data boundaries
 - **0.2.x** - MCP integration, semantic detectors, contract detection
 - **0.1.x** - Initial release, core functionality
 
-[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/dadbodgeoff/drift/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/dadbodgeoff/drift/compare/v0.4.4...v0.5.0
+[0.4.4]: https://github.com/dadbodgeoff/drift/compare/v0.4.0...v0.4.4
 [0.4.0]: https://github.com/dadbodgeoff/drift/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dadbodgeoff/drift/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/dadbodgeoff/drift/compare/v0.1.8...v0.2.2
