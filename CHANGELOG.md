@@ -31,6 +31,26 @@ New ultra-focused, minimal-token tools designed specifically for AI coding assis
   - Returns score, violations, and suggestions
   - Checks error handling, data access, typing, and config patterns
 
+- **`drift_similar`** - Find semantically similar code
+  - Matches by intent (api_endpoint, service, component, hook, utility, test, middleware)
+  - Returns relevant examples with patterns and conventions
+  - Analyzes naming, error handling, and import conventions from matches
+
+- **`drift_type`** - Expand type definitions
+  - Finds interface/type/class/enum definitions by name
+  - Returns full shape with all fields and types
+  - Shows related types (extends, contains, parameter, return)
+
+- **`drift_recent`** - Show recent changes in area
+  - Git-based change detection for specific directories/files
+  - Identifies pattern changes and new conventions
+  - Recommends recently-updated files as current examples
+
+- **`drift_test_template`** - Generate test scaffolding
+  - Detects test framework (vitest, jest, mocha)
+  - Learns mocking style, assertion style, file patterns
+  - Generates ready-to-use test template matching codebase conventions
+
 All surgical tools follow enterprise patterns:
 - ResponseBuilder with consistent envelope format
 - Structured errors with recovery hints
