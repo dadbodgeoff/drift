@@ -24,3 +24,15 @@ export {
   type WrapperScannerConfig,
   type WrapperScanResult,
 } from './scanner.js';
+
+// Pattern adapter - convert wrapper clusters to Drift patterns
+export {
+  clusterToPattern,
+  wrapperToLocation,
+  clustersToPatterns,
+  generatePatternId,
+  extractPatternMetadata,
+  isWrapperPattern,
+  extractWrapperInfo,
+  type WrapperToPatternOptions,
+} from './pattern-adapter.js';
