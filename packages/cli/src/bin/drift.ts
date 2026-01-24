@@ -31,6 +31,7 @@ import {
   projectsCommand,
   skillsCommand,
   migrateStorageCommand,
+  wrappersCommand,
 } from '../commands/index.js';
 
 /**
@@ -67,6 +68,7 @@ function createProgram(): Command {
   program.addCommand(projectsCommand);
   program.addCommand(skillsCommand);
   program.addCommand(migrateStorageCommand);
+  program.addCommand(wrappersCommand);
 
   // Add help examples
   program.addHelpText(
@@ -116,6 +118,9 @@ Examples:
   $ drift skills info <name>      Show skill details
   $ drift migrate-storage         Migrate to unified storage format
   $ drift migrate-storage status  Check current storage format
+  $ drift wrappers                Detect framework wrapper patterns
+  $ drift wrappers --json         Output wrapper analysis as JSON
+  $ drift wrappers --verbose      Show detailed wrapper information
 
 Documentation:
   https://github.com/drift/drift

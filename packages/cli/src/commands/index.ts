@@ -24,3 +24,4 @@ export { callgraphCommand } from './callgraph.js';
 export { projectsCommand } from './projects.js';
 export { skillsCommand } from './skills.js';
 export { migrateStorageCommand } from './migrate-storage.js';
+export { wrappersCommand } from './wrappers.js';

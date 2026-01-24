@@ -19,6 +19,13 @@ const GENE_IDS = [
   'theming', 'spacing-philosophy', 'animation-approach',
 ];
 
+const WRAPPER_CATEGORIES = [
+  'state-management', 'data-fetching', 'side-effects', 'authentication',
+  'authorization', 'validation', 'dependency-injection', 'middleware',
+  'testing', 'logging', 'caching', 'error-handling', 'async-utilities',
+  'form-handling', 'routing', 'factory', 'decorator', 'utility', 'other',
+];
+
 export const DETAIL_TOOLS: Tool[] = [
   // Pattern Tools
   {
@@ -192,6 +199,42 @@ export const DETAIL_TOOLS: Tool[] = [
       },
     },
   },
+  
+  // Wrapper Detection Tools
+  {
+    name: 'drift_wrappers',
+    description: 'Detect framework wrapper patterns. Identifies custom abstractions built on top of framework primitives (React hooks, Express middleware, etc.). Shows clusters of similar wrappers with confidence scores.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: {
+          type: 'string',
+          enum: WRAPPER_CATEGORIES,
+          description: 'Filter by wrapper category',
+        },
+        minConfidence: {
+          type: 'number',
+          description: 'Minimum cluster confidence 0-1 (default: 0.5)',
+        },
+        minClusterSize: {
+          type: 'number',
+          description: 'Minimum wrappers per cluster (default: 2)',
+        },
+        maxDepth: {
+          type: 'number',
+          description: 'Maximum wrapper depth to traverse (default: 10)',
+        },
+        includeTests: {
+          type: 'boolean',
+          description: 'Include test files in analysis (default: false)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum clusters to return (default: 20)',
+        },
+      },
+    },
+  },
 ];
 
 // Handler exports
@@ -202,6 +245,7 @@ export { handleFilePatterns } from './file-patterns.js';
 export { handleImpactAnalysis } from './impact-analysis.js';
 export { handleReachability } from './reachability.js';
 export { handleDNAProfile } from './dna-profile.js';
+export { handleWrappers, handleWrappersWithConfig } from './wrappers.js';
 
 // Re-export types
 export type { PatternGetData, PatternLocation, PatternOutlier, PatternGetArgs } from './pattern-get.js';
@@ -211,3 +255,4 @@ export type { FilePatternData, FilePattern, FilePatternLocation } from './file-p
 export type { ImpactData, AffectedCaller, SensitivePath } from './impact-analysis.js';
 export type { ReachabilityData, ForwardReachabilityData, InverseReachabilityData, ReachableData, SensitiveField, AccessPath } from './reachability.js';
 export type { DNAProfileData, GeneProfile } from './dna-profile.js';
+export type { WrappersData, WrappersArgs, ClusterSummary, WrapperSummary } from './wrappers.js';

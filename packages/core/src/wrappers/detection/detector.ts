@@ -22,16 +22,16 @@ export interface FunctionInfo {
   endLine: number;
   language: SupportedLanguage;
   isAsync: boolean;
-  returnType?: string;
-  parameters?: ParameterInfo[];
-  decorators?: string[];
+  returnType?: string | undefined;
+  parameters?: ParameterInfo[] | undefined;
+  decorators?: string[] | undefined;
   calls: CallInfo[];
 }
 
 export interface ParameterInfo {
   name: string;
-  type?: string;
-  defaultValue?: string;
+  type?: string | undefined;
+  defaultValue?: string | undefined;
 }
 
 export interface CallInfo {
@@ -48,12 +48,18 @@ export interface DetectionContext {
 }
 
 export interface DetectionOptions {
-  maxDepth?: number;
-  includeTestFiles?: boolean;
-  minUsageCount?: number;
+  maxDepth?: number | undefined;
+  includeTestFiles?: boolean | undefined;
+  minUsageCount?: number | undefined;
 }
 
-const DEFAULT_OPTIONS: Required<DetectionOptions> = {
+interface DetectionDefaults {
+  maxDepth: number;
+  includeTestFiles: boolean;
+  minUsageCount: number;
+}
+
+const DEFAULT_OPTIONS: DetectionDefaults = {
   maxDepth: 10,
   includeTestFiles: true,
   minUsageCount: 0,
@@ -70,13 +76,16 @@ export function detectWrappers(
   context: DetectionContext,
   options: DetectionOptions = {}
 ): WrapperFunction[] {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const maxDepth = options.maxDepth ?? DEFAULT_OPTIONS.maxDepth;
+  const includeTestFiles = options.includeTestFiles ?? DEFAULT_OPTIONS.includeTestFiles;
+  const minUsageCount = options.minUsageCount ?? DEFAULT_OPTIONS.minUsageCount;
+  
   const primitiveNames = new Set(context.primitives.map((p) => p.name));
   const wrappers = new Map<string, WrapperFunction>();
 
   // Pass 1: Find direct wrappers (depth 1)
   for (const func of context.functions) {
-    if (!opts.includeTestFiles && isTestFile(func.file)) continue;
+    if (!includeTestFiles && isTestFile(func.file)) continue;
 
     const calledPrimitives = func.calls
       .filter((c) => primitiveNames.has(c.calleeName))
@@ -98,7 +107,7 @@ export function detectWrappers(
   let changed = true;
   let currentDepth = 1;
 
-  while (changed && currentDepth < opts.maxDepth) {
+  while (changed && currentDepth < maxDepth) {
     changed = false;
     currentDepth++;
 
@@ -107,7 +116,7 @@ export function detectWrappers(
 
     for (const func of context.functions) {
       if (wrappers.has(func.qualifiedName)) continue;
-      if (!opts.includeTestFiles && isTestFile(func.file)) continue;
+      if (!includeTestFiles && isTestFile(func.file)) continue;
 
       const calledWrappers = func.calls
         .filter((c) => wrappers.has(c.calleeName) || wrappers.has(c.calleeQualifiedName || ''))
@@ -161,7 +170,7 @@ export function detectWrappers(
 
   // Filter by minimum usage
   const result = [...wrappers.values()].filter(
-    (w) => w.calledBy.length >= opts.minUsageCount
+    (w) => w.calledBy.length >= minUsageCount
   );
 
   return result;
@@ -268,7 +277,7 @@ function detectDecoratorPattern(func: FunctionInfo): boolean {
   if (func.language === 'python') {
     if (func.parameters?.length === 1) {
       const param = func.parameters[0];
-      if (param.name === 'func' || param.name === 'fn' || param.type?.includes('Callable')) {
+      if (param && (param.name === 'func' || param.name === 'fn' || param.type?.includes('Callable'))) {
         return true;
       }
     }

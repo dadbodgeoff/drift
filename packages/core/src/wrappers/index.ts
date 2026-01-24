@@ -131,6 +131,25 @@ export {
   type ClusteringOptions,
 } from './clustering/clusterer.js';
 
+// Integration with call graph
+export {
+  // Adapter utilities
+  mapLanguage,
+  convertFunction,
+  convertImport,
+  buildDiscoveryContext,
+  buildDetectionContext,
+  filterExtractions,
+  calculateExtractionStats,
+  type AdapterOptions,
+  type ExtractionStats,
+  // Scanner
+  WrapperScanner,
+  createWrapperScanner,
+  type WrapperScannerConfig,
+  type WrapperScanResult,
+} from './integration/index.js';
+
 
 // =============================================================================
 // High-Level Analysis API
