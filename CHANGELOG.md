@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-01-24
+
+### Fixed
+- Fixed internal package dependencies that were still referencing 0.5.0 instead of 0.6.0
+- CLI, dashboard, detectors, and vscode packages now correctly depend on 0.6.x versions
+
 ## [0.6.0] - 2026-01-24
 
 ### 🚀 New Language & Framework Support
