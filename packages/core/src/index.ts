@@ -892,3 +892,177 @@ export {
   DEFAULT_MIN_CONFIDENCE,
   DEFAULT_ENFORCEMENT_LEVEL,
 } from './constraints/index.js';
+
+
+// ============================================================================
+// WPF Framework Support (XAML parsing, ViewModel linking, MVVM analysis)
+// ============================================================================
+
+export {
+  // Main analyzer
+  WpfAnalyzer,
+  createWpfAnalyzer,
+
+  // Extractors
+  XamlHybridExtractor,
+  createXamlHybridExtractor,
+  ViewModelHybridExtractor,
+  createViewModelHybridExtractor,
+  CodeBehindLinker,
+  createCodeBehindLinker,
+  ResourceDictionaryParser,
+  createResourceDictionaryParser,
+  DependencyPropertyExtractor,
+  createDependencyPropertyExtractor,
+  DEPENDENCY_PROPERTY_PATTERNS,
+  ValueConverterExtractor,
+  createValueConverterExtractor,
+  VALUE_CONVERTER_PATTERNS,
+  BindingErrorDetector,
+  createBindingErrorDetector,
+
+  // Regex extractors (for direct use or testing)
+  XamlRegexExtractor,
+  XAML_REGEX_PATTERNS,
+  ViewModelRegexExtractor,
+  VIEWMODEL_REGEX_PATTERNS,
+
+  // Linkers
+  DataContextResolver,
+  createDataContextResolver,
+  ViewModelLinker,
+  createViewModelLinker,
+
+  // Integration
+  WpfCallGraphAdapter,
+  createWpfCallGraphAdapter,
+  WpfDataFlowTracer,
+  createWpfDataFlowTracer,
+} from './wpf/index.js';
+
+export type {
+  // Configuration types
+  WpfAnalyzerConfig,
+  XamlExtractorConfig,
+  ViewModelExtractorConfig,
+
+  // Result types
+  WpfAnalysisResult,
+  WpfAnalysisStats,
+  LinkingResult,
+  UnresolvedBinding,
+  LinkingStats,
+
+  // XAML types
+  XamlElement,
+  XamlBinding,
+  XamlCommand,
+  XamlFile,
+  XamlResource,
+  XamlResourceType,
+  XamlExtractionResult,
+  ExtractedBinding,
+  ExtractedCommand,
+  BindingMode,
+  BindingSourceType,
+  UpdateSourceTrigger,
+
+  // ViewModel types
+  ViewModelAnalysis,
+  ViewModelProperty,
+  ViewModelCommand,
+  DependencyPropertyInfo,
+  DependencyPropertyCallback,
+
+  // Linking types
+  ViewModelLink,
+  CodeBehindLink,
+  EventHandlerLink,
+  NamedElementLink,
+  DataContextResolution,
+  DataContextStep,
+
+  // Call graph integration types
+  WpfNodeType,
+  WpfCallGraphNode,
+  WpfNodeMetadata,
+  WpfEdgeType,
+  WpfCallGraphEdge,
+  WpfCallGraphIntegration,
+  WpfCallGraphStats,
+
+  // Data flow types
+  DataFlowTrace,
+  DataFlowStep,
+  DataFlowStepType,
+  DataFlowStepDetails,
+  DataFlowAnalysisResult,
+  SensitiveDataSummary,
+  DataFlowStats,
+
+  // Pattern detection types
+  MvvmComplianceResult,
+  MvvmViolation,
+  MvvmViolationType,
+  BindingError,
+  BindingErrorType,
+  BindingValidationResult,
+  BindingWarning,
+  BindingWarningType,
+  BindingValidationStats,
+
+  // Resource dictionary types
+  ResourceDictionary,
+  ResourceResolution,
+
+  // Value converter types
+  ValueConverterInfo,
+  ConverterUsage,
+  ConverterMethodInfo,
+  ValueConverterExtractionResult,
+
+  // Dependency property types
+  DependencyPropertyExtractionResult,
+
+  // Project detection types
+  WpfProjectInfo,
+
+  // Common types
+  SourceLocation as WpfSourceLocation,
+  WpfExtractionQuality,
+} from './wpf/index.js';
+
+
+// ============================================================================
+// Go Language Support (Go analysis, routes, error handling, data access)
+// ============================================================================
+
+export {
+  // Main analyzer
+  GoAnalyzer,
+  createGoAnalyzer,
+} from './go/index.js';
+
+export type {
+  // Configuration types
+  GoAnalyzerConfig,
+
+  // Result types
+  GoAnalysisResult,
+  GoAnalysisStats,
+  GoPackage,
+  GoRoute,
+  GoRoutesResult,
+  GoErrorHandlingResult,
+  GoErrorPattern,
+  GoErrorIssue,
+  GoSentinelError,
+  GoCustomError,
+  GoInterfacesResult,
+  GoInterface,
+  GoImplementation,
+  GoDataAccessResult,
+  GoGoroutinesResult,
+  GoGoroutine,
+  GoConcurrencyIssue,
+} from './go/index.js';

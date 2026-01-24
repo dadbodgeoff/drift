@@ -43,7 +43,7 @@ export interface TestFrameworkConfig {
 
 export abstract class BaseTestExtractor {
   protected parser: Parser;
-  protected language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php';
+  protected language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go';
 
   constructor(parser: Parser, language: BaseTestExtractor['language']) {
     this.parser = parser;

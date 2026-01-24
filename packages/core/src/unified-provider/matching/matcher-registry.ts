@@ -18,6 +18,9 @@ import { SQLAlchemyMatcher } from './sqlalchemy-matcher.js';
 import { EFCoreMatcher } from './efcore-matcher.js';
 import { EloquentMatcher } from './eloquent-matcher.js';
 import { SpringDataMatcher } from './spring-data-matcher.js';
+import { GORMMatcher } from './gorm-matcher.js';
+import { SqlxMatcher } from './sqlx-matcher.js';
+import { DatabaseSqlMatcher } from './database-sql-matcher.js';
 
 /**
  * Matcher registry - manages all pattern matchers
@@ -56,6 +59,11 @@ export class MatcherRegistry {
 
     // Java ORMs
     this.register(new SpringDataMatcher());
+
+    // Go ORMs
+    this.register(new GORMMatcher());
+    this.register(new SqlxMatcher());
+    this.register(new DatabaseSqlMatcher());
   }
 
   /**

@@ -8,6 +8,7 @@ export { PythonNormalizer } from './python-normalizer.js';
 export { JavaNormalizer } from './java-normalizer.js';
 export { PhpNormalizer } from './php-normalizer.js';
 export { CSharpNormalizer } from './csharp-normalizer.js';
+export { GoNormalizer } from './go-normalizer.js';
 
 import type { UnifiedLanguage, CallChainNormalizer } from '../types.js';
 import { TypeScriptNormalizer } from './typescript-normalizer.js';
@@ -15,6 +16,7 @@ import { PythonNormalizer } from './python-normalizer.js';
 import { JavaNormalizer } from './java-normalizer.js';
 import { PhpNormalizer } from './php-normalizer.js';
 import { CSharpNormalizer } from './csharp-normalizer.js';
+import { GoNormalizer } from './go-normalizer.js';
 
 /**
  * Normalizer registry
@@ -48,6 +50,9 @@ export function getNormalizer(language: UnifiedLanguage): CallChainNormalizer | 
     case 'csharp':
       normalizer = new CSharpNormalizer();
       break;
+    case 'go':
+      normalizer = new GoNormalizer();
+      break;
   }
 
   if (normalizer) {
@@ -61,7 +66,7 @@ export function getNormalizer(language: UnifiedLanguage): CallChainNormalizer | 
  * Get all available normalizers
  */
 export function getAvailableNormalizers(): UnifiedLanguage[] {
-  return ['typescript', 'javascript', 'python', 'java', 'php', 'csharp'];
+  return ['typescript', 'javascript', 'python', 'java', 'php', 'csharp', 'go'];
 }
 
 /**

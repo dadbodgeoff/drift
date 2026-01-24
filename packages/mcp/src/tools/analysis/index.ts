@@ -11,6 +11,8 @@ const COUPLING_ACTIONS = ['status', 'cycles', 'hotspots', 'analyze', 'refactor-i
 const ERROR_HANDLING_ACTIONS = ['status', 'gaps', 'boundaries', 'unhandled', 'analyze'];
 const DECISIONS_ACTIONS = ['status', 'list', 'get', 'for-file', 'timeline', 'search', 'mine'];
 const CONSTRAINTS_ACTIONS = ['list', 'show', 'extract', 'approve', 'ignore', 'verify'];
+const WPF_ACTIONS = ['status', 'bindings', 'mvvm', 'datacontext', 'commands'];
+const GO_ACTIONS = ['status', 'routes', 'errors', 'interfaces', 'data-access', 'goroutines'];
 
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
@@ -251,6 +253,66 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_wpf',
+    description: 'Analyze WPF applications: bindings, MVVM compliance, data flow. Actions: status (project overview), bindings (list all bindings), mvvm (compliance check), datacontext (resolution), commands (list commands).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: WPF_ACTIONS,
+          description: 'Action to perform: status, bindings, mvvm, datacontext, commands',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        options: {
+          type: 'object',
+          properties: {
+            unresolvedOnly: {
+              type: 'boolean',
+              description: 'Show only unresolved bindings',
+            },
+            limit: {
+              type: 'number',
+              description: 'Limit number of results',
+            },
+          },
+          description: 'Additional options',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'drift_go',
+    description: 'Analyze Go projects: routes, error handling, interfaces, data access, goroutines. Actions: status (project overview), routes (HTTP routes), errors (error handling patterns), interfaces (interface analysis), data-access (database patterns), goroutines (concurrency analysis).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: GO_ACTIONS,
+          description: 'Action to perform: status, routes, errors, interfaces, data-access, goroutines',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes action): gin, echo, chi, fiber, net/http',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -259,3 +321,5 @@ export { handleErrorHandling, type ErrorHandlingArgs, type ErrorHandlingAction }
 export { handleDecisions, type DecisionsArgs, type DecisionsAction } from './decisions.js';
 export { handleSimulate, type SimulateArgs } from './simulate.js';
 export { handleConstraints, type ConstraintsArgs, type ConstraintsAction } from './constraints.js';
+export { executeWpfTool, type WpfArgs, type WpfAction } from './wpf.js';
+export { executeGoTool, type GoArgs, type GoAction } from './go.js';

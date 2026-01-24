@@ -27,6 +27,11 @@ export { EloquentMatcher } from './eloquent-matcher.js';
 // Java ORMs
 export { SpringDataMatcher } from './spring-data-matcher.js';
 
+// Go ORMs
+export { GORMMatcher } from './gorm-matcher.js';
+export { SqlxMatcher } from './sqlx-matcher.js';
+export { DatabaseSqlMatcher } from './database-sql-matcher.js';
+
 export {
   MatcherRegistry,
   getMatcherRegistry,

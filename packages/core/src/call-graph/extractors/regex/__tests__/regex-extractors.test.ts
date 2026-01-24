@@ -374,9 +374,14 @@ describe('getRegexExtractorForFile', () => {
     expect(getRegexExtractorForFile('Test.cs')).toBeInstanceOf(CSharpRegexExtractor);
   });
 
+  it('should return Go extractor for .go files', () => {
+    const extractor = getRegexExtractorForFile('test.go');
+    expect(extractor).not.toBeNull();
+    expect(extractor?.language).toBe('go');
+  });
+
   it('should return null for unsupported extensions', () => {
     expect(getRegexExtractorForFile('test.rb')).toBeNull();
-    expect(getRegexExtractorForFile('test.go')).toBeNull();
     expect(getRegexExtractorForFile('test.rs')).toBeNull();
   });
 });

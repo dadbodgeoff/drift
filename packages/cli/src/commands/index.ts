@@ -35,3 +35,9 @@ export { createConstraintsCommand } from './constraints.js';
 
 // Speculative Execution Engine
 export { createSimulateCommand } from './simulate.js';
+
+// WPF Framework Support
+export { createWpfCommand } from './wpf.js';
+
+// Go Language Support
+export { createGoCommand } from './go.js';

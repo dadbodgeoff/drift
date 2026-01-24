@@ -86,6 +86,8 @@ import { handleErrorHandling } from './tools/analysis/error-handling.js';
 import { handleDecisions } from './tools/analysis/decisions.js';
 import { handleSimulate } from './tools/analysis/simulate.js';
 import { handleConstraints } from './tools/analysis/constraints.js';
+import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
+import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -359,6 +361,12 @@ async function routeToolCall(
       
     case 'drift_constraints':
       return handleConstraints(projectRoot, args as unknown as Parameters<typeof handleConstraints>[1]);
+      
+    case 'drift_wpf':
+      return executeWpfTool(args as unknown as WpfArgs, { projectRoot });
+
+    case 'drift_go':
+      return executeGoTool(args as unknown as GoArgs, { projectRoot });
   }
 
   // ============================================================================

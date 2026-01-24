@@ -47,6 +47,11 @@ export type ORMFramework =
   // PHP
   | 'eloquent'
   | 'doctrine'
+  // Go
+  | 'gorm'
+  | 'sqlx'
+  | 'ent'
+  | 'bun'
   // Generic
   | 'raw-sql'
   | 'unknown';

@@ -822,6 +822,7 @@ export class GraphBuilder {
       java: 0,
       csharp: 0,
       php: 0,
+      go: 0,
     };
 
     for (const [, func] of this.functions) {

@@ -49,6 +49,7 @@ export function mapLanguage(lang: CallGraphLanguage): SupportedLanguage | null {
     java: 'java',
     csharp: 'csharp',
     php: 'php',
+    go: null, // Go wrapper detection not yet implemented
   };
   return mapping[lang];
 }

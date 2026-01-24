@@ -11,6 +11,7 @@ export { PythonRegexExtractor } from './python-regex.js';
 export { PhpRegexExtractor } from './php-regex.js';
 export { JavaRegexExtractor } from './java-regex.js';
 export { CSharpRegexExtractor } from './csharp-regex.js';
+export { GoRegexExtractor, createGoRegexExtractor } from './go-regex.js';
 
 // Re-export types
 export type {
@@ -34,6 +35,7 @@ import { PythonRegexExtractor } from './python-regex.js';
 import { PhpRegexExtractor } from './php-regex.js';
 import { JavaRegexExtractor } from './java-regex.js';
 import { CSharpRegexExtractor } from './csharp-regex.js';
+import { GoRegexExtractor } from './go-regex.js';
 import type { BaseRegexExtractor } from './base-regex-extractor.js';
 
 /**
@@ -52,6 +54,8 @@ export function getRegexExtractor(language: CallGraphLanguage): BaseRegexExtract
       return new JavaRegexExtractor();
     case 'csharp':
       return new CSharpRegexExtractor();
+    case 'go':
+      return new GoRegexExtractor();
     default:
       return null;
   }
@@ -86,6 +90,11 @@ export function getRegexExtractorForFile(filePath: string): BaseRegexExtractor |
   // C#
   if (ext === '.cs') {
     return new CSharpRegexExtractor();
+  }
+  
+  // Go
+  if (ext === '.go') {
+    return new GoRegexExtractor();
   }
   
   return null;

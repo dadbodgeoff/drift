@@ -43,6 +43,7 @@ import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
 import { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
 import { JavaCallGraphExtractor } from './extractors/java-extractor.js';
 import { PhpCallGraphExtractor } from './extractors/php-extractor.js';
+import { GoCallGraphExtractor } from './extractors/go-extractor.js';
 import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
 import { GraphBuilder } from './analysis/graph-builder.js';
 import { ReachabilityEngine } from './analysis/reachability.js';
@@ -57,6 +58,9 @@ export { PythonCallGraphExtractor } from './extractors/python-extractor.js';
 export { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
 export { JavaCallGraphExtractor } from './extractors/java-extractor.js';
 export { PhpCallGraphExtractor } from './extractors/php-extractor.js';
+export { GoCallGraphExtractor, createGoExtractor } from './extractors/go-extractor.js';
+export { GoHybridExtractor, createGoHybridExtractor } from './extractors/go-hybrid-extractor.js';
+export { GoDataAccessExtractor, createGoDataAccessExtractor } from './extractors/go-data-access-extractor.js';
 
 // Data Access Extractors base class
 export { 
@@ -173,6 +177,7 @@ export class CallGraphAnalyzer {
       new CSharpCallGraphExtractor(),
       new JavaCallGraphExtractor(),
       new PhpCallGraphExtractor(),
+      new GoCallGraphExtractor(),
     ];
   }
 

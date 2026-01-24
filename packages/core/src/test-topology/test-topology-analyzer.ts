@@ -386,6 +386,7 @@ export class TestTopologyAnalyzer {
       junit4: 0, junit5: 0, testng: 0,
       xunit: 0, nunit: 0, mstest: 0,
       phpunit: 0, pest: 0, codeception: 0,
+      'go-testing': 0, testify: 0, ginkgo: 0, gomega: 0,
       unknown: 0,
     };
 

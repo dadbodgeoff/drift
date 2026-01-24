@@ -37,6 +37,8 @@ import {
   createErrorHandlingCommand,
   createSimulateCommand,
   createConstraintsCommand,
+  createWpfCommand,
+  createGoCommand,
 } from '../commands/index.js';
 
 /**
@@ -83,6 +85,12 @@ function createProgram(): Command {
   
   // Speculative Execution Engine
   program.addCommand(createSimulateCommand());
+  
+  // WPF Framework Support
+  program.addCommand(createWpfCommand());
+
+  // Go Language Support
+  program.addCommand(createGoCommand());
 
   // Add help examples
   program.addHelpText(

@@ -34,6 +34,11 @@ export type TestFramework =
   | 'phpunit'
   | 'pest'
   | 'codeception'
+  // Go
+  | 'go-testing'
+  | 'testify'
+  | 'ginkgo'
+  | 'gomega'
   | 'unknown';
 
 /**
@@ -240,7 +245,7 @@ export interface TestExtraction {
   /** Detected framework */
   framework: TestFramework;
   /** Language */
-  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php';
+  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go';
   /** Extracted test cases */
   testCases: TestCase[];
   /** Mock statements */

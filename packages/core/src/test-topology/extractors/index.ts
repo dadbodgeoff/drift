@@ -10,3 +10,4 @@ export { PythonTestExtractor, createPythonTestExtractor } from './python-test-ex
 export { JavaTestExtractor, createJavaTestExtractor } from './java-test-extractor.js';
 export { CSharpTestExtractor, createCSharpTestExtractor } from './csharp-test-extractor.js';
 export { PHPTestExtractor, createPHPTestExtractor } from './php-test-extractor.js';
+export { GoTestExtractor, createGoTestExtractor } from './go-test-extractor.js';

@@ -11,6 +11,7 @@ export type Language =
   | 'csharp'
   | 'java'
   | 'php'
+  | 'go'
   | 'css'
   | 'scss'
   | 'json'
