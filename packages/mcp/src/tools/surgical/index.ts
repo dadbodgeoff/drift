@@ -17,6 +17,10 @@
  * - drift_type: Expand type definitions
  * - drift_recent: Show recent changes in area
  * - drift_test_template: Generate test scaffolding
+ * - drift_dependencies: Package dependencies lookup (multi-language)
+ * - drift_middleware: Middleware pattern lookup
+ * - drift_hooks: React/Vue hooks lookup
+ * - drift_errors: Error types and handling gaps
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -29,6 +33,10 @@ export * from './similar.js';
 export * from './type.js';
 export * from './recent.js';
 export * from './test-template.js';
+export * from './dependencies.js';
+export * from './middleware.js';
+export * from './hooks.js';
+export * from './errors.js';
 
 import { signatureToolDefinition } from './signature.js';
 import { callersToolDefinition } from './callers.js';
@@ -38,6 +46,10 @@ import { similarToolDefinition } from './similar.js';
 import { typeToolDefinition } from './type.js';
 import { recentToolDefinition } from './recent.js';
 import { testTemplateToolDefinition } from './test-template.js';
+import { dependenciesToolDefinition } from './dependencies.js';
+import { middlewareToolDefinition } from './middleware.js';
+import { hooksToolDefinition } from './hooks.js';
+import { errorsToolDefinition } from './errors.js';
 
 /**
  * All surgical tools
@@ -51,4 +63,8 @@ export const SURGICAL_TOOLS: Tool[] = [
   typeToolDefinition,
   recentToolDefinition,
   testTemplateToolDefinition,
+  dependenciesToolDefinition,
+  middlewareToolDefinition,
+  hooksToolDefinition,
+  errorsToolDefinition,
 ];

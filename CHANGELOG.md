@@ -48,6 +48,29 @@ New ultra-focused, minimal-token tools designed specifically for AI coding assis
 
 - **`drift_test_template`** - Generate test scaffolding
   - Detects test framework (vitest, jest, mocha)
+  - Generates describe/it structure matching codebase conventions
+  - Includes mock patterns and assertion styles from existing tests
+
+- **`drift_dependencies`** - Multi-language package dependency lookup
+  - Supports JS/TS (package.json), Python (requirements.txt, pyproject.toml), 
+    Java (pom.xml, build.gradle), PHP (composer.json), C# (*.csproj), Go (go.mod)
+  - Categorizes packages (framework, testing, database, utility, ui)
+  - Filter by type (prod/dev/peer), category, or language
+
+- **`drift_middleware`** - Middleware pattern lookup
+  - Finds auth, logging, validation, and error handling middleware
+  - Detects framework (Express, NestJS, Laravel, Spring, Go)
+  - Returns usage counts and parameter signatures
+
+- **`drift_hooks`** - React/Vue hooks lookup
+  - Finds custom hooks by category (state, fetch, effect, form, auth)
+  - Shows dependencies and usage patterns
+  - Helps avoid duplicate hook creation
+
+- **`drift_errors`** - Error types and handling gaps
+  - action="types": Find custom error classes
+  - action="gaps": Find missing error handling (swallowed errors, unhandled async)
+  - action="boundaries": Find error boundaries and their coverage
   - Learns mocking style, assertion style, file patterns
   - Generates ready-to-use test template matching codebase conventions
 

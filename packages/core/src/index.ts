@@ -1113,3 +1113,47 @@ export type {
   // Scanner config
   EnvScannerConfig,
 } from './environment/index.js';
+
+
+// ============================================================================
+// Constants Module (Constant/Enum extraction and tracking)
+// ============================================================================
+
+export {
+  // Store
+  ConstantStore,
+  // Analysis
+  inferCategory,
+  getCategoryDisplayName,
+  getCategoryDescription,
+  isSecuritySensitive,
+  suggestConstantName,
+  // Extractors - Base
+  BaseConstantExtractor,
+  BaseConstantRegexExtractor,
+  // Extractors - Language-specific
+  TypeScriptConstantRegexExtractor,
+} from './constants/index.js';
+
+export type {
+  // Core types
+  ConstantExtraction,
+  EnumExtraction,
+  EnumMember,
+  ConstantReference,
+  FileConstantResult,
+  ConstantExtractionQuality,
+  ConstantFileShard,
+  ConstantIndex,
+  ConstantStats,
+  ConstantLanguage,
+  ConstantKind,
+  ConstantCategory,
+  IssueSeverity,
+  MagicValue,
+  PotentialSecret,
+  DeadConstant,
+  InconsistentConstant,
+  // Store config
+  ConstantStoreConfig,
+} from './constants/index.js';
