@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Surgical Tools for AI Code Generation (`packages/mcp/src/tools/surgical/`)
+New ultra-focused, minimal-token tools designed specifically for AI coding assistants:
+
+- **`drift_signature`** - Get function/class signatures without reading entire files
+  - Returns signature, parameters, return type, and location
+  - Token budget: 200-500 tokens (vs 2000+ for reading full files)
+  
+- **`drift_callers`** - Lightweight "who calls this function" lookup
+  - Direct callers with optional transitive caller traversal
+  - Much faster than full impact analysis
+  - Includes public API detection and usage stats
+  
+- **`drift_imports`** - Resolve correct import statements
+  - Learns codebase conventions (barrel vs deep, alias vs relative)
+  - Returns ready-to-use import statements
+  - Detects path aliases (@/, ~/)
+  
+- **`drift_prevalidate`** - Validate proposed code BEFORE writing
+  - Catches pattern violations before they happen
+  - Returns score, violations, and suggestions
+  - Checks error handling, data access, typing, and config patterns
+
+All surgical tools follow enterprise patterns:
+- ResponseBuilder with consistent envelope format
+- Structured errors with recovery hints
+- Metrics collection for observability
+- Token budget awareness
+
 ## [0.6.1] - 2026-01-24
 
 ### Fixed

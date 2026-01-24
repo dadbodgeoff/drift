@@ -11,6 +11,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { DISCOVERY_TOOLS } from './discovery/index.js';
 import { EXPLORATION_TOOLS } from './exploration/index.js';
 import { DETAIL_TOOLS } from './detail/index.js';
+import { SURGICAL_TOOLS } from './surgical/index.js';
 import { ORCHESTRATION_TOOLS } from './orchestration/index.js';
 import { ANALYSIS_TOOLS } from './analysis/index.js';
 import { GENERATION_TOOLS } from './generation/index.js';
@@ -21,14 +22,16 @@ import { GENERATION_TOOLS } from './generation/index.js';
  * Order matters for AI discovery:
  * 1. Orchestration (recommended starting point)
  * 2. Discovery (quick health checks)
- * 3. Exploration (browsing/listing)
- * 4. Detail (deep inspection)
- * 5. Analysis (deeper analysis)
- * 6. Generation (AI-powered code intelligence)
+ * 3. Surgical (ultra-focused lookups for code generation)
+ * 4. Exploration (browsing/listing)
+ * 5. Detail (deep inspection)
+ * 6. Analysis (deeper analysis)
+ * 7. Generation (AI-powered code intelligence)
  */
 export const ALL_TOOLS: Tool[] = [
   ...ORCHESTRATION_TOOLS,  // Start here
   ...DISCOVERY_TOOLS,
+  ...SURGICAL_TOOLS,       // Quick lookups for AI
   ...EXPLORATION_TOOLS,
   ...DETAIL_TOOLS,
   ...ANALYSIS_TOOLS,
@@ -41,6 +44,7 @@ export const ALL_TOOLS: Tool[] = [
 export const TOOL_CATEGORIES = {
   orchestration: ORCHESTRATION_TOOLS.map(t => t.name),
   discovery: DISCOVERY_TOOLS.map(t => t.name),
+  surgical: SURGICAL_TOOLS.map(t => t.name),
   exploration: EXPLORATION_TOOLS.map(t => t.name),
   detail: DETAIL_TOOLS.map(t => t.name),
   analysis: ANALYSIS_TOOLS.map(t => t.name),
@@ -64,12 +68,14 @@ export function hasTool(name: string): boolean {
 /**
  * Get tools by category
  */
-export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'exploration' | 'detail' | 'analysis' | 'generation'): Tool[] {
+export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'surgical' | 'exploration' | 'detail' | 'analysis' | 'generation'): Tool[] {
   switch (category) {
     case 'orchestration':
       return ORCHESTRATION_TOOLS;
     case 'discovery':
       return DISCOVERY_TOOLS;
+    case 'surgical':
+      return SURGICAL_TOOLS;
     case 'exploration':
       return EXPLORATION_TOOLS;
     case 'detail':
