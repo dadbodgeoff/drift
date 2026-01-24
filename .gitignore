@@ -44,3 +44,6 @@ test-repos/
 analyze-*.ts
 detect-*.ts
 fix-*.js
+
+# Draft files
+.git-commit-msg.txt
