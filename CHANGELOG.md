@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-01-24
+
+### 🐛 Bug Fixes
+
+#### MCP Server File Tools
+- **Fixed `drift_files_list`**: Now correctly uses `IndexStore` instead of deprecated `ManifestStore` for file-to-pattern mapping
+- **Fixed `drift_file_patterns`**: Now correctly uses `IndexStore` and `PatternStore` APIs for retrieving file patterns
+- Both tools now properly read from `.drift/indexes/by-file.json` which contains the actual file-to-pattern mappings
+
 ## [0.5.0] - 2026-01-24
 
 ### 🚀 Major Release: Unified Language Provider, Framework-Aware Extraction & Enterprise Features

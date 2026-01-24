@@ -3,16 +3,17 @@
  * 
  * Detail tool that lists files matching a glob pattern with their pattern counts.
  * Supports pagination for large codebases.
+ * 
+ * Uses IndexStore (by-file.json) for file-to-pattern mapping.
  */
 
-import type { ManifestStore } from 'driftdetect-core';
+import { IndexStore, PatternStore } from 'driftdetect-core';
 import { createResponseBuilder, createCursor, parseCursor } from '../../infrastructure/index.js';
 
 export interface FileEntry {
   file: string;
   patternCount: number;
   categories: string[];
-  lastScanned?: string;
 }
 
 export interface FilesListData {
@@ -24,7 +25,7 @@ export interface FilesListData {
 const DEFAULT_LIMIT = 20;
 
 export async function handleFilesList(
-  store: ManifestStore,
+  projectRoot: string,
   args: {
     path?: string;
     category?: string;
@@ -34,28 +35,45 @@ export async function handleFilesList(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<FilesListData>();
   
-  await store.load();
-  const manifest = await store.get();
+  // Use IndexStore for file-to-pattern mapping
+  const indexStore = new IndexStore({ rootDir: projectRoot });
+  await indexStore.initialize();
+  
+  const fileIndex = await indexStore.getFileIndex();
+  
+  if (!fileIndex || Object.keys(fileIndex.patterns).length === 0) {
+    return builder
+      .withSummary('0 files with 0 pattern instances.')
+      .withData({ files: [], totalFiles: 0, totalPatterns: 0 })
+      .withHints({
+        nextActions: ['Run drift scan to discover patterns'],
+        relatedTools: ['drift_file_patterns', 'drift_patterns_list'],
+      })
+      .buildContent();
+  }
   
   const limit = args.limit ?? DEFAULT_LIMIT;
   const offset = args.cursor ? parseCursor(args.cursor).offset : 0;
   const pathPattern = args.path ?? '**/*';
   
-  // Get all files from manifest
-  const allFiles = Object.entries(manifest.files);
+  // Get all files from index
+  const allFiles = Object.entries(fileIndex.patterns);
   
   // Filter by path pattern (simple glob matching)
   let filteredFiles = allFiles.filter(([filePath]) => 
     matchGlob(filePath, pathPattern)
   );
   
+  // Load pattern store to get categories
+  const patternStore = new PatternStore({ rootDir: projectRoot });
+  await patternStore.initialize();
+  
   // Build file entries with pattern info
-  let fileEntries: FileEntry[] = filteredFiles.map(([filePath, fileData]) => {
-    const patternIds = fileData.patterns;
+  let fileEntries: FileEntry[] = filteredFiles.map(([filePath, patternIds]) => {
     const categories = new Set<string>();
     
     for (const patternId of patternIds) {
-      const pattern = manifest.patterns[patternId];
+      const pattern = patternStore.get(patternId);
       if (pattern) {
         categories.add(pattern.category);
       }
@@ -65,7 +83,6 @@ export async function handleFilesList(
       file: filePath,
       patternCount: patternIds.length,
       categories: Array.from(categories).sort(),
-      lastScanned: fileData.lastScanned,
     };
   });
   
@@ -91,12 +108,12 @@ export async function handleFilesList(
   };
   
   // Build summary
-  let summary = `${totalFiles} files with ${totalPatterns} pattern instances.`;
+  let summary = totalFiles + ' files with ' + totalPatterns + ' pattern instances.';
   if (args.path && args.path !== '**/*') {
-    summary = `Matching "${args.path}": ${summary}`;
+    summary = 'Matching "' + args.path + '": ' + summary;
   }
   if (args.category) {
-    summary += ` Filtered to ${args.category} category.`;
+    summary += ' Filtered to ' + args.category + ' category.';
   }
   
   // Add pagination
@@ -116,7 +133,7 @@ export async function handleFilesList(
       nextActions: paginatedFiles.length > 0
         ? [
             'Use drift_file_patterns with a specific file to see its patterns',
-            hasMore ? `Use cursor="${createCursor(offset + limit, limit)}" to see more files` : '',
+            hasMore ? 'Use cursor="' + createCursor(offset + limit, limit) + '" to see more files' : '',
           ].filter(Boolean)
         : ['Run drift scan to discover patterns'],
       relatedTools: ['drift_file_patterns', 'drift_patterns_list'],
@@ -130,13 +147,14 @@ export async function handleFilesList(
 function matchGlob(filePath: string, pattern: string): boolean {
   if (pattern === '**/*' || pattern === '*') return true;
   
+  // Escape special regex chars first, then handle glob patterns
   const regexPattern = pattern
+    .replace(/\./g, '\\.')
     .replace(/\*\*/g, '{{GLOBSTAR}}')
     .replace(/\*/g, '[^/]*')
     .replace(/{{GLOBSTAR}}/g, '.*')
-    .replace(/\?/g, '.')
-    .replace(/\./g, '\\.');
+    .replace(/\?/g, '.');
   
-  const regex = new RegExp(`^${regexPattern}$`);
+  const regex = new RegExp('^' + regexPattern + '$');
   return regex.test(filePath);
 }
