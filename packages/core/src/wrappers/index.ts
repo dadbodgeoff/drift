@@ -131,6 +131,37 @@ export {
   type ClusteringOptions,
 } from './clustering/clusterer.js';
 
+// Exclusions
+export {
+  applyExclusions,
+  applyClusterExclusions,
+  getLanguageExclusions,
+  createExclusionRule,
+  excludeByName,
+  excludeByFile,
+  EXCLUSION_RULES,
+  type ExclusionRule,
+  type ExclusionResult,
+} from './clustering/exclusions.js';
+
+// Export formats
+export {
+  exportToJson,
+  buildExportResult,
+  parseJsonExport,
+  validateExport,
+  type WrapperExportOptions,
+  type WrapperExportResult,
+  type ProjectMetadata,
+  type FrameworkExport,
+  type PrimitiveExport,
+  type WrapperExport,
+  type WrapperFlags,
+  type ClusterExport,
+  type ClusterMetrics,
+  type SummaryExport,
+} from './export/index.js';
+
 // Integration with call graph
 export {
   // Adapter utilities
@@ -165,16 +196,21 @@ import type {
 import { discoverPrimitives, detectFrameworks, type DiscoveryContext } from './primitives/discovery.js';
 import { detectWrappers, calculateWrapperStats, type DetectionContext } from './detection/detector.js';
 import { clusterWrappers, getMostCommonPrimitives } from './clustering/clusterer.js';
+import { applyExclusions, applyClusterExclusions, getLanguageExclusions, type ExclusionRule } from './clustering/exclusions.js';
 
 export interface AnalysisOptions {
   /** Minimum confidence for clusters (0-1) */
-  minConfidence?: number;
+  minConfidence?: number | undefined;
   /** Minimum cluster size */
-  minClusterSize?: number;
+  minClusterSize?: number | undefined;
   /** Maximum wrapper depth to traverse */
-  maxDepth?: number;
+  maxDepth?: number | undefined;
   /** Include test files in analysis */
-  includeTestFiles?: boolean;
+  includeTestFiles?: boolean | undefined;
+  /** Apply exclusion rules to filter false positives */
+  applyExclusions?: boolean | undefined;
+  /** Custom exclusion rules (in addition to built-in rules) */
+  customExclusions?: ExclusionRule[] | undefined;
 }
 
 /**
@@ -185,6 +221,15 @@ export function analyzeWrappers(
   detectionContext: Omit<DetectionContext, 'primitives'>,
   options: AnalysisOptions = {}
 ): WrapperAnalysisResult {
+  const {
+    minConfidence = 0.3,
+    minClusterSize = 2,
+    maxDepth,
+    includeTestFiles,
+    applyExclusions: shouldApplyExclusions = true,
+    customExclusions = [],
+  } = options;
+
   // 1. Discover primitives
   const primitives = discoverPrimitives(discoveryContext);
 
@@ -203,18 +248,31 @@ export function analyzeWrappers(
     primitives,
   };
 
-  const wrappers = detectWrappers(fullDetectionContext, {
-    maxDepth: options.maxDepth,
-    includeTestFiles: options.includeTestFiles,
+  let wrappers = detectWrappers(fullDetectionContext, {
+    maxDepth,
+    includeTestFiles,
   });
 
-  // 4. Cluster wrappers
-  const clusters = clusterWrappers(wrappers, primitives, {
-    minConfidence: options.minConfidence,
-    minClusterSize: options.minClusterSize,
+  // 4. Apply exclusion rules to filter false positives
+  if (shouldApplyExclusions) {
+    const languageRules = getLanguageExclusions(discoveryContext.language);
+    const allRules = [...languageRules, ...customExclusions];
+    const exclusionResult = applyExclusions(wrappers, allRules);
+    wrappers = exclusionResult.included;
+  }
+
+  // 5. Cluster wrappers
+  let clusters = clusterWrappers(wrappers, primitives, {
+    minConfidence,
+    minClusterSize,
   });
 
-  // 5. Calculate summary
+  // 6. Apply cluster-level exclusions
+  if (shouldApplyExclusions) {
+    clusters = applyClusterExclusions(clusters, minClusterSize, minConfidence);
+  }
+
+  // 7. Calculate summary
   const stats = calculateWrapperStats(wrappers);
   const mostCommon = getMostCommonPrimitives(clusters, 1);
 
@@ -254,7 +312,7 @@ export function analyzeWrappers(
   }
 
   const mostUsedWrapper = wrappers.reduce(
-    (max, w) => (w.calledBy.length > (max?.calledBy.length || 0) ? w : max),
+    (max, w) => (w.calledBy.length > (max?.calledBy.length ?? 0) ? w : max),
     wrappers[0]
   );
 
@@ -263,8 +321,8 @@ export function analyzeWrappers(
     totalClusters: clusters.length,
     avgDepth: stats.avgDepth,
     maxDepth: stats.maxDepth,
-    mostWrappedPrimitive: mostCommon[0]?.primitive || 'N/A',
-    mostUsedWrapper: mostUsedWrapper?.name || 'N/A',
+    mostWrappedPrimitive: mostCommon[0]?.primitive ?? 'N/A',
+    mostUsedWrapper: mostUsedWrapper?.name ?? 'N/A',
     wrappersByLanguage,
     wrappersByCategory,
   };
