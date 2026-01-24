@@ -587,3 +587,308 @@ export type {
   GapDetectionOptions,
   BoundaryAnalysisOptions,
 } from './error-handling/index.js';
+
+
+// ============================================================================
+// Decision Mining (L8 - Architectural decision mining from git history)
+// ============================================================================
+
+export {
+  // Main analyzer
+  DecisionMiningAnalyzer,
+  createDecisionMiningAnalyzer,
+
+  // Git integration
+  GitWalker,
+  createGitWalker,
+  detectLanguage,
+  classifyFile,
+  CommitParser,
+  createCommitParser,
+  parseCommitMessage,
+  extractMessageSignals,
+  parseDiff,
+  analyzeArchitecturalSignals,
+  analyzeDependencyChanges,
+  analyzeDependencyChangesSync,
+  compareManifests,
+
+  // Extractors
+  BaseCommitExtractor,
+  TypeScriptCommitExtractor,
+  createTypeScriptCommitExtractor,
+  PythonCommitExtractor,
+  createPythonCommitExtractor,
+  JavaCommitExtractor,
+  createJavaCommitExtractor,
+  CSharpCommitExtractor,
+  createCSharpCommitExtractor,
+  PhpCommitExtractor,
+  createPhpCommitExtractor,
+  createCommitExtractor,
+  createAllCommitExtractors,
+  getExtractorForFile,
+} from './decisions/index.js';
+
+export type {
+  // Core types
+  DecisionLanguage,
+  DecisionConfidence,
+  DecisionStatus,
+  DecisionCategory,
+
+  // Git types
+  GitCommit,
+  GitFileChange,
+  PullRequestInfo,
+
+  // Extraction types
+  CommitSemanticExtraction,
+  PatternDelta,
+  FunctionDelta,
+  DependencyDelta,
+  MessageSignal,
+  ArchitecturalSignal,
+
+  // Clustering types
+  CommitCluster,
+  ClusterReason,
+
+  // Decision types
+  MinedDecision,
+  SynthesizedADR,
+  ADRReference,
+  ADREvidence,
+  CodeLocation as DecisionCodeLocation,
+
+  // Summary types
+  DecisionMiningSummary,
+
+  // Options types
+  DecisionMiningOptions,
+  ClusteringOptions,
+  SynthesisOptions as DecisionSynthesisOptions,
+
+  // Result types
+  DecisionMiningResult,
+  MiningError,
+
+  // Store types
+  DecisionStoreConfig,
+  DecisionIndex,
+
+  // Git integration types
+  GitWalkerOptions,
+  GitWalkResult,
+  ParsedDiff,
+  DiffHunk,
+  DiffLine,
+  ParsedCommitMessage,
+  ConventionalCommitType,
+  FooterToken,
+  MessageReference,
+  LanguageDetection,
+  FileClassification,
+  ParsedManifest,
+  ManifestDependency,
+  ManifestDiff,
+
+  // Extractor types
+  CommitExtractorOptions,
+  ExtractionContext,
+} from './decisions/index.js';
+
+
+// ============================================================================
+// Speculative Execution Engine (Pre-flight simulation)
+// ============================================================================
+
+export {
+  // Main engine
+  SimulationEngine,
+  createSimulationEngine,
+
+  // Approach generator
+  ApproachGenerator,
+  createApproachGenerator,
+
+  // Scorers
+  FrictionScorer,
+  createFrictionScorer,
+  ImpactScorer,
+  createImpactScorer,
+  PatternAlignmentScorer,
+  createPatternAlignmentScorer,
+  SecurityScorer,
+  createSecurityScorer,
+
+  // Language strategies
+  getStrategyProvider,
+  getStrategiesForTask,
+  detectTaskCategory,
+  detectFramework as detectProjectFramework,
+  getSupportedLanguages,
+  getFrameworksForLanguage as getSimulationFrameworksForLanguage,
+  typescriptStrategyProvider,
+  pythonStrategyProvider,
+  javaStrategyProvider,
+  csharpStrategyProvider,
+  phpStrategyProvider,
+
+  // Constants
+  DEFAULT_SCORING_WEIGHTS,
+  DEFAULT_SIMULATION_OPTIONS,
+} from './simulation/index.js';
+
+export type {
+  // Task types
+  TaskCategory,
+  ConstraintType as SimulationConstraintType,
+  SimulationConstraint,
+  SimulationTask,
+
+  // Approach types
+  ApproachStrategy,
+  SimulationApproach,
+
+  // Scoring types
+  RiskLevel,
+  Severity as SimulationSeverity,
+  FrictionBreakdown,
+  FrictionMetrics,
+  ImpactMetrics,
+  AlignedPattern,
+  ConflictingPattern,
+  PatternAlignmentMetrics,
+  DataAccessImplication,
+  SecurityWarning,
+  SecurityMetrics,
+
+  // Result types
+  SimulatedApproach,
+  ApproachTradeoff,
+  SimulationConfidence,
+  SimulationMetadata,
+  SimulationResult,
+
+  // Configuration types
+  SimulationOptions,
+  ScoringWeights,
+
+  // Engine config
+  SimulationEngineConfig,
+
+  // Generator types
+  ApproachGeneratorConfig,
+  GeneratedApproaches,
+
+  // Scorer configs
+  FrictionScorerConfig,
+  ImpactScorerConfig,
+  PatternAlignmentScorerConfig,
+  SecurityScorerConfig,
+
+  // Strategy types
+  StrategyTemplate,
+  FrameworkDefinition,
+  LanguageStrategyProvider,
+  CategoryKeywords,
+} from './simulation/index.js';
+
+
+// ============================================================================
+// Constraint Protocol (Learned architectural invariants)
+// ============================================================================
+
+export {
+  // Store
+  ConstraintStore,
+  createConstraintStore,
+  // Extraction
+  InvariantDetector,
+  createInvariantDetector,
+  ConstraintSynthesizer,
+  createConstraintSynthesizer,
+  // Verification
+  ConstraintVerifier,
+  createConstraintVerifier,
+} from './constraints/index.js';
+
+export type {
+  // Store config
+  ConstraintStoreConfig,
+
+  // Core types
+  Constraint,
+  ConstraintCategory,
+  ConstraintLanguage,
+  ConstraintStatus,
+  ConstraintType,
+  ConstraintSource,
+  ConstraintInvariant,
+  ConstraintScope,
+  ConstraintConfidence,
+  ConstraintViolationDetail,
+  ConstraintEnforcement,
+  ConstraintFix,
+  ConstraintFixType,
+  ConstraintExample,
+  ConstraintMetadata,
+
+  // Predicate types
+  ConstraintPredicate,
+  EntryPointPredicate,
+  FunctionPredicate,
+  ClassPredicate,
+  DataAccessPredicate,
+  CallChainPredicate,
+  TestCoveragePredicate,
+  NamingPredicate,
+  FileStructurePredicate,
+
+  // Verification types
+  VerificationResult,
+  SatisfiedConstraint,
+  ConstraintViolation,
+  ViolationLocation,
+  ViolationFix,
+  SkippedConstraint,
+  VerificationMetadata,
+
+  // Index types
+  ConstraintIndex,
+  ConstraintCounts,
+  ConstraintSummary,
+
+  // Query types
+  ConstraintQueryOptions,
+  ConstraintQueryResult,
+
+  // Extraction types
+  ExtractionOptions,
+  ExtractionResult,
+  ExtractionStats,
+
+  // Extraction module types
+  InvariantDetectorConfig,
+  DetectedInvariant,
+  InvariantEvidence,
+  ConstraintSynthesizerConfig,
+  SynthesisOptions as ConstraintSynthesisOptions,
+
+  // Verification module types
+  ConstraintVerifierConfig,
+  VerifyOptions,
+  FileContext,
+} from './constraints/index.js';
+
+// Constraint constants
+export {
+  CONSTRAINT_SCHEMA_VERSION,
+  CONSTRAINT_CATEGORIES,
+  CONSTRAINT_LANGUAGES,
+  CONSTRAINT_STATUSES,
+  CONSTRAINT_TYPES,
+  DEFAULT_MIN_CONFIDENCE,
+  DEFAULT_ENFORCEMENT_LEVEL,
+} from './constraints/index.js';

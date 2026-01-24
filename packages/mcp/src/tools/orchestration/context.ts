@@ -19,9 +19,12 @@ import {
   CallGraphStore,
   DNAStore,
   createLanguageIntelligence,
+  createConstraintStore,
   type Pattern,
   type PatternCategory,
   type NormalizedExtractionResult,
+  type Constraint,
+  type ConstraintCategory,
 } from 'driftdetect-core';
 import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
 import * as fs from 'fs/promises';
@@ -112,6 +115,19 @@ export interface SemanticInsights {
   };
 }
 
+/** Relevant constraint for the task */
+export interface RelevantConstraint {
+  id: string;
+  name: string;
+  category: ConstraintCategory;
+  type: string;
+  condition: string;
+  enforcement: 'error' | 'warning' | 'info';
+  confidence: number;
+  guidance: string;
+  why: string;
+}
+
 export interface ContextPackage {
   summary: string;
   relevantPatterns: RelevantPattern[];
@@ -122,6 +138,8 @@ export interface ContextPackage {
   deeperDive: DeeperDive[];
   /** Semantic insights from Language Intelligence */
   semanticInsights?: SemanticInsights;
+  /** Architectural constraints that apply to this task */
+  constraints?: RelevantConstraint[];
   /** Project context when targeting a specific project */
   projectContext?: Record<string, unknown>;
 }
@@ -447,8 +465,16 @@ export async function handleContext(
     focus
   );
   
+  // Get relevant constraints for this task
+  const constraints = await getRelevantConstraints(
+    effectiveRoot,
+    intent,
+    focus,
+    suggestedFiles
+  );
+  
   // Build summary
-  let summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings, semanticInsights);
+  let summary = buildSummary(intent, focus, relevantPatterns, suggestedFiles, warnings, semanticInsights, constraints);
   
   // Add project context to summary if using a different project
   if (resolution.fromRegistry && resolution.project) {
@@ -464,7 +490,21 @@ export async function handleContext(
     confidence,
     deeperDive,
     ...(semanticInsights && { semanticInsights }),
+    ...(constraints.length > 0 && { constraints }),
   };
+  
+  // Add constraint-related guidance
+  if (constraints.length > 0) {
+    const errorConstraints = constraints.filter(c => c.enforcement === 'error');
+    if (errorConstraints.length > 0) {
+      guidance.keyInsights.unshift(
+        `⚠️ ${errorConstraints.length} mandatory constraint(s) apply - violations will cause errors`
+      );
+    }
+    guidance.decisionPoints.push(
+      'Review constraints below before implementing - they define what code MUST do'
+    );
+  }
   
   // Add project context to response
   const projectContext = formatProjectContext(resolution);
@@ -769,7 +809,8 @@ function buildSummary(
   patterns: RelevantPattern[],
   files: SuggestedFile[],
   warnings: Warning[],
-  semanticInsights?: SemanticInsights
+  semanticInsights?: SemanticInsights,
+  constraints?: RelevantConstraint[]
 ): string {
   const intentLabels: Record<TaskIntent, string> = {
     add_feature: 'Adding feature',
@@ -818,7 +859,21 @@ function buildSummary(
     }
     
     if (semanticParts.length > 0) {
-      summary += `Semantic analysis: ${semanticParts.join(', ')}.`;
+      summary += `Semantic analysis: ${semanticParts.join(', ')}. `;
+    }
+  }
+  
+  // Add constraint info to summary
+  if (constraints && constraints.length > 0) {
+    const errorCount = constraints.filter(c => c.enforcement === 'error').length;
+    const warningCount = constraints.filter(c => c.enforcement === 'warning').length;
+    
+    if (errorCount > 0) {
+      summary += `🔒 ${errorCount} mandatory constraint(s). `;
+    } else if (warningCount > 0) {
+      summary += `${constraints.length} constraint(s) apply. `;
+    } else {
+      summary += `${constraints.length} constraint(s) for reference. `;
     }
   }
   
@@ -961,6 +1016,266 @@ async function generateSemanticInsights(
     // Language Intelligence not available or error - return undefined
     return undefined;
   }
+}
+
+// =============================================================================
+// Constraint Integration
+// =============================================================================
+
+/**
+ * Get constraints relevant to the current task
+ * 
+ * Maps task intent to constraint categories and filters constraints
+ * that apply to the suggested files.
+ */
+async function getRelevantConstraints(
+  projectRoot: string,
+  intent: TaskIntent,
+  focus: string,
+  suggestedFiles: SuggestedFile[]
+): Promise<RelevantConstraint[]> {
+  try {
+    // Initialize constraint store
+    const constraintStore = createConstraintStore({ rootDir: projectRoot });
+    await constraintStore.initialize();
+    
+    // Map intent to relevant constraint categories
+    const intentToCategories: Record<TaskIntent, ConstraintCategory[]> = {
+      add_feature: ['api', 'auth', 'data', 'error', 'validation', 'logging', 'structural'],
+      fix_bug: ['error', 'data', 'validation', 'logging'],
+      refactor: ['structural', 'api', 'data', 'performance'],
+      security_audit: ['security', 'auth', 'data', 'validation'],
+      understand_code: ['api', 'data', 'structural', 'auth'],
+      add_test: ['test', 'error', 'data', 'api'],
+    };
+    
+    const relevantCategories = intentToCategories[intent] ?? [];
+    
+    // Get active constraints (approved + high-confidence discovered)
+    const activeConstraints = constraintStore.getActive(0.85);
+    
+    // Filter to relevant categories
+    let filtered = activeConstraints.filter(c => 
+      relevantCategories.includes(c.category)
+    );
+    
+    // Further filter to constraints that apply to suggested files
+    if (suggestedFiles.length > 0) {
+      filtered = filtered.filter(c => {
+        // If constraint has no file scope, it applies globally
+        if (!c.scope.files || c.scope.files.length === 0) {
+          return true;
+        }
+        // Check if any suggested file matches the constraint scope
+        return suggestedFiles.some(sf => 
+          constraintAppliesToFile(c, sf.file)
+        );
+      });
+    }
+    
+    // Also include constraints that match the focus term
+    const focusLower = focus.toLowerCase();
+    const focusMatches = activeConstraints.filter(c =>
+      !filtered.includes(c) && (
+        c.name.toLowerCase().includes(focusLower) ||
+        c.description.toLowerCase().includes(focusLower)
+      )
+    );
+    
+    filtered = [...filtered, ...focusMatches];
+    
+    // Sort by enforcement level (errors first) then confidence
+    filtered.sort((a, b) => {
+      const levelOrder = { error: 0, warning: 1, info: 2 };
+      const levelDiff = levelOrder[a.enforcement.level] - levelOrder[b.enforcement.level];
+      if (levelDiff !== 0) return levelDiff;
+      return b.confidence.score - a.confidence.score;
+    });
+    
+    // Limit to top 10 most relevant
+    const top = filtered.slice(0, 10);
+    
+    // Convert to RelevantConstraint format
+    return top.map(c => ({
+      id: c.id,
+      name: c.name,
+      category: c.category,
+      type: c.invariant.type,
+      condition: c.invariant.condition,
+      enforcement: c.enforcement.level,
+      confidence: Math.round(c.confidence.score * 100) / 100,
+      guidance: c.enforcement.guidance,
+      why: generateConstraintWhy(c, intent, focus),
+    }));
+  } catch {
+    // Constraint store not available or error - return empty
+    return [];
+  }
+}
+
+/**
+ * Check if a constraint applies to a specific file
+ */
+function constraintAppliesToFile(constraint: Constraint, filePath: string): boolean {
+  const scope = constraint.scope;
+  
+  // Check exclusions first
+  if (scope.exclude?.files?.length) {
+    for (const pattern of scope.exclude.files) {
+      if (matchGlob(filePath, pattern)) {
+        return false;
+      }
+    }
+  }
+  
+  if (scope.exclude?.directories?.length) {
+    for (const dir of scope.exclude.directories) {
+      if (filePath.includes(dir)) {
+        return false;
+      }
+    }
+  }
+  
+  // Check inclusions
+  if (scope.files?.length) {
+    return scope.files.some(pattern => matchGlob(filePath, pattern));
+  }
+  
+  // Check language match
+  if (constraint.language !== 'all') {
+    const ext = path.extname(filePath).toLowerCase();
+    const langExtensions: Record<string, string[]> = {
+      typescript: ['.ts', '.tsx'],
+      javascript: ['.js', '.jsx', '.mjs', '.cjs'],
+      python: ['.py'],
+      java: ['.java'],
+      csharp: ['.cs'],
+      php: ['.php'],
+    };
+    
+    const exts = langExtensions[constraint.language];
+    if (exts && !exts.includes(ext)) {
+      return false;
+    }
+  }
+  
+  // If no specific file scope, constraint applies to all matching language files
+  return true;
+}
+
+/**
+ * Simple glob matching (supports * and **)
+ */
+function matchGlob(filePath: string, pattern: string): boolean {
+  const regexPattern = pattern
+    .replace(/\*\*/g, '{{GLOBSTAR}}')
+    .replace(/\*/g, '[^/]*')
+    .replace(/{{GLOBSTAR}}/g, '.*')
+    .replace(/\//g, '\\/');
+  
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(filePath);
+}
+
+/**
+ * Generate explanation for why a constraint is relevant
+ */
+function generateConstraintWhy(
+  constraint: Constraint,
+  intent: TaskIntent,
+  focus: string
+): string {
+  const focusLower = focus.toLowerCase();
+  
+  // Check if constraint name/description matches focus
+  if (constraint.name.toLowerCase().includes(focusLower) ||
+      constraint.description.toLowerCase().includes(focusLower)) {
+    return `Directly related to "${focus}" - this constraint must be satisfied`;
+  }
+  
+  // Intent-specific explanations
+  const intentExplanations: Record<TaskIntent, Record<ConstraintCategory, string>> = {
+    add_feature: {
+      api: 'API constraints ensure new endpoints follow established patterns',
+      auth: 'Authentication constraints protect new features',
+      data: 'Data access constraints ensure proper data handling',
+      error: 'Error handling constraints ensure robust error management',
+      validation: 'Validation constraints ensure input safety',
+      logging: 'Logging constraints ensure observability',
+      structural: 'Structural constraints maintain code organization',
+      security: 'Security constraints protect against vulnerabilities',
+      test: 'Test constraints ensure adequate coverage',
+      performance: 'Performance constraints prevent regressions',
+    },
+    fix_bug: {
+      error: 'Error handling constraints may reveal the bug pattern',
+      data: 'Data constraints ensure fix doesn\'t break data integrity',
+      validation: 'Validation constraints may be the root cause',
+      logging: 'Logging constraints help debug the issue',
+      api: 'API constraints ensure fix maintains compatibility',
+      auth: 'Auth constraints ensure fix doesn\'t create security holes',
+      security: 'Security constraints must be maintained during fix',
+      structural: 'Structural constraints guide where fix should go',
+      test: 'Test constraints ensure fix is properly tested',
+      performance: 'Performance constraints ensure fix doesn\'t regress',
+    },
+    refactor: {
+      structural: 'Structural constraints guide refactoring direction',
+      api: 'API constraints ensure refactor maintains compatibility',
+      data: 'Data constraints ensure refactor preserves data handling',
+      performance: 'Performance constraints ensure refactor improves efficiency',
+      error: 'Error handling must be preserved during refactor',
+      auth: 'Auth patterns must be maintained',
+      security: 'Security patterns must be preserved',
+      validation: 'Validation must be maintained',
+      logging: 'Logging must be preserved',
+      test: 'Tests must continue to pass',
+    },
+    security_audit: {
+      security: 'Security constraints define required protections',
+      auth: 'Auth constraints ensure proper authentication',
+      data: 'Data constraints protect sensitive information',
+      validation: 'Validation constraints prevent injection attacks',
+      api: 'API constraints ensure secure endpoints',
+      error: 'Error handling must not leak sensitive info',
+      logging: 'Logging must not expose sensitive data',
+      structural: 'Structure affects security boundaries',
+      test: 'Security tests must exist',
+      performance: 'Performance affects DoS resistance',
+    },
+    understand_code: {
+      api: 'API constraints explain endpoint requirements',
+      data: 'Data constraints explain data flow rules',
+      structural: 'Structural constraints explain code organization',
+      auth: 'Auth constraints explain security model',
+      error: 'Error constraints explain error handling approach',
+      security: 'Security constraints explain protection model',
+      validation: 'Validation constraints explain input requirements',
+      logging: 'Logging constraints explain observability approach',
+      test: 'Test constraints explain testing strategy',
+      performance: 'Performance constraints explain optimization rules',
+    },
+    add_test: {
+      test: 'Test constraints define testing requirements',
+      error: 'Error constraints show what error cases to test',
+      data: 'Data constraints show what data scenarios to test',
+      api: 'API constraints show what endpoints need testing',
+      auth: 'Auth constraints show security scenarios to test',
+      security: 'Security constraints show attack vectors to test',
+      validation: 'Validation constraints show input cases to test',
+      logging: 'Logging constraints show what to verify in logs',
+      structural: 'Structure affects test organization',
+      performance: 'Performance constraints show what to benchmark',
+    },
+  };
+  
+  const explanation = intentExplanations[intent]?.[constraint.category];
+  if (explanation) {
+    return explanation;
+  }
+  
+  // Default explanation
+  return `${constraint.category} constraint with ${Math.round(constraint.confidence.score * 100)}% confidence`;
 }
 
 /**

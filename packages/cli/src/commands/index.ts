@@ -30,3 +30,8 @@ export { wrappersCommand } from './wrappers.js';
 export { createTestTopologyCommand } from './test-topology.js';
 export { createCouplingCommand } from './coupling.js';
 export { createErrorHandlingCommand } from './error-handling.js';
+export { createDecisionsCommand } from './decisions.js';
+export { createConstraintsCommand } from './constraints.js';
+
+// Speculative Execution Engine
+export { createSimulateCommand } from './simulate.js';

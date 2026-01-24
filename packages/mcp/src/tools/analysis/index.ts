@@ -9,8 +9,58 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 const TEST_TOPOLOGY_ACTIONS = ['status', 'coverage', 'uncovered', 'mocks', 'affected', 'quality'];
 const COUPLING_ACTIONS = ['status', 'cycles', 'hotspots', 'analyze', 'refactor-impact', 'unused-exports'];
 const ERROR_HANDLING_ACTIONS = ['status', 'gaps', 'boundaries', 'unhandled', 'analyze'];
+const DECISIONS_ACTIONS = ['status', 'list', 'get', 'for-file', 'timeline', 'search', 'mine'];
+const CONSTRAINTS_ACTIONS = ['list', 'show', 'extract', 'approve', 'ignore', 'verify'];
+
+const DECISION_CATEGORIES = [
+  'technology-adoption', 'technology-removal', 'pattern-introduction',
+  'pattern-migration', 'architecture-change', 'api-change',
+  'security-enhancement', 'performance-optimization', 'refactoring',
+  'testing-strategy', 'infrastructure', 'other'
+];
+const TASK_CATEGORIES = [
+  'rate-limiting', 'authentication', 'authorization', 'api-endpoint',
+  'data-access', 'error-handling', 'caching', 'logging', 'testing',
+  'validation', 'middleware', 'refactoring', 'generic'
+];
 
 export const ANALYSIS_TOOLS: Tool[] = [
+  {
+    name: 'drift_simulate',
+    description: 'Speculative Execution Engine: Simulates multiple implementation approaches BEFORE code generation, scoring them by friction, impact, and pattern alignment. Returns ranked approaches with trade-off analysis.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Task description (e.g., "add rate limiting to API", "implement user authentication")',
+        },
+        category: {
+          type: 'string',
+          enum: TASK_CATEGORIES,
+          description: 'Task category (auto-detected if not provided)',
+        },
+        target: {
+          type: 'string',
+          description: 'Target file or function to focus on',
+        },
+        constraints: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Constraints (e.g., "must work with existing auth", "minimal file changes")',
+        },
+        maxApproaches: {
+          type: 'number',
+          description: 'Maximum approaches to simulate (default: 5)',
+        },
+        includeSecurityAnalysis: {
+          type: 'boolean',
+          description: 'Include security analysis (default: true)',
+        },
+      },
+      required: ['task'],
+    },
+  },
   {
     name: 'drift_test_topology',
     description: 'Analyze test-to-code mappings, mock patterns, and test quality. Actions: status (overview), coverage (file coverage), uncovered (find gaps), mocks (mock analysis), affected (minimum test set), quality (test quality metrics).',
@@ -108,8 +158,104 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_decisions',
+    description: 'Mine architectural decisions from git history. Analyzes commits to discover and synthesize ADRs (Architecture Decision Records). Actions: status (overview), list (all decisions), get (decision details), for-file (decisions affecting file), timeline (chronological view), search (find decisions), mine (run mining).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: DECISIONS_ACTIONS,
+          description: 'Action to perform: status, list, get, for-file, timeline, search, mine',
+        },
+        id: {
+          type: 'string',
+          description: 'Decision ID for get action',
+        },
+        file: {
+          type: 'string',
+          description: 'File path for for-file action',
+        },
+        query: {
+          type: 'string',
+          description: 'Search query for search action',
+        },
+        category: {
+          type: 'string',
+          enum: DECISION_CATEGORIES,
+          description: 'Filter by category for list action',
+        },
+        limit: {
+          type: 'number',
+          description: 'Max results (default: 20)',
+        },
+        since: {
+          type: 'string',
+          description: 'Start date (ISO format) for mine action',
+        },
+        until: {
+          type: 'string',
+          description: 'End date (ISO format) for mine action',
+        },
+        minConfidence: {
+          type: 'number',
+          description: 'Minimum confidence (0-1) for mine action (default: 0.5)',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'drift_constraints',
+    description: 'Manage architectural constraints learned from the codebase. Constraints are invariants that MUST be satisfied. Actions: list (all constraints), show (constraint details), extract (discover from codebase), approve (activate constraint), ignore (disable constraint), verify (check file against constraints).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: CONSTRAINTS_ACTIONS,
+          description: 'Action to perform: list, show, extract, approve, ignore, verify',
+        },
+        id: {
+          type: 'string',
+          description: 'Constraint ID for show/approve/ignore actions',
+        },
+        file: {
+          type: 'string',
+          description: 'File path for verify action',
+        },
+        category: {
+          type: 'string',
+          enum: ['api', 'auth', 'data', 'error', 'test', 'security', 'structural', 'performance', 'logging', 'validation'],
+          description: 'Filter by category',
+        },
+        status: {
+          type: 'string',
+          enum: ['discovered', 'approved', 'ignored', 'custom'],
+          description: 'Filter by status',
+        },
+        limit: {
+          type: 'number',
+          description: 'Max results (default: 20)',
+        },
+        minConfidence: {
+          type: 'number',
+          description: 'Minimum confidence (0-1)',
+        },
+        reason: {
+          type: 'string',
+          description: 'Reason for ignore action',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
 export { handleCoupling, type CouplingArgs, type CouplingAction } from './coupling.js';
 export { handleErrorHandling, type ErrorHandlingArgs, type ErrorHandlingAction } from './error-handling.js';
+export { handleDecisions, type DecisionsArgs, type DecisionsAction } from './decisions.js';
+export { handleSimulate, type SimulateArgs } from './simulate.js';
+export { handleConstraints, type ConstraintsArgs, type ConstraintsAction } from './constraints.js';

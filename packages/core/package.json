@@ -1,18 +1,28 @@
 {
   "name": "driftdetect-core",
   "version": "0.5.0",
-  "description": "Core pattern detection and analysis engine for Drift",
+  "description": "Core engine for Drift - multi-language pattern detection, call graph analysis, and security boundary tracking. Supports TypeScript, Python, C#, Java, PHP.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/dadbodgeoff/drift"
   },
+  "homepage": "https://github.com/dadbodgeoff/drift#readme",
   "keywords": [
-    "architecture",
-    "drift",
-    "patterns",
+    "pattern-detection",
+    "static-analysis",
+    "call-graph",
+    "code-analysis",
+    "security-analysis",
+    "tree-sitter",
+    "typescript",
+    "python",
+    "csharp",
+    "java",
+    "php",
+    "ast",
     "code-quality",
-    "static-analysis"
+    "architecture"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -48,6 +58,7 @@
     "ignore": "^5.3.1",
     "minimatch": "^9.0.3",
     "piscina": "^5.1.4",
+    "simple-git": "^3.30.0",
     "tree-sitter": "^0.21.1",
     "tree-sitter-c-sharp": "^0.21.3",
     "tree-sitter-java": "^0.21.0",

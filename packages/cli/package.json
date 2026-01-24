@@ -1,7 +1,7 @@
 {
   "name": "driftdetect",
   "version": "0.5.0",
-  "description": "AI-augmented architectural drift detection - learn and enforce codebase patterns",
+  "description": "Codebase pattern detection for AI agents - scans your code, learns conventions, feeds context to Claude/Cursor/Copilot via MCP. Static analysis for TypeScript, Python, C#, Java, PHP.",
   "license": "MIT",
   "author": "Geoffrey Fernald",
   "repository": {
@@ -10,14 +10,26 @@
   },
   "homepage": "https://github.com/dadbodgeoff/drift#readme",
   "keywords": [
-    "architecture",
-    "drift",
-    "patterns",
-    "linting",
-    "ai",
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "claude",
+    "cursor",
+    "copilot",
+    "codebase-analysis",
+    "pattern-detection",
+    "static-analysis",
     "code-quality",
-    "cli",
-    "static-analysis"
+    "architecture",
+    "linting",
+    "typescript",
+    "python",
+    "csharp",
+    "java",
+    "php",
+    "call-graph",
+    "security-analysis",
+    "code-conventions"
   ],
   "engines": {
     "node": ">=18 <25"

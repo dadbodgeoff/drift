@@ -79,13 +79,13 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../core
       driftdetect-dashboard:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -124,6 +124,9 @@ importers:
       piscina:
         specifier: ^5.1.4
         version: 5.1.4
+      simple-git:
+        specifier: ^3.30.0
+        version: 3.30.0
       tree-sitter:
         specifier: ^0.21.1
         version: 0.21.1
@@ -168,10 +171,10 @@ importers:
   packages/dashboard:
     dependencies:
       driftdetect-core:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../core
       driftdetect-galaxy:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../galaxy
       express:
         specifier: ^4.18.2
@@ -274,7 +277,7 @@ importers:
   packages/detectors:
     dependencies:
       driftdetect-core:
-        specifier: ^0.4.5
+        specifier: ^0.5.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -386,7 +389,7 @@ importers:
   packages/vscode:
     dependencies:
       driftdetect-lsp:
-        specifier: ^0.4.2
+        specifier: ^0.5.0
         version: link:../lsp
       vscode-languageclient:
         specifier: ^9.0.1
@@ -1552,6 +1555,18 @@ packages:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
     dev: true
+
+  /@kwsites/file-exists@1.1.1:
+    resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
+    dependencies:
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@kwsites/promise-deferred@1.1.1:
+    resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+    dev: false
 
   /@mediapipe/tasks-vision@0.10.17:
     resolution: {integrity: sha512-CZWV/q6TTe8ta61cZXjfnnHsfWIdFhms03M9T7Cnd5y2mdpylJM0rF1qRq+wsQVRMLz1OYPVEBU9ph2Bx8cxrg==}
@@ -6557,6 +6572,16 @@ packages:
       simple-concat: 1.0.1
     dev: true
     optional: true
+
+  /simple-git@3.30.0:
+    resolution: {integrity: sha512-q6lxyDsCmEal/MEGhP1aVyQ3oxnagGlBDOVSIB4XUVLl1iZh0Pah6ebC9V4xBap/RfgP2WlI8EKs0WS0rMEJHg==}
+    dependencies:
+      '@kwsites/file-exists': 1.1.1
+      '@kwsites/promise-deferred': 1.1.1
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}

@@ -51,7 +51,7 @@ export async function handleFilesList(
       })
       .buildContent();
   }
-  
+
   const limit = args.limit ?? DEFAULT_LIMIT;
   const offset = args.cursor ? parseCursor(args.cursor).offset : 0;
   const pathPattern = args.path ?? '**/*';
@@ -106,14 +106,14 @@ export async function handleFilesList(
     totalFiles,
     totalPatterns,
   };
-  
+
   // Build summary
-  let summary = totalFiles + ' files with ' + totalPatterns + ' pattern instances.';
+  let summary = `${totalFiles} files with ${totalPatterns} pattern instances.`;
   if (args.path && args.path !== '**/*') {
-    summary = 'Matching "' + args.path + '": ' + summary;
+    summary = `Matching "${args.path}": ${summary}`;
   }
   if (args.category) {
-    summary += ' Filtered to ' + args.category + ' category.';
+    summary += ` Filtered to ${args.category} category.`;
   }
   
   // Add pagination
@@ -133,7 +133,7 @@ export async function handleFilesList(
       nextActions: paginatedFiles.length > 0
         ? [
             'Use drift_file_patterns with a specific file to see its patterns',
-            hasMore ? 'Use cursor="' + createCursor(offset + limit, limit) + '" to see more files' : '',
+            hasMore ? `Use cursor="${createCursor(offset + limit, limit)}" to see more files` : '',
           ].filter(Boolean)
         : ['Run drift scan to discover patterns'],
       relatedTools: ['drift_file_patterns', 'drift_patterns_list'],
@@ -155,6 +155,6 @@ function matchGlob(filePath: string, pattern: string): boolean {
     .replace(/{{GLOBSTAR}}/g, '.*')
     .replace(/\?/g, '.');
   
-  const regex = new RegExp('^' + regexPattern + '$');
+  const regex = new RegExp(`^${regexPattern}$`);
   return regex.test(filePath);
 }

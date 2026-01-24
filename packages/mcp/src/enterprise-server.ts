@@ -83,6 +83,9 @@ import { handleExplain } from './tools/generation/explain.js';
 import { handleTestTopology } from './tools/analysis/test-topology.js';
 import { handleCoupling } from './tools/analysis/coupling.js';
 import { handleErrorHandling } from './tools/analysis/error-handling.js';
+import { handleDecisions } from './tools/analysis/decisions.js';
+import { handleSimulate } from './tools/analysis/simulate.js';
+import { handleConstraints } from './tools/analysis/constraints.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -339,6 +342,9 @@ async function routeToolCall(
   // Analysis Tools (L5-L7 Layers)
   // ============================================================================
   switch (name) {
+    case 'drift_simulate':
+      return handleSimulate(projectRoot, args as unknown as Parameters<typeof handleSimulate>[1]);
+      
     case 'drift_test_topology':
       return handleTestTopology(projectRoot, args as unknown as Parameters<typeof handleTestTopology>[1]);
       
@@ -347,6 +353,12 @@ async function routeToolCall(
       
     case 'drift_error_handling':
       return handleErrorHandling(projectRoot, args as unknown as Parameters<typeof handleErrorHandling>[1]);
+      
+    case 'drift_decisions':
+      return handleDecisions(projectRoot, args as unknown as Parameters<typeof handleDecisions>[1]);
+      
+    case 'drift_constraints':
+      return handleConstraints(projectRoot, args as unknown as Parameters<typeof handleConstraints>[1]);
   }
 
   // ============================================================================

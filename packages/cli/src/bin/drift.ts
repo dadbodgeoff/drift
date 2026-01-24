@@ -35,6 +35,8 @@ import {
   createTestTopologyCommand,
   createCouplingCommand,
   createErrorHandlingCommand,
+  createSimulateCommand,
+  createConstraintsCommand,
 } from '../commands/index.js';
 
 /**
@@ -77,6 +79,10 @@ function createProgram(): Command {
   program.addCommand(createTestTopologyCommand());
   program.addCommand(createCouplingCommand());
   program.addCommand(createErrorHandlingCommand());
+  program.addCommand(createConstraintsCommand());
+  
+  // Speculative Execution Engine
+  program.addCommand(createSimulateCommand());
 
   // Add help examples
   program.addHelpText(
@@ -140,6 +146,9 @@ Examples:
   $ drift error-handling          Show error handling status
   $ drift error-handling gaps     Find error handling gaps
   $ drift error-handling unhandled Find unhandled error paths
+  $ drift simulate "add rate limiting"  Simulate implementation approaches
+  $ drift simulate "add auth" -v  Simulate with detailed analysis
+  $ drift simulate "add caching" --json  Output simulation as JSON
 
 Documentation:
   https://github.com/drift/drift
