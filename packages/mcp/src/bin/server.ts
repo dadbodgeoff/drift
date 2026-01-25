@@ -36,15 +36,23 @@ async function main() {
   // Parse flags
   const noCache = args.includes('--no-cache');
   const noRateLimit = args.includes('--no-rate-limit');
+  const verbose = args.includes('--verbose') || args.includes('-v');
+  const skipWarmup = args.includes('--skip-warmup');
   
   // Get project root (first non-flag argument, or cwd)
-  const projectRoot = args.find(arg => !arg.startsWith('--')) ?? process.cwd();
+  const projectRoot = args.find(arg => !arg.startsWith('--') && !arg.startsWith('-')) ?? process.cwd();
+
+  if (verbose) {
+    console.error(`[drift-mcp] Starting server for: ${projectRoot}`);
+  }
 
   const server = createEnterpriseMCPServer({
     projectRoot,
     enableCache: !noCache,
     enableRateLimiting: !noRateLimit,
     enableMetrics: true,
+    verbose,
+    skipWarmup,
   });
   
   const transport = new StdioServerTransport();

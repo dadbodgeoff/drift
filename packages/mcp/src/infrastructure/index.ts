@@ -81,3 +81,12 @@ export {
   ProjectInvalidError,
   type ProjectResolution,
 } from './project-resolver.js';
+
+// Startup Warmer
+export {
+  warmupStores,
+  buildMissingData,
+  logWarmupResult,
+  type WarmupResult,
+  type WarmupStores,
+} from './startup-warmer.js';

@@ -44,6 +44,9 @@ import {
   rateLimiter,
   metrics,
   createCache,
+  warmupStores,
+  buildMissingData,
+  logWarmupResult,
 } from './infrastructure/index.js';
 
 // Tool definitions
@@ -103,6 +106,10 @@ export interface EnterpriseMCPConfig {
   maxRequestsPerMinute?: number;
   /** Use the new IPatternService instead of direct PatternStore access */
   usePatternService?: boolean;
+  /** Enable verbose logging for warmup */
+  verbose?: boolean;
+  /** Skip warmup on startup (not recommended) */
+  skipWarmup?: boolean;
 }
 
 export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
@@ -139,6 +146,27 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
   const cache = config.enableCache !== false 
     ? createCache(config.projectRoot)
     : null;
+
+  // Warm up stores on startup (async, non-blocking for server start)
+  // This loads all .drift data into memory so tools work immediately
+  if (config.skipWarmup !== true) {
+    warmupStores(stores, config.projectRoot, dataLake)
+      .then((result) => {
+        logWarmupResult(result, config.verbose);
+        
+        // Build missing data in background (e.g., call graph)
+        if (!result.loaded.callGraph) {
+          buildMissingData(config.projectRoot, result.loaded).catch(() => {
+            // Silently fail - user can build manually
+          });
+        }
+      })
+      .catch((error) => {
+        if (config.verbose) {
+          console.error('[drift-mcp] Warmup failed:', error);
+        }
+      });
+  }
 
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
