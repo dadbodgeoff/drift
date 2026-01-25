@@ -133,6 +133,14 @@ export type {
 // Re-export enrichment module
 export * from './enrichment/index.js';
 
+// Streaming builder for large codebases
+export {
+  StreamingCallGraphBuilder,
+  createStreamingCallGraphBuilder,
+  type StreamingBuilderConfig,
+  type StreamingBuildResult,
+} from './streaming-builder.js';
+
 // ============================================================================
 // Main Analyzer
 // ============================================================================

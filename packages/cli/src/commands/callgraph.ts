@@ -13,6 +13,7 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import {
   createCallGraphAnalyzer,
+  createStreamingCallGraphBuilder,
   createBoundaryScanner,
   createSecurityPrioritizer,
   createImpactAnalyzer,
@@ -212,29 +213,24 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
       }
     }
 
-    // Step 3: Build call graph with data access points
-    spinner?.text('📊 Building call graph...');
-    const analyzer = createCallGraphAnalyzer({ rootDir });
-    await analyzer.initialize();
+    // Step 3: Build call graph with streaming/sharded storage (memory optimized)
+    spinner?.text('📊 Building call graph (streaming mode)...');
+    
+    const streamingBuilder = createStreamingCallGraphBuilder({
+      rootDir,
+      onProgress: (current: number, total: number, _file: string) => {
+        if (isTextFormat && spinner) {
+          spinner.text(`📊 Building call graph... ${current}/${total} files`);
+        }
+      },
+      onError: (file: string, error: Error) => {
+        if (options.verbose) {
+          console.error(chalk.yellow(`  Warning: ${file}: ${error.message}`));
+        }
+      },
+    });
 
-    const graph = await analyzer.scan(filePatterns, dataAccessPoints);
-
-    // Ensure directory exists
-    const graphDir = path.join(rootDir, DRIFT_DIR, CALLGRAPH_DIR);
-    await fs.mkdir(graphDir, { recursive: true });
-
-    // Save graph
-    spinner?.text('💾 Saving call graph...');
-    const graphPath = path.join(graphDir, 'graph.json');
-    await fs.writeFile(graphPath, JSON.stringify({
-      version: graph.version,
-      generatedAt: graph.generatedAt,
-      projectRoot: graph.projectRoot,
-      stats: graph.stats,
-      entryPoints: graph.entryPoints,
-      dataAccessors: graph.dataAccessors,
-      functions: Object.fromEntries(graph.functions),
-    }, null, 2));
+    const buildResult = await streamingBuilder.build(filePatterns, dataAccessPoints);
 
     spinner?.stop();
 
@@ -243,12 +239,18 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
       console.log(JSON.stringify({
         success: true,
         detectedStack,
-        stats: graph.stats,
-        entryPoints: graph.entryPoints.length,
-        dataAccessors: graph.dataAccessors.length,
+        stats: {
+          totalFunctions: buildResult.totalFunctions,
+          totalCallSites: buildResult.totalCalls,
+          entryPoints: buildResult.entryPoints,
+          dataAccessors: buildResult.dataAccessors,
+        },
+        filesProcessed: buildResult.filesProcessed,
         semanticStats: semanticStats,
         boundaryStats: boundaryResult.stats,
         regexAdditions,
+        errors: buildResult.errors.length,
+        durationMs: buildResult.durationMs,
       }, null, 2));
       return;
     }
@@ -261,10 +263,12 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
     // Main statistics box
     console.log(chalk.bold('📊 Graph Statistics'));
     console.log(chalk.gray('─'.repeat(50)));
-    console.log(`  Functions:     ${chalk.cyan.bold(graph.stats.totalFunctions.toLocaleString())}`);
-    console.log(`  Call Sites:    ${chalk.cyan(graph.stats.totalCallSites.toLocaleString())} (${chalk.green(Math.round(graph.stats.resolvedCallSites / Math.max(1, graph.stats.totalCallSites) * 100) + '%')} resolved)`);
-    console.log(`  Entry Points:  ${chalk.magenta.bold(graph.entryPoints.length.toLocaleString())} ${chalk.gray('(API routes, exports)')}`);
-    console.log(`  Data Accessors: ${chalk.yellow.bold(graph.dataAccessors.length.toLocaleString())} ${chalk.gray('(functions with DB access)')}`);
+    console.log(`  Files:         ${chalk.cyan.bold(buildResult.filesProcessed.toLocaleString())}`);
+    console.log(`  Functions:     ${chalk.cyan.bold(buildResult.totalFunctions.toLocaleString())}`);
+    console.log(`  Call Sites:    ${chalk.cyan(buildResult.totalCalls.toLocaleString())}`);
+    console.log(`  Entry Points:  ${chalk.magenta.bold(buildResult.entryPoints.toLocaleString())} ${chalk.gray('(API routes, exports)')}`);
+    console.log(`  Data Accessors: ${chalk.yellow.bold(buildResult.dataAccessors.toLocaleString())} ${chalk.gray('(functions with DB access)')}`);
+    console.log(`  Duration:      ${chalk.gray((buildResult.durationMs / 1000).toFixed(2) + 's')}`);
     console.log();
 
     // Data access detection summary
@@ -291,33 +295,17 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
       console.log();
     }
 
-    // Language breakdown
-    const languages = Object.entries(graph.stats.byLanguage)
-      .filter(([, count]) => count > 0)
-      .sort((a, b) => b[1] - a[1]);
-
-    if (languages.length > 0) {
-      console.log(chalk.bold('📝 By Language'));
-      console.log(chalk.gray('─'.repeat(50)));
-      const langIcons: Record<string, string> = {
-        'typescript': '🟦',
-        'javascript': '🟨',
-        'python': '🐍',
-        'csharp': '🟣',
-        'java': '☕',
-        'php': '🐘',
-      };
-      for (const [lang, count] of languages) {
-        const icon = langIcons[lang] ?? '📄';
-        const bar = '█'.repeat(Math.min(20, Math.ceil(count / Math.max(...languages.map(([,c]) => c)) * 20)));
-        console.log(`  ${icon} ${lang.padEnd(12)} ${chalk.cyan(bar)} ${count.toLocaleString()} functions`);
-      }
-      console.log();
-    }
-
     // Errors summary
-    if (semanticStats.errors > 0) {
-      console.log(chalk.yellow(`⚠️  ${semanticStats.errors} file(s) had parsing errors (use --verbose for details)`));
+    if (buildResult.errors.length > 0) {
+      console.log(chalk.yellow(`⚠️  ${buildResult.errors.length} file(s) had errors during extraction`));
+      if (options.verbose) {
+        for (const errorFile of buildResult.errors.slice(0, 10)) {
+          console.log(chalk.gray(`    • ${errorFile}`));
+        }
+        if (buildResult.errors.length > 10) {
+          console.log(chalk.gray(`    ... and ${buildResult.errors.length - 10} more`));
+        }
+      }
       console.log();
     }
 

@@ -270,6 +270,9 @@ export {
   createDataAccessExtractors,
   SemanticDataAccessScanner,
   createSemanticDataAccessScanner,
+  // Streaming builder for large codebases
+  StreamingCallGraphBuilder,
+  createStreamingCallGraphBuilder,
 } from './call-graph/index.js';
 export type {
   // Unified scanner types
@@ -279,6 +282,9 @@ export type {
   // Backward compatibility type aliases
   SemanticScannerConfig,
   SemanticScanResult,
+  // Streaming builder types
+  StreamingBuilderConfig,
+  StreamingBuildResult,
 } from './call-graph/index.js';
 export type {
   CallGraph,
