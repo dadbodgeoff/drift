@@ -30,6 +30,7 @@ export { JavaHybridExtractor, createJavaHybridExtractor } from './java-hybrid-ex
 export { CSharpHybridExtractor, createCSharpHybridExtractor } from './csharp-hybrid-extractor.js';
 export { GoHybridExtractor, createGoHybridExtractor } from './go-hybrid-extractor.js';
 export { RustHybridExtractor, createRustHybridExtractor } from './rust-hybrid-extractor.js';
+export { CppHybridExtractor, createCppHybridExtractor } from './cpp-hybrid-extractor.js';
 
 // Regex Fallback Extractors
 export {
@@ -39,6 +40,10 @@ export {
   PhpRegexExtractor,
   JavaRegexExtractor,
   CSharpRegexExtractor,
+  GoRegexExtractor,
+  RustRegexExtractor,
+  CppRegexExtractor,
+  createCppRegexExtractor,
   getRegexExtractor,
   getRegexExtractorForFile,
 } from './regex/index.js';
@@ -84,3 +89,20 @@ export {
 
 // Also export detectProjectStack from unified provider
 export { detectProjectStack } from '../../unified-provider/integration/unified-scanner.js';
+
+// Standalone language-specific data access extractors
+export {
+  extractRustDataAccess,
+  detectRustDatabaseFrameworks,
+  hasRustDataAccess,
+  type RustDataAccessResult,
+  type RustDataAccessOptions,
+} from './rust-data-access-extractor.js';
+
+export {
+  extractCppDataAccess,
+  detectCppDatabaseFrameworks,
+  hasCppDataAccess,
+  type CppDataAccessResult,
+  type CppDataAccessOptions,
+} from './cpp-data-access-extractor.js';

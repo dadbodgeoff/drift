@@ -45,6 +45,9 @@ export { createGoCommand } from './go.js';
 // Rust Language Support
 export { createRustCommand } from './rust.js';
 
+// C++ Language Support
+export { createCppCommand } from './cpp.js';
+
 // Environment Variable Detection
 export { envCommand } from './env.js';
 

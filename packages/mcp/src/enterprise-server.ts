@@ -91,6 +91,7 @@ import { handleConstraints } from './tools/analysis/constraints.js';
 import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
 import { executeRustTool, type RustArgs } from './tools/analysis/rust.js';
+import { executeCppTool, type CppArgs } from './tools/analysis/cpp.js';
 import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
@@ -385,6 +386,9 @@ async function routeToolCall(
 
     case 'drift_rust':
       return executeRustTool(args as unknown as RustArgs, { projectRoot });
+
+    case 'drift_cpp':
+      return executeCppTool(args as unknown as CppArgs, { projectRoot });
 
     case 'drift_constants':
       return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);

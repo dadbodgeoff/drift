@@ -45,6 +45,12 @@ export type TestFramework =
   | 'proptest'
   | 'criterion'
   | 'rstest'
+  // C++
+  | 'gtest'
+  | 'catch2'
+  | 'boost-test'
+  | 'doctest'
+  | 'cppunit'
   | 'unknown';
 
 /**
@@ -251,7 +257,7 @@ export interface TestExtraction {
   /** Detected framework */
   framework: TestFramework;
   /** Language */
-  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
+  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust' | 'cpp';
   /** Extracted test cases */
   testCases: TestCase[];
   /** Mock statements */

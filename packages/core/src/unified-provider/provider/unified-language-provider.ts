@@ -24,7 +24,7 @@ import type {
  */
 const DEFAULT_OPTIONS: Required<UnifiedProviderOptions> = {
   projectRoot: '.',
-  languages: ['typescript', 'javascript', 'python', 'java', 'csharp', 'php'],
+  languages: ['typescript', 'javascript', 'python', 'java', 'csharp', 'php', 'go', 'rust', 'cpp'],
   matchers: [],
   includeRawNodes: false,
   maxChainDepth: 20,

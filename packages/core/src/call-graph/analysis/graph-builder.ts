@@ -824,6 +824,7 @@ export class GraphBuilder {
       php: 0,
       go: 0,
       rust: 0,
+      cpp: 0,
     };
 
     for (const [, func] of this.functions) {

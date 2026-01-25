@@ -10,6 +10,7 @@ export { PhpNormalizer } from './php-normalizer.js';
 export { CSharpNormalizer } from './csharp-normalizer.js';
 export { GoNormalizer } from './go-normalizer.js';
 export { RustNormalizer } from './rust-normalizer.js';
+export { CppNormalizer } from './cpp-normalizer.js';
 
 import type { UnifiedLanguage, CallChainNormalizer } from '../types.js';
 import { TypeScriptNormalizer } from './typescript-normalizer.js';
@@ -19,6 +20,7 @@ import { PhpNormalizer } from './php-normalizer.js';
 import { CSharpNormalizer } from './csharp-normalizer.js';
 import { GoNormalizer } from './go-normalizer.js';
 import { RustNormalizer } from './rust-normalizer.js';
+import { CppNormalizer } from './cpp-normalizer.js';
 
 /**
  * Normalizer registry
@@ -58,6 +60,9 @@ export function getNormalizer(language: UnifiedLanguage): CallChainNormalizer | 
     case 'rust':
       normalizer = new RustNormalizer();
       break;
+    case 'cpp':
+      normalizer = new CppNormalizer();
+      break;
   }
 
   if (normalizer) {
@@ -71,7 +76,7 @@ export function getNormalizer(language: UnifiedLanguage): CallChainNormalizer | 
  * Get all available normalizers
  */
 export function getAvailableNormalizers(): UnifiedLanguage[] {
-  return ['typescript', 'javascript', 'python', 'java', 'php', 'csharp', 'go', 'rust'];
+  return ['typescript', 'javascript', 'python', 'java', 'php', 'csharp', 'go', 'rust', 'cpp'];
 }
 
 /**

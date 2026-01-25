@@ -50,7 +50,8 @@ export function mapLanguage(lang: CallGraphLanguage): SupportedLanguage | null {
     csharp: 'csharp',
     php: 'php',
     go: null, // Go wrapper detection not yet implemented
-    rust: null, // Rust wrapper detection not yet implemented
+    rust: 'rust',
+    cpp: 'cpp',
   };
   return mapping[lang];
 }

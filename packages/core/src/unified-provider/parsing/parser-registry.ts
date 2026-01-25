@@ -14,6 +14,9 @@ let pythonLoader: typeof import('../../parsers/tree-sitter/loader.js') | null = 
 let javaLoader: typeof import('../../parsers/tree-sitter/java-loader.js') | null = null;
 let phpLoader: typeof import('../../parsers/tree-sitter/php-loader.js') | null = null;
 let csharpLoader: typeof import('../../parsers/tree-sitter/csharp-loader.js') | null = null;
+let goLoader: typeof import('../../parsers/tree-sitter/go-loader.js') | null = null;
+let rustLoader: typeof import('../../parsers/tree-sitter/rust-loader.js') | null = null;
+let cppLoader: typeof import('../../parsers/tree-sitter/cpp-loader.js') | null = null;
 
 /**
  * Parser availability status
@@ -89,7 +92,7 @@ export class ParserRegistry {
    * Get availability status for all languages
    */
   async getAllAvailability(): Promise<ParserAvailability[]> {
-    const languages: UnifiedLanguage[] = ['typescript', 'javascript', 'python', 'java', 'csharp', 'php'];
+    const languages: UnifiedLanguage[] = ['typescript', 'javascript', 'python', 'java', 'csharp', 'php', 'go', 'rust', 'cpp'];
     const results: ParserAvailability[] = [];
 
     for (const language of languages) {
@@ -159,6 +162,24 @@ export class ParserRegistry {
           }
           return csharpLoader.isCSharpTreeSitterAvailable();
         }
+        case 'go': {
+          if (!goLoader) {
+            goLoader = await import('../../parsers/tree-sitter/go-loader.js');
+          }
+          return goLoader.isGoTreeSitterAvailable();
+        }
+        case 'rust': {
+          if (!rustLoader) {
+            rustLoader = await import('../../parsers/tree-sitter/rust-loader.js');
+          }
+          return rustLoader.isRustTreeSitterAvailable();
+        }
+        case 'cpp': {
+          if (!cppLoader) {
+            cppLoader = await import('../../parsers/tree-sitter/cpp-loader.js');
+          }
+          return cppLoader.isCppTreeSitterAvailable();
+        }
         default:
           return false;
       }
@@ -208,6 +229,24 @@ export class ParserRegistry {
             csharpLoader = await import('../../parsers/tree-sitter/csharp-loader.js');
           }
           return csharpLoader.createCSharpParser();
+        }
+        case 'go': {
+          if (!goLoader) {
+            goLoader = await import('../../parsers/tree-sitter/go-loader.js');
+          }
+          return goLoader.createGoParser();
+        }
+        case 'rust': {
+          if (!rustLoader) {
+            rustLoader = await import('../../parsers/tree-sitter/rust-loader.js');
+          }
+          return rustLoader.createRustParser();
+        }
+        case 'cpp': {
+          if (!cppLoader) {
+            cppLoader = await import('../../parsers/tree-sitter/cpp-loader.js');
+          }
+          return cppLoader.createCppParser();
         }
         default:
           return null;
@@ -266,6 +305,25 @@ export function detectLanguage(filePath: string): UnifiedLanguage | null {
     return 'php';
   }
 
+  // Go
+  if (lower.endsWith('.go')) {
+    return 'go';
+  }
+
+  // Rust
+  if (lower.endsWith('.rs')) {
+    return 'rust';
+  }
+
+  // C++
+  if (lower.endsWith('.cpp') || lower.endsWith('.cc') ||
+      lower.endsWith('.cxx') || lower.endsWith('.c++') ||
+      lower.endsWith('.hpp') || lower.endsWith('.hh') ||
+      lower.endsWith('.hxx') || lower.endsWith('.h++') ||
+      lower.endsWith('.h')) {
+    return 'cpp';
+  }
+
   return null;
 }
 
@@ -286,6 +344,12 @@ export function getLanguageExtensions(language: UnifiedLanguage): string[] {
       return ['.cs'];
     case 'php':
       return ['.php', '.phtml', '.php3', '.php4', '.php5', '.php7', '.phps'];
+    case 'go':
+      return ['.go'];
+    case 'rust':
+      return ['.rs'];
+    case 'cpp':
+      return ['.cpp', '.cc', '.cxx', '.c++', '.hpp', '.hh', '.hxx', '.h++', '.h'];
     default:
       return [];
   }

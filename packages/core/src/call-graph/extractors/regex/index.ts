@@ -13,6 +13,7 @@ export { JavaRegexExtractor } from './java-regex.js';
 export { CSharpRegexExtractor } from './csharp-regex.js';
 export { GoRegexExtractor, createGoRegexExtractor } from './go-regex.js';
 export { RustRegexExtractor, createRustRegexExtractor } from './rust-regex.js';
+export { CppRegexExtractor, createCppRegexExtractor } from './cpp-regex.js';
 
 // Re-export types
 export type {
@@ -38,6 +39,7 @@ import { JavaRegexExtractor } from './java-regex.js';
 import { CSharpRegexExtractor } from './csharp-regex.js';
 import { GoRegexExtractor } from './go-regex.js';
 import { RustRegexExtractor } from './rust-regex.js';
+import { CppRegexExtractor } from './cpp-regex.js';
 import type { BaseRegexExtractor } from './base-regex-extractor.js';
 
 /**
@@ -60,6 +62,8 @@ export function getRegexExtractor(language: CallGraphLanguage): BaseRegexExtract
       return new GoRegexExtractor();
     case 'rust':
       return new RustRegexExtractor();
+    case 'cpp':
+      return new CppRegexExtractor();
     default:
       return null;
   }
@@ -104,6 +108,11 @@ export function getRegexExtractorForFile(filePath: string): BaseRegexExtractor |
   // Rust
   if (ext === '.rs') {
     return new RustRegexExtractor();
+  }
+  
+  // C++
+  if (['.cpp', '.cc', '.cxx', '.c++', '.hpp', '.hh', '.hxx', '.h++', '.h'].includes(ext)) {
+    return new CppRegexExtractor();
   }
   
   return null;

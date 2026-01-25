@@ -40,6 +40,7 @@ import {
   createWpfCommand,
   createGoCommand,
   createRustCommand,
+  createCppCommand,
   envCommand,
   constantsCommand,
   licenseCommand,
@@ -101,6 +102,9 @@ function createProgram(): Command {
 
   // Rust Language Support
   program.addCommand(createRustCommand());
+
+  // C++ Language Support
+  program.addCommand(createCppCommand());
 
   // Environment Variable Detection
   program.addCommand(envCommand);

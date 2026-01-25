@@ -12,3 +12,4 @@ export { CSharpEnvExtractor, createCSharpEnvExtractor } from './csharp-env-extra
 export { PhpEnvExtractor, createPhpEnvExtractor } from './php-env-extractor.js';
 export { GoEnvExtractor, createGoEnvExtractor } from './go-env-extractor.js';
 export { RustEnvExtractor, createRustEnvExtractor } from './rust-env-extractor.js';
+export { CppEnvExtractor, createCppEnvExtractor } from './cpp-env-extractor.js';

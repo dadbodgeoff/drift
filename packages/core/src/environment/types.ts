@@ -12,7 +12,7 @@
 /**
  * Supported languages for environment extraction
  */
-export type EnvLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
+export type EnvLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust' | 'cpp';
 
 /**
  * Environment access method
@@ -55,6 +55,11 @@ export type EnvAccessMethod =
   | 'std::env::var_os'
   | 'dotenvy'
   | 'config-rs'
+  // C++
+  | 'std::getenv'
+  | 'getenv'
+  | 'boost::program_options'
+  | 'QSettings'
   // Generic
   | 'unknown';
 

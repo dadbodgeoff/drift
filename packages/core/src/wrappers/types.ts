@@ -25,7 +25,7 @@ export interface DetectedPrimitive {
   language: SupportedLanguage;
 }
 
-export type SupportedLanguage = 'typescript' | 'python' | 'java' | 'csharp' | 'php' | 'rust';
+export type SupportedLanguage = 'typescript' | 'python' | 'java' | 'csharp' | 'php' | 'rust' | 'cpp';
 
 // =============================================================================
 // Wrapper Types

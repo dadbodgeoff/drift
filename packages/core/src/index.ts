@@ -1096,6 +1096,37 @@ export type {
 
 
 // ============================================================================
+// C++ Language Support (C++ analysis, classes, memory, templates, virtual)
+// ============================================================================
+
+export {
+  // Main analyzer
+  CppAnalyzer,
+  createCppAnalyzer,
+} from './cpp/index.js';
+
+export type {
+  // Configuration types
+  CppAnalyzerOptions,
+
+  // Result types
+  CppAnalysisResult,
+  CppModule,
+  CppAnalysisStats,
+  CppClass,
+  CppClassesResult,
+  CppMemoryPattern,
+  CppMemoryResult,
+  CppMemoryIssue,
+  CppTemplate,
+  CppTemplatesResult,
+  CppVirtualMethod,
+  CppVirtualResult,
+  CppPolymorphicHierarchy,
+} from './cpp/index.js';
+
+
+// ============================================================================
 // Environment Variable Detection (Config access pattern tracking)
 // ============================================================================
 

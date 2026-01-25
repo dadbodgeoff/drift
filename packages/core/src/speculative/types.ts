@@ -21,7 +21,8 @@ export type SupportedLanguage =
   | 'java'
   | 'csharp'
   | 'php'
-  | 'rust';
+  | 'rust'
+  | 'cpp';
 
 /**
  * Supported frameworks by language
@@ -50,6 +51,7 @@ export const LANGUAGE_EXTENSIONS: Record<SupportedLanguage, string[]> = {
   csharp: ['.cs'],
   php: ['.php'],
   rust: ['.rs'],
+  cpp: ['.cpp', '.cc', '.cxx', '.c++', '.hpp', '.hh', '.hxx', '.h++', '.h'],
 };
 
 // ============================================================================

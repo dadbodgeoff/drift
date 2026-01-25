@@ -19,7 +19,8 @@ export type DecisionLanguage =
   | 'java'
   | 'csharp'
   | 'php'
-  | 'rust';
+  | 'rust'
+  | 'cpp';
 
 /**
  * Decision confidence level

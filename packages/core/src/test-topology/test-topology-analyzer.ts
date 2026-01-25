@@ -388,6 +388,7 @@ export class TestTopologyAnalyzer {
       phpunit: 0, pest: 0, codeception: 0,
       'go-testing': 0, testify: 0, ginkgo: 0, gomega: 0,
       'rust-test': 0, 'tokio-test': 0, proptest: 0, criterion: 0, rstest: 0,
+      gtest: 0, catch2: 0, 'boost-test': 0, doctest: 0, cppunit: 0,
       unknown: 0,
     };
 

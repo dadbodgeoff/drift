@@ -67,6 +67,7 @@
     "tree-sitter-php": "^0.22.0",
     "tree-sitter-python": "^0.21.0",
     "tree-sitter-rust": "^0.21.0",
+    "tree-sitter-cpp": "^0.22.0",
     "tree-sitter-typescript": "^0.21.2",
     "typescript": "^5.3.0"
   },

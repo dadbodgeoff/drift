@@ -14,7 +14,7 @@ import type { DataAccessPoint, SensitiveField } from '../boundaries/types.js';
 /**
  * Supported languages for call graph extraction
  */
-export type CallGraphLanguage = 'python' | 'typescript' | 'javascript' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
+export type CallGraphLanguage = 'python' | 'typescript' | 'javascript' | 'java' | 'csharp' | 'php' | 'go' | 'rust' | 'cpp';
 
 /**
  * A function/method definition in the codebase

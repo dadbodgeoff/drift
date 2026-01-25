@@ -526,6 +526,83 @@ export const RUST_PRIMITIVES: PrimitiveRegistry = {
   ...TRACING_PRIMITIVES,
 };
 
+// =============================================================================
+// C++ Primitives
+// =============================================================================
+
+export const QT_PRIMITIVES: PrimitiveRegistry = {
+  qt: {
+    core: ['QObject', 'QCoreApplication', 'QThread', 'QTimer', 'QEventLoop', 'QMetaObject'],
+    widgets: ['QWidget', 'QMainWindow', 'QDialog', 'QPushButton', 'QLabel', 'QLineEdit', 'QTextEdit'],
+    signals: ['connect', 'disconnect', 'emit', 'Q_SIGNAL', 'Q_SLOT', 'Q_EMIT'],
+    properties: ['Q_PROPERTY', 'Q_OBJECT', 'Q_INVOKABLE', 'Q_ENUM', 'Q_FLAG'],
+    containers: ['QList', 'QVector', 'QMap', 'QHash', 'QSet', 'QString', 'QByteArray'],
+    io: ['QFile', 'QDir', 'QFileInfo', 'QTextStream', 'QDataStream', 'QSettings'],
+    network: ['QNetworkAccessManager', 'QNetworkRequest', 'QNetworkReply', 'QTcpSocket', 'QUdpSocket'],
+    sql: ['QSqlDatabase', 'QSqlQuery', 'QSqlTableModel', 'QSqlRelationalTableModel'],
+  },
+};
+
+export const BOOST_PRIMITIVES: PrimitiveRegistry = {
+  boost: {
+    smart_ptr: ['shared_ptr', 'weak_ptr', 'scoped_ptr', 'intrusive_ptr', 'make_shared'],
+    asio: ['io_context', 'async_read', 'async_write', 'deadline_timer', 'strand', 'post', 'dispatch'],
+    filesystem: ['path', 'exists', 'create_directory', 'remove', 'copy', 'rename', 'directory_iterator'],
+    thread: ['thread', 'mutex', 'lock_guard', 'unique_lock', 'condition_variable', 'future', 'promise'],
+    algorithm: ['split', 'join', 'trim', 'to_lower', 'to_upper', 'replace_all'],
+    program_options: ['options_description', 'variables_map', 'store', 'notify', 'value'],
+    serialization: ['serialize', 'text_oarchive', 'text_iarchive', 'binary_oarchive', 'binary_iarchive'],
+    test: ['BOOST_AUTO_TEST_CASE', 'BOOST_CHECK', 'BOOST_REQUIRE', 'BOOST_TEST', 'BOOST_CHECK_EQUAL'],
+  },
+};
+
+export const UNREAL_PRIMITIVES: PrimitiveRegistry = {
+  unreal: {
+    core: ['UObject', 'AActor', 'UActorComponent', 'APawn', 'ACharacter', 'APlayerController'],
+    macros: ['UCLASS', 'USTRUCT', 'UENUM', 'UPROPERTY', 'UFUNCTION', 'GENERATED_BODY'],
+    delegates: ['DECLARE_DELEGATE', 'DECLARE_MULTICAST_DELEGATE', 'DECLARE_DYNAMIC_DELEGATE', 'BindUObject', 'AddDynamic'],
+    containers: ['TArray', 'TMap', 'TSet', 'FString', 'FName', 'FText'],
+    memory: ['NewObject', 'CreateDefaultSubobject', 'MakeShared', 'MakeUnique', 'TSharedPtr', 'TWeakPtr'],
+    logging: ['UE_LOG', 'UE_CLOG', 'check', 'ensure', 'verify'],
+    gameplay: ['GetWorld', 'GetOwner', 'GetActorLocation', 'SetActorLocation', 'SpawnActor', 'DestroyActor'],
+    input: ['BindAction', 'BindAxis', 'SetupPlayerInputComponent'],
+  },
+};
+
+export const STL_PRIMITIVES: PrimitiveRegistry = {
+  stl: {
+    containers: ['vector', 'list', 'deque', 'set', 'map', 'unordered_set', 'unordered_map', 'array', 'string'],
+    algorithms: ['sort', 'find', 'find_if', 'transform', 'copy', 'remove_if', 'for_each', 'accumulate'],
+    memory: ['unique_ptr', 'shared_ptr', 'weak_ptr', 'make_unique', 'make_shared', 'allocator'],
+    threading: ['thread', 'mutex', 'lock_guard', 'unique_lock', 'condition_variable', 'future', 'promise', 'async'],
+    io: ['ifstream', 'ofstream', 'stringstream', 'cout', 'cin', 'cerr'],
+    functional: ['function', 'bind', 'ref', 'cref', 'invoke', 'mem_fn'],
+    utility: ['pair', 'tuple', 'optional', 'variant', 'any', 'move', 'forward'],
+  },
+};
+
+export const CPP_TESTING_PRIMITIVES: PrimitiveRegistry = {
+  gtest: {
+    test: ['TEST', 'TEST_F', 'TEST_P', 'EXPECT_EQ', 'EXPECT_NE', 'EXPECT_TRUE', 'EXPECT_FALSE', 'ASSERT_EQ', 'ASSERT_TRUE'],
+    mock: ['MOCK_METHOD', 'EXPECT_CALL', 'ON_CALL', 'WillOnce', 'WillRepeatedly', 'Return', 'Invoke'],
+    fixtures: ['SetUp', 'TearDown', 'SetUpTestSuite', 'TearDownTestSuite'],
+  },
+  catch2: {
+    test: ['TEST_CASE', 'SECTION', 'REQUIRE', 'CHECK', 'REQUIRE_FALSE', 'CHECK_FALSE', 'REQUIRE_THROWS', 'BENCHMARK'],
+  },
+  doctest: {
+    test: ['TEST_CASE', 'SUBCASE', 'CHECK', 'REQUIRE', 'CHECK_EQ', 'REQUIRE_EQ'],
+  },
+};
+
+export const CPP_PRIMITIVES: PrimitiveRegistry = {
+  ...QT_PRIMITIVES,
+  ...BOOST_PRIMITIVES,
+  ...UNREAL_PRIMITIVES,
+  ...STL_PRIMITIVES,
+  ...CPP_TESTING_PRIMITIVES,
+};
+
 export const ALL_PRIMITIVES: Record<SupportedLanguage, PrimitiveRegistry> = {
   typescript: TYPESCRIPT_PRIMITIVES,
   python: PYTHON_PRIMITIVES,
@@ -533,6 +610,7 @@ export const ALL_PRIMITIVES: Record<SupportedLanguage, PrimitiveRegistry> = {
   csharp: CSHARP_PRIMITIVES,
   php: PHP_PRIMITIVES,
   rust: RUST_PRIMITIVES,
+  cpp: CPP_PRIMITIVES,
 };
 
 // =============================================================================

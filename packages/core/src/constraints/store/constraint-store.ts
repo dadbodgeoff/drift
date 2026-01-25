@@ -566,6 +566,7 @@ export class ConstraintStore extends EventEmitter {
         csharp: ['.cs'],
         php: ['.php'],
         rust: ['.rs'],
+        cpp: ['.cpp', '.cc', '.cxx', '.hpp', '.hh', '.h'],
         all: [],
       };
 

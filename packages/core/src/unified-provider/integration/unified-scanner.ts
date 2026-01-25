@@ -303,6 +303,9 @@ export class UnifiedScanner {
       '**/*.cs',
       '**/*.java',
       '**/*.php',
+      '**/*.go',
+      '**/*.rs',
+      '**/*.cpp', '**/*.cc', '**/*.cxx', '**/*.hpp', '**/*.h',
     ];
     const ignorePatterns = options.ignorePatterns ?? [
       'node_modules', '.git', 'dist', 'build', '__pycache__',

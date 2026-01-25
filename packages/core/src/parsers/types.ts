@@ -13,6 +13,7 @@ export type Language =
   | 'php'
   | 'go'
   | 'rust'
+  | 'cpp'
   | 'css'
   | 'scss'
   | 'json'

@@ -16,6 +16,7 @@ const GO_ACTIONS = ['status', 'routes', 'errors', 'interfaces', 'data-access', '
 const CONSTANTS_ACTIONS = ['status', 'list', 'get', 'usages', 'magic', 'dead', 'secrets', 'inconsistent'];
 
 const RUST_ACTIONS = ['status', 'routes', 'errors', 'traits', 'data-access', 'async'];
+const CPP_ACTIONS = ['status', 'classes', 'memory', 'templates', 'virtual'];
 
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
@@ -453,6 +454,33 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_cpp',
+    description: 'Analyze C++ projects: classes, memory management, templates, virtual functions. Actions: status (project overview), classes (class/struct analysis with inheritance), memory (smart pointers, RAII, manual allocation), templates (template classes and functions), virtual (virtual functions and polymorphic hierarchies).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: CPP_ACTIONS,
+          description: 'Action to perform: status, classes, memory, templates, virtual',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework: Qt, Boost, Unreal Engine',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -466,3 +494,4 @@ export { executeGoTool, type GoArgs, type GoAction } from './go.js';
 export { executeRustTool, type RustArgs, type RustAction } from './rust.js';
 export { handleConstants, type ConstantsArgs, type ConstantsAction } from './constants.js';
 export { handleQualityGate, qualityGateTool, type QualityGateArgs } from './quality-gate.js';
+export { executeCppTool, type CppArgs, type CppAction } from './cpp.js';
