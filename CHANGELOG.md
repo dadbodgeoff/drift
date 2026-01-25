@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-25
+
+### Added
+
+#### Complete Constant & Enum Extraction System
+Enterprise-grade constant and enum tracking across all 7 supported languages:
+
+- **Core Types & Store** (`packages/core/src/constants/`)
+  - `types.ts` - Comprehensive type definitions for constants, enums, references
+  - `store/constant-store.ts` - Persistent storage with category indexing
+  - `analysis/categorizer.ts` - Auto-categorization into 10 categories (api, config, feature_flag, etc.)
+
+- **Language Extractors** (regex-based with tree-sitter fallback ready)
+  - TypeScript/JavaScript: const exports, enums, readonly properties
+  - Python: module-level constants, Enum classes, Final annotations
+  - Java: static final fields, enum declarations
+  - C#: const/readonly fields, enum declarations
+  - PHP: const/define, class constants, enums (PHP 8.1+)
+  - Go: const blocks, iota patterns, type aliases
+
+- **Analysis Engine**
+  - `reference-finder.ts` - Track constant usage across codebase
+  - `magic-detector.ts` - Find magic numbers/strings that should be constants
+  - `dead-constant-detector.ts` - Identify unused constants
+  - `consistency-analyzer.ts` - Detect naming inconsistencies
+  - `security-scanner.ts` - Find hardcoded secrets (API keys, passwords, tokens)
+
+- **MCP Tool: `drift_constants`** with 8 actions:
+  - `status` - Overview of constants in codebase
+  - `list` - List constants with filtering by category/language
+  - `get` - Get detailed info about a specific constant
+  - `usages` - Find all references to a constant
+  - `magic` - Detect magic numbers/strings
+  - `dead` - Find unused constants
+  - `secrets` - Scan for hardcoded secrets
+  - `inconsistent` - Find naming inconsistencies
+
+- **CLI Command: `drift constants`**
+  - Full subcommand support matching MCP actions
+  - Table and JSON output formats
+  - Category and language filtering
+
+- **VSCode Integration**
+  - `constants-tree-provider.ts` - Tree view with 3 modes (by category, by file, issues)
+  - Command handlers for constant operations
+
+- **Pattern Detector**
+  - `constants-detector.ts` - Unified detector for constant-related patterns
+
+- **Dashboard Tab**
+  - `ConstantsTab.tsx` - Full dashboard with stats, filtering, and issue highlighting
+
+- **310 passing tests** covering all extractors and analysis engines
+
+### Documentation
+- Updated `wiki/MCP-Tools-Reference.md` with `drift_constants` documentation
+- Updated `wiki/CLI-Reference.md` with `drift constants` command documentation
+
 ## [Unreleased]
 
 ### Added
