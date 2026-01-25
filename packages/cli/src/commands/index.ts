@@ -47,3 +47,9 @@ export { envCommand } from './env.js';
 
 // Constants & Enum Analysis
 export { constantsCommand } from './constants.js';
+
+// License Management
+export { licenseCommand } from './license.js';
+
+// Quality Gates (Enterprise)
+export { createGateCommand } from './gate.js';

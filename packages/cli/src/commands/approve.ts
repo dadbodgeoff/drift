@@ -25,6 +25,8 @@ export interface ApproveOptions {
   yes?: boolean;
   /** Enable verbose output */
   verbose?: boolean;
+  /** Project root directory */
+  root?: string;
 }
 
 /** Directory name for drift configuration */
@@ -43,17 +45,52 @@ async function isDriftInitialized(rootDir: string): Promise<boolean> {
 }
 
 /**
+ * Resolve the project root directory.
+ * Priority: --root option > detect .drift folder > cwd
+ */
+async function resolveProjectRoot(rootOption?: string): Promise<string> {
+  // If --root is specified, use it
+  if (rootOption) {
+    const resolved = path.resolve(rootOption);
+    try {
+      await fs.access(path.join(resolved, DRIFT_DIR));
+      return resolved;
+    } catch {
+      // .drift doesn't exist at specified root, but use it anyway
+      return resolved;
+    }
+  }
+
+  // Try to find .drift folder starting from cwd and going up
+  let current = process.cwd();
+  const root = path.parse(current).root;
+
+  while (current !== root) {
+    try {
+      await fs.access(path.join(current, DRIFT_DIR));
+      return current;
+    } catch {
+      current = path.dirname(current);
+    }
+  }
+
+  // Fall back to cwd
+  return process.cwd();
+}
+
+/**
  * Approve command implementation
  */
 async function approveAction(
   patternId: string,
   options: ApproveOptions
 ): Promise<void> {
-  const rootDir = process.cwd();
+  const rootDir = await resolveProjectRoot(options.root);
   const verbose = options.verbose ?? false;
 
   console.log();
   console.log(chalk.bold('🔍 Drift - Approve Pattern'));
+  console.log(chalk.dim(`Project: ${rootDir}`));
   console.log();
 
   // Check if initialized
@@ -288,6 +325,7 @@ async function approveAction(
 export const approveCommand = new Command('approve')
   .description('Approve a pattern by ID')
   .argument('<pattern-id>', 'Pattern ID to approve (or "all" for batch approval)')
+  .option('-r, --root <path>', 'Project root directory (auto-detects .drift folder if not specified)')
   .option('-c, --category <category>', 'Approve all patterns in category')
   .option('-y, --yes', 'Skip confirmation prompt')
   .option('--verbose', 'Enable verbose output')

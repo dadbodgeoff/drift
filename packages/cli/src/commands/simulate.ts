@@ -12,6 +12,8 @@ import {
   createCallGraphAnalyzer,
   createPatternService,
   createPatternRepository,
+  checkFeature,
+  formatFeatureCheck,
   type SimulationTask,
   type SimulationResult,
   type SimulationConstraint,
@@ -38,6 +40,27 @@ async function simulateAction(
   const rootDir = process.cwd();
   const format = options.format ?? 'text';
   const isTextFormat = format === 'text';
+
+  // Check license for impact simulation feature
+  const featureCheck = await checkFeature('gate:impact-simulation', rootDir);
+  if (!featureCheck.allowed) {
+    if (format === 'json') {
+      console.log(JSON.stringify({
+        error: 'Feature not licensed',
+        feature: featureCheck.feature,
+        requiredTier: featureCheck.requiredTier,
+        currentTier: featureCheck.currentTier,
+        upgradeUrl: featureCheck.upgradeUrl,
+      }));
+    } else {
+      console.log();
+      console.log(chalk.yellow('⚠️  Enterprise Feature Required'));
+      console.log();
+      console.log(formatFeatureCheck(featureCheck));
+      console.log();
+    }
+    process.exit(1);
+  }
 
   try {
     if (isTextFormat) {

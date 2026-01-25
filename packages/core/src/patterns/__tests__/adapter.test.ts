@@ -35,19 +35,22 @@ class MockPatternStore extends EventEmitter {
 
   add(pattern: any): void {
     this.patterns.set(pattern.id, pattern);
-    this.emit('pattern:created', pattern);
+    // Emit event in the same format as the real PatternStore
+    this.emit('pattern:created', { patternId: pattern.id, category: pattern.category });
   }
 
   update(id: string, pattern: any): void {
     this.patterns.set(id, pattern);
-    this.emit('pattern:updated', pattern);
+    // Emit event in the same format as the real PatternStore
+    this.emit('pattern:updated', { patternId: id, category: pattern.category });
   }
 
   delete(id: string): void {
     const pattern = this.patterns.get(id);
     if (pattern) {
       this.patterns.delete(id);
-      this.emit('pattern:deleted', pattern);
+      // Emit event in the same format as the real PatternStore
+      this.emit('pattern:deleted', { patternId: id, category: pattern.category });
     }
   }
 
@@ -62,14 +65,16 @@ class MockPatternStore extends EventEmitter {
     pattern.status = 'approved';
     pattern.metadata.approvedAt = new Date().toISOString();
     pattern.metadata.approvedBy = approvedBy;
-    this.emit('pattern:approved', pattern);
+    // Emit event in the same format as the real PatternStore
+    this.emit('pattern:approved', { patternId: id, category: pattern.category });
   }
 
   ignore(id: string): void {
     const pattern = this.patterns.get(id);
     if (!pattern) throw new Error('Pattern not found');
     pattern.status = 'ignored';
-    this.emit('pattern:ignored', pattern);
+    // Emit event in the same format as the real PatternStore
+    this.emit('pattern:ignored', { patternId: id, category: pattern.category });
   }
 
   getStats(): { totalPatterns: number } {

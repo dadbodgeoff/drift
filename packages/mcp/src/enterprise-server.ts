@@ -91,6 +91,7 @@ import { handleConstraints } from './tools/analysis/constraints.js';
 import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
 import { handleConstants } from './tools/analysis/constants.js';
+import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -378,6 +379,9 @@ async function routeToolCall(
 
     case 'drift_constants':
       return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);
+
+    case 'drift_quality_gate':
+      return handleQualityGate(projectRoot, args as Parameters<typeof handleQualityGate>[1]);
   }
 
   // ============================================================================

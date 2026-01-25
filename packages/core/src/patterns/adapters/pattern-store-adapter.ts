@@ -182,24 +182,50 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
 
   private setupEventForwarding(): void {
     // Map legacy events to new event types
-    this.store.on('pattern:created', (pattern: LegacyPattern) => {
-      this.emit('pattern:added', legacyToUnified(pattern));
+    // Note: The store emits PatternStoreEvent objects, not Pattern objects
+    // We need to fetch the pattern from the store when handling events
+    
+    this.store.on('pattern:created', (event: { patternId?: string }) => {
+      if (event.patternId) {
+        const pattern = this.store.get(event.patternId);
+        if (pattern) {
+          this.emit('pattern:added', legacyToUnified(pattern));
+        }
+      }
     });
 
-    this.store.on('pattern:updated', (pattern: LegacyPattern) => {
-      this.emit('pattern:updated', legacyToUnified(pattern));
+    this.store.on('pattern:updated', (event: { patternId?: string }) => {
+      if (event.patternId) {
+        const pattern = this.store.get(event.patternId);
+        if (pattern) {
+          this.emit('pattern:updated', legacyToUnified(pattern));
+        }
+      }
     });
 
-    this.store.on('pattern:deleted', (pattern: LegacyPattern) => {
-      this.emit('pattern:deleted', legacyToUnified(pattern));
+    this.store.on('pattern:deleted', (event: { patternId?: string; category?: string }) => {
+      // Pattern is already deleted, emit with minimal info
+      if (event.patternId) {
+        this.emit('pattern:deleted', { id: event.patternId, category: event.category });
+      }
     });
 
-    this.store.on('pattern:approved', (pattern: LegacyPattern) => {
-      this.emit('pattern:approved', legacyToUnified(pattern));
+    this.store.on('pattern:approved', (event: { patternId?: string }) => {
+      if (event.patternId) {
+        const pattern = this.store.get(event.patternId);
+        if (pattern) {
+          this.emit('pattern:approved', legacyToUnified(pattern));
+        }
+      }
     });
 
-    this.store.on('pattern:ignored', (pattern: LegacyPattern) => {
-      this.emit('pattern:ignored', legacyToUnified(pattern));
+    this.store.on('pattern:ignored', (event: { patternId?: string }) => {
+      if (event.patternId) {
+        const pattern = this.store.get(event.patternId);
+        if (pattern) {
+          this.emit('pattern:ignored', legacyToUnified(pattern));
+        }
+      }
     });
   }
 

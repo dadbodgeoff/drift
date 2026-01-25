@@ -41,6 +41,8 @@ import {
   createGoCommand,
   envCommand,
   constantsCommand,
+  licenseCommand,
+  createGateCommand,
 } from '../commands/index.js';
 
 /**
@@ -99,6 +101,12 @@ function createProgram(): Command {
 
   // Constants & Enum Analysis
   program.addCommand(constantsCommand);
+
+  // License Management
+  program.addCommand(licenseCommand);
+
+  // Quality Gates (Enterprise)
+  program.addCommand(createGateCommand());
 
   // Add help examples
   program.addHelpText(
@@ -180,6 +188,11 @@ Examples:
   $ drift constants inconsistent  Show constants with inconsistent values
   $ drift constants dead          Show potentially unused constants
   $ drift constants export out.json  Export constants to file
+  $ drift gate                    Run quality gates with default policy
+  $ drift gate --policy strict    Run with strict policy
+  $ drift gate --format sarif     Output in SARIF format
+  $ drift gate --ci               Run in CI mode with JSON output
+  $ drift gate --gates pattern-compliance,security-boundary  Run specific gates
 
 Documentation:
   https://github.com/drift/drift

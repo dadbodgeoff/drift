@@ -6,7 +6,7 @@ Drift scans your codebase, learns YOUR patterns, and gives AI agents deep unders
 
 [![npm version](https://img.shields.io/npm/v/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
 [![npm downloads](https://img.shields.io/npm/dm/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Add a demo GIF here showing the MCP in action or Galaxy visualization -->
 <!-- ![Drift Demo](./docs/demo.gif) -->
@@ -203,4 +203,13 @@ drift export --format summary     # Human-readable
 
 ## License
 
-MIT © Geoffrey Fernald
+Drift uses an **Open Core** model:
+
+- **Core packages**: Apache 2.0 (fully open source)
+- **Enterprise features**: BSL 1.1 (source available, converts to Apache 2.0 after 4 years)
+
+**Individual developers and small teams can use Drift completely free.** Enterprise features (multi-repo governance, team analytics, compliance audit trails) require a commercial license.
+
+See [LICENSING.md](./LICENSING.md) for details.
+
+© 2025 Geoffrey Fernald

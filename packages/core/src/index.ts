@@ -1228,3 +1228,158 @@ export type {
   PatternLocation as ConstantPatternLocation,
   ManifestPattern as ConstantManifestPattern,
 } from './constants/index.js';
+
+
+// ============================================================================
+// Licensing System (OSS vs Enterprise feature gating)
+// ============================================================================
+
+export {
+  // License Manager
+  LicenseManager,
+  getLicenseManager,
+  isFeatureAvailable,
+  getCurrentTier,
+  // License Validator
+  LicenseValidator,
+  generateTestKey,
+  generateTestJWT,
+  // Feature Guards
+  requireFeature,
+  checkFeature,
+  guardFeature,
+  withFeatureGate,
+  RequiresFeature,
+  FeatureNotLicensedError,
+  formatFeatureError,
+  formatFeatureCheck,
+  createMCPFeatureError,
+  guardMCPTool,
+  requireTier,
+  getLicenseStatus,
+  // Constants
+  FEATURE_TIERS,
+  TIER_HIERARCHY,
+} from './licensing/index.js';
+
+export type {
+  // Core types
+  License,
+  LicenseTier,
+  LicenseSource,
+  LicenseValidationResult,
+  FeatureCheckResult,
+  EnterpriseFeature,
+  // Guard types
+  FeatureGateOptions,
+  GatedResult,
+} from './licensing/index.js';
+
+
+// ============================================================================
+// Quality Gates System (Enterprise-grade code quality enforcement)
+// ============================================================================
+
+export {
+  // Orchestrator
+  GateOrchestrator,
+  GateRegistry,
+  getGateRegistry,
+  ParallelExecutor,
+  ResultAggregator,
+  // Gates
+  BaseGate,
+  PatternComplianceGate,
+  // Policy
+  PolicyLoader,
+  PolicyEvaluator,
+  DEFAULT_POLICIES,
+  // Reporters
+  BaseReporter,
+  TextReporter,
+  JsonReporter,
+  GitHubReporter,
+  GitLabReporter,
+  SarifReporter,
+  // Store
+  GateRunStore,
+  SnapshotStore,
+  // Factory
+  createQualityGateOrchestrator,
+} from './quality-gates/index.js';
+
+export type {
+  // Core types
+  GateStatus,
+  ViolationSeverity,
+  GateId,
+  OutputFormat,
+  AggregationMode,
+  // Input/Output types
+  GateInput,
+  GateContext,
+  GateResult,
+  GateViolation,
+  // Gate configs
+  BaseGateConfig,
+  PatternComplianceConfig,
+  ConstraintVerificationConfig,
+  RegressionDetectionConfig,
+  ImpactSimulationConfig,
+  SecurityBoundaryConfig,
+  CustomRulesConfig,
+  GateConfig,
+  // Gate result details
+  PatternComplianceDetails,
+  OutlierDetail,
+  ConstraintVerificationDetails,
+  ConstraintResult as GateConstraintResult,
+  ConstraintViolationDetail as GateConstraintViolationDetail,
+  SkippedConstraint as GateSkippedConstraint,
+  RegressionDetectionDetails,
+  PatternRegression,
+  PatternImprovement,
+  ImpactSimulationDetails,
+  SensitiveDataPath,
+  AffectedFile,
+  SecurityBoundaryDetails,
+  DataAccessPoint as GateDataAccessPoint,
+  UnauthorizedPath,
+  CustomRulesDetails,
+  RuleResult,
+  RuleViolation,
+  // Custom rule types
+  CustomRule,
+  RuleCondition,
+  FilePatternCondition,
+  ContentPatternCondition,
+  DependencyCondition,
+  NamingCondition,
+  StructureCondition,
+  CompositeCondition,
+  // Policy types
+  QualityPolicy,
+  PolicyScope,
+  PolicyGateConfigs,
+  AggregationConfig,
+  PolicyActions,
+  PolicyAction,
+  // Orchestrator types
+  QualityGateOptions,
+  QualityGateResult,
+  // Snapshot types
+  HealthSnapshot,
+  PatternHealthSnapshot,
+  ConstraintHealthSnapshot,
+  SecurityHealthSnapshot,
+  // Reporter types
+  ReporterOptions,
+  Reporter,
+  // Store types
+  GateRunRecord,
+  // Factory types
+  GateFactory,
+  GateFactoryContext,
+  Logger,
+  Gate,
+} from './quality-gates/index.js';

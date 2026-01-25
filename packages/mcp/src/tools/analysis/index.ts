@@ -34,7 +34,49 @@ const CONSTANT_LANGUAGES = [
   'typescript', 'javascript', 'python', 'java', 'csharp', 'php', 'go'
 ];
 
+const QUALITY_GATE_GATES = ['pattern-compliance', 'constraint-verification', 'regression-detection', 'impact-simulation', 'security-boundary', 'custom-rules'];
+const QUALITY_GATE_FORMATS = ['text', 'json', 'github', 'gitlab', 'sarif'];
+
 export const ANALYSIS_TOOLS: Tool[] = [
+  {
+    name: 'drift_quality_gate',
+    description: 'Run quality gates on code changes. Checks pattern compliance, constraint verification, regression detection, impact simulation, security boundaries, and custom rules. Use before merging PRs to catch architectural drift.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Files to check (optional - defaults to all changed files)',
+        },
+        policy: {
+          type: 'string',
+          description: 'Policy to use: default, strict, relaxed, ci-fast, or custom ID',
+        },
+        gates: {
+          type: 'string',
+          description: `Specific gates to run (comma-separated): ${QUALITY_GATE_GATES.join(', ')}`,
+        },
+        format: {
+          type: 'string',
+          enum: QUALITY_GATE_FORMATS,
+          description: 'Output format (default: json)',
+        },
+        verbose: {
+          type: 'boolean',
+          description: 'Include detailed output',
+        },
+        branch: {
+          type: 'string',
+          description: 'Current branch name',
+        },
+        baseBranch: {
+          type: 'string',
+          description: 'Base branch for comparison (for PRs)',
+        },
+      },
+    },
+  },
   {
     name: 'drift_simulate',
     description: 'Speculative Execution Engine: Simulates multiple implementation approaches BEFORE code generation, scoring them by friction, impact, and pattern alignment. Returns ranked approaches with trade-off analysis.',
@@ -393,3 +435,4 @@ export { handleConstraints, type ConstraintsArgs, type ConstraintsAction } from 
 export { executeWpfTool, type WpfArgs, type WpfAction } from './wpf.js';
 export { executeGoTool, type GoArgs, type GoAction } from './go.js';
 export { handleConstants, type ConstantsArgs, type ConstantsAction } from './constants.js';
+export { handleQualityGate, qualityGateTool, type QualityGateArgs } from './quality-gate.js';

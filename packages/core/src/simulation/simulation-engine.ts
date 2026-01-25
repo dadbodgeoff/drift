@@ -1,8 +1,14 @@
 /**
  * Simulation Engine
  *
+ * @license BSL-1.1
+ * @changeDate 2030-01-25
+ * 
  * Main orchestrator for the Speculative Execution Engine.
  * Coordinates approach generation, scoring, and ranking.
+ * 
+ * This is an ENTERPRISE FEATURE requiring a commercial license
+ * for production use. See LICENSING.md for details.
  *
  * @module simulation/simulation-engine
  */
