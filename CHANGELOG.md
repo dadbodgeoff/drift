@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-25
+
+### Fixed
+
+- **ConstraintStore initialization bug** - Fixed race condition where `rebuildIndex()` called methods requiring initialization before the `initialized` flag was set
+- **CLI spinner not stopping on error** - Fixed `drift constraints extract` leaving spinner running after errors, requiring Ctrl+C to exit
+
 ## [0.7.0] - 2026-01-25
 
 ### Added
