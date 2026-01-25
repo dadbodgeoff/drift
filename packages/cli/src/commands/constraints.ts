@@ -66,15 +66,16 @@ async function extractAction(options: ConstraintsOptions): Promise<void> {
   const format = options.format ?? 'text';
   const isTextFormat = format === 'text';
 
-  try {
-    if (isTextFormat) {
-      console.log();
-      console.log(chalk.bold('🔍 Extracting Constraints'));
-      console.log(chalk.gray('═'.repeat(50)));
-    }
+  if (isTextFormat) {
+    console.log();
+    console.log(chalk.bold('🔍 Extracting Constraints'));
+    console.log(chalk.gray('═'.repeat(50)));
+  }
 
-    const spinner = isTextFormat ? createSpinner('Initializing...') : null;
-    spinner?.start();
+  const spinner = isTextFormat ? createSpinner('Initializing...') : null;
+  spinner?.start();
+
+  try {
 
     // Initialize store
     spinner?.text('Loading constraint store...');
@@ -141,6 +142,7 @@ async function extractAction(options: ConstraintsOptions): Promise<void> {
     console.log();
 
   } catch (error) {
+    spinner?.stop();
     if (format === 'json') {
       console.log(JSON.stringify({ error: String(error) }));
     } else {

@@ -691,8 +691,46 @@ export class ConstraintStore extends EventEmitter {
   }
 
   private async rebuildIndex(): Promise<void> {
-    const summaries = this.getSummaries();
-    const counts = this.getCounts();
+    // Build summaries directly (avoid ensureInitialized check during init)
+    const summaries: ConstraintSummary[] = Array.from(this.constraints.values()).map(c => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      category: c.category,
+      language: c.language,
+      status: c.status,
+      confidence: c.confidence.score,
+      enforcement: c.enforcement.level,
+      evidence: c.confidence.evidence,
+      violations: c.confidence.violations,
+      type: c.invariant.type,
+    }));
+
+    // Build counts directly (avoid ensureInitialized check during init)
+    const counts: ConstraintCounts = {
+      total: this.constraints.size,
+      byStatus: {} as Record<ConstraintStatus, number>,
+      byCategory: {} as Record<ConstraintCategory, number>,
+      byLanguage: {} as Record<ConstraintLanguage, number>,
+      byEnforcement: { error: 0, warning: 0, info: 0 },
+    };
+
+    for (const status of CONSTRAINT_STATUSES) {
+      counts.byStatus[status] = 0;
+    }
+    for (const category of CONSTRAINT_CATEGORIES) {
+      counts.byCategory[category] = 0;
+    }
+    for (const language of CONSTRAINT_LANGUAGES) {
+      counts.byLanguage[language] = 0;
+    }
+
+    for (const constraint of this.constraints.values()) {
+      counts.byStatus[constraint.status]++;
+      counts.byCategory[constraint.category]++;
+      counts.byLanguage[constraint.language]++;
+      counts.byEnforcement[constraint.enforcement.level]++;
+    }
 
     // Build lookup maps
     const byFile: Record<string, string[]> = {};
