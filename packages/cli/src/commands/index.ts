@@ -44,3 +44,6 @@ export { createGoCommand } from './go.js';
 
 // Environment Variable Detection
 export { envCommand } from './env.js';
+
+// Constants & Enum Analysis
+export { constantsCommand } from './constants.js';

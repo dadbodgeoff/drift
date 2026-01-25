@@ -136,7 +136,7 @@ describe('inferCategory', () => {
     });
 
     it('should categorize by secret value patterns', () => {
-      expect(inferCategory(createConstant('KEY', 'sk_live_abc123'))).toBe('security');
+      expect(inferCategory(createConstant('KEY', 'sk_test_FAKE_abc123'))).toBe('security');
       expect(inferCategory(createConstant('CERT', '-----BEGIN PRIVATE KEY-----'))).toBe('security');
     });
   });

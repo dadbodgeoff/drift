@@ -315,6 +315,9 @@ export class ConstantStore {
       stats,
     };
 
+    // Ensure directory exists before saving
+    await fs.mkdir(this.constantsDir, { recursive: true });
+    
     // Save index
     await fs.writeFile(this.indexPath, JSON.stringify(index, null, 2));
     this.indexCache = index;

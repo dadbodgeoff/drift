@@ -13,6 +13,7 @@ const DECISIONS_ACTIONS = ['status', 'list', 'get', 'for-file', 'timeline', 'sea
 const CONSTRAINTS_ACTIONS = ['list', 'show', 'extract', 'approve', 'ignore', 'verify'];
 const WPF_ACTIONS = ['status', 'bindings', 'mvvm', 'datacontext', 'commands'];
 const GO_ACTIONS = ['status', 'routes', 'errors', 'interfaces', 'data-access', 'goroutines'];
+const CONSTANTS_ACTIONS = ['status', 'list', 'get', 'usages', 'magic', 'dead', 'secrets', 'inconsistent'];
 
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
@@ -24,6 +25,13 @@ const TASK_CATEGORIES = [
   'rate-limiting', 'authentication', 'authorization', 'api-endpoint',
   'data-access', 'error-handling', 'caching', 'logging', 'testing',
   'validation', 'middleware', 'refactoring', 'generic'
+];
+const CONSTANT_CATEGORIES = [
+  'config', 'api', 'status', 'error', 'feature_flag', 'limit',
+  'regex', 'path', 'env', 'security', 'uncategorized'
+];
+const CONSTANT_LANGUAGES = [
+  'typescript', 'javascript', 'python', 'java', 'csharp', 'php', 'go'
 ];
 
 export const ANALYSIS_TOOLS: Tool[] = [
@@ -313,6 +321,67 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_constants',
+    description: 'Analyze constants, enums, and exported values. Detects hardcoded secrets, inconsistent values, and magic numbers. Actions: status (overview), list (browse constants), get (constant details), usages (find references), magic (magic values), dead (unused constants), secrets (hardcoded secrets), inconsistent (value mismatches).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: CONSTANTS_ACTIONS,
+          description: 'Action to perform: status, list, get, usages, magic, dead, secrets, inconsistent',
+        },
+        category: {
+          type: 'string',
+          enum: CONSTANT_CATEGORIES,
+          description: 'Filter by category for list action',
+        },
+        language: {
+          type: 'string',
+          enum: CONSTANT_LANGUAGES,
+          description: 'Filter by language for list action',
+        },
+        file: {
+          type: 'string',
+          description: 'Filter by file path for list action',
+        },
+        search: {
+          type: 'string',
+          description: 'Search constant names for list action',
+        },
+        exported: {
+          type: 'boolean',
+          description: 'Filter by exported status for list action',
+        },
+        id: {
+          type: 'string',
+          description: 'Constant ID for get/usages actions',
+        },
+        name: {
+          type: 'string',
+          description: 'Constant name for get/usages actions',
+        },
+        constantId: {
+          type: 'string',
+          description: 'Constant ID for usages action',
+        },
+        severity: {
+          type: 'string',
+          enum: ['info', 'low', 'medium', 'high', 'critical'],
+          description: 'Minimum severity for secrets action',
+        },
+        limit: {
+          type: 'number',
+          description: 'Max results (default: 20, max: 50)',
+        },
+        cursor: {
+          type: 'string',
+          description: 'Pagination cursor',
+        },
+      },
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -323,3 +392,4 @@ export { handleSimulate, type SimulateArgs } from './simulate.js';
 export { handleConstraints, type ConstraintsArgs, type ConstraintsAction } from './constraints.js';
 export { executeWpfTool, type WpfArgs, type WpfAction } from './wpf.js';
 export { executeGoTool, type GoArgs, type GoAction } from './go.js';
+export { handleConstants, type ConstantsArgs, type ConstantsAction } from './constants.js';

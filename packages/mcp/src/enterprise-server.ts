@@ -90,6 +90,7 @@ import { handleSimulate } from './tools/analysis/simulate.js';
 import { handleConstraints } from './tools/analysis/constraints.js';
 import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
+import { handleConstants } from './tools/analysis/constants.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -374,6 +375,9 @@ async function routeToolCall(
 
     case 'drift_go':
       return executeGoTool(args as unknown as GoArgs, { projectRoot });
+
+    case 'drift_constants':
+      return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);
   }
 
   // ============================================================================

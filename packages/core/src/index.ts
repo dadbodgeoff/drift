@@ -1122,17 +1122,55 @@ export type {
 export {
   // Store
   ConstantStore,
-  // Analysis
+  // Analysis - Categorizer
   inferCategory,
   getCategoryDisplayName,
   getCategoryDescription,
   isSecuritySensitive,
   suggestConstantName,
+  // Analysis - Reference Finder
+  ConstantReferenceFinder,
+  findAllReferences,
+  DEFAULT_REFERENCE_FIND_CONFIG,
+  // Analysis - Magic Value Detector
+  MagicValueDetector,
+  DEFAULT_MAGIC_DETECTOR_CONFIG,
+  // Analysis - Dead Constant Detector
+  DeadConstantDetector,
+  isLikelyDead,
+  DEFAULT_DEAD_CONSTANT_CONFIG,
+  // Analysis - Consistency Analyzer
+  ConsistencyAnalyzer,
+  hasPotentialInconsistency,
+  DEFAULT_CONSISTENCY_CONFIG,
+  // Analysis - Security Scanner
+  ConstantSecurityScanner,
+  DEFAULT_SECURITY_SCAN_CONFIG,
   // Extractors - Base
   BaseConstantExtractor,
   BaseConstantRegexExtractor,
   // Extractors - Language-specific
   TypeScriptConstantRegexExtractor,
+  PythonConstantRegexExtractor,
+  JavaConstantRegexExtractor,
+  CSharpConstantRegexExtractor,
+  PhpConstantRegexExtractor,
+  GoConstantRegexExtractor,
+  // Integration - Scanner Adapter
+  ConstantScannerAdapter,
+  createConstantScanner,
+  getConstantLanguage,
+  hashContent,
+  processConstantTask,
+  createDefaultConstantQuality,
+  // Integration - Call Graph Adapter
+  ConstantCallGraphAdapter,
+  createCallGraphAdapter,
+  // Integration - Pattern Adapter
+  ConstantPatternAdapter,
+  createPatternAdapter,
+  severityToNumber,
+  compareSeverity,
 } from './constants/index.js';
 
 export type {
@@ -1156,4 +1194,37 @@ export type {
   InconsistentConstant,
   // Store config
   ConstantStoreConfig,
+  // Analysis configs
+  ReferenceFindConfig,
+  ReferenceResult,
+  MagicDetectorConfig,
+  MagicDetectionResult,
+  DeadConstantConfig,
+  DeadConstantResult,
+  ConsistencyConfig,
+  ConsistencyResult,
+  SecurityScanConfig,
+  SecretPattern,
+  SecurityScanResult,
+  // Integration - Scanner types
+  ConstantScannerConfig,
+  ConstantScanResult,
+  ConstantBatchScanResult,
+  ConstantWorkerTask,
+  ConstantWorkerResult,
+  // Integration - Call graph types
+  CallGraphAdapterConfig,
+  CallGraphInterface,
+  ConstantWithContext,
+  ConstantImpactAnalysis,
+  FunctionUsage,
+  DataFlowPath,
+  AffectedFunction as ConstantAffectedFunction,
+  // Integration - Pattern types
+  PatternAdapterConfig,
+  ConstantPattern,
+  ConstantPatternCategory,
+  ConstantPatternResult,
+  PatternLocation as ConstantPatternLocation,
+  ManifestPattern as ConstantManifestPattern,
 } from './constants/index.js';

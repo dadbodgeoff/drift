@@ -40,6 +40,7 @@ import {
   createWpfCommand,
   createGoCommand,
   envCommand,
+  constantsCommand,
 } from '../commands/index.js';
 
 /**
@@ -95,6 +96,9 @@ function createProgram(): Command {
 
   // Environment Variable Detection
   program.addCommand(envCommand);
+
+  // Constants & Enum Analysis
+  program.addCommand(constantsCommand);
 
   // Add help examples
   program.addHelpText(
@@ -168,6 +172,14 @@ Examples:
   $ drift env var <name>          Show details for a specific variable
   $ drift env required            Show required variables without defaults
   $ drift env file <pattern>      Show what env vars a file accesses
+  $ drift constants               Show constants overview
+  $ drift constants list          List all constants
+  $ drift constants list -c api   List API-related constants
+  $ drift constants get <name>    Show constant details
+  $ drift constants secrets       Show potential hardcoded secrets
+  $ drift constants inconsistent  Show constants with inconsistent values
+  $ drift constants dead          Show potentially unused constants
+  $ drift constants export out.json  Export constants to file
 
 Documentation:
   https://github.com/drift/drift

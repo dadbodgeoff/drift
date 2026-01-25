@@ -66,11 +66,13 @@ const CATEGORY_PATTERNS: Record<ConstantCategory, CategoryPattern> = {
   },
   error: {
     namePatterns: [
-      /^err/i,
-      /error/i,
-      /^e_/i,
+      /^err_/i,      // ERR_ prefix
+      /^error_/i,    // ERROR_ prefix
+      /^e_/i,        // E_ prefix
+      /_error$/i,    // _ERROR suffix
+      /_err$/i,      // _ERR suffix
       /exception/i,
-      /^fault$/i,  // Only match exact "fault", not "default"
+      /^fault$/i,    // Only match exact "fault", not "default"
       /failure/i,
     ],
     valuePatterns: [
@@ -103,22 +105,30 @@ const CATEGORY_PATTERNS: Record<ConstantCategory, CategoryPattern> = {
   },
   limit: {
     namePatterns: [
-      /^max/i,
-      /^min/i,
-      /limit/i,
+      /^max_/i,
+      /^min_/i,
+      /_max$/i,
+      /_min$/i,
+      /^limit/i,
+      /_limit$/i,
       /threshold/i,
       /timeout/i,
-      /size/i,
-      /count/i,
-      /length/i,
+      /^size_/i,
+      /_size$/i,
+      /^count_/i,
+      /_count$/i,
+      /^length_/i,
+      /_length$/i,
       /capacity/i,
-      /rate/i,
+      /^rate_/i,
+      /_rate$/i,
       /interval/i,
       /delay/i,
       /ttl/i,
       /expire/i,
       /duration/i,
-      /retry/i,
+      /^retry_/i,
+      /_retry$/i,
       /attempt/i,
     ],
     valuePatterns: [],
