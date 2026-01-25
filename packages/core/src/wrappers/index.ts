@@ -291,6 +291,7 @@ export function analyzeWrappers(
     java: 0,
     csharp: 0,
     php: 0,
+    rust: 0,
   };
   wrappersByLanguage[discoveryContext.language] = wrappers.length;
 

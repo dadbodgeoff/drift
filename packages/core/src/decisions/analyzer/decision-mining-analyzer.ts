@@ -958,6 +958,7 @@ export class DecisionMiningAnalyzer {
       java: 0,
       csharp: 0,
       php: 0,
+      rust: 0,
       mixed: 0,
     };
 
@@ -1094,6 +1095,7 @@ export class DecisionMiningAnalyzer {
         java: 0,
         csharp: 0,
         php: 0,
+        rust: 0,
         mixed: 0,
       },
       dateRange: { earliest: new Date(), latest: new Date() },

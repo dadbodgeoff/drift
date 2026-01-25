@@ -6,6 +6,7 @@
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { packageContextToolDefinition } from './package-context.js';
 
 export const ORCHESTRATION_TOOLS: Tool[] = [
   {
@@ -65,10 +66,12 @@ EXAMPLE:
       required: ['intent', 'focus'],
     },
   },
+  packageContextToolDefinition as Tool,
 ];
 
 // Handler export
 export { handleContext } from './context.js';
+export { handlePackageContext } from './package-context.js';
 
 // Type exports
 export type {
@@ -81,3 +84,9 @@ export type {
   Confidence,
   DeeperDive,
 } from './context.js';
+
+export type {
+  PackageContextInput,
+  PackageContextOutput,
+  PackageListResult,
+} from './package-context.js';

@@ -565,6 +565,7 @@ export class ConstraintStore extends EventEmitter {
         java: ['.java'],
         csharp: ['.cs'],
         php: ['.php'],
+        rust: ['.rs'],
         all: [],
       };
 

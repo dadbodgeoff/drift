@@ -141,6 +141,7 @@ describe('Primitive Registry', () => {
         'java',
         'csharp',
         'php',
+        'rust',
       ]);
     });
 

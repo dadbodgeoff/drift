@@ -39,10 +39,13 @@ import {
   createConstraintsCommand,
   createWpfCommand,
   createGoCommand,
+  createRustCommand,
   envCommand,
   constantsCommand,
   licenseCommand,
   createGateCommand,
+  contextCommand,
+  telemetryCommand,
 } from '../commands/index.js';
 
 /**
@@ -96,6 +99,9 @@ function createProgram(): Command {
   // Go Language Support
   program.addCommand(createGoCommand());
 
+  // Rust Language Support
+  program.addCommand(createRustCommand());
+
   // Environment Variable Detection
   program.addCommand(envCommand);
 
@@ -107,6 +113,12 @@ function createProgram(): Command {
 
   // Quality Gates (Enterprise)
   program.addCommand(createGateCommand());
+
+  // Package Context (Monorepo AI context minimization)
+  program.addCommand(contextCommand);
+
+  // Telemetry Management (Privacy-first, opt-in)
+  program.addCommand(telemetryCommand);
 
   // Add help examples
   program.addHelpText(
@@ -193,6 +205,14 @@ Examples:
   $ drift gate --format sarif     Output in SARIF format
   $ drift gate --ci               Run in CI mode with JSON output
   $ drift gate --gates pattern-compliance,security-boundary  Run specific gates
+  $ drift context --list          List all packages in monorepo
+  $ drift context @drift/core     Generate context for a package
+  $ drift context packages/core --format ai  AI-optimized context
+  $ drift context @drift/core --snippets  Include code snippets
+  $ drift telemetry             Show telemetry status
+  $ drift telemetry enable      Enable telemetry (opt-in)
+  $ drift telemetry disable     Disable telemetry
+  $ drift telemetry setup       Interactive telemetry configuration
 
 Documentation:
   https://github.com/drift/drift

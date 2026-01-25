@@ -34,6 +34,11 @@ export {
   createGoTestRegexExtractor,
 } from './go-test-regex.js';
 
+export {
+  RustTestRegexExtractor,
+  createRustTestRegexExtractor,
+} from './rust-test-regex.js';
+
 import type { TestExtraction } from '../../types.js';
 import { TypeScriptTestRegexExtractor } from './typescript-test-regex.js';
 import { PythonTestRegexExtractor } from './python-test-regex.js';
@@ -41,6 +46,7 @@ import { JavaTestRegexExtractor } from './java-test-regex.js';
 import { CSharpTestRegexExtractor } from './csharp-test-regex.js';
 import { PHPTestRegexExtractor } from './php-test-regex.js';
 import { GoTestRegexExtractor } from './go-test-regex.js';
+import { RustTestRegexExtractor } from './rust-test-regex.js';
 
 /**
  * Get a regex extractor for a file
@@ -70,6 +76,8 @@ export function getTestRegexExtractor(filePath: string): {
       return new PHPTestRegexExtractor();
     case 'go':
       return new GoTestRegexExtractor();
+    case 'rs':
+      return new RustTestRegexExtractor();
     default:
       return null;
   }

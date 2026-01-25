@@ -42,6 +42,9 @@ export { createWpfCommand } from './wpf.js';
 // Go Language Support
 export { createGoCommand } from './go.js';
 
+// Rust Language Support
+export { createRustCommand } from './rust.js';
+
 // Environment Variable Detection
 export { envCommand } from './env.js';
 
@@ -53,3 +56,9 @@ export { licenseCommand } from './license.js';
 
 // Quality Gates (Enterprise)
 export { createGateCommand } from './gate.js';
+
+// Package Context (Monorepo AI context minimization)
+export { contextCommand } from './context.js';
+
+// Telemetry Management (Privacy-first, opt-in)
+export { telemetryCommand } from './telemetry.js';

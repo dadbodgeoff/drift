@@ -11,3 +11,4 @@ export { JavaEnvExtractor, createJavaEnvExtractor } from './java-env-extractor.j
 export { CSharpEnvExtractor, createCSharpEnvExtractor } from './csharp-env-extractor.js';
 export { PhpEnvExtractor, createPhpEnvExtractor } from './php-env-extractor.js';
 export { GoEnvExtractor, createGoEnvExtractor } from './go-env-extractor.js';
+export { RustEnvExtractor, createRustEnvExtractor } from './rust-env-extractor.js';

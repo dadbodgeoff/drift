@@ -15,7 +15,7 @@ import type { DataOperation } from '../boundaries/types.js';
 /**
  * Supported languages for unified extraction
  */
-export type UnifiedLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go';
+export type UnifiedLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
 
 /**
  * Language configuration for parser and normalizer selection

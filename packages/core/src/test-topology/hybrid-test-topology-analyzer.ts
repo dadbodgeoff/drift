@@ -419,6 +419,7 @@ export class HybridTestTopologyAnalyzer {
       xunit: 0, nunit: 0, mstest: 0,
       phpunit: 0, pest: 0, codeception: 0,
       'go-testing': 0, testify: 0, ginkgo: 0, gomega: 0,
+      'rust-test': 0, 'tokio-test': 0, proptest: 0, criterion: 0, rstest: 0,
       unknown: 0,
     };
 

@@ -29,6 +29,9 @@ Thumbs.db
 .drift/
 **/.drift/
 
+# Infrastructure secrets (keep wrangler.toml.example as template)
+infrastructure/telemetry-worker/wrangler.toml
+
 # Logs
 *.log
 npm-debug.log*

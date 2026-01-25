@@ -12,6 +12,7 @@ export { PhpRegexExtractor } from './php-regex.js';
 export { JavaRegexExtractor } from './java-regex.js';
 export { CSharpRegexExtractor } from './csharp-regex.js';
 export { GoRegexExtractor, createGoRegexExtractor } from './go-regex.js';
+export { RustRegexExtractor, createRustRegexExtractor } from './rust-regex.js';
 
 // Re-export types
 export type {
@@ -36,6 +37,7 @@ import { PhpRegexExtractor } from './php-regex.js';
 import { JavaRegexExtractor } from './java-regex.js';
 import { CSharpRegexExtractor } from './csharp-regex.js';
 import { GoRegexExtractor } from './go-regex.js';
+import { RustRegexExtractor } from './rust-regex.js';
 import type { BaseRegexExtractor } from './base-regex-extractor.js';
 
 /**
@@ -56,6 +58,8 @@ export function getRegexExtractor(language: CallGraphLanguage): BaseRegexExtract
       return new CSharpRegexExtractor();
     case 'go':
       return new GoRegexExtractor();
+    case 'rust':
+      return new RustRegexExtractor();
     default:
       return null;
   }
@@ -95,6 +99,11 @@ export function getRegexExtractorForFile(filePath: string): BaseRegexExtractor |
   // Go
   if (ext === '.go') {
     return new GoRegexExtractor();
+  }
+  
+  // Rust
+  if (ext === '.rs') {
+    return new RustRegexExtractor();
   }
   
   return null;

@@ -39,6 +39,12 @@ export type TestFramework =
   | 'testify'
   | 'ginkgo'
   | 'gomega'
+  // Rust
+  | 'rust-test'
+  | 'tokio-test'
+  | 'proptest'
+  | 'criterion'
+  | 'rstest'
   | 'unknown';
 
 /**
@@ -245,7 +251,7 @@ export interface TestExtraction {
   /** Detected framework */
   framework: TestFramework;
   /** Language */
-  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go';
+  language: 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
   /** Extracted test cases */
   testCases: TestCase[];
   /** Mock statements */

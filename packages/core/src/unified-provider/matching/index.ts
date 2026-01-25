@@ -29,8 +29,12 @@ export { SpringDataMatcher } from './spring-data-matcher.js';
 
 // Go ORMs
 export { GORMMatcher } from './gorm-matcher.js';
-export { SqlxMatcher } from './sqlx-matcher.js';
 export { DatabaseSqlMatcher } from './database-sql-matcher.js';
+
+// Rust ORMs
+export { SQLxMatcher } from './sqlx-matcher.js';
+export { DieselMatcher } from './diesel-matcher.js';
+export { SeaORMMatcher } from './seaorm-matcher.js';
 
 export {
   MatcherRegistry,

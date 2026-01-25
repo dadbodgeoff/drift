@@ -15,6 +15,8 @@ const WPF_ACTIONS = ['status', 'bindings', 'mvvm', 'datacontext', 'commands'];
 const GO_ACTIONS = ['status', 'routes', 'errors', 'interfaces', 'data-access', 'goroutines'];
 const CONSTANTS_ACTIONS = ['status', 'list', 'get', 'usages', 'magic', 'dead', 'secrets', 'inconsistent'];
 
+const RUST_ACTIONS = ['status', 'routes', 'errors', 'traits', 'data-access', 'async'];
+
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
   'pattern-migration', 'architecture-change', 'api-change',
@@ -424,6 +426,33 @@ export const ANALYSIS_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    name: 'drift_rust',
+    description: 'Analyze Rust projects: routes, error handling, traits, data access, async patterns. Actions: status (project overview), routes (HTTP routes - Actix, Axum, Rocket, Warp), errors (error handling - Result, thiserror, anyhow), traits (trait definitions and implementations), data-access (database patterns - SQLx, Diesel, SeaORM), async (async patterns and runtime analysis).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: RUST_ACTIONS,
+          description: 'Action to perform: status, routes, errors, traits, data-access, async',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes and data-access): actix, axum, rocket, warp, sqlx, diesel, sea-orm',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -434,5 +463,6 @@ export { handleSimulate, type SimulateArgs } from './simulate.js';
 export { handleConstraints, type ConstraintsArgs, type ConstraintsAction } from './constraints.js';
 export { executeWpfTool, type WpfArgs, type WpfAction } from './wpf.js';
 export { executeGoTool, type GoArgs, type GoAction } from './go.js';
+export { executeRustTool, type RustArgs, type RustAction } from './rust.js';
 export { handleConstants, type ConstantsArgs, type ConstantsAction } from './constants.js';
 export { handleQualityGate, qualityGateTool, type QualityGateArgs } from './quality-gate.js';

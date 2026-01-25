@@ -79,6 +79,7 @@ export type ConstraintLanguage =
   | 'java'
   | 'csharp'
   | 'php'
+  | 'rust'
   | 'all';
 
 /**
@@ -888,6 +889,7 @@ export const CONSTRAINT_LANGUAGES: ConstraintLanguage[] = [
   'java',
   'csharp',
   'php',
+  'rust',
   'all',
 ];
 

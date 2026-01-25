@@ -18,6 +18,8 @@ export { PythonCallGraphExtractor } from './python-extractor.js';
 export { CSharpCallGraphExtractor } from './csharp-extractor.js';
 export { JavaCallGraphExtractor } from './java-extractor.js';
 export { PhpCallGraphExtractor } from './php-extractor.js';
+export { GoCallGraphExtractor, createGoExtractor } from './go-extractor.js';
+export { RustCallGraphExtractor, createRustExtractor } from './rust-extractor.js';
 
 // Hybrid Extractors (tree-sitter + regex fallback)
 export { HybridExtractorBase, type HybridExtractionResult } from './hybrid-extractor-base.js';
@@ -26,6 +28,8 @@ export { TypeScriptHybridExtractor, createTypeScriptHybridExtractor } from './ty
 export { PhpHybridExtractor, createPhpHybridExtractor } from './php-hybrid-extractor.js';
 export { JavaHybridExtractor, createJavaHybridExtractor } from './java-hybrid-extractor.js';
 export { CSharpHybridExtractor, createCSharpHybridExtractor } from './csharp-hybrid-extractor.js';
+export { GoHybridExtractor, createGoHybridExtractor } from './go-hybrid-extractor.js';
+export { RustHybridExtractor, createRustHybridExtractor } from './rust-hybrid-extractor.js';
 
 // Regex Fallback Extractors
 export {

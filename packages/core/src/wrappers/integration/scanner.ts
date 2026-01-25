@@ -376,6 +376,7 @@ export class WrapperScanner {
           java: 0,
           csharp: 0,
           php: 0,
+          rust: 0,
         },
         wrappersByCategory: {
           'state-management': 0,

@@ -1,0 +1,65 @@
+# Drift Pattern Check - GitHub Actions Template
+# 
+# Copy this file to your project's .github/workflows/drift-check.yml
+# 
+# This workflow runs Drift quality gates on pull requests to catch
+# pattern drift before it reaches your main branch.
+
+name: Drift Pattern Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Cache Drift data
+        uses: actions/cache@v4
+        with:
+          path: .drift
+          key: drift-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.py', '**/*.java', '**/*.cs', '**/*.php') }}
+          restore-keys: |
+            drift-${{ runner.os }}-
+            
+      - name: Install Drift
+        run: npm install -g driftdetect
+        
+      - name: Initialize Drift
+        run: drift init --yes
+        
+      - name: Scan codebase
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # Full scan on push to main
+            drift scan --verbose
+          else
+            # Incremental scan on PRs
+            drift scan --incremental
+          fi
+        
+      - name: Run quality gate
+        id: gate
+        run: drift gate --ci --format github
+        
+      - name: Upload Drift artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-analysis
+          path: .drift/
+          retention-days: 7

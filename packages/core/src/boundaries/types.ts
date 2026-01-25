@@ -52,6 +52,11 @@ export type ORMFramework =
   | 'sqlx'
   | 'ent'
   | 'bun'
+  // Rust
+  | 'diesel'
+  | 'sea-orm'
+  | 'tokio-postgres'
+  | 'rusqlite'
   // Generic
   | 'raw-sql'
   | 'unknown';

@@ -12,7 +12,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import chalk from 'chalk';
-import { PatternStore, getProjectRegistry } from 'driftdetect-core';
+import { PatternStore, getProjectRegistry, generateInstallationId, type TelemetryConfig } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { promptInitOptions, confirmPrompt } from '../ui/prompts.js';
 
@@ -402,6 +402,53 @@ async function initAction(options: InitOptions): Promise<void> {
     if (verbose) {
       console.error(chalk.gray((error as Error).message));
     }
+  }
+
+  // Telemetry opt-in prompt (only on interactive init)
+  if (!options.yes) {
+    console.log();
+    console.log(chalk.bold('📊 Help Improve Drift'));
+    console.log();
+    console.log(chalk.gray('  Drift can collect anonymized telemetry to improve pattern detection.'));
+    console.log(chalk.gray('  • No source code is ever sent'));
+    console.log(chalk.gray('  • Only pattern signatures and aggregate statistics'));
+    console.log(chalk.gray('  • You can change this anytime with `drift telemetry`'));
+    console.log();
+
+    const enableTelemetry = await confirmPrompt(
+      'Enable telemetry to help improve Drift?',
+      false
+    );
+
+    if (enableTelemetry) {
+      try {
+        const configPath = path.join(rootDir, DRIFT_DIR, 'config.json');
+        const configContent = await fs.readFile(configPath, 'utf-8');
+        const config = JSON.parse(configContent);
+
+        const telemetryConfig: TelemetryConfig = {
+          enabled: true,
+          sharePatternSignatures: true,
+          shareAggregateStats: true,
+          shareUserActions: false,
+          installationId: generateInstallationId(),
+          enabledAt: new Date().toISOString(),
+        };
+
+        config.telemetry = telemetryConfig;
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+
+        status.success('Telemetry enabled - thank you! 🙏');
+        console.log(chalk.gray('  Run `drift telemetry setup` to customize settings'));
+      } catch (error) {
+        if (verbose) {
+          console.error(chalk.gray(`Could not enable telemetry: ${(error as Error).message}`));
+        }
+      }
+    } else {
+      console.log(chalk.gray('  No problem! You can enable it later with `drift telemetry enable`'));
+    }
+    console.log();
   }
 }
 

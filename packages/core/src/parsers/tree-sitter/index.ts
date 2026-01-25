@@ -143,6 +143,74 @@ export {
 } from './config.js';
 
 // ============================================
+// Go Loader Exports
+// ============================================
+
+export {
+  isGoTreeSitterAvailable,
+  getGoLanguage,
+  getGoTreeSitter,
+  createGoParser,
+  getGoLoadingError,
+  resetGoLoader,
+} from './go-loader.js';
+
+// ============================================
+// Go Parser Exports
+// ============================================
+
+export { TreeSitterGoParser } from './tree-sitter-go-parser.js';
+export type {
+  GoParseResult,
+  GoPackageInfo,
+  GoImportInfo,
+  GoParameterInfo,
+  GoReturnInfo,
+  GoFunctionInfo,
+  GoMethodInfo,
+  GoReceiverInfo,
+  GoFieldInfo,
+  GoStructInfo,
+  GoInterfaceMethodInfo,
+  GoInterfaceInfo,
+  GoTypeAliasInfo,
+} from './tree-sitter-go-parser.js';
+
+// ============================================
+// Rust Loader Exports
+// ============================================
+
+export {
+  isRustTreeSitterAvailable,
+  getRustLanguage,
+  getRustTreeSitter,
+  createRustParser,
+  getRustLoadingError,
+  resetRustLoader,
+} from './rust-loader.js';
+
+// ============================================
+// Rust Parser Exports
+// ============================================
+
+export { RustTreeSitterParser, createRustTreeSitterParser } from './tree-sitter-rust-parser.js';
+export type {
+  RustParseResult,
+  RustFunction,
+  RustParameter,
+  RustGeneric,
+  RustStruct,
+  RustField,
+  RustEnum,
+  RustEnumVariant,
+  RustTrait,
+  RustTraitMethod,
+  RustImpl,
+  RustUse,
+  RustMacroCall,
+} from './tree-sitter-rust-parser.js';
+
+// ============================================
 // Type Exports
 // ============================================
 

@@ -395,12 +395,144 @@ export const PHP_PRIMITIVES: PrimitiveRegistry = {
   ...PHP_TESTING_PRIMITIVES,
 };
 
+// =============================================================================
+// Rust Primitives
+// =============================================================================
+
+export const ACTIX_PRIMITIVES: PrimitiveRegistry = {
+  actix: {
+    web: ['#[get]', '#[post]', '#[put]', '#[delete]', '#[patch]', '#[route]', 'web::get', 'web::post', 'web::resource', 'web::scope'],
+    extractors: ['Path', 'Query', 'Json', 'Form', 'Data', 'HttpRequest', 'HttpResponse'],
+    middleware: ['wrap', 'wrap_fn', 'Transform', 'Service'],
+    response: ['HttpResponse::Ok', 'HttpResponse::BadRequest', 'HttpResponse::NotFound', 'HttpResponse::InternalServerError'],
+    state: ['web::Data', 'AppState'],
+  },
+};
+
+export const AXUM_PRIMITIVES: PrimitiveRegistry = {
+  axum: {
+    routing: ['Router::new', 'get', 'post', 'put', 'delete', 'patch', 'route', 'nest', 'merge'],
+    extractors: ['Path', 'Query', 'Json', 'Form', 'State', 'Extension', 'Request', 'Headers'],
+    response: ['IntoResponse', 'Response', 'Json', 'Html', 'Redirect'],
+    middleware: ['layer', 'ServiceBuilder', 'from_fn', 'middleware::from_fn'],
+    state: ['State', 'Extension'],
+  },
+};
+
+export const ROCKET_PRIMITIVES: PrimitiveRegistry = {
+  rocket: {
+    routes: ['#[get]', '#[post]', '#[put]', '#[delete]', '#[patch]', '#[route]', 'routes!'],
+    guards: ['FromRequest', 'FromData', 'FromForm', 'FromParam'],
+    response: ['Json', 'Template', 'Redirect', 'Flash', 'Status'],
+    fairings: ['Fairing', 'attach', 'on_ignite', 'on_liftoff', 'on_request', 'on_response'],
+    state: ['State', 'manage'],
+  },
+};
+
+export const WARP_PRIMITIVES: PrimitiveRegistry = {
+  warp: {
+    filters: ['path', 'query', 'body::json', 'body::form', 'header', 'method'],
+    combinators: ['and', 'or', 'map', 'and_then', 'with', 'boxed'],
+    reply: ['reply::json', 'reply::html', 'reply::with_status', 'reply::with_header'],
+    rejection: ['reject::custom', 'reject::not_found', 'recover'],
+  },
+};
+
+export const TOKIO_PRIMITIVES: PrimitiveRegistry = {
+  tokio: {
+    runtime: ['#[tokio::main]', '#[tokio::test]', 'Runtime::new', 'spawn', 'spawn_blocking'],
+    sync: ['Mutex', 'RwLock', 'Semaphore', 'Notify', 'mpsc', 'oneshot', 'broadcast', 'watch'],
+    io: ['AsyncRead', 'AsyncWrite', 'BufReader', 'BufWriter'],
+    time: ['sleep', 'timeout', 'interval', 'Instant'],
+    task: ['JoinHandle', 'JoinSet', 'yield_now', 'block_in_place'],
+  },
+};
+
+export const SERDE_PRIMITIVES: PrimitiveRegistry = {
+  serde: {
+    derive: ['#[derive(Serialize)]', '#[derive(Deserialize)]', '#[serde(rename)]', '#[serde(skip)]', '#[serde(default)]'],
+    traits: ['Serialize', 'Deserialize', 'Serializer', 'Deserializer'],
+  },
+  serde_json: {
+    functions: ['to_string', 'to_string_pretty', 'from_str', 'to_value', 'from_value', 'json!'],
+  },
+};
+
+export const DIESEL_PRIMITIVES: PrimitiveRegistry = {
+  diesel: {
+    query: ['select', 'filter', 'find', 'first', 'load', 'get_result', 'get_results', 'execute'],
+    insert: ['insert_into', 'values', 'on_conflict', 'do_update', 'do_nothing'],
+    update: ['update', 'set'],
+    delete: ['delete'],
+    schema: ['table!', 'joinable!', 'allow_tables_to_appear_in_same_query!'],
+    connection: ['PgConnection', 'MysqlConnection', 'SqliteConnection', 'establish'],
+  },
+};
+
+export const SQLX_PRIMITIVES: PrimitiveRegistry = {
+  sqlx: {
+    query: ['query', 'query_as', 'query_scalar', 'query!', 'query_as!'],
+    pool: ['PgPool', 'MySqlPool', 'SqlitePool', 'Pool::connect'],
+    transaction: ['begin', 'commit', 'rollback'],
+    types: ['FromRow', 'Type', 'Encode', 'Decode'],
+  },
+};
+
+export const RUST_ERROR_PRIMITIVES: PrimitiveRegistry = {
+  thiserror: {
+    derive: ['#[derive(Error)]', '#[error]', '#[from]', '#[source]'],
+  },
+  anyhow: {
+    types: ['Result', 'Error', 'Context', 'bail!', 'ensure!', 'anyhow!'],
+    methods: ['context', 'with_context'],
+  },
+};
+
+export const RUST_TESTING_PRIMITIVES: PrimitiveRegistry = {
+  rust_test: {
+    attributes: ['#[test]', '#[ignore]', '#[should_panic]', '#[cfg(test)]'],
+    macros: ['assert!', 'assert_eq!', 'assert_ne!', 'panic!', 'debug_assert!'],
+  },
+  tokio_test: {
+    attributes: ['#[tokio::test]'],
+  },
+  mockall: {
+    mock: ['#[automock]', 'mock!', 'expect_', 'returning', 'times', 'with'],
+  },
+};
+
+export const TRACING_PRIMITIVES: PrimitiveRegistry = {
+  tracing: {
+    macros: ['info!', 'debug!', 'warn!', 'error!', 'trace!', 'span!', 'event!'],
+    attributes: ['#[instrument]', '#[tracing::instrument]'],
+    subscriber: ['Subscriber', 'Layer', 'Registry'],
+  },
+  tracing_subscriber: {
+    setup: ['fmt', 'init', 'with', 'finish'],
+  },
+};
+
+export const RUST_PRIMITIVES: PrimitiveRegistry = {
+  ...ACTIX_PRIMITIVES,
+  ...AXUM_PRIMITIVES,
+  ...ROCKET_PRIMITIVES,
+  ...WARP_PRIMITIVES,
+  ...TOKIO_PRIMITIVES,
+  ...SERDE_PRIMITIVES,
+  ...DIESEL_PRIMITIVES,
+  ...SQLX_PRIMITIVES,
+  ...RUST_ERROR_PRIMITIVES,
+  ...RUST_TESTING_PRIMITIVES,
+  ...TRACING_PRIMITIVES,
+};
+
 export const ALL_PRIMITIVES: Record<SupportedLanguage, PrimitiveRegistry> = {
   typescript: TYPESCRIPT_PRIMITIVES,
   python: PYTHON_PRIMITIVES,
   java: JAVA_PRIMITIVES,
   csharp: CSHARP_PRIMITIVES,
   php: PHP_PRIMITIVES,
+  rust: RUST_PRIMITIVES,
 };
 
 // =============================================================================

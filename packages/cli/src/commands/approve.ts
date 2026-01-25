@@ -13,6 +13,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
 import type { PatternCategory } from 'driftdetect-core';
+import { loadProjectConfig, createTelemetryClient, type TelemetryConfig } from 'driftdetect-core';
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptBatchPatternApproval, type PatternChoice } from '../ui/prompts.js';
@@ -31,6 +32,36 @@ export interface ApproveOptions {
 
 /** Directory name for drift configuration */
 const DRIFT_DIR = '.drift';
+
+/**
+ * Record telemetry for approve action (if enabled)
+ */
+async function recordApproveTelemetry(
+  rootDir: string,
+  pattern: { category: string; confidence: number; metadata?: { firstSeen?: string } },
+  isBulkAction: boolean
+): Promise<void> {
+  try {
+    const projectConfig = await loadProjectConfig(rootDir);
+    if (!projectConfig.telemetry?.enabled) return;
+    
+    const driftDir = path.join(rootDir, DRIFT_DIR);
+    const telemetryClient = createTelemetryClient(driftDir, projectConfig.telemetry as TelemetryConfig);
+    await telemetryClient.initialize();
+    
+    await telemetryClient.recordUserAction({
+      action: 'approve',
+      category: pattern.category,
+      confidenceAtAction: pattern.confidence,
+      discoveredAt: pattern.metadata?.firstSeen ?? new Date().toISOString(),
+      isBulkAction,
+    });
+    
+    await telemetryClient.shutdown();
+  } catch {
+    // Telemetry should never block user operations
+  }
+}
 
 /**
  * Check if drift is initialized
@@ -158,6 +189,11 @@ async function approveAction(
       try {
         await service.approvePattern(pattern.id);
         approvedCount++;
+        // Record telemetry for each approved pattern
+        await recordApproveTelemetry(rootDir, {
+          category: pattern.category,
+          confidence: pattern.confidence,
+        }, true);
         if (verbose) {
           console.log(chalk.gray(`  Approved: ${pattern.name}`));
         }
@@ -203,6 +239,15 @@ async function approveAction(
       approveSpinner.start();
 
       const approved = await service.approveMany(selectedIds);
+      
+      // Record telemetry for batch approval
+      for (const p of approved) {
+        await recordApproveTelemetry(rootDir, {
+          category: p.category,
+          confidence: p.confidence,
+          metadata: { firstSeen: p.metadata?.firstSeen },
+        }, true);
+      }
 
       approveSpinner.succeed(`Approved ${approved.length} patterns`);
       console.log();
@@ -215,6 +260,15 @@ async function approveAction(
 
     const ids = discovered.map((p) => p.id);
     const approved = await service.approveMany(ids);
+    
+    // Record telemetry for batch approval
+    for (const p of approved) {
+      await recordApproveTelemetry(rootDir, {
+        category: p.category,
+        confidence: p.confidence,
+        metadata: { firstSeen: p.metadata?.firstSeen },
+      }, true);
+    }
 
     approveSpinner.succeed(`Approved ${approved.length} patterns`);
     console.log();
@@ -251,6 +305,11 @@ async function approveAction(
 
       try {
         await service.approvePattern(match.id);
+        // Record telemetry
+        await recordApproveTelemetry(rootDir, {
+          category: match.category,
+          confidence: match.confidence,
+        }, false);
         status.success(`Approved pattern: ${match.name}`);
       } catch (error) {
         status.warning(`Could not approve pattern: ${match.name}`);
@@ -314,6 +373,12 @@ async function approveAction(
   // Approve the pattern
   try {
     await service.approvePattern(patternId);
+    // Record telemetry
+    await recordApproveTelemetry(rootDir, {
+      category: pattern.category,
+      confidence: pattern.confidence,
+      metadata: { firstSeen: pattern.metadata?.firstSeen },
+    }, false);
     status.success(`Approved pattern: ${pattern.name}`);
   } catch (error) {
     status.error(`Cannot approve pattern from status: ${pattern.status}`);

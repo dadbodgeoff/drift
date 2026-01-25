@@ -19,12 +19,14 @@ import {
   createDataLake,
   loadProjectConfig,
   getProjectRegistry,
+  createTelemetryClient,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
   type PatternLocation,
   type ConfidenceInfo,
   type DetectorConfig,
+  type TelemetryConfig,
 } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
@@ -834,6 +836,81 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       console.log(chalk.cyan('  drift export --format ai-context'));
       console.log(chalk.cyan('  drift where <pattern>'));
       console.log(chalk.cyan('  drift files <path>'));
+    }
+
+    // Record telemetry (if enabled) - inside try block where scanResults is in scope
+    try {
+      const projectConfig = await loadProjectConfig(rootDir);
+      if (projectConfig.telemetry?.enabled) {
+        const driftDir = path.join(rootDir, DRIFT_DIR);
+        const telemetryClient = createTelemetryClient(driftDir, projectConfig.telemetry as TelemetryConfig);
+        await telemetryClient.initialize();
+        
+        // Record scan completion
+        const scanDuration = Date.now() - startTime;
+        await telemetryClient.recordScanCompletion({
+          durationMs: scanDuration,
+          filesScanned: files.length,
+          newPatternsDiscovered: addedCount,
+          isIncremental: options.incremental ?? false,
+          workerCount: scannerService.getWorkerThreadCount(),
+        });
+        
+        // Record pattern signatures for discovered patterns (limit to 50)
+        for (const aggPattern of scanResults.patterns.slice(0, 50)) {
+          await telemetryClient.recordPatternSignature({
+            patternName: aggPattern.name,
+            detectorConfig: { detectorId: aggPattern.detectorId },
+            category: aggPattern.category,
+            confidence: aggPattern.confidence,
+            locationCount: aggPattern.locations.length,
+            outlierCount: 0,
+            detectionMethod: 'regex',
+            language: getExtension(aggPattern.locations[0]?.file ?? 'ts'),
+          });
+        }
+        
+        // Record aggregate stats
+        const telemetryPatterns = store.getAll();
+        const patternsByCategory: Record<string, number> = {};
+        for (const p of telemetryPatterns) {
+          patternsByCategory[p.category] = (patternsByCategory[p.category] ?? 0) + 1;
+        }
+        
+        const languages = new Set<string>();
+        for (const file of files) {
+          languages.add(getExtension(file));
+        }
+        
+        await telemetryClient.recordAggregateStats({
+          totalPatterns: telemetryPatterns.length,
+          patternsByStatus: {
+            discovered: store.getDiscovered().length,
+            approved: store.getApproved().length,
+            ignored: store.getIgnored().length,
+          },
+          patternsByCategory,
+          languages: Array.from(languages),
+          frameworks: [],
+          featuresEnabled: [
+            options.contracts !== false ? 'contracts' : '',
+            options.boundaries !== false ? 'boundaries' : '',
+            options.manifest ? 'manifest' : '',
+          ].filter(Boolean),
+          fileCount: files.length,
+        });
+        
+        await telemetryClient.shutdown();
+        
+        if (verbose) {
+          console.log(chalk.gray('  Telemetry events submitted'));
+        }
+      }
+    } catch (telemetryError) {
+      // Telemetry should never block - silently ignore errors
+      if (verbose) {
+        console.log(chalk.gray(`  Telemetry: ${(telemetryError as Error).message}`));
+      }
     }
 
   } catch (error) {

@@ -12,6 +12,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
+import { loadProjectConfig, createTelemetryClient, type TelemetryConfig } from 'driftdetect-core';
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptIgnoreReason } from '../ui/prompts.js';
@@ -28,6 +29,36 @@ export interface IgnoreOptions {
 
 /** Directory name for drift configuration */
 const DRIFT_DIR = '.drift';
+
+/**
+ * Record telemetry for ignore action (if enabled)
+ */
+async function recordIgnoreTelemetry(
+  rootDir: string,
+  pattern: { category: string; confidence: number; metadata?: { firstSeen?: string } },
+  isBulkAction: boolean
+): Promise<void> {
+  try {
+    const projectConfig = await loadProjectConfig(rootDir);
+    if (!projectConfig.telemetry?.enabled) return;
+    
+    const driftDir = path.join(rootDir, DRIFT_DIR);
+    const telemetryClient = createTelemetryClient(driftDir, projectConfig.telemetry as TelemetryConfig);
+    await telemetryClient.initialize();
+    
+    await telemetryClient.recordUserAction({
+      action: 'ignore',
+      category: pattern.category,
+      confidenceAtAction: pattern.confidence,
+      discoveredAt: pattern.metadata?.firstSeen ?? new Date().toISOString(),
+      isBulkAction,
+    });
+    
+    await telemetryClient.shutdown();
+  } catch {
+    // Telemetry should never block user operations
+  }
+}
 
 /**
  * Check if drift is initialized
@@ -109,6 +140,11 @@ async function ignoreAction(
         // Note: reason is stored via the service's ignorePattern method
         // The service handles metadata updates internally
         await service.ignorePattern(match.id);
+        // Record telemetry
+        await recordIgnoreTelemetry(rootDir, {
+          category: match.category,
+          confidence: match.confidence,
+        }, false);
         status.success(`Ignored pattern: ${match.name}`);
         if (reason) {
           console.log(chalk.gray(`  Reason: ${reason}`));
@@ -189,6 +225,12 @@ async function ignoreAction(
   // Ignore the pattern
   try {
     await service.ignorePattern(patternId);
+    // Record telemetry
+    await recordIgnoreTelemetry(rootDir, {
+      category: pattern.category,
+      confidence: pattern.confidence,
+      metadata: { firstSeen: pattern.metadata?.firstSeen },
+    }, false);
     status.success(`Ignored pattern: ${pattern.name}`);
     if (reason) {
       console.log(chalk.gray(`  Reason: ${reason}`));

@@ -52,6 +52,24 @@ export interface PerformanceConfig {
 }
 
 /**
+ * Telemetry configuration - privacy-first, opt-in only
+ */
+export interface TelemetryConfig {
+  /** Master switch - telemetry completely disabled if false */
+  enabled: boolean;
+  /** Share anonymized pattern signatures (hash + category + confidence) */
+  sharePatternSignatures: boolean;
+  /** Share aggregate statistics (counts, no identifying info) */
+  shareAggregateStats: boolean;
+  /** Share user actions (approve/ignore decisions, no code) */
+  shareUserActions: boolean;
+  /** Unique installation ID (generated on opt-in, not tied to identity) */
+  installationId?: string;
+  /** When telemetry was enabled */
+  enabledAt?: string;
+}
+
+/**
  * Project metadata
  */
 export interface ProjectMetadata {
@@ -104,6 +122,8 @@ export interface ProjectConfig {
     dna?: boolean;
     contracts?: boolean;
   };
+  /** Telemetry settings (opt-in, privacy-first) */
+  telemetry?: TelemetryConfig;
 }
 
 /**

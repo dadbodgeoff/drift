@@ -380,8 +380,14 @@ describe('getRegexExtractorForFile', () => {
     expect(extractor?.language).toBe('go');
   });
 
+  it('should return Rust extractor for .rs files', () => {
+    const extractor = getRegexExtractorForFile('test.rs');
+    expect(extractor).not.toBeNull();
+    expect(extractor?.language).toBe('rust');
+  });
+
   it('should return null for unsupported extensions', () => {
     expect(getRegexExtractorForFile('test.rb')).toBeNull();
-    expect(getRegexExtractorForFile('test.rs')).toBeNull();
+    expect(getRegexExtractorForFile('test.swift')).toBeNull();
   });
 });

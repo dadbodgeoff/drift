@@ -29,4 +29,6 @@ export {
   createPhpEnvExtractor,
   GoEnvExtractor,
   createGoEnvExtractor,
+  RustEnvExtractor,
+  createRustEnvExtractor,
 } from './extractors/index.js';

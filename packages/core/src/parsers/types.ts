@@ -12,6 +12,7 @@ export type Language =
   | 'java'
   | 'php'
   | 'go'
+  | 'rust'
   | 'css'
   | 'scss'
   | 'json'

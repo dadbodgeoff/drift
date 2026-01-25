@@ -1069,6 +1069,33 @@ export type {
 
 
 // ============================================================================
+// Rust Language Support (Rust analysis, routes, error handling, data access)
+// ============================================================================
+
+export {
+  // Main analyzer
+  RustAnalyzer,
+  createRustAnalyzer,
+} from './rust/index.js';
+
+export type {
+  // Configuration types
+  RustAnalyzerOptions,
+
+  // Result types
+  RustRoute,
+  RustErrorPattern,
+  RustCustomError,
+  RustTrait,
+  RustTraitImpl,
+  RustDataAccessPoint,
+  RustAsyncFunction,
+  RustCrate,
+  RustIssue,
+} from './rust/index.js';
+
+
+// ============================================================================
 // Environment Variable Detection (Config access pattern tracking)
 // ============================================================================
 
@@ -1093,6 +1120,8 @@ export {
   createPhpEnvExtractor,
   GoEnvExtractor,
   createGoEnvExtractor,
+  RustEnvExtractor,
+  createRustEnvExtractor,
   // Utilities
   classifyEnvSensitivity,
   SENSITIVE_VAR_PATTERNS,
@@ -1383,3 +1412,71 @@ export type {
   Logger,
   Gate,
 } from './quality-gates/index.js';
+
+
+// ============================================================================
+// Package Context (Monorepo context minimization for AI)
+// ============================================================================
+
+export {
+  // Package Detection
+  PackageDetector,
+  createPackageDetector,
+  // Context Generation
+  PackageContextGenerator,
+  createPackageContextGenerator,
+} from './context/index.js';
+
+export type {
+  // Package types
+  PackageManager,
+  DetectedPackage,
+  MonorepoStructure,
+  // Context options
+  PackageContextOptions,
+  // Context result types
+  ContextPattern,
+  ContextConstraint,
+  ContextEntryPoint,
+  ContextDataAccessor,
+  PackageContext,
+  PackageContextResult,
+  // AI format
+  AIContextFormat,
+  // Cache
+  ContextCacheEntry,
+  // Events
+  ContextEventType,
+  ContextEvent,
+} from './context/index.js';
+
+
+// ============================================================================
+// Telemetry System (Privacy-first, opt-in telemetry)
+// ============================================================================
+
+export {
+  // Client
+  TelemetryClient,
+  createTelemetryClient,
+  generateInstallationId,
+  // Constants
+  DEFAULT_TELEMETRY_CONFIG,
+  DEFAULT_CLIENT_CONFIG,
+} from './telemetry/index.js';
+
+export type {
+  // Config types
+  TelemetryConfig,
+  TelemetryClientConfig,
+  // Event types
+  TelemetryEvent,
+  BaseTelemetryEvent,
+  PatternSignatureEvent,
+  AggregateStatsEvent,
+  UserActionEvent,
+  ScanCompletionEvent,
+  // Result types
+  TelemetrySubmitResult,
+  TelemetryStatus,
+} from './telemetry/index.js';

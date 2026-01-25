@@ -18,7 +18,8 @@ export type DecisionLanguage =
   | 'python'
   | 'java'
   | 'csharp'
-  | 'php';
+  | 'php'
+  | 'rust';
 
 /**
  * Decision confidence level

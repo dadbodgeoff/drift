@@ -1,15 +1,15 @@
 /**
- * sqlx Pattern Matcher
+ * SQLx Pattern Matcher
  *
- * Matches sqlx (Go SQL extensions) patterns:
- * - db.Select(&users, "SELECT * FROM users")
- * - db.Get(&user, "SELECT * FROM users WHERE id = ?", id)
- * - db.Exec("INSERT INTO users ...")
- * - db.NamedExec("INSERT INTO users ...", user)
- * - db.Queryx("SELECT * FROM users")
- * - db.QueryRowx("SELECT * FROM users WHERE id = ?", id)
+ * Matches SQLx (Rust async SQL toolkit) patterns:
+ * - sqlx::query("SELECT ...").fetch_all(&pool)
+ * - sqlx::query_as::<_, User>("SELECT ...").fetch_one(&pool)
+ * - sqlx::query!("SELECT ...").fetch_optional(&pool)
+ * - sqlx::query_scalar("SELECT count(*)").fetch_one(&pool)
+ * - pool.execute("INSERT ...").await
+ * - Transaction patterns
  *
- * @requirements Go Language Support
+ * @requirements Rust Language Support
  */
 
 import type { DataOperation } from '../../boundaries/types.js';
@@ -17,41 +17,62 @@ import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedA
 import { BaseMatcher } from './base-matcher.js';
 
 /**
- * sqlx pattern matcher
+ * SQLx pattern matcher
  */
-export class SqlxMatcher extends BaseMatcher {
+export class SQLxMatcher extends BaseMatcher {
   readonly id = 'sqlx';
-  readonly name = 'sqlx';
-  readonly languages: UnifiedLanguage[] = ['go'];
-  readonly priority = 85;
+  readonly name = 'SQLx';
+  readonly languages: UnifiedLanguage[] = ['rust'];
+  readonly priority = 90;
 
-  private readonly readMethods = [
-    'Select', 'Get', 'Queryx', 'QueryRowx',
-    'NamedQuery', 'PrepareNamed',
+  private readonly fetchMethods = [
+    'fetch_one', 'fetch_optional', 'fetch_all', 'fetch',
   ];
 
-  private readonly writeMethods = [
-    'Exec', 'NamedExec', 'MustExec',
+  private readonly executeMethods = [
+    'execute',
   ];
 
   match(chain: UnifiedCallChain): PatternMatchResult | null {
-    // Pattern 1: db.Method() where db is a sqlx database instance
-    const dbMatch = this.matchDbPattern(chain);
-    if (dbMatch) return dbMatch;
+    // Pattern 1: sqlx::query*() chains
+    const sqlxMatch = this.matchSqlxPattern(chain);
+    if (sqlxMatch) return sqlxMatch;
 
-    // Pattern 2: tx.Method() for transaction patterns
+    // Pattern 2: pool.execute() or pool.fetch*()
+    const poolMatch = this.matchPoolPattern(chain);
+    if (poolMatch) return poolMatch;
+
+    // Pattern 3: Transaction patterns
     const txMatch = this.matchTransactionPattern(chain);
     if (txMatch) return txMatch;
 
     return null;
   }
 
-  private matchDbPattern(chain: UnifiedCallChain): PatternMatchResult | null {
+  private matchSqlxPattern(chain: UnifiedCallChain): PatternMatchResult | null {
+    // Check if receiver is sqlx or starts with sqlx::
+    if (chain.receiver !== 'sqlx' && !chain.receiver.startsWith('sqlx::')) {
+      return null;
+    }
+
+    return this.analyzeChain(chain);
+  }
+
+  private matchPoolPattern(chain: UnifiedCallChain): PatternMatchResult | null {
     const receiver = chain.receiver.toLowerCase();
 
-    // Common sqlx receiver names
-    const sqlxReceivers = ['db', 'sqlx', 'conn', 'connection', 'database'];
-    if (!sqlxReceivers.some(r => receiver.includes(r))) {
+    // Common pool receiver names
+    const poolReceivers = ['pool', 'db', 'conn', 'connection', 'pg_pool', 'mysql_pool', 'sqlite_pool'];
+    if (!poolReceivers.some(r => receiver.includes(r))) {
+      return null;
+    }
+
+    // Check if any segment is a fetch or execute method
+    const hasSqlxMethod = chain.segments.some(s =>
+      this.fetchMethods.includes(s.name) || this.executeMethods.includes(s.name)
+    );
+
+    if (!hasSqlxMethod) {
       return null;
     }
 
@@ -62,7 +83,7 @@ export class SqlxMatcher extends BaseMatcher {
     const receiver = chain.receiver.toLowerCase();
 
     // Transaction receiver names
-    const txReceivers = ['tx', 'transaction', 'trx'];
+    const txReceivers = ['tx', 'transaction', 'txn'];
     if (!txReceivers.some(r => receiver === r || receiver.endsWith(r))) {
       return null;
     }
@@ -73,169 +94,179 @@ export class SqlxMatcher extends BaseMatcher {
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
     if (chain.segments.length < 1) return null;
 
-    const segment = chain.segments[0];
-    if (!segment?.isCall) return null;
+    let operation: DataOperation | null = null;
+    let table: string | null = null;
+    const fields: string[] = [];
+    let isRawSql = false;
+    let sqlQuery: string | null = null;
 
-    const methodName = segment.name;
-    let operation = this.getOperation(methodName);
+    for (const segment of chain.segments) {
+      if (!segment.isCall) continue;
 
-    // For Exec methods, determine operation from SQL
-    if (methodName === 'Exec' || methodName === 'NamedExec' || methodName === 'MustExec') {
-      const sqlOp = this.getOperationFromSql(segment.args);
-      if (sqlOp) operation = sqlOp;
+      const methodName = segment.name;
+
+      // Check for query methods
+      if (methodName === 'query' || methodName === 'query_as' ||
+          methodName === 'query_scalar' || methodName === 'query_unchecked') {
+        isRawSql = true;
+        if (segment.args.length > 0) {
+          sqlQuery = this.extractSqlQuery(segment.args[0]!);
+          if (sqlQuery) {
+            const parsed = this.parseSqlQuery(sqlQuery);
+            operation = parsed.operation;
+            table = parsed.table;
+            fields.push(...parsed.fields);
+          }
+        }
+      }
+
+      // Check for compile-time checked query macros
+      if (methodName.endsWith('!')) {
+        const macroName = methodName.slice(0, -1);
+        if (macroName === 'query' || macroName === 'query_as' ||
+            macroName === 'query_scalar' || macroName === 'query_file' ||
+            macroName === 'query_file_as' || macroName === 'query_file_scalar') {
+          isRawSql = true;
+          if (segment.args.length > 0) {
+            sqlQuery = this.extractSqlQuery(segment.args[0]!);
+            if (sqlQuery) {
+              const parsed = this.parseSqlQuery(sqlQuery);
+              operation = parsed.operation;
+              table = parsed.table;
+              fields.push(...parsed.fields);
+            }
+          }
+        }
+      }
+
+      // Check for fetch methods (read operation)
+      if (this.fetchMethods.includes(methodName)) {
+        if (!operation) operation = 'read';
+      }
+
+      // Check for execute method
+      if (this.executeMethods.includes(methodName)) {
+        if (!operation) operation = 'write';
+      }
+
+      // Check for bind() to extract potential field info
+      if (methodName === 'bind' && segment.args.length > 0) {
+        // Bind arguments might give hints about fields
+      }
     }
 
     if (!operation) return null;
 
-    // Extract table and fields from SQL query
-    const { table, fields } = this.extractFromSql(segment.args);
-
     return this.createMatch({
       table: table ?? 'unknown',
-      fields,
+      fields: [...new Set(fields)],
       operation,
-      confidence: table ? 0.85 : 0.65,
+      confidence: table ? 0.9 : 0.7,
+      isRawSql,
       metadata: {
         pattern: 'sqlx',
-        method: methodName,
+        chainLength: chain.segments.length,
+        sqlQuery,
       },
     });
   }
 
-  private getOperation(methodName: string): DataOperation | null {
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
+  private extractSqlQuery(arg: NormalizedArg): string | null {
+    if (arg.stringValue) {
+      return this.unquoteString(arg.stringValue);
+    }
+    if (arg.type === 'string') {
+      return this.unquoteString(arg.value);
+    }
     return null;
   }
 
-  private getOperationFromSql(args: NormalizedArg[]): DataOperation | null {
-    const sql = this.extractSqlString(args);
-    if (!sql) return null;
-
+  private parseSqlQuery(sql: string): {
+    operation: DataOperation;
+    table: string | null;
+    fields: string[];
+  } {
     const upperSql = sql.toUpperCase().trim();
-
-    if (upperSql.startsWith('SELECT')) return 'read';
-    if (upperSql.startsWith('INSERT')) return 'write';
-    if (upperSql.startsWith('UPDATE')) return 'write';
-    if (upperSql.startsWith('DELETE')) return 'delete';
-    if (upperSql.startsWith('UPSERT')) return 'write';
-    if (upperSql.startsWith('MERGE')) return 'write';
-
-    return null;
-  }
-
-  private extractFromSql(args: NormalizedArg[]): { table: string | null; fields: string[] } {
-    const sql = this.extractSqlString(args);
-    if (!sql) return { table: null, fields: [] };
-
-    const table = this.extractTableFromSql(sql);
-    const fields = this.extractFieldsFromSql(sql);
-
-    return { table, fields };
-  }
-
-  private extractSqlString(args: NormalizedArg[]): string | null {
-    // For Select/Get, SQL is typically the second argument
-    // For Exec/NamedExec, SQL is typically the first argument
-    for (const arg of args) {
-      if (arg.stringValue) {
-        const value = this.unquoteString(arg.stringValue);
-        if (this.looksLikeSql(value)) {
-          return value;
-        }
-      }
-      if (arg.type === 'string') {
-        const value = this.unquoteString(arg.value);
-        if (this.looksLikeSql(value)) {
-          return value;
-        }
-      }
-    }
-    return null;
-  }
-
-  private looksLikeSql(str: string): boolean {
-    const upperStr = str.toUpperCase().trim();
-    return upperStr.startsWith('SELECT') ||
-           upperStr.startsWith('INSERT') ||
-           upperStr.startsWith('UPDATE') ||
-           upperStr.startsWith('DELETE') ||
-           upperStr.startsWith('WITH');
-  }
-
-  private extractTableFromSql(sql: string): string | null {
-    const upperSql = sql.toUpperCase();
-
-    // SELECT ... FROM table
-    const fromMatch = upperSql.match(/FROM\s+(["`]?[\w.]+["`]?)/i);
-    if (fromMatch) {
-      return this.cleanTableName(fromMatch[1]!);
-    }
-
-    // INSERT INTO table
-    const insertMatch = upperSql.match(/INSERT\s+INTO\s+(["`]?[\w.]+["`]?)/i);
-    if (insertMatch) {
-      return this.cleanTableName(insertMatch[1]!);
-    }
-
-    // UPDATE table
-    const updateMatch = upperSql.match(/UPDATE\s+(["`]?[\w.]+["`]?)/i);
-    if (updateMatch) {
-      return this.cleanTableName(updateMatch[1]!);
-    }
-
-    // DELETE FROM table
-    const deleteMatch = upperSql.match(/DELETE\s+FROM\s+(["`]?[\w.]+["`]?)/i);
-    if (deleteMatch) {
-      return this.cleanTableName(deleteMatch[1]!);
-    }
-
-    return null;
-  }
-
-  private extractFieldsFromSql(sql: string): string[] {
+    let operation: DataOperation = 'read';
+    let table: string | null = null;
     const fields: string[] = [];
 
-    // Extract from SELECT clause
-    const selectMatch = sql.match(/SELECT\s+(.+?)\s+FROM/i);
-    if (selectMatch) {
-      const selectClause = selectMatch[1]!;
-      if (selectClause.trim() !== '*') {
-        const fieldParts = selectClause.split(',');
-        for (const part of fieldParts) {
-          const field = part.trim()
-            .replace(/\s+AS\s+\w+$/i, '') // Remove aliases
-            .replace(/^[\w.]+\./, ''); // Remove table prefix
-          if (field && field !== '*') {
-            fields.push(field);
+    // Determine operation
+    if (upperSql.startsWith('SELECT')) {
+      operation = 'read';
+    } else if (upperSql.startsWith('INSERT')) {
+      operation = 'write';
+    } else if (upperSql.startsWith('UPDATE')) {
+      operation = 'write';
+    } else if (upperSql.startsWith('DELETE')) {
+      operation = 'delete';
+    }
+
+    // Extract table name
+    const fromMatch = sql.match(/\bFROM\s+["'`]?(\w+)["'`]?/i);
+    if (fromMatch) {
+      table = fromMatch[1]!;
+    }
+
+    const intoMatch = sql.match(/\bINTO\s+["'`]?(\w+)["'`]?/i);
+    if (intoMatch) {
+      table = intoMatch[1]!;
+    }
+
+    const updateMatch = sql.match(/\bUPDATE\s+["'`]?(\w+)["'`]?/i);
+    if (updateMatch) {
+      table = updateMatch[1]!;
+    }
+
+    // Extract fields from SELECT
+    if (operation === 'read') {
+      const selectMatch = sql.match(/SELECT\s+(.+?)\s+FROM/i);
+      if (selectMatch) {
+        const fieldsStr = selectMatch[1]!;
+        if (fieldsStr !== '*') {
+          const fieldList = fieldsStr.split(',').map(f => {
+            // Handle aliases: field AS alias
+            const aliasMatch = f.trim().match(/^["'`]?(\w+)["'`]?(?:\s+AS\s+\w+)?$/i);
+            return aliasMatch ? aliasMatch[1]! : f.trim();
+          }).filter(f => f && f !== '*');
+          fields.push(...fieldList);
+        }
+      }
+    }
+
+    // Extract fields from INSERT
+    if (operation === 'write' && upperSql.startsWith('INSERT')) {
+      const columnsMatch = sql.match(/\(([^)]+)\)\s*VALUES/i);
+      if (columnsMatch) {
+        const columnList = columnsMatch[1]!.split(',').map(c => c.trim().replace(/["'`]/g, ''));
+        fields.push(...columnList);
+      }
+    }
+
+    // Extract fields from UPDATE SET
+    if (operation === 'write' && upperSql.startsWith('UPDATE')) {
+      const setMatch = sql.match(/SET\s+(.+?)(?:\s+WHERE|$)/i);
+      if (setMatch) {
+        const assignments = setMatch[1]!.split(',');
+        for (const assignment of assignments) {
+          const fieldMatch = assignment.match(/["'`]?(\w+)["'`]?\s*=/);
+          if (fieldMatch) {
+            fields.push(fieldMatch[1]!);
           }
         }
       }
     }
 
-    // Extract from WHERE clause
-    const whereMatch = sql.match(/WHERE\s+(.+?)(?:ORDER|GROUP|LIMIT|$)/i);
-    if (whereMatch) {
-      const whereClause = whereMatch[1]!;
-      const fieldMatches = whereClause.match(/\b([a-z_][a-z0-9_]*)\s*(?:=|!=|<|>|<=|>=|LIKE|IN|IS)/gi);
-      if (fieldMatches) {
-        for (const match of fieldMatches) {
-          const field = match.replace(/\s*(?:=|!=|<|>|<=|>=|LIKE|IN|IS).*/i, '').trim();
-          if (field && !['AND', 'OR', 'NOT'].includes(field.toUpperCase())) {
-            fields.push(field);
-          }
-        }
-      }
-    }
-
-    return [...new Set(fields)];
-  }
-
-  private cleanTableName(name: string): string {
-    return name.replace(/["`]/g, '').split('.').pop() ?? name;
+    return { operation, table, fields };
   }
 
   private unquoteString(str: string): string {
+    // Handle Rust raw strings: r#"..."#, r##"..."##, etc.
+    const rawMatch = str.match(/^r#*"([\s\S]*)"#*$/);
+    if (rawMatch) {
+      return rawMatch[1]!;
+    }
+    // Handle regular strings
     return str.replace(/^["'`]|["'`]$/g, '');
   }
 }

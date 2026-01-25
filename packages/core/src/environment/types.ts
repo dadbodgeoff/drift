@@ -12,7 +12,7 @@
 /**
  * Supported languages for environment extraction
  */
-export type EnvLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go';
+export type EnvLanguage = 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust';
 
 /**
  * Environment access method
@@ -50,6 +50,11 @@ export type EnvAccessMethod =
   | 'os.LookupEnv'
   | 'viper'
   | 'envconfig'
+  // Rust
+  | 'std::env::var'
+  | 'std::env::var_os'
+  | 'dotenvy'
+  | 'config-rs'
   // Generic
   | 'unknown';
 

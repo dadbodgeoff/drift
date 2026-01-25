@@ -19,7 +19,9 @@ import { EFCoreMatcher } from './efcore-matcher.js';
 import { EloquentMatcher } from './eloquent-matcher.js';
 import { SpringDataMatcher } from './spring-data-matcher.js';
 import { GORMMatcher } from './gorm-matcher.js';
-import { SqlxMatcher } from './sqlx-matcher.js';
+import { SQLxMatcher } from './sqlx-matcher.js';
+import { DieselMatcher } from './diesel-matcher.js';
+import { SeaORMMatcher } from './seaorm-matcher.js';
 import { DatabaseSqlMatcher } from './database-sql-matcher.js';
 
 /**
@@ -62,8 +64,12 @@ export class MatcherRegistry {
 
     // Go ORMs
     this.register(new GORMMatcher());
-    this.register(new SqlxMatcher());
     this.register(new DatabaseSqlMatcher());
+
+    // Rust ORMs
+    this.register(new SQLxMatcher());
+    this.register(new DieselMatcher());
+    this.register(new SeaORMMatcher());
   }
 
   /**

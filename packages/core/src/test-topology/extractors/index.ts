@@ -11,3 +11,4 @@ export { JavaTestExtractor, createJavaTestExtractor } from './java-test-extracto
 export { CSharpTestExtractor, createCSharpTestExtractor } from './csharp-test-extractor.js';
 export { PHPTestExtractor, createPHPTestExtractor } from './php-test-extractor.js';
 export { GoTestExtractor, createGoTestExtractor } from './go-test-extractor.js';
+export { RustTestExtractor, createRustTestExtractor } from './rust-test-extractor.js';

@@ -19,7 +19,8 @@ export type ConstantLanguage =
   | 'java'
   | 'csharp'
   | 'php'
-  | 'go';
+  | 'go'
+  | 'rust';
 
 /**
  * What kind of constant this is

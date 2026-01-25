@@ -74,7 +74,7 @@ import { handleWrappers } from './tools/detail/wrappers.js';
 import { handleProjects } from './tools/discovery/projects.js';
 
 // Orchestration handlers
-import { handleContext } from './tools/orchestration/index.js';
+import { handleContext, handlePackageContext } from './tools/orchestration/index.js';
 
 // Generation handlers (new AI-powered tools)
 import { handleSuggestChanges } from './tools/generation/suggest-changes.js';
@@ -90,6 +90,7 @@ import { handleSimulate } from './tools/analysis/simulate.js';
 import { handleConstraints } from './tools/analysis/constraints.js';
 import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
+import { executeRustTool, type RustArgs } from './tools/analysis/rust.js';
 import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
@@ -244,6 +245,11 @@ async function routeToolCall(
         projectRoot,
         args as Parameters<typeof handleContext>[2]
       );
+    case 'drift_package_context':
+      return handlePackageContext(
+        projectRoot,
+        args as Parameters<typeof handlePackageContext>[1]
+      );
   }
 
   // ============================================================================
@@ -376,6 +382,9 @@ async function routeToolCall(
 
     case 'drift_go':
       return executeGoTool(args as unknown as GoArgs, { projectRoot });
+
+    case 'drift_rust':
+      return executeRustTool(args as unknown as RustArgs, { projectRoot });
 
     case 'drift_constants':
       return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);

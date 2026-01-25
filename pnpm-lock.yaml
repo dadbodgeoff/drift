@@ -79,13 +79,13 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../core
       driftdetect-dashboard:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -133,6 +133,9 @@ importers:
       tree-sitter-c-sharp:
         specifier: ^0.21.3
         version: 0.21.3(tree-sitter@0.21.1)
+      tree-sitter-go:
+        specifier: ^0.21.0
+        version: 0.21.2(tree-sitter@0.21.1)
       tree-sitter-java:
         specifier: ^0.21.0
         version: 0.21.0(tree-sitter@0.21.1)
@@ -143,6 +146,9 @@ importers:
         specifier: ^0.22.0
         version: 0.22.8(tree-sitter@0.21.1)
       tree-sitter-python:
+        specifier: ^0.21.0
+        version: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-rust:
         specifier: ^0.21.0
         version: 0.21.0(tree-sitter@0.21.1)
       tree-sitter-typescript:
@@ -171,10 +177,10 @@ importers:
   packages/dashboard:
     dependencies:
       driftdetect-core:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../core
       driftdetect-galaxy:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../galaxy
       express:
         specifier: ^4.18.2
@@ -277,7 +283,7 @@ importers:
   packages/detectors:
     dependencies:
       driftdetect-core:
-        specifier: ^0.7.0
+        specifier: ^0.7.1
         version: link:../core
     devDependencies:
       '@types/node':
@@ -6964,6 +6970,21 @@ packages:
       tree-sitter: 0.21.1
     dev: false
 
+  /tree-sitter-go@0.21.2(tree-sitter@0.21.1):
+    resolution: {integrity: sha512-aMFwjsB948nWhURiIxExK8QX29JYKs96P/IfXVvluVMRJZpL04SREHsdOZHYqJr1whkb7zr3/gWHqqvlkczmvw==}
+    requiresBuild: true
+    peerDependencies:
+      tree-sitter: ^0.21.0
+      tree_sitter: '*'
+    peerDependenciesMeta:
+      tree_sitter:
+        optional: true
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+      tree-sitter: 0.21.1
+    dev: false
+
   /tree-sitter-java@0.21.0(tree-sitter@0.21.1):
     resolution: {integrity: sha512-CKJiTo1uc3SUsgEcaZgufGx8my6dzihy8JR/JsJH40Tj3uSe2/eFLk+0q+fpbosGAyY4YiXJtEoFB2O4bS2yOw==}
     requiresBuild: true
@@ -7015,6 +7036,21 @@ packages:
     requiresBuild: true
     peerDependencies:
       tree-sitter: ^0.21.0
+      tree_sitter: '*'
+    peerDependenciesMeta:
+      tree_sitter:
+        optional: true
+    dependencies:
+      node-addon-api: 7.1.1
+      node-gyp-build: 4.8.4
+      tree-sitter: 0.21.1
+    dev: false
+
+  /tree-sitter-rust@0.21.0(tree-sitter@0.21.1):
+    resolution: {integrity: sha512-unVr73YLn3VC4Qa/GF0Nk+Wom6UtI526p5kz9Rn2iZSqwIFedyCZ3e0fKCEmUJLIPGrTb/cIEdu3ZUNGzfZx7A==}
+    requiresBuild: true
+    peerDependencies:
+      tree-sitter: ^0.21.1
       tree_sitter: '*'
     peerDependenciesMeta:
       tree_sitter:
