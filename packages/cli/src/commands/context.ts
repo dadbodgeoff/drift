@@ -128,17 +128,29 @@ async function generateContext(
     categories = options.categories.split(',').map(c => c.trim());
   }
 
-  // Build options
+  // Build options - use explicit assignments to satisfy exactOptionalPropertyTypes
   const contextOptions: PackageContextOptions = {
     package: packageArg,
-    includeSnippets: options.snippets,
-    includeDependencies: options.deps,
-    includeInternalDeps: options.deps,
-    categories,
-    minConfidence: options.minConfidence ? parseFloat(options.minConfidence) : undefined,
-    maxTokens: options.maxTokens ? parseInt(options.maxTokens, 10) : undefined,
     format: options.format as 'json' | 'markdown' | 'ai-context',
   };
+  
+  // Only set optional properties if they have values
+  if (options.snippets !== undefined) {
+    contextOptions.includeSnippets = options.snippets;
+  }
+  if (options.deps !== undefined) {
+    contextOptions.includeDependencies = options.deps;
+    contextOptions.includeInternalDeps = options.deps;
+  }
+  if (categories !== undefined) {
+    contextOptions.categories = categories;
+  }
+  if (options.minConfidence) {
+    contextOptions.minConfidence = parseFloat(options.minConfidence);
+  }
+  if (options.maxTokens) {
+    contextOptions.maxTokens = parseInt(options.maxTokens, 10);
+  }
 
   console.error(chalk.blue(`Generating context for ${packageArg}...`));
 

@@ -10,6 +10,20 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { createSpinner } from '../ui/spinner.js';
 
+// Dashboard server interface for dynamic import
+interface DashboardServerOptions {
+  driftDir: string;
+  port: number;
+  openBrowser: boolean;
+}
+
+interface DashboardServerClass {
+  new (options: DashboardServerOptions): {
+    start(): Promise<void>;
+    stop(): Promise<void>;
+  };
+}
+
 export interface DashboardOptions {
   /** Port to run the server on */
   port?: number;
@@ -57,7 +71,9 @@ async function dashboardAction(options: DashboardOptions): Promise<void> {
 
   try {
     // Dynamic import to avoid loading dashboard package unless needed
-    const { DashboardServer } = await import('driftdetect-dashboard');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dashboardModule = await import('driftdetect-dashboard' as any) as { DashboardServer: DashboardServerClass };
+    const { DashboardServer } = dashboardModule;
 
     const server = new DashboardServer({
       driftDir: path.join(rootDir, DRIFT_DIR),
