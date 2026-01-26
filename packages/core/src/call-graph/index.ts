@@ -141,6 +141,16 @@ export {
   type StreamingBuildResult,
 } from './streaming-builder.js';
 
+// Unified Call Graph Provider (supports both legacy and sharded storage)
+export {
+  UnifiedCallGraphProvider,
+  createUnifiedCallGraphProvider,
+  type UnifiedCallGraphProviderConfig,
+  type CallGraphStorageFormat,
+  type ProviderStats,
+  type UnifiedFunction,
+} from './unified-provider.js';
+
 // ============================================================================
 // Main Analyzer
 // ============================================================================

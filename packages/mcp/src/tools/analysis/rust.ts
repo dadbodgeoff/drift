@@ -281,7 +281,7 @@ function formatAsyncResult(
       message: i.message,
       file: i.file,
       line: i.line,
-      suggestion: i.suggestion,
+      type: i.type,
     })),
     truncated: result.asyncFunctions.length > limit,
   };

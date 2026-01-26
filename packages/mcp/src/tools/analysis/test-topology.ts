@@ -136,11 +136,44 @@ async function handleStatus(
       .buildContent();
       
   } catch {
-    throw Errors.custom(
-      'NO_TEST_TOPOLOGY',
-      'No test topology found. Build it first using the CLI: drift test-topology build',
-      ['drift test-topology build']
-    );
+    // No cached data - try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      const summary = analyzer.getSummary();
+      const mockAnalysis = analyzer.analyzeMocks();
+      
+      let summaryText = `🧪 ${summary.testCases} tests in ${summary.testFiles} files. `;
+      summaryText += `Coverage: ${summary.functionCoveragePercent}% functions. `;
+      summaryText += `Quality: ${summary.avgQualityScore}/100.`;
+      
+      const hints = {
+        nextActions: [
+          summary.functionCoveragePercent < 50 
+            ? 'Run drift_test_topology action="uncovered" to find gaps'
+            : 'Good coverage - consider drift_test_topology action="mocks" for quality',
+        ],
+        relatedTools: ['drift_test_topology action="uncovered"', 'drift_test_topology action="mocks"'],
+      };
+      
+      return builder
+        .withSummary(summaryText)
+        .withData({ summary, mockAnalysis })
+        .withHints(hints)
+        .buildContent();
+    } catch {
+      // Return graceful empty state
+      return builder
+        .withSummary('🧪 Test topology analysis not available. Run a scan first.')
+        .withData({ 
+          summary: { testCases: 0, testFiles: 0, functionCoveragePercent: 0, avgQualityScore: 0, byFramework: {}, avgMockRatio: 0 } as unknown as TestTopologySummary,
+          mockAnalysis: { totalMocks: 0, externalMocks: 0, internalMocks: 0, externalPercent: 0, internalPercent: 0, avgMockRatio: 0, highMockRatioTests: [], topMockedModules: [] } as MockAnalysis
+        })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase first'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
 }
 
@@ -235,50 +268,64 @@ async function handleMocks(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<TestTopologyMocksData>();
 
-  // Load cached data
+  // First try cached data
   const summaryPath = path.join(projectRoot, DRIFT_DIR, TEST_TOPOLOGY_DIR, 'summary.json');
+  
+  let mockAnalysis: MockAnalysis;
   
   try {
     const data = JSON.parse(await fs.readFile(summaryPath, 'utf-8'));
-    const { mockAnalysis } = data;
-
-    const warnings: string[] = [];
-    
-    if (mockAnalysis.internalPercent > 50) {
-      warnings.push('High internal mocking (>50%) may indicate tight coupling');
-    }
-    if (mockAnalysis.avgMockRatio > 0.7) {
-      warnings.push('High average mock ratio - tests may be brittle');
-    }
-    if (mockAnalysis.highMockRatioTests.length > 5) {
-      warnings.push(`${mockAnalysis.highMockRatioTests.length} tests have >70% mock ratio`);
-    }
-
-    let summaryText = `🎭 ${mockAnalysis.totalMocks} mocks. `;
-    summaryText += `${mockAnalysis.externalPercent}% external, ${mockAnalysis.internalPercent}% internal. `;
-    summaryText += `Avg ratio: ${Math.round(mockAnalysis.avgMockRatio * 100)}%.`;
-
-    const hints = {
-      nextActions: warnings.length > 0
-        ? ['Review high-mock tests for potential refactoring']
-        : ['Mock patterns look healthy'],
-      warnings: warnings.length > 0 ? warnings : undefined,
-      relatedTools: ['drift_test_topology action="quality"'],
-    };
-
-    return builder
-      .withSummary(summaryText)
-      .withData({ analysis: mockAnalysis, warnings })
-      .withHints(hints)
-      .buildContent();
-
+    mockAnalysis = data.mockAnalysis;
   } catch {
-    throw Errors.custom(
-      'NO_TEST_TOPOLOGY',
-      'No test topology found. Build it first.',
-      ['drift test-topology build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      mockAnalysis = analyzer.analyzeMocks();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('🎭 No mock analysis available. Run a scan first.')
+        .withData({ 
+          analysis: { totalMocks: 0, externalMocks: 0, internalMocks: 0, externalPercent: 0, internalPercent: 0, avgMockRatio: 0, highMockRatioTests: [], topMockedModules: [] } as MockAnalysis, 
+          warnings: [] 
+        })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
+
+  const warnings: string[] = [];
+  
+  if (mockAnalysis.internalPercent > 50) {
+    warnings.push('High internal mocking (>50%) may indicate tight coupling');
+  }
+  if (mockAnalysis.avgMockRatio > 0.7) {
+    warnings.push('High average mock ratio - tests may be brittle');
+  }
+  if (mockAnalysis.highMockRatioTests.length > 5) {
+    warnings.push(`${mockAnalysis.highMockRatioTests.length} tests have >70% mock ratio`);
+  }
+
+  let summaryText = `🎭 ${mockAnalysis.totalMocks} mocks. `;
+  summaryText += `${mockAnalysis.externalPercent}% external, ${mockAnalysis.internalPercent}% internal. `;
+  summaryText += `Avg ratio: ${Math.round(mockAnalysis.avgMockRatio * 100)}%.`;
+
+  const hints = {
+    nextActions: warnings.length > 0
+      ? ['Review high-mock tests for potential refactoring']
+      : ['Mock patterns look healthy'],
+    warnings: warnings.length > 0 ? warnings : undefined,
+    relatedTools: ['drift_test_topology action="quality"'],
+  };
+
+  return builder
+    .withSummary(summaryText)
+    .withData({ analysis: mockAnalysis, warnings })
+    .withHints(hints)
+    .buildContent();
 }
 
 async function handleAffected(
@@ -318,36 +365,50 @@ async function handleQuality(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<{ file: string | undefined; summary: TestTopologySummary }>();
 
-  // Load cached data
+  // First try cached data
   const summaryPath = path.join(projectRoot, DRIFT_DIR, TEST_TOPOLOGY_DIR, 'summary.json');
+  
+  let summary: TestTopologySummary;
   
   try {
     const data = JSON.parse(await fs.readFile(summaryPath, 'utf-8'));
-    const { summary } = data;
-
-    let summaryText = `📈 Test Quality: ${summary.avgQualityScore}/100. `;
-    summaryText += `Mock ratio: ${Math.round(summary.avgMockRatio * 100)}%.`;
-
-    const hints = {
-      nextActions: summary.avgQualityScore < 50
-        ? ['Improve test quality by adding assertions and error cases']
-        : ['Test quality is good'],
-      relatedTools: ['drift_test_topology action="mocks"'],
-    };
-
-    return builder
-      .withSummary(summaryText)
-      .withData({ file, summary })
-      .withHints(hints)
-      .buildContent();
-
+    summary = data.summary;
   } catch {
-    throw Errors.custom(
-      'NO_TEST_TOPOLOGY',
-      'No test topology found. Build it first.',
-      ['drift test-topology build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      summary = analyzer.getSummary();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('📈 Test quality analysis not available. Run a scan first.')
+        .withData({ 
+          file, 
+          summary: { testCases: 0, testFiles: 0, functionCoveragePercent: 0, avgQualityScore: 0, byFramework: {}, avgMockRatio: 0 } as unknown as TestTopologySummary 
+        })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
+
+  let summaryText = `📈 Test Quality: ${summary.avgQualityScore}/100. `;
+  summaryText += `Mock ratio: ${Math.round((summary.avgMockRatio ?? 0) * 100)}%.`;
+
+  const hints = {
+    nextActions: summary.avgQualityScore < 50
+      ? ['Improve test quality by adding assertions and error cases']
+      : ['Test quality is good'],
+    relatedTools: ['drift_test_topology action="mocks"'],
+  };
+
+  return builder
+    .withSummary(summaryText)
+    .withData({ file, summary })
+    .withHints(hints)
+    .buildContent();
 }
 
 // ============================================================================

@@ -14,8 +14,6 @@ export {
   type RustCustomError,
   type RustTrait,
   type RustTraitImpl,
-  type RustDataAccessPoint,
   type RustAsyncFunction,
   type RustCrate,
-  type RustIssue,
 } from './rust-analyzer.js';

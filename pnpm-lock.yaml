@@ -133,6 +133,9 @@ importers:
       tree-sitter-c-sharp:
         specifier: ^0.21.3
         version: 0.21.3(tree-sitter@0.21.1)
+      tree-sitter-cpp:
+        specifier: ^0.22.0
+        version: 0.22.3(tree-sitter@0.21.1)
       tree-sitter-go:
         specifier: ^0.21.0
         version: 0.21.2(tree-sitter@0.21.1)
@@ -283,7 +286,7 @@ importers:
   packages/detectors:
     dependencies:
       driftdetect-core:
-        specifier: ^0.7.1
+        specifier: workspace:*
         version: link:../core
     devDependencies:
       '@types/node':
@@ -6960,6 +6963,21 @@ packages:
     requiresBuild: true
     peerDependencies:
       tree-sitter: ^0.21.0
+      tree_sitter: '*'
+    peerDependenciesMeta:
+      tree_sitter:
+        optional: true
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+      tree-sitter: 0.21.1
+    dev: false
+
+  /tree-sitter-cpp@0.22.3(tree-sitter@0.21.1):
+    resolution: {integrity: sha512-p7w5903L/koqTQFVDwyyX0vjioxoZu2G4zT2ZHVG8DvLQbWN6OjNAqfMsCi+WdVkfMgU+7j06hS8i3j6Q0sPNQ==}
+    requiresBuild: true
+    peerDependencies:
+      tree-sitter: ^0.21.1
       tree_sitter: '*'
     peerDependenciesMeta:
       tree_sitter:

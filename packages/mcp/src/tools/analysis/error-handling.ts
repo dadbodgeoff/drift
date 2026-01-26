@@ -109,6 +109,7 @@ async function handleStatus(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<ErrorHandlingStatusData>();
 
+  // First try to load cached data
   const dataPath = path.join(projectRoot, DRIFT_DIR, ERROR_HANDLING_DIR, 'topology.json');
   
   try {
@@ -143,11 +144,56 @@ async function handleStatus(
       .buildContent();
       
   } catch {
-    throw Errors.custom(
-      'NO_ERROR_HANDLING_DATA',
-      'No error handling analysis found. Build it first using the CLI: drift error-handling build',
-      ['drift error-handling build']
-    );
+    // No cached data - try to build on-demand from call graph
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      const summary = analyzer.getSummary();
+      const metrics = analyzer.getMetrics();
+      
+      if (!summary || !metrics) {
+        throw new Error('No analysis data available');
+      }
+      
+      let summaryText = `🛡️ ${summary.totalFunctions} functions. `;
+      summaryText += `Coverage: ${summary.coveragePercent}%. `;
+      summaryText += `Quality: ${summary.avgQuality}/100. `;
+      summaryText += `${summary.unhandledPaths} unhandled paths.`;
+      
+      const warnings: string[] = [];
+      if (summary.criticalUnhandled > 0) {
+        warnings.push(`${summary.criticalUnhandled} critical unhandled error paths`);
+      }
+      if (metrics.swallowedErrorCount > 0) {
+        warnings.push(`${metrics.swallowedErrorCount} swallowed errors`);
+      }
+      
+      const hints = {
+        nextActions: summary.unhandledPaths > 0
+          ? ['Run drift_error_handling action="gaps" to see specific issues']
+          : ['Error handling looks good'],
+        warnings: warnings.length > 0 ? warnings : undefined,
+        relatedTools: ['drift_error_handling action="gaps"', 'drift_error_handling action="boundaries"'],
+      };
+      
+      return builder
+        .withSummary(summaryText)
+        .withData({ summary, metrics })
+        .withHints(hints)
+        .buildContent();
+    } catch {
+      // No call graph available - return graceful empty state
+      return builder
+        .withSummary('🛡️ Error handling analysis not available. Run a scan first.')
+        .withData({ 
+          summary: { totalFunctions: 0, coveragePercent: 0, avgQuality: 0, unhandledPaths: 0, criticalUnhandled: 0, boundaryCount: 0, avgBoundaryDepth: 0 } as unknown as ErrorHandlingSummary,
+          metrics: { swallowedErrorCount: 0, totalTryCatch: 0, totalThrows: 0, totalFunctions: 0, functionsWithTryCatch: 0, functionsThatThrow: 0, boundaryCount: 0, avgCatchBlockSize: 0, avgThrowsPerFunction: 0, rethrowRate: 0, emptyHandlerCount: 0 } as unknown as ErrorHandlingMetrics
+        })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase first'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
 }
 
@@ -198,6 +244,7 @@ async function handleBoundaries(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<ErrorHandlingBoundariesData>();
 
+  // First try cached data
   const dataPath = path.join(projectRoot, DRIFT_DIR, ERROR_HANDLING_DIR, 'topology.json');
   
   try {
@@ -222,11 +269,38 @@ async function handleBoundaries(
       .buildContent();
 
   } catch {
-    throw Errors.custom(
-      'NO_ERROR_HANDLING_DATA',
-      'No error handling analysis found. Build it first.',
-      ['drift error-handling build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      const boundaries = analyzer.getBoundaries();
+      const frameworkBoundaries = boundaries.filter(b => b.isFrameworkBoundary).length;
+
+      let summaryText = `🛡️ ${boundaries.length} error boundaries. `;
+      summaryText += `${frameworkBoundaries} framework boundaries.`;
+
+      const hints = {
+        nextActions: boundaries.length === 0
+          ? ['Consider adding error boundaries to protect critical paths']
+          : ['Review boundary coverage'],
+        relatedTools: ['drift_error_handling action="unhandled"'],
+      };
+
+      return builder
+        .withSummary(summaryText)
+        .withData({ boundaries, total: boundaries.length, frameworkBoundaries })
+        .withHints(hints)
+        .buildContent();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('🛡️ No error boundaries detected. Run a scan first.')
+        .withData({ boundaries: [], total: 0, frameworkBoundaries: 0 })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
 }
 
@@ -236,56 +310,68 @@ async function handleUnhandled(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<ErrorHandlingUnhandledData>();
 
+  // First try cached data
   const dataPath = path.join(projectRoot, DRIFT_DIR, ERROR_HANDLING_DIR, 'topology.json');
+  
+  let paths: UnhandledErrorPath[] = [];
   
   try {
     const data = JSON.parse(await fs.readFile(dataPath, 'utf-8'));
-    let paths: UnhandledErrorPath[] = data.topology.unhandledPaths;
-
-    // Filter by severity
-    if (minSeverity) {
-      const severityOrder: Record<ErrorSeverity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-      const minOrder = severityOrder[minSeverity];
-      paths = paths.filter(p => severityOrder[p.severity] <= minOrder);
-    }
-
-    const bySeverity: Record<ErrorSeverity, number> = {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0,
-    };
-    for (const p of paths) {
-      bySeverity[p.severity]++;
-    }
-
-    let summaryText = `⚠️ ${paths.length} unhandled error paths. `;
-    if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
-    if (bySeverity.high > 0) summaryText += `🟡 ${bySeverity.high} high.`;
-
-    const hints = {
-      nextActions: paths.length > 0
-        ? [`Add error boundary at: ${paths[0]?.suggestedBoundary ?? 'entry point'}`]
-        : ['All error paths are handled!'],
-      warnings: bySeverity.critical > 0
-        ? ['Critical unhandled paths can cause application crashes']
-        : undefined,
-      relatedTools: ['drift_error_handling action="boundaries"'],
-    };
-
-    return builder
-      .withSummary(summaryText)
-      .withData({ paths, total: paths.length, bySeverity })
-      .withHints(hints)
-      .buildContent();
-
+    paths = data.topology.unhandledPaths;
   } catch {
-    throw Errors.custom(
-      'NO_ERROR_HANDLING_DATA',
-      'No error handling analysis found. Build it first.',
-      ['drift error-handling build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      paths = analyzer.getUnhandledPaths();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('⚠️ No unhandled error path analysis available. Run a scan first.')
+        .withData({ paths: [], total: 0, bySeverity: { critical: 0, high: 0, medium: 0, low: 0 } })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
+
+  // Filter by severity
+  if (minSeverity) {
+    const severityOrder: Record<ErrorSeverity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    const minOrder = severityOrder[minSeverity];
+    paths = paths.filter(p => severityOrder[p.severity] <= minOrder);
+  }
+
+  const bySeverity: Record<ErrorSeverity, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+  for (const p of paths) {
+    bySeverity[p.severity]++;
+  }
+
+  let summaryText = `⚠️ ${paths.length} unhandled error paths. `;
+  if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
+  if (bySeverity.high > 0) summaryText += `🟡 ${bySeverity.high} high.`;
+
+  const hints = {
+    nextActions: paths.length > 0
+      ? [`Add error boundary at: ${paths[0]?.suggestedBoundary ?? 'entry point'}`]
+      : ['All error paths are handled!'],
+    warnings: bySeverity.critical > 0
+      ? ['Critical unhandled paths can cause application crashes']
+      : undefined,
+    relatedTools: ['drift_error_handling action="boundaries"'],
+  };
+
+  return builder
+    .withSummary(summaryText)
+    .withData({ paths, total: paths.length, bySeverity })
+    .withHints(hints)
+    .buildContent();
 }
 
 async function handleAnalyze(

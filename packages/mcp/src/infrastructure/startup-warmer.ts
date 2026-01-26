@@ -29,6 +29,8 @@ import {
   ContractStore,
   CallGraphStore,
   EnvStore,
+  UnifiedCallGraphProvider,
+  createUnifiedCallGraphProvider,
   type DataLake,
 } from 'driftdetect-core';
 
@@ -58,6 +60,7 @@ export interface WarmupStores {
   boundary: BoundaryStore;
   contract: ContractStore;
   callGraph: CallGraphStore;
+  callGraphProvider?: UnifiedCallGraphProvider;
   env: EnvStore;
 }
 
@@ -188,13 +191,25 @@ export async function warmupStores(
     })()
   );
 
-  // 7. Call Graph Store
+  // 7. Call Graph Store (supports both legacy and sharded formats)
   initPromises.push(
     (async () => {
       try {
-        await stores.callGraph.initialize();
-        const graph = stores.callGraph.getGraph();
-        loaded.callGraph = graph !== null && graph.functions.size > 0;
+        // First try the unified provider which supports both formats
+        const provider = createUnifiedCallGraphProvider({ rootDir: projectRoot });
+        await provider.initialize();
+        
+        if (provider.isAvailable()) {
+          const stats = provider.getProviderStats();
+          loaded.callGraph = stats.totalFunctions > 0;
+          // Store the provider for later use
+          stores.callGraphProvider = provider;
+        } else {
+          // Fall back to legacy store
+          await stores.callGraph.initialize();
+          const graph = stores.callGraph.getGraph();
+          loaded.callGraph = graph !== null && graph.functions.size > 0;
+        }
       } catch (e) {
         errors.push(`Call graph store: ${e instanceof Error ? e.message : String(e)}`);
       }

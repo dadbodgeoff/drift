@@ -149,11 +149,80 @@ async function handleStatus(
       .buildContent();
       
   } catch {
-    throw Errors.custom(
-      'NO_COUPLING_GRAPH',
-      'No coupling graph found. Build it first using the CLI: drift coupling build',
-      ['drift coupling build']
-    );
+    // No cached data - try to build on-demand from call graph
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      const hotspots = analyzer.getHotspots({ limit: 100 });
+      const cycles = analyzer.getCycles();
+      
+      // Calculate aggregate metrics from hotspots
+      const totalModules = hotspots.length;
+      const totalEdges = hotspots.reduce((sum, h) => sum + h.coupling, 0);
+      const cycleCount = cycles.length;
+      const avgInstability = hotspots.length > 0 
+        ? hotspots.reduce((sum, h) => sum + h.metrics.instability, 0) / hotspots.length 
+        : 0;
+      const avgDistance = hotspots.length > 0
+        ? hotspots.reduce((sum, h) => sum + h.metrics.distance, 0) / hotspots.length
+        : 0;
+      
+      let summaryText = `🔗 ${totalModules} modules, ${totalEdges} dependencies. `;
+      summaryText += `${cycleCount} cycles. `;
+      summaryText += `Avg instability: ${avgInstability.toFixed(2)}, distance: ${avgDistance.toFixed(2)}.`;
+      
+      const warnings: string[] = [];
+      if (cycleCount > 0) {
+        warnings.push(`${cycleCount} dependency cycles detected`);
+      }
+      
+      const hints = {
+        nextActions: cycleCount > 0
+          ? ['Run drift_coupling action="cycles" to see cycle details']
+          : ['Coupling looks healthy'],
+        warnings: warnings.length > 0 ? warnings : undefined,
+        relatedTools: ['drift_coupling action="cycles"', 'drift_coupling action="hotspots"'],
+      };
+      
+      return builder
+        .withSummary(summaryText)
+        .withData({ 
+          metrics: { 
+            totalModules, 
+            totalEdges, 
+            cycleCount, 
+            avgInstability, 
+            avgDistance,
+            zoneOfPain: [],
+            zoneOfUselessness: [],
+            hotspots: [],
+            isolatedModules: []
+          } as AggregateCouplingMetrics
+        })
+        .withHints(hints)
+        .buildContent();
+    } catch {
+      // No call graph available - return graceful empty state
+      return builder
+        .withSummary('🔗 Coupling analysis not available. Run a scan first.')
+        .withData({ 
+          metrics: { 
+            totalModules: 0, 
+            totalEdges: 0, 
+            cycleCount: 0, 
+            avgInstability: 0, 
+            avgDistance: 0,
+            zoneOfPain: [],
+            zoneOfUselessness: [],
+            hotspots: [],
+            isolatedModules: []
+          } as AggregateCouplingMetrics
+        })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase first'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
 }
 
@@ -164,57 +233,69 @@ async function handleCycles(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<CouplingCyclesData>();
 
+  // First try cached data
   const graphPath = path.join(projectRoot, DRIFT_DIR, COUPLING_DIR, 'graph.json');
+  
+  let cycles: DependencyCycle[] = [];
   
   try {
     const data = JSON.parse(await fs.readFile(graphPath, 'utf-8'));
-    let cycles: DependencyCycle[] = data.cycles;
-
-    // Filter by length
-    if (maxCycleLength) {
-      cycles = cycles.filter(c => c.length <= maxCycleLength);
-    }
-
-    // Filter by severity
-    if (minSeverity) {
-      const severityOrder = { critical: 0, warning: 1, info: 2 };
-      const minOrder = severityOrder[minSeverity];
-      cycles = cycles.filter(c => severityOrder[c.severity] <= minOrder);
-    }
-
-    const bySeverity = {
-      critical: cycles.filter(c => c.severity === 'critical').length,
-      warning: cycles.filter(c => c.severity === 'warning').length,
-      info: cycles.filter(c => c.severity === 'info').length,
-    };
-
-    let summaryText = `🔄 ${cycles.length} cycles. `;
-    if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
-    if (bySeverity.warning > 0) summaryText += `🟡 ${bySeverity.warning} warning. `;
-    if (bySeverity.info > 0) summaryText += `⚪ ${bySeverity.info} info.`;
-
-    const hints = {
-      nextActions: bySeverity.critical > 0
-        ? ['Focus on breaking critical cycles first']
-        : cycles.length > 0
-          ? ['Consider breaking cycles to improve maintainability']
-          : ['No cycles - good architecture!'],
-      relatedTools: ['drift_coupling action="analyze" module="<path>"'],
-    };
-
-    return builder
-      .withSummary(summaryText)
-      .withData({ cycles, total: cycles.length, bySeverity })
-      .withHints(hints)
-      .buildContent();
-
+    cycles = data.cycles;
   } catch {
-    throw Errors.custom(
-      'NO_COUPLING_GRAPH',
-      'No coupling graph found. Build it first.',
-      ['drift coupling build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      cycles = analyzer.getCycles();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('🔄 No cycle analysis available. Run a scan first.')
+        .withData({ cycles: [], total: 0, bySeverity: { critical: 0, warning: 0, info: 0 } })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
+
+  // Filter by length
+  if (maxCycleLength) {
+    cycles = cycles.filter(c => c.length <= maxCycleLength);
+  }
+
+  // Filter by severity
+  if (minSeverity) {
+    const severityOrder = { critical: 0, warning: 1, info: 2 };
+    const minOrder = severityOrder[minSeverity];
+    cycles = cycles.filter(c => severityOrder[c.severity] <= minOrder);
+  }
+
+  const bySeverity = {
+    critical: cycles.filter(c => c.severity === 'critical').length,
+    warning: cycles.filter(c => c.severity === 'warning').length,
+    info: cycles.filter(c => c.severity === 'info').length,
+  };
+
+  let summaryText = `🔄 ${cycles.length} cycles. `;
+  if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
+  if (bySeverity.warning > 0) summaryText += `🟡 ${bySeverity.warning} warning. `;
+  if (bySeverity.info > 0) summaryText += `⚪ ${bySeverity.info} info.`;
+
+  const hints = {
+    nextActions: bySeverity.critical > 0
+      ? ['Focus on breaking critical cycles first']
+      : cycles.length > 0
+        ? ['Consider breaking cycles to improve maintainability']
+        : ['No cycles - good architecture!'],
+    relatedTools: ['drift_coupling action="analyze" module="<path>"'],
+  };
+
+  return builder
+    .withSummary(summaryText)
+    .withData({ cycles, total: cycles.length, bySeverity })
+    .withHints(hints)
+    .buildContent();
 }
 
 async function handleHotspots(
@@ -224,47 +305,77 @@ async function handleHotspots(
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   const builder = createResponseBuilder<CouplingHotspotsData>();
 
+  // First try cached data
   const graphPath = path.join(projectRoot, DRIFT_DIR, COUPLING_DIR, 'graph.json');
+  
+  let modules: [string, { metrics: CouplingMetrics }][] = [];
   
   try {
     const data = JSON.parse(await fs.readFile(graphPath, 'utf-8'));
-    const modules = Object.entries(data.modules) as [string, { metrics: CouplingMetrics }][];
-    
-    const hotspots = modules
-      .map(([modPath, mod]) => ({
-        path: modPath,
-        coupling: mod.metrics.Ca + mod.metrics.Ce,
-        metrics: mod.metrics,
-      }))
-      .filter(h => h.coupling >= (minCoupling ?? 3))
-      .sort((a, b) => b.coupling - a.coupling)
-      .slice(0, limit ?? 15);
-
-    let summaryText = `🔥 ${hotspots.length} coupling hotspots. `;
-    if (hotspots.length > 0) {
-      summaryText += `Top: ${hotspots[0]!.path} (${hotspots[0]!.coupling} connections).`;
-    }
-
-    const hints = {
-      nextActions: hotspots.length > 0
-        ? [`Analyze top hotspot: drift_coupling action="analyze" module="${hotspots[0]!.path}"`]
-        : ['No hotspots - coupling is well distributed'],
-      relatedTools: ['drift_coupling action="refactor-impact"'],
-    };
-
-    return builder
-      .withSummary(summaryText)
-      .withData({ hotspots, total: hotspots.length })
-      .withHints(hints)
-      .buildContent();
-
+    modules = Object.entries(data.modules) as [string, { metrics: CouplingMetrics }][];
   } catch {
-    throw Errors.custom(
-      'NO_COUPLING_GRAPH',
-      'No coupling graph found. Build it first.',
-      ['drift coupling build']
-    );
+    // Try to build on-demand
+    try {
+      const analyzer = await buildAnalyzer(projectRoot);
+      const hotspots = analyzer.getHotspots({ limit: limit ?? 15, minCoupling: minCoupling ?? 3 });
+      
+      let summaryText = `🔥 ${hotspots.length} coupling hotspots. `;
+      if (hotspots.length > 0) {
+        summaryText += `Top: ${hotspots[0]!.path} (${hotspots[0]!.coupling} connections).`;
+      }
+
+      const hints = {
+        nextActions: hotspots.length > 0
+          ? [`Analyze top hotspot: drift_coupling action="analyze" module="${hotspots[0]!.path}"`]
+          : ['No hotspots - coupling is well distributed'],
+        relatedTools: ['drift_coupling action="refactor-impact"'],
+      };
+
+      return builder
+        .withSummary(summaryText)
+        .withData({ hotspots, total: hotspots.length })
+        .withHints(hints)
+        .buildContent();
+    } catch {
+      // Return empty state
+      return builder
+        .withSummary('🔥 No coupling hotspots analysis available. Run a scan first.')
+        .withData({ hotspots: [], total: 0 })
+        .withHints({
+          nextActions: ['Run drift scan to analyze the codebase'],
+          relatedTools: ['drift_status'],
+        })
+        .buildContent();
+    }
   }
+  
+  const hotspots = modules
+    .map(([modPath, mod]) => ({
+      path: modPath,
+      coupling: mod.metrics.Ca + mod.metrics.Ce,
+      metrics: mod.metrics,
+    }))
+    .filter(h => h.coupling >= (minCoupling ?? 3))
+    .sort((a, b) => b.coupling - a.coupling)
+    .slice(0, limit ?? 15);
+
+  let summaryText = `🔥 ${hotspots.length} coupling hotspots. `;
+  if (hotspots.length > 0) {
+    summaryText += `Top: ${hotspots[0]!.path} (${hotspots[0]!.coupling} connections).`;
+  }
+
+  const hints = {
+    nextActions: hotspots.length > 0
+      ? [`Analyze top hotspot: drift_coupling action="analyze" module="${hotspots[0]!.path}"`]
+      : ['No hotspots - coupling is well distributed'],
+    relatedTools: ['drift_coupling action="refactor-impact"'],
+  };
+
+  return builder
+    .withSummary(summaryText)
+    .withData({ hotspots, total: hotspots.length })
+    .withHints(hints)
+    .buildContent();
 }
 
 async function handleAnalyze(

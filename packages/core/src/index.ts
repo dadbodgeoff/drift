@@ -273,6 +273,9 @@ export {
   // Streaming builder for large codebases
   StreamingCallGraphBuilder,
   createStreamingCallGraphBuilder,
+  // Unified call graph provider (supports legacy and sharded storage)
+  UnifiedCallGraphProvider,
+  createUnifiedCallGraphProvider,
 } from './call-graph/index.js';
 export type {
   // Unified scanner types
@@ -285,6 +288,11 @@ export type {
   // Streaming builder types
   StreamingBuilderConfig,
   StreamingBuildResult,
+  // Unified provider types
+  UnifiedCallGraphProviderConfig,
+  CallGraphStorageFormat,
+  ProviderStats,
+  UnifiedFunction,
 } from './call-graph/index.js';
 export type {
   CallGraph,
@@ -1094,10 +1102,8 @@ export type {
   RustCustomError,
   RustTrait,
   RustTraitImpl,
-  RustDataAccessPoint,
   RustAsyncFunction,
   RustCrate,
-  RustIssue,
 } from './rust/index.js';
 
 

@@ -3,12 +3,15 @@
  * 
  * Detail tool that answers "What data can this code access?" and
  * "Who can access this data?" using call graph traversal.
+ * 
+ * Now uses UnifiedCallGraphProvider which supports both legacy and sharded storage.
  */
 
 import {
-  createCallGraphAnalyzer,
+  createUnifiedCallGraphProvider,
   type ReachabilityResult,
   type InverseReachabilityResult,
+  type UnifiedCallGraphProvider,
 } from 'driftdetect-core';
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
@@ -79,12 +82,11 @@ export async function handleReachability(
   const limit = args.limit ?? DEFAULT_LIMIT;
   const sensitiveOnly = args.sensitiveOnly ?? false;
   
-  // Initialize call graph analyzer
-  const analyzer = createCallGraphAnalyzer({ rootDir: projectRoot });
-  await analyzer.initialize();
+  // Initialize unified call graph provider (supports both legacy and sharded)
+  const provider = createUnifiedCallGraphProvider({ rootDir: projectRoot });
+  await provider.initialize();
   
-  const graph = analyzer.getGraph();
-  if (!graph) {
+  if (!provider.isAvailable()) {
     throw Errors.custom(
       'NO_CALL_GRAPH',
       'No call graph found. Run drift_callgraph action="build" first.',
@@ -93,15 +95,14 @@ export async function handleReachability(
   }
   
   if (direction === 'forward') {
-    return handleForwardReachability(analyzer, graph, args.location, sensitiveOnly, builder, maxDepth, limit);
+    return handleForwardReachability(provider, args.location, sensitiveOnly, builder, maxDepth, limit);
   } else {
-    return handleInverseReachability(analyzer, graph, args.target, builder, maxDepth, limit);
+    return handleInverseReachability(provider, args.target, builder, maxDepth, limit);
   }
 }
 
 async function handleForwardReachability(
-  analyzer: ReturnType<typeof createCallGraphAnalyzer>,
-  graph: NonNullable<ReturnType<ReturnType<typeof createCallGraphAnalyzer>['getGraph']>>,
+  provider: UnifiedCallGraphProvider,
   location: string | undefined,
   sensitiveOnly: boolean,
   builder: ReturnType<typeof createResponseBuilder<ReachabilityData>>,
@@ -119,15 +120,25 @@ async function handleForwardReachability(
     const [file, lineStr] = location.split(':');
     const line = parseInt(lineStr ?? '0', 10);
     if (!file || isNaN(line)) {
-      throw Errors.custom('INVALID_LOCATION', 'Location must be file:line or function_name');
+      throw Errors.custom('INVALID_LOCATION', 'Location must be file:line (e.g., "src/api.ts:42") or function_name');
     }
-    result = analyzer.getReachableData(file, line, { maxDepth, sensitiveOnly });
+    result = await provider.getReachableData(file, line, { maxDepth, sensitiveOnly });
+  } else if (location.includes('/') || location.includes('.')) {
+    // Looks like a file path without line number - provide helpful error
+    throw Errors.custom(
+      'INVALID_LOCATION', 
+      `Location "${location}" looks like a file path. Please provide a line number (e.g., "${location}:1") or use a function name.`,
+      [`Try: location="${location}:1"`]
+    );
   } else {
-    // Find function by name
+    // Find function by name - search through entry points first
+    const entryPoints = await provider.getEntryPoints();
     let funcId: string | undefined;
-    for (const [id, func] of graph.functions) {
-      if (func.name === location || func.qualifiedName === location) {
-        funcId = id;
+    
+    for (const epId of entryPoints) {
+      const func = await provider.getFunction(epId);
+      if (func && (func.name === location)) {
+        funcId = epId;
         break;
       }
     }
@@ -136,7 +147,13 @@ async function handleForwardReachability(
       throw Errors.notFound('function', location);
     }
     
-    result = analyzer.getReachableDataFromFunction(funcId, { maxDepth, sensitiveOnly });
+    // Get the function's file and line to use getReachableData
+    const func = await provider.getFunction(funcId);
+    if (!func) {
+      throw Errors.notFound('function', location);
+    }
+    
+    result = await provider.getReachableData(func.file, func.startLine, { maxDepth, sensitiveOnly });
   }
   
   // Map reachable data
@@ -200,8 +217,7 @@ async function handleForwardReachability(
 }
 
 async function handleInverseReachability(
-  analyzer: ReturnType<typeof createCallGraphAnalyzer>,
-  graph: NonNullable<ReturnType<ReturnType<typeof createCallGraphAnalyzer>['getGraph']>>,
+  provider: UnifiedCallGraphProvider,
   target: string | undefined,
   builder: ReturnType<typeof createResponseBuilder<ReachabilityData>>,
   maxDepth: number,
@@ -216,30 +232,28 @@ async function handleInverseReachability(
   const table = parts[0] ?? '';
   const field = parts.length > 1 ? parts.slice(1).join('.') : undefined;
   
-  const result: InverseReachabilityResult = analyzer.getCodePathsToData(
+  const result: InverseReachabilityResult = await provider.getCodePathsToData(
     field ? { table, field, maxDepth } : { table, maxDepth }
   );
   
   // Map access paths
-  const accessPaths: AccessPath[] = result.accessPaths
-    .slice(0, limit)
-    .map(ap => {
-      const entryFunc = graph.functions.get(ap.entryPoint);
-      return {
-        entryPoint: entryFunc?.qualifiedName ?? ap.entryPoint,
-        entryPointFile: entryFunc?.file ?? '',
-        pathLength: ap.path.length,
-        path: ap.path.map(p => p.functionName),
-      };
+  const accessPaths: AccessPath[] = [];
+  for (const ap of result.accessPaths.slice(0, limit)) {
+    const entryFunc = await provider.getFunction(ap.entryPoint);
+    accessPaths.push({
+      entryPoint: entryFunc?.name ?? ap.entryPoint,
+      entryPointFile: entryFunc?.file ?? '',
+      pathLength: ap.path.length,
+      path: ap.path.map(p => p.functionName),
     });
+  }
   
   // Get entry point names
-  const entryPointNames = result.entryPoints
-    .slice(0, limit)
-    .map(epId => {
-      const func = graph.functions.get(epId);
-      return func?.qualifiedName ?? epId;
-    });
+  const entryPointNames: string[] = [];
+  for (const epId of result.entryPoints.slice(0, limit)) {
+    const func = await provider.getFunction(epId);
+    entryPointNames.push(func?.name ?? epId);
+  }
   
   const targetData: InverseReachabilityData['target'] = { table };
   if (field) {
