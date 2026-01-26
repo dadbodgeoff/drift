@@ -51,6 +51,8 @@ import {
   createGateCommand,
   contextCommand,
   telemetryCommand,
+  nextStepsCommand,
+  troubleshootCommand,
 } from '../commands/index.js';
 
 /**
@@ -139,6 +141,10 @@ function createProgram(): Command {
 
   // Telemetry Management (Privacy-first, opt-in)
   program.addCommand(telemetryCommand);
+
+  // User Guidance Commands
+  program.addCommand(nextStepsCommand);
+  program.addCommand(troubleshootCommand);
 
   // Add help examples
   program.addHelpText(
@@ -233,6 +239,10 @@ Examples:
   $ drift telemetry enable      Enable telemetry (opt-in)
   $ drift telemetry disable     Disable telemetry
   $ drift telemetry setup       Interactive telemetry configuration
+  $ drift next-steps            Get personalized recommendations
+  $ drift next-steps -v         Show all recommendations with reasons
+  $ drift troubleshoot          Diagnose common issues
+  $ drift troubleshoot -v       Show all issues including info-level
 
 Documentation:
   https://github.com/drift/drift

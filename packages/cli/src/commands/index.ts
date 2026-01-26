@@ -77,3 +77,7 @@ export { contextCommand } from './context.js';
 
 // Telemetry Management (Privacy-first, opt-in)
 export { telemetryCommand } from './telemetry.js';
+
+// User Guidance Commands
+export { nextStepsCommand } from './next-steps.js';
+export { troubleshootCommand } from './troubleshoot.js';

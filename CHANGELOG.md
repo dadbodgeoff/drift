@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### User Guidance Commands
+New commands to help users get started and troubleshoot issues:
+
+- **`drift next-steps`** - Personalized recommendations based on project state
+  - Analyzes project type, languages, frameworks
+  - Recommends high-priority actions (init, scan, review patterns)
+  - Suggests language-specific commands
+  - Shows analysis data status (call graph, test topology, coupling)
+
+- **`drift troubleshoot`** - Diagnose common issues with targeted fixes
+  - Checks initialization, configuration, patterns
+  - Detects .driftignore problems
+  - Finds large directories slowing scans
+  - Validates Node.js version compatibility
+  - Checks MCP configuration
+
+#### Enhanced MCP Capabilities Tool
+- `drift_capabilities` now documents all 45+ tools with:
+  - Token cost estimates (low/medium/high)
+  - Use case guides (code generation, security audit, refactoring)
+  - Common workflows with tool sequences
+  - Layer organization (orchestration, discovery, exploration, detail, analysis, language-specific, generation, enterprise)
+
 #### Language CLI & MCP Tool Parity
 Complete CLI commands and MCP tools for all 8 supported languages:
 
