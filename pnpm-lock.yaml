@@ -80,13 +80,13 @@ importers:
         version: 12.1.0
       driftdetect-core:
         specifier: ^0.8.2
-        version: link:../core
+        version: 0.8.2
       driftdetect-dashboard:
         specifier: ^0.8.2
-        version: link:../dashboard
+        version: 0.8.2(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)
       driftdetect-detectors:
         specifier: ^0.8.2
-        version: link:../detectors
+        version: 0.8.2
       ora:
         specifier: ^8.1.0
         version: 8.2.0
@@ -181,10 +181,10 @@ importers:
     dependencies:
       driftdetect-core:
         specifier: ^0.8.2
-        version: link:../core
+        version: 0.8.2
       driftdetect-galaxy:
         specifier: ^0.8.2
-        version: link:../galaxy
+        version: 0.8.2(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)
       express:
         specifier: ^4.18.2
         version: 4.22.1
@@ -399,7 +399,7 @@ importers:
     dependencies:
       driftdetect-lsp:
         specifier: ^0.8.1
-        version: link:../lsp
+        version: 0.8.2
       vscode-languageclient:
         specifier: ^9.0.1
         version: 9.0.1
@@ -3709,6 +3709,111 @@ packages:
 
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
+
+  /driftdetect-core@0.8.2:
+    resolution: {integrity: sha512-f+uXmDYoKgQj1HFnNJ0tBUz8ZWCBz0kHJ5dQXw/yQ5mdodi3yputg8Trw9oBga2aeSwqLSiI+w+XQu14QduRWA==}
+    engines: {node: '>=18 <25'}
+    dependencies:
+      ignore: 5.3.2
+      minimatch: 9.0.5
+      piscina: 5.1.4
+      simple-git: 3.30.0
+      tree-sitter: 0.21.1
+      tree-sitter-c-sharp: 0.21.3(tree-sitter@0.21.1)
+      tree-sitter-cpp: 0.22.3(tree-sitter@0.21.1)
+      tree-sitter-go: 0.21.2(tree-sitter@0.21.1)
+      tree-sitter-java: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-javascript: 0.21.4(tree-sitter@0.21.1)
+      tree-sitter-php: 0.22.8(tree-sitter@0.21.1)
+      tree-sitter-python: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-rust: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-typescript: 0.21.2(tree-sitter@0.21.1)
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - supports-color
+      - tree_sitter
+    dev: false
+
+  /driftdetect-dashboard@0.8.2(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-S7owvTt3SUsVogd2hNGZwpa0biu1FPG6QaxyG+hqXSPxFsqwR2A54Kqk9h4mf236RA3t9IaXMCMmT0rhrJRyNA==}
+    engines: {node: '>=18 <25'}
+    peerDependencies:
+      react: ^18.2.0
+      react-dom: ^18.2.0
+    dependencies:
+      driftdetect-core: 0.8.2
+      driftdetect-galaxy: 0.8.2(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)
+      express: 4.22.1
+      open: 10.2.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      ws: 8.19.0
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/three'
+      - bufferutil
+      - expo
+      - expo-asset
+      - expo-file-system
+      - expo-gl
+      - immer
+      - react-native
+      - supports-color
+      - tree_sitter
+      - use-sync-external-store
+      - utf-8-validate
+    dev: false
+
+  /driftdetect-detectors@0.8.2:
+    resolution: {integrity: sha512-+2WM95x+7goKBJCfz08N/b0CNvjb8Lz+4SqNQevrpxCIHc87cHGu/HU2nZVP1OPP8HxeaFYpGF3DgzzeoCqdNg==}
+    engines: {node: '>=18 <25'}
+    dependencies:
+      driftdetect-core: 0.8.2
+    transitivePeerDependencies:
+      - supports-color
+      - tree_sitter
+    dev: false
+
+  /driftdetect-galaxy@0.8.2(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-yb/g9R9fZhazoMdG0HDEIFRYyeCTt4nXCDAXF/Bmxp+Aood8E9sVYE7UkbMxP2rWWSwbi65UDU0S1MbI/HUPag==}
+    engines: {node: '>=18 <25'}
+    peerDependencies:
+      react: ^18.2.0
+      react-dom: ^18.2.0
+    dependencies:
+      '@react-three/drei': 9.122.0(@react-three/fiber@8.18.0)(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)(three@0.160.1)
+      '@react-three/fiber': 8.18.0(@types/react@18.3.27)(react-dom@18.3.1)(react@18.3.1)(three@0.160.1)
+      '@react-three/postprocessing': 2.19.1(@react-three/fiber@8.18.0)(@types/three@0.160.0)(react@18.3.1)(three@0.160.1)
+      jsfxr: 1.3.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      three: 0.160.1
+      zustand: 4.5.7(@types/react@18.3.27)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/three'
+      - expo
+      - expo-asset
+      - expo-file-system
+      - expo-gl
+      - immer
+      - react-native
+      - use-sync-external-store
+    dev: false
+
+  /driftdetect-lsp@0.8.2:
+    resolution: {integrity: sha512-KjedqnP9spel9BJS3gWD6/w9BWlae9gJuCeU18B4OpcdLIEvTB+zp7TdXVN95+XaL+ei7U/lYaTsNVsn0/M1YA==}
+    hasBin: true
+    dependencies:
+      driftdetect-core: 0.8.2
+      driftdetect-detectors: 0.8.2
+      vscode-languageserver: 9.0.1
+      vscode-languageserver-textdocument: 1.0.12
+      vscode-uri: 3.1.0
+    transitivePeerDependencies:
+      - supports-color
+      - tree_sitter
+    dev: false
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
