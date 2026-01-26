@@ -150,6 +150,28 @@ Add to your MCP config:
 
 **Windsurf, Kiro, VS Code** — same format in their respective config files.
 
+### Docker Deployment
+
+Run Drift as a containerized HTTP service:
+
+```bash
+# Clone and start
+git clone https://github.com/dadbodgeoff/drift.git
+cd drift
+
+# Start with your project mounted
+PROJECT_PATH=/path/to/your/project docker compose up -d
+
+# Check health
+curl http://localhost:3000/health
+```
+
+Configure your MCP client to connect via HTTP/SSE:
+- SSE endpoint: `http://localhost:3000/sse`
+- Message endpoint: `http://localhost:3000/message`
+
+See [docker-compose.yml](./docker-compose.yml) for configuration options.
+
 ---
 
 ## What Questions Can Drift Answer?

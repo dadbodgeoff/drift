@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-01-26
+
+### Added
+
+#### Docker Deployment Support
+Containerized deployment for the MCP server (thanks [@Ntrakiyski](https://github.com/Ntrakiyski) for the contribution!):
+
+- **HTTP Server**: New `drift-mcp-http` binary exposing MCP over HTTP/SSE transport
+  - `GET /health` - Health check endpoint
+  - `GET /sse` - SSE endpoint for MCP communication
+  - `POST /message` - Send messages to MCP server
+- **Dockerfile**: Multi-stage build for optimized production images
+  - Non-root user for security
+  - Health checks built-in
+- **docker-compose.yml**: Ready-to-use configuration
+  - Volume mounts for project analysis
+  - Environment variable configuration
+  - Resource limits (4GB memory)
+- **.env.example**: Template for environment configuration
+
+Usage:
+```bash
+PROJECT_PATH=/path/to/your/project docker compose up -d
+curl http://localhost:3000/health
+```
+
 ## [0.9.4] - 2026-01-26
 
 ### Fixed
