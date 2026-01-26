@@ -1,0 +1,66 @@
+# Drift MCP Server - Docker Compose Configuration
+#
+# This configuration allows you to run the Drift MCP server as a containerized
+# service accessible via HTTP. The MCP protocol is exposed via SSE (Server-Sent Events).
+#
+# Usage:
+#   1. Build and start:
+#      docker compose up -d
+#
+#   2. With custom project path:
+#      PROJECT_PATH=/path/to/your/project docker compose up -d
+#
+#   3. View logs:
+#      docker compose logs -f
+#
+#   4. Stop:
+#      docker compose down
+#
+# Endpoints:
+#   - http://localhost:3000/health  - Health check
+#   - http://localhost:3000/sse     - SSE endpoint for MCP
+#   - http://localhost:3000/message - POST endpoint for MCP messages
+
+services:
+  drift-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drift-mcp
+    restart: unless-stopped
+    ports:
+      - "${DRIFT_PORT:-3000}:3000"
+    volumes:
+      # Mount the project directory you want to analyze
+      - "${PROJECT_PATH:-.}:/project:ro"
+      # Optional: Mount .drift cache directory for persistence
+      - drift-cache:/project/.drift
+    environment:
+      # Server configuration
+      - PORT=3000
+      - PROJECT_ROOT=/project
+      # Feature flags
+      - ENABLE_CACHE=${ENABLE_CACHE:-true}
+      - ENABLE_RATE_LIMIT=${ENABLE_RATE_LIMIT:-true}
+      - VERBOSE=${VERBOSE:-false}
+      - SKIP_WARMUP=${SKIP_WARMUP:-false}
+      # Node.js configuration
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits (adjust based on project size)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+
+volumes:
+  drift-cache:
+    driver: local
