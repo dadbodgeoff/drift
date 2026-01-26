@@ -67,7 +67,7 @@
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
     "driftdetect-core": "^0.8.2",
-    "driftdetect-dashboard": "^0.8.1",
+    "driftdetect-dashboard": "^0.8.2",
     "driftdetect-detectors": "^0.8.2",
     "ora": "^8.1.0",
     "piscina": "^5.1.4"
