@@ -79,13 +79,13 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: ^0.8.1
+        specifier: ^0.8.2
         version: link:../core
       driftdetect-dashboard:
-        specifier: ^0.8.1
+        specifier: ^0.8.2
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: ^0.8.1
+        specifier: ^0.8.2
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -180,10 +180,10 @@ importers:
   packages/dashboard:
     dependencies:
       driftdetect-core:
-        specifier: ^0.8.1
+        specifier: ^0.8.2
         version: link:../core
       driftdetect-galaxy:
-        specifier: ^0.8.1
+        specifier: ^0.8.2
         version: link:../galaxy
       express:
         specifier: ^4.18.2
