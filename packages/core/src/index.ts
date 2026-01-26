@@ -1139,6 +1139,129 @@ export type {
 
 
 // ============================================================================
+// TypeScript/JavaScript Language Support (Routes, Components, Hooks, Data Access)
+// ============================================================================
+
+export {
+  // Main analyzer
+  TypeScriptAnalyzer,
+  createTypeScriptAnalyzer,
+} from './typescript/index.js';
+
+export type {
+  // Configuration types
+  TypeScriptAnalyzerConfig,
+
+  // Result types
+  TypeScriptAnalysisResult,
+  TypeScriptAnalysisStats,
+  TSRoute,
+  TSRoutesResult,
+  TSComponent,
+  TSComponentsResult,
+  TSHook,
+  TSHooksResult,
+  TSErrorPattern,
+  TSErrorIssue,
+  TSErrorHandlingResult,
+  TSDataAccessPoint,
+  TSDataAccessResult,
+  TSDecorator,
+  TSDecoratorsResult,
+} from './typescript/index.js';
+
+
+// ============================================================================
+// Python Language Support (Routes, Error Handling, Data Access, Async)
+// ============================================================================
+
+export {
+  // Main analyzer
+  PythonAnalyzer,
+  createPythonAnalyzer,
+} from './python/index.js';
+
+export type {
+  // Configuration types
+  PythonAnalyzerConfig,
+
+  // Result types
+  PythonAnalysisResult,
+  PythonAnalysisStats,
+  PyRoute,
+  PyRoutesResult,
+  PyErrorPattern,
+  PyErrorIssue,
+  PyErrorHandlingResult,
+  PyDataAccessPoint,
+  PyDataAccessResult,
+  PyDecorator,
+  PyDecoratorsResult,
+  PyAsyncFunction,
+  PyAsyncResult,
+} from './python/index.js';
+
+
+// ============================================================================
+// Java Language Support (Routes, Error Handling, Data Access, Annotations)
+// ============================================================================
+
+export {
+  // Main analyzer
+  JavaAnalyzer,
+  createJavaAnalyzer,
+} from './java/index.js';
+
+export type {
+  // Configuration types
+  JavaAnalyzerConfig,
+
+  // Result types
+  JavaAnalysisResult,
+  JavaAnalysisStats,
+  JavaRoute,
+  JavaRoutesResult,
+  JavaErrorPattern,
+  JavaErrorIssue,
+  JavaErrorHandlingResult,
+  JavaDataAccessPoint,
+  JavaDataAccessResult,
+  JavaAnnotation,
+  JavaAnnotationsResult,
+} from './java/index.js';
+
+
+// ============================================================================
+// PHP Language Support (Routes, Error Handling, Data Access, Traits)
+// ============================================================================
+
+export {
+  // Main analyzer
+  PhpAnalyzer,
+  createPhpAnalyzer,
+} from './php/index.js';
+
+export type {
+  // Configuration types
+  PhpAnalyzerConfig,
+
+  // Result types
+  PhpAnalysisResult,
+  PhpAnalysisStats,
+  PhpRoute,
+  PhpRoutesResult,
+  PhpErrorPattern,
+  PhpErrorIssue,
+  PhpErrorHandlingResult,
+  PhpDataAccessPoint,
+  PhpDataAccessResult,
+  PhpTrait,
+  PhpTraitUsage,
+  PhpTraitsResult,
+} from './php/index.js';
+
+
+// ============================================================================
 // Environment Variable Detection (Config access pattern tracking)
 // ============================================================================
 

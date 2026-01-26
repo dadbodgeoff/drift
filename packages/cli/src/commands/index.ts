@@ -48,6 +48,18 @@ export { createRustCommand } from './rust.js';
 // C++ Language Support
 export { createCppCommand } from './cpp.js';
 
+// TypeScript/JavaScript Language Support
+export { createTsCommand } from './ts.js';
+
+// Python Language Support
+export { createPyCommand } from './py.js';
+
+// Java Language Support
+export { createJavaCommand } from './java.js';
+
+// PHP Language Support
+export { createPhpCommand } from './php.js';
+
 // Environment Variable Detection
 export { envCommand } from './env.js';
 

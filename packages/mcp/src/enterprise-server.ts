@@ -95,6 +95,10 @@ import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
 import { executeRustTool, type RustArgs } from './tools/analysis/rust.js';
 import { executeCppTool, type CppArgs } from './tools/analysis/cpp.js';
+import { executeTypeScriptTool, type TypeScriptArgs } from './tools/analysis/typescript.js';
+import { executePythonTool, type PythonArgs } from './tools/analysis/python.js';
+import { executeJavaTool, type JavaArgs } from './tools/analysis/java.js';
+import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
 import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
@@ -417,6 +421,18 @@ async function routeToolCall(
 
     case 'drift_cpp':
       return executeCppTool(args as unknown as CppArgs, { projectRoot });
+
+    case 'drift_typescript':
+      return executeTypeScriptTool(args as unknown as TypeScriptArgs, { projectRoot });
+
+    case 'drift_python':
+      return executePythonTool(args as unknown as PythonArgs, { projectRoot });
+
+    case 'drift_java':
+      return executeJavaTool(args as unknown as JavaArgs, { projectRoot });
+
+    case 'drift_php':
+      return executePhpTool(args as unknown as PhpArgs, { projectRoot });
 
     case 'drift_constants':
       return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);

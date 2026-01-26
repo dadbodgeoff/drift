@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-01-26
+
+### Added
+
+#### Language CLI & MCP Tool Parity
+Complete CLI commands and MCP tools for all 8 supported languages:
+
+- **TypeScript/JavaScript** (`drift ts`, `drift_typescript`)
+  - Actions: status, routes, components, hooks, errors, data-access, decorators
+  - Frameworks: Express, NestJS, Next.js, Fastify
+  - Data access: Prisma, TypeORM, Drizzle, Sequelize, Mongoose
+
+- **Python** (`drift py`, `drift_python`)
+  - Actions: status, routes, errors, data-access, decorators, async
+  - Frameworks: Flask, FastAPI, Django, Starlette
+  - Data access: Django ORM, SQLAlchemy, Tortoise, Peewee
+
+- **Java** (`drift java`, `drift_java`)
+  - Actions: status, routes, errors, data-access, annotations
+  - Frameworks: Spring MVC, JAX-RS, Micronaut, Quarkus
+  - Data access: Spring Data JPA, Hibernate, JDBC, MyBatis
+
+- **PHP** (`drift php`, `drift_php`)
+  - Actions: status, routes, errors, data-access, traits
+  - Frameworks: Laravel, Symfony, Slim, Lumen
+  - Data access: Eloquent, Doctrine, PDO
+
+#### New Core Analyzers
+- `packages/core/src/typescript/typescript-analyzer.ts` - Full TypeScript/JS analysis
+- `packages/core/src/python/python-analyzer.ts` - Full Python analysis
+- `packages/core/src/java/java-analyzer.ts` - Full Java analysis
+- `packages/core/src/php/php-analyzer.ts` - Full PHP analysis
+
+### Fixed
+
+- **Dashboard build cache**: Fixed stale tsbuildinfo causing dashboard server JS files to not emit
+
 ## [0.8.1] - 2026-01-26
 
 ### Fixed

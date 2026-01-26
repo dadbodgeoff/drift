@@ -17,6 +17,10 @@ const CONSTANTS_ACTIONS = ['status', 'list', 'get', 'usages', 'magic', 'dead', '
 
 const RUST_ACTIONS = ['status', 'routes', 'errors', 'traits', 'data-access', 'async'];
 const CPP_ACTIONS = ['status', 'classes', 'memory', 'templates', 'virtual'];
+const TYPESCRIPT_ACTIONS = ['status', 'routes', 'components', 'hooks', 'errors', 'data-access', 'decorators'];
+const PYTHON_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'decorators', 'async'];
+const JAVA_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'annotations'];
+const PHP_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'traits'];
 
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
@@ -481,6 +485,114 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_typescript',
+    description: 'Analyze TypeScript/JavaScript projects: routes, components, hooks, error handling, data access. Actions: status (project overview), routes (HTTP routes - Express, NestJS, Next.js, Fastify), components (React components), hooks (React hooks usage), errors (error handling patterns), data-access (database patterns - Prisma, TypeORM, Drizzle, Sequelize, Mongoose), decorators (NestJS, TypeORM decorators).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: TYPESCRIPT_ACTIONS,
+          description: 'Action to perform: status, routes, components, hooks, errors, data-access, decorators',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes): express, nestjs, nextjs, fastify',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'drift_python',
+    description: 'Analyze Python projects: routes, error handling, data access, async patterns. Actions: status (project overview), routes (HTTP routes - Flask, FastAPI, Django, Starlette), errors (error handling patterns), data-access (database patterns - Django ORM, SQLAlchemy, Tortoise, Peewee), decorators (decorator usage), async (async patterns).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: PYTHON_ACTIONS,
+          description: 'Action to perform: status, routes, errors, data-access, decorators, async',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes): flask, fastapi, django, starlette',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'drift_java',
+    description: 'Analyze Java projects: routes, error handling, data access, annotations. Actions: status (project overview), routes (HTTP routes - Spring MVC, JAX-RS, Micronaut, Quarkus), errors (error handling patterns), data-access (database patterns - Spring Data JPA, Hibernate, JDBC, MyBatis), annotations (annotation usage).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: JAVA_ACTIONS,
+          description: 'Action to perform: status, routes, errors, data-access, annotations',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes): spring, jax-rs, micronaut, quarkus',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'drift_php',
+    description: 'Analyze PHP projects: routes, error handling, data access, traits. Actions: status (project overview), routes (HTTP routes - Laravel, Symfony, Slim, Lumen), errors (error handling patterns), data-access (database patterns - Eloquent, Doctrine, PDO), traits (trait definitions and usage).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: PHP_ACTIONS,
+          description: 'Action to perform: status, routes, errors, data-access, traits',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        framework: {
+          type: 'string',
+          description: 'Filter by framework (for routes): laravel, symfony, slim, lumen',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -495,3 +607,7 @@ export { executeRustTool, type RustArgs, type RustAction } from './rust.js';
 export { handleConstants, type ConstantsArgs, type ConstantsAction } from './constants.js';
 export { handleQualityGate, qualityGateTool, type QualityGateArgs } from './quality-gate.js';
 export { executeCppTool, type CppArgs, type CppAction } from './cpp.js';
+export { executeTypeScriptTool, type TypeScriptArgs, type TypeScriptAction } from './typescript.js';
+export { executePythonTool, type PythonArgs, type PythonAction } from './python.js';
+export { executeJavaTool, type JavaArgs, type JavaAction } from './java.js';
+export { executePhpTool, type PhpArgs, type PhpAction } from './php.js';

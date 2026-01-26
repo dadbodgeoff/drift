@@ -41,6 +41,10 @@ import {
   createGoCommand,
   createRustCommand,
   createCppCommand,
+  createTsCommand,
+  createPyCommand,
+  createJavaCommand,
+  createPhpCommand,
   envCommand,
   constantsCommand,
   licenseCommand,
@@ -105,6 +109,18 @@ function createProgram(): Command {
 
   // C++ Language Support
   program.addCommand(createCppCommand());
+
+  // TypeScript/JavaScript Language Support
+  program.addCommand(createTsCommand());
+
+  // Python Language Support
+  program.addCommand(createPyCommand());
+
+  // Java Language Support
+  program.addCommand(createJavaCommand());
+
+  // PHP Language Support
+  program.addCommand(createPhpCommand());
 
   // Environment Variable Detection
   program.addCommand(envCommand);
