@@ -2,7 +2,7 @@
   "name": "driftdetect-vscode",
   "displayName": "Drift - Architectural Drift Detection",
   "description": "Learn your codebase patterns and enforce consistency. Pattern detection, call graph analysis, security visualization, and MCP integration for AI agents. Supports TypeScript, Python, C#, Java, PHP.",
-  "version": "0.8.4",
+  "version": "0.9.5",
   "publisher": "driftdetect",
   "license": "Apache-2.0",
   "icon": "resources/drift-icon.png",
@@ -150,13 +150,19 @@
         },
         "drift.server.args": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "Additional arguments to pass to the LSP server"
         },
         "drift.server.trace": {
           "type": "string",
-          "enum": ["off", "messages", "verbose"],
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
           "default": "off",
           "description": "Trace communication with the Drift server"
         },
@@ -178,8 +184,14 @@
         },
         "drift.scan.excludePatterns": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["**/node_modules/**", "**/dist/**", "**/.git/**"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.git/**"
+          ],
           "description": "Glob patterns to exclude from scanning"
         },
         "drift.display.showStatusBar": {
@@ -201,9 +213,17 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["error", "warning", "info", "hint"]
+            "enum": [
+              "error",
+              "warning",
+              "info",
+              "hint"
+            ]
           },
-          "default": ["error", "warning"],
+          "default": [
+            "error",
+            "warning"
+          ],
           "description": "Severity levels to display"
         },
         "drift.ai.enabled": {
@@ -213,7 +233,12 @@
         },
         "drift.ai.provider": {
           "type": "string",
-          "enum": ["openai", "anthropic", "ollama", "none"],
+          "enum": [
+            "openai",
+            "anthropic",
+            "ollama",
+            "none"
+          ],
           "default": "none",
           "description": "AI provider for explanations and fixes"
         },

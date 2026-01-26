@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-lsp",
-  "version": "0.8.4",
+  "version": "0.9.5",
   "description": "Language Server Protocol implementation for Drift",
   "license": "Apache-2.0",
   "repository": {
