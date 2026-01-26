@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.2] - 2026-01-26
 
+### Fixed
+
+#### Call Graph Persistence
+- Fixed call graph data not persisting after build
+- `CallGraphStore` now loads from lake storage (`.drift/lake/callgraph/`) in addition to legacy path
+- `callGraphExists()` check updated to look in correct location
+- Dashboard `loadCallGraph()` updated to support both storage formats
+- All call graph commands (`status`, `reach`, `inverse`, etc.) now work correctly after build
+
 ### Added
 
 #### User Guidance Commands

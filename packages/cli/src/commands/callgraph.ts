@@ -45,18 +45,31 @@ export interface CallGraphOptions {
 /** Directory name for drift configuration */
 const DRIFT_DIR = '.drift';
 
-/** Directory name for call graph data */
+/** Directory name for call graph data (lake storage) */
+const LAKE_DIR = 'lake';
 const CALLGRAPH_DIR = 'callgraph';
 
 /**
  * Check if call graph data exists
+ * 
+ * Call graph data is stored in .drift/lake/callgraph/ with:
+ * - index.json: Summary index of all shards
+ * - files/: Individual file shards
  */
 async function callGraphExists(rootDir: string): Promise<boolean> {
   try {
-    await fs.access(path.join(rootDir, DRIFT_DIR, CALLGRAPH_DIR, 'graph.json'));
+    // Check for the index file in the lake storage location
+    await fs.access(path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'index.json'));
     return true;
   } catch {
-    return false;
+    // Also check for any file shards (in case index wasn't built yet)
+    try {
+      const filesDir = path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'files');
+      const files = await fs.readdir(filesDir);
+      return files.some(f => f.endsWith('.json'));
+    } catch {
+      return false;
+    }
   }
 }
 
