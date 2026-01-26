@@ -31,6 +31,13 @@ PROJECT_PATH=/path/to/your/project docker compose up -d
 curl http://localhost:3000/health
 ```
 
+### Fixed
+
+#### Pattern Approval Persistence
+- Fixed patterns not persisting to disk after approval/ignore operations
+- `PatternStoreAdapter.approve()` and `ignore()` now call `saveAll()` immediately
+- Previously, patterns were only updated in memory but not written to `.drift/patterns/`
+
 ## [0.9.4] - 2026-01-26
 
 ### Fixed

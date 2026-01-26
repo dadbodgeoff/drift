@@ -482,6 +482,9 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
       throw error;
     }
 
+    // Persist the change to disk immediately
+    await this.store.saveAll();
+
     const updated = this.store.get(id);
     return legacyToUnified(updated!);
   }
@@ -502,6 +505,9 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
       }
       throw error;
     }
+
+    // Persist the change to disk immediately
+    await this.store.saveAll();
 
     const updated = this.store.get(id);
     return legacyToUnified(updated!);
