@@ -1,12 +1,12 @@
 {
   "name": "driftdetect",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Codebase pattern detection for AI agents - scans your code, learns conventions, feeds context to Claude/Cursor/Copilot via MCP. Static analysis for TypeScript, Python, C#, Java, PHP.",
   "license": "Apache-2.0",
   "author": "Geoffrey Fernald",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dadbodgeoff/drift"
+    "url": "git+https://github.com/dadbodgeoff/drift.git"
   },
   "homepage": "https://github.com/dadbodgeoff/drift#readme",
   "keywords": [
@@ -38,7 +38,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "drift": "./dist/bin/drift.js"
+    "drift": "dist/bin/drift.js"
   },
   "exports": {
     ".": {
