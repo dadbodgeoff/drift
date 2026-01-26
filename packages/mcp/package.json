@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-mcp",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "MCP server that gives AI agents (Claude, Cursor, Copilot) deep understanding of your codebase patterns, conventions, and architecture. Query patterns, security boundaries, call graphs in real-time.",
   "license": "Apache-2.0",
   "author": "Geoffrey Fernald",
