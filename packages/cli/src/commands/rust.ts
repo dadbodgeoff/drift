@@ -208,16 +208,16 @@ async function errorsAction(targetPath: string | undefined, options: RustOptions
     // Pattern breakdown
     const patternCounts = {
       propagated: result.patterns.filter((p: RustErrorPattern) => p.type === 'propagated').length,
-      mapped: result.patterns.filter((p: RustErrorPattern) => p.type === 'mapped').length,
+      wrapped: result.patterns.filter((p: RustErrorPattern) => p.type === 'wrapped').length,
       logged: result.patterns.filter((p: RustErrorPattern) => p.type === 'logged').length,
-      unwrapped: result.patterns.filter((p: RustErrorPattern) => p.type === 'unwrapped').length,
+      ignored: result.patterns.filter((p: RustErrorPattern) => p.type === 'ignored').length,
     };
 
     console.log(chalk.bold('Pattern Breakdown:'));
     console.log(`  Propagated (?): ${chalk.cyan(patternCounts.propagated)}`);
-    console.log(`  Mapped (.map_err): ${chalk.green(patternCounts.mapped)}`);
+    console.log(`  Wrapped (.map_err): ${chalk.green(patternCounts.wrapped)}`);
     console.log(`  Logged: ${chalk.blue(patternCounts.logged)}`);
-    console.log(`  Unwrapped: ${chalk.yellow(patternCounts.unwrapped)}`);
+    console.log(`  Ignored: ${chalk.yellow(patternCounts.ignored)}`);
     console.log();
 
     // Issues
