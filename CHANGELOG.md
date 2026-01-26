@@ -5,6 +5,156 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-26
+
+### 🚀 Major Release: 8 Languages, 45+ MCP Tools, Comprehensive Documentation
+
+This release marks a significant milestone with full support for 8 programming languages, a complete MCP tool suite, and enterprise-grade documentation.
+
+---
+
+### ⭐ Headline Features
+
+#### 🦀 Rust Language Support
+Complete Rust language support with Tree-sitter parsing:
+
+- **Framework Detection**: Actix-web, Axum, Rocket, Warp
+- **Data Access**: Diesel, SQLx, SeaORM pattern detection
+- **Error Handling**: Result/Option patterns, `?` operator tracking, custom error types
+- **Safety Analysis**: `unsafe` block detection and tracking
+- **Trait Analysis**: Trait implementations and bounds
+- **CLI Command**: `drift rust` with status, unsafe, errors, traits actions
+- **MCP Tool**: `drift_rust` for AI agent integration
+
+#### ⚙️ C++ Language Support
+Complete C++ language support with Tree-sitter parsing:
+
+- **Framework Detection**: Qt, Boost.Beast, Crow, custom frameworks
+- **Memory Analysis**: Smart pointer usage, raw pointer tracking, RAII patterns
+- **Polymorphism**: Virtual function detection, inheritance hierarchies
+- **Template Analysis**: Template instantiation tracking
+- **Data Access**: Database library pattern detection
+- **CLI Command**: `drift cpp` with status, memory, templates, virtual actions
+- **MCP Tool**: `drift_cpp` for AI agent integration
+
+#### 🐹 Go Language Support (Enhanced)
+Improved Go support with additional analysis:
+
+- **Goroutine Tracking**: Concurrent code pattern detection
+- **Interface Analysis**: Implementation tracking
+- **Error Handling**: Go-style error patterns
+
+#### 📚 Comprehensive Wiki Documentation
+22 wiki pages covering every aspect of Drift:
+
+- **Getting Started**: Quick start, MCP setup, configuration
+- **MCP Server**: Tools reference (45+ tools), architecture (7-layer design)
+- **Deep Dives**: Call graph, security, test topology, coupling analysis
+- **CI/CD**: Quality gates, CI integration, Git hooks, incremental scans
+- **Community**: Contributing guide, 50+ FAQ, troubleshooting
+
+#### 🏗️ MCP Architecture — The Gold Standard
+Documented 7-layer MCP architecture:
+
+1. **Orchestration**: Intent-aware context (`drift_context`)
+2. **Discovery**: Quick health checks (`drift_status`, `drift_capabilities`)
+3. **Surgical**: Ultra-focused lookups (12 tools, 200-500 tokens each)
+4. **Exploration**: Paginated browsing with filters
+5. **Detail**: Deep dives into specific items
+6. **Analysis**: Complex computation (coupling, test topology, error handling)
+7. **Generation**: AI-assisted code generation and validation
+
+---
+
+### Added
+
+#### Rust Support (`packages/core/src/rust/`)
+- `rust-analyzer.ts` - Main Rust analysis orchestrator
+- `index.ts` - Public exports
+
+#### Rust Extractors (`packages/core/src/call-graph/extractors/`)
+- `rust-extractor.ts` - Tree-sitter based Rust extraction
+- `rust-hybrid-extractor.ts` - Hybrid extractor with regex fallback
+- `rust-data-access-extractor.ts` - Diesel, SQLx, SeaORM detection
+- `regex/rust-regex.ts` - Regex fallback patterns
+
+#### Rust Parsers (`packages/core/src/parsers/tree-sitter/`)
+- `tree-sitter-rust-parser.ts` - Rust-specific tree-sitter parser
+
+#### Rust Detectors (`packages/detectors/src/`)
+- `api/rust/actix-detector.ts` - Actix-web framework detection
+- `api/rust/axum-detector.ts` - Axum framework detection
+- `auth/rust/middleware-detector.ts` - Auth middleware detection
+- `errors/rust/error-handling-detector.ts` - Rust error patterns
+
+#### C++ Support (`packages/core/src/cpp/`)
+- `cpp-analyzer.ts` - Main C++ analysis orchestrator
+- `index.ts` - Public exports
+
+#### C++ Extractors (`packages/core/src/call-graph/extractors/`)
+- `cpp-extractor.ts` - Tree-sitter based C++ extraction
+- `cpp-hybrid-extractor.ts` - Hybrid extractor with regex fallback
+- `cpp-data-access-extractor.ts` - Database library detection
+- `regex/cpp-regex.ts` - Regex fallback patterns
+
+#### C++ Parsers (`packages/core/src/parsers/tree-sitter/`)
+- `tree-sitter-cpp-parser.ts` - C++-specific tree-sitter parser
+
+#### C++ Detectors (`packages/detectors/src/`)
+- `api/cpp/boost-beast-detector.ts` - Boost.Beast detection
+- `api/cpp/crow-detector.ts` - Crow framework detection
+- `api/cpp/qt-detector.ts` - Qt framework detection
+- `auth/cpp/middleware-detector.ts` - Auth middleware detection
+- `errors/cpp/error-handling-detector.ts` - C++ error patterns
+
+#### CLI Commands
+- `drift rust` - Rust language analysis (status, unsafe, errors, traits)
+- `drift cpp` - C++ language analysis (status, memory, templates, virtual)
+
+#### MCP Tools
+- `drift_rust` - Rust analysis for AI agents (4 actions)
+- `drift_cpp` - C++ analysis for AI agents (4 actions)
+
+#### Demo Projects
+- `demo/rust-backend/` - Rust Actix-web API example
+- Enhanced C++ examples
+
+#### Wiki Documentation (22 pages)
+- `Home.md` - Hero page with value proposition
+- `Getting-Started.md` - Expanded quick start
+- `MCP-Setup.md` - Setup for Claude, Cursor, Windsurf, Kiro, VS Code
+- `MCP-Tools-Reference.md` - Complete 45+ tool documentation
+- `MCP-Architecture.md` - Gold standard MCP design philosophy
+- `Architecture.md` - How Drift works under the hood
+- `Language-Support.md` - All 8 languages with frameworks
+- `Call-Graph-Analysis.md` - Data flow deep dive
+- `Security-Analysis.md` - Sensitive data tracking
+- `Test-Topology.md` - Test-to-code mapping
+- `Coupling-Analysis.md` - Dependency analysis
+- `Quality-Gates.md` - 6 gates, policies, configuration
+- `CI-Integration.md` - GitHub Actions, GitLab CI, Azure DevOps, CircleCI
+- `Git-Hooks.md` - Husky, Lefthook, lint-staged
+- `Incremental-Scans.md` - Performance optimization
+- `CLI-Reference.md` - All 35+ commands
+- `Pattern-Categories.md` - 14 pattern categories
+- `Configuration.md` - Config options
+- `Contributing.md` - How to help Drift learn
+- `FAQ.md` - 50+ questions answered
+- `Troubleshooting.md` - Common issues
+- `_Sidebar.md` - Navigation
+
+---
+
+### Changed
+
+- **Language Support**: Now 8 languages (TypeScript/JS, Python, Java, C#, PHP, Go, Rust, C++)
+- **MCP Tools**: Now 45+ tools organized in 7-layer architecture
+- **CLI Commands**: Now 35+ commands
+- **README**: Complete revamp with visual flow diagrams
+- **Root Directory**: Cleaned up (moved community files to `.github/`, `licenses/`, `docs/`)
+
+---
+
 ## [0.7.1] - 2026-01-25
 
 ### Fixed
