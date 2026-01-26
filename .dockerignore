@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs (we rebuild in Docker)
+dist/
+**/dist/
+.turbo/
+**/.turbo/
+
+# Development files
+*.log
+*.local
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+coverage/
+**/coverage/
+.nyc_output/
+**/.nyc_output/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Demo and examples (not needed for server)
+demo/
+examples/
+
+# Other packages not needed for MCP server
+packages/dashboard/
+packages/vscode/
+packages/lsp/
+packages/ai/
+packages/galaxy/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# macOS
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
