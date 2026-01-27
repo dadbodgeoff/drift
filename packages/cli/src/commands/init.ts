@@ -376,6 +376,25 @@ async function initAction(options: InitOptions): Promise<void> {
   console.log(chalk.gray('Patterns: .drift/patterns/'));
   console.log(chalk.gray('Ignore rules: .driftignore'));
   console.log();
+  
+  // Suggest .gitignore additions
+  console.log(chalk.bold('📝 Add to your .gitignore:'));
+  console.log();
+  console.log(chalk.gray('  # Drift: ignore caches and temporary data'));
+  console.log(chalk.gray('  .drift/lake/'));
+  console.log(chalk.gray('  .drift/cache/'));
+  console.log(chalk.gray('  .drift/history/'));
+  console.log(chalk.gray('  .drift/call-graph/'));
+  console.log(chalk.gray('  .drift/patterns/discovered/'));
+  console.log(chalk.gray('  .drift/patterns/ignored/'));
+  console.log(chalk.gray('  .drift/patterns/variants/'));
+  console.log(chalk.gray('  .drift/constraints/discovered/'));
+  console.log(chalk.gray('  .drift/constraints/ignored/'));
+  console.log(chalk.gray('  .drift/contracts/discovered/'));
+  console.log(chalk.gray('  .drift/contracts/ignored/'));
+  console.log(chalk.gray('  .drift/contracts/mismatch/'));
+  console.log(chalk.gray('  .drift/**/.backups/'));
+  console.log();
 
   // Register project in global registry
   const registrySpinner = createSpinner('Registering project...');
