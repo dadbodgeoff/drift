@@ -91,3 +91,12 @@ export {
   type WarmupResult,
   type WarmupStores,
 } from './startup-warmer.js';
+
+// Tool Filtering
+export {
+  detectProjectLanguages,
+  filterToolsForProject,
+  getFilteredTools,
+  getToolFilterConfig,
+  type Language,
+} from './tool-filter.js';

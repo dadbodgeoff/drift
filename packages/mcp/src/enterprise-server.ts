@@ -47,6 +47,7 @@ import {
   warmupStores,
   buildMissingData,
   logWarmupResult,
+  getFilteredTools,
 } from './infrastructure/index.js';
 
 // Tool definitions
@@ -186,10 +187,19 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       });
   }
 
-  // List available tools
+  // Get filtered tools based on project languages
+  const toolFilterResult = getFilteredTools(ALL_TOOLS, config.projectRoot);
+  const filteredTools = toolFilterResult.tools;
+  
+  if (config.verbose) {
+    console.error(`[drift-mcp] Detected languages: ${toolFilterResult.detectedLanguages.join(', ') || 'none'}`);
+    console.error(`[drift-mcp] Exposing ${toolFilterResult.filteredCount}/${toolFilterResult.totalCount} tools`);
+  }
+
+  // List available tools (filtered by project language)
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     metrics.increment('tools.list');
-    return { tools: ALL_TOOLS };
+    return { tools: filteredTools };
   });
 
   // Handle tool calls
