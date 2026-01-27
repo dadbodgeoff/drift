@@ -63,6 +63,20 @@ export async function handleEnv(
   if (!store.hasData()) {
     return builder
       .withSummary('No environment variable data found. Run `drift env scan` first.')
+      .withData({
+        overview: {
+          totalVariables: 0,
+          totalAccessPoints: 0,
+          secretVariables: 0,
+          credentialVariables: 0,
+          configVariables: 0,
+        },
+        byLanguage: {},
+        byMethod: {},
+        topVariables: [],
+        secrets: [],
+        requiredVariables: [],
+      } as EnvData)
       .withHints({
         nextActions: ['Run drift env scan to discover environment variable access patterns'],
         relatedTools: ['drift_status'],
