@@ -79,43 +79,39 @@ All data is stored in `.drift/` at your project root. This includes:
 **Short answer:** Use this simple `.gitignore` pattern:
 
 ```gitignore
-# Ignore everything in .drift except what we explicitly include
-.drift/*
+# Drift: ignore caches and temporary data
+.drift/lake/
+.drift/cache/
+.drift/history/
+.drift/call-graph/
+.drift/patterns/discovered/
+.drift/patterns/ignored/
+.drift/patterns/variants/
+.drift/constraints/discovered/
+.drift/constraints/ignored/
+.drift/contracts/discovered/
+.drift/contracts/ignored/
+.drift/contracts/mismatch/
 
-# Keep these (team-shareable configuration and approved patterns)
-!.drift/config.json
-!.drift/patterns/
-.drift/patterns/*
-!.drift/patterns/approved/
-!.drift/boundaries/
-!.drift/indexes/
-!.drift/views/
-!.drift/constraints/
-.drift/constraints/*
-!.drift/constraints/approved/
+# Always ignore backup files (created during updates)
+.drift/**/.backups/
 ```
 
-**What this does:**
-- Ignores all cache/temporary data (lake, cache, history, call-graph)
-- Keeps your approved patterns and configuration
-- Team members get your conventions without rebuilding everything
+**What gets committed (good for teams):**
+- `.drift/config.json` - Project configuration
+- `.drift/patterns/approved/` - Your approved conventions
+- `.drift/boundaries/` - Security boundary rules
+- `.drift/indexes/` - Small lookup indexes
+- `.drift/views/` - Status cache
+- `.drift/constraints/approved/` - Architectural constraints
+- `.drift/contracts/verified/` - Verified API contracts
 
-**Detailed breakdown:**
+**What gets ignored (rebuild on scan):**
+- All `/lake/`, `/cache/`, `/history/`, `/call-graph/` directories
+- All `/discovered/`, `/ignored/`, `/variants/`, `/mismatch/` directories
+- All `/.backups/` directories (internal backup files)
 
-| Directory | Commit? | Why |
-|-----------|---------|-----|
-| `.drift/config.json` | ✅ Yes | Project configuration |
-| `.drift/patterns/approved/` | ✅ Yes | Your approved conventions |
-| `.drift/boundaries/` | ✅ Yes | Security boundary rules |
-| `.drift/indexes/` | ✅ Yes | Small, speeds up lookups |
-| `.drift/views/` | ✅ Yes | Small, speeds up status |
-| `.drift/constraints/approved/` | ✅ Yes | Architectural constraints |
-| `.drift/lake/` | ❌ No | Large cached data |
-| `.drift/cache/` | ❌ No | Temporary cache |
-| `.drift/history/` | ❌ No | Historical snapshots |
-| `.drift/call-graph/` | ❌ No | Rebuilt on scan |
-| `.drift/patterns/discovered/` | ❌ No | Not yet approved |
-| `.drift/patterns/ignored/` | ❌ No | Explicitly ignored |
+This approach explicitly lists what to ignore rather than using complex negation patterns.
 
 ---
 
