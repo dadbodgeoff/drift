@@ -122,15 +122,22 @@ drift status
 
 ## Connect to Your AI
 
-Add to your MCP config:
+### Option 1: Global Install (Recommended)
+
+For production use, install globally with a pinned version:
+
+```bash
+npm install -g driftdetect-mcp@0.9.22
+```
+
+Then configure your MCP client:
 
 **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
     "drift": {
-      "command": "npx",
-      "args": ["-y", "driftdetect-mcp"]
+      "command": "driftdetect-mcp"
     }
   }
 }
@@ -141,8 +148,22 @@ Add to your MCP config:
 {
   "mcpServers": {
     "drift": {
+      "command": "driftdetect-mcp"
+    }
+  }
+}
+```
+
+### Option 2: npx (Quick Try)
+
+For quick evaluation, use npx with a pinned version:
+
+```json
+{
+  "mcpServers": {
+    "drift": {
       "command": "npx",
-      "args": ["-y", "driftdetect-mcp"]
+      "args": ["-y", "driftdetect-mcp@0.9.22"]
     }
   }
 }
@@ -307,6 +328,29 @@ drift check --format gitlab
 - **[MCP Architecture](https://github.com/dadbodgeoff/drift/wiki/MCP-Architecture)** — The gold standard design
 - **[Getting Started](https://github.com/dadbodgeoff/drift/wiki/Getting-Started)** — Detailed setup guide
 - **[FAQ](https://github.com/dadbodgeoff/drift/wiki/FAQ)** — 50+ questions answered
+
+---
+
+## Security & Privacy
+
+Drift runs **100% locally**. Your code never leaves your machine.
+
+| Aspect | Details |
+|--------|---------|
+| **Reads** | Source files in your project directory |
+| **Writes** | `.drift/` directory only (patterns, cache, indexes) |
+| **Network** | No outbound calls for analysis |
+| **Telemetry** | Anonymous usage stats, opt-out with `drift telemetry disable` |
+
+**What telemetry collects (if enabled):**
+- Commands run (not arguments)
+- Languages detected
+- Error rates
+- Performance metrics
+
+**Never collected:** Source code, file contents, pattern details, personal information.
+
+For stricter environments, use the [Docker deployment](#docker-deployment) which provides additional isolation.
 
 ---
 
