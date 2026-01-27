@@ -102,6 +102,20 @@ import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
 import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
+// Surgical handlers (ultra-focused tools)
+import { handleSignature } from './tools/surgical/signature.js';
+import { handleCallers } from './tools/surgical/callers.js';
+import { handleImports } from './tools/surgical/imports.js';
+import { handlePrevalidate, handlePrevalidateWithService } from './tools/surgical/prevalidate.js';
+import { handleSimilar } from './tools/surgical/similar.js';
+import { handleType } from './tools/surgical/type.js';
+import { handleRecent } from './tools/surgical/recent.js';
+import { handleTestTemplate } from './tools/surgical/test-template.js';
+import { handleDependencies } from './tools/surgical/dependencies.js';
+import { handleMiddleware } from './tools/surgical/middleware.js';
+import { handleHooks } from './tools/surgical/hooks.js';
+import { handleErrors } from './tools/surgical/errors.js';
+
 export interface EnterpriseMCPConfig {
   projectRoot: string;
   enableCache?: boolean;
@@ -430,6 +444,50 @@ async function routeToolCall(
     // Wrapper detection tools
     case 'drift_wrappers':
       return handleWrappers(args as Parameters<typeof handleWrappers>[0], projectRoot);
+  }
+
+  // ============================================================================
+  // Surgical Tools (Ultra-focused, minimal-token tools)
+  // ============================================================================
+  switch (name) {
+    case 'drift_signature':
+      return handleSignature(stores.callGraph, args as unknown as Parameters<typeof handleSignature>[1]);
+      
+    case 'drift_callers':
+      return handleCallers(stores.callGraph, args as unknown as Parameters<typeof handleCallers>[1]);
+      
+    case 'drift_imports':
+      return handleImports(stores.callGraph, args as unknown as Parameters<typeof handleImports>[1]);
+      
+    case 'drift_prevalidate':
+      if (patternService) {
+        return handlePrevalidateWithService(patternService, args as unknown as Parameters<typeof handlePrevalidateWithService>[1]);
+      }
+      return handlePrevalidate(stores.pattern, args as unknown as Parameters<typeof handlePrevalidate>[1]);
+      
+    case 'drift_similar':
+      return handleSimilar(stores.callGraph, stores.pattern, args as unknown as Parameters<typeof handleSimilar>[2]);
+      
+    case 'drift_type':
+      return handleType(stores.callGraph, args as unknown as Parameters<typeof handleType>[1], projectRoot);
+      
+    case 'drift_recent':
+      return handleRecent(args as unknown as Parameters<typeof handleRecent>[0], projectRoot);
+      
+    case 'drift_test_template':
+      return handleTestTemplate(stores.callGraph, args as unknown as Parameters<typeof handleTestTemplate>[1], projectRoot);
+      
+    case 'drift_dependencies':
+      return handleDependencies(args as unknown as Parameters<typeof handleDependencies>[0], projectRoot);
+      
+    case 'drift_middleware':
+      return handleMiddleware(args as unknown as Parameters<typeof handleMiddleware>[0], projectRoot);
+      
+    case 'drift_hooks':
+      return handleHooks(args as unknown as Parameters<typeof handleHooks>[0], projectRoot);
+      
+    case 'drift_errors':
+      return handleErrors(stores.callGraph, args as unknown as Parameters<typeof handleErrors>[1], projectRoot);
   }
 
   // ============================================================================

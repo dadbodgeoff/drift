@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.10] - 2026-01-26
+
+### Fixed
+
+#### Missing Surgical Tool Handlers in MCP Server
+- Fixed `drift_callers`, `drift_signature`, `drift_imports`, `drift_prevalidate`, `drift_similar`, `drift_type`, `drift_recent`, `drift_test_template`, `drift_dependencies`, `drift_middleware`, `drift_hooks`, and `drift_errors` returning "Unknown tool" error
+- These tools were registered in the tool list but missing from the routing logic in `enterprise-server.ts`
+- All 12 surgical tools now properly route to their handlers
+
 ## [0.9.9] - 2026-01-26
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-mcp",
-  "version": "0.9.9",
+  "version": "0.9.11",
   "description": "MCP server that gives AI agents (Claude, Cursor, Copilot) deep understanding of your codebase patterns, conventions, and architecture. Query patterns, security boundaries, call graphs in real-time.",
   "license": "Apache-2.0",
   "author": "Geoffrey Fernald",
@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "driftdetect-core": "workspace:*",
-    "driftdetect-detectors": "workspace:*"
+    "driftdetect-core": "^0.9.9",
+    "driftdetect-detectors": "^0.9.9"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
