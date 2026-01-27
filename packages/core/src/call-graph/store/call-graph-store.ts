@@ -208,6 +208,10 @@ export class CallGraphStore {
         }
       }
 
+      // Build reverse references (calledBy) from forward references (calls)
+      // The sharded format only stores forward calls, so we need to reconstruct calledBy
+      this.buildReverseReferences(functions);
+
       // Construct the CallGraph
       const graph: CallGraph = {
         version: index.version ?? '1.0.0',
@@ -265,6 +269,61 @@ export class CallGraphStore {
       case '.h':
       case '.hpp': return 'cpp';
       default: return 'typescript';
+    }
+  }
+
+  /**
+   * Build reverse references (calledBy) from forward references (calls)
+   * 
+   * The sharded format only stores forward calls (who this function calls),
+   * so we need to reconstruct the reverse references (who calls this function).
+   */
+  private buildReverseReferences(functions: Map<string, FunctionNode>): void {
+    // Build a map of function name -> function IDs for resolution
+    const nameToIds = new Map<string, string[]>();
+    for (const [id, func] of functions) {
+      const existing = nameToIds.get(func.name) ?? [];
+      existing.push(id);
+      nameToIds.set(func.name, existing);
+    }
+
+    // For each function, look at its calls and add reverse references
+    for (const [callerId, callerFunc] of functions) {
+      for (const call of callerFunc.calls) {
+        // Try to resolve the callee by name
+        const calleeName = call.calleeName;
+        const candidateIds = nameToIds.get(calleeName) ?? [];
+        
+        // Add calledBy reference to each candidate
+        for (const calleeId of candidateIds) {
+          const calleeFunc = functions.get(calleeId);
+          if (calleeFunc) {
+            // Check if this caller is already in calledBy
+            const alreadyExists = calleeFunc.calledBy.some(cb => cb.callerId === callerId);
+            if (!alreadyExists) {
+              calleeFunc.calledBy.push({
+                callerId,
+                calleeId,
+                calleeName: calleeFunc.name,
+                line: call.line,
+                column: call.column ?? 0,
+                resolved: true,
+                confidence: candidateIds.length === 1 ? 1.0 : 0.5,
+                file: callerFunc.file,
+                resolvedCandidates: [],
+                argumentCount: 0,
+              });
+            }
+            
+            // Also update the call's calleeId if we found a unique match
+            if (candidateIds.length === 1) {
+              call.calleeId = calleeId;
+              call.resolved = true;
+              call.confidence = 1.0;
+            }
+          }
+        }
+      }
     }
   }
 

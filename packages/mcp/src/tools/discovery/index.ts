@@ -18,7 +18,7 @@ export const DISCOVERY_TOOLS: Tool[] = [
   },
   {
     name: 'drift_capabilities',
-    description: 'List all Drift capabilities and when to use each tool. Returns a guide to available tools organized by purpose. Use this when unsure which tool to use.',
+    description: '⭐ AGENT NAVIGATION GUIDE - Call this when struggling to find the right tool! Returns a decision tree mapping user intent keywords to recommended tool sequences. Includes: decisionTree (match keywords → tool sequence), surgicalLookups (quick Q&A), commonMistakes (what NOT to do). 45+ tools organized by purpose.',
     inputSchema: {
       type: 'object',
       properties: {},

@@ -6,13 +6,13 @@
  * This enables running Drift MCP as a containerized service accessible via HTTP.
  * 
  * Usage:
- *   drift-mcp-http                          # Run server on default port 3000
+ *   drift-mcp-http                          # Run server using active project
  *   drift-mcp-http --port 8080              # Run on custom port
  *   drift-mcp-http --project /path/to/proj  # Analyze specific project
  * 
  * Environment Variables:
  *   PORT            - HTTP server port (default: 3000)
- *   PROJECT_ROOT    - Path to project to analyze (default: /project)
+ *   PROJECT_ROOT    - Path to project to analyze (default: active project from ~/.drift)
  *   ENABLE_CACHE    - Enable response caching (default: true)
  *   ENABLE_RATE_LIMIT - Enable rate limiting (default: true)
  *   VERBOSE         - Enable verbose logging (default: false)
@@ -27,6 +27,9 @@
  *   # Then configure your MCP client to connect to http://localhost:3000
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { createServer, type IncomingMessage, type ServerResponse, type Server as HttpServer } from 'http';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { type Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -38,6 +41,52 @@ const SERVER_VERSION = '2.0.0';
 // Track active transports for cleanup
 const activeTransports = new Map<string, SSEServerTransport>();
 let transportIdCounter = 0;
+
+/**
+ * Get the active project root from ~/.drift/projects.json
+ * Falls back to /project (for Docker) or cwd
+ */
+function getActiveProjectRoot(): string {
+  const globalDriftDir = path.join(os.homedir(), '.drift');
+  const projectsFile = path.join(globalDriftDir, 'projects.json');
+  
+  try {
+    if (fs.existsSync(projectsFile)) {
+      const content = fs.readFileSync(projectsFile, 'utf-8');
+      const data = JSON.parse(content);
+      
+      // Find the active project
+      if (data.projects && Array.isArray(data.projects)) {
+        const activeProject = data.projects.find((p: { isActive?: boolean }) => p.isActive === true);
+        if (activeProject && activeProject.path && fs.existsSync(activeProject.path)) {
+          return activeProject.path;
+        }
+        
+        // If no active project, use the most recently accessed one
+        const sortedProjects = [...data.projects]
+          .filter((p: { path?: string }) => p.path && fs.existsSync(p.path))
+          .sort((a: { lastAccessedAt?: string }, b: { lastAccessedAt?: string }) => {
+            const aTime = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
+            const bTime = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
+            return bTime - aTime;
+          });
+        
+        if (sortedProjects.length > 0) {
+          return sortedProjects[0].path;
+        }
+      }
+    }
+  } catch {
+    // Ignore errors, fall back to defaults
+  }
+  
+  // For Docker, /project is the default mount point
+  if (fs.existsSync('/project')) {
+    return '/project';
+  }
+  
+  return process.cwd();
+}
 
 /**
  * Set CORS headers for cross-origin requests
@@ -257,7 +306,7 @@ function createShutdownHandler(mcpServer: Server, httpServer: HttpServer, verbos
 async function main() {
   // Configuration from environment variables
   const envPort = parseInt(process.env['PORT'] ?? '3000', 10);
-  const envProjectRoot = process.env['PROJECT_ROOT'] ?? '/project';
+  const envProjectRoot = process.env['PROJECT_ROOT'];
   const enableCache = process.env['ENABLE_CACHE'] !== 'false';
   const enableRateLimit = process.env['ENABLE_RATE_LIMIT'] !== 'false';
   const verbose = process.env['VERBOSE'] === 'true';
@@ -280,6 +329,11 @@ async function main() {
     } else if (arg === '--verbose' || arg === '-v') {
       // Allow --verbose flag like the stdio server
     }
+  }
+
+  // If no project root specified, use active project from ~/.drift/projects.json
+  if (!projectRoot) {
+    projectRoot = getActiveProjectRoot();
   }
 
   if (verbose) {

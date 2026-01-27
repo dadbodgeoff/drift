@@ -195,20 +195,22 @@ export async function warmupStores(
   initPromises.push(
     (async () => {
       try {
-        // First try the unified provider which supports both formats
-        const provider = createUnifiedCallGraphProvider({ rootDir: projectRoot });
-        await provider.initialize();
+        // Always initialize the CallGraphStore - it's used by surgical tools
+        await stores.callGraph.initialize();
+        const graph = stores.callGraph.getGraph();
+        loaded.callGraph = graph !== null && graph.functions.size > 0;
         
-        if (provider.isAvailable()) {
-          const stats = provider.getProviderStats();
-          loaded.callGraph = stats.totalFunctions > 0;
-          // Store the provider for later use
-          stores.callGraphProvider = provider;
-        } else {
-          // Fall back to legacy store
-          await stores.callGraph.initialize();
-          const graph = stores.callGraph.getGraph();
-          loaded.callGraph = graph !== null && graph.functions.size > 0;
+        // Also try the unified provider for additional capabilities
+        try {
+          const provider = createUnifiedCallGraphProvider({ rootDir: projectRoot });
+          await provider.initialize();
+          
+          if (provider.isAvailable()) {
+            // Store the provider for tools that can use it
+            stores.callGraphProvider = provider;
+          }
+        } catch {
+          // Provider initialization failed, but we have the store
         }
       } catch (e) {
         errors.push(`Call graph store: ${e instanceof Error ? e.message : String(e)}`);

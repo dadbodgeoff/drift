@@ -225,41 +225,50 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       let effectiveDataLake = dataLake;
       let effectivePatternService = patternService;
       
-      // Check for project parameter or active project change
+      // Check for project parameter or fall back to active project from registry
       const requestedProject = (args as Record<string, unknown>)['project'] as string | undefined;
-      if (requestedProject) {
-        // User explicitly requested a different project
-        const resolved = await import('./infrastructure/project-resolver.js')
-          .then(m => m.resolveProject(requestedProject, config.projectRoot));
+      
+      // Resolve the effective project root:
+      // 1. If project parameter is provided, use that
+      // 2. Otherwise, check if there's an active project in the registry
+      // 3. Fall back to config.projectRoot
+      const resolvedProjectRoot = await import('./infrastructure/project-resolver.js')
+        .then(async (m) => {
+          if (requestedProject) {
+            const resolved = await m.resolveProject(requestedProject, config.projectRoot);
+            return resolved.projectRoot;
+          }
+          // No explicit project - check for active project in registry
+          return m.getActiveProjectRoot(config.projectRoot);
+        });
+      
+      if (resolvedProjectRoot !== config.projectRoot) {
+        effectiveProjectRoot = resolvedProjectRoot;
+        // Create temporary stores for this project
+        effectiveStores = {
+          pattern: new PatternStore({ rootDir: effectiveProjectRoot }),
+          manifest: new ManifestStore(effectiveProjectRoot),
+          history: new HistoryStore({ rootDir: effectiveProjectRoot }),
+          dna: new DNAStore({ rootDir: effectiveProjectRoot }),
+          boundary: new BoundaryStore({ rootDir: effectiveProjectRoot }),
+          contract: new ContractStore({ rootDir: effectiveProjectRoot }),
+          callGraph: new CallGraphStore({ rootDir: effectiveProjectRoot }),
+          env: new EnvStore({ rootDir: effectiveProjectRoot }),
+        };
+        effectiveDataLake = createDataLake({ rootDir: effectiveProjectRoot });
+        effectivePatternService = config.usePatternService !== false
+          ? createPatternServiceFromStore(effectiveStores.pattern, effectiveProjectRoot, {
+              enableCache: config.enableCache !== false,
+            })
+          : null;
         
-        if (resolved.projectRoot !== config.projectRoot) {
-          effectiveProjectRoot = resolved.projectRoot;
-          // Create temporary stores for this project
-          effectiveStores = {
-            pattern: new PatternStore({ rootDir: effectiveProjectRoot }),
-            manifest: new ManifestStore(effectiveProjectRoot),
-            history: new HistoryStore({ rootDir: effectiveProjectRoot }),
-            dna: new DNAStore({ rootDir: effectiveProjectRoot }),
-            boundary: new BoundaryStore({ rootDir: effectiveProjectRoot }),
-            contract: new ContractStore({ rootDir: effectiveProjectRoot }),
-            callGraph: new CallGraphStore({ rootDir: effectiveProjectRoot }),
-            env: new EnvStore({ rootDir: effectiveProjectRoot }),
-          };
-          effectiveDataLake = createDataLake({ rootDir: effectiveProjectRoot });
-          effectivePatternService = config.usePatternService !== false
-            ? createPatternServiceFromStore(effectiveStores.pattern, effectiveProjectRoot, {
-                enableCache: config.enableCache !== false,
-              })
-            : null;
-          
-          // Initialize the temporary stores
-          await Promise.all([
-            effectiveStores.pattern.initialize(),
-            effectiveStores.boundary.initialize(),
-            effectiveStores.contract.initialize(),
-            effectiveStores.callGraph.initialize(),
-          ]);
-        }
+        // Initialize the temporary stores
+        await Promise.all([
+          effectiveStores.pattern.initialize(),
+          effectiveStores.boundary.initialize(),
+          effectiveStores.contract.initialize(),
+          effectiveStores.callGraph.initialize(),
+        ]);
       }
 
       // Check cache

@@ -605,6 +605,12 @@ async function getSuggestedFiles(
   for (const pattern of patterns) {
     for (const location of pattern.locations) {
       const file = location.file;
+      
+      // Skip internal .drift files - these are not source code
+      if (file.includes('.drift/') || file.includes('/.drift/')) {
+        continue;
+      }
+      
       const existing = fileScores.get(file) || { score: 0, patterns: [], reasons: [] };
       
       // Higher score for focus matches
