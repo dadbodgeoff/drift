@@ -333,6 +333,8 @@ export interface PatternShardEntry {
   id: string;
   name: string;
   description: string;
+  /** The pattern category - stored explicitly for query retrieval */
+  category: PatternCategory;
   subcategory: string;
   status: PatternStatus;
   confidence: {

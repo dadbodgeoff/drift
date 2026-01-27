@@ -90,7 +90,7 @@ export class ModuleCouplingAnalyzer {
         });
       }
 
-      // Track imports from function calls
+      // Track imports from function calls (using resolvedCandidates)
       for (const call of func.calls) {
         for (const candidate of call.resolvedCandidates) {
           const targetFunc = this.callGraph.functions.get(candidate);
@@ -122,6 +122,40 @@ export class ModuleCouplingAnalyzer {
             edge.symbols.push(targetFunc.name);
             edge.weight++;
           }
+        }
+      }
+
+      // ALSO track imports using calledBy relationships (more reliable)
+      // This captures cross-module calls even when resolvedCandidates is empty
+      for (const calledByInfo of func.calledBy) {
+        const callerFunc = this.callGraph.functions.get(calledByInfo.callerId);
+        if (!callerFunc) continue;
+
+        const callerModule = callerFunc.file;
+        if (callerModule === modulePath) continue; // Skip same-module calls
+        if (!this.options.includeExternal && this.isExternalModule(callerModule)) continue;
+
+        // Create or update edge (caller imports this module)
+        if (!importMap.has(callerModule)) {
+          importMap.set(callerModule, new Map());
+        }
+
+        const callerImports = importMap.get(callerModule)!;
+        if (!callerImports.has(modulePath)) {
+          callerImports.set(modulePath, {
+            from: callerModule,
+            to: modulePath,
+            symbols: [],
+            isTypeOnly: false,
+            weight: 0,
+            line: calledByInfo.line,
+          });
+        }
+
+        const edge = callerImports.get(modulePath)!;
+        if (!edge.symbols.includes(func.name)) {
+          edge.symbols.push(func.name);
+          edge.weight++;
         }
       }
     }

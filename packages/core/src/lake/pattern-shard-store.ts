@@ -377,6 +377,7 @@ export class PatternShardStore extends EventEmitter {
       id: pattern.id,
       name: pattern.name,
       description: pattern.description,
+      category: pattern.category,
       subcategory: pattern.subcategory,
       status: pattern.status,
       confidence: {

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.27] - 2026-01-27
+
+### Fixed
+
+#### npm Install Compatibility
+- Fixed `workspace:*` dependencies not being resolved during npm publish
+- Changed internal dependencies to explicit `^0.9.26` versions for npm compatibility
+
+## [0.9.26] - 2026-01-27
+
+### Fixed
+
+#### drift_capabilities Documentation Completeness
+- Added missing Surgical layer (12 tools) to `drift_capabilities` output
+- Added missing `drift_env` to Exploration layer
+- Tool count now correctly shows 49 tools (was showing 36)
+
 ## [0.9.25] - 2026-01-27
 
 ### Added

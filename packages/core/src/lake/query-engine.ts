@@ -496,7 +496,7 @@ export class QueryEngine extends EventEmitter {
     return {
       id: entry.id,
       name: entry.name,
-      category: entry.subcategory ? entry.subcategory.split('/')[0] as PatternCategory : 'structural',
+      category: entry.category,
       subcategory: entry.subcategory,
       status: entry.status,
       confidence: entry.confidence.score,

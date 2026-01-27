@@ -115,10 +115,13 @@ export async function handleCallers(
   // Get direct callers
   const directCallers: CallerInfo[] = targetFunc.calledBy.map(call => {
     const callerFunc = graph.functions.get(call.callerId);
+    // For __module__ (top-level code), show a more descriptive name
+    // and use the actual call site line instead of line 1
+    const isModuleLevel = callerFunc?.name === '__module__';
     return {
-      function: callerFunc?.name ?? call.callerId,
+      function: isModuleLevel ? '<module-level>' : (callerFunc?.name ?? call.callerId),
       file: call.file,
-      line: callerFunc?.startLine ?? call.line,
+      line: isModuleLevel ? call.line : (callerFunc?.startLine ?? call.line),
       callSite: call.line,
     };
   });
