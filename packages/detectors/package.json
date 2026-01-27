@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-detectors",
-  "version": "0.9.20",
+  "version": "0.9.24",
   "description": "Pattern detectors for Drift - 150+ detectors across 15 categories",
   "license": "Apache-2.0",
   "repository": {
@@ -41,7 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "driftdetect-core": "^0.9.20"
+    "driftdetect-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

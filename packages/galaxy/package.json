@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-galaxy",
-  "version": "0.9.20",
+  "version": "0.9.24",
   "description": "3D database galaxy visualization for Drift",
   "license": "Apache-2.0",
   "author": "Geoffrey Fernald",

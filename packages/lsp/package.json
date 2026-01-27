@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-lsp",
-  "version": "0.9.19",
+  "version": "0.9.24",
   "description": "Language Server Protocol implementation for Drift",
   "license": "Apache-2.0",
   "repository": {
@@ -34,8 +34,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "driftdetect-core": "^0.9.19",
-    "driftdetect-detectors": "^0.9.19",
+    "driftdetect-core": "workspace:*",
+    "driftdetect-detectors": "workspace:*",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
     "vscode-uri": "^3.0.8"

@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-dashboard",
-  "version": "0.9.20",
+  "version": "0.9.24",
   "description": "Local web dashboard for Drift architectural drift detection",
   "license": "Apache-2.0",
   "repository": {
@@ -51,8 +51,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.client.json"
   },
   "dependencies": {
-    "driftdetect-core": "^0.9.20",
-    "driftdetect-galaxy": "^0.9.19",
+    "driftdetect-core": "workspace:*",
+    "driftdetect-galaxy": "workspace:*",
     "express": "^4.18.2",
     "open": "^10.0.0",
     "ws": "^8.16.0"

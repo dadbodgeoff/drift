@@ -1,6 +1,6 @@
 {
   "name": "@drift/ai",
-  "version": "0.9.16",
+  "version": "0.9.24",
   "private": true,
   "description": "AI integration module for Drift",
   "type": "module",
