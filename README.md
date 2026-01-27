@@ -281,8 +281,9 @@ drift callgraph inverse users.password_hash  # Who can access passwords?
 
 ### 🔒 Security Boundaries
 ```bash
-drift boundaries              # See sensitive data access
-drift security-summary        # Security posture overview
+drift boundaries              # See sensitive data access overview
+drift boundaries sensitive    # Find sensitive data access points
+drift boundaries check        # Check for boundary violations
 ```
 
 ### 🧪 Test Topology
