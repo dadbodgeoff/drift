@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-01-26
+
+### Fixed
+
+#### Pattern Storage Dual-Write Issue
+- **CRITICAL FIX**: Removed dual pattern storage that was causing patterns to be written to both `.drift/patterns/` and `.drift/lake/patterns/`
+- Patterns are now only written to `.drift/patterns/{status}/{category}.json` (single source of truth)
+- Removed `dataLake.patternShards.saveAll()` call from scan command
+- This eliminates potential data divergence between the two storage locations
+- Views and indexes in `.drift/views/` and `.drift/indexes/` continue to be materialized correctly
+
+### Changed
+- `PatternShardStore` is now deprecated - use `PatternStore` for pattern persistence
+- `.drift/lake/patterns/` directory may contain stale data from previous versions and can be safely deleted
+
 ## [0.9.5] - 2026-01-26
 
 ### Added

@@ -246,6 +246,112 @@ function getExtension(filePath: string): string {
 }
 
 /**
+ * Detect frameworks from project files
+ */
+async function detectFrameworks(rootDir: string): Promise<string[]> {
+  const frameworks: string[] = [];
+
+  // Helper to check package.json for JS frameworks
+  async function checkPackageJson(pkgPath: string): Promise<void> {
+    try {
+      const content = await fs.readFile(pkgPath, 'utf-8');
+      const pkg = JSON.parse(content);
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+      if (deps['next'] && !frameworks.includes('nextjs')) frameworks.push('nextjs');
+      if (deps['react'] && !deps['next'] && !frameworks.includes('react')) frameworks.push('react');
+      if (deps['vue'] && !frameworks.includes('vue')) frameworks.push('vue');
+      if (deps['@angular/core'] && !frameworks.includes('angular')) frameworks.push('angular');
+      if (deps['express'] && !frameworks.includes('express')) frameworks.push('express');
+      if (deps['fastify'] && !frameworks.includes('fastify')) frameworks.push('fastify');
+      if (deps['@nestjs/core'] && !frameworks.includes('nestjs')) frameworks.push('nestjs');
+      if ((deps['svelte'] || deps['@sveltejs/kit']) && !frameworks.includes('svelte')) frameworks.push('svelte');
+    } catch {
+      // No package.json at this path
+    }
+  }
+
+  // Check root package.json
+  await checkPackageJson(path.join(rootDir, 'package.json'));
+
+  // Check common subdirectory package.json files (monorepo/fullstack patterns)
+  const commonSubdirs = ['frontend', 'client', 'web', 'app', 'packages/web', 'packages/frontend'];
+  for (const subdir of commonSubdirs) {
+    await checkPackageJson(path.join(rootDir, subdir, 'package.json'));
+  }
+
+  // Check Python frameworks
+  try {
+    const reqPath = path.join(rootDir, 'requirements.txt');
+    const content = await fs.readFile(reqPath, 'utf-8');
+    if (content.includes('fastapi')) frameworks.push('fastapi');
+    if (content.includes('django')) frameworks.push('django');
+    if (content.includes('flask')) frameworks.push('flask');
+  } catch {
+    // No requirements.txt - try pyproject.toml
+    try {
+      const pyprojectPath = path.join(rootDir, 'pyproject.toml');
+      const content = await fs.readFile(pyprojectPath, 'utf-8');
+      if (content.includes('fastapi')) frameworks.push('fastapi');
+      if (content.includes('django')) frameworks.push('django');
+      if (content.includes('flask')) frameworks.push('flask');
+    } catch {
+      // No pyproject.toml
+    }
+  }
+
+  // Check for Spring (Java)
+  try {
+    const pomPath = path.join(rootDir, 'pom.xml');
+    const content = await fs.readFile(pomPath, 'utf-8');
+    if (content.includes('spring-boot')) frameworks.push('spring');
+  } catch {
+    // No pom.xml - try build.gradle
+    try {
+      const gradlePath = path.join(rootDir, 'build.gradle');
+      const content = await fs.readFile(gradlePath, 'utf-8');
+      if (content.includes('spring')) frameworks.push('spring');
+    } catch {
+      // No build.gradle
+    }
+  }
+
+  // Check for ASP.NET
+  try {
+    const files = await fs.readdir(rootDir);
+    for (const file of files) {
+      if (file.endsWith('.csproj')) {
+        const content = await fs.readFile(path.join(rootDir, file), 'utf-8');
+        if (content.includes('Microsoft.AspNetCore')) {
+          frameworks.push('aspnet');
+          break;
+        }
+      }
+    }
+  } catch {
+    // No csproj
+  }
+
+  // Check for Laravel
+  try {
+    await fs.access(path.join(rootDir, 'artisan'));
+    frameworks.push('laravel');
+  } catch {
+    // No artisan
+  }
+
+  // Check for Rails
+  try {
+    await fs.access(path.join(rootDir, 'config', 'routes.rb'));
+    frameworks.push('rails');
+  } catch {
+    // No routes.rb
+  }
+
+  return frameworks;
+}
+
+/**
  * Check if file is scannable
  */
 function isScannableFile(filePath: string): boolean {
@@ -881,6 +987,9 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
         for (const file of files) {
           languages.add(getExtension(file));
         }
+
+        // Detect frameworks from project files
+        const detectedFrameworks = await detectFrameworks(rootDir);
         
         await telemetryClient.recordAggregateStats({
           totalPatterns: telemetryPatterns.length,
@@ -891,7 +1000,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
           },
           patternsByCategory,
           languages: Array.from(languages),
-          frameworks: [],
+          frameworks: detectedFrameworks,
           featuresEnabled: [
             options.contracts !== false ? 'contracts' : '',
             options.boundaries !== false ? 'boundaries' : '',
@@ -1085,15 +1194,16 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       errors: 0,
     };
     
-    // Materialize views, indexes, and shards
+    // Materialize views and indexes
+    // NOTE: We no longer call dataLake.patternShards.saveAll() because PatternStore
+    // already writes to .drift/patterns/{status}/{category}.json which is the
+    // single source of truth for pattern storage. The lake's pattern shards
+    // (.drift/lake/patterns/) were a duplicate that caused confusion.
     const materializeResult = await dataLake.materializer.materialize(
       allPatterns,
       { force: options.force ?? false },
       { lastScan: lastScanInfo }
     );
-    
-    // Also save patterns to shards for category-based queries
-    await dataLake.patternShards.saveAll(allPatterns);
     
     lakeSpinner.succeed(
       `Built ${materializeResult.viewsRebuilt.length} views, ` +
