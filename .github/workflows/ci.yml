@@ -39,6 +39,9 @@ jobs:
         
       - name: Test
         run: pnpm test
+        
+      - name: Validate Documentation
+        run: pnpm validate-docs
 
   publish-check:
     runs-on: ubuntu-latest
