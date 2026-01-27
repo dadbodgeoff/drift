@@ -41,7 +41,8 @@
     "test:coverage": "turbo run test:coverage",
     "typecheck": "turbo run typecheck",
     "prepare": "husky install",
-    "drift": "node packages/cli/dist/bin/drift.js"
+    "drift": "node packages/cli/dist/bin/drift.js",
+    "validate-docs": "./scripts/validate-docs.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
