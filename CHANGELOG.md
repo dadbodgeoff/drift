@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-01-26
+
+### Fixed
+
+#### Package Version Consistency
+- Synchronized all package versions to 0.9.9
+- Fixed `driftdetect-dashboard` having outdated dependencies (`driftdetect-core: ^0.8.2` and `driftdetect-galaxy: ^0.8.2`)
+- Fixed `driftdetect-vscode` having outdated dependency (`driftdetect-lsp: ^0.8.1`)
+- All packages now use consistent `^0.9.9` dependencies
+- This eliminates npm deduplication issues where multiple versions of core packages were installed
+
 ## [0.9.7] - 2026-01-26
 
 ### Fixed
