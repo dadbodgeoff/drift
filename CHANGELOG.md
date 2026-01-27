@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.24] - 2026-01-27
+
+### Fixed
+
+#### Documentation Sync & .gitignore Guidance
+- Fixed `drift security-summary` documented in README but doesn't exist (changed to `drift boundaries sensitive`)
+- Removed `drift decisions` from CLI-Reference.md (MCP-only feature)
+- Added documentation validation script (`pnpm validate-docs`) to prevent future drift
+- Added CI step to validate documentation on every PR
+
+#### Improved .gitignore Guidance
+- Updated FAQ with simpler, explicit .gitignore pattern (no complex negations)
+- Added `.drift/**/.backups/` to recommended ignore list (fixes .backups files appearing in git status)
+- `drift init` now displays recommended .gitignore additions
+
+### Changed
+
+#### Package Version Sync
+- Synchronized all package versions to 0.9.24
+- Changed internal dependencies to use `workspace:*` protocol for consistency
+
 ## [0.9.12] - 2026-01-27
 
 ### Fixed
