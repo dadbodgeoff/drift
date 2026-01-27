@@ -127,7 +127,7 @@ drift status
 For production use, install globally with a pinned version:
 
 ```bash
-npm install -g driftdetect-mcp@0.9.22
+npm install -g driftdetect-mcp@0.9.23
 ```
 
 Then configure your MCP client:
@@ -163,7 +163,7 @@ For quick evaluation, use npx with a pinned version:
   "mcpServers": {
     "drift": {
       "command": "npx",
-      "args": ["-y", "driftdetect-mcp@0.9.22"]
+      "args": ["-y", "driftdetect-mcp@0.9.23"]
     }
   }
 }
