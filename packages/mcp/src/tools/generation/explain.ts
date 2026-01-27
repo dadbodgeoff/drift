@@ -170,7 +170,11 @@ async function extractDependencies(dataAccessPoints: DataAccessPoint[], file: st
       for (const func of analyzer.getFunctionsInFile(file)) {
         for (const caller of func.calledBy) {
           const callerFunc = graph.functions.get(caller.callerId);
-          if (callerFunc && !usedBy.includes(callerFunc.qualifiedName)) usedBy.push(callerFunc.qualifiedName);
+          if (callerFunc) {
+            // Transform __module__ to <module-level> for cleaner display
+            const displayName = callerFunc.qualifiedName === '__module__' ? '<module-level>' : callerFunc.qualifiedName;
+            if (!usedBy.includes(displayName)) usedBy.push(displayName);
+          }
         }
       }
     }

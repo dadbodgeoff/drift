@@ -357,6 +357,9 @@ async function analyzeSecurityIssues(
       const fileFunctions = callGraphAnalyzer.getFunctionsInFile(file);
       
       for (const func of fileFunctions) {
+        // Skip module-level pseudo-functions
+        if (func.name === '__module__') continue;
+        
         const reachable = callGraphAnalyzer.getReachableDataFromFunction(
           `${file}:${func.name}`,
           { sensitiveOnly: true, maxDepth: 5 }

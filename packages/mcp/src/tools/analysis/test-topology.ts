@@ -204,7 +204,7 @@ async function handleCoverage(
   summaryText += `${coveredCount}/${coverage.functions.length} functions tested.`;
 
   const uncoveredFunctions = coverage.functions
-    .filter((f: { isCovered: boolean }) => !f.isCovered)
+    .filter((f: { isCovered: boolean; name: string }) => !f.isCovered && f.name !== '__module__')
     .map((f: { name: string }) => f.name);
 
   const hints = {
@@ -248,7 +248,7 @@ async function handleUncovered(
 
   const hints = {
     nextActions: highRisk.length > 0
-      ? [`Priority: Add tests for ${highRisk[0]?.qualifiedName ?? 'high-risk functions'}`]
+      ? [`Priority: Add tests for ${highRisk[0]?.qualifiedName === '__module__' ? 'module-level code' : (highRisk[0]?.qualifiedName ?? 'high-risk functions')}`]
       : ['Consider adding tests for medium-risk functions'],
     warnings: highRisk.filter((f: { accessesSensitiveData: boolean }) => f.accessesSensitiveData).length > 0
       ? ['Some uncovered functions access sensitive data']

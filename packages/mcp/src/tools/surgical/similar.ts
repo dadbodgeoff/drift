@@ -125,6 +125,11 @@ export async function handleSimilar(
   const targetDecorators = INTENT_DECORATORS[intent] ?? [];
   
   for (const [, func] of graph.functions) {
+    // Skip module-level pseudo-functions - they're not useful examples
+    if (func.name === '__module__') {
+      continue;
+    }
+    
     // Skip if scope specified and doesn't match
     if (scope && !func.file.includes(scope)) {
       continue;

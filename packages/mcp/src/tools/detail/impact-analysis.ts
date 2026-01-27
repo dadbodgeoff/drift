@@ -103,10 +103,11 @@ export async function handleImpactAnalysis(
   }
   
   // Map entry points
+  // Transform __module__ to <module-level> for cleaner display
   const entryPoints: AffectedCaller[] = result.entryPoints
     .slice(0, limit)
     .map(ep => ({
-      name: ep.qualifiedName,
+      name: ep.qualifiedName === '__module__' ? '<module-level>' : ep.qualifiedName,
       file: ep.file,
       line: ep.line,
       depth: ep.depth,
@@ -127,11 +128,12 @@ export async function handleImpactAnalysis(
     }));
   
   // Map direct callers
+  // Transform __module__ to <module-level> for cleaner display
   const directCallers: AffectedCaller[] = result.affected
     .filter(a => a.depth === 1)
     .slice(0, limit)
     .map(c => ({
-      name: c.qualifiedName,
+      name: c.qualifiedName === '__module__' ? '<module-level>' : c.qualifiedName,
       file: c.file,
       line: c.line,
       depth: c.depth,
