@@ -127,3 +127,29 @@ export function formatProjectContext(resolution: ProjectResolution): Record<stri
     framework: resolution.project.framework,
   };
 }
+
+/**
+ * Get the active project root from the registry
+ * 
+ * This is the key function for dynamic project resolution.
+ * It checks the registry for the active project and returns its path,
+ * falling back to the default if no active project is set.
+ * 
+ * @param defaultRoot - Default project root to use if no active project
+ * @returns The active project root path
+ */
+export async function getActiveProjectRoot(defaultRoot: string): Promise<string> {
+  try {
+    const registry = await getProjectRegistry();
+    const active = registry.getActive();
+    
+    if (active && active.isValid !== false) {
+      return active.path;
+    }
+    
+    return defaultRoot;
+  } catch {
+    // Registry not available - fall back to default
+    return defaultRoot;
+  }
+}

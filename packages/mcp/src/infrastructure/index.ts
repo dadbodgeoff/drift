@@ -77,6 +77,7 @@ export {
 export {
   resolveProject,
   formatProjectContext,
+  getActiveProjectRoot,
   ProjectNotFoundError,
   ProjectInvalidError,
   type ProjectResolution,

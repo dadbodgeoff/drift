@@ -165,7 +165,10 @@ export class CallGraphStore {
                   line: fn.startLine,
                   column: 0,
                   resolved: false,
+                  resolvedCandidates: [],
                   confidence: 0.5,
+                  argumentCount: 0,
+                  file: shard.file,
                 })) ?? [],
                 calledBy: fn.calledBy?.map((callerId: string) => ({
                   callerId,

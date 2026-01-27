@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-01-26
+
+### Fixed
+
+#### Impact Analysis Bug with Sharded Call Graph
+- Fixed `drift_impact_analysis` crashing with "call.resolvedCandidates is not iterable" error
+- The sharded call graph format was missing `resolvedCandidates` array when loading calls
+- Added defensive handling in `ImpactAnalyzer` to handle both `calleeId` and `resolvedCandidates`
+
+#### Call Graph Store Missing Fields
+- Added missing `resolvedCandidates`, `argumentCount`, and `file` fields when loading from sharded format
+- Ensures full compatibility between legacy and sharded call graph storage
+
+### Added
+
+#### Dynamic Project Resolution for MCP
+- MCP tools now support a `project` parameter to query different registered projects
+- Example: `drift_status` with `project="my-other-project"` will analyze that project
+- Stores are dynamically initialized for the requested project
+- Falls back to the default project if not specified
+
+#### New Infrastructure Function
+- Added `getActiveProjectRoot()` function to resolve the active project from the registry
+- Enables future improvements for automatic project switching
+
 ## [0.9.6] - 2026-01-26
 
 ### Fixed

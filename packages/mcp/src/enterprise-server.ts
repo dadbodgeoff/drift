@@ -204,6 +204,50 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
         }
       }
 
+      // Dynamic project resolution: check if a different project is requested
+      // or if the active project in the registry has changed
+      let effectiveProjectRoot = config.projectRoot;
+      let effectiveStores = stores;
+      let effectiveDataLake = dataLake;
+      let effectivePatternService = patternService;
+      
+      // Check for project parameter or active project change
+      const requestedProject = (args as Record<string, unknown>)['project'] as string | undefined;
+      if (requestedProject) {
+        // User explicitly requested a different project
+        const resolved = await import('./infrastructure/project-resolver.js')
+          .then(m => m.resolveProject(requestedProject, config.projectRoot));
+        
+        if (resolved.projectRoot !== config.projectRoot) {
+          effectiveProjectRoot = resolved.projectRoot;
+          // Create temporary stores for this project
+          effectiveStores = {
+            pattern: new PatternStore({ rootDir: effectiveProjectRoot }),
+            manifest: new ManifestStore(effectiveProjectRoot),
+            history: new HistoryStore({ rootDir: effectiveProjectRoot }),
+            dna: new DNAStore({ rootDir: effectiveProjectRoot }),
+            boundary: new BoundaryStore({ rootDir: effectiveProjectRoot }),
+            contract: new ContractStore({ rootDir: effectiveProjectRoot }),
+            callGraph: new CallGraphStore({ rootDir: effectiveProjectRoot }),
+            env: new EnvStore({ rootDir: effectiveProjectRoot }),
+          };
+          effectiveDataLake = createDataLake({ rootDir: effectiveProjectRoot });
+          effectivePatternService = config.usePatternService !== false
+            ? createPatternServiceFromStore(effectiveStores.pattern, effectiveProjectRoot, {
+                enableCache: config.enableCache !== false,
+              })
+            : null;
+          
+          // Initialize the temporary stores
+          await Promise.all([
+            effectiveStores.pattern.initialize(),
+            effectiveStores.boundary.initialize(),
+            effectiveStores.contract.initialize(),
+            effectiveStores.callGraph.initialize(),
+          ]);
+        }
+      }
+
       // Check cache
       const cacheKey = cache?.generateKey(name, args as Record<string, unknown>);
       if (cache && cacheKey) {
@@ -218,10 +262,10 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       const result = await routeToolCall(
         name, 
         args, 
-        stores, 
-        config.projectRoot, 
-        dataLake,
-        patternService
+        effectiveStores, 
+        effectiveProjectRoot, 
+        effectiveDataLake,
+        effectivePatternService
       );
 
       // Cache result

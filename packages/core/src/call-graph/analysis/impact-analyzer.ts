@@ -369,7 +369,12 @@ export class ImpactAnalyzer {
 
       // Follow calls
       for (const call of func.calls) {
-        for (const candidate of call.resolvedCandidates) {
+        // Handle both resolved calleeId and resolvedCandidates
+        const candidates = call.resolvedCandidates ?? [];
+        if (call.calleeId && !candidates.includes(call.calleeId)) {
+          candidates.push(call.calleeId);
+        }
+        for (const candidate of candidates) {
           if (!visited.has(candidate)) {
             queue.push(candidate);
           }
