@@ -558,6 +558,9 @@ function formatMockAnalysisDetailed(analysis: MockAnalysis): void {
 
 function formatUncoveredFunctions(uncovered: UncoveredFunction[]): void {
   for (const func of uncovered) {
+    // Skip __module__ entries - they're not useful for test coverage
+    if (func.qualifiedName === '__module__') continue;
+    
     const riskColor = func.riskScore >= 60 ? chalk.red : 
                      func.riskScore >= 30 ? chalk.yellow : chalk.gray;
     

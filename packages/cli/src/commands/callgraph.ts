@@ -419,7 +419,9 @@ async function statusAction(options: CallGraphOptions): Promise<void> {
     for (const id of graph.entryPoints.slice(0, 10)) {
       const func = graph.functions.get(id);
       if (func) {
-        console.log(`  ${chalk.magenta('🚪')} ${chalk.white(func.qualifiedName)}`);
+        // Transform __module__ to <module-level> for cleaner display
+        const displayName = func.qualifiedName === '__module__' ? '<module-level>' : func.qualifiedName;
+        console.log(`  ${chalk.magenta('🚪')} ${chalk.white(displayName)}`);
         console.log(chalk.gray(`     ${func.file}:${func.startLine}`));
       }
     }
@@ -436,7 +438,9 @@ async function statusAction(options: CallGraphOptions): Promise<void> {
       const func = graph.functions.get(id);
       if (func) {
         const tables = [...new Set(func.dataAccess.map(d => d.table))];
-        console.log(`  ${chalk.blue('💾')} ${chalk.white(func.qualifiedName)} → [${tables.join(', ')}]`);
+        // Transform __module__ to <module-level> for cleaner display
+        const displayName = func.qualifiedName === '__module__' ? '<module-level>' : func.qualifiedName;
+        console.log(`  ${chalk.blue('💾')} ${chalk.white(displayName)} → [${tables.join(', ')}]`);
         console.log(chalk.gray(`     ${func.file}:${func.startLine}`));
       }
     }
@@ -811,7 +815,9 @@ async function inverseAction(target: string, options: CallGraphOptions): Promise
     for (const ap of result.accessPaths.slice(0, 10)) {
       const entryFunc = graph?.functions.get(ap.entryPoint);
       if (entryFunc) {
-        console.log(`  ${chalk.magenta('🚪')} ${chalk.white(entryFunc.qualifiedName)}`);
+        // Transform __module__ to <module-level> for cleaner display
+        const displayName = entryFunc.qualifiedName === '__module__' ? '<module-level>' : entryFunc.qualifiedName;
+        console.log(`  ${chalk.magenta('🚪')} ${chalk.white(displayName)}`);
         console.log(chalk.gray(`     Path: ${ap.path.map(p => p.functionName).join(' → ')}`));
       }
     }
@@ -900,9 +906,10 @@ async function functionAction(name: string, options: CallGraphOptions): Promise<
     return;
   }
 
-  // Text output
+  // Text output - transform __module__ to <module-level> for cleaner display
+  const displayName = func.qualifiedName === '__module__' ? '<module-level>' : func.qualifiedName;
   console.log();
-  console.log(chalk.bold(`📋 Function: ${func.qualifiedName}`));
+  console.log(chalk.bold(`📋 Function: ${displayName}`));
   console.log(chalk.gray('─'.repeat(60)));
   console.log();
 
@@ -940,7 +947,9 @@ async function functionAction(name: string, options: CallGraphOptions): Promise<
     console.log(chalk.bold(`Called By (${func.calledBy.length}):`));
     for (const c of func.calledBy.slice(0, 10)) {
       const caller = graph.functions.get(c.callerId);
-      console.log(`  ${chalk.white(caller?.qualifiedName ?? c.callerId)}`);
+      // Transform __module__ to <module-level> for cleaner display
+      const displayName = caller?.qualifiedName === '__module__' ? '<module-level>' : (caller?.qualifiedName ?? c.callerId);
+      console.log(`  ${chalk.white(displayName)}`);
     }
     if (func.calledBy.length > 10) {
       console.log(chalk.gray(`  ... and ${func.calledBy.length - 10} more`));
@@ -1073,7 +1082,9 @@ async function impactAction(target: string, options: CallGraphOptions): Promise<
   if (result.entryPoints.length > 0) {
     console.log(chalk.bold.yellow('🚪 Affected Entry Points (User-Facing Impact):'));
     for (const ep of result.entryPoints.slice(0, 10)) {
-      console.log(`  ${chalk.magenta('●')} ${chalk.white(ep.qualifiedName)}`);
+      // Transform __module__ to <module-level> for cleaner display
+      const displayName = ep.qualifiedName === '__module__' ? '<module-level>' : ep.qualifiedName;
+      console.log(`  ${chalk.magenta('●')} ${chalk.white(displayName)}`);
       console.log(chalk.gray(`    ${ep.file}:${ep.line}`));
       console.log(chalk.gray(`    Path: ${ep.pathToChange.map(p => p.functionName).join(' → ')}`));
     }
@@ -1108,8 +1119,10 @@ async function impactAction(target: string, options: CallGraphOptions): Promise<
   if (directCallers.length > 0) {
     console.log(chalk.bold('📞 Direct Callers (Immediate Impact):'));
     for (const caller of directCallers.slice(0, 10)) {
+      // Transform __module__ to <module-level> for cleaner display
+      const displayName = caller.qualifiedName === '__module__' ? '<module-level>' : caller.qualifiedName;
       const icon = caller.accessesSensitiveData ? chalk.red('●') : chalk.gray('○');
-      console.log(`  ${icon} ${chalk.white(caller.qualifiedName)}`);
+      console.log(`  ${icon} ${chalk.white(displayName)}`);
       console.log(chalk.gray(`    ${caller.file}:${caller.line}`));
     }
     if (directCallers.length > 10) {
@@ -1123,8 +1136,10 @@ async function impactAction(target: string, options: CallGraphOptions): Promise<
   if (transitiveCallers.length > 0) {
     console.log(chalk.bold('🔗 Transitive Callers (Ripple Effect):'));
     for (const caller of transitiveCallers.slice(0, 8)) {
+      // Transform __module__ to <module-level> for cleaner display
+      const displayName = caller.qualifiedName === '__module__' ? '<module-level>' : caller.qualifiedName;
       const depthIndicator = chalk.gray(`[depth ${caller.depth}]`);
-      console.log(`  ${depthIndicator} ${chalk.white(caller.qualifiedName)}`);
+      console.log(`  ${depthIndicator} ${chalk.white(displayName)}`);
     }
     if (transitiveCallers.length > 8) {
       console.log(chalk.gray(`  ... and ${transitiveCallers.length - 8} more transitive callers`));
@@ -1237,8 +1252,8 @@ async function deadCodeAction(options: CallGraphOptions & { confidence?: string;
   console.log(`  Framework Hooks: ${chalk.gray(result.excluded.frameworkHooks)}`);
   console.log();
 
-  // High confidence candidates
-  const highConf = result.candidates.filter(c => c.confidence === 'high');
+  // High confidence candidates (filter out __module__ entries)
+  const highConf = result.candidates.filter(c => c.confidence === 'high' && c.qualifiedName !== '__module__');
   if (highConf.length > 0) {
     console.log(chalk.bold.red('🔴 High Confidence (Safe to Remove):'));
     for (const c of highConf.slice(0, 15)) {
@@ -1251,8 +1266,8 @@ async function deadCodeAction(options: CallGraphOptions & { confidence?: string;
     console.log();
   }
 
-  // Medium confidence candidates
-  const medConf = result.candidates.filter(c => c.confidence === 'medium');
+  // Medium confidence candidates (filter out __module__ entries)
+  const medConf = result.candidates.filter(c => c.confidence === 'medium' && c.qualifiedName !== '__module__');
   if (medConf.length > 0) {
     console.log(chalk.bold.yellow('🟡 Medium Confidence (Review First):'));
     for (const c of medConf.slice(0, 10)) {
