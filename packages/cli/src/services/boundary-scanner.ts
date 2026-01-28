@@ -16,6 +16,9 @@ import {
   type BoundaryScanResult,
 } from 'driftdetect-core';
 
+// Re-export types for consumers
+export type { BoundaryScanResult } from 'driftdetect-core';
+
 // ============================================================================
 // Types
 // ============================================================================

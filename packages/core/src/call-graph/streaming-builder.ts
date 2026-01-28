@@ -16,6 +16,7 @@ import * as path from 'node:path';
 import { minimatch } from 'minimatch';
 
 import type { DataAccessPoint } from '../boundaries/types.js';
+import { createTableNameValidator, type TableNameValidator } from '../boundaries/table-name-validator.js';
 import type { CallGraphShard, FunctionEntry, DataAccessRef, CallEntry } from '../lake/types.js';
 import { CallGraphShardStore } from '../lake/callgraph-shard-store.js';
 import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
@@ -71,11 +72,13 @@ export class StreamingCallGraphBuilder {
   private readonly shardStore: CallGraphShardStore;
   private readonly extractors: BaseCallGraphExtractor[];
   private readonly resolutionBatchSize: number;
+  private readonly tableNameValidator: TableNameValidator;
 
   constructor(config: StreamingBuilderConfig) {
     this.config = config;
     this.shardStore = new CallGraphShardStore({ rootDir: config.rootDir });
     this.resolutionBatchSize = config.resolutionBatchSize ?? 50;
+    this.tableNameValidator = createTableNameValidator();
     
     // Register extractors
     this.extractors = [
@@ -317,6 +320,13 @@ export class StreamingCallGraphBuilder {
       if (dataAccessPoints) {
         for (const dap of dataAccessPoints) {
           if (dap.line >= fn.startLine && dap.line <= fn.endLine) {
+            // Validate table name to filter out noise
+            const validation = this.tableNameValidator.validate(dap.table);
+            if (!validation.isValid) {
+              // Skip noisy table names like 'unknown', 'item', 'data', etc.
+              continue;
+            }
+            
             // Map operation to allowed values
             let operation: 'read' | 'write' | 'delete' = 'read';
             const op = dap.operation as string;
@@ -327,7 +337,7 @@ export class StreamingCallGraphBuilder {
             }
             
             fnDataAccess.push({
-              table: dap.table,
+              table: validation.normalizedName ?? dap.table,
               operation,
               line: dap.line,
               fields: dap.fields ?? [],

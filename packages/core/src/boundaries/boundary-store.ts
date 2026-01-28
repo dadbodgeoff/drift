@@ -3,6 +3,11 @@
  *
  * Loads and saves data access maps and boundary rules to .drift/boundaries/ directory.
  * Supports querying access points by table, file, and checking violations against rules.
+ * 
+ * Features:
+ * - Table name validation to filter false positives
+ * - Confidence adjustment based on table name quality
+ * - Configurable validation rules
  */
 
 import * as fs from 'node:fs/promises';
@@ -19,6 +24,11 @@ import type {
   BoundaryRules,
   BoundaryViolation,
 } from './types.js';
+import { 
+  TableNameValidator, 
+  createTableNameValidator,
+  type TableNameValidatorConfig 
+} from './table-name-validator.js';
 
 // ============================================================================
 // Constants
@@ -90,6 +100,16 @@ function createEmptyAccessMap(projectRoot: string): DataAccessMap {
   };
 }
 
+/**
+ * BoundaryStore configuration with validation options
+ */
+export interface ExtendedBoundaryStoreConfig extends BoundaryStoreConfig {
+  /** Table name validation configuration */
+  tableValidation?: TableNameValidatorConfig;
+  /** Whether to enable table name validation (default: true) */
+  enableTableValidation?: boolean;
+}
+
 // ============================================================================
 // BoundaryStore Class
 // ============================================================================
@@ -102,14 +122,21 @@ function createEmptyAccessMap(projectRoot: string): DataAccessMap {
  * - .drift/boundaries/rules.json - User-defined boundary rules (optional)
  */
 export class BoundaryStore {
-  private readonly config: BoundaryStoreConfig;
+  private readonly config: ExtendedBoundaryStoreConfig;
   private readonly boundariesDir: string;
+  private readonly tableValidator: TableNameValidator;
+  private readonly enableValidation: boolean;
   private accessMap: DataAccessMap | null = null;
   private rules: BoundaryRules | null = null;
+  
+  /** Statistics about filtered table names */
+  private filteredTables: Map<string, string> = new Map();
 
-  constructor(config: BoundaryStoreConfig) {
+  constructor(config: ExtendedBoundaryStoreConfig) {
     this.config = config;
     this.boundariesDir = path.join(this.config.rootDir, DRIFT_DIR, BOUNDARIES_DIR);
+    this.enableValidation = config.enableTableValidation !== false;
+    this.tableValidator = createTableNameValidator(config.tableValidation);
   }
 
   // ==========================================================================
@@ -412,10 +439,35 @@ export class BoundaryStore {
 
   /**
    * Add a single access point
+   * 
+   * Table names are validated to filter out false positives.
+   * Invalid table names are logged and the access point is skipped.
    */
   addAccessPoint(point: DataAccessPoint): void {
     if (!this.accessMap) {
       this.accessMap = createEmptyAccessMap(this.config.rootDir);
+    }
+
+    // Validate table name if validation is enabled
+    if (this.enableValidation) {
+      const validation = this.tableValidator.validate(point.table, {
+        file: point.file,
+        line: point.line,
+      });
+      
+      if (!validation.isValid) {
+        // Track filtered tables for debugging
+        this.filteredTables.set(point.table, validation.reason ?? 'Unknown reason');
+        return; // Skip this access point
+      }
+      
+      // Adjust confidence based on table name quality
+      point.confidence = point.confidence * validation.confidenceMultiplier;
+      
+      // Use normalized name if provided
+      if (validation.normalizedName) {
+        point.table = validation.normalizedName;
+      }
     }
 
     // Ensure ID exists
@@ -454,6 +506,20 @@ export class BoundaryStore {
     // Update stats
     this.accessMap.stats.totalTables = Object.keys(this.accessMap.tables).length;
     this.accessMap.stats.totalAccessPoints = Object.keys(this.accessMap.accessPoints).length;
+  }
+
+  /**
+   * Get filtered table names and reasons (for debugging)
+   */
+  getFilteredTables(): Map<string, string> {
+    return new Map(this.filteredTables);
+  }
+
+  /**
+   * Clear filtered tables tracking
+   */
+  clearFilteredTables(): void {
+    this.filteredTables.clear();
   }
 
   /**
@@ -549,6 +615,6 @@ export class BoundaryStore {
 /**
  * Create a new BoundaryStore instance
  */
-export function createBoundaryStore(config: BoundaryStoreConfig): BoundaryStore {
+export function createBoundaryStore(config: ExtendedBoundaryStoreConfig): BoundaryStore {
   return new BoundaryStore(config);
 }

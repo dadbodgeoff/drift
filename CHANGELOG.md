@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.30] - 2026-01-28
+
+### 🧪 CIBench v2: Frontier Codebase Intelligence Benchmark
+
+Introduces CIBench v2, a novel benchmark for measuring how well tools **understand** codebases, not just navigate them. Unlike existing benchmarks that test pattern matching, CIBench tests actual understanding through counterfactual reasoning, calibrated confidence, and generative probes.
+
+### Added
+
+- **Four-Level Evaluation Framework**:
+  - Level 1: Perception (30%) - Pattern detection, call graphs, data flow
+  - Level 2: Understanding (35%) - Architectural intent, causal reasoning, uncertainty quantification
+  - Level 3: Application (25%) - Token efficiency, compositional reasoning, iterative refinement
+  - Level 4: Validation (10%) - Human correlation
+
+- **Novel Evaluation Methodology**:
+  - **Counterfactual Evaluation**: "What would happen if X changed?" - tests causal understanding
+  - **Calibration Measurement**: ECE/MCE metrics for confidence calibration
+  - **Generative Probes**: Tools must generate explanations, not just match patterns
+  - **Adversarial Robustness**: Probes designed to expose weaknesses
+  - **Negative Knowledge**: Tests knowing what NOT to do
+
+- **v2 Schema** (`drift/packages/cibench/src/schema/v2/`):
+  - `manifest.ts` - Corpus metadata, evaluation config
+  - `perception.ts` - Patterns, call graph, data flow ground truth
+  - `understanding.ts` - Intent, causality, uncertainty ground truth
+  - `application.ts` - Efficiency, composition, refinement ground truth
+  - `probes.ts` - Generative probes for testing understanding
+
+- **v2 Evaluator** (`drift/packages/cibench/src/evaluator/v2/`):
+  - `calibration.ts` - ECE/MCE calculation, reliability diagrams
+  - `perception-scorer.ts` - Pattern and call graph scoring
+  - `understanding-scorer.ts` - Intent, causal, uncertainty scoring
+  - `application-scorer.ts` - Efficiency, composition, refinement scoring
+  - `probe-evaluator.ts` - Generative probe evaluation
+
+### Changed
+
+- Updated `drift/packages/cibench/README.md` with v2 framework documentation
+- Updated `drift/docs/designs/CIBENCH-SPEC.md` with v2 specification
+
 ## [0.9.29] - 2026-01-28
 
 ### 🚀 Enterprise Codebase Performance Fix

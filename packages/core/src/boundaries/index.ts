@@ -26,6 +26,18 @@ export type {
 
 // Store
 export { BoundaryStore, createBoundaryStore } from './boundary-store.js';
+export type { ExtendedBoundaryStoreConfig } from './boundary-store.js';
+
+// Table Name Validator
+export { 
+  TableNameValidator, 
+  createTableNameValidator,
+  defaultTableNameValidator,
+} from './table-name-validator.js';
+export type { 
+  TableNameValidationResult, 
+  TableNameValidatorConfig,
+} from './table-name-validator.js';
 
 // Scanner (with learning)
 export { BoundaryScanner, createBoundaryScanner } from './boundary-scanner.js';

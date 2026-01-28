@@ -9,9 +9,12 @@
  * - Incremental updates for changed files
  * - Dependency tracking between views
  * - Parallel view generation
+ * - Manifest stats sync from actual data files
  */
 
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 import type {
   IncrementalUpdate,
@@ -370,6 +373,7 @@ export class ViewMaterializer extends EventEmitter {
     patterns: Pattern[],
     additionalData?: {
       accessMap?: DataAccessMap;
+      violations?: BoundaryViolation[];
       lastScan?: {
         timestamp: string;
         duration: number;
@@ -403,20 +407,125 @@ export class ViewMaterializer extends EventEmitter {
       totalOutliers,
     });
 
-    // Security stats
+    // Security stats - sync from actual boundary data
     if (additionalData?.accessMap) {
       const accessMap = additionalData.accessMap;
       this.manifestStore.updateSecurityStats({
         totalTables: Object.keys(accessMap.tables).length,
         totalAccessPoints: Object.keys(accessMap.accessPoints).length,
         sensitiveFields: accessMap.sensitiveFields.length,
-        riskLevel: this.calculateRiskLevel(accessMap),
+        violations: additionalData.violations?.length ?? 0,
+        riskLevel: this.calculateRiskLevel(accessMap, additionalData.violations),
       });
     }
+
+    // Sync call graph stats from index file if it exists
+    await this.syncCallGraphStats();
+
+    // Sync contract stats from contracts files if they exist
+    await this.syncContractStats();
 
     // Last scan info
     if (additionalData?.lastScan) {
       this.manifestStore.updateLastScan(additionalData.lastScan);
+    }
+  }
+
+  /**
+   * Sync call graph stats from the call graph index file
+   */
+  private async syncCallGraphStats(): Promise<void> {
+    try {
+      const callGraphIndexPath = path.join(
+        this.config.rootDir,
+        '.drift',
+        'lake',
+        'callgraph',
+        'index.json'
+      );
+      
+      const content = await fs.readFile(callGraphIndexPath, 'utf-8');
+      const index = JSON.parse(content) as {
+        summary?: {
+          totalFunctions?: number;
+          totalCalls?: number;
+          entryPoints?: number;
+          dataAccessors?: number;
+          avgDepth?: number;
+        };
+      };
+      
+      if (index.summary) {
+        this.manifestStore.updateCallGraphStats({
+          totalFunctions: index.summary.totalFunctions ?? 0,
+          totalCalls: index.summary.totalCalls ?? 0,
+          entryPoints: index.summary.entryPoints ?? 0,
+          dataAccessors: index.summary.dataAccessors ?? 0,
+          avgDepth: index.summary.avgDepth ?? 0,
+        });
+      }
+    } catch {
+      // Call graph index doesn't exist or is invalid, skip
+    }
+  }
+
+  /**
+   * Sync contract stats from the contracts files
+   */
+  private async syncContractStats(): Promise<void> {
+    try {
+      const contractsDir = path.join(this.config.rootDir, '.drift', 'contracts');
+      
+      let discovered = 0;
+      let verified = 0;
+      let mismatch = 0;
+      let ignored = 0;
+
+      // Count discovered contracts
+      try {
+        const discoveredPath = path.join(contractsDir, 'discovered', 'contracts.json');
+        const content = await fs.readFile(discoveredPath, 'utf-8');
+        const data = JSON.parse(content) as { contracts?: unknown[] };
+        discovered = data.contracts?.length ?? 0;
+      } catch {
+        // No discovered contracts
+      }
+
+      // Count verified contracts
+      try {
+        const verifiedDir = path.join(contractsDir, 'verified');
+        const files = await fs.readdir(verifiedDir);
+        verified = files.filter(f => f.endsWith('.json')).length;
+      } catch {
+        // No verified contracts
+      }
+
+      // Count mismatch contracts
+      try {
+        const mismatchDir = path.join(contractsDir, 'mismatch');
+        const files = await fs.readdir(mismatchDir);
+        mismatch = files.filter(f => f.endsWith('.json')).length;
+      } catch {
+        // No mismatch contracts
+      }
+
+      // Count ignored contracts
+      try {
+        const ignoredDir = path.join(contractsDir, 'ignored');
+        const files = await fs.readdir(ignoredDir);
+        ignored = files.filter(f => f.endsWith('.json')).length;
+      } catch {
+        // No ignored contracts
+      }
+
+      this.manifestStore.updateContractStats({
+        discovered,
+        verified,
+        mismatch,
+        ignored,
+      });
+    } catch {
+      // Contracts directory doesn't exist, skip
     }
   }
 
