@@ -46,16 +46,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
-    "@types/node": "^20.10.0",
+    "@types/node": "^25.0.10",
     "@vitest/coverage-v8": "^1.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",
     "husky": "^8.0.3",
-    "prettier": "^3.1.0",
+    "prettier": "^3.8.1",
     "turbo": "^1.11.0",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@8.10.0",
   "engines": {
