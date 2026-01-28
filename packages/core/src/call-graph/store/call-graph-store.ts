@@ -300,7 +300,7 @@ export class CallGraphStore {
    * so we need to reconstruct the reverse references (who calls this function).
    */
   private buildReverseReferences(functions: Map<string, FunctionNode>): void {
-    // Build a map of function name -> function IDs for resolution
+    // Build a map of function name -> function IDs for resolution (fallback)
     const nameToIds = new Map<string, string[]>();
     for (const [id, func] of functions) {
       const existing = nameToIds.get(func.name) ?? [];
@@ -311,7 +311,32 @@ export class CallGraphStore {
     // For each function, look at its calls and add reverse references
     for (const [callerId, callerFunc] of functions) {
       for (const call of callerFunc.calls) {
-        // Try to resolve the callee by name
+        // First, try to use the already-resolved calleeId from sharded storage
+        // This is more accurate than name-based lookup
+        if (call.calleeId) {
+          const calleeFunc = functions.get(call.calleeId);
+          if (calleeFunc) {
+            // Check if this caller is already in calledBy
+            const alreadyExists = calleeFunc.calledBy.some(cb => cb.callerId === callerId);
+            if (!alreadyExists) {
+              calleeFunc.calledBy.push({
+                callerId,
+                calleeId: call.calleeId,
+                calleeName: calleeFunc.name,
+                line: call.line,
+                column: call.column ?? 0,
+                resolved: true,
+                confidence: call.confidence ?? 1.0,
+                file: callerFunc.file,
+                resolvedCandidates: [],
+                argumentCount: 0,
+              });
+            }
+            continue; // Skip name-based lookup since we found the callee
+          }
+        }
+
+        // Fallback: Try to resolve the callee by name
         const calleeName = call.calleeName;
         const candidateIds = nameToIds.get(calleeName) ?? [];
         
