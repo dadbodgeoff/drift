@@ -20,6 +20,8 @@ import {
   loadProjectConfig,
   getProjectRegistry,
   createTelemetryClient,
+  createTestTopologyAnalyzer,
+  createCallGraphAnalyzer,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
@@ -53,6 +55,8 @@ export interface ScanCommandOptions {
   contracts?: boolean;
   /** Skip data boundary scanning (boundaries enabled by default) */
   boundaries?: boolean;
+  /** Build test topology during scan */
+  testTopology?: boolean;
   /** Scan a specific registered project by name */
   project?: string;
   /** Scan all registered projects */
@@ -1174,6 +1178,107 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     }
   }
 
+  // Test topology scanning (test-to-code mappings) - opt-in
+  if (options.testTopology) {
+    console.log();
+    const testTopologySpinner = createSpinner('Building test topology...');
+    testTopologySpinner.start();
+
+    try {
+      // Initialize test topology analyzer
+      const testAnalyzer = createTestTopologyAnalyzer({});
+
+      // Try to load call graph for transitive analysis
+      try {
+        const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
+        await callGraphAnalyzer.initialize();
+        const graph = callGraphAnalyzer.getGraph();
+        if (graph) {
+          testAnalyzer.setCallGraph(graph);
+        }
+      } catch {
+        // No call graph available, continue with direct analysis
+      }
+
+      // Find test files from the already-discovered files
+      const testFilePatterns = [
+        /\.test\.[jt]sx?$/,
+        /\.spec\.[jt]sx?$/,
+        /_test\.py$/,
+        /test_.*\.py$/,
+        /Test\.java$/,
+        /Tests\.java$/,
+        /Test\.cs$/,
+        /Tests\.cs$/,
+        /Test\.php$/,
+      ];
+      
+      const testFiles = files.filter(f => testFilePatterns.some(p => p.test(f)));
+      
+      if (testFiles.length === 0) {
+        testTopologySpinner.succeed('No test files found');
+      } else {
+        // Extract tests from each file
+        let extractedCount = 0;
+        for (const testFile of testFiles) {
+          try {
+            const content = await fs.readFile(path.join(rootDir, testFile), 'utf-8');
+            const extraction = testAnalyzer.extractFromFile(content, testFile);
+            if (extraction) extractedCount++;
+          } catch {
+            // Skip files that can't be read
+          }
+        }
+
+        // Build mappings
+        testAnalyzer.buildMappings();
+
+        // Get results
+        const summary = testAnalyzer.getSummary();
+        const mockAnalysis = testAnalyzer.analyzeMocks();
+
+        // Save results
+        const testTopologyDir = path.join(rootDir, DRIFT_DIR, 'test-topology');
+        await fs.mkdir(testTopologyDir, { recursive: true });
+        await fs.writeFile(
+          path.join(testTopologyDir, 'summary.json'),
+          JSON.stringify({ summary, mockAnalysis, generatedAt: new Date().toISOString() }, null, 2)
+        );
+
+        testTopologySpinner.succeed(
+          `Built test topology: ${summary.testFiles} test files, ${summary.testCases} tests, ` +
+          `${summary.coveredFunctions}/${summary.totalFunctions} functions covered`
+        );
+
+        if (verbose) {
+          console.log(chalk.gray(`  Test files extracted: ${extractedCount}/${testFiles.length}`));
+          console.log(chalk.gray(`  Coverage: ${summary.coveragePercent}%`));
+          if (mockAnalysis.totalMocks > 0) {
+            console.log(chalk.gray(`  Mocks: ${mockAnalysis.totalMocks} (${mockAnalysis.externalPercent}% external)`));
+          }
+        }
+
+        // Show uncovered functions warning
+        if (summary.totalFunctions > 0 && summary.functionCoveragePercent < 50) {
+          console.log();
+          console.log(chalk.yellow(`⚠️  Low test coverage: ${summary.functionCoveragePercent}% of functions covered`));
+          console.log(chalk.gray('  Run `drift test-topology uncovered` to find untested code'));
+        }
+
+        console.log();
+        console.log(chalk.gray('View test topology:'));
+        console.log(chalk.cyan('  drift test-topology status'));
+        console.log(chalk.cyan('  drift test-topology uncovered'));
+      }
+
+    } catch (error) {
+      testTopologySpinner.fail('Test topology build failed');
+      if (verbose) {
+        console.error(chalk.red((error as Error).message));
+      }
+    }
+  }
+
   // Materialize data lake views for fast queries
   const lakeSpinner = createSpinner('Building data lake views...');
   lakeSpinner.start();
@@ -1279,6 +1384,7 @@ export const scanCommand = new Command('scan')
   .option('--incremental', 'Only scan changed files')
   .option('--no-contracts', 'Skip BE↔FE contract scanning')
   .option('--no-boundaries', 'Skip data boundary scanning')
+  .option('--test-topology', 'Build test topology (test-to-code mappings)')
   .option('-p, --project <name>', 'Scan a specific registered project by name')
   .option('--all-projects', 'Scan all registered projects')
   .option('-t, --timeout <seconds>', 'Scan timeout in seconds (default: 300)', '300')

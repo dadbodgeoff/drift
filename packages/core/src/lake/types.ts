@@ -407,9 +407,25 @@ export interface FunctionEntry {
   endLine: number;
   isEntryPoint: boolean;
   isDataAccessor: boolean;
-  calls: string[];
+  calls: CallEntry[];
   calledBy: string[];
   dataAccess: DataAccessRef[];
+}
+
+/**
+ * A call entry with resolution information
+ */
+export interface CallEntry {
+  /** Target function name (as written in code) */
+  target: string;
+  /** Resolved function ID (if resolved) */
+  resolvedId?: string;
+  /** Whether the call was resolved */
+  resolved: boolean;
+  /** Resolution confidence (0-1) */
+  confidence: number;
+  /** Line number of the call */
+  line: number;
 }
 
 export interface DataAccessRef {

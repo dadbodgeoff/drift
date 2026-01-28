@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.28] - 2026-01-28
+
+### 🎉 Major Release: All 6 Critical Gaps Resolved
+
+This release completes a comprehensive quality-of-life overhaul addressing 6 critical gaps in the Drift analysis pipeline. Pattern metadata, outlier detection, backend DNA analysis, test topology, call graph resolution, and boundary field extraction now work end-to-end.
+
+### Added
+
+#### Gap 6: Multi-Framework Boundary Field Extraction
+- **New field extractor framework** with pluggable ORM-specific extractors
+- **7 framework extractors**: Supabase, Prisma, Django, SQLAlchemy, GORM (Go), Diesel (Rust), Raw SQL
+- **Added missing language support**: Go, Rust, C++ now included in boundary scanning
+- **Rich field metadata**: confidence scores, field sources (query/model/filter/insert/update), relationship detection
+- **Model definition parsing**: Extracts fields from ORM model/entity definitions
+
+#### Gap 4: Test Topology Integration
+- **`--test-topology` flag** on `drift scan` command
+- Builds test topology during scan instead of requiring separate command
+- Shows coverage stats and warnings for low coverage
+
+#### Gap 3: Backend DNA Analysis
+- **4 new backend gene extractors**: API Response Format, Error Response Format, Logging Format, Configuration Pattern
+- **`--mode backend`** option for `drift dna scan`
+- **Backend framework detection**: FastAPI, Flask, Django, Express, NestJS, Spring, Laravel, Gin, Actix
+
+### Fixed
+
+#### Gap 1: Worker Bridge Metadata Preservation
+- Pattern locations now preserve `isOutlier`, `outlierReason`, `matchedText`, `confidence`
+- Metadata flows through entire pipeline from detectors to storage
+
+#### Gap 2: Statistical Outlier Detection During Scan
+- Outliers now detected during scan (not just after approval)
+- Uses z-score and IQR methods for statistical outlier detection
+- `totalOutliers` tracked in manifest, visible in status views
+
+#### Gap 5: Call Graph Resolution Stats Persistence
+- Resolution stats (`resolvedCalls`, `unresolvedCalls`, `resolutionRate`) now persisted
+- Two-pass streaming build: extract → resolve → persist
+- Stats visible in `drift callgraph build` and `drift callgraph status` output
+
+### Production Test Results
+- **Gap 1**: ✅ Pattern metadata preserved (isOutlier, confidence in all locations)
+- **Gap 2**: ✅ 128 outliers detected during scan
+- **Gap 3**: ✅ Backend framework (FastAPI) and 4 genes detected
+- **Gap 4**: ✅ Test topology built during scan
+- **Gap 5**: ✅ 14,818/68,101 (22%) calls resolved, stats persisted
+- **Gap 6**: ✅ 228 tables, 4,118 access points, fields extracted
+
 ## [0.9.27] - 2026-01-27
 
 ### Fixed

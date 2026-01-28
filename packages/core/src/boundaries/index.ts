@@ -47,3 +47,34 @@ export type {
   SecuritySummary,
   PrioritizedScanResult,
 } from './security-prioritizer.js';
+
+// Field Extractors
+export {
+  // Types
+  type FieldExtractor,
+  type ExtractedField,
+  type FieldSource,
+  type LineExtractionResult,
+  type ModelExtractionResult,
+  BaseFieldExtractor,
+  // Extractors
+  SupabaseFieldExtractor,
+  createSupabaseExtractor,
+  PrismaFieldExtractor,
+  createPrismaExtractor,
+  DjangoFieldExtractor,
+  createDjangoExtractor,
+  SQLAlchemyFieldExtractor,
+  createSQLAlchemyExtractor,
+  RawSQLFieldExtractor,
+  createRawSQLExtractor,
+  GORMFieldExtractor,
+  createGORMExtractor,
+  DieselFieldExtractor,
+  createDieselExtractor,
+  // Factory functions
+  getMatchingExtractors,
+  getAllExtractors,
+  extractFieldsFromLine,
+  extractModelsFromContent,
+} from './field-extractors/index.js';

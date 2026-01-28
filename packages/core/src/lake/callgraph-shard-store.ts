@@ -56,6 +56,9 @@ export interface CallGraphIndex {
     totalFiles: number;
     totalFunctions: number;
     totalCalls: number;
+    resolvedCalls: number;
+    unresolvedCalls: number;
+    resolutionRate: number;
     entryPoints: number;
     dataAccessors: number;
     avgDepth: number;
@@ -223,6 +226,7 @@ export class CallGraphShardStore extends EventEmitter {
     
     let totalFunctions = 0;
     let totalCalls = 0;
+    let resolvedCalls = 0;
     let totalEntryPoints = 0;
     let totalDataAccessors = 0;
     let totalDepth = 0;
@@ -233,10 +237,23 @@ export class CallGraphShardStore extends EventEmitter {
 
       const entryPointCount = shard.functions.filter(f => f.isEntryPoint).length;
       const dataAccessorCount = shard.functions.filter(f => f.isDataAccessor).length;
-      const callCount = shard.functions.reduce((sum, f) => sum + f.calls.length, 0);
+      
+      // Count calls and resolved calls
+      let fileCallCount = 0;
+      let fileResolvedCount = 0;
+      for (const fn of shard.functions) {
+        for (const call of fn.calls) {
+          fileCallCount++;
+          // Handle both old format (string[]) and new format (CallEntry[])
+          if (typeof call === 'object' && call.resolved) {
+            fileResolvedCount++;
+          }
+        }
+      }
 
       totalFunctions += shard.functions.length;
-      totalCalls += callCount;
+      totalCalls += fileCallCount;
+      resolvedCalls += fileResolvedCount;
       totalEntryPoints += entryPointCount;
       totalDataAccessors += dataAccessorCount;
 
@@ -280,6 +297,9 @@ export class CallGraphShardStore extends EventEmitter {
     // Calculate average depth (simplified)
     const avgDepth = totalFunctions > 0 ? totalCalls / totalFunctions : 0;
     totalDepth = avgDepth;
+    
+    // Calculate resolution rate
+    const resolutionRate = totalCalls > 0 ? Math.round((resolvedCalls / totalCalls) * 100) / 100 : 0;
 
     // Sort and limit
     entryPoints.sort((a, b) => b.reachableTables - a.reachableTables);
@@ -292,6 +312,9 @@ export class CallGraphShardStore extends EventEmitter {
         totalFiles: fileEntries.length,
         totalFunctions,
         totalCalls,
+        resolvedCalls,
+        unresolvedCalls: totalCalls - resolvedCalls,
+        resolutionRate,
         entryPoints: totalEntryPoints,
         dataAccessors: totalDataAccessors,
         avgDepth: Math.round(totalDepth * 100) / 100,
@@ -469,6 +492,11 @@ export class CallGraphShardStore extends EventEmitter {
       for (const fn of shard.functions.filter(f => f.isEntryPoint)) {
         const tables = [...new Set(fn.dataAccess.map(da => da.table))];
         const sensitiveFields: string[] = []; // Would need security data
+        
+        // Extract call targets - handle both old format (string[]) and new format (CallEntry[])
+        const reachableFunctions = fn.calls.map(call => 
+          typeof call === 'string' ? call : (call.resolvedId ?? call.target)
+        );
 
         entryPoints.push({
           id: fn.id,
@@ -477,7 +505,7 @@ export class CallGraphShardStore extends EventEmitter {
           line: fn.startLine,
           endLine: fn.endLine,
           type: this.inferEntryPointType(fn.name, shard.file),
-          reachableFunctions: fn.calls,
+          reachableFunctions,
           reachableTables: tables,
           reachableSensitiveFields: sensitiveFields,
         });

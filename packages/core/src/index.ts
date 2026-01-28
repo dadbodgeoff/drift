@@ -164,6 +164,19 @@ export {
   DEFAULT_CONFIDENCE_WEIGHTS,
 } from './matcher/types.js';
 
+// Outlier detection exports
+export {
+  OutlierDetector,
+  detectOutliers,
+  calculateStatistics,
+  DEFAULT_OUTLIER_CONFIG,
+} from './matcher/outlier-detector.js';
+export type {
+  OutlierDetectorConfig,
+  DataPoint,
+  OutlierRule,
+} from './matcher/outlier-detector.js';
+
 // Store exports (selective to avoid conflicts)
 export type { PatternFile, StoredPattern, DetectorConfig, ConfidenceInfo, PatternLocation, OutlierLocation, PatternStoreConfig, PatternCategory, PatternStatus, Pattern, VariantScope, PatternVariant } from './store/types.js';
 export { CacheManager } from './store/cache-manager.js';

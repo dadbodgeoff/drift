@@ -10,6 +10,23 @@ Drift scans your codebase, learns YOUR patterns, and gives AI agents deep unders
 
 ---
 
+## 🎉 What's New in v0.9.28
+
+**All 6 Critical Gaps Resolved** - A comprehensive quality-of-life overhaul:
+
+| Feature | What's Fixed |
+|---------|--------------|
+| **Pattern Metadata** | `isOutlier`, `confidence`, `matchedText` now preserved through entire pipeline |
+| **Outlier Detection** | Statistical outliers detected during scan (not just after approval) |
+| **Backend DNA** | New gene extractors for API responses, error handling, logging, config patterns |
+| **Test Topology** | `--test-topology` flag runs test analysis during scan |
+| **Call Graph Stats** | Resolution stats (22% resolved) now persisted and visible |
+| **Field Extraction** | 7 ORM extractors: Supabase, Prisma, Django, SQLAlchemy, GORM, Diesel, Raw SQL |
+
+See [CHANGELOG.md](./CHANGELOG.md) for full details.
+
+---
+
 ## The Problem
 
 AI writes code that works but doesn't fit. It ignores your conventions, misses your patterns, and creates inconsistency. You spend more time fixing AI output than you saved.

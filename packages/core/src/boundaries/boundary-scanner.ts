@@ -19,6 +19,10 @@ import type {
 } from './types.js';
 import { BoundaryStore, createBoundaryStore } from './boundary-store.js';
 import { DataAccessLearner, createDataAccessLearner, type LearnedDataAccessConventions } from './data-access-learner.js';
+import {
+  extractFieldsFromLine,
+  extractModelsFromContent,
+} from './field-extractors/index.js';
 
 // ============================================================================
 // Types
@@ -62,6 +66,16 @@ function getLanguage(filePath: string): string | null {
       return 'php';
     case '.java':
       return 'java';
+    case '.go':
+      return 'go';
+    case '.rs':
+      return 'rust';
+    case '.cpp':
+    case '.cc':
+    case '.cxx':
+    case '.hpp':
+    case '.h':
+      return 'cpp';
     default:
       return null;
   }
@@ -74,18 +88,45 @@ function isDataAccessFile(filePath: string, content: string): boolean {
     return false;
   }
 
-  // ORM patterns
+  // ORM patterns for all 8 supported languages
   const ormPatterns = [
+    // C# - EF Core, Dapper
     'DbSet', 'DbContext', 'Entity', 'Table', 'Column',
+    // Python - Django, SQLAlchemy
     'models.Model', 'CharField', 'ForeignKey', 'ManyToMany',
     'declarative_base', 'relationship',
+    // TypeScript/JavaScript - Prisma, TypeORM, Sequelize, Drizzle, Supabase
     'prisma.', '@prisma/client',
     '@Entity', '@Column', 'getRepository',
     'sequelize.define', 'DataTypes',
     'drizzle-orm',
+    'supabase', '.from(', '.select(', '.insert(', '.update(',
+    // Java - Hibernate, Spring Data, jOOQ, MyBatis
+    '@Repository', 'JpaRepository', 'CrudRepository',
+    '@Table', '@Id', '@GeneratedValue',
+    'DSL.', 'jOOQ',
+    '<mapper', '<select', '<insert', '<update',
+    // PHP - Eloquent, Doctrine
+    'Eloquent', 'hasMany', 'belongsTo',
+    '@ORM\\', 'EntityManager',
+    // Go - GORM, sqlx, Ent, Bun
+    'gorm.Model', 'gorm.DB', 'db.Find', 'db.Create', 'db.Where',
+    'sqlx.DB', 'sqlx.Select', 'sqlx.Get',
+    'ent.Client', 'entc.', '.Query()',
+    'bun.DB', 'bun.NewSelect',
+    // Rust - Diesel, SeaORM, sqlx, tokio-postgres
+    'diesel::', '#[derive(Queryable)]', '#[table_name',
+    'sea_orm::', 'Entity::find', 'ActiveModel',
+    'sqlx::query', 'sqlx::FromRow',
+    'tokio_postgres::', 'postgres::',
+    // C++ - ODB, SOCI, sqlpp11, raw SQL libs
+    'odb::', '#pragma db', 'odb::database',
+    'soci::', 'soci::session',
+    'sqlpp::', 'sqlpp11',
+    'pqxx::', 'mysqlpp::', 'sqlite3_',
+    // Generic SQL patterns
     'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'FROM',
     'execute', 'query', 'rawQuery',
-    'supabase', '.from(', '.select(', '.insert(', '.update(',
   ];
 
   return ormPatterns.some(pattern => content.includes(pattern));
@@ -382,7 +423,29 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
 
 function detectORMModels(content: string, file: string): ORMModel[] {
   const models: ORMModel[] = [];
+  const language = getLanguage(file) ?? 'unknown';
+  
+  // First, try the new field extractors for model detection
+  const extractedModels = extractModelsFromContent(content, language);
+  for (const em of extractedModels) {
+    models.push({
+      name: em.modelName,
+      tableName: em.tableName ?? em.modelName.toLowerCase() + 's',
+      fields: em.fields.map(f => f.name),
+      file,
+      line: em.startLine,
+      framework: em.framework,
+      confidence: 0.95,
+    });
+  }
+  
+  // If we found models from extractors, return them
+  if (models.length > 0) {
+    return models;
+  }
 
+  // Fallback to regex-based detection for frameworks not yet covered by extractors
+  
   // Detect EF Core DbSet patterns
   const dbSetPattern = /DbSet<(\w+)>\s+(\w+)/g;
   let match;
@@ -494,8 +557,51 @@ function detectORMModels(content: string, file: string): ORMModel[] {
       });
     }
   }
+  
+  // Detect GORM models (Go)
+  const gormPattern = /type\s+(\w+)\s+struct\s*\{[^}]*gorm\.Model/g;
+  while ((match = gormPattern.exec(content)) !== null) {
+    const modelName = match[1];
+    if (modelName) {
+      const lineNum = content.substring(0, match.index).split('\n').length;
+      models.push({
+        name: modelName,
+        tableName: toSnakeCase(modelName) + 's',
+        fields: [],
+        file,
+        line: lineNum,
+        framework: 'gorm',
+        confidence: 0.9,
+      });
+    }
+  }
+  
+  // Detect Diesel models (Rust)
+  const dieselPattern = /#\[derive\([^\]]*Queryable[^\]]*\)\]\s*(?:pub\s+)?struct\s+(\w+)/g;
+  while ((match = dieselPattern.exec(content)) !== null) {
+    const modelName = match[1];
+    if (modelName) {
+      const lineNum = content.substring(0, match.index).split('\n').length;
+      models.push({
+        name: modelName,
+        tableName: toSnakeCase(modelName) + 's',
+        fields: [],
+        file,
+        line: lineNum,
+        framework: 'diesel',
+        confidence: 0.9,
+      });
+    }
+  }
 
   return models;
+}
+
+/**
+ * Convert PascalCase to snake_case
+ */
+function toSnakeCase(str: string): string {
+  return str.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
 }
 
 // ============================================================================
@@ -732,9 +838,19 @@ function extractTableName(line: string, context: string[]): string {
 }
 
 /**
- * Extract field names from a line of code
+ * Extract field names from a line of code using framework-specific extractors
+ * 
+ * This is a wrapper that uses the new field extractor system while maintaining
+ * backward compatibility with the existing API.
  */
-function extractFields(line: string): string[] {
+function extractFields(line: string, content?: string, language?: string): string[] {
+  // If we have content and language, use the new extractors
+  if (content && language) {
+    const result = extractFieldsFromLine(line, [], 0, content, language);
+    return result.fields.map(f => f.name);
+  }
+  
+  // Fallback to basic extraction for backward compatibility
   const fields: string[] = [];
 
   // Extract from .select('field1, field2')
@@ -914,6 +1030,7 @@ export class BoundaryScanner {
   private detectWithLearning(content: string, file: string): DataAccessPoint[] {
     const accessPoints: DataAccessPoint[] = [];
     const lines = content.split('\n');
+    const language = getLanguage(file) ?? 'unknown';
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -954,11 +1071,22 @@ export class BoundaryScanner {
         confidence = table === 'unknown' ? 0.3 : 0.7;
       }
 
-      const fields = extractFields(line);
+      // Use new field extractors for better field detection
+      const fieldResult = extractFieldsFromLine(line, context, i + 1, content, language);
+      const fields = fieldResult.fields.length > 0 
+        ? fieldResult.fields.map(f => f.name)
+        : extractFields(line); // Fallback to basic extraction
+      
+      // Use table from field extractor if we didn't find one
+      if (table === 'unknown' && fieldResult.table) {
+        table = fieldResult.table;
+        confidence = 0.8;
+      }
+      
       const id = `${file}:${i + 1}:0:${table}`;
       
       if (!accessPoints.find(ap => ap.id === id)) {
-        accessPoints.push({
+        const accessPoint: DataAccessPoint = {
           id,
           table,
           fields,
@@ -969,7 +1097,11 @@ export class BoundaryScanner {
           context: trimmed.slice(0, 100),
           isRawSql: /\b(SELECT|INSERT|UPDATE|DELETE)\b/i.test(line),
           confidence,
-        });
+        };
+        if (fieldResult.framework) {
+          accessPoint.framework = fieldResult.framework;
+        }
+        accessPoints.push(accessPoint);
       }
     }
 
@@ -1037,8 +1169,30 @@ export class BoundaryScanner {
    * Scan directory with glob patterns
    */
   async scanDirectory(options: ScanFilesOptions = {}): Promise<BoundaryScanResult> {
-    const patterns = options.patterns ?? ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.py'];
-    const ignorePatterns = options.ignorePatterns ?? ['node_modules', '.git', 'dist', 'build', '__pycache__', '.drift'];
+    const patterns = options.patterns ?? [
+      // TypeScript/JavaScript
+      '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx',
+      // Python
+      '**/*.py',
+      // C#
+      '**/*.cs',
+      // PHP
+      '**/*.php',
+      // Java
+      '**/*.java',
+      // Go
+      '**/*.go',
+      // Rust
+      '**/*.rs',
+      // C++
+      '**/*.cpp', '**/*.cc', '**/*.cxx', '**/*.hpp',
+      // Schema files
+      '**/*.prisma',
+    ];
+    const ignorePatterns = options.ignorePatterns ?? [
+      'node_modules', '.git', 'dist', 'build', '__pycache__', '.drift',
+      'vendor', 'target', 'bin', 'obj', 'out',
+    ];
     
     const files = await this.findFiles(patterns, ignorePatterns);
     return this.scanFiles(files);

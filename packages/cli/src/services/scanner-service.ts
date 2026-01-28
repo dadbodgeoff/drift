@@ -19,12 +19,15 @@ import {
 } from 'driftdetect-detectors';
 import {
   type Language,
+  type PatternMatch,
   ManifestStore,
   hashContent,
   type SemanticLocation,
   type SemanticType,
   type ManifestPattern,
   type Manifest,
+  type PatternMatchResult,
+  OutlierDetector,
 } from 'driftdetect-core';
 import type {
   DetectorWorkerTask,
@@ -87,6 +90,11 @@ export interface ScannerServiceConfig {
 
 /**
  * Aggregated pattern match across files
+ * 
+ * Enhanced to preserve all metadata from detectors including:
+ * - Full location range (endLine/endColumn)
+ * - Outlier information per location
+ * - Matched text for context
  */
 export interface AggregatedPattern {
   patternId: string;
@@ -99,9 +107,25 @@ export interface AggregatedPattern {
     file: string;
     line: number;
     column: number;
+    /** End line for full range highlighting */
+    endLine?: number;
+    /** End column for full range highlighting */
+    endColumn?: number;
+    /** Whether this specific location is an outlier */
+    isOutlier?: boolean;
+    /** Reason for outlier classification */
+    outlierReason?: string;
+    /** The actual text that was matched */
+    matchedText?: string;
+    /** Per-location confidence score */
+    confidence?: number;
   }>;
   confidence: number;
   occurrences: number;
+  /** Total number of outliers across all locations */
+  outlierCount: number;
+  /** Custom metadata from detectors */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -129,7 +153,17 @@ export interface FileScanResult {
     patternId: string;
     detectorId: string;
     confidence: number;
-    location: { file: string; line: number; column: number };
+    location: {
+      file: string;
+      line: number;
+      column: number;
+      endLine?: number;
+      endColumn?: number;
+    };
+    isOutlier?: boolean;
+    outlierReason?: string;
+    matchedText?: string;
+    metadata?: Record<string, unknown>;
   }>;
   violations: AggregatedViolation[];
   duration: number;
@@ -524,13 +558,28 @@ export class ScannerService {
       totalDetectorsRan += result.detectorsRan;
       totalDetectorsSkipped += result.detectorsSkipped;
 
-      // Convert to FileScanResult
-      const filePatterns = result.patterns.map(p => ({
-        patternId: p.patternId,
-        detectorId: p.detectorId,
-        confidence: p.confidence,
-        location: p.location,
-      }));
+      // Convert to FileScanResult - PRESERVE ALL METADATA
+      const filePatterns: FileScanResult['patterns'] = result.patterns.map(p => {
+        const loc: FileScanResult['patterns'][0]['location'] = {
+          file: p.location.file,
+          line: p.location.line,
+          column: p.location.column,
+        };
+        if (p.location.endLine !== undefined) loc.endLine = p.location.endLine;
+        if (p.location.endColumn !== undefined) loc.endColumn = p.location.endColumn;
+        
+        const pattern: FileScanResult['patterns'][0] = {
+          patternId: p.patternId,
+          detectorId: p.detectorId,
+          confidence: p.confidence,
+          location: loc,
+        };
+        if (p.isOutlier !== undefined) pattern.isOutlier = p.isOutlier;
+        if (p.outlierReason !== undefined) pattern.outlierReason = p.outlierReason;
+        if (p.matchedText !== undefined) pattern.matchedText = p.matchedText;
+        if (p.metadata !== undefined) pattern.metadata = p.metadata;
+        return pattern;
+      });
 
       fileResults.push({
         file: result.file,
@@ -540,26 +589,51 @@ export class ScannerService {
         error: result.error,
       });
 
-      // Aggregate patterns
+      // Aggregate patterns - PRESERVE ALL METADATA
       for (const match of result.patterns) {
         const key = match.patternId;
         const existing = patternMap.get(key);
+        
+        // Create enhanced location with all metadata
+        const enhancedLocation: AggregatedPattern['locations'][0] = {
+          file: match.location.file,
+          line: match.location.line,
+          column: match.location.column,
+        };
+        if (match.location.endLine !== undefined) enhancedLocation.endLine = match.location.endLine;
+        if (match.location.endColumn !== undefined) enhancedLocation.endColumn = match.location.endColumn;
+        if (match.isOutlier !== undefined) enhancedLocation.isOutlier = match.isOutlier;
+        if (match.outlierReason !== undefined) enhancedLocation.outlierReason = match.outlierReason;
+        if (match.matchedText !== undefined) enhancedLocation.matchedText = match.matchedText;
+        enhancedLocation.confidence = match.confidence;
+        
         if (existing) {
-          addUniqueLocation(existing.locations, match.location);
+          addUniqueLocation(existing.locations, enhancedLocation);
           existing.occurrences++;
           existing.confidence = Math.max(existing.confidence, match.confidence);
+          // Track outlier count
+          if (match.isOutlier) {
+            existing.outlierCount = (existing.outlierCount || 0) + 1;
+          }
+          // Merge metadata
+          if (match.metadata) {
+            existing.metadata = { ...existing.metadata, ...match.metadata };
+          }
         } else {
-          patternMap.set(key, {
+          const newPattern: AggregatedPattern = {
             patternId: match.patternId,
             detectorId: match.detectorId,
             category: match.category,
             subcategory: match.subcategory,
             name: match.detectorName,
             description: match.detectorDescription,
-            locations: [match.location],
+            locations: [enhancedLocation],
             confidence: match.confidence,
             occurrences: 1,
-          });
+            outlierCount: match.isOutlier ? 1 : 0,
+          };
+          if (match.metadata !== undefined) newPattern.metadata = match.metadata;
+          patternMap.set(key, newPattern);
         }
 
         // Build manifest pattern
@@ -576,6 +650,112 @@ export class ScannerService {
 
     // Convert pattern map to array
     const patterns = Array.from(patternMap.values());
+
+    // ========================================================================
+    // STATISTICAL OUTLIER DETECTION (Gap 2 Fix)
+    // Run outlier detection on aggregated patterns to identify statistical
+    // deviations that weren't caught by individual detectors
+    // ========================================================================
+    const outlierDetector = new OutlierDetector({ 
+      sensitivity: 0.5,
+      minSampleSize: 5, // Need at least 5 samples for statistical analysis
+    });
+
+    for (const pattern of patterns) {
+      // Skip patterns with too few locations for statistical analysis
+      if (pattern.locations.length < 5) continue;
+
+      // Convert locations to PatternMatchResult format for outlier detection
+      // Handle exactOptionalPropertyTypes by only including defined values
+      const matchResults: PatternMatchResult[] = pattern.locations.map((loc) => {
+        const result: PatternMatchResult = {
+          patternId: pattern.patternId,
+          location: {
+            file: loc.file,
+            line: loc.line,
+            column: loc.column,
+          },
+          confidence: loc.confidence ?? pattern.confidence,
+          isOutlier: loc.isOutlier ?? false,
+          matchType: 'ast' as const,
+          timestamp: new Date(),
+        };
+        // Only add optional properties if they have values
+        if (loc.endLine !== undefined) result.location.endLine = loc.endLine;
+        if (loc.endColumn !== undefined) result.location.endColumn = loc.endColumn;
+        if (loc.matchedText !== undefined) result.matchedText = loc.matchedText;
+        if (loc.outlierReason !== undefined) result.outlierReason = loc.outlierReason;
+        return result;
+      });
+
+      // Run statistical outlier detection
+      const outlierResult = outlierDetector.detect(matchResults, pattern.patternId);
+
+      // Update pattern locations with newly detected outliers
+      for (const outlier of outlierResult.outliers) {
+        // Find the matching location
+        const locIndex = pattern.locations.findIndex(
+          loc => loc.file === outlier.location.file && 
+                 loc.line === outlier.location.line &&
+                 loc.column === outlier.location.column
+        );
+
+        if (locIndex !== -1) {
+          const loc = pattern.locations[locIndex];
+          // Only mark as outlier if not already marked by detector
+          if (!loc?.isOutlier) {
+            if (loc) {
+              loc.isOutlier = true;
+              loc.outlierReason = outlier.reason;
+            }
+            pattern.outlierCount++;
+          }
+        }
+      }
+
+      // Update manifest pattern with outliers if generating manifest
+      if (this.config.generateManifest) {
+        const manifestKey = `${pattern.category}/${pattern.subcategory}/${pattern.patternId}`;
+        const manifestPattern = manifestPatternMap.get(manifestKey);
+        
+        if (manifestPattern && outlierResult.outliers.length > 0) {
+          // Add outlier locations to manifest pattern
+          for (const outlier of outlierResult.outliers) {
+            // Create semantic location for outlier
+            const outlierSemanticLoc: SemanticLocation = {
+              file: outlier.location.file,
+              hash: '', // Will be populated if we have the content
+              range: {
+                start: outlier.location.line,
+                end: outlier.location.endLine ?? outlier.location.line,
+              },
+              type: 'block',
+              name: `outlier-${outlier.location.line}`,
+              confidence: 1 - outlier.deviationScore, // Lower confidence for higher deviation
+              metadata: {
+                reason: outlier.reason,
+                deviationScore: outlier.deviationScore,
+                deviationType: outlier.deviationType,
+                significance: outlier.significance,
+                expected: outlier.expected,
+                actual: outlier.actual,
+                suggestedFix: outlier.suggestedFix,
+              },
+            };
+
+            // Check if this outlier location already exists
+            const exists = manifestPattern.outliers.some(
+              o => o.file === outlierSemanticLoc.file && 
+                   o.range.start === outlierSemanticLoc.range.start
+            );
+
+            if (!exists) {
+              manifestPattern.outliers.push(outlierSemanticLoc);
+            }
+          }
+        }
+      }
+    }
 
     // Build and save manifest
     let manifest: Manifest | undefined;
@@ -737,31 +917,79 @@ export class ScannerService {
             const info = detector.getInfo();
 
             for (const match of result.patterns) {
-              filePatterns.push({
+              // Cast to extended type to safely access optional fields
+              // Note: PatternMatch has isOutlier, but extended fields may not exist
+              const extendedMatch = match as PatternMatch & {
+                outlierReason?: string;
+                matchedText?: string;
+                metadata?: Record<string, unknown>;
+              };
+              
+              // Create enhanced location with all metadata
+              const enhancedLocation: FileScanResult['patterns'][0]['location'] = {
+                file: match.location.file,
+                line: match.location.line,
+                column: match.location.column,
+              };
+              if (match.location.endLine !== undefined) enhancedLocation.endLine = match.location.endLine;
+              if (match.location.endColumn !== undefined) enhancedLocation.endColumn = match.location.endColumn;
+              
+              // Build file pattern
+              const filePattern: FileScanResult['patterns'][0] = {
                 patternId: match.patternId,
                 detectorId: detector.id,
                 confidence: match.confidence,
-                location: match.location,
-              });
+                location: enhancedLocation,
+              };
+              if (match.isOutlier !== undefined) filePattern.isOutlier = match.isOutlier;
+              if (extendedMatch.outlierReason !== undefined) filePattern.outlierReason = extendedMatch.outlierReason;
+              if (extendedMatch.matchedText !== undefined) filePattern.matchedText = extendedMatch.matchedText;
+              const metadata = extendedMatch.metadata ?? result.metadata?.custom;
+              if (metadata !== undefined) filePattern.metadata = metadata;
+              filePatterns.push(filePattern);
 
               const key = match.patternId;
               const existing = patternMap.get(key);
+              
+              // Create aggregated location with all metadata
+              const aggLocation: AggregatedPattern['locations'][0] = {
+                file: match.location.file,
+                line: match.location.line,
+                column: match.location.column,
+                confidence: match.confidence,
+              };
+              if (match.location.endLine !== undefined) aggLocation.endLine = match.location.endLine;
+              if (match.location.endColumn !== undefined) aggLocation.endColumn = match.location.endColumn;
+              if (match.isOutlier !== undefined) aggLocation.isOutlier = match.isOutlier;
+              if (extendedMatch.outlierReason !== undefined) aggLocation.outlierReason = extendedMatch.outlierReason;
+              if (extendedMatch.matchedText !== undefined) aggLocation.matchedText = extendedMatch.matchedText;
+              
               if (existing) {
-                addUniqueLocation(existing.locations, match.location);
+                addUniqueLocation(existing.locations, aggLocation);
                 existing.occurrences++;
                 existing.confidence = Math.max(existing.confidence, match.confidence);
+                if (match.isOutlier) {
+                  existing.outlierCount = (existing.outlierCount || 0) + 1;
+                }
+                if (extendedMatch.metadata || result.metadata?.custom) {
+                  existing.metadata = { ...existing.metadata, ...(extendedMatch.metadata ?? result.metadata?.custom) };
+                }
               } else {
-                patternMap.set(key, {
+                const newPattern: AggregatedPattern = {
                   patternId: match.patternId,
                   detectorId: detector.id,
                   category: info.category,
                   subcategory: info.subcategory,
                   name: info.name,
                   description: info.description,
-                  locations: [match.location],
+                  locations: [aggLocation],
                   confidence: match.confidence,
                   occurrences: 1,
-                });
+                  outlierCount: match.isOutlier ? 1 : 0,
+                };
+                const patternMetadata = extendedMatch.metadata ?? result.metadata?.custom;
+                if (patternMetadata !== undefined) newPattern.metadata = patternMetadata;
+                patternMap.set(key, newPattern);
               }
 
               if (this.config.generateManifest) {
@@ -887,6 +1115,112 @@ export class ScannerService {
     }
 
     const patterns = Array.from(patternMap.values());
+
+    // ========================================================================
+    // STATISTICAL OUTLIER DETECTION (Gap 2 Fix - Single-threaded path)
+    // Run outlier detection on aggregated patterns to identify statistical
+    // deviations that weren't caught by individual detectors
+    // ========================================================================
+    const outlierDetectorST = new OutlierDetector({ 
+      sensitivity: 0.5,
+      minSampleSize: 5, // Need at least 5 samples for statistical analysis
+    });
+
+    for (const pattern of patterns) {
+      // Skip patterns with too few locations for statistical analysis
+      if (pattern.locations.length < 5) continue;
+
+      // Convert locations to PatternMatchResult format for outlier detection
+      // Handle exactOptionalPropertyTypes by only including defined values
+      const matchResults: PatternMatchResult[] = pattern.locations.map((loc) => {
+        const result: PatternMatchResult = {
+          patternId: pattern.patternId,
+          location: {
+            file: loc.file,
+            line: loc.line,
+            column: loc.column,
+          },
+          confidence: loc.confidence ?? pattern.confidence,
+          isOutlier: loc.isOutlier ?? false,
+          matchType: 'ast' as const,
+          timestamp: new Date(),
+        };
+        // Only add optional properties if they have values
+        if (loc.endLine !== undefined) result.location.endLine = loc.endLine;
+        if (loc.endColumn !== undefined) result.location.endColumn = loc.endColumn;
+        if (loc.matchedText !== undefined) result.matchedText = loc.matchedText;
+        if (loc.outlierReason !== undefined) result.outlierReason = loc.outlierReason;
+        return result;
+      });
+
+      // Run statistical outlier detection
+      const outlierResult = outlierDetectorST.detect(matchResults, pattern.patternId);
+
+      // Update pattern locations with newly detected outliers
+      for (const outlier of outlierResult.outliers) {
+        // Find the matching location
+        const locIndex = pattern.locations.findIndex(
+          loc => loc.file === outlier.location.file && 
+                 loc.line === outlier.location.line &&
+                 loc.column === outlier.location.column
+        );
+
+        if (locIndex !== -1) {
+          const loc = pattern.locations[locIndex];
+          // Only mark as outlier if not already marked by detector
+          if (!loc?.isOutlier) {
+            if (loc) {
+              loc.isOutlier = true;
+              loc.outlierReason = outlier.reason;
+            }
+            pattern.outlierCount++;
+          }
+        }
+      }
+
+      // Update manifest pattern with outliers if generating manifest
+      if (this.config.generateManifest) {
+        const manifestKey = `${pattern.category}/${pattern.subcategory}/${pattern.patternId}`;
+        const manifestPattern = manifestPatternMap.get(manifestKey);
+        
+        if (manifestPattern && outlierResult.outliers.length > 0) {
+          // Add outlier locations to manifest pattern
+          for (const outlier of outlierResult.outliers) {
+            // Create semantic location for outlier
+            const outlierSemanticLoc: SemanticLocation = {
+              file: outlier.location.file,
+              hash: '', // Will be populated if we have the content
+              range: {
+                start: outlier.location.line,
+                end: outlier.location.endLine ?? outlier.location.line,
+              },
+              type: 'block',
+              name: `outlier-${outlier.location.line}`,
+              confidence: 1 - outlier.deviationScore, // Lower confidence for higher deviation
+              metadata: {
+                reason: outlier.reason,
+                deviationScore: outlier.deviationScore,
+                deviationType: outlier.deviationType,
+                significance: outlier.significance,
+                expected: outlier.expected,
+                actual: outlier.actual,
+                suggestedFix: outlier.suggestedFix,
+              },
+            };
+
+            // Check if this outlier location already exists
+            const exists = manifestPattern.outliers.some(
+              o => o.file === outlierSemanticLoc.file && 
+                   o.range.start === outlierSemanticLoc.range.start
+            );
+
+            if (!exists) {
+              manifestPattern.outliers.push(outlierSemanticLoc);
+            }
+          }
+        }
+      }
+    }
 
     let manifest: Manifest | undefined;
     if (this.config.generateManifest && this.manifestStore) {

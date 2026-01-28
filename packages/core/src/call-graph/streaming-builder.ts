@@ -7,7 +7,8 @@
  * This solves the "Invalid string length" error on large codebases by:
  * 1. Processing one file at a time
  * 2. Writing each file's functions to a separate shard
- * 3. Building the index at the end from shard metadata
+ * 3. Running a resolution pass in batches after all shards are written
+ * 4. Building the index at the end from shard metadata
  */
 
 import * as fs from 'node:fs/promises';
@@ -15,7 +16,7 @@ import * as path from 'node:path';
 import { minimatch } from 'minimatch';
 
 import type { DataAccessPoint } from '../boundaries/types.js';
-import type { CallGraphShard, FunctionEntry, DataAccessRef } from '../lake/types.js';
+import type { CallGraphShard, FunctionEntry, DataAccessRef, CallEntry } from '../lake/types.js';
 import { CallGraphShardStore } from '../lake/callgraph-shard-store.js';
 import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
 import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
@@ -36,6 +37,8 @@ export interface StreamingBuilderConfig {
   onProgress?: (current: number, total: number, file: string) => void;
   /** Callback for errors (non-fatal) */
   onError?: (file: string, error: Error) => void;
+  /** Batch size for resolution pass (default: 50) */
+  resolutionBatchSize?: number;
 }
 
 export interface StreamingBuildResult {
@@ -45,6 +48,10 @@ export interface StreamingBuildResult {
   totalFunctions: number;
   /** Total call sites found */
   totalCalls: number;
+  /** Resolved call sites */
+  resolvedCalls: number;
+  /** Resolution rate (0-1) */
+  resolutionRate: number;
   /** Entry points found */
   entryPoints: number;
   /** Data accessors found */
@@ -63,10 +70,12 @@ export class StreamingCallGraphBuilder {
   private readonly config: StreamingBuilderConfig;
   private readonly shardStore: CallGraphShardStore;
   private readonly extractors: BaseCallGraphExtractor[];
+  private readonly resolutionBatchSize: number;
 
   constructor(config: StreamingBuilderConfig) {
     this.config = config;
     this.shardStore = new CallGraphShardStore({ rootDir: config.rootDir });
+    this.resolutionBatchSize = config.resolutionBatchSize ?? 50;
     
     // Register extractors
     this.extractors = [
@@ -101,7 +110,7 @@ export class StreamingCallGraphBuilder {
     let entryPoints = 0;
     let dataAccessors = 0;
     
-    // Process each file and save shard immediately
+    // Phase 1: Extract and save shards with raw calls
     for (let i = 0; i < files.length; i++) {
       const file = files[i]!;
       
@@ -127,18 +136,148 @@ export class StreamingCallGraphBuilder {
       }
     }
     
+    // Phase 2: Resolution pass - resolve calls across all shards
+    const resolvedCalls = await this.runResolutionPass();
+    
     // Build index from shards (reads shard metadata, not full content)
     await this.shardStore.buildIndex();
+    
+    const resolutionRate = totalCalls > 0 ? Math.round((resolvedCalls / totalCalls) * 100) / 100 : 0;
     
     return {
       filesProcessed: files.length,
       totalFunctions,
       totalCalls,
+      resolvedCalls,
+      resolutionRate,
       entryPoints,
       dataAccessors,
       errors,
       durationMs: Date.now() - startTime,
     };
+  }
+
+  /**
+   * Run resolution pass across all shards
+   * Loads shards in batches to keep memory bounded
+   */
+  private async runResolutionPass(): Promise<number> {
+    const fileHashes = await this.shardStore.listFiles();
+    
+    // Build function index: name -> [function IDs]
+    // This allows us to resolve calls without loading all shards at once
+    const functionIndex = new Map<string, string[]>();
+    const functionFiles = new Map<string, string>(); // functionId -> file
+    
+    // First pass: build index of all function names
+    for (const fileHash of fileHashes) {
+      const shard = await this.shardStore.getFileShard(fileHash);
+      if (!shard) continue;
+      
+      for (const fn of shard.functions) {
+        const existing = functionIndex.get(fn.name) ?? [];
+        existing.push(fn.id);
+        functionIndex.set(fn.name, existing);
+        functionFiles.set(fn.id, shard.file);
+      }
+    }
+    
+    // Second pass: resolve calls in batches
+    let totalResolved = 0;
+    
+    for (let i = 0; i < fileHashes.length; i += this.resolutionBatchSize) {
+      const batch = fileHashes.slice(i, i + this.resolutionBatchSize);
+      
+      for (const fileHash of batch) {
+        const shard = await this.shardStore.getFileShard(fileHash);
+        if (!shard) continue;
+        
+        let shardModified = false;
+        
+        for (const fn of shard.functions) {
+          const resolvedCalls: CallEntry[] = [];
+          
+          for (const call of fn.calls) {
+            // Handle both old format (string) and new format (CallEntry)
+            const target = typeof call === 'string' ? call : call.target;
+            const line = typeof call === 'object' ? call.line : 0;
+            
+            const resolution = this.resolveCall(target, shard.file, functionIndex, functionFiles);
+            
+            const callEntry: CallEntry = {
+              target,
+              resolved: resolution.resolved,
+              confidence: resolution.confidence,
+              line,
+            };
+            
+            // Only set resolvedId if we have one (exactOptionalPropertyTypes)
+            if (resolution.resolvedId) {
+              callEntry.resolvedId = resolution.resolvedId;
+            }
+            
+            resolvedCalls.push(callEntry);
+            
+            if (resolution.resolved) {
+              totalResolved++;
+            }
+          }
+          
+          // Update function's calls with resolved info
+          fn.calls = resolvedCalls;
+          shardModified = true;
+        }
+        
+        // Save updated shard
+        if (shardModified) {
+          await this.shardStore.saveFileShard(shard);
+        }
+      }
+      
+      // Clear shard cache between batches to keep memory bounded
+      this.shardStore.invalidateCache();
+    }
+    
+    return totalResolved;
+  }
+
+  /**
+   * Resolve a call to its target function
+   */
+  private resolveCall(
+    target: string,
+    callerFile: string,
+    functionIndex: Map<string, string[]>,
+    functionFiles: Map<string, string>
+  ): { resolved: boolean; resolvedId: string | null; confidence: number } {
+    const candidates = functionIndex.get(target);
+    
+    if (!candidates || candidates.length === 0) {
+      return { resolved: false, resolvedId: null, confidence: 0 };
+    }
+    
+    // Strategy 1: Same file (highest confidence)
+    const sameFileCandidates = candidates.filter(id => functionFiles.get(id) === callerFile);
+    if (sameFileCandidates.length === 1 && sameFileCandidates[0]) {
+      return { resolved: true, resolvedId: sameFileCandidates[0], confidence: 0.95 };
+    }
+    
+    // Strategy 2: Single candidate globally
+    if (candidates.length === 1 && candidates[0]) {
+      return { resolved: true, resolvedId: candidates[0], confidence: 0.8 };
+    }
+    
+    // Strategy 3: Multiple candidates - pick same file if available, else first
+    if (sameFileCandidates.length > 0 && sameFileCandidates[0]) {
+      return { resolved: true, resolvedId: sameFileCandidates[0], confidence: 0.7 };
+    }
+    
+    // Strategy 4: Multiple candidates, different files - low confidence
+    if (candidates[0]) {
+      return { resolved: true, resolvedId: candidates[0], confidence: 0.4 };
+    }
+    
+    return { resolved: false, resolvedId: null, confidence: 0 };
   }
 
   /**
@@ -197,9 +336,14 @@ export class StreamingCallGraphBuilder {
         }
       }
       
-      // Get calls for this function - just store target IDs
+      // Get calls for this function - store as CallEntry with unresolved state
       const fnCalls = callsByFunction.get(fnId) ?? [];
-      const callTargets = fnCalls.map(c => c.calleeName);
+      const callEntries: CallEntry[] = fnCalls.map(c => ({
+        target: c.calleeName,
+        resolved: false,
+        confidence: 0,
+        line: c.line,
+      }));
       
       functions.push({
         id: fnId,
@@ -208,7 +352,7 @@ export class StreamingCallGraphBuilder {
         endLine: fn.endLine,
         isEntryPoint: fn.isExported, // Exported functions are potential entry points
         isDataAccessor: fnDataAccess.length > 0,
-        calls: callTargets,
+        calls: callEntries,
         calledBy: [], // Will be populated during index building
         dataAccess: fnDataAccess,
       });

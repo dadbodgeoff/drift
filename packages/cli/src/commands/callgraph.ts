@@ -255,6 +255,9 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
         stats: {
           totalFunctions: buildResult.totalFunctions,
           totalCallSites: buildResult.totalCalls,
+          resolvedCallSites: buildResult.resolvedCalls,
+          unresolvedCallSites: buildResult.totalCalls - buildResult.resolvedCalls,
+          resolutionRate: buildResult.resolutionRate,
           entryPoints: buildResult.entryPoints,
           dataAccessors: buildResult.dataAccessors,
         },
@@ -278,7 +281,7 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
     console.log(chalk.gray('─'.repeat(50)));
     console.log(`  Files:         ${chalk.cyan.bold(buildResult.filesProcessed.toLocaleString())}`);
     console.log(`  Functions:     ${chalk.cyan.bold(buildResult.totalFunctions.toLocaleString())}`);
-    console.log(`  Call Sites:    ${chalk.cyan(buildResult.totalCalls.toLocaleString())}`);
+    console.log(`  Call Sites:    ${chalk.cyan(buildResult.totalCalls.toLocaleString())} (${chalk.green(buildResult.resolvedCalls.toLocaleString())} resolved, ${chalk.yellow(Math.round(buildResult.resolutionRate * 100) + '%')})`);
     console.log(`  Entry Points:  ${chalk.magenta.bold(buildResult.entryPoints.toLocaleString())} ${chalk.gray('(API routes, exports)')}`);
     console.log(`  Data Accessors: ${chalk.yellow.bold(buildResult.dataAccessors.toLocaleString())} ${chalk.gray('(functions with DB access)')}`);
     console.log(`  Duration:      ${chalk.gray((buildResult.durationMs / 1000).toFixed(2) + 's')}`);

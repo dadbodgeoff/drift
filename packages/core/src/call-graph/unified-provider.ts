@@ -280,8 +280,8 @@ export class UnifiedCallGraphProvider {
       return {
         totalFunctions: this.index.summary.totalFunctions,
         totalCallSites: this.index.summary.totalCalls,
-        resolvedCallSites: 0,
-        unresolvedCallSites: 0,
+        resolvedCallSites: this.index.summary.resolvedCalls ?? 0,
+        unresolvedCallSites: this.index.summary.unresolvedCalls ?? 0,
         totalDataAccessors: this.index.summary.dataAccessors,
         byLanguage,
       };
@@ -520,6 +520,15 @@ export class UnifiedCallGraphProvider {
   }
 
   private entryToUnified(entry: FunctionEntry, file: string): UnifiedFunction {
+    // Handle both old format (string[]) and new format (CallEntry[])
+    const calleeIds = entry.calls.map(call => {
+      if (typeof call === 'string') {
+        return call;
+      }
+      // New format: use resolvedId if available, otherwise target
+      return call.resolvedId ?? call.target;
+    });
+    
     return {
       id: entry.id,
       name: entry.name,
@@ -528,7 +537,7 @@ export class UnifiedCallGraphProvider {
       endLine: entry.endLine,
       isEntryPoint: entry.isEntryPoint,
       isDataAccessor: entry.isDataAccessor,
-      calleeIds: entry.calls,
+      calleeIds,
       callerIds: entry.calledBy,
       dataAccess: entry.dataAccess,
     };

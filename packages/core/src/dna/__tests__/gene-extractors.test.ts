@@ -117,15 +117,21 @@ describe('Gene Extractors', () => {
   });
 
   describe('createAllGeneExtractors', () => {
-    it('should create all 6 extractors', () => {
+    it('should create all 10 extractors (6 frontend + 4 backend)', () => {
       const extractors = createAllGeneExtractors();
-      expect(extractors.size).toBe(6);
+      expect(extractors.size).toBe(10);
+      // Frontend extractors
       expect(extractors.has('variant-handling')).toBe(true);
       expect(extractors.has('responsive-approach')).toBe(true);
       expect(extractors.has('state-styling')).toBe(true);
       expect(extractors.has('theming')).toBe(true);
       expect(extractors.has('spacing-philosophy')).toBe(true);
       expect(extractors.has('animation-approach')).toBe(true);
+      // Backend extractors
+      expect(extractors.has('api-response-format')).toBe(true);
+      expect(extractors.has('error-response-format')).toBe(true);
+      expect(extractors.has('logging-format')).toBe(true);
+      expect(extractors.has('config-pattern')).toBe(true);
     });
   });
 });

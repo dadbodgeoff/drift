@@ -6,15 +6,17 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import { DNAAnalyzer, DNAStore, PlaybookGenerator, GENE_IDS } from 'driftdetect-core';
+import { DNAAnalyzer, DNAStore, PlaybookGenerator, FRONTEND_GENE_IDS, BACKEND_GENE_IDS } from 'driftdetect-core';
 import { createSpinner, status } from '../../ui/spinner.js';
 
 interface DNAScanOptions {
   paths?: string[];
+  backendPaths?: string[];
   force?: boolean;
   verbose?: boolean;
   playbook?: boolean;
   format?: 'summary' | 'json' | 'ai-context';
+  mode?: 'frontend' | 'backend' | 'all';
 }
 
 const DRIFT_DIR = '.drift';
@@ -26,9 +28,10 @@ async function isDriftInitialized(rootDir: string): Promise<boolean> {
 async function dnaScanAction(options: DNAScanOptions): Promise<void> {
   const rootDir = process.cwd();
   const verbose = options.verbose ?? false;
+  const mode = options.mode ?? 'all';
 
   console.log();
-  console.log(chalk.bold('🧬 Drift DNA - Styling Analysis'));
+  console.log(chalk.bold('🧬 Drift DNA - Code Pattern Analysis'));
   console.log();
 
   if (!(await isDriftInitialized(rootDir))) {
@@ -36,13 +39,15 @@ async function dnaScanAction(options: DNAScanOptions): Promise<void> {
     process.exit(1);
   }
 
-  const spinner = createSpinner('Analyzing styling DNA...');
+  const spinner = createSpinner(`Analyzing ${mode === 'all' ? 'frontend & backend' : mode} DNA...`);
   spinner.start();
 
   try {
     const analyzer = new DNAAnalyzer({
       rootDir,
+      mode,
       ...(options.paths ? { componentPaths: options.paths } : {}),
+      ...(options.backendPaths ? { backendPaths: options.backendPaths } : {}),
       verbose,
     });
 
@@ -58,7 +63,8 @@ async function dnaScanAction(options: DNAScanOptions): Promise<void> {
     if (verbose) {
       console.log(chalk.gray(`  Duration: ${result.stats.duration}ms`));
       console.log(chalk.gray(`  Files analyzed: ${result.stats.filesAnalyzed}`));
-      console.log(chalk.gray(`  Components: ${result.stats.componentFiles}`));
+      console.log(chalk.gray(`  Frontend components: ${result.stats.componentFiles}`));
+      console.log(chalk.gray(`  Backend files: ${result.stats.backendFiles}`));
     }
 
     // Output based on format
@@ -73,17 +79,38 @@ async function dnaScanAction(options: DNAScanOptions): Promise<void> {
     console.log(chalk.gray('─'.repeat(50)));
     console.log(`  Health Score:      ${colorScore(result.profile.summary.healthScore)}`);
     console.log(`  Genetic Diversity: ${result.profile.summary.geneticDiversity.toFixed(2)} ${result.profile.summary.geneticDiversity < 0.3 ? chalk.green('(Low - Consistent)') : chalk.yellow('(High - Fragmented)')}`);
-    console.log(`  Framework:         ${chalk.cyan(result.profile.summary.dominantFramework)}`);
-    console.log();
-
-    console.log(chalk.bold('Genes:'));
-    for (const geneId of GENE_IDS) {
-      const gene = result.profile.genes[geneId];
-      const dominant = gene.dominant?.name ?? chalk.gray('None');
-      const conf = `${Math.round(gene.confidence * 100)}%`;
-      console.log(`  ├─ ${gene.name.padEnd(20)} ${dominant.padEnd(25)} ${conf}`);
+    console.log(`  Frontend Framework: ${chalk.cyan(result.profile.summary.dominantFramework)}`);
+    if (result.profile.summary.dominantBackendFramework && result.profile.summary.dominantBackendFramework !== 'unknown') {
+      console.log(`  Backend Framework:  ${chalk.cyan(result.profile.summary.dominantBackendFramework)}`);
     }
     console.log();
+
+    // Show genes based on mode
+    if (mode === 'all' || mode === 'frontend') {
+      console.log(chalk.bold('Frontend Genes:'));
+      for (const geneId of FRONTEND_GENE_IDS) {
+        const gene = result.profile.genes[geneId];
+        if (gene) {
+          const dominant = gene.dominant?.name ?? chalk.gray('None');
+          const conf = `${Math.round(gene.confidence * 100)}%`;
+          console.log(`  ├─ ${gene.name.padEnd(20)} ${dominant.padEnd(25)} ${conf}`);
+        }
+      }
+      console.log();
+    }
+    
+    if (mode === 'all' || mode === 'backend') {
+      console.log(chalk.bold('Backend Genes:'));
+      for (const geneId of BACKEND_GENE_IDS) {
+        const gene = result.profile.genes[geneId];
+        if (gene) {
+          const dominant = gene.dominant?.name ?? chalk.gray('None');
+          const conf = `${Math.round(gene.confidence * 100)}%`;
+          console.log(`  ├─ ${gene.name.padEnd(20)} ${dominant.padEnd(25)} ${conf}`);
+        }
+      }
+      console.log();
+    }
 
     if (result.profile.mutations.length > 0) {
       console.log(chalk.bold.yellow(`Mutations (${result.profile.mutations.length}):`));
@@ -126,8 +153,10 @@ function colorScore(score: number): string {
 }
 
 export const dnaScanCommand = new Command('scan')
-  .description('Analyze codebase and generate styling DNA profile')
-  .option('-p, --paths <paths...>', 'Specific component paths to scan')
+  .description('Analyze codebase and generate DNA profile (frontend styling + backend patterns)')
+  .option('-p, --paths <paths...>', 'Specific frontend component paths to scan')
+  .option('-b, --backend-paths <paths...>', 'Specific backend paths to scan')
+  .option('-m, --mode <mode>', 'Analysis mode: frontend, backend, or all (default: all)', 'all')
   .option('--force', 'Force rescan even if cache is valid')
   .option('--verbose', 'Enable verbose output')
   .option('--playbook', 'Generate playbook after scan')

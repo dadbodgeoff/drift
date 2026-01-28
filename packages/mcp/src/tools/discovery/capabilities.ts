@@ -5,7 +5,7 @@
  * Helps AI agents understand the tool landscape and choose the right tool.
  * 
  * Enhanced version with:
- * - All 45+ tools documented
+ * - All 50 tools documented
  * - Token cost estimates
  * - Use case examples
  * - Tool relationships

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DNA_VERSION, GENE_IDS, DEFAULT_DNA_THRESHOLDS, DEFAULT_DNA_STORE_CONFIG, type GeneId, type StylingFramework, type MutationImpact, type StylingDNAProfile, type Gene, type Allele, type Mutation } from '../types.js';
+import { DNA_VERSION, GENE_IDS, FRONTEND_GENE_IDS, BACKEND_GENE_IDS, DEFAULT_DNA_THRESHOLDS, DEFAULT_DNA_STORE_CONFIG, type GeneId, type StylingFramework, type MutationImpact, type StylingDNAProfile, type Gene, type Allele, type Mutation } from '../types.js';
 
 describe('DNA Types', () => {
   describe('Constants', () => {
@@ -7,14 +7,28 @@ describe('DNA Types', () => {
       expect(DNA_VERSION).toBe('1.0.0');
     });
 
-    it('should have all 6 gene IDs', () => {
-      expect(GENE_IDS).toHaveLength(6);
+    it('should have all 10 gene IDs (6 frontend + 4 backend)', () => {
+      expect(GENE_IDS).toHaveLength(10);
+      // Frontend genes
       expect(GENE_IDS).toContain('variant-handling');
       expect(GENE_IDS).toContain('responsive-approach');
       expect(GENE_IDS).toContain('state-styling');
       expect(GENE_IDS).toContain('theming');
       expect(GENE_IDS).toContain('spacing-philosophy');
       expect(GENE_IDS).toContain('animation-approach');
+      // Backend genes
+      expect(GENE_IDS).toContain('api-response-format');
+      expect(GENE_IDS).toContain('error-response-format');
+      expect(GENE_IDS).toContain('logging-format');
+      expect(GENE_IDS).toContain('config-pattern');
+    });
+
+    it('should have 6 frontend gene IDs', () => {
+      expect(FRONTEND_GENE_IDS).toHaveLength(6);
+    });
+
+    it('should have 4 backend gene IDs', () => {
+      expect(BACKEND_GENE_IDS).toHaveLength(4);
     });
 
     it('should have valid default thresholds', () => {
@@ -26,6 +40,7 @@ describe('DNA Types', () => {
     it('should have valid default store config', () => {
       expect(DEFAULT_DNA_STORE_CONFIG.rootDir).toBe('.');
       expect(DEFAULT_DNA_STORE_CONFIG.componentPaths.length).toBeGreaterThan(0);
+      expect(DEFAULT_DNA_STORE_CONFIG.backendPaths?.length).toBeGreaterThan(0);
       expect(DEFAULT_DNA_STORE_CONFIG.thresholds).toEqual(DEFAULT_DNA_THRESHOLDS);
     });
   });

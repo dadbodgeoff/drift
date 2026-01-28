@@ -223,8 +223,8 @@ export class CallGraphStore {
         stats: {
           totalFunctions: index.summary?.totalFunctions ?? functions.size,
           totalCallSites: index.summary?.totalCalls ?? 0,
-          resolvedCallSites: 0,
-          unresolvedCallSites: 0,
+          resolvedCallSites: index.summary?.resolvedCalls ?? 0,
+          unresolvedCallSites: index.summary?.unresolvedCalls ?? 0,
           totalDataAccessors: index.summary?.dataAccessors ?? dataAccessors.length,
           byLanguage: {
             python: 0,

@@ -16,7 +16,7 @@ import {
   type BaseDetector,
   type DetectionContext,
 } from 'driftdetect-detectors';
-import type { Language } from 'driftdetect-core';
+import type { Language, PatternMatch } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -71,6 +71,12 @@ export interface DetectorWorkerTask {
 
 /**
  * Pattern match from detector
+ * 
+ * Enhanced to preserve all metadata from detectors including:
+ * - Full location range (endLine/endColumn)
+ * - Outlier information (isOutlier, outlierReason)
+ * - Matched text for context
+ * - Custom detector metadata
  */
 export interface WorkerPatternMatch {
   patternId: string;
@@ -84,7 +90,19 @@ export interface WorkerPatternMatch {
     file: string;
     line: number;
     column: number;
+    /** End line for full range highlighting */
+    endLine?: number;
+    /** End column for full range highlighting */
+    endColumn?: number;
   };
+  /** Whether this match deviates from the established pattern */
+  isOutlier?: boolean;
+  /** Explanation for why this is an outlier */
+  outlierReason?: string;
+  /** The actual text that was matched */
+  matchedText?: string;
+  /** Custom metadata from the detector (auth types, route info, etc.) */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -178,6 +196,10 @@ const CRITICAL_DETECTOR_IDS = new Set([
   'errors/try-catch-placement',
   'logging/pii-redaction',
 ]);
+
+// ============================================================================
+// Helpers
+// ============================================================================
 
 // ============================================================================
 // Worker State (cached per worker thread)
@@ -354,9 +376,27 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
         const result = await detector.detect(context);
         const info = detector.getInfo();
 
-        // Process patterns
+        // Process patterns - PRESERVE ALL METADATA
+        // Note: Detectors output PatternMatch which has isOutlier but not all extended fields
+        // We safely access extended fields if they exist (some detectors may provide them)
         for (const match of result.patterns) {
-          patterns.push({
+          const extendedMatch = match as PatternMatch & {
+            outlierReason?: string;
+            matchedText?: string;
+            metadata?: Record<string, unknown>;
+          };
+          
+          // Build location object, only including defined values
+          const location: WorkerPatternMatch['location'] = {
+            file: match.location.file,
+            line: match.location.line,
+            column: match.location.column,
+          };
+          if (match.location.endLine !== undefined) location.endLine = match.location.endLine;
+          if (match.location.endColumn !== undefined) location.endColumn = match.location.endColumn;
+          
+          // Build pattern match, only including defined values
+          const patternMatch: WorkerPatternMatch = {
             patternId: match.patternId,
             detectorId: detector.id,
             detectorName: info.name,
@@ -364,8 +404,15 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
             category: info.category,
             subcategory: info.subcategory,
             confidence: match.confidence,
-            location: match.location,
-          });
+            location,
+            isOutlier: match.isOutlier,
+          };
+          if (extendedMatch.outlierReason !== undefined) patternMatch.outlierReason = extendedMatch.outlierReason;
+          if (extendedMatch.matchedText !== undefined) patternMatch.matchedText = extendedMatch.matchedText;
+          const metadata = extendedMatch.metadata ?? result.metadata?.custom;
+          if (metadata !== undefined) patternMatch.metadata = metadata;
+          
+          patterns.push(patternMatch);
         }
 
         // Process violations
