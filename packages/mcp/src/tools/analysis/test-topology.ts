@@ -229,11 +229,16 @@ async function handleUncovered(
   const builder = createResponseBuilder<TestTopologyUncoveredData>();
 
   const analyzer = await buildAnalyzer(projectRoot);
-  const uncovered = analyzer.getUncoveredFunctions({
-    limit: limit ?? 20,
+  const rawUncovered = analyzer.getUncoveredFunctions({
+    limit: (limit ?? 20) + 20, // Request extra to account for filtering
     minRisk: minRisk ?? 'medium',
     includeReasons: true,
   });
+
+  // Filter out __module__ entries - they're not useful for test coverage
+  const uncovered = rawUncovered
+    .filter((f: { qualifiedName: string }) => f.qualifiedName !== '__module__')
+    .slice(0, limit ?? 20);
 
   const highRisk = uncovered.filter((f: { riskScore: number }) => f.riskScore >= 60);
   const mediumRisk = uncovered.filter((f: { riskScore: number }) => f.riskScore >= 30 && f.riskScore < 60);
