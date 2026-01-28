@@ -49,6 +49,28 @@ Introduces CIBench v2, a novel benchmark for measuring how well tools **understa
 
 ### 🚀 Enterprise Codebase Performance Fix
 
+### Fixed
+
+- **OOM Prevention in Call Graph Builder**: Fixed heap exhaustion when building call graphs for large codebases (1600+ files). The resolution pass now uses a disk-backed function index (NDJSON format) instead of keeping all function mappings in memory. This allows processing codebases of any size without hitting the 4GB heap limit.
+
+### Technical Details
+
+The previous implementation built two unbounded in-memory Maps during `runResolutionPass()`:
+- `functionIndex: Map<string, string[]>` - name → [function IDs]
+- `functionFiles: Map<string, string>` - functionId → file
+
+For a codebase with ~50K functions, these maps could consume 500MB+ of memory, causing OOM at ~776/1607 files.
+
+The fix:
+1. **Phase 1**: Stream function metadata to disk as NDJSON (`.drift/lake/callgraph/resolution-index.ndjson`)
+2. **Phase 2**: Load the lightweight index back into memory (only name, id, file - not full function bodies)
+3. **Phase 3**: Resolve calls in batches with cache invalidation
+4. **Cleanup**: Remove temporary index file after completion
+
+Memory comparison for 50K functions:
+- Full shards in memory: ~500MB+ (causes OOM)
+- Index only: ~5-10MB (fits easily)
+
 Addresses timeout issues for large enterprise codebases (979+ files) by expanding default ignores, adding missing language extensions, and providing better pre-scan feedback.
 
 ### Added

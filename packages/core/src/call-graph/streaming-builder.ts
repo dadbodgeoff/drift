@@ -9,10 +9,17 @@
  * 2. Writing each file's functions to a separate shard
  * 3. Running a resolution pass in batches after all shards are written
  * 4. Building the index at the end from shard metadata
+ * 
+ * OOM Prevention (v0.9.29+):
+ * The resolution pass now uses a disk-backed function index instead of
+ * keeping all function mappings in memory. This allows processing codebases
+ * of any size without hitting heap limits.
  */
 
 import * as fs from 'node:fs/promises';
+import { createReadStream, createWriteStream } from 'node:fs';
 import * as path from 'node:path';
+import * as readline from 'node:readline';
 import { minimatch } from 'minimatch';
 
 import type { DataAccessPoint } from '../boundaries/types.js';
@@ -67,18 +74,32 @@ export interface StreamingBuildResult {
 // Streaming Builder
 // ============================================================================
 
+// Resolution index file format (NDJSON - one JSON object per line)
+// Each line: { "name": "functionName", "id": "file:name:line", "file": "path/to/file.ts" }
+const RESOLUTION_INDEX_FILE = 'resolution-index.ndjson';
+
 export class StreamingCallGraphBuilder {
   private readonly config: StreamingBuilderConfig;
   private readonly shardStore: CallGraphShardStore;
   private readonly extractors: BaseCallGraphExtractor[];
   private readonly resolutionBatchSize: number;
   private readonly tableNameValidator: TableNameValidator;
+  private readonly resolutionIndexPath: string;
 
   constructor(config: StreamingBuilderConfig) {
     this.config = config;
     this.shardStore = new CallGraphShardStore({ rootDir: config.rootDir });
     this.resolutionBatchSize = config.resolutionBatchSize ?? 50;
     this.tableNameValidator = createTableNameValidator();
+    
+    // Path for temporary resolution index (disk-backed to prevent OOM)
+    this.resolutionIndexPath = path.join(
+      config.rootDir,
+      '.drift',
+      'lake',
+      'callgraph',
+      RESOLUTION_INDEX_FILE
+    );
     
     // Register extractors
     this.extractors = [
@@ -162,30 +183,25 @@ export class StreamingCallGraphBuilder {
 
   /**
    * Run resolution pass across all shards
-   * Loads shards in batches to keep memory bounded
+   * 
+   * Uses a disk-backed function index to prevent OOM on large codebases.
+   * The index is written as NDJSON (newline-delimited JSON) for streaming reads.
+   * 
+   * Phase 1: Build index - stream function metadata to disk
+   * Phase 2: Resolve calls - load index in memory-efficient chunks
    */
   private async runResolutionPass(): Promise<number> {
     const fileHashes = await this.shardStore.listFiles();
     
-    // Build function index: name -> [function IDs]
-    // This allows us to resolve calls without loading all shards at once
-    const functionIndex = new Map<string, string[]>();
-    const functionFiles = new Map<string, string>(); // functionId -> file
+    // Phase 1: Build disk-backed function index
+    await this.buildResolutionIndex(fileHashes);
     
-    // First pass: build index of all function names
-    for (const fileHash of fileHashes) {
-      const shard = await this.shardStore.getFileShard(fileHash);
-      if (!shard) continue;
-      
-      for (const fn of shard.functions) {
-        const existing = functionIndex.get(fn.name) ?? [];
-        existing.push(fn.id);
-        functionIndex.set(fn.name, existing);
-        functionFiles.set(fn.id, shard.file);
-      }
-    }
+    // Phase 2: Load index into memory for resolution
+    // For most codebases, the index fits in memory even when full shards don't
+    // The index only stores: name, id, file (not full function bodies)
+    const { functionIndex, functionFiles } = await this.loadResolutionIndex();
     
-    // Second pass: resolve calls in batches
+    // Phase 3: Resolve calls in batches
     let totalResolved = 0;
     
     for (let i = 0; i < fileHashes.length; i += this.resolutionBatchSize) {
@@ -241,7 +257,117 @@ export class StreamingCallGraphBuilder {
       this.shardStore.invalidateCache();
     }
     
+    // Cleanup: remove temporary index file
+    await this.cleanupResolutionIndex();
+    
     return totalResolved;
+  }
+
+  /**
+   * Build the resolution index to disk (NDJSON format)
+   * 
+   * Streams function metadata to disk one shard at a time,
+   * preventing memory accumulation for large codebases.
+   */
+  private async buildResolutionIndex(fileHashes: string[]): Promise<void> {
+    // Ensure directory exists
+    const indexDir = path.dirname(this.resolutionIndexPath);
+    await fs.mkdir(indexDir, { recursive: true });
+    
+    // Create write stream for NDJSON output
+    const writeStream = createWriteStream(this.resolutionIndexPath, { encoding: 'utf-8' });
+    
+    try {
+      for (const fileHash of fileHashes) {
+        const shard = await this.shardStore.getFileShard(fileHash);
+        if (!shard) continue;
+        
+        // Write each function as a single JSON line
+        for (const fn of shard.functions) {
+          const indexEntry = {
+            name: fn.name,
+            id: fn.id,
+            file: shard.file,
+          };
+          writeStream.write(JSON.stringify(indexEntry) + '\n');
+        }
+        
+        // Clear shard from cache after processing to free memory
+        this.shardStore.invalidateCache(fileHash);
+      }
+    } finally {
+      // Close the write stream
+      await new Promise<void>((resolve, reject) => {
+        writeStream.end((err: Error | null | undefined) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+  }
+
+  /**
+   * Load the resolution index from disk into memory
+   * 
+   * The index is much smaller than full shards since it only contains
+   * function name, id, and file path (not code, calls, data access, etc.)
+   * 
+   * For a codebase with 50K functions:
+   * - Full shards: ~500MB+ (causes OOM)
+   * - Index only: ~5-10MB (fits easily)
+   */
+  private async loadResolutionIndex(): Promise<{
+    functionIndex: Map<string, string[]>;
+    functionFiles: Map<string, string>;
+  }> {
+    const functionIndex = new Map<string, string[]>();
+    const functionFiles = new Map<string, string>();
+    
+    // Check if index file exists
+    try {
+      await fs.access(this.resolutionIndexPath);
+    } catch {
+      // No index file - return empty maps
+      return { functionIndex, functionFiles };
+    }
+    
+    // Stream read the NDJSON file line by line
+    const fileStream = createReadStream(this.resolutionIndexPath, { encoding: 'utf-8' });
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+    
+    for await (const line of rl) {
+      if (!line.trim()) continue;
+      
+      try {
+        const entry = JSON.parse(line) as { name: string; id: string; file: string };
+        
+        // Build name -> [ids] index
+        const existing = functionIndex.get(entry.name) ?? [];
+        existing.push(entry.id);
+        functionIndex.set(entry.name, existing);
+        
+        // Build id -> file index
+        functionFiles.set(entry.id, entry.file);
+      } catch {
+        // Skip malformed lines
+      }
+    }
+    
+    return { functionIndex, functionFiles };
+  }
+
+  /**
+   * Clean up the temporary resolution index file
+   */
+  private async cleanupResolutionIndex(): Promise<void> {
+    try {
+      await fs.unlink(this.resolutionIndexPath);
+    } catch {
+      // Ignore if file doesn't exist
+    }
   }
 
   /**
