@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.29] - 2026-01-28
+
+### 🚀 Enterprise Codebase Performance Fix
+
+Addresses timeout issues for large enterprise codebases (979+ files) by expanding default ignores, adding missing language extensions, and providing better pre-scan feedback.
+
+### Added
+
+- **`--max-file-size <bytes>` CLI flag**: Skip files larger than threshold (default: 1MB)
+  - Prevents giant generated files (migrations, bundles) from choking the scanner
+- **Pre-scan estimation**: Warns users about expected scan duration for large codebases
+  - Shows estimated time for 500+ files
+  - Suggests `--timeout` increase or subdirectory scan for 2000+ files
+- **Blazor/Razor support**: Added `.razor` and `.cshtml` to scannable extensions
+
+### Fixed
+
+- **Missing file extensions in `isScannableFile`**:
+  - Added: `.go`, `.rs`, `.c`, `.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`, `.mts`, `.cts`, `.razor`, `.cshtml`
+  - Now aligned with `file-walker.ts` EXTENSION_LANGUAGE_MAP
+
+- **Ecosystem-aware default ignores** - dramatically reduces file count for enterprise projects:
+  - **.NET/C#/MAUI/Blazor**: `bin/`, `obj/`, `packages/`, `.vs/`, `*.dll`, `*.exe`, `*.pdb`, `*.nupkg`, `wwwroot/lib/`
+  - **Java/Spring/Gradle/Maven**: `target/`, `.gradle/`, `.m2/`, `*.class`, `*.jar`, `*.war`
+  - **Go**: `vendor/`
+  - **C++/CMake**: `cmake-build-*/`, `out/`, `*.o`, `*.obj`, `*.a`, `*.lib`, `*.so`, `*.dylib`
+  - **Python**: `.eggs/`, `*.egg-info/`, `.tox/`, `.mypy_cache/`, `.pytest_cache/`
+  - **Node extras**: `.npm/`, `.yarn/`, `.pnpm-store/`, `.next/`, `.nuxt/`
+  - **Archives**: `*.zip`, `*.rar`, `*.7z`, `*.tar`, `*.gz`
+  - **IDE**: `.idea/`, `.vscode/`, `*.swp`, `*.swo`
+  - **Logs**: `*.log`, `logs/`
+
+### Changed
+
+- Improved timeout error message with ecosystem-specific `.driftignore` examples
+- `maxFileSize` now wired through from CLI to FileWalker (was defined but not exposed)
+
 ## [0.9.28] - 2026-01-28
 
 ### 🎉 Major Release: All 6 Critical Gaps Resolved

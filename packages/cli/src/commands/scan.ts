@@ -34,7 +34,7 @@ import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
 import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
 import { createContractScanner } from '../services/contract-scanner.js';
-import { createBoundaryScanner } from '../services/boundary-scanner.js';
+import { createBoundaryScanner, type BoundaryScanResult } from '../services/boundary-scanner.js';
 
 export interface ScanCommandOptions {
   /** Specific paths to scan */
@@ -63,6 +63,8 @@ export interface ScanCommandOptions {
   allProjects?: boolean;
   /** Scan timeout in seconds (default: 300 = 5 minutes) */
   timeout?: number;
+  /** Maximum file size in bytes to scan (default: 1MB) */
+  maxFileSize?: number;
 }
 
 /** Interval for progress updates when scan is slow (10 seconds) */
@@ -168,16 +170,23 @@ The scan took too long and was stopped to prevent hanging.
 
 ${chalk.bold('Common causes:')}
   • Scanning a very large codebase (try scanning a subdirectory first)
-  • node_modules or other large folders not being ignored
-  • A detector encountering problematic code
+  • Build artifacts or dependencies not being ignored
+  • Large generated files (migrations, bundles)
 
 ${chalk.bold('Try these fixes:')}
-  1. Check your ${chalk.cyan('.driftignore')} file excludes large directories:
+  1. Check your ${chalk.cyan('.driftignore')} file excludes build artifacts:
+     ${chalk.gray('# .NET/C#')}
+     ${chalk.gray('bin/')}
+     ${chalk.gray('obj/')}
+     ${chalk.gray('packages/')}
+     ${chalk.gray('')}
+     ${chalk.gray('# Java')}
+     ${chalk.gray('target/')}
+     ${chalk.gray('.gradle/')}
+     ${chalk.gray('')}
+     ${chalk.gray('# Node')}
      ${chalk.gray('node_modules/')}
      ${chalk.gray('dist/')}
-     ${chalk.gray('.git/')}
-     ${chalk.gray('vendor/')}
-     ${chalk.gray('__pycache__/')}
 
   2. Scan a specific directory instead:
      ${chalk.cyan('drift scan src/')}
@@ -185,7 +194,10 @@ ${chalk.bold('Try these fixes:')}
   3. Increase the timeout:
      ${chalk.cyan('drift scan --timeout 600')}  ${chalk.gray('# 10 minutes')}
 
-  4. Run with verbose mode to see what's happening:
+  4. Limit file size (skip large generated files):
+     ${chalk.cyan('drift scan --max-file-size 500000')}  ${chalk.gray('# 500KB')}
+
+  5. Run with verbose mode to see what's happening:
      ${chalk.cyan('drift scan --verbose')}
 
 ${chalk.bold('Still stuck?')}
@@ -214,18 +226,85 @@ async function isDriftInitialized(rootDir: string): Promise<boolean> {
 
 /**
  * Load ignore patterns from .driftignore
+ * Includes ecosystem-aware defaults for enterprise codebases
  */
 async function loadIgnorePatterns(rootDir: string): Promise<string[]> {
   const defaultIgnores = [
+    // Universal
     'node_modules/**',
     '.git/**',
     'dist/**',
     'build/**',
     'coverage/**',
     '.drift/**',
+    
+    // Python
     '__pycache__/**',
     '.venv/**',
     'venv/**',
+    '.eggs/**',
+    '*.egg-info/**',
+    '.tox/**',
+    '.mypy_cache/**',
+    '.pytest_cache/**',
+    
+    // .NET / C# / MAUI / Blazor
+    'bin/**',
+    'obj/**',
+    'packages/**',
+    '.vs/**',
+    '*.dll',
+    '*.exe',
+    '*.pdb',
+    '*.nupkg',
+    'wwwroot/lib/**',
+    
+    // Java / Spring / Gradle / Maven
+    'target/**',
+    '.gradle/**',
+    '.m2/**',
+    '*.class',
+    '*.jar',
+    '*.war',
+    
+    // Go
+    'vendor/**',
+    
+    // Rust (target already covered above)
+    
+    // C++ / CMake
+    'cmake-build-*/**',
+    'out/**',
+    '*.o',
+    '*.obj',
+    '*.a',
+    '*.lib',
+    '*.so',
+    '*.dylib',
+    
+    // Node extras
+    '.npm/**',
+    '.yarn/**',
+    '.pnpm-store/**',
+    '.next/**',
+    '.nuxt/**',
+    
+    // IDE / Editor
+    '.idea/**',
+    '.vscode/**',
+    '*.swp',
+    '*.swo',
+    
+    // Archives / binaries (common in enterprise)
+    '*.zip',
+    '*.rar',
+    '*.7z',
+    '*.tar',
+    '*.gz',
+    
+    // Logs
+    '*.log',
+    'logs/**',
   ];
 
   try {
@@ -357,19 +436,38 @@ async function detectFrameworks(rootDir: string): Promise<string[]> {
 
 /**
  * Check if file is scannable
+ * Aligned with file-walker.ts EXTENSION_LANGUAGE_MAP
  */
 function isScannableFile(filePath: string): boolean {
   const scannableExtensions = [
-    'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
+    // TypeScript / JavaScript
+    'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'mts', 'cts',
+    // Python
     'py', 'pyw',
-    'cs', // C#
-    'java', // Java/Spring Boot
-    'php', // PHP/Laravel
+    // C#
+    'cs',
+    // Java
+    'java',
+    // PHP
+    'php',
+    // Go
+    'go',
+    // Rust
+    'rs',
+    // C / C++
+    'c', 'cpp', 'cc', 'cxx', 'c++', 'hpp', 'hh', 'hxx', 'h++', 'h',
+    // Web / Styling
     'css', 'scss', 'sass', 'less',
+    // Config / Data
     'json', 'yaml', 'yml',
+    // Documentation
     'md', 'mdx',
+    // HTML / Templates
     'html', 'htm',
+    // Frontend frameworks
     'vue', 'svelte',
+    // Blazor / Razor (C# in templates)
+    'razor', 'cshtml',
   ];
   const ext = getExtension(filePath);
   return scannableExtensions.includes(ext);
@@ -662,6 +760,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       respectDriftignore: true,
       followSymlinks: false,
       maxDepth: 50,
+      maxFileSize: options.maxFileSize ?? 1048576, // 1MB default
     };
 
     // Add include patterns if configured (allowlist mode)
@@ -693,6 +792,17 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     // Filter to scannable files
     files = files.filter(isScannableFile);
     discoverSpinner.succeed(`Discovered ${files.length} files`);
+    
+    // Pre-scan warning for large codebases
+    if (files.length > 500) {
+      const estimatedMinutes = Math.ceil(files.length / 200); // ~200 files/min estimate
+      console.log();
+      console.log(chalk.yellow(`  ⚠️  Large codebase detected (${files.length} files)`));
+      console.log(chalk.gray(`     Estimated scan time: ${estimatedMinutes}-${estimatedMinutes * 2} minutes`));
+      if (files.length > 2000) {
+        console.log(chalk.gray(`     Consider: drift scan src/ or increase --timeout ${Math.ceil(files.length / 100) * 60}`));
+      }
+    }
   } catch (error) {
     discoverSpinner.fail('Failed to discover files');
     console.error(chalk.red((error as Error).message));
@@ -1107,16 +1217,21 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     }
   }
 
+  // Variable to hold boundary scan result for passing to materializer
+  let scanBoundaryResult: BoundaryScanResult | undefined;
+
   // Data boundary scanning (Backend ↔ Database access tracking) - enabled by default
   if (options.boundaries !== false) {
     console.log();
     const boundarySpinner = createSpinner('Scanning for data boundaries...');
     boundarySpinner.start();
-
     try {
       const boundaryScanner = createBoundaryScanner({ rootDir, verbose });
       await boundaryScanner.initialize();
       const boundaryResult = await boundaryScanner.scanFiles(files);
+      
+      // Store result for materializer
+      scanBoundaryResult = boundaryResult;
 
       boundarySpinner.succeed(
         `Found ${boundaryResult.stats.tablesFound} tables, ` +
@@ -1307,7 +1422,14 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     const materializeResult = await dataLake.materializer.materialize(
       allPatterns,
       { force: options.force ?? false },
-      { lastScan: lastScanInfo }
+      { 
+        lastScan: lastScanInfo,
+        // Pass boundary data for manifest stats sync (only if available)
+        ...(scanBoundaryResult ? {
+          accessMap: scanBoundaryResult.accessMap,
+          violations: scanBoundaryResult.violations,
+        } : {}),
+      }
     );
     
     lakeSpinner.succeed(
@@ -1388,6 +1510,7 @@ export const scanCommand = new Command('scan')
   .option('-p, --project <name>', 'Scan a specific registered project by name')
   .option('--all-projects', 'Scan all registered projects')
   .option('-t, --timeout <seconds>', 'Scan timeout in seconds (default: 300)', '300')
+  .option('--max-file-size <bytes>', 'Max file size to scan in bytes (default: 1MB)', '1048576')
   .action((paths: string[], options: ScanCommandOptions) => {
     // Merge positional paths with options
     if (paths && paths.length > 0) {
@@ -1396,6 +1519,10 @@ export const scanCommand = new Command('scan')
     // Parse timeout as number
     if (typeof options.timeout === 'string') {
       options.timeout = parseInt(options.timeout, 10);
+    }
+    // Parse maxFileSize as number
+    if (typeof options.maxFileSize === 'string') {
+      options.maxFileSize = parseInt(options.maxFileSize, 10);
     }
     return scanAction(options);
   });
