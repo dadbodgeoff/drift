@@ -145,6 +145,38 @@ export class CallGraphStore {
             
             // Convert shard functions to FunctionNode format
             for (const fn of shard.functions ?? []) {
+              // Handle both old format (string[]) and new format (CallEntry[])
+              const calls = (fn.calls ?? []).map((call: string | { target: string; resolvedId?: string; resolved?: boolean; confidence?: number; line?: number }) => {
+                // Old format: just a string (function name)
+                if (typeof call === 'string') {
+                  return {
+                    calleeName: call,
+                    calleeId: null,
+                    callerId: fn.id,
+                    line: fn.startLine,
+                    column: 0,
+                    resolved: false,
+                    resolvedCandidates: [],
+                    confidence: 0.5,
+                    argumentCount: 0,
+                    file: shard.file,
+                  };
+                }
+                // New format: CallEntry object with target, resolvedId, etc.
+                return {
+                  calleeName: call.target,
+                  calleeId: call.resolvedId ?? null,
+                  callerId: fn.id,
+                  line: call.line ?? fn.startLine,
+                  column: 0,
+                  resolved: call.resolved ?? false,
+                  resolvedCandidates: [],
+                  confidence: call.confidence ?? 0.5,
+                  argumentCount: 0,
+                  file: shard.file,
+                };
+              });
+
               const funcNode: FunctionNode = {
                 id: fn.id,
                 name: fn.name,
@@ -158,18 +190,7 @@ export class CallGraphStore {
                 isAsync: false,
                 decorators: [],
                 parameters: [],
-                calls: fn.calls?.map((calleeName: string) => ({
-                  calleeName,
-                  calleeId: null,
-                  callerId: fn.id,
-                  line: fn.startLine,
-                  column: 0,
-                  resolved: false,
-                  resolvedCandidates: [],
-                  confidence: 0.5,
-                  argumentCount: 0,
-                  file: shard.file,
-                })) ?? [],
+                calls,
                 calledBy: fn.calledBy?.map((callerId: string) => ({
                   callerId,
                   calleeId: fn.id,
