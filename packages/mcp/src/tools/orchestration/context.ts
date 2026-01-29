@@ -163,13 +163,43 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
     categories: ['api', 'components', 'structural', 'errors', 'logging', 'types'],
     prioritizePatterns: (patterns, focus) => {
       const focusLower = focus.toLowerCase();
-      return patterns
-        .filter(p => 
-          p.name.toLowerCase().includes(focusLower) ||
-          p.description.toLowerCase().includes(focusLower) ||
-          p.locations.some(l => l.file.toLowerCase().includes(focusLower))
-        )
-        .sort((a, b) => b.confidence.score - a.confidence.score);
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns by relevance to focus
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Exact focus match in name/description (highest priority)
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 100;
+        }
+        
+        // Category match (e.g., "api endpoint" matches "api" category)
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 50;
+        }
+        
+        // Individual word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue; // Skip short words
+          if (nameLower.includes(word)) score += 20;
+          if (descLower.includes(word)) score += 10;
+          if (p.locations.some(l => l.file.toLowerCase().includes(word))) score += 5;
+        }
+        
+        // Boost by confidence
+        score += p.confidence.score * 10;
+        
+        return { pattern: p, score };
+      });
+      
+      // Sort by score, then by confidence
+      return scored
+        .sort((a, b) => b.score - a.score || b.pattern.confidence.score - a.pattern.confidence.score)
+        .map(s => s.pattern);
     },
     generateGuidance: (patterns) => ({
       keyInsights: [
@@ -197,18 +227,45 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
     categories: ['errors', 'logging', 'data-access', 'api', 'testing'],
     prioritizePatterns: (patterns, focus) => {
       const focusLower = focus.toLowerCase();
-      // For bugs, prioritize error handling and the specific area
-      return patterns
-        .filter(p => 
-          p.category === 'errors' ||
-          p.name.toLowerCase().includes(focusLower) ||
-          p.locations.some(l => l.file.toLowerCase().includes(focusLower))
-        )
-        .sort((a, b) => {
-          if (a.category === 'errors' && b.category !== 'errors') {return -1;}
-          if (b.category === 'errors' && a.category !== 'errors') {return 1;}
-          return b.confidence.score - a.confidence.score;
-        });
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns - prioritize errors category for bug fixes
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Error patterns get highest priority for bug fixes
+        if (p.category === 'errors') {
+          score += 100;
+        }
+        
+        // Exact focus match
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 80;
+        }
+        
+        // Category match
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 40;
+        }
+        
+        // Word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue;
+          if (nameLower.includes(word)) score += 15;
+          if (descLower.includes(word)) score += 8;
+          if (p.locations.some(l => l.file.toLowerCase().includes(word))) score += 5;
+        }
+        
+        score += p.confidence.score * 10;
+        return { pattern: p, score };
+      });
+      
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.pattern);
     },
     generateGuidance: (patterns) => ({
       keyInsights: [
@@ -235,12 +292,43 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
     categories: ['structural', 'components', 'types', 'api', 'styling'],
     prioritizePatterns: (patterns, focus) => {
       const focusLower = focus.toLowerCase();
-      return patterns
-        .filter(p => 
-          p.locations.some(l => l.file.toLowerCase().includes(focusLower)) ||
-          p.name.toLowerCase().includes(focusLower)
-        )
-        .sort((a, b) => b.locations.length - a.locations.length); // Most used patterns first
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns - prioritize by usage count for refactoring
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Exact focus match
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 80;
+        }
+        
+        // Category match
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 40;
+        }
+        
+        // Word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue;
+          if (nameLower.includes(word)) score += 15;
+          if (descLower.includes(word)) score += 8;
+          if (p.locations.some(l => l.file.toLowerCase().includes(word))) score += 10;
+        }
+        
+        // Boost by location count (most used patterns are more important for refactoring)
+        score += Math.min(p.locations.length * 5, 50);
+        score += p.confidence.score * 10;
+        
+        return { pattern: p, score };
+      });
+      
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.pattern);
     },
     generateGuidance: (patterns) => ({
       keyInsights: [
@@ -266,19 +354,53 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
 
   security_audit: {
     categories: ['security', 'auth', 'data-access', 'api'],
-    prioritizePatterns: (patterns, _focus) => {
-      // Security audit prioritizes security-related patterns
-      return patterns
-        .filter(p => 
-          ['security', 'auth', 'data-access'].includes(p.category) ||
-          p.name.toLowerCase().includes('auth') ||
-          p.name.toLowerCase().includes('permission') ||
-          p.name.toLowerCase().includes('access')
-        )
-        .sort((a, b) => {
-          const securityOrder = ['security', 'auth', 'data-access', 'api'];
-          return securityOrder.indexOf(a.category) - securityOrder.indexOf(b.category);
-        });
+    prioritizePatterns: (patterns, focus) => {
+      const focusLower = focus.toLowerCase();
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns - prioritize security-related categories
+      const securityOrder = ['security', 'auth', 'data-access', 'api'];
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Security categories get priority
+        const categoryIndex = securityOrder.indexOf(p.category);
+        if (categoryIndex !== -1) {
+          score += (4 - categoryIndex) * 30; // security=120, auth=90, data-access=60, api=30
+        }
+        
+        // Security-related keywords
+        if (nameLower.includes('auth') || nameLower.includes('permission') || nameLower.includes('access')) {
+          score += 50;
+        }
+        
+        // Focus match
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 40;
+        }
+        
+        // Category match
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 30;
+        }
+        
+        // Word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue;
+          if (nameLower.includes(word)) score += 10;
+          if (descLower.includes(word)) score += 5;
+        }
+        
+        score += p.confidence.score * 10;
+        return { pattern: p, score };
+      });
+      
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.pattern);
     },
     generateGuidance: () => ({
       keyInsights: [
@@ -304,13 +426,43 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
     categories: ['structural', 'api', 'components', 'data-access', 'types'],
     prioritizePatterns: (patterns, focus) => {
       const focusLower = focus.toLowerCase();
-      return patterns
-        .filter(p => 
-          p.locations.some(l => l.file.toLowerCase().includes(focusLower)) ||
-          p.name.toLowerCase().includes(focusLower) ||
-          p.description.toLowerCase().includes(focusLower)
-        )
-        .sort((a, b) => b.locations.length - a.locations.length);
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns - prioritize by relevance and usage
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Exact focus match
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 80;
+        }
+        
+        // Category match
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 40;
+        }
+        
+        // Word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue;
+          if (nameLower.includes(word)) score += 15;
+          if (descLower.includes(word)) score += 8;
+          if (p.locations.some(l => l.file.toLowerCase().includes(word))) score += 10;
+        }
+        
+        // Boost by location count (more occurrences = more important to understand)
+        score += Math.min(p.locations.length * 3, 30);
+        score += p.confidence.score * 10;
+        
+        return { pattern: p, score };
+      });
+      
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.pattern);
     },
     generateGuidance: (patterns) => ({
       keyInsights: [
@@ -335,17 +487,45 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
     categories: ['testing', 'errors', 'api', 'data-access'],
     prioritizePatterns: (patterns, focus) => {
       const focusLower = focus.toLowerCase();
-      // Prioritize testing patterns, then the area being tested
-      return patterns
-        .filter(p => 
-          p.category === 'testing' ||
-          p.locations.some(l => l.file.toLowerCase().includes(focusLower))
-        )
-        .sort((a, b) => {
-          if (a.category === 'testing' && b.category !== 'testing') {return -1;}
-          if (b.category === 'testing' && a.category !== 'testing') {return 1;}
-          return b.confidence.score - a.confidence.score;
-        });
+      const focusWords = focusLower.split(/\s+/);
+      
+      // Score patterns - prioritize testing patterns
+      const scored = patterns.map(p => {
+        let score = 0;
+        const nameLower = p.name.toLowerCase();
+        const descLower = p.description.toLowerCase();
+        const categoryLower = p.category.toLowerCase();
+        
+        // Testing patterns get highest priority
+        if (p.category === 'testing') {
+          score += 100;
+        }
+        
+        // Exact focus match
+        if (nameLower.includes(focusLower) || descLower.includes(focusLower)) {
+          score += 60;
+        }
+        
+        // Category match
+        if (focusWords.some(word => categoryLower.includes(word) || word.includes(categoryLower))) {
+          score += 30;
+        }
+        
+        // Word matches
+        for (const word of focusWords) {
+          if (word.length < 3) continue;
+          if (nameLower.includes(word)) score += 15;
+          if (descLower.includes(word)) score += 8;
+          if (p.locations.some(l => l.file.toLowerCase().includes(word))) score += 5;
+        }
+        
+        score += p.confidence.score * 10;
+        return { pattern: p, score };
+      });
+      
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.pattern);
     },
     generateGuidance: (patterns) => ({
       keyInsights: [
