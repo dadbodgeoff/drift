@@ -1,6 +1,6 @@
 {
   "name": "@drift/cibench",
-  "version": "2.0.0",
+  "version": "0.9.32",
   "description": "CIBench - Frontier Codebase Intelligence Benchmark",
   "type": "module",
   "main": "dist/index.js",

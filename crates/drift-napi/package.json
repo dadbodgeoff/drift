@@ -1,6 +1,6 @@
 {
-  "name": "@drift/native",
-  "version": "0.1.0",
+  "name": "driftdetect-native",
+  "version": "0.9.31",
   "description": "Native Rust core for Drift - high-performance code analysis",
   "main": "index.js",
   "types": "index.d.ts",
@@ -48,5 +48,14 @@
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version"
+  },
+  "optionalDependencies": {
+    "driftdetect-native-win32-x64-msvc": "0.9.31",
+    "driftdetect-native-darwin-x64": "0.9.31",
+    "driftdetect-native-linux-x64-gnu": "0.9.31",
+    "driftdetect-native-darwin-arm64": "0.9.31",
+    "driftdetect-native-linux-arm64-gnu": "0.9.31",
+    "driftdetect-native-linux-arm64-musl": "0.9.31",
+    "driftdetect-native-linux-x64-musl": "0.9.31"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-detectors",
-  "version": "0.9.31",
+  "version": "0.9.32",
   "description": "Pattern detectors for Drift - 150+ detectors across 15 categories",
   "license": "Apache-2.0",
   "repository": {

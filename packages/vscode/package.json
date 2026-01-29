@@ -2,7 +2,7 @@
   "name": "driftdetect-vscode",
   "displayName": "Drift - Architectural Drift Detection",
   "description": "Learn your codebase patterns and enforce consistency. Pattern detection, call graph analysis, security visualization, and MCP integration for AI agents. Supports TypeScript, Python, C#, Java, PHP.",
-  "version": "0.9.31",
+  "version": "0.9.32",
   "publisher": "driftdetect",
   "license": "Apache-2.0",
   "icon": "resources/drift-icon.png",

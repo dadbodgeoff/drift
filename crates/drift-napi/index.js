@@ -37,7 +37,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.android-arm64.node')
           } else {
-            nativeBinding = require('@drift/native-android-arm64')
+            nativeBinding = require('driftdetect-native-android-arm64')
           }
         } catch (e) {
           loadError = e
@@ -49,7 +49,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.android-arm-eabi.node')
           } else {
-            nativeBinding = require('@drift/native-android-arm-eabi')
+            nativeBinding = require('driftdetect-native-android-arm-eabi')
           }
         } catch (e) {
           loadError = e
@@ -69,7 +69,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.win32-x64-msvc.node')
           } else {
-            nativeBinding = require('@drift/native-win32-x64-msvc')
+            nativeBinding = require('driftdetect-native-win32-x64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -83,7 +83,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.win32-ia32-msvc.node')
           } else {
-            nativeBinding = require('@drift/native-win32-ia32-msvc')
+            nativeBinding = require('driftdetect-native-win32-ia32-msvc')
           }
         } catch (e) {
           loadError = e
@@ -97,7 +97,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.win32-arm64-msvc.node')
           } else {
-            nativeBinding = require('@drift/native-win32-arm64-msvc')
+            nativeBinding = require('driftdetect-native-win32-arm64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -113,7 +113,7 @@ switch (platform) {
       if (localFileExisted) {
         nativeBinding = require('./drift-native.darwin-universal.node')
       } else {
-        nativeBinding = require('@drift/native-darwin-universal')
+        nativeBinding = require('driftdetect-native-darwin-universal')
       }
       break
     } catch {}
@@ -124,7 +124,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.darwin-x64.node')
           } else {
-            nativeBinding = require('@drift/native-darwin-x64')
+            nativeBinding = require('driftdetect-native-darwin-x64')
           }
         } catch (e) {
           loadError = e
@@ -138,7 +138,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.darwin-arm64.node')
           } else {
-            nativeBinding = require('@drift/native-darwin-arm64')
+            nativeBinding = require('driftdetect-native-darwin-arm64')
           }
         } catch (e) {
           loadError = e
@@ -157,7 +157,7 @@ switch (platform) {
       if (localFileExisted) {
         nativeBinding = require('./drift-native.freebsd-x64.node')
       } else {
-        nativeBinding = require('@drift/native-freebsd-x64')
+        nativeBinding = require('driftdetect-native-freebsd-x64')
       }
     } catch (e) {
       loadError = e
@@ -174,7 +174,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-x64-musl.node')
             } else {
-              nativeBinding = require('@drift/native-linux-x64-musl')
+              nativeBinding = require('driftdetect-native-linux-x64-musl')
             }
           } catch (e) {
             loadError = e
@@ -187,7 +187,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-x64-gnu.node')
             } else {
-              nativeBinding = require('@drift/native-linux-x64-gnu')
+              nativeBinding = require('driftdetect-native-linux-x64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -203,7 +203,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-arm64-musl.node')
             } else {
-              nativeBinding = require('@drift/native-linux-arm64-musl')
+              nativeBinding = require('driftdetect-native-linux-arm64-musl')
             }
           } catch (e) {
             loadError = e
@@ -216,7 +216,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-arm64-gnu.node')
             } else {
-              nativeBinding = require('@drift/native-linux-arm64-gnu')
+              nativeBinding = require('driftdetect-native-linux-arm64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -232,7 +232,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-arm-musleabihf.node')
             } else {
-              nativeBinding = require('@drift/native-linux-arm-musleabihf')
+              nativeBinding = require('driftdetect-native-linux-arm-musleabihf')
             }
           } catch (e) {
             loadError = e
@@ -245,7 +245,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-arm-gnueabihf.node')
             } else {
-              nativeBinding = require('@drift/native-linux-arm-gnueabihf')
+              nativeBinding = require('driftdetect-native-linux-arm-gnueabihf')
             }
           } catch (e) {
             loadError = e
@@ -261,7 +261,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-riscv64-musl.node')
             } else {
-              nativeBinding = require('@drift/native-linux-riscv64-musl')
+              nativeBinding = require('driftdetect-native-linux-riscv64-musl')
             }
           } catch (e) {
             loadError = e
@@ -274,7 +274,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./drift-native.linux-riscv64-gnu.node')
             } else {
-              nativeBinding = require('@drift/native-linux-riscv64-gnu')
+              nativeBinding = require('driftdetect-native-linux-riscv64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -289,7 +289,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./drift-native.linux-s390x-gnu.node')
           } else {
-            nativeBinding = require('@drift/native-linux-s390x-gnu')
+            nativeBinding = require('driftdetect-native-linux-s390x-gnu')
           }
         } catch (e) {
           loadError = e

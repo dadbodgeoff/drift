@@ -1,6 +1,6 @@
 {
   "name": "driftdetect-core",
-  "version": "0.9.31",
+  "version": "0.9.32",
   "description": "Core engine for Drift - multi-language pattern detection, call graph analysis, and security boundary tracking. Supports TypeScript, Python, C#, Java, PHP.",
   "license": "Apache-2.0",
   "repository": {
@@ -70,6 +70,9 @@
     "tree-sitter-cpp": "^0.22.0",
     "tree-sitter-typescript": "^0.21.2",
     "typescript": "^5.3.0"
+  },
+  "optionalDependencies": {
+    "driftdetect-native": "^0.9.31"
   },
   "devDependencies": {
     "@types/minimatch": "^5.1.2",

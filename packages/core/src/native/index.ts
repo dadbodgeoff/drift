@@ -643,9 +643,15 @@ let nativeModule: NativeModule | null = null;
 let loadError: Error | null = null;
 
 try {
-  nativeModule = require('@drift/native');
+  // Try the published package name first
+  nativeModule = require('driftdetect-native');
 } catch (err) {
-  loadError = err as Error;
+  // Fall back to scoped name for local development
+  try {
+    nativeModule = require('@drift/native');
+  } catch {
+    loadError = err as Error;
+  }
 }
 
 /**
