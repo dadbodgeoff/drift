@@ -37,30 +37,35 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             npm-dir: darwin-x64
+            build: npm run build -- --target x86_64-apple-darwin
           - host: macos-latest
             target: aarch64-apple-darwin
             npm-dir: darwin-arm64
+            build: npm run build -- --target aarch64-apple-darwin
           # Windows - native build
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             npm-dir: win32-x64-msvc
-          # Linux GNU - native builds on Ubuntu
+            build: npm run build -- --target x86_64-pc-windows-msvc
+          # Linux GNU - use napi-cross Docker images for proper cross-compilation
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             npm-dir: linux-x64-gnu
-          # Linux ARM64 GNU - use zig for cross-compilation
+            build: npm run build -- --target x86_64-unknown-linux-gnu --use-napi-cross
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             npm-dir: linux-arm64-gnu
-            use-zig: true
-          # Linux musl - use zig for cross-compilation
+            build: npm run build -- --target aarch64-unknown-linux-gnu --use-napi-cross
+          # Linux musl - use zig for cross-compilation (works for musl targets)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             npm-dir: linux-x64-musl
+            build: npm run build -- --target x86_64-unknown-linux-musl --cross-compile
             use-zig: true
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             npm-dir: linux-arm64-musl
+            build: npm run build -- --target aarch64-unknown-linux-musl --cross-compile
             use-zig: true
 
     name: Build ${{ matrix.settings.target }}
@@ -95,17 +100,10 @@ jobs:
         working-directory: crates/drift-napi
         run: npm install
 
-      - name: Build (native)
-        if: ${{ !matrix.settings.use-zig }}
+      - name: Build
         working-directory: crates/drift-napi
         shell: bash
-        run: npm run build -- --target ${{ matrix.settings.target }}
-
-      - name: Build (cross-compile with zigbuild)
-        if: matrix.settings.use-zig
-        working-directory: crates/drift-napi
-        shell: bash
-        run: npm run build -- --target ${{ matrix.settings.target }} --cross-compile
+        run: ${{ matrix.settings.build }}
 
       - name: Move artifact to npm dir
         shell: bash
