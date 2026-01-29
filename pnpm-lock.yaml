@@ -190,8 +190,8 @@ importers:
         version: 5.9.3
     optionalDependencies:
       driftdetect-native:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: 0.9.38
+        version: 0.9.38
     devDependencies:
       '@types/minimatch':
         specifier: ^5.1.2
@@ -3810,6 +3810,15 @@ packages:
     dev: false
     optional: true
 
+  /driftdetect-native-darwin-arm64@0.9.38:
+    resolution: {integrity: sha512-42Jf3vqF2XxbdpNFH/rMCbPO9cd+I0+WoXSYCHwBbE742EcXebMLYRrzbUhfCSE1BJLfa8ypc0V2J+cczp+rPg==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /driftdetect-native-darwin-x64@0.9.33:
     resolution: {integrity: sha512-rNAGjBDQQNUikN6DoPyIEILP2Iflhj9luwO8AqmhI+Z/XXQaDItcOgpK5nucpqSE9uOE1uNTDTxa9KvqXU9S3g==}
     engines: {node: '>= 18'}
@@ -3819,8 +3828,26 @@ packages:
     dev: false
     optional: true
 
+  /driftdetect-native-darwin-x64@0.9.38:
+    resolution: {integrity: sha512-uj3QbQj2CfNK3QMCc0YRU9CZBl5NdBsajLnutKMUvVzjZVKFZnL9HXuuW6aDWoxDPEJbi7xn721+sPoS3+1/EA==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /driftdetect-native-linux-arm64-gnu@0.9.33:
     resolution: {integrity: sha512-UaInKllFO0ymHaUjU1sYuRFmueMrLclJ+KTgNIpK721TvCyWbKfCaijiHNoF8Y+Ivq5r3VmiOcoXhuvoqZ/HFw==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-linux-arm64-gnu@0.9.38:
+    resolution: {integrity: sha512-bHEEmJYKrOOb7ZseD6gvMir1SoetdvfOWMQiHVvYhsemnI0/8OXxSWEKdu5mIErxggNTPoEfB+6RPfQRIBuwfw==}
     engines: {node: '>= 18'}
     cpu: [arm64]
     os: [linux]
@@ -3846,6 +3873,15 @@ packages:
     dev: false
     optional: true
 
+  /driftdetect-native-linux-x64-gnu@0.9.38:
+    resolution: {integrity: sha512-VrZ5EWgc+eh072sMqJCWcjSH4yfFkTMctchuR+HqqJM3zy636i08xoiebdQOI5UEvn70+JFxd5v8a2JvYdz11A==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /driftdetect-native-linux-x64-musl@0.9.33:
     resolution: {integrity: sha512-1Mdl4HVwhtQgDfvL+CxvzClhMX7ZZoFw0rcN0LPSpZfBh6wr/SODjAuioUB2VzNTNNRsQ8QW6DSpl6IYG5Wjug==}
     engines: {node: '>= 18'}
@@ -3857,6 +3893,15 @@ packages:
 
   /driftdetect-native-win32-x64-msvc@0.9.33:
     resolution: {integrity: sha512-VlEW/CtfGfF7iOUxj9OR7ptyoX4HbRU7xg8r/UVVKIv4QE2DzSZBJqoE1fYqlKBQ3i3IzjlJmLauwfgv/wekww==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-win32-x64-msvc@0.9.38:
+    resolution: {integrity: sha512-w2SjzLp5PaiKOoQ3SXk4v2SEgpVqtk3+kcOxTYLCvJ6geVCbRJlxAKfE5IXf8BAb9f3YgEU6aOo0qEhMww+P7A==}
     engines: {node: '>= 18'}
     cpu: [x64]
     os: [win32]
@@ -3876,6 +3921,19 @@ packages:
       driftdetect-native-linux-x64-gnu: 0.9.33
       driftdetect-native-linux-x64-musl: 0.9.33
       driftdetect-native-win32-x64-msvc: 0.9.33
+    dev: false
+    optional: true
+
+  /driftdetect-native@0.9.38:
+    resolution: {integrity: sha512-Y4sdPteubb7L4Eqxxhi480IHmkMjZ76ZFYpjrtShuTwAQ5mtMvFMRUQ8OngEXFpAWs7VwvNs05PSB3O6LnDPiA==}
+    engines: {node: '>= 18'}
+    requiresBuild: true
+    optionalDependencies:
+      driftdetect-native-darwin-arm64: 0.9.38
+      driftdetect-native-darwin-x64: 0.9.38
+      driftdetect-native-linux-arm64-gnu: 0.9.38
+      driftdetect-native-linux-x64-gnu: 0.9.38
+      driftdetect-native-win32-x64-msvc: 0.9.38
     dev: false
     optional: true
 
