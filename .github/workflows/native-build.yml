@@ -4,7 +4,6 @@ env:
   DEBUG: napi:*
   APP_NAME: drift-native
   MACOSX_DEPLOYMENT_TARGET: '10.13'
-  CARGO_INCREMENTAL: '1'
 
 on:
   push:
@@ -19,14 +18,10 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish to npm (use version number like 0.9.33 to publish)'
+        description: 'Publish version (e.g., 0.9.33)'
         required: false
         default: ''
         type: string
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -40,32 +35,32 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            build: npm run build -- --target x86_64-apple-darwin
+            npm-dir: darwin-x64
           - host: macos-latest
             target: aarch64-apple-darwin
-            build: npm run build -- --target aarch64-apple-darwin
+            npm-dir: darwin-arm64
           - host: windows-latest
             target: x86_64-pc-windows-msvc
-            build: npm run build -- --target x86_64-pc-windows-msvc
+            npm-dir: win32-x64-msvc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            build: npm run build -- --target x86_64-unknown-linux-gnu --use-napi-cross
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            build: npm run build -- --target x86_64-unknown-linux-musl -x
+            npm-dir: linux-x64-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            build: npm run build -- --target aarch64-unknown-linux-gnu --use-napi-cross
+            npm-dir: linux-arm64-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            npm-dir: linux-x64-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            build: npm run build -- --target aarch64-unknown-linux-musl -x
+            npm-dir: linux-arm64-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
-
-    defaults:
-      run:
-        working-directory: crates/drift-napi
 
     steps:
       - uses: actions/checkout@v4
@@ -80,43 +75,44 @@ jobs:
         with:
           targets: ${{ matrix.settings.target }}
 
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
-
-      - name: Setup zig
-        uses: mlugg/setup-zig@v2
-        if: contains(matrix.settings.target, 'musl')
-        with:
-          version: 0.13.0
-
-      - name: Install cargo-zigbuild
-        uses: taiki-e/install-action@v2
-        if: contains(matrix.settings.target, 'musl')
-        with:
-          tool: cargo-zigbuild
-
       - name: Install dependencies
+        working-directory: crates/drift-napi
         run: npm install
 
-      - name: Build
-        run: ${{ matrix.settings.build }}
+      # Native builds (macOS, Windows)
+      - name: Build (native)
+        if: ${{ !matrix.settings.docker }}
+        working-directory: crates/drift-napi
+        run: npm run build -- --target ${{ matrix.settings.target }}
+
+      # Docker builds (Linux)
+      - name: Build (docker)
+        if: ${{ matrix.settings.docker }}
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: >-
+            --user 0:0
+            -v ${{ github.workspace }}:/build
+            -w /build/crates/drift-napi
+          run: |
+            npm install
+            npm run build -- --target ${{ matrix.settings.target }}
+
+      - name: Move artifact to npm dir
         shell: bash
+        run: |
+          mv crates/drift-napi/*.node crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/ || true
+          ls -la crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: crates/drift-napi/${{ env.APP_NAME }}.*.node
+          path: crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/*.node
           if-no-files-found: error
 
-  test-bindings:
+  test:
     name: Test ${{ matrix.settings.target }}
     needs: build
     strategy:
@@ -124,13 +120,14 @@ jobs:
       matrix:
         settings:
           - host: macos-latest
-            target: x86_64-apple-darwin
-          - host: macos-latest
             target: aarch64-apple-darwin
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
+            npm-dir: darwin-arm64
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            npm-dir: linux-x64-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+            npm-dir: win32-x64-msvc
 
     runs-on: ${{ matrix.settings.host }}
 
@@ -146,7 +143,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: crates/drift-napi
+          path: crates/drift-napi/npm/${{ matrix.settings.npm-dir }}
 
       - name: Install dependencies
         working-directory: crates/drift-napi
@@ -157,9 +154,9 @@ jobs:
         run: node -e "const m = require('./index.js'); console.log('Version:', m.version()); console.log('Languages:', m.supportedLanguages());"
 
   publish:
-    name: Publish to npm
+    name: Publish
     runs-on: ubuntu-latest
-    needs: [build, test-bindings]
+    needs: [build, test]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish != ''
 
     steps:
@@ -171,29 +168,52 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        working-directory: crates/drift-napi
-        run: npm install
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Move artifacts
+      - name: Move artifacts to npm dirs
         run: |
           cd crates/drift-napi
-          for dir in ../../artifacts/bindings-*/; do
-            echo "Copying from $dir"
-            cp "$dir"*.node . 2>/dev/null || true
-          done
-          ls -la *.node
+          # Move each platform binary to its npm directory
+          cp ../../artifacts/bindings-x86_64-apple-darwin/*.node npm/darwin-x64/ || true
+          cp ../../artifacts/bindings-aarch64-apple-darwin/*.node npm/darwin-arm64/ || true
+          cp ../../artifacts/bindings-x86_64-pc-windows-msvc/*.node npm/win32-x64-msvc/ || true
+          cp ../../artifacts/bindings-x86_64-unknown-linux-gnu/*.node npm/linux-x64-gnu/ || true
+          cp ../../artifacts/bindings-aarch64-unknown-linux-gnu/*.node npm/linux-arm64-gnu/ || true
+          cp ../../artifacts/bindings-x86_64-unknown-linux-musl/*.node npm/linux-x64-musl/ || true
+          cp ../../artifacts/bindings-aarch64-unknown-linux-musl/*.node npm/linux-arm64-musl/ || true
+          
+          echo "=== Artifacts ==="
+          ls -la npm/*/
 
-      - name: Update version
+      - name: Update versions
         working-directory: crates/drift-napi
-        run: npm version ${{ github.event.inputs.publish }} --no-git-tag-version
+        run: |
+          VERSION=${{ github.event.inputs.publish }}
+          # Update main package
+          npm version $VERSION --no-git-tag-version
+          # Update platform packages
+          for dir in npm/*/; do
+            cd "$dir"
+            npm version $VERSION --no-git-tag-version
+            cd ../..
+          done
 
-      - name: Publish
+      - name: Publish platform packages
+        working-directory: crates/drift-napi
+        run: |
+          for dir in npm/*/; do
+            echo "Publishing $dir"
+            cd "$dir"
+            npm publish --access public --provenance || true
+            cd ../..
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish main package
         working-directory: crates/drift-napi
         run: npm publish --access public --provenance
         env:
