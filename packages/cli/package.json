@@ -1,6 +1,6 @@
 {
   "name": "driftdetect",
-  "version": "0.9.30",
+  "version": "0.9.31",
   "description": "Codebase pattern detection for AI agents - scans your code, learns conventions, feeds context to Claude/Cursor/Copilot via MCP. Static analysis for TypeScript, Python, C#, Java, PHP.",
   "license": "Apache-2.0",
   "author": "Geoffrey Fernald",

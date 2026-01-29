@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.31] - 2026-01-28
+
+### 🦀 Rust Native Module Production Release
+
+All Rust native modules are now production-ready with clean builds and comprehensive test coverage.
+
+### Fixed
+
+- **Clean Rust build**: Removed all compiler warnings (unused imports, dead code, unused variables)
+- **Version sync**: All packages now at 0.9.31 (including @drift/ai which was at 0.9.28)
+
+### Verified
+
+- **70 Rust unit tests passing**
+- **3,118 TypeScript tests passing** (including 51 E2E regression tests)
+- **All 10 native modules wired and functional**:
+  - `scan`, `parse`, `buildCallGraph` (SQLite storage - 8x faster)
+  - `scanBoundaries`, `analyzeCoupling`, `analyzeTestTopology`
+  - `analyzeErrorHandling`, `analyzeConstants`, `analyzeEnvironment`
+  - `analyzeWrappers`, `analyzeReachabilitySqlite`, `analyzeInverseReachabilitySqlite`
+
 ## [0.9.30] - 2026-01-28
 
 ### 🧪 CIBench v2: Frontier Codebase Intelligence Benchmark
