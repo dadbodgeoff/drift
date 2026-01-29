@@ -76,10 +76,10 @@
   },
   "devDependencies": {
     "@types/cli-progress": "^3.11.6",
-    "@types/node": "^20.10.0",
+    "@types/node": "^25.0.10",
     "@vitest/coverage-v8": "^1.0.0",
     "fast-check": "^3.15.0",
     "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "vitest": "^4.0.18"
   }
 }
