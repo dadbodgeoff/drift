@@ -230,6 +230,8 @@ jobs:
 
       - name: Publish main package
         working-directory: crates/drift-napi
-        run: npm publish --access public
+        run: |
+          # Skip prepublishOnly hook which tries to create GitHub releases
+          npm publish --access public --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
