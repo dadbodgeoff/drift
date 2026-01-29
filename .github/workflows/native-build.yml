@@ -205,10 +205,11 @@ jobs:
         working-directory: crates/drift-napi
         run: |
           VERSION=${{ github.event.inputs.publish }}
-          npm version $VERSION --no-git-tag-version
+          # Use --allow-same-version to avoid error if version already matches
+          npm version $VERSION --no-git-tag-version --allow-same-version
           for dir in npm/*/; do
             cd "$dir"
-            npm version $VERSION --no-git-tag-version
+            npm version $VERSION --no-git-tag-version --allow-same-version
             cd ../..
           done
 
