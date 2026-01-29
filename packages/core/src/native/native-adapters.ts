@@ -50,10 +50,17 @@ interface NativeModule {
 let nativeModule: NativeModule | null = null;
 
 try {
+  // Try the published package name first
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  nativeModule = require('@drift/native');
+  nativeModule = require('driftdetect-native');
 } catch {
-  // Native not available
+  // Fall back to scoped name for local development
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    nativeModule = require('@drift/native');
+  } catch {
+    // Native not available
+  }
 }
 
 // ============================================================================
