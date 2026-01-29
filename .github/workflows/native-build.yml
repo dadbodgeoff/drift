@@ -201,17 +201,20 @@ jobs:
           echo "=== Artifacts ==="
           ls -la npm/*/
 
+      - name: Install dependencies
+        working-directory: crates/drift-napi
+        run: npm install
+
       - name: Update versions
         working-directory: crates/drift-napi
         run: |
           VERSION=${{ github.event.inputs.publish }}
-          # Use --allow-same-version to avoid error if version already matches
-          npm version $VERSION --no-git-tag-version --allow-same-version
+          # Update version in package.json files directly using node to avoid npm version hooks
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = '$VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
           for dir in npm/*/; do
-            cd "$dir"
-            npm version $VERSION --no-git-tag-version --allow-same-version
-            cd ../..
+            node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('${dir}package.json')); pkg.version = '$VERSION'; fs.writeFileSync('${dir}package.json', JSON.stringify(pkg, null, 2));"
           done
+          echo "Updated versions to $VERSION"
 
       - name: Publish platform packages
         working-directory: crates/drift-napi
