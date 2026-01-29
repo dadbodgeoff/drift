@@ -188,6 +188,10 @@ importers:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+    optionalDependencies:
+      driftdetect-native:
+        specifier: ^0.9.31
+        version: 0.9.31
     devDependencies:
       '@types/minimatch':
         specifier: ^5.1.2
@@ -3761,6 +3765,13 @@ packages:
 
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
+
+  /driftdetect-native@0.9.31:
+    resolution: {integrity: sha512-I9BXHF9gkQTdx+RgOR7DqNq+Pw9baoThZwKs4OhzaGgO1ywA8AlRi4ry3G6n5uunwxAwAb6Z5denQo/7jNvHFA==}
+    engines: {node: '>= 18'}
+    requiresBuild: true
+    dev: false
+    optional: true
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
