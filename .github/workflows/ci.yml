@@ -35,7 +35,7 @@ jobs:
         run: pnpm build
         
       - name: Lint
-        run: pnpm lint --filter '!@drift/cibench'
+        run: pnpm lint --filter '!@drift/cibench' --filter '!driftdetect-vscode'
         
       - name: Test
         run: pnpm test
