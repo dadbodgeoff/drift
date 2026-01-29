@@ -33,31 +33,41 @@ jobs:
       fail-fast: false
       matrix:
         settings:
+          # macOS
           - host: macos-latest
             target: x86_64-apple-darwin
             npm-dir: darwin-x64
+            build: npm run build -- --target x86_64-apple-darwin
           - host: macos-latest
             target: aarch64-apple-darwin
             npm-dir: darwin-arm64
+            build: npm run build -- --target aarch64-apple-darwin
+          # Windows
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             npm-dir: win32-x64-msvc
+            build: npm run build -- --target x86_64-pc-windows-msvc
+          # Linux GNU (use napi-cross)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             npm-dir: linux-x64-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: npm run build -- --target x86_64-unknown-linux-gnu --use-napi-cross
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             npm-dir: linux-arm64-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: npm run build -- --target aarch64-unknown-linux-gnu --use-napi-cross
+          # Linux musl (use zig)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             npm-dir: linux-x64-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: npm run build -- --target x86_64-unknown-linux-musl -x
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y musl-tools
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             npm-dir: linux-arm64-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: npm run build -- --target aarch64-unknown-linux-musl -x
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
@@ -75,33 +85,36 @@ jobs:
         with:
           targets: ${{ matrix.settings.target }}
 
+      - name: Setup zig
+        if: contains(matrix.settings.target, 'musl')
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - name: Install cargo-zigbuild
+        if: contains(matrix.settings.target, 'musl')
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
+
+      - name: Run setup
+        if: matrix.settings.setup
+        shell: bash
+        run: ${{ matrix.settings.setup }}
+
       - name: Install dependencies
         working-directory: crates/drift-napi
         run: npm install
 
-      # Native builds (macOS, Windows)
-      - name: Build (native)
-        if: ${{ !matrix.settings.docker }}
+      - name: Build
         working-directory: crates/drift-napi
-        run: npm run build -- --target ${{ matrix.settings.target }}
-
-      # Docker builds (Linux)
-      - name: Build (docker)
-        if: ${{ matrix.settings.docker }}
-        uses: addnab/docker-run-action@v3
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: >-
-            --user 0:0
-            -v ${{ github.workspace }}:/build
-            -w /build/crates/drift-napi
-          run: |
-            npm install
-            npm run build -- --target ${{ matrix.settings.target }}
+        shell: bash
+        run: ${{ matrix.settings.build }}
 
       - name: Move artifact to npm dir
         shell: bash
         run: |
+          mkdir -p crates/drift-napi/npm/${{ matrix.settings.npm-dir }}
           mv crates/drift-napi/*.node crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/ || true
           ls -la crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/
 
@@ -176,7 +189,6 @@ jobs:
       - name: Move artifacts to npm dirs
         run: |
           cd crates/drift-napi
-          # Move each platform binary to its npm directory
           cp ../../artifacts/bindings-x86_64-apple-darwin/*.node npm/darwin-x64/ || true
           cp ../../artifacts/bindings-aarch64-apple-darwin/*.node npm/darwin-arm64/ || true
           cp ../../artifacts/bindings-x86_64-pc-windows-msvc/*.node npm/win32-x64-msvc/ || true
@@ -192,9 +204,7 @@ jobs:
         working-directory: crates/drift-napi
         run: |
           VERSION=${{ github.event.inputs.publish }}
-          # Update main package
           npm version $VERSION --no-git-tag-version
-          # Update platform packages
           for dir in npm/*/; do
             cd "$dir"
             npm version $VERSION --no-git-tag-version
@@ -207,7 +217,7 @@ jobs:
           for dir in npm/*/; do
             echo "Publishing $dir"
             cd "$dir"
-            npm publish --access public --provenance || true
+            npm publish --access public || true
             cd ../..
           done
         env:
@@ -215,6 +225,6 @@ jobs:
 
       - name: Publish main package
         working-directory: crates/drift-napi
-        run: npm publish --access public --provenance
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
