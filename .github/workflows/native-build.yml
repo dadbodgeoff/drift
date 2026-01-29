@@ -56,17 +56,15 @@ jobs:
             target: aarch64-unknown-linux-gnu
             npm-dir: linux-arm64-gnu
             build: npm run build -- --target aarch64-unknown-linux-gnu --use-napi-cross
-          # Linux musl - use zig for cross-compilation (works for musl targets)
+          # Linux musl - also use napi-cross (zig fails with tree-sitter C compilation)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             npm-dir: linux-x64-musl
-            build: npm run build -- --target x86_64-unknown-linux-musl --cross-compile
-            use-zig: true
+            build: npm run build -- --target x86_64-unknown-linux-musl --use-napi-cross
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             npm-dir: linux-arm64-musl
-            build: npm run build -- --target aarch64-unknown-linux-musl --cross-compile
-            use-zig: true
+            build: npm run build -- --target aarch64-unknown-linux-musl --use-napi-cross
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
@@ -83,18 +81,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.settings.target }}
-
-      - name: Setup zig
-        if: matrix.settings.use-zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.13.0
-
-      - name: Install cargo-zigbuild
-        if: matrix.settings.use-zig
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-zigbuild
 
       - name: Install dependencies
         working-directory: crates/drift-napi
