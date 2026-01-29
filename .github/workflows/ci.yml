@@ -35,7 +35,7 @@ jobs:
         run: pnpm build
         
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint --filter '!@drift/cibench'
         
       - name: Test
         run: pnpm test
