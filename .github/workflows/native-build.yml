@@ -214,8 +214,20 @@ jobs:
         working-directory: crates/drift-napi
         run: |
           VERSION=${{ github.event.inputs.publish }}
-          # Update version in package.json files directly using node to avoid npm version hooks
-          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.version = '$VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          # Update version in main package.json AND optionalDependencies
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json'));
+            pkg.version = '$VERSION';
+            // Update all optionalDependencies to the same version
+            if (pkg.optionalDependencies) {
+              for (const dep of Object.keys(pkg.optionalDependencies)) {
+                pkg.optionalDependencies[dep] = '$VERSION';
+              }
+            }
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          # Update version in platform package.json files
           for dir in npm/*/; do
             node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('${dir}package.json')); pkg.version = '$VERSION'; fs.writeFileSync('${dir}package.json', JSON.stringify(pkg, null, 2));"
           done
