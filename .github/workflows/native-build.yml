@@ -1,4 +1,10 @@
-name: Native Build & Publish
+name: Native Build
+
+env:
+  DEBUG: napi:*
+  APP_NAME: drift-native
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
+  CARGO_INCREMENTAL: '1'
 
 on:
   push:
@@ -6,8 +12,6 @@ on:
     paths:
       - 'crates/**'
       - '.github/workflows/native-build.yml'
-    tags:
-      - 'native-v*'
   pull_request:
     branches: [main]
     paths:
@@ -15,13 +19,14 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish to npm'
+        description: 'Publish to npm (use version number like 0.9.33 to publish)'
         required: false
-        default: 'false'
-        type: boolean
+        default: ''
+        type: string
 
-env:
-  CARGO_TERM_COLOR: always
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -33,48 +38,34 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          # macOS
           - host: macos-latest
             target: x86_64-apple-darwin
             build: npm run build -- --target x86_64-apple-darwin
           - host: macos-latest
             target: aarch64-apple-darwin
             build: npm run build -- --target aarch64-apple-darwin
-
-          # Linux GNU
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            build: npm run build -- --target x86_64-unknown-linux-gnu
-
-          # Linux ARM64 GNU
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            build: |
-              sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-              export CC=aarch64-linux-gnu-gcc
-              export CXX=aarch64-linux-gnu-g++
-              npm run build -- --target aarch64-unknown-linux-gnu
-
-          # Linux musl
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            build: npm run build -- --target x86_64-unknown-linux-musl
-
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            build: |
-              sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu
-              npm run build -- --target aarch64-unknown-linux-musl
-
-          # Windows
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             build: npm run build -- --target x86_64-pc-windows-msvc
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build -- --target x86_64-unknown-linux-gnu --use-napi-cross
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            build: npm run build -- --target x86_64-unknown-linux-musl -x
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            build: npm run build -- --target aarch64-unknown-linux-gnu --use-napi-cross
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            build: npm run build -- --target aarch64-unknown-linux-musl -x
 
-    name: Build - ${{ matrix.settings.target }}
+    name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
+
+    defaults:
+      run:
+        working-directory: crates/drift-napi
 
     steps:
       - uses: actions/checkout@v4
@@ -85,37 +76,48 @@ jobs:
           node-version: '20'
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.settings.target }}
 
-      - name: Install musl tools
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+
+      - name: Setup zig
+        uses: mlugg/setup-zig@v2
         if: contains(matrix.settings.target, 'musl')
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+        with:
+          version: 0.13.0
+
+      - name: Install cargo-zigbuild
+        uses: taiki-e/install-action@v2
+        if: contains(matrix.settings.target, 'musl')
+        with:
+          tool: cargo-zigbuild
 
       - name: Install dependencies
-        working-directory: crates/drift-napi
         run: npm install
 
-      - name: Build native module
-        working-directory: crates/drift-napi
-        shell: bash
+      - name: Build
         run: ${{ matrix.settings.build }}
-
-      - name: List built files
-        working-directory: crates/drift-napi
         shell: bash
-        run: ls -la *.node || echo "No .node files found"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: crates/drift-napi/*.node
+          path: crates/drift-napi/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
 
-  test:
-    name: Test bindings
+  test-bindings:
+    name: Test ${{ matrix.settings.target }}
     needs: build
     strategy:
       fail-fast: false
@@ -125,10 +127,10 @@ jobs:
             target: x86_64-apple-darwin
           - host: macos-latest
             target: aarch64-apple-darwin
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
           - host: windows-latest
             target: x86_64-pc-windows-msvc
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
 
     runs-on: ${{ matrix.settings.host }}
 
@@ -146,11 +148,6 @@ jobs:
           name: bindings-${{ matrix.settings.target }}
           path: crates/drift-napi
 
-      - name: List files
-        working-directory: crates/drift-napi
-        shell: bash
-        run: ls -la
-
       - name: Install dependencies
         working-directory: crates/drift-napi
         run: npm install
@@ -161,9 +158,9 @@ jobs:
 
   publish:
     name: Publish to npm
-    needs: [build, test]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/native-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
+    needs: [build, test-bindings]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish != ''
 
     steps:
       - uses: actions/checkout@v4
@@ -174,27 +171,30 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Install dependencies
+        working-directory: crates/drift-napi
+        run: npm install
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Move artifacts to napi directory
+      - name: Move artifacts
         run: |
           cd crates/drift-napi
-          ls -la ../../artifacts/
           for dir in ../../artifacts/bindings-*/; do
+            echo "Copying from $dir"
             cp "$dir"*.node . 2>/dev/null || true
           done
           ls -la *.node
 
-      - name: Install dependencies
+      - name: Update version
         working-directory: crates/drift-napi
-        run: npm install
+        run: npm version ${{ github.event.inputs.publish }} --no-git-tag-version
 
       - name: Publish
         working-directory: crates/drift-napi
-        run: |
-          npm publish --access public --provenance
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
