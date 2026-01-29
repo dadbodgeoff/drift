@@ -100,11 +100,11 @@ jobs:
         shell: bash
         run: npm run build -- --target ${{ matrix.settings.target }}
 
-      - name: Build (zig)
+      - name: Build (cross-compile)
         if: matrix.settings.use-zig
         working-directory: crates/drift-napi
         shell: bash
-        run: npm run build -- --target ${{ matrix.settings.target }} --zig
+        run: npm run build -- --target ${{ matrix.settings.target }} --use-napi-cross
 
       - name: Move artifact to npm dir
         shell: bash
