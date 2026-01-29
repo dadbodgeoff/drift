@@ -14,6 +14,8 @@ import chalk from 'chalk';
 import {
   createEnvScanner,
   createEnvStore,
+  isNativeAvailable,
+  analyzeEnvironmentWithFallback,
   type EnvSensitivity,
 } from 'driftdetect-core';
 
@@ -72,6 +74,57 @@ async function scanAction(options: EnvOptions): Promise<void> {
     console.log();
   }
 
+  // Try native analyzer first (much faster)
+  if (isNativeAvailable()) {
+    try {
+      const files = await getSourceFiles(rootDir);
+      const nativeResult = await analyzeEnvironmentWithFallback(rootDir, files);
+      
+      // Use TypeScript scanner to save results (handles format conversion)
+      const scanner = createEnvScanner({ rootDir, verbose });
+      const tsResult = await scanner.scanFiles(files);
+      
+      const store = createEnvStore({ rootDir });
+      await store.initialize();
+      await store.updateAccessMap(tsResult.accessMap);
+
+      // JSON output
+      if (format === 'json') {
+        console.log(JSON.stringify({
+          stats: nativeResult.stats,
+          variables: nativeResult.variables.length,
+          secrets: nativeResult.stats.secretsCount,
+          credentials: nativeResult.stats.credentialsCount,
+          native: true,
+        }, null, 2));
+        return;
+      }
+
+      // Text output
+      console.log(chalk.green('✓ Scan complete (native)'));
+      console.log();
+      console.log(`Files scanned: ${chalk.cyan(nativeResult.stats.filesAnalyzed)}`);
+      console.log(`Variables found: ${chalk.cyan(nativeResult.stats.uniqueVariables)}`);
+      console.log(`Access points: ${chalk.cyan(nativeResult.stats.totalAccesses)}`);
+      console.log(`Secrets detected: ${chalk.yellow(nativeResult.stats.secretsCount)}`);
+      console.log(`Duration: ${chalk.gray(`${nativeResult.stats.durationMs}ms`)}`);
+      console.log();
+
+      if (nativeResult.stats.secretsCount > 0) {
+        console.log(chalk.yellow(`⚠️  ${nativeResult.stats.secretsCount} secret variables detected`));
+        console.log(chalk.gray("Run 'drift env secrets' to see details"));
+        console.log();
+      }
+      return;
+    } catch (nativeError) {
+      if (verbose) {
+        console.log(chalk.gray(`Native analyzer failed, using TypeScript fallback: ${(nativeError as Error).message}`));
+      }
+      // Fall through to TypeScript implementation
+    }
+  }
+
+  // TypeScript fallback
   const scanner = createEnvScanner({ rootDir, verbose });
   const result = await scanner.scanDirectory();
 
@@ -106,6 +159,42 @@ async function scanAction(options: EnvOptions): Promise<void> {
     console.log(chalk.gray("Run 'drift env secrets' to see details"));
     console.log();
   }
+}
+
+/**
+ * Get source files for scanning
+ */
+async function getSourceFiles(rootDir: string): Promise<string[]> {
+  const files: string[] = [];
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.go'];
+  const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', '.drift', 'vendor', 'target', '.venv', 'venv'];
+  
+  async function walk(dir: string, relativePath: string = ''): Promise<void> {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+        
+        if (entry.isDirectory()) {
+          if (!ignoreDirs.includes(entry.name) && !entry.name.startsWith('.')) {
+            await walk(fullPath, relPath);
+          }
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name);
+          if (extensions.includes(ext)) {
+            files.push(relPath);
+          }
+        }
+      }
+    } catch {
+      // Skip unreadable directories
+    }
+  }
+  
+  await walk(rootDir);
+  return files;
 }
 
 /**

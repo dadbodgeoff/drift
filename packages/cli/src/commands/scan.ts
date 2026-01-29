@@ -22,6 +22,15 @@ import {
   createTelemetryClient,
   createTestTopologyAnalyzer,
   createCallGraphAnalyzer,
+  getDefaultIgnorePatterns,
+  mergeIgnorePatterns,
+  // Native adapters with TypeScript fallback
+  isNativeAvailable,
+  analyzeTestTopologyWithFallback,
+  scanBoundariesWithFallback,
+  analyzeConstantsWithFallback,
+  buildCallGraph,
+  ConstantStore,
   type ScanOptions,
   type Pattern,
   type PatternCategory,
@@ -29,6 +38,7 @@ import {
   type ConfidenceInfo,
   type DetectorConfig,
   type TelemetryConfig,
+  type BuildConfig,
 } from 'driftdetect-core';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
@@ -57,6 +67,10 @@ export interface ScanCommandOptions {
   boundaries?: boolean;
   /** Build test topology during scan */
   testTopology?: boolean;
+  /** Extract constants during scan */
+  constants?: boolean;
+  /** Build call graph during scan */
+  callgraph?: boolean;
   /** Scan a specific registered project by name */
   project?: string;
   /** Scan all registered projects */
@@ -226,97 +240,19 @@ async function isDriftInitialized(rootDir: string): Promise<boolean> {
 
 /**
  * Load ignore patterns from .driftignore
- * Includes ecosystem-aware defaults for enterprise codebases
+ * Uses enterprise-grade defaults from @driftdetect/core
  */
 async function loadIgnorePatterns(rootDir: string): Promise<string[]> {
-  const defaultIgnores = [
-    // Universal
-    'node_modules/**',
-    '.git/**',
-    'dist/**',
-    'build/**',
-    'coverage/**',
-    '.drift/**',
-    
-    // Python
-    '__pycache__/**',
-    '.venv/**',
-    'venv/**',
-    '.eggs/**',
-    '*.egg-info/**',
-    '.tox/**',
-    '.mypy_cache/**',
-    '.pytest_cache/**',
-    
-    // .NET / C# / MAUI / Blazor
-    'bin/**',
-    'obj/**',
-    'packages/**',
-    '.vs/**',
-    '*.dll',
-    '*.exe',
-    '*.pdb',
-    '*.nupkg',
-    'wwwroot/lib/**',
-    
-    // Java / Spring / Gradle / Maven
-    'target/**',
-    '.gradle/**',
-    '.m2/**',
-    '*.class',
-    '*.jar',
-    '*.war',
-    
-    // Go
-    'vendor/**',
-    
-    // Rust (target already covered above)
-    
-    // C++ / CMake
-    'cmake-build-*/**',
-    'out/**',
-    '*.o',
-    '*.obj',
-    '*.a',
-    '*.lib',
-    '*.so',
-    '*.dylib',
-    
-    // Node extras
-    '.npm/**',
-    '.yarn/**',
-    '.pnpm-store/**',
-    '.next/**',
-    '.nuxt/**',
-    
-    // IDE / Editor
-    '.idea/**',
-    '.vscode/**',
-    '*.swp',
-    '*.swo',
-    
-    // Archives / binaries (common in enterprise)
-    '*.zip',
-    '*.rar',
-    '*.7z',
-    '*.tar',
-    '*.gz',
-    
-    // Logs
-    '*.log',
-    'logs/**',
-  ];
-
   try {
     const driftignorePath = path.join(rootDir, '.driftignore');
     const content = await fs.readFile(driftignorePath, 'utf-8');
-    const patterns = content
+    const userPatterns = content
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'));
-    return [...defaultIgnores, ...patterns];
+    return mergeIgnorePatterns(userPatterns);
   } catch {
-    return defaultIgnores;
+    return getDefaultIgnorePatterns();
   }
 }
 
@@ -1226,69 +1162,207 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     const boundarySpinner = createSpinner('Scanning for data boundaries...');
     boundarySpinner.start();
     try {
-      const boundaryScanner = createBoundaryScanner({ rootDir, verbose });
-      await boundaryScanner.initialize();
-      const boundaryResult = await boundaryScanner.scanFiles(files);
-      
-      // Store result for materializer
-      scanBoundaryResult = boundaryResult;
+      // Try native analyzer first (much faster)
+      if (isNativeAvailable()) {
+        try {
+          const nativeResult = await scanBoundariesWithFallback(rootDir, files);
+          
+          // Convert native result to BoundaryScanResult format
+          // Note: Native types may differ slightly, so we convert carefully
+          const accessPointsMap: Record<string, import('driftdetect-core').DataAccessPoint> = {};
+          for (const ap of nativeResult.accessPoints) {
+            const id = `${ap.file}:${ap.line}:0:${ap.table}`;
+            accessPointsMap[id] = {
+              id,
+              table: ap.table,
+              fields: ap.fields,
+              operation: ap.operation as 'read' | 'write' | 'delete',
+              file: ap.file,
+              line: ap.line,
+              column: 0,
+              context: '',
+              isRawSql: false,
+              confidence: ap.confidence,
+            };
+          }
+          
+          const sensitiveFields: import('driftdetect-core').SensitiveField[] = nativeResult.sensitiveFields.map(sf => ({
+            field: sf.field,
+            table: sf.table ?? null,
+            sensitivityType: sf.sensitivityType as 'pii' | 'credentials' | 'financial' | 'health',
+            file: sf.file,
+            line: sf.line,
+            confidence: sf.confidence,
+          }));
+          
+          const models: import('driftdetect-core').ORMModel[] = nativeResult.models.map(m => ({
+            name: m.name,
+            tableName: m.tableName,
+            fields: m.fields,
+            file: m.file,
+            line: m.line,
+            framework: m.framework as import('driftdetect-core').ORMFramework,
+            confidence: m.confidence,
+          }));
+          
+          // Build tables map from access points
+          const tablesMap: Record<string, import('driftdetect-core').TableAccessInfo> = {};
+          for (const ap of nativeResult.accessPoints) {
+            let tableInfo = tablesMap[ap.table];
+            if (!tableInfo) {
+              tableInfo = {
+                name: ap.table,
+                model: null,
+                fields: [],
+                sensitiveFields: [],
+                accessedBy: [],
+              };
+              tablesMap[ap.table] = tableInfo;
+            }
+            const apId = `${ap.file}:${ap.line}:0:${ap.table}`;
+            const fullAp = accessPointsMap[apId];
+            if (fullAp) {
+              tableInfo.accessedBy.push(fullAp);
+            }
+          }
+          
+          scanBoundaryResult = {
+            accessMap: {
+              version: '1.0',
+              generatedAt: new Date().toISOString(),
+              projectRoot: rootDir,
+              tables: tablesMap,
+              accessPoints: accessPointsMap,
+              sensitiveFields,
+              models,
+              stats: {
+                totalTables: Object.keys(tablesMap).length,
+                totalAccessPoints: nativeResult.accessPoints.length,
+                totalSensitiveFields: nativeResult.sensitiveFields.length,
+                totalModels: nativeResult.models.length,
+              },
+            },
+            violations: [],
+            stats: {
+              filesScanned: nativeResult.filesScanned,
+              tablesFound: Object.keys(tablesMap).length,
+              accessPointsFound: nativeResult.accessPoints.length,
+              sensitiveFieldsFound: nativeResult.sensitiveFields.length,
+              violationsFound: 0,
+              scanDurationMs: nativeResult.durationMs,
+            },
+          };
 
-      boundarySpinner.succeed(
-        `Found ${boundaryResult.stats.tablesFound} tables, ` +
-        `${boundaryResult.stats.accessPointsFound} access points`
-      );
+          boundarySpinner.succeed(
+            `Found ${scanBoundaryResult.stats.tablesFound} tables, ` +
+            `${scanBoundaryResult.stats.accessPointsFound} access points (native)`
+          );
 
-      // Show sensitive field access warnings
-      if (boundaryResult.stats.sensitiveFieldsFound > 0) {
-        console.log();
-        console.log(chalk.bold.yellow(`⚠️  ${boundaryResult.stats.sensitiveFieldsFound} Sensitive Field Access Detected:`));
+          // Show sensitive field access warnings
+          if (scanBoundaryResult.stats.sensitiveFieldsFound > 0) {
+            console.log();
+            console.log(chalk.bold.yellow(`⚠️  ${scanBoundaryResult.stats.sensitiveFieldsFound} Sensitive Field Access Detected:`));
+            
+            const sensFields = scanBoundaryResult.accessMap.sensitiveFields.slice(0, 5);
+            for (const field of sensFields) {
+              const fieldName = field.table ? `${field.table}.${field.field}` : field.field;
+              console.log(chalk.yellow(`    ${fieldName} (${field.sensitivityType}) - ${field.file}:${field.line}`));
+            }
+            if (scanBoundaryResult.accessMap.sensitiveFields.length > 5) {
+              console.log(chalk.gray(`    ... and ${scanBoundaryResult.accessMap.sensitiveFields.length - 5} more`));
+            }
+          }
+
+          console.log();
+          console.log(chalk.gray('View data boundaries:'));
+          console.log(chalk.cyan('  drift boundaries'));
+          console.log(chalk.cyan('  drift boundaries table <name>'));
+
+        } catch (nativeError) {
+          if (verbose) {
+            boundarySpinner.text(chalk.gray(`Native boundary scanner failed, using TypeScript fallback`));
+          }
+          // Fall through to TypeScript implementation
+          throw nativeError; // Re-throw to trigger fallback
+        }
+      } else {
+        // TypeScript fallback
+        const boundaryScanner = createBoundaryScanner({ rootDir, verbose });
+        await boundaryScanner.initialize();
+        const boundaryResult = await boundaryScanner.scanFiles(files);
         
-        const sensitiveFields = boundaryResult.accessMap.sensitiveFields.slice(0, 5);
-        for (const field of sensitiveFields) {
-          const fieldName = field.table ? `${field.table}.${field.field}` : field.field;
-          console.log(chalk.yellow(`    ${fieldName} (${field.sensitivityType}) - ${field.file}:${field.line}`));
-        }
-        if (boundaryResult.accessMap.sensitiveFields.length > 5) {
-          console.log(chalk.gray(`    ... and ${boundaryResult.accessMap.sensitiveFields.length - 5} more`));
-        }
-      }
+        // Store result for materializer
+        scanBoundaryResult = boundaryResult;
 
-      // Check violations if rules exist
-      if (boundaryResult.stats.violationsFound > 0) {
+        boundarySpinner.succeed(
+          `Found ${boundaryResult.stats.tablesFound} tables, ` +
+          `${boundaryResult.stats.accessPointsFound} access points`
+        );
+
+        // Show sensitive field access warnings
+        if (boundaryResult.stats.sensitiveFieldsFound > 0) {
+          console.log();
+          console.log(chalk.bold.yellow(`⚠️  ${boundaryResult.stats.sensitiveFieldsFound} Sensitive Field Access Detected:`));
+          
+          const sensitiveFields = boundaryResult.accessMap.sensitiveFields.slice(0, 5);
+          for (const field of sensitiveFields) {
+            const fieldName = field.table ? `${field.table}.${field.field}` : field.field;
+            console.log(chalk.yellow(`    ${fieldName} (${field.sensitivityType}) - ${field.file}:${field.line}`));
+          }
+          if (boundaryResult.accessMap.sensitiveFields.length > 5) {
+            console.log(chalk.gray(`    ... and ${boundaryResult.accessMap.sensitiveFields.length - 5} more`));
+          }
+        }
+
+        // Check violations if rules exist
+        if (boundaryResult.stats.violationsFound > 0) {
+          console.log();
+          console.log(chalk.bold.red(`🚫 ${boundaryResult.stats.violationsFound} Boundary Violations:`));
+          
+          for (const violation of boundaryResult.violations.slice(0, 5)) {
+            const icon = violation.severity === 'error' ? '🔴' : violation.severity === 'warning' ? '🟡' : '🔵';
+            console.log(chalk.red(`    ${icon} ${violation.file}:${violation.line} - ${violation.message}`));
+          }
+          if (boundaryResult.violations.length > 5) {
+            console.log(chalk.gray(`    ... and ${boundaryResult.violations.length - 5} more`));
+          }
+        }
+
+        // Show top accessed tables in verbose mode
+        if (verbose && boundaryResult.stats.tablesFound > 0) {
+          console.log();
+          console.log(chalk.gray('  Top accessed tables:'));
+          const tableEntries = Object.entries(boundaryResult.accessMap.tables)
+            .map(([name, info]) => ({ name, count: info.accessedBy.length }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+          for (const table of tableEntries) {
+            console.log(chalk.gray(`    ${table.name}: ${table.count} access points`));
+          }
+        }
+
         console.log();
-        console.log(chalk.bold.red(`🚫 ${boundaryResult.stats.violationsFound} Boundary Violations:`));
-        
-        for (const violation of boundaryResult.violations.slice(0, 5)) {
-          const icon = violation.severity === 'error' ? '🔴' : violation.severity === 'warning' ? '🟡' : '🔵';
-          console.log(chalk.red(`    ${icon} ${violation.file}:${violation.line} - ${violation.message}`));
-        }
-        if (boundaryResult.violations.length > 5) {
-          console.log(chalk.gray(`    ... and ${boundaryResult.violations.length - 5} more`));
-        }
+        console.log(chalk.gray('View data boundaries:'));
+        console.log(chalk.cyan('  drift boundaries'));
+        console.log(chalk.cyan('  drift boundaries table <name>'));
       }
-
-      // Show top accessed tables in verbose mode
-      if (verbose && boundaryResult.stats.tablesFound > 0) {
-        console.log();
-        console.log(chalk.gray('  Top accessed tables:'));
-        const tableEntries = Object.entries(boundaryResult.accessMap.tables)
-          .map(([name, info]) => ({ name, count: info.accessedBy.length }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-        for (const table of tableEntries) {
-          console.log(chalk.gray(`    ${table.name}: ${table.count} access points`));
-        }
-      }
-
-      console.log();
-      console.log(chalk.gray('View data boundaries:'));
-      console.log(chalk.cyan('  drift boundaries'));
-      console.log(chalk.cyan('  drift boundaries table <name>'));
-
     } catch (error) {
-      boundarySpinner.fail('Boundary scanning failed');
-      if (verbose) {
-        console.error(chalk.red((error as Error).message));
+      // If native failed, try TypeScript fallback
+      try {
+        const boundaryScanner = createBoundaryScanner({ rootDir, verbose });
+        await boundaryScanner.initialize();
+        const boundaryResult = await boundaryScanner.scanFiles(files);
+        scanBoundaryResult = boundaryResult;
+
+        boundarySpinner.succeed(
+          `Found ${boundaryResult.stats.tablesFound} tables, ` +
+          `${boundaryResult.stats.accessPointsFound} access points`
+        );
+      } catch (fallbackError) {
+        boundarySpinner.fail('Boundary scanning failed');
+        if (verbose) {
+          console.error(chalk.red((fallbackError as Error).message));
+        }
       }
     }
   }
@@ -1300,94 +1374,265 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     testTopologySpinner.start();
 
     try {
-      // Initialize test topology analyzer
-      const testAnalyzer = createTestTopologyAnalyzer({});
+      // Try native analyzer first (much faster)
+      if (isNativeAvailable()) {
+        try {
+          const nativeResult = await analyzeTestTopologyWithFallback(rootDir, files);
+          
+          // Save results
+          const testTopologyDir = path.join(rootDir, DRIFT_DIR, 'test-topology');
+          await fs.mkdir(testTopologyDir, { recursive: true });
+          
+          // Convert native result to summary format
+          const summary = {
+            testFiles: nativeResult.testFiles.length,
+            testCases: nativeResult.totalTests,
+            coveredFunctions: nativeResult.coverage.length,
+            totalFunctions: nativeResult.coverage.length + nativeResult.uncoveredFiles.length,
+            functionCoveragePercent: nativeResult.coverage.length > 0 
+              ? Math.round((nativeResult.coverage.length / (nativeResult.coverage.length + nativeResult.uncoveredFiles.length)) * 100)
+              : 0,
+            coveragePercent: 0,
+            avgQualityScore: 0,
+            byFramework: {} as Record<string, number>,
+          };
+          
+          // Count by framework
+          for (const tf of nativeResult.testFiles) {
+            summary.byFramework[tf.framework] = (summary.byFramework[tf.framework] ?? 0) + tf.testCount;
+          }
+          
+          const mockAnalysis = {
+            totalMocks: nativeResult.testFiles.reduce((sum, tf) => sum + tf.mockCount, 0),
+            externalMocks: 0,
+            internalMocks: 0,
+            externalPercent: 0,
+            internalPercent: 0,
+            avgMockRatio: 0,
+            highMockRatioTests: [] as string[],
+            topMockedModules: [] as string[],
+          };
+          
+          await fs.writeFile(
+            path.join(testTopologyDir, 'summary.json'),
+            JSON.stringify({ summary, mockAnalysis, generatedAt: new Date().toISOString() }, null, 2)
+          );
 
-      // Try to load call graph for transitive analysis
-      try {
-        const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
-        await callGraphAnalyzer.initialize();
-        const graph = callGraphAnalyzer.getGraph();
-        if (graph) {
-          testAnalyzer.setCallGraph(graph);
+          testTopologySpinner.succeed(
+            `Built test topology (native): ${summary.testFiles} test files, ${summary.testCases} tests`
+          );
+
+          if (verbose) {
+            console.log(chalk.gray(`  Native analyzer used for faster analysis`));
+            console.log(chalk.gray(`  Files analyzed: ${nativeResult.filesAnalyzed}`));
+          }
+          
+        } catch (nativeError) {
+          // Native failed, fall through to TypeScript implementation
+          if (verbose) {
+            console.log(chalk.gray(`  Native analyzer failed, using TypeScript fallback`));
+          }
+          await runTypeScriptTestTopology(rootDir, files, verbose, testTopologySpinner);
         }
-      } catch {
-        // No call graph available, continue with direct analysis
-      }
-
-      // Find test files from the already-discovered files
-      const testFilePatterns = [
-        /\.test\.[jt]sx?$/,
-        /\.spec\.[jt]sx?$/,
-        /_test\.py$/,
-        /test_.*\.py$/,
-        /Test\.java$/,
-        /Tests\.java$/,
-        /Test\.cs$/,
-        /Tests\.cs$/,
-        /Test\.php$/,
-      ];
-      
-      const testFiles = files.filter(f => testFilePatterns.some(p => p.test(f)));
-      
-      if (testFiles.length === 0) {
-        testTopologySpinner.succeed('No test files found');
       } else {
-        // Extract tests from each file
-        let extractedCount = 0;
-        for (const testFile of testFiles) {
-          try {
-            const content = await fs.readFile(path.join(rootDir, testFile), 'utf-8');
-            const extraction = testAnalyzer.extractFromFile(content, testFile);
-            if (extraction) extractedCount++;
-          } catch {
-            // Skip files that can't be read
-          }
-        }
-
-        // Build mappings
-        testAnalyzer.buildMappings();
-
-        // Get results
-        const summary = testAnalyzer.getSummary();
-        const mockAnalysis = testAnalyzer.analyzeMocks();
-
-        // Save results
-        const testTopologyDir = path.join(rootDir, DRIFT_DIR, 'test-topology');
-        await fs.mkdir(testTopologyDir, { recursive: true });
-        await fs.writeFile(
-          path.join(testTopologyDir, 'summary.json'),
-          JSON.stringify({ summary, mockAnalysis, generatedAt: new Date().toISOString() }, null, 2)
-        );
-
-        testTopologySpinner.succeed(
-          `Built test topology: ${summary.testFiles} test files, ${summary.testCases} tests, ` +
-          `${summary.coveredFunctions}/${summary.totalFunctions} functions covered`
-        );
-
-        if (verbose) {
-          console.log(chalk.gray(`  Test files extracted: ${extractedCount}/${testFiles.length}`));
-          console.log(chalk.gray(`  Coverage: ${summary.coveragePercent}%`));
-          if (mockAnalysis.totalMocks > 0) {
-            console.log(chalk.gray(`  Mocks: ${mockAnalysis.totalMocks} (${mockAnalysis.externalPercent}% external)`));
-          }
-        }
-
-        // Show uncovered functions warning
-        if (summary.totalFunctions > 0 && summary.functionCoveragePercent < 50) {
-          console.log();
-          console.log(chalk.yellow(`⚠️  Low test coverage: ${summary.functionCoveragePercent}% of functions covered`));
-          console.log(chalk.gray('  Run `drift test-topology uncovered` to find untested code'));
-        }
-
-        console.log();
-        console.log(chalk.gray('View test topology:'));
-        console.log(chalk.cyan('  drift test-topology status'));
-        console.log(chalk.cyan('  drift test-topology uncovered'));
+        // Native not available, use TypeScript
+        await runTypeScriptTestTopology(rootDir, files, verbose, testTopologySpinner);
       }
 
     } catch (error) {
       testTopologySpinner.fail('Test topology build failed');
+      if (verbose) {
+        console.error(chalk.red((error as Error).message));
+      }
+    }
+  }
+
+  // Constants extraction (opt-in)
+  if (options.constants) {
+    console.log();
+    const constantsSpinner = createSpinner('Extracting constants...');
+    constantsSpinner.start();
+
+    try {
+      const constantsResult = await analyzeConstantsWithFallback(rootDir, files);
+      
+      // Save to ConstantStore
+      const constantStore = new ConstantStore({ rootDir });
+      await constantStore.initialize();
+      
+      // Group constants by file and save
+      const constantsByFile = new Map<string, typeof constantsResult.constants>();
+      for (const constant of constantsResult.constants) {
+        const existing = constantsByFile.get(constant.file) ?? [];
+        existing.push(constant);
+        constantsByFile.set(constant.file, existing);
+      }
+      
+      // Map native language to ConstantLanguage
+      const mapLanguage = (lang: string): 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust' | 'cpp' => {
+        const validLangs = ['typescript', 'javascript', 'python', 'java', 'csharp', 'php', 'go', 'rust', 'cpp'];
+        return validLangs.includes(lang) ? lang as 'typescript' | 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'go' | 'rust' | 'cpp' : 'typescript';
+      };
+      
+      // Map native kind to ConstantKind
+      const mapKind = (kind: string): 'primitive' | 'enum' | 'enum_member' | 'object' | 'array' | 'computed' | 'class_constant' | 'interface_constant' => {
+        const kindMap: Record<string, 'primitive' | 'enum' | 'enum_member' | 'object' | 'array' | 'computed' | 'class_constant' | 'interface_constant'> = {
+          'const': 'primitive',
+          'let': 'primitive',
+          'var': 'primitive',
+          'readonly': 'primitive',
+          'static': 'class_constant',
+          'final': 'class_constant',
+          'define': 'primitive',
+          'enum_member': 'enum_member',
+          'primitive': 'primitive',
+          'enum': 'enum',
+          'object': 'object',
+          'array': 'array',
+          'computed': 'computed',
+          'class_constant': 'class_constant',
+          'interface_constant': 'interface_constant',
+        };
+        return kindMap[kind] ?? 'primitive';
+      };
+      
+      // Map native category to ConstantCategory
+      const mapCategory = (cat: string): 'config' | 'api' | 'status' | 'error' | 'feature_flag' | 'limit' | 'regex' | 'path' | 'env' | 'security' | 'uncategorized' => {
+        const validCats = ['config', 'api', 'status', 'error', 'feature_flag', 'limit', 'regex', 'path', 'env', 'security', 'uncategorized'];
+        return validCats.includes(cat) ? cat as 'config' | 'api' | 'status' | 'error' | 'feature_flag' | 'limit' | 'regex' | 'path' | 'env' | 'security' | 'uncategorized' : 'uncategorized';
+      };
+      
+      // Save each file's constants
+      for (const [file, fileConstants] of constantsByFile) {
+        const firstLang = fileConstants[0]?.language;
+        await constantStore.saveFileResult({
+          file,
+          language: mapLanguage(firstLang ?? 'typescript'),
+          constants: fileConstants.map(c => ({
+            id: `${file}:${c.line}:${c.name}`,
+            name: c.name,
+            qualifiedName: c.name,
+            file,
+            line: c.line,
+            column: 0,
+            endLine: c.line,
+            language: mapLanguage(c.language),
+            kind: mapKind(c.declarationType ?? 'const'),
+            category: mapCategory(c.category),
+            value: c.value,
+            isExported: c.isExported,
+            decorators: [],
+            modifiers: [],
+            confidence: 0.9,
+          })),
+          enums: [],
+          references: [],
+          errors: [],
+          quality: {
+            method: 'regex',
+            confidence: 0.9,
+            coveragePercent: 100,
+            itemsExtracted: fileConstants.length,
+            parseErrors: 0,
+            warnings: [],
+            usedFallback: !isNativeAvailable(),
+            extractionTimeMs: constantsResult.stats.durationMs,
+          },
+        });
+      }
+      
+      // Rebuild index
+      await constantStore.rebuildIndex();
+      
+      const nativeIndicator = isNativeAvailable() ? ' (native)' : '';
+      constantsSpinner.succeed(
+        `Extracted ${constantsResult.stats.totalConstants} constants from ${constantsResult.stats.filesAnalyzed} files${nativeIndicator}`
+      );
+      
+      // Show secrets warning if any found
+      if (constantsResult.secrets.length > 0) {
+        console.log();
+        console.log(chalk.bold.red(`🔐 ${constantsResult.secrets.length} Potential Hardcoded Secrets Detected!`));
+        
+        const critical = constantsResult.secrets.filter(s => s.severity === 'critical' || s.severity === 'high');
+        if (critical.length > 0) {
+          for (const secret of critical.slice(0, 3)) {
+            console.log(chalk.red(`    ${secret.name} (${secret.secretType}) - ${secret.file}:${secret.line}`));
+          }
+          if (critical.length > 3) {
+            console.log(chalk.gray(`    ... and ${critical.length - 3} more`));
+          }
+        }
+        
+        console.log();
+        console.log(chalk.yellow("Run 'drift constants secrets' to review all potential secrets"));
+      }
+      
+      if (verbose) {
+        console.log(chalk.gray(`  Duration: ${constantsResult.stats.durationMs}ms`));
+        console.log(chalk.gray(`  Exported: ${constantsResult.stats.exportedCount}`));
+      }
+      
+      console.log();
+      console.log(chalk.gray('View constants:'));
+      console.log(chalk.cyan('  drift constants'));
+      console.log(chalk.cyan('  drift constants list'));
+      
+    } catch (error) {
+      constantsSpinner.fail('Constants extraction failed');
+      if (verbose) {
+        console.error(chalk.red((error as Error).message));
+      }
+    }
+  }
+
+  // Call graph building (opt-in) - uses native Rust for memory safety
+  if (options.callgraph) {
+    console.log();
+    const callgraphSpinner = createSpinner('Building call graph...');
+    callgraphSpinner.start();
+
+    try {
+      if (isNativeAvailable()) {
+        const callgraphConfig: BuildConfig = {
+          root: rootDir,
+          patterns: [
+            '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx',
+            '**/*.py', '**/*.cs', '**/*.java', '**/*.php',
+          ],
+          resolutionBatchSize: 50,
+        };
+
+        const callgraphResult = await buildCallGraph(callgraphConfig);
+
+        callgraphSpinner.succeed(
+          `Built call graph (native): ${callgraphResult.filesProcessed} files, ` +
+          `${callgraphResult.totalFunctions.toLocaleString()} functions, ` +
+          `${callgraphResult.resolvedCalls.toLocaleString()}/${callgraphResult.totalCalls.toLocaleString()} calls resolved`
+        );
+
+        if (verbose) {
+          console.log(chalk.gray(`  Entry points: ${callgraphResult.entryPoints}`));
+          console.log(chalk.gray(`  Data accessors: ${callgraphResult.dataAccessors}`));
+          console.log(chalk.gray(`  Resolution rate: ${Math.round(callgraphResult.resolutionRate * 100)}%`));
+          console.log(chalk.gray(`  Duration: ${(callgraphResult.durationMs / 1000).toFixed(2)}s`));
+        }
+
+        if (callgraphResult.errors.length > 0 && verbose) {
+          console.log(chalk.yellow(`  ⚠️  ${callgraphResult.errors.length} files had parse errors`));
+        }
+
+        console.log();
+        console.log(chalk.gray('Query the call graph:'));
+        console.log(chalk.cyan('  drift callgraph status'));
+        console.log(chalk.cyan('  drift callgraph reach <function>'));
+        console.log(chalk.cyan('  drift callgraph inverse <table>'));
+      } else {
+        callgraphSpinner.fail('Call graph requires native module (not available)');
+        console.log(chalk.gray('  Run `drift callgraph build` for TypeScript fallback (may OOM on large codebases)'));
+      }
+    } catch (error) {
+      callgraphSpinner.fail('Call graph build failed');
       if (verbose) {
         console.error(chalk.red((error as Error).message));
       }
@@ -1466,6 +1711,9 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     const discovered = store.getDiscovered();
     const highConfidence = discovered.filter((p) => p.confidence.level === 'high');
     
+    // Count auto-approve eligible (≥90% confidence)
+    const autoApproveEligible = discovered.filter((p) => p.confidence.score >= 0.90).length;
+    
     if (highConfidence.length > 0) {
       console.log(chalk.bold('High Confidence Patterns (ready for approval):'));
       console.log();
@@ -1487,12 +1735,127 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       console.log();
     }
 
-    console.log(chalk.gray('To review and approve patterns:'));
-    console.log(chalk.cyan('  drift status'));
-    console.log(chalk.cyan('  drift approve <pattern-id>'));
+    // Post-scan summary with agent assistance prompt
+    console.log(chalk.bold('📊 Pattern Review'));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(`  Patterns discovered:     ${chalk.cyan(stats.byStatus.discovered)}`);
+    console.log(`  Auto-approve eligible:   ${chalk.green(autoApproveEligible)} (≥90% confidence)`);
+    console.log(`  Needs review:            ${chalk.yellow(stats.byStatus.discovered - autoApproveEligible)}`);
+    console.log();
+    
+    console.log(chalk.gray('Quick actions:'));
+    if (autoApproveEligible > 0) {
+      console.log(chalk.cyan(`  drift approve --auto`) + chalk.gray(`     - Auto-approve ${autoApproveEligible} high-confidence patterns`));
+    }
+    console.log(chalk.cyan(`  drift audit --review`) + chalk.gray(`     - Generate detailed review report`));
+    console.log(chalk.cyan(`  drift approve <id>`) + chalk.gray(`       - Approve a specific pattern`));
+    console.log();
+    
+    console.log(chalk.gray('For agent assistance, copy this to your AI assistant:'));
+    console.log(chalk.cyan('┌─────────────────────────────────────────────────────────────┐'));
+    console.log(chalk.cyan('│') + ' Run `drift audit --review` and approve high-confidence     ' + chalk.cyan('│'));
+    console.log(chalk.cyan('│') + ' patterns that match codebase conventions. Flag any that    ' + chalk.cyan('│'));
+    console.log(chalk.cyan('│') + ' look like false positives or duplicates.                   ' + chalk.cyan('│'));
+    console.log(chalk.cyan('└─────────────────────────────────────────────────────────────┘'));
   }
 
   console.log();
+}
+
+/**
+ * Run TypeScript test topology analyzer (fallback when native is unavailable)
+ */
+async function runTypeScriptTestTopology(
+  rootDir: string,
+  files: string[],
+  verbose: boolean,
+  spinner: ReturnType<typeof createSpinner>
+): Promise<void> {
+  // Initialize test topology analyzer
+  const testAnalyzer = createTestTopologyAnalyzer({});
+
+  // Try to load call graph for transitive analysis
+  try {
+    const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
+    await callGraphAnalyzer.initialize();
+    const graph = callGraphAnalyzer.getGraph();
+    if (graph) {
+      testAnalyzer.setCallGraph(graph);
+    }
+  } catch {
+    // No call graph available, continue with direct analysis
+  }
+
+  // Find test files from the already-discovered files
+  const testFilePatterns = [
+    /\.test\.[jt]sx?$/,
+    /\.spec\.[jt]sx?$/,
+    /_test\.py$/,
+    /test_.*\.py$/,
+    /Test\.java$/,
+    /Tests\.java$/,
+    /Test\.cs$/,
+    /Tests\.cs$/,
+    /Test\.php$/,
+  ];
+  
+  const testFiles = files.filter(f => testFilePatterns.some(p => p.test(f)));
+  
+  if (testFiles.length === 0) {
+    spinner.succeed('No test files found');
+  } else {
+    // Extract tests from each file
+    let extractedCount = 0;
+    for (const testFile of testFiles) {
+      try {
+        const content = await fs.readFile(path.join(rootDir, testFile), 'utf-8');
+        const extraction = testAnalyzer.extractFromFile(content, testFile);
+        if (extraction) extractedCount++;
+      } catch {
+        // Skip files that can't be read
+      }
+    }
+
+    // Build mappings
+    testAnalyzer.buildMappings();
+
+    // Get results
+    const summary = testAnalyzer.getSummary();
+    const mockAnalysis = testAnalyzer.analyzeMocks();
+
+    // Save results
+    const testTopologyDir = path.join(rootDir, DRIFT_DIR, 'test-topology');
+    await fs.mkdir(testTopologyDir, { recursive: true });
+    await fs.writeFile(
+      path.join(testTopologyDir, 'summary.json'),
+      JSON.stringify({ summary, mockAnalysis, generatedAt: new Date().toISOString() }, null, 2)
+    );
+
+    spinner.succeed(
+      `Built test topology: ${summary.testFiles} test files, ${summary.testCases} tests, ` +
+      `${summary.coveredFunctions}/${summary.totalFunctions} functions covered`
+    );
+
+    if (verbose) {
+      console.log(chalk.gray(`  Test files extracted: ${extractedCount}/${testFiles.length}`));
+      console.log(chalk.gray(`  Coverage: ${summary.coveragePercent}%`));
+      if (mockAnalysis.totalMocks > 0) {
+        console.log(chalk.gray(`  Mocks: ${mockAnalysis.totalMocks} (${mockAnalysis.externalPercent}% external)`));
+      }
+    }
+
+    // Show uncovered functions warning
+    if (summary.totalFunctions > 0 && summary.functionCoveragePercent < 50) {
+      console.log();
+      console.log(chalk.yellow(`⚠️  Low test coverage: ${summary.functionCoveragePercent}% of functions covered`));
+      console.log(chalk.gray('  Run `drift test-topology uncovered` to find untested code'));
+    }
+
+    console.log();
+    console.log(chalk.gray('View test topology:'));
+    console.log(chalk.cyan('  drift test-topology status'));
+    console.log(chalk.cyan('  drift test-topology uncovered'));
+  }
 }
 
 export const scanCommand = new Command('scan')
@@ -1507,6 +1870,8 @@ export const scanCommand = new Command('scan')
   .option('--no-contracts', 'Skip BE↔FE contract scanning')
   .option('--no-boundaries', 'Skip data boundary scanning')
   .option('--test-topology', 'Build test topology (test-to-code mappings)')
+  .option('--constants', 'Extract constants, enums, and detect hardcoded secrets')
+  .option('--callgraph', 'Build call graph for reachability analysis (native Rust)')
   .option('-p, --project <name>', 'Scan a specific registered project by name')
   .option('--all-projects', 'Scan all registered projects')
   .option('-t, --timeout <seconds>', 'Scan timeout in seconds (default: 300)', '300')

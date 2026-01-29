@@ -10,6 +10,7 @@ import * as path from 'node:path';
 import {
   createTestTopologyAnalyzer,
   createCallGraphAnalyzer,
+  shouldIgnoreDirectory,
   type TestTopologySummary,
   type MockAnalysis,
   type MinimumTestSet,
@@ -464,9 +465,9 @@ async function findTestFiles(rootDir: string, subDir = ''): Promise<string[]> {
     for (const entry of entries) {
       const relativePath = path.join(subDir, entry.name);
       
-      // Skip common non-source directories
+      // Skip directories using enterprise-grade ignore list
       if (entry.isDirectory()) {
-        if (['node_modules', 'vendor', 'dist', 'build', '.git', '.drift'].includes(entry.name)) {
+        if (shouldIgnoreDirectory(entry.name)) {
           continue;
         }
         // Recurse into subdirectories

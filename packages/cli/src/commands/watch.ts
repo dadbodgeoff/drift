@@ -16,7 +16,7 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import chalk from 'chalk';
 import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
-import { PatternStore } from 'driftdetect-core';
+import { PatternStore, getDefaultIgnoreDirectories } from 'driftdetect-core';
 import type { Pattern, PatternCategory } from 'driftdetect-core';
 
 // ============================================================================
@@ -82,7 +82,8 @@ const LOCK_FILE_PATH = 'index/.lock';
 const LOCK_TIMEOUT_MS = 10000; // 10 seconds max lock hold time
 const LOCK_RETRY_MS = 100; // Retry every 100ms
 const SUPPORTED_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.cs', '.css', '.scss', '.json', '.md'];
-const IGNORE_PATTERNS = ['node_modules', '.git', 'dist', 'build', 'coverage', '.turbo', '.drift'];
+// Use enterprise-grade ignore list from core
+const IGNORE_PATTERNS = getDefaultIgnoreDirectories();
 
 // ============================================================================
 // Location Deduplication

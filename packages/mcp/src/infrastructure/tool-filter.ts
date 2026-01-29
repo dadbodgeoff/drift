@@ -15,6 +15,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { shouldIgnoreDirectory } from 'driftdetect-core';
 
 /**
  * Supported languages with their detection markers
@@ -233,9 +234,9 @@ function scanForExtensions(dir: string, maxDepth: number, currentDepth = 0): Set
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     
     for (const entry of entries) {
-      // Skip common non-source directories
+      // Skip directories using enterprise-grade ignore list
       if (entry.isDirectory()) {
-        if (['node_modules', '.git', 'dist', 'build', 'target', 'vendor', '__pycache__', '.venv'].includes(entry.name)) {
+        if (shouldIgnoreDirectory(entry.name)) {
           continue;
         }
         const subExtensions = scanForExtensions(

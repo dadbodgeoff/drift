@@ -7,6 +7,18 @@
 
 export * from './types.js';
 export { FileWalker } from './file-walker.js';
+
+// Default ignore patterns (enterprise-grade)
+export {
+  DEFAULT_IGNORE_DIRECTORIES,
+  DEFAULT_IGNORE_PATTERNS,
+  DEFAULT_IGNORE_EXTENSIONS,
+  shouldIgnoreDirectory,
+  shouldIgnoreExtension,
+  getDefaultIgnorePatterns,
+  getDefaultIgnoreDirectories,
+  mergeIgnorePatterns,
+} from './default-ignores.js';
 export {
   ChangeDetector,
   type ChangeType,
@@ -56,3 +68,16 @@ export type {
   FileProcessorTask,
   FileProcessorResult,
 } from './file-processor-worker.js';
+
+// Native Rust Scanner (high-performance)
+export {
+  isNativeScannerAvailable,
+  getNativeScannerError,
+  getNativeScannerVersion,
+  nativeScan,
+  scanWithFallback,
+  type NativeScanResult,
+  type NativeFileInfo,
+  type NativeScanStats,
+  type NativeScanConfig,
+} from './native-scanner.js';

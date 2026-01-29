@@ -20,6 +20,7 @@ import {
   DNAStore,
   createLanguageIntelligence,
   createConstraintStore,
+  shouldIgnoreDirectory,
   type Pattern,
   type PatternCategory,
   type NormalizedExtractionResult,
@@ -1305,9 +1306,9 @@ async function findFilesMatchingFocus(projectRoot: string, focus: string): Promi
         const fullPath = path.join(dir, entry.name);
         const relativePath = path.relative(projectRoot, fullPath);
         
-        // Skip common non-source directories
+        // Skip directories using enterprise-grade ignore list
         if (entry.isDirectory()) {
-          if (['node_modules', '.git', 'dist', 'build', '.drift', '__pycache__', 'vendor'].includes(entry.name)) {
+          if (shouldIgnoreDirectory(entry.name)) {
             continue;
           }
           await searchDir(fullPath, depth + 1);

@@ -21,6 +21,10 @@ import {
   createCoverageAnalyzer,
   createUnifiedScanner,
   detectProjectStack,
+  shouldIgnoreDirectory,
+  isNativeAvailable,
+  buildCallGraph as nativeBuildCallGraph,
+  type DataAccessPoint,
   type ReachabilityResult,
   type InverseReachabilityResult,
   type ImpactAnalysisResult,
@@ -28,8 +32,40 @@ import {
   type DeadCodeConfidence,
   type CoverageAnalysisResult,
   type DetectedStack,
+  type BuildConfig,
 } from 'driftdetect-core';
 import { createSpinner } from '../ui/spinner.js';
+
+/**
+ * Count source files in a directory (respecting ignore patterns)
+ */
+async function countSourceFiles(rootDir: string): Promise<number> {
+  const sourceExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.py', '.cs', '.java', '.php', '.go', '.rs', '.cpp', '.c', '.h', '.hpp']);
+  let count = 0;
+
+  async function walk(dir: string): Promise<void> {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          if (!shouldIgnoreDirectory(entry.name)) {
+            await walk(path.join(dir, entry.name));
+          }
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (sourceExtensions.has(ext)) {
+            count++;
+          }
+        }
+      }
+    } catch {
+      // Directory not readable
+    }
+  }
+
+  await walk(rootDir);
+  return count;
+}
 
 export interface CallGraphOptions {
   /** Output format */
@@ -53,22 +89,29 @@ const CALLGRAPH_DIR = 'callgraph';
  * Check if call graph data exists
  * 
  * Call graph data is stored in .drift/lake/callgraph/ with:
- * - index.json: Summary index of all shards
- * - files/: Individual file shards
+ * - callgraph.db: SQLite database (preferred, native Rust)
+ * - index.json: Summary index of all shards (legacy)
+ * - files/: Individual file shards (legacy)
  */
 async function callGraphExists(rootDir: string): Promise<boolean> {
   try {
-    // Check for the index file in the lake storage location
-    await fs.access(path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'index.json'));
+    // Check for SQLite database first (preferred format)
+    await fs.access(path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'callgraph.db'));
     return true;
   } catch {
-    // Also check for any file shards (in case index wasn't built yet)
+    // Fall back to checking for legacy JSON index
     try {
-      const filesDir = path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'files');
-      const files = await fs.readdir(filesDir);
-      return files.some(f => f.endsWith('.json'));
+      await fs.access(path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'index.json'));
+      return true;
     } catch {
-      return false;
+      // Also check for any file shards (in case index wasn't built yet)
+      try {
+        const filesDir = path.join(rootDir, DRIFT_DIR, LAKE_DIR, CALLGRAPH_DIR, 'files');
+        const files = await fs.readdir(filesDir);
+        return files.some(f => f.endsWith('.json'));
+      } catch {
+        return false;
+      }
     }
   }
 }
@@ -191,44 +234,98 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
       '**/*.php',
     ];
 
-    // Step 1: Run unified data access scanner (tree-sitter based)
-    spinner?.text('🌳 Scanning with tree-sitter (semantic analysis)...');
-    const unifiedScanner = createUnifiedScanner({ 
-      rootDir, 
-      verbose: options.verbose ?? false,
-      autoDetect: true,
-    });
-    const semanticResult = await unifiedScanner.scanDirectory({ patterns: filePatterns });
+    // Count files first to determine if we should skip pre-scanning
+    // For large codebases (>1000 files), skip pre-scanning to avoid OOM
+    const fileCount = await countSourceFiles(rootDir);
+    const isLargeCodebase = fileCount > 1000;
 
-    // Use semantic results as primary source
-    const dataAccessPoints = semanticResult.accessPoints;
-    const semanticStats = semanticResult.stats;
-
-    // Step 2: Fall back to boundary scanner for additional coverage (regex-based)
-    spinner?.text('🔍 Scanning for additional patterns (regex fallback)...');
-    const boundaryScanner = createBoundaryScanner({ rootDir, verbose: options.verbose ?? false });
-    await boundaryScanner.initialize();
-
-    const boundaryResult = await boundaryScanner.scanDirectory({ patterns: filePatterns });
-
-    // Merge boundary results with semantic results (semantic takes precedence)
-    let regexAdditions = 0;
-    for (const [, accessPoint] of Object.entries(boundaryResult.accessMap.accessPoints)) {
-      const existing = dataAccessPoints.get(accessPoint.file) ?? [];
-      // Only add if not already detected by semantic scanner
-      const isDuplicate = existing.some(ap => 
-        ap.line === accessPoint.line && ap.table === accessPoint.table
-      );
-      if (!isDuplicate) {
-        existing.push(accessPoint);
-        dataAccessPoints.set(accessPoint.file, existing);
-        regexAdditions++;
+    // =========================================================================
+    // TRY NATIVE RUST FIRST (prevents OOM on large codebases)
+    // =========================================================================
+    if (isNativeAvailable()) {
+      try {
+        spinner?.text('📊 Building call graph with native Rust (memory-safe)...');
+        
+        const nativeConfig: BuildConfig = {
+          root: rootDir,
+          patterns: filePatterns,
+          resolutionBatchSize: 50,
+        };
+        
+        const nativeResult = await nativeBuildCallGraph(nativeConfig);
+        
+        spinner?.stop();
+        
+        // JSON output
+        if (format === 'json') {
+          console.log(JSON.stringify({
+            success: true,
+            native: true,
+            detectedStack,
+            stats: {
+              totalFunctions: nativeResult.totalFunctions,
+              totalCallSites: nativeResult.totalCalls,
+              resolvedCallSites: nativeResult.resolvedCalls,
+              unresolvedCallSites: nativeResult.totalCalls - nativeResult.resolvedCalls,
+              resolutionRate: nativeResult.resolutionRate,
+              entryPoints: nativeResult.entryPoints,
+              dataAccessors: nativeResult.dataAccessors,
+            },
+            filesProcessed: nativeResult.filesProcessed,
+            errors: nativeResult.errors.length,
+            durationMs: nativeResult.durationMs,
+          }, null, 2));
+          return;
+        }
+        
+        // Text output
+        console.log();
+        console.log(chalk.green.bold('✓ Call graph built successfully') + chalk.gray(' (native Rust)'));
+        console.log();
+        
+        console.log(chalk.bold('📊 Graph Statistics'));
+        console.log(chalk.gray('─'.repeat(50)));
+        console.log(`  Files:         ${chalk.cyan.bold(nativeResult.filesProcessed.toLocaleString())}`);
+        console.log(`  Functions:     ${chalk.cyan.bold(nativeResult.totalFunctions.toLocaleString())}`);
+        console.log(`  Call Sites:    ${chalk.cyan(nativeResult.totalCalls.toLocaleString())} (${chalk.green(nativeResult.resolvedCalls.toLocaleString())} resolved, ${chalk.yellow(Math.round(nativeResult.resolutionRate * 100) + '%')})`);
+        console.log(`  Entry Points:  ${chalk.magenta.bold(nativeResult.entryPoints.toLocaleString())} ${chalk.gray('(API routes, exports)')}`);
+        console.log(`  Data Accessors: ${chalk.yellow.bold(nativeResult.dataAccessors.toLocaleString())} ${chalk.gray('(functions with DB access)')}`);
+        console.log(`  Duration:      ${chalk.gray((nativeResult.durationMs / 1000).toFixed(2) + 's')}`);
+        console.log();
+        
+        if (nativeResult.errors.length > 0) {
+          console.log(chalk.yellow(`⚠️  ${nativeResult.errors.length} files had parse errors`));
+          if (options.verbose) {
+            for (const err of nativeResult.errors.slice(0, 10)) {
+              console.log(chalk.gray(`   • ${err}`));
+            }
+            if (nativeResult.errors.length > 10) {
+              console.log(chalk.gray(`   ... and ${nativeResult.errors.length - 10} more`));
+            }
+          }
+          console.log();
+        }
+        
+        console.log(chalk.gray('─'.repeat(50)));
+        console.log(chalk.bold('📌 Next Steps:'));
+        console.log(`  • ${chalk.cyan('drift callgraph reach <function>')}  Trace data access from function`);
+        console.log(`  • ${chalk.cyan('drift callgraph inverse <table>')}   Find who accesses table`);
+        console.log(`  • ${chalk.cyan('drift callgraph impact <file>')}     Analyze change impact`);
+        console.log();
+        
+        return;
+      } catch (nativeError) {
+        // Fall back to TypeScript if native fails
+        spinner?.stop();
+        if (options.verbose) {
+          console.log(chalk.yellow(`Native build failed, falling back to TypeScript: ${nativeError}`));
+        }
       }
     }
-
-    // Step 3: Build call graph with streaming/sharded storage (memory optimized)
-    spinner?.text('📊 Building call graph (streaming mode)...');
     
+    // =========================================================================
+    // FALLBACK: TypeScript streaming builder (may OOM on very large codebases)
+    // =========================================================================
     const streamingBuilder = createStreamingCallGraphBuilder({
       rootDir,
       onProgress: (current: number, total: number, _file: string) => {
@@ -242,6 +339,59 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
         }
       },
     });
+
+    let dataAccessPoints: Map<string, DataAccessPoint[]> | undefined;
+    let semanticStats = { filesScanned: 0, accessPointsFound: 0, byOrm: {} as Record<string, number> };
+    let regexAdditions = 0;
+    let boundaryStats: { filesScanned: number; accessPointsFound: number } | undefined;
+
+    if (isLargeCodebase) {
+      // For large codebases, skip pre-scanning to avoid OOM
+      // Data access will be detected inline during call graph building (less accurate but memory-safe)
+      if (isTextFormat) {
+        spinner?.text(`📊 Large codebase detected (${fileCount} files) - using memory-optimized mode...`);
+      }
+      dataAccessPoints = undefined;
+    } else {
+      // For smaller codebases, run full pre-scanning for better data access detection
+      // Step 1: Run unified data access scanner (tree-sitter based)
+      spinner?.text('🌳 Scanning with tree-sitter (semantic analysis)...');
+      const unifiedScanner = createUnifiedScanner({ 
+        rootDir, 
+        verbose: options.verbose ?? false,
+        autoDetect: true,
+      });
+      const semanticResult = await unifiedScanner.scanDirectory({ patterns: filePatterns });
+
+      // Use semantic results as primary source
+      dataAccessPoints = semanticResult.accessPoints;
+      semanticStats = semanticResult.stats;
+
+      // Step 2: Fall back to boundary scanner for additional coverage (regex-based)
+      spinner?.text('🔍 Scanning for additional patterns (regex fallback)...');
+      const boundaryScanner = createBoundaryScanner({ rootDir, verbose: options.verbose ?? false });
+      await boundaryScanner.initialize();
+
+      const boundaryResult = await boundaryScanner.scanDirectory({ patterns: filePatterns });
+      boundaryStats = boundaryResult.stats;
+
+      // Merge boundary results with semantic results (semantic takes precedence)
+      for (const [, accessPoint] of Object.entries(boundaryResult.accessMap.accessPoints)) {
+        const existing = dataAccessPoints.get(accessPoint.file) ?? [];
+        // Only add if not already detected by semantic scanner
+        const isDuplicate = existing.some(ap => 
+          ap.line === accessPoint.line && ap.table === accessPoint.table
+        );
+        if (!isDuplicate) {
+          existing.push(accessPoint);
+          dataAccessPoints.set(accessPoint.file, existing);
+          regexAdditions++;
+        }
+      }
+    }
+
+    // Step 3: Build call graph with streaming/sharded storage (memory optimized)
+    spinner?.text('📊 Building call graph (streaming mode)...');
 
     const buildResult = await streamingBuilder.build(filePatterns, dataAccessPoints);
 
@@ -263,7 +413,7 @@ async function buildAction(options: CallGraphOptions): Promise<void> {
         },
         filesProcessed: buildResult.filesProcessed,
         semanticStats: semanticStats,
-        boundaryStats: boundaryResult.stats,
+        boundaryStats: boundaryStats,
         regexAdditions,
         errors: buildResult.errors.length,
         durationMs: buildResult.durationMs,

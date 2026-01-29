@@ -27,6 +27,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { minimatch } from 'minimatch';
 
+import { shouldIgnoreDirectory, shouldIgnoreExtension } from '../scanner/default-ignores.js';
 import type {
   CallGraph,
   ReachabilityResult,
@@ -358,7 +359,6 @@ export class CallGraphAnalyzer {
    * Find files matching patterns
    */
   private async findFiles(patterns: string[]): Promise<string[]> {
-    const ignorePatterns = ['node_modules', '.git', 'dist', 'build', '__pycache__'];
     const files: string[] = [];
 
     const walk = async (dir: string, relativePath: string = ''): Promise<void> => {
@@ -369,10 +369,15 @@ export class CallGraphAnalyzer {
         const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
 
         if (entry.isDirectory()) {
-          if (!ignorePatterns.includes(entry.name) && !entry.name.startsWith('.')) {
+          // Use enterprise-grade ignore list
+          if (!shouldIgnoreDirectory(entry.name)) {
             await walk(fullPath, relPath);
           }
         } else if (entry.isFile()) {
+          // Skip ignored file extensions
+          if (shouldIgnoreExtension(entry.name)) {
+            continue;
+          }
           // Check if file matches any pattern
           for (const pattern of patterns) {
             if (minimatch(relPath, pattern)) {

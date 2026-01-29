@@ -100,6 +100,7 @@ import { executeTypeScriptTool, type TypeScriptArgs } from './tools/analysis/typ
 import { executePythonTool, type PythonArgs } from './tools/analysis/python.js';
 import { executeJavaTool, type JavaArgs } from './tools/analysis/java.js';
 import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
+import { handleAudit, type AuditArgs } from './tools/analysis/audit.js';
 import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 
@@ -560,6 +561,9 @@ async function routeToolCall(
 
     case 'drift_quality_gate':
       return handleQualityGate(projectRoot, args as Parameters<typeof handleQualityGate>[1]);
+
+    case 'drift_audit':
+      return handleAudit(projectRoot, args as unknown as AuditArgs);
   }
 
   // ============================================================================

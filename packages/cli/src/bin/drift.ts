@@ -51,6 +51,7 @@ import {
   createGateCommand,
   contextCommand,
   telemetryCommand,
+  auditCommand,
   nextStepsCommand,
   troubleshootCommand,
 } from '../commands/index.js';
@@ -141,6 +142,9 @@ function createProgram(): Command {
 
   // Telemetry Management (Privacy-first, opt-in)
   program.addCommand(telemetryCommand);
+
+  // Audit System (Pattern validation and approval workflows)
+  program.addCommand(auditCommand);
 
   // User Guidance Commands
   program.addCommand(nextStepsCommand);

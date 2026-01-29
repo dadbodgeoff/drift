@@ -12,6 +12,8 @@ import chalk from 'chalk';
 import {
   createModuleCouplingAnalyzer,
   createCallGraphAnalyzer,
+  isNativeAvailable,
+  analyzeCouplingWithFallback,
   type ModuleCouplingGraph,
   type DependencyCycle,
   type ModuleCouplingAnalysis,
@@ -64,6 +66,7 @@ function showNotBuiltMessage(): void {
 async function buildAction(options: CouplingOptions): Promise<void> {
   const rootDir = process.cwd();
   const format = options.format ?? 'text';
+  const verbose = options.verbose ?? false;
   const isTextFormat = format === 'text';
 
   try {
@@ -76,6 +79,115 @@ async function buildAction(options: CouplingOptions): Promise<void> {
     const spinner = isTextFormat ? createSpinner('Initializing...') : null;
     spinner?.start();
 
+    // Try native analyzer first (much faster)
+    if (isNativeAvailable()) {
+      try {
+        spinner?.text('Analyzing module coupling (native)...');
+        
+        // Get file list
+        const files = await getSourceFiles(rootDir);
+        const nativeResult = await analyzeCouplingWithFallback(rootDir, files);
+        
+        // Save results
+        spinner?.text('Saving results...');
+        const couplingDir = path.join(rootDir, DRIFT_DIR, COUPLING_DIR);
+        await fs.mkdir(couplingDir, { recursive: true });
+        
+        // Convert native result to graph format
+        const serializedGraph = {
+          modules: Object.fromEntries(nativeResult.modules.map(m => [m.path, {
+            path: m.path,
+            imports: [],
+            importedBy: [],
+            exports: [],
+            metrics: {
+              Ca: m.ca,
+              Ce: m.ce,
+              instability: m.instability,
+              abstractness: m.abstractness,
+              distance: m.distance,
+            },
+            role: 'balanced',
+            isEntryPoint: false,
+            isLeaf: m.ce === 0,
+          }])),
+          edges: [],
+          cycles: nativeResult.cycles.map((c, i) => ({
+            id: `cycle-${i}`,
+            path: c.modules,
+            length: c.modules.length,
+            severity: c.severity as 'info' | 'warning' | 'critical',
+            totalWeight: c.filesAffected,
+            breakPoints: [],
+          })),
+          metrics: {
+            totalModules: nativeResult.modules.length,
+            totalEdges: 0,
+            cycleCount: nativeResult.cycles.length,
+            avgInstability: nativeResult.modules.reduce((sum, m) => sum + m.instability, 0) / Math.max(1, nativeResult.modules.length),
+            avgDistance: nativeResult.modules.reduce((sum, m) => sum + m.distance, 0) / Math.max(1, nativeResult.modules.length),
+            zoneOfPain: [] as string[],
+            zoneOfUselessness: [] as string[],
+            hotspots: nativeResult.hotspots.map(h => ({ path: h.module, coupling: h.totalCoupling })),
+            isolatedModules: [] as string[],
+          },
+          generatedAt: new Date().toISOString(),
+          projectRoot: rootDir,
+        };
+        
+        await fs.writeFile(
+          path.join(couplingDir, 'graph.json'),
+          JSON.stringify(serializedGraph, null, 2)
+        );
+        
+        spinner?.stop();
+        
+        // Output
+        if (format === 'json') {
+          console.log(JSON.stringify({
+            success: true,
+            native: true,
+            modules: nativeResult.modules.length,
+            cycles: nativeResult.cycles.length,
+            hotspots: nativeResult.hotspots.length,
+            healthScore: nativeResult.healthScore,
+            filesAnalyzed: nativeResult.filesAnalyzed,
+            durationMs: nativeResult.durationMs,
+          }, null, 2));
+          return;
+        }
+        
+        // Text output
+        console.log();
+        console.log(chalk.green.bold('✓ Module coupling graph built successfully (native)'));
+        console.log();
+        console.log(`Files analyzed: ${chalk.cyan(nativeResult.filesAnalyzed)}`);
+        console.log(`Modules: ${chalk.cyan(nativeResult.modules.length)}`);
+        console.log(`Cycles: ${nativeResult.cycles.length > 0 ? chalk.yellow(nativeResult.cycles.length) : chalk.green('0')}`);
+        console.log(`Health score: ${chalk.cyan(nativeResult.healthScore)}/100`);
+        console.log(`Duration: ${chalk.gray(`${nativeResult.durationMs}ms`)}`);
+        console.log();
+        
+        formatMetrics(serializedGraph.metrics);
+        formatCycleSummary(serializedGraph.cycles);
+        
+        console.log(chalk.gray('─'.repeat(50)));
+        console.log(chalk.bold('📌 Next Steps:'));
+        console.log(chalk.gray(`  • drift coupling status       ${chalk.white('View coupling overview')}`));
+        console.log(chalk.gray(`  • drift coupling cycles       ${chalk.white('List dependency cycles')}`));
+        console.log(chalk.gray(`  • drift coupling hotspots     ${chalk.white('Find highly coupled modules')}`));
+        console.log();
+        return;
+        
+      } catch (nativeError) {
+        if (verbose) {
+          spinner?.text(chalk.gray(`Native analyzer failed, using TypeScript fallback: ${(nativeError as Error).message}`));
+        }
+        // Fall through to TypeScript implementation
+      }
+    }
+
+    // TypeScript fallback
     // Load call graph (required)
     spinner?.text('Loading call graph...');
     const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
@@ -158,6 +270,42 @@ async function buildAction(options: CouplingOptions): Promise<void> {
       console.log(chalk.red(`\n❌ Error: ${error}`));
     }
   }
+}
+
+/**
+ * Get source files for scanning
+ */
+async function getSourceFiles(rootDir: string): Promise<string[]> {
+  const files: string[] = [];
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.go'];
+  const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', '.drift', 'vendor', 'target', '.venv', 'venv'];
+  
+  async function walk(dir: string, relativePath: string = ''): Promise<void> {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+        
+        if (entry.isDirectory()) {
+          if (!ignoreDirs.includes(entry.name) && !entry.name.startsWith('.')) {
+            await walk(fullPath, relPath);
+          }
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name);
+          if (extensions.includes(ext)) {
+            files.push(relPath);
+          }
+        }
+      }
+    } catch {
+      // Skip unreadable directories
+    }
+  }
+  
+  await walk(rootDir);
+  return files;
 }
 
 /**

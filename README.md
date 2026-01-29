@@ -121,7 +121,7 @@ AI writes code that works but doesn't fit. It ignores your conventions, misses y
 ## Quick Start
 
 ```bash
-# Install globally
+# Install the CLI
 npm install -g driftdetect
 
 # In your project
@@ -134,6 +134,22 @@ drift status
 ```
 
 **That's it.** Drift now understands your codebase.
+
+---
+
+## Two Packages, Two Purposes
+
+> ⚠️ **Common confusion:** Drift has a CLI and an MCP server. They're separate npm packages.
+
+| Package | Install Command | What It Does |
+|---------|-----------------|--------------|
+| **CLI** | `npm install -g driftdetect` | Terminal commands you run: `drift scan`, `drift status`, etc. |
+| **MCP Server** | `npm install -g driftdetect-mcp` | Tools AI agents call: `drift_status`, `drift_context`, etc. |
+
+**The CLI scans your project. The MCP server lets AI use that data.**
+
+- If you get `zsh: command not found: drift` → Install the CLI: `npm install -g driftdetect`
+- If `drift_status` does nothing in chat → Configure the MCP server (see below) and make sure you've run `drift scan` first
 
 ---
 
@@ -289,6 +305,21 @@ drift scan                    # Discover patterns
 drift status                  # See what was found
 drift approve <pattern-id>    # Approve conventions
 ```
+
+### 📋 Pattern Audit & Auto-Approval
+```bash
+drift audit                   # Run full audit on discovered patterns
+drift audit status            # Check audit health score
+drift approve --auto          # Auto-approve ≥90% confidence patterns
+drift audit trends            # View quality trends over time
+drift audit --ci --threshold 85  # CI mode with health threshold
+```
+
+The audit system reduces manual review burden by:
+- Identifying high-confidence patterns eligible for auto-approval
+- Detecting duplicate patterns that may need merging
+- Cross-validating patterns against call graph and constraints
+- Tracking quality degradation over time
 
 ### 📊 Call Graph Analysis
 ```bash

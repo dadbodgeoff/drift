@@ -20,6 +20,10 @@ import {
   type WrapperCluster,
   type WrapperFunction,
 } from 'driftdetect-core/wrappers';
+import {
+  isNativeAvailable,
+  analyzeWrappersWithFallback,
+} from 'driftdetect-core';
 
 // =============================================================================
 // Command Definition
@@ -50,6 +54,164 @@ export const wrappersCommand = new Command('wrappers')
     }
 
     try {
+      // Try native analyzer first (much faster)
+      if (isNativeAvailable()) {
+        try {
+          const files = await getSourceFiles(rootDir);
+          const nativeResult = await analyzeWrappersWithFallback(rootDir, files);
+          
+          // Convert native WrapperInfo to WrapperFunction format
+          const convertedWrappers: WrapperFunction[] = nativeResult.wrappers.map(w => ({
+            name: w.name,
+            qualifiedName: w.name,
+            file: w.file,
+            line: w.line,
+            language: 'typescript' as const,
+            directPrimitives: w.wraps,
+            transitivePrimitives: [],
+            primitiveSignature: w.wraps,
+            depth: 1,
+            callsWrappers: [],
+            calledBy: [],
+            isFactory: false,
+            isHigherOrder: false,
+            isDecorator: false,
+            isAsync: false,
+          }));
+          
+          // Convert native WrapperCluster to TypeScript WrapperCluster format
+          let clusters: WrapperCluster[] = nativeResult.clusters.map(c => ({
+            id: c.id,
+            name: c.wrappedPrimitive, // Use wrappedPrimitive as name
+            category: c.category as WrapperCluster['category'],
+            description: `Wrappers for ${c.wrappedPrimitive}`,
+            confidence: c.confidence,
+            primitiveSignature: [c.wrappedPrimitive],
+            wrappers: c.wrappers.map(w => ({
+              name: w.name,
+              qualifiedName: w.name,
+              file: w.file,
+              line: w.line,
+              language: 'typescript' as const,
+              directPrimitives: w.wraps,
+              transitivePrimitives: [],
+              primitiveSignature: w.wraps,
+              depth: 1,
+              callsWrappers: [],
+              calledBy: [],
+              isFactory: false,
+              isHigherOrder: false,
+              isDecorator: false,
+              isAsync: false,
+            })),
+            avgDepth: 1,
+            maxDepth: 1,
+            totalUsages: c.totalUsage,
+            fileSpread: new Set(c.wrappers.map(w => w.file)).size,
+            suggestedNames: [],
+          }));
+          
+          // Filter by category if specified
+          if (categoryFilter) {
+            clusters = clusters.filter(c => c.category === categoryFilter);
+          }
+          
+          // Filter by confidence and cluster size
+          clusters = clusters.filter(c => 
+            c.confidence >= minConfidence && 
+            c.wrappers.length >= minClusterSize
+          );
+          
+          // Build category counts with proper typing
+          const wrappersByCategory: Record<WrapperCluster['category'], number> = {
+            'state-management': 0,
+            'data-fetching': 0,
+            'side-effects': 0,
+            'authentication': 0,
+            'authorization': 0,
+            'validation': 0,
+            'dependency-injection': 0,
+            'middleware': 0,
+            'testing': 0,
+            'logging': 0,
+            'caching': 0,
+            'error-handling': 0,
+            'async-utilities': 0,
+            'form-handling': 0,
+            'routing': 0,
+            'factory': 0,
+            'decorator': 0,
+            'utility': 0,
+            'other': 0,
+          };
+          for (const cat of nativeResult.stats.byCategory) {
+            if (cat.category in wrappersByCategory) {
+              wrappersByCategory[cat.category as WrapperCluster['category']] = cat.count;
+            }
+          }
+          
+          // Find most wrapped primitive and most used wrapper
+          const topPrimitive = nativeResult.stats.topPrimitives?.[0];
+          const firstWrapper = convertedWrappers[0];
+          const mostUsedWrapper = firstWrapper?.name ?? '';
+          
+          const result: WrapperScanResult = {
+            analysis: {
+              clusters,
+              wrappers: convertedWrappers,
+              frameworks: [],
+              primitives: [],
+              factories: [],
+              decoratorWrappers: [],
+              asyncWrappers: [],
+              summary: {
+                totalWrappers: nativeResult.stats.totalWrappers,
+                totalClusters: nativeResult.stats.clusterCount,
+                avgDepth: 1,
+                maxDepth: 1,
+                mostWrappedPrimitive: topPrimitive?.primitive ?? '',
+                mostUsedWrapper,
+                wrappersByLanguage: { 
+                  typescript: nativeResult.wrappers.length,
+                  python: 0,
+                  java: 0,
+                  csharp: 0,
+                  php: 0,
+                  rust: 0,
+                  cpp: 0,
+                },
+                wrappersByCategory,
+              },
+            },
+            stats: {
+              totalFiles: nativeResult.stats.filesAnalyzed,
+              totalFunctions: nativeResult.wrappers.length,
+              totalCalls: 0,
+              totalImports: 0,
+              byLanguage: {},
+            },
+            duration: nativeResult.stats.durationMs,
+            errors: [],
+          };
+
+          if (jsonOutput) {
+            console.log(JSON.stringify(result, null, 2));
+          } else {
+            if (!jsonOutput) {
+              console.log(chalk.gray(`  (native analyzer, ${nativeResult.stats.durationMs}ms)\n`));
+            }
+            printResults(result, verbose);
+          }
+          return;
+        } catch (nativeError) {
+          if (verbose) {
+            console.log(chalk.gray(`Native analyzer failed, using TypeScript fallback: ${(nativeError as Error).message}\n`));
+          }
+          // Fall through to TypeScript implementation
+        }
+      }
+
+      // TypeScript fallback
       const scanner = createWrapperScanner({
         rootDir,
         includeTestFiles: includeTests,
@@ -84,6 +246,43 @@ export const wrappersCommand = new Command('wrappers')
       process.exit(1);
     }
   });
+
+/**
+ * Get source files for scanning
+ */
+async function getSourceFiles(rootDir: string): Promise<string[]> {
+  const fs = await import('node:fs/promises');
+  const files: string[] = [];
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.go'];
+  const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', '.drift', 'vendor', 'target', '.venv', 'venv'];
+  
+  async function walk(dir: string, relativePath: string = ''): Promise<void> {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+        
+        if (entry.isDirectory()) {
+          if (!ignoreDirs.includes(entry.name) && !entry.name.startsWith('.')) {
+            await walk(fullPath, relPath);
+          }
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name);
+          if (extensions.includes(ext)) {
+            files.push(relPath);
+          }
+        }
+      }
+    } catch {
+      // Skip unreadable directories
+    }
+  }
+  
+  await walk(rootDir);
+  return files;
+}
 
 // =============================================================================
 // Output Formatting

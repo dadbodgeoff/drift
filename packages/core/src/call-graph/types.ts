@@ -103,7 +103,7 @@ export interface CallSite {
  */
 export interface CallGraph {
   /** Schema version */
-  version: '1.0';
+  version: string;
   /** Generation timestamp */
   generatedAt: string;
   /** Project root */
@@ -116,6 +116,8 @@ export interface CallGraph {
   dataAccessors: string[];
   /** Statistics */
   stats: CallGraphStats;
+  /** Internal flag: true when using SQLite storage (queries go through native module) */
+  _sqliteAvailable?: boolean;
 }
 
 /**
@@ -350,7 +352,7 @@ export interface SensitiveFieldAccess {
  * Serializable call graph for storage
  */
 export interface SerializedCallGraph {
-  version: '1.0';
+  version: string;
   generatedAt: string;
   projectRoot: string;
   functions: Record<string, FunctionNode>;

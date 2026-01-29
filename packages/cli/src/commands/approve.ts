@@ -28,6 +28,12 @@ export interface ApproveOptions {
   verbose?: boolean;
   /** Project root directory */
   root?: string;
+  /** Auto-approve patterns with ≥90% confidence */
+  auto?: boolean;
+  /** Custom confidence threshold for auto-approve (default: 0.90) */
+  threshold?: number;
+  /** Dry run - show what would be approved */
+  dryRun?: boolean;
 }
 
 /** Directory name for drift configuration */
@@ -140,6 +146,96 @@ async function approveAction(
   const discoveredResult = await service.listByStatus('discovered', { limit: 1000 });
   
   spinner.succeed('Patterns loaded');
+
+  // Handle auto-approve (≥90% confidence by default)
+  if (options.auto) {
+    const threshold = options.threshold ?? 0.90;
+    const discovered = discoveredResult.items;
+    
+    // Filter by confidence threshold
+    const eligible = discovered.filter(p => p.confidence >= threshold);
+    
+    if (eligible.length === 0) {
+      status.info(`No patterns with ≥${(threshold * 100).toFixed(0)}% confidence to auto-approve`);
+      console.log();
+      console.log(chalk.gray(`Found ${discovered.length} discovered patterns, but none meet the threshold.`));
+      console.log(chalk.gray(`Try lowering the threshold with --threshold 0.80`));
+      return;
+    }
+
+    console.log();
+    console.log(chalk.bold(`Auto-Approve Candidates (≥${(threshold * 100).toFixed(0)}% confidence)`));
+    console.log();
+
+    const rows: PatternRow[] = eligible.slice(0, 20).map((p) => ({
+      id: p.id.slice(0, 13),
+      name: p.name.slice(0, 28),
+      category: p.category,
+      confidence: p.confidence,
+      locations: p.locationCount,
+      outliers: p.outlierCount,
+    }));
+
+    console.log(createPatternsTable(rows));
+    
+    if (eligible.length > 20) {
+      console.log(chalk.gray(`  ... and ${eligible.length - 20} more`));
+    }
+    console.log();
+
+    // Dry run mode
+    if (options.dryRun) {
+      console.log(chalk.yellow('Dry run mode - no patterns were approved'));
+      console.log(chalk.gray(`Would approve ${eligible.length} patterns`));
+      return;
+    }
+
+    // Confirm unless --yes
+    if (!options.yes) {
+      const confirm = await confirmPrompt(
+        `Auto-approve ${eligible.length} patterns with ≥${(threshold * 100).toFixed(0)}% confidence?`,
+        true
+      );
+      if (!confirm) {
+        status.info('Auto-approval cancelled');
+        return;
+      }
+    }
+
+    // Approve all eligible patterns
+    const approveSpinner = createSpinner('Auto-approving patterns...');
+    approveSpinner.start();
+
+    let approvedCount = 0;
+    for (const pattern of eligible) {
+      try {
+        await service.approvePattern(pattern.id);
+        approvedCount++;
+        await recordApproveTelemetry(rootDir, {
+          category: pattern.category,
+          confidence: pattern.confidence,
+        }, true);
+        if (verbose) {
+          console.log(chalk.gray(`  ✓ ${pattern.name} (${(pattern.confidence * 100).toFixed(0)}%)`));
+        }
+      } catch (error) {
+        if (verbose) {
+          console.log(chalk.yellow(`  ✗ ${pattern.name}: ${(error as Error).message}`));
+        }
+      }
+    }
+
+    approveSpinner.succeed(`Auto-approved ${approvedCount} patterns (≥${(threshold * 100).toFixed(0)}% confidence)`);
+    console.log();
+    
+    // Show remaining patterns
+    const remaining = discovered.length - approvedCount;
+    if (remaining > 0) {
+      console.log(chalk.gray(`${remaining} patterns remain below threshold. Run \`drift audit --review\` for details.`));
+      console.log();
+    }
+    return;
+  }
 
   // Handle category-based approval
   if (options.category) {
@@ -389,9 +485,23 @@ async function approveAction(
 
 export const approveCommand = new Command('approve')
   .description('Approve a pattern by ID')
-  .argument('<pattern-id>', 'Pattern ID to approve (or "all" for batch approval)')
+  .argument('[pattern-id]', 'Pattern ID to approve (or "all" for batch approval)')
   .option('-r, --root <path>', 'Project root directory (auto-detects .drift folder if not specified)')
   .option('-c, --category <category>', 'Approve all patterns in category')
   .option('-y, --yes', 'Skip confirmation prompt')
   .option('--verbose', 'Enable verbose output')
-  .action(approveAction);
+  .option('--auto', 'Auto-approve patterns with ≥90% confidence')
+  .option('--threshold <number>', 'Custom confidence threshold for auto-approve (default: 0.90)', '0.90')
+  .option('--dry-run', 'Show what would be approved without making changes')
+  .action((patternId: string | undefined, options: ApproveOptions) => {
+    // Parse threshold as number
+    if (typeof options.threshold === 'string') {
+      options.threshold = parseFloat(options.threshold);
+    }
+    // If --auto is used without pattern-id, that's fine
+    if (!patternId && !options.auto && !options.category) {
+      console.error('Error: pattern-id is required unless using --auto or --category');
+      process.exit(1);
+    }
+    return approveAction(patternId ?? '', options);
+  });

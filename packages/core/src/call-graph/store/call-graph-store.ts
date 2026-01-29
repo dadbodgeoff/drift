@@ -2,8 +2,10 @@
  * Call Graph Store
  *
  * Persistence layer for the call graph.
- * Stores and loads call graphs from .drift/call-graph/ directory (legacy)
- * or .drift/lake/callgraph/ directory (sharded storage).
+ * Stores and loads call graphs from:
+ * - .drift/lake/callgraph/callgraph.db (SQLite - preferred, native Rust)
+ * - .drift/lake/callgraph/ (sharded JSON - legacy)
+ * - .drift/call-graph/graph.json (single file JSON - deprecated)
  */
 
 import * as fs from 'node:fs/promises';
@@ -14,6 +16,11 @@ import type {
   CallGraphStoreConfig,
   FunctionNode,
 } from '../types.js';
+
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+} from '../../native/index.js';
 
 // ============================================================================
 // Constants
@@ -29,6 +36,7 @@ const LAKE_DIR = 'lake';
 const LAKE_CALLGRAPH_DIR = 'callgraph';
 const LAKE_INDEX_FILE = 'index.json';
 const LAKE_FILES_DIR = 'files';
+const LAKE_SQLITE_FILE = 'callgraph.db';
 
 // ============================================================================
 // Helper Functions
@@ -78,11 +86,20 @@ export class CallGraphStore {
   /**
    * Load the call graph from disk
    * 
-   * Checks both legacy (.drift/call-graph/graph.json) and 
-   * lake storage (.drift/lake/callgraph/) locations.
+   * Checks storage locations in order of preference:
+   * 1. SQLite (.drift/lake/callgraph/callgraph.db) - native Rust, preferred
+   * 2. Lake storage (.drift/lake/callgraph/) - sharded JSON
+   * 3. Legacy storage (.drift/call-graph/graph.json) - single file JSON
    */
   async load(): Promise<CallGraph | null> {
-    // First, try lake storage (new sharded format)
+    // First, try SQLite storage (native Rust - preferred)
+    const sqliteGraph = await this.loadFromSqlite();
+    if (sqliteGraph) {
+      this.graph = sqliteGraph;
+      return this.graph;
+    }
+
+    // Second, try lake storage (sharded JSON format)
     const lakeGraph = await this.loadFromLake();
     if (lakeGraph) {
       this.graph = lakeGraph;
@@ -104,6 +121,158 @@ export class CallGraphStore {
       return this.graph;
     } catch {
       this.graph = null;
+      return null;
+    }
+  }
+
+  /**
+   * Load call graph from SQLite storage (native Rust)
+   * 
+   * This is the preferred format for large codebases as it provides:
+   * - O(1) memory usage (queries don't load entire graph)
+   * - Fast indexed lookups
+   * - Concurrent access support
+   */
+  private async loadFromSqlite(): Promise<CallGraph | null> {
+    const sqlitePath = path.join(
+      this.config.rootDir, 
+      DRIFT_DIR, 
+      LAKE_DIR, 
+      LAKE_CALLGRAPH_DIR, 
+      LAKE_SQLITE_FILE
+    );
+
+    // Check if SQLite database exists
+    if (!(await fileExists(sqlitePath))) {
+      return null;
+    }
+
+    // Check if native module is available
+    if (!isNativeAvailable() || !isCallGraphAvailable(this.config.rootDir)) {
+      return null;
+    }
+
+    try {
+      // Import native functions dynamically to avoid circular deps
+      const { 
+        getCallGraphStats, 
+        getCallGraphEntryPoints, 
+        getCallGraphDataAccessors 
+      } = await import('../../native/index.js');
+      
+      // Get stats from SQLite database
+      const nativeStats = getCallGraphStats(this.config.rootDir);
+      
+      // Get entry points and data accessors with their details
+      const entryPoints = getCallGraphEntryPoints(this.config.rootDir);
+      const dataAccessors = getCallGraphDataAccessors(this.config.rootDir);
+      
+      // Create a functions Map with entry points and data accessors
+      // This allows the CLI to display their details without loading the entire graph
+      const functions = new Map<string, FunctionNode>();
+      
+      // Add entry points to functions map
+      for (const ep of entryPoints) {
+        functions.set(ep.id, {
+          id: ep.id,
+          name: ep.name,
+          qualifiedName: ep.name,
+          file: ep.file,
+          startLine: ep.line,
+          endLine: ep.line,
+          language: this.detectLanguage(ep.file),
+          isExported: true,
+          isConstructor: false,
+          isAsync: false,
+          decorators: [],
+          parameters: [],
+          calls: [],
+          calledBy: [],
+          dataAccess: [],
+        });
+      }
+      
+      // Add data accessors to functions map (may overlap with entry points)
+      for (const da of dataAccessors) {
+        const existing = functions.get(da.id);
+        if (existing) {
+          // Update existing entry with data access info
+          existing.dataAccess = da.tables.map(table => ({
+            id: `${da.id}:${da.line}`,
+            file: da.file,
+            table,
+            operation: 'read' as const,
+            fields: [],
+            line: da.line,
+            column: 0,
+            context: da.name,
+            confidence: 1.0,
+            isRawSql: false,
+          }));
+        } else {
+          // Add new entry
+          functions.set(da.id, {
+            id: da.id,
+            name: da.name,
+            qualifiedName: da.name,
+            file: da.file,
+            startLine: da.line,
+            endLine: da.line,
+            language: this.detectLanguage(da.file),
+            isExported: false,
+            isConstructor: false,
+            isAsync: false,
+            decorators: [],
+            parameters: [],
+            calls: [],
+            calledBy: [],
+            dataAccess: da.tables.map(table => ({
+              id: `${da.id}:${da.line}`,
+              file: da.file,
+              table,
+              operation: 'read' as const,
+              fields: [],
+              line: da.line,
+              column: 0,
+              context: da.name,
+              confidence: 1.0,
+              isRawSql: false,
+            })),
+          });
+        }
+      }
+      
+      // Create a CallGraph structure with data from SQLite
+      const graph: CallGraph = {
+        version: '2.0.0-sqlite',
+        generatedAt: new Date().toISOString(),
+        projectRoot: this.config.rootDir,
+        functions,
+        entryPoints: entryPoints.map(ep => ep.id),
+        dataAccessors: dataAccessors.map(da => da.id),
+        stats: {
+          totalFunctions: nativeStats?.totalFunctions ?? 0,
+          totalCallSites: nativeStats?.totalCalls ?? 0,
+          resolvedCallSites: nativeStats?.resolvedCalls ?? 0,
+          unresolvedCallSites: (nativeStats?.totalCalls ?? 0) - (nativeStats?.resolvedCalls ?? 0),
+          totalDataAccessors: nativeStats?.dataAccessors ?? 0,
+          byLanguage: {
+            python: 0,
+            typescript: 0,
+            javascript: 0,
+            java: 0,
+            csharp: 0,
+            php: 0,
+            go: 0,
+            rust: 0,
+            cpp: 0,
+          },
+        },
+        _sqliteAvailable: true, // Internal flag to indicate SQLite mode
+      };
+
+      return graph;
+    } catch {
       return null;
     }
   }

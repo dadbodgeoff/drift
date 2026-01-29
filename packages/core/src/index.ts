@@ -1659,3 +1659,166 @@ export type {
   TelemetrySubmitResult,
   TelemetryStatus,
 } from './telemetry/index.js';
+
+
+// ============================================================================
+// Audit System (Pattern validation, deduplication, and approval workflows)
+// ============================================================================
+
+export {
+  // Engine
+  AuditEngine,
+  // Store
+  AuditStore,
+  // Constants
+  AUDIT_VERSION,
+  DEFAULT_AUTO_APPROVE_THRESHOLD,
+  DEFAULT_REVIEW_THRESHOLD,
+  DEFAULT_DUPLICATE_SIMILARITY_THRESHOLD,
+  DEFAULT_MIN_LOCATIONS_ESTABLISHED,
+  DEFAULT_MAX_OUTLIER_RATIO,
+  HEALTH_SCORE_WEIGHTS,
+} from './audit/index.js';
+
+export type {
+  // Core types
+  AuditResult,
+  AuditSummary,
+  AuditOptions,
+  AuditEngineConfig,
+  PatternAuditResult,
+  PatternCrossValidation,
+  DuplicateGroup,
+  DuplicateRecommendation,
+  CrossValidationResult,
+  CrossValidationIssue,
+  CrossValidationIssueType,
+  CrossValidationSeverity,
+  DegradationResult,
+  DegradationTracking,
+  DegradationAlert,
+  DegradationAlertType,
+  AuditHistoryEntry,
+  CategoryAuditSummary,
+  AuditRecommendation,
+  TrendDirection as AuditTrendDirection,
+  // Store config
+  AuditStoreConfig,
+} from './audit/index.js';
+
+
+// ============================================================================
+// Native Rust Integration (High-performance native addon with TS fallback)
+// ============================================================================
+
+export {
+  // Status functions
+  isNativeAvailable,
+  getNativeLoadError,
+  getNativeVersion,
+  getSupportedLanguages as getNativeSupportedLanguages,
+  // Direct native functions (throw if native unavailable)
+  scan,
+  parse,
+  buildCallGraph,
+  scanBoundaries,
+  analyzeCoupling,
+  analyzeTestTopology,
+  analyzeErrorHandling,
+  analyzeReachability,
+  analyzeInverseReachability,
+  analyzeUnified,
+  analyzeConstants,
+  analyzeEnvironment,
+  analyzeWrappers,
+  // Adapter functions with TypeScript fallback (recommended)
+  parseWithFallback,
+  analyzeCouplingWithFallback,
+  analyzeTestTopologyWithFallback,
+  analyzeErrorHandlingWithFallback,
+  analyzeConstantsWithFallback,
+  analyzeEnvironmentWithFallback,
+  analyzeWrappersWithFallback,
+  scanBoundariesWithFallback,
+  nativeAdapters,
+  // Convenience object
+  native,
+} from './native/index.js';
+
+export type {
+  // Scan types
+  ScanConfig,
+  FileInfo,
+  ScanResult,
+  // Parse types (aliased to avoid conflict with parser types)
+  ParseResult as NativeParseResult,
+  FunctionInfo as NativeFunctionInfo,
+  ClassInfo as NativeClassInfo,
+  ImportInfo as NativeImportInfo,
+  ExportInfo as NativeExportInfo,
+  CallSite as NativeCallSite,
+  ParseError as NativeParseError,
+  // Build types
+  BuildConfig,
+  BuildResult,
+  // Boundary types
+  DataAccessPoint as NativeDataAccessPoint,
+  SensitiveField as NativeSensitiveField,
+  BoundaryScanResult as NativeBoundaryScanResult,
+  ORMModel as NativeORMModel,
+  // Coupling types
+  CouplingResult,
+  ModuleMetrics,
+  DependencyCycle as NativeDependencyCycle,
+  CouplingHotspot,
+  UnusedExport as NativeUnusedExport,
+  // Test topology types
+  TestTopologyResult as NativeTestTopologyResult,
+  TestFile,
+  TestCoverage as NativeTestCoverage,
+  // Error handling types
+  ErrorHandlingResult as NativeErrorHandlingResult,
+  ErrorBoundary as NativeErrorBoundary,
+  ErrorGap,
+  ErrorType,
+  // Reachability types (aliased to avoid conflict with call-graph types)
+  CodeLocation as NativeCodeLocation,
+  CallPathNode as NativeCallPathNode,
+  ReachableDataAccess as NativeReachableDataAccess,
+  SensitiveFieldAccess as NativeSensitiveFieldAccess,
+  ReachabilityResult as NativeReachabilityResult,
+  ReachabilityOptions as NativeReachabilityOptions,
+  InverseAccessPath as NativeInverseAccessPath,
+  InverseReachabilityResult as NativeInverseReachabilityResult,
+  CallGraphFunction,
+  CallGraphCallSite,
+  CallGraphDataAccess,
+  CallGraphInput,
+  // Unified types
+  DetectedPattern,
+  FilePatterns,
+  ResolutionStats,
+  CallGraphSummary,
+  AnalysisMetrics,
+  UnifiedResult,
+  UnifiedOptions,
+  // Constants types
+  ConstantInfo,
+  SecretCandidate,
+  MagicNumber,
+  ValueLocation,
+  ValueInconsistency,
+  ConstantsStats,
+  ConstantsResult,
+  // Environment types
+  EnvAccess,
+  EnvAccessLocation,
+  EnvVariable,
+  EnvironmentStats,
+  EnvironmentResult,
+  // Wrappers types
+  WrapperInfo,
+  WrapperCluster,
+  WrappersStats,
+  WrappersResult,
+} from './native/index.js';

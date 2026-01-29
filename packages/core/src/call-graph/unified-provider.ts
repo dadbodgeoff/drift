@@ -2,7 +2,11 @@
  * Unified Call Graph Provider
  * 
  * Provides a unified interface for call graph queries regardless of storage format.
- * Supports both legacy single-file (graph.json) and new sharded storage.
+ * Supports:
+ * - SQLite storage (recommended for large codebases) - uses native Rust queries
+ * - Sharded JSON storage
+ * - Legacy single-file JSON (graph.json)
+ * 
  * Implements lazy loading for memory efficiency on large codebases.
  */
 
@@ -33,6 +37,12 @@ import type { DataAccessPoint } from '../boundaries/types.js';
 
 import { CallGraphShardStore, type CallGraphIndex } from '../lake/callgraph-shard-store.js';
 import { CallGraphStore } from './store/call-graph-store.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  analyzeReachabilitySqlite,
+  analyzeInverseReachabilitySqlite,
+} from '../native/index.js';
 
 // Types
 export interface UnifiedCallGraphProviderConfig {
@@ -40,7 +50,7 @@ export interface UnifiedCallGraphProviderConfig {
   maxCachedShards?: number;
 }
 
-export type CallGraphStorageFormat = 'legacy' | 'sharded' | 'none';
+export type CallGraphStorageFormat = 'sqlite' | 'legacy' | 'sharded' | 'none';
 
 export interface ProviderStats {
   format: CallGraphStorageFormat;
@@ -136,7 +146,10 @@ export class UnifiedCallGraphProvider {
   async initialize(): Promise<void> {
     this.format = await this.detectFormat();
     
-    if (this.format === 'sharded') {
+    if (this.format === 'sqlite') {
+      // SQLite format uses native queries - no initialization needed
+      // The native module handles database access
+    } else if (this.format === 'sharded') {
       await this.shardStore.initialize();
       this.index = await this.shardStore.getIndex();
     } else if (this.format === 'legacy') {
@@ -146,6 +159,11 @@ export class UnifiedCallGraphProvider {
   }
 
   private async detectFormat(): Promise<CallGraphStorageFormat> {
+    // Check SQLite first (preferred for large codebases)
+    if (isNativeAvailable() && isCallGraphAvailable(this.config.rootDir)) {
+      return 'sqlite';
+    }
+    
     const shardedPath = path.join(this.config.rootDir, DRIFT_DIR, SHARDED_INDEX_FILE);
     const legacyPath = path.join(this.config.rootDir, DRIFT_DIR, LEGACY_GRAPH_FILE);
     
@@ -311,6 +329,76 @@ export class UnifiedCallGraphProvider {
     const maxDepth = options?.maxDepth ?? 10;
     const sensitiveOnly = options?.sensitiveOnly ?? false;
     
+    // Use SQLite-backed native queries when available (O(1) memory)
+    if (this.format === 'sqlite') {
+      try {
+        // Find the function at this location first
+        const startFunc = await this.getFunctionAtLine(file, line);
+        if (!startFunc) {
+          return this.emptyReachabilityResult(file, line);
+        }
+        
+        const nativeOptions: ReachabilityOptions = { maxDepth, sensitiveOnly };
+        if (options?.tables) {
+          nativeOptions.tables = options.tables;
+        }
+        
+        const nativeResult = await analyzeReachabilitySqlite(
+          this.config.rootDir,
+          startFunc.id,
+          nativeOptions
+        );
+        
+        // Convert native result to our format
+        const result: ReachabilityResult = {
+          origin: {
+            file: nativeResult.origin.file,
+            line: nativeResult.origin.line,
+          },
+          reachableAccess: nativeResult.reachableAccess.map(ra => ({
+            access: {
+              id: `${ra.file}:${ra.line}`,
+              file: ra.file,
+              line: ra.line,
+              column: 0,
+              table: ra.table,
+              operation: ra.operation,
+              fields: ra.fields,
+              context: '',
+              confidence: ra.confidence,
+              isRawSql: false,
+            },
+            path: ra.path,
+            depth: ra.depth,
+          })),
+          tables: nativeResult.tables,
+          sensitiveFields: nativeResult.sensitiveFields.map(sf => ({
+            field: {
+              field: sf.field,
+              table: sf.table ?? null,
+              sensitivityType: sf.sensitivityType as 'pii' | 'credentials' | 'financial' | 'health',
+              file: sf.file,
+              line: sf.line,
+              confidence: sf.confidence,
+            },
+            paths: sf.paths,
+            accessCount: sf.accessCount,
+          })),
+          maxDepth: nativeResult.maxDepth,
+          functionsTraversed: nativeResult.functionsTraversed,
+        };
+        
+        if (nativeResult.origin.functionId) {
+          result.origin.functionId = nativeResult.origin.functionId;
+        }
+        
+        return result;
+      } catch (err) {
+        // Fall through to TypeScript implementation on error
+        console.warn('[UnifiedCallGraphProvider] SQLite query failed, falling back to TypeScript:', err);
+      }
+    }
+    
     const startFunc = await this.getFunctionAtLine(file, line);
     if (!startFunc) {
       return this.emptyReachabilityResult(file, line);
@@ -419,6 +507,47 @@ export class UnifiedCallGraphProvider {
     options: InverseReachabilityOptions
   ): Promise<InverseReachabilityResult> {
     const { table, field, maxDepth = 10 } = options;
+    
+    // Use SQLite-backed native queries when available (O(1) memory)
+    if (this.format === 'sqlite') {
+      try {
+        const nativeResult = await analyzeInverseReachabilitySqlite(
+          this.config.rootDir,
+          table,
+          field,
+          maxDepth
+        );
+        
+        // Convert native result to our format
+        return {
+          target: {
+            table: nativeResult.targetTable,
+            field: nativeResult.targetField,
+          },
+          accessPaths: nativeResult.accessPaths.map(ap => ({
+            entryPoint: ap.entryPoint,
+            path: ap.path,
+            accessPoint: {
+              id: `${ap.accessFile}:${ap.accessLine}`,
+              file: ap.accessFile,
+              line: ap.accessLine,
+              column: 0,
+              table: ap.accessTable,
+              operation: ap.accessOperation,
+              fields: ap.accessFields,
+              context: '',
+              confidence: 1.0,
+              isRawSql: false,
+            },
+          })),
+          entryPoints: nativeResult.entryPoints,
+          totalAccessors: nativeResult.totalAccessors,
+        };
+      } catch (err) {
+        // Fall through to TypeScript implementation on error
+        console.warn('[UnifiedCallGraphProvider] SQLite inverse query failed, falling back to TypeScript:', err);
+      }
+    }
     
     const accessorIds = await this.findDataAccessors(table, field);
     const accessPaths: InverseAccessPath[] = [];

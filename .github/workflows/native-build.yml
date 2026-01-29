@@ -1,0 +1,148 @@
+name: Native Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - '.github/workflows/native-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'crates/**'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: macOS-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            name: macOS-arm64
+
+          # Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: Linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            name: Linux-arm64
+
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: Windows-x64
+
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build native module
+        working-directory: crates/drift-napi
+        run: |
+          npm install
+          npm run build
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+
+      - name: Run tests
+        if: matrix.target != 'aarch64-unknown-linux-gnu' && matrix.target != 'aarch64-apple-darwin'
+        working-directory: crates
+        run: cargo test --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-native-${{ matrix.name }}
+          path: crates/drift-napi/*.node
+          if-no-files-found: error
+
+  test-integration:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Integration Tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: drift-native-Linux-x64
+          path: crates/drift-napi
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run integration tests
+        run: pnpm test
+        env:
+          DRIFT_NATIVE_PATH: ./crates/drift-napi
+
+  publish:
+    needs: [build, test-integration]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Publish to npm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Move artifacts
+        run: |
+          mkdir -p crates/drift-napi/npm
+          mv artifacts/*/*.node crates/drift-napi/
+
+      - name: Publish
+        working-directory: crates/drift-napi
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

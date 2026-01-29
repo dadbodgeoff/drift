@@ -26,6 +26,7 @@ import type { DataAccessPoint } from '../boundaries/types.js';
 import { createTableNameValidator, type TableNameValidator } from '../boundaries/table-name-validator.js';
 import type { CallGraphShard, FunctionEntry, DataAccessRef, CallEntry } from '../lake/types.js';
 import { CallGraphShardStore } from '../lake/callgraph-shard-store.js';
+import { shouldIgnoreDirectory, shouldIgnoreExtension } from '../scanner/default-ignores.js';
 import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
 import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
 import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
@@ -516,7 +517,6 @@ export class StreamingCallGraphBuilder {
    * Find files matching patterns
    */
   private async findFiles(patterns: string[]): Promise<string[]> {
-    const ignorePatterns = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'vendor', '.drift'];
     const files: string[] = [];
 
     const walk = async (dir: string, relativePath: string = ''): Promise<void> => {
@@ -527,10 +527,15 @@ export class StreamingCallGraphBuilder {
         const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
 
         if (entry.isDirectory()) {
-          if (!ignorePatterns.includes(entry.name) && !entry.name.startsWith('.')) {
+          // Use enterprise-grade ignore list
+          if (!shouldIgnoreDirectory(entry.name)) {
             await walk(fullPath, relPath);
           }
         } else if (entry.isFile()) {
+          // Skip ignored file extensions
+          if (shouldIgnoreExtension(entry.name)) {
+            continue;
+          }
           // Check if file matches any pattern
           for (const pattern of patterns) {
             if (minimatch(relPath, pattern)) {

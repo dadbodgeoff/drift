@@ -14,6 +14,7 @@ const CONSTRAINTS_ACTIONS = ['list', 'show', 'extract', 'approve', 'ignore', 've
 const WPF_ACTIONS = ['status', 'bindings', 'mvvm', 'datacontext', 'commands'];
 const GO_ACTIONS = ['status', 'routes', 'errors', 'interfaces', 'data-access', 'goroutines'];
 const CONSTANTS_ACTIONS = ['status', 'list', 'get', 'usages', 'magic', 'dead', 'secrets', 'inconsistent'];
+const AUDIT_ACTIONS = ['status', 'run', 'approve-recommended', 'trends'];
 
 const RUST_ACTIONS = ['status', 'routes', 'errors', 'traits', 'data-access', 'async'];
 const CPP_ACTIONS = ['status', 'classes', 'memory', 'templates', 'virtual'];
@@ -45,6 +46,34 @@ const QUALITY_GATE_GATES = ['pattern-compliance', 'constraint-verification', 're
 const QUALITY_GATE_FORMATS = ['text', 'json', 'github', 'gitlab', 'sarif'];
 
 export const ANALYSIS_TOOLS: Tool[] = [
+  {
+    name: 'drift_audit',
+    description: 'Run pattern audit to detect duplicates, validate cross-references, and generate approval recommendations. Actions: status (show audit status), run (run full audit), approve-recommended (auto-approve ≥90% confidence patterns), trends (show quality trends). Use after scanning to streamline pattern approval workflows.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: AUDIT_ACTIONS,
+          description: 'Action to perform: status, run, approve-recommended, trends',
+        },
+        threshold: {
+          type: 'number',
+          description: 'Confidence threshold for auto-approve (default: 0.90)',
+        },
+        compareToPrevious: {
+          type: 'boolean',
+          description: 'Compare to previous audit for degradation detection (default: true)',
+        },
+        categories: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Categories to audit (empty = all)',
+        },
+      },
+      required: ['action'],
+    },
+  },
   {
     name: 'drift_quality_gate',
     description: 'Run quality gates on code changes. Checks pattern compliance, constraint verification, regression detection, impact simulation, security boundaries, and custom rules. Use before merging PRs to catch architectural drift.',
@@ -611,3 +640,4 @@ export { executeTypeScriptTool, type TypeScriptArgs, type TypeScriptAction } fro
 export { executePythonTool, type PythonArgs, type PythonAction } from './python.js';
 export { executeJavaTool, type JavaArgs, type JavaAction } from './java.js';
 export { executePhpTool, type PhpArgs, type PhpAction } from './php.js';
+export { handleAudit, auditTool, type AuditArgs } from './audit.js';
