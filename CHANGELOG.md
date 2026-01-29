@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.33] - 2026-01-29
+
+### 🔧 Data Access Detection Fix
+
+### Fixed
+
+- **Call Graph Data Accessor Detection**: Fixed critical bug where the Rust call graph builder was not detecting data access patterns. The `DataAccessDetector` was implemented but never called during call graph builds, resulting in 0 data accessors being reported.
+
+### Technical Details
+
+The `StreamingBuilder::process_file_static()` method was passing an empty array `&[]` for data access when converting extraction results to function entries. This meant:
+- `drift callgraph status` showed "Data Accessors: 0" even for codebases with database access
+- Reachability analysis couldn't trace data flow paths
+- Security analysis was missing database access information
+
+The fix integrates `DataAccessDetector` into the call graph build process:
+1. Parse file with tree-sitter
+2. Extract functions and calls
+3. **NEW**: Run `DataAccessDetector.detect_from_ast()` to find ORM patterns (Supabase, Prisma, TypeORM, Sequelize, Django, GORM, Diesel)
+4. **NEW**: Run `DataAccessDetector.detect_sql_in_source()` as fallback for raw SQL strings
+5. Attach data access points to functions and store in SQLite
+
+### Supported Frameworks
+
+The data access detector now correctly identifies:
+- **JavaScript/TypeScript**: Supabase, Prisma, TypeORM, Sequelize
+- **Python**: Django ORM, Supabase Python
+- **Go**: GORM
+- **Rust**: Diesel
+- **Raw SQL**: SELECT, INSERT, UPDATE, DELETE statements
+
 ## [0.9.31] - 2026-01-28
 
 ### 🦀 Rust Native Module Production Release
