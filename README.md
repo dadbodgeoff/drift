@@ -2,7 +2,7 @@
 
 **The most comprehensive MCP server for codebase intelligence**
 
-Drift scans your codebase, learns YOUR patterns, and gives AI agents deep understanding of your conventions. 35+ CLI commands. 45+ MCP tools. 8 languages. Your AI finally writes code that fits.
+Drift scans your codebase, learns YOUR patterns, and gives AI agents deep understanding of your conventions. 45+ CLI commands. 50 MCP tools. 9 languages. Native Rust core. Your AI finally writes code that fits.
 
 [![npm version](https://img.shields.io/npm/v/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
 [![npm downloads](https://img.shields.io/npm/dm/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
@@ -10,18 +10,28 @@ Drift scans your codebase, learns YOUR patterns, and gives AI agents deep unders
 
 ---
 
-## 🎉 What's New in v0.9.28
+## 🎉 What's New in v1.0.0 — The Rust Core Release 🦀
 
-**All 6 Critical Gaps Resolved** - A comprehensive quality-of-life overhaul:
+**Complete engine rewrite in Rust.** Drift now processes real-world codebases that previously crashed with OOM errors.
 
-| Feature | What's Fixed |
-|---------|--------------|
-| **Pattern Metadata** | `isOutlier`, `confidence`, `matchedText` now preserved through entire pipeline |
-| **Outlier Detection** | Statistical outliers detected during scan (not just after approval) |
-| **Backend DNA** | New gene extractors for API responses, error handling, logging, config patterns |
-| **Test Topology** | `--test-topology` flag runs test analysis during scan |
-| **Call Graph Stats** | Resolution stats (22% resolved) now persisted and visible |
-| **Field Extraction** | 7 ORM extractors: Supabase, Prisma, Django, SQLAlchemy, GORM, Diesel, Raw SQL |
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Call graph (5K files) | 4.86s | 1.11s | **4.4x faster** |
+| Call graph (10K files) | OOM crash | 2.34s | **∞ (now works)** |
+| Memory usage | Unbounded | O(1) queries | **SQLite-backed** |
+
+### What Changed
+
+- **12 Rust modules** — Scanner, parsers, call graph, boundaries, coupling, test topology, error handling, reachability, constants, environment, wrappers all run natively
+- **SQLite storage** — Call graphs stored in `.drift/lake/callgraph/callgraph.db` with WAL mode for concurrent access
+- **Native tree-sitter** — No WASM overhead, direct Rust bindings for all 9 languages
+- **Automatic fallback** — TypeScript fallback ensures backward compatibility if native modules unavailable
+
+### Key Fixes
+- ESM native module loading (root cause of OOM)
+- Prisma `this.prisma.user.findMany()` detection
+- Test topology line indexing
+- `it.skip()`/`test.skip()` detection
 
 See [CHANGELOG.md](./CHANGELOG.md) for full details.
 
@@ -49,7 +59,7 @@ AI writes code that works but doesn't fit. It ignores your conventions, misses y
 │                                                                              │
 │   $ drift init && drift scan                                                │
 │                                                                              │
-│   Drift analyzes your code with Tree-sitter parsing:                        │
+│   Drift analyzes your code with native Rust + Tree-sitter parsing:          │
 │   • Discovers patterns (how YOU write controllers, services, etc.)          │
 │   • Builds call graph (who calls what, data flow)                           │
 │   • Maps security boundaries (what touches sensitive data)                  │
@@ -160,7 +170,7 @@ drift status
 For production use, install globally with a pinned version:
 
 ```bash
-npm install -g driftdetect-mcp@0.9.23
+npm install -g driftdetect-mcp@1.0.0
 ```
 
 Then configure your MCP client:
@@ -196,7 +206,7 @@ For quick evaluation, use npx with a pinned version:
   "mcpServers": {
     "drift": {
       "command": "npx",
-      "args": ["-y", "driftdetect-mcp@0.9.23"]
+      "args": ["-y", "driftdetect-mcp@1.0.0"]
     }
   }
 }

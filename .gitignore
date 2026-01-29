@@ -50,3 +50,6 @@ fix-*.js
 
 # Draft files
 .git-commit-msg.txt
+
+# Rust build artifacts
+crates/target/
