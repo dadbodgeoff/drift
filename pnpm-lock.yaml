@@ -102,13 +102,13 @@ importers:
         version: 12.1.0
       driftdetect-core:
         specifier: 0.9.37
-        version: link:../core
+        version: 0.9.37
       driftdetect-dashboard:
         specifier: ^0.9.28
         version: link:../dashboard
       driftdetect-detectors:
         specifier: 0.9.37
-        version: link:../detectors
+        version: 0.9.37
       ora:
         specifier: ^8.1.0
         version: 8.2.0
@@ -213,7 +213,7 @@ importers:
     dependencies:
       driftdetect-core:
         specifier: 0.9.37
-        version: link:../core
+        version: 0.9.37
       driftdetect-galaxy:
         specifier: ^0.9.28
         version: link:../galaxy
@@ -319,7 +319,7 @@ importers:
     dependencies:
       driftdetect-core:
         specifier: 0.9.37
-        version: link:../core
+        version: 0.9.37
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -381,10 +381,10 @@ importers:
     dependencies:
       driftdetect-core:
         specifier: 0.9.37
-        version: link:../core
+        version: 0.9.37
       driftdetect-detectors:
         specifier: 0.9.37
-        version: link:../detectors
+        version: 0.9.37
       vscode-languageserver:
         specifier: ^9.0.1
         version: 9.0.1
@@ -415,10 +415,10 @@ importers:
         version: 1.25.3(hono@4.11.7)(zod@4.3.6)
       driftdetect-core:
         specifier: 0.9.37
-        version: link:../core
+        version: 0.9.37
       driftdetect-detectors:
         specifier: 0.9.37
-        version: link:../detectors
+        version: 0.9.37
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -3764,6 +3764,42 @@ packages:
 
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
+
+  /driftdetect-core@0.9.37:
+    resolution: {integrity: sha512-DIMeLSbNuXbN7kHS1YnEH91OPOItRPYMNng16SdSAQcyzhrDF9fUSgRqaLKJaU7u9WquNBRgX7h031Gk3mfNfQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      ignore: 5.3.2
+      minimatch: 9.0.5
+      piscina: 5.1.4
+      simple-git: 3.30.0
+      tree-sitter: 0.21.1
+      tree-sitter-c-sharp: 0.21.3(tree-sitter@0.21.1)
+      tree-sitter-cpp: 0.22.3(tree-sitter@0.21.1)
+      tree-sitter-go: 0.21.2(tree-sitter@0.21.1)
+      tree-sitter-java: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-javascript: 0.21.4(tree-sitter@0.21.1)
+      tree-sitter-php: 0.22.8(tree-sitter@0.21.1)
+      tree-sitter-python: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-rust: 0.21.0(tree-sitter@0.21.1)
+      tree-sitter-typescript: 0.21.2(tree-sitter@0.21.1)
+      typescript: 5.9.3
+    optionalDependencies:
+      driftdetect-native: 0.9.37
+    transitivePeerDependencies:
+      - supports-color
+      - tree_sitter
+    dev: false
+
+  /driftdetect-detectors@0.9.37:
+    resolution: {integrity: sha512-iFbiuclqm2AISX9BaIaCPKeoFOl2uonRBTX4aE4LcvRVjyWIEvXU8gMMq3KnNTASZHnDvX0YwseMk7a6nqI2eQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      driftdetect-core: 0.9.37
+    transitivePeerDependencies:
+      - supports-color
+      - tree_sitter
+    dev: false
 
   /driftdetect-native-darwin-arm64@0.9.33:
     resolution: {integrity: sha512-6v9OXUVXPUdYPZZnlmiWT3zO3jke2Z/EYyIuZ7SmB06VMY4uy+mCj8BcA+X2z6NZocfjkK2GjwP5yqYGXxOkaw==}
