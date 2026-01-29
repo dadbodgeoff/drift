@@ -190,8 +190,8 @@ importers:
         version: 5.9.3
     optionalDependencies:
       driftdetect-native:
-        specifier: ^0.9.31
-        version: 0.9.31
+        specifier: ^0.9.34
+        version: 0.9.34
     devDependencies:
       '@types/minimatch':
         specifier: ^5.1.2
@@ -412,7 +412,7 @@ importers:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
-        version: 1.25.3(hono@4.11.4)(zod@4.3.5)
+        version: 1.25.3(hono@4.11.7)(zod@4.3.6)
       driftdetect-core:
         specifier: ^0.9.28
         version: link:../core
@@ -1293,13 +1293,13 @@ packages:
       levn: 0.4.1
     dev: true
 
-  /@hono/node-server@1.19.9(hono@4.11.4):
+  /@hono/node-server@1.19.9(hono@4.11.7):
     resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
     dependencies:
-      hono: 4.11.4
+      hono: 4.11.7
     dev: false
 
   /@humanfs/core@0.19.1:
@@ -1624,7 +1624,7 @@ packages:
   /@mediapipe/tasks-vision@0.10.17:
     resolution: {integrity: sha512-CZWV/q6TTe8ta61cZXjfnnHsfWIdFhms03M9T7Cnd5y2mdpylJM0rF1qRq+wsQVRMLz1OYPVEBU9ph2Bx8cxrg==}
 
-  /@modelcontextprotocol/sdk@1.25.3(hono@4.11.4)(zod@4.3.5):
+  /@modelcontextprotocol/sdk@1.25.3(hono@4.11.7)(zod@4.3.6):
     resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -1634,7 +1634,7 @@ packages:
       '@cfworker/json-schema':
         optional: true
     dependencies:
-      '@hono/node-server': 1.19.9(hono@4.11.4)
+      '@hono/node-server': 1.19.9(hono@4.11.7)
       ajv: 8.17.1
       ajv-formats: 3.0.1(ajv@8.17.1)
       content-type: 1.0.5
@@ -1648,8 +1648,8 @@ packages:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.3.5
-      zod-to-json-schema: 3.25.1(zod@4.3.5)
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
     transitivePeerDependencies:
       - hono
       - supports-color
@@ -3766,10 +3766,81 @@ packages:
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
 
-  /driftdetect-native@0.9.31:
-    resolution: {integrity: sha512-I9BXHF9gkQTdx+RgOR7DqNq+Pw9baoThZwKs4OhzaGgO1ywA8AlRi4ry3G6n5uunwxAwAb6Z5denQo/7jNvHFA==}
+  /driftdetect-native-darwin-arm64@0.9.33:
+    resolution: {integrity: sha512-6v9OXUVXPUdYPZZnlmiWT3zO3jke2Z/EYyIuZ7SmB06VMY4uy+mCj8BcA+X2z6NZocfjkK2GjwP5yqYGXxOkaw==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-darwin-x64@0.9.33:
+    resolution: {integrity: sha512-rNAGjBDQQNUikN6DoPyIEILP2Iflhj9luwO8AqmhI+Z/XXQaDItcOgpK5nucpqSE9uOE1uNTDTxa9KvqXU9S3g==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-linux-arm64-gnu@0.9.33:
+    resolution: {integrity: sha512-UaInKllFO0ymHaUjU1sYuRFmueMrLclJ+KTgNIpK721TvCyWbKfCaijiHNoF8Y+Ivq5r3VmiOcoXhuvoqZ/HFw==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-linux-arm64-musl@0.9.33:
+    resolution: {integrity: sha512-gHxj3jBdJhrYNmxhBfTwwU5FmapvtzEOGDYk1z6nclCv1ApqXBZWEBOosTFCnamcplg9meaHOQ9G8a0X98XGsw==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-linux-x64-gnu@0.9.33:
+    resolution: {integrity: sha512-IayJJOFmTPEw42rjScfAnnl1TP2axf2RlF3fkpanet0y9dq05RWrIiuOjJ5PF7WkX7i8p8vMf0I74KjapgJSuA==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-linux-x64-musl@0.9.33:
+    resolution: {integrity: sha512-1Mdl4HVwhtQgDfvL+CxvzClhMX7ZZoFw0rcN0LPSpZfBh6wr/SODjAuioUB2VzNTNNRsQ8QW6DSpl6IYG5Wjug==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native-win32-x64-msvc@0.9.33:
+    resolution: {integrity: sha512-VlEW/CtfGfF7iOUxj9OR7ptyoX4HbRU7xg8r/UVVKIv4QE2DzSZBJqoE1fYqlKBQ3i3IzjlJmLauwfgv/wekww==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /driftdetect-native@0.9.34:
+    resolution: {integrity: sha512-zBOzQlqIzw9njDJ9QapKt2kER+I+GcXFXhE2HfS1diSPNbI9FStipgbGsS/R8gXVBeUePZ3Kij21ifplGYGc0w==}
     engines: {node: '>= 18'}
     requiresBuild: true
+    optionalDependencies:
+      driftdetect-native-darwin-arm64: 0.9.33
+      driftdetect-native-darwin-x64: 0.9.33
+      driftdetect-native-linux-arm64-gnu: 0.9.33
+      driftdetect-native-linux-arm64-musl: 0.9.33
+      driftdetect-native-linux-x64-gnu: 0.9.33
+      driftdetect-native-linux-x64-musl: 0.9.33
+      driftdetect-native-win32-x64-msvc: 0.9.33
     dev: false
     optional: true
 
@@ -4734,8 +4805,8 @@ packages:
   /hls.js@1.6.15:
     resolution: {integrity: sha512-E3a5VwgXimGHwpRGV+WxRTKeSp2DW5DI5MWv34ulL3t5UNmyJWCQ1KmLEHbYzcfThfXG8amBL+fCYPneGHC4VA==}
 
-  /hono@4.11.4:
-    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+  /hono@4.11.7:
+    resolution: {integrity: sha512-l7qMiNee7t82bH3SeyUCt9UF15EVmaBvsppY2zQtrbIhl/yzBTny+YUxsVjSjQ6gaqaeVtZmGocom8TzBlA4Yw==}
     engines: {node: '>=16.9.0'}
     dev: false
 
@@ -7933,16 +8004,16 @@ packages:
     engines: {node: '>=18'}
     dev: false
 
-  /zod-to-json-schema@3.25.1(zod@4.3.5):
+  /zod-to-json-schema@3.25.1(zod@4.3.6):
     resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
     peerDependencies:
       zod: ^3.25 || ^4
     dependencies:
-      zod: 4.3.5
+      zod: 4.3.6
     dev: false
 
-  /zod@4.3.5:
-    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
+  /zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
     dev: false
 
   /zustand@3.7.2(react@18.3.1):
