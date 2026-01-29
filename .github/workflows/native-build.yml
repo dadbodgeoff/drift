@@ -160,7 +160,12 @@ jobs:
 
       - name: Test binding
         working-directory: crates/drift-napi
-        run: node -e "const m = require('./index.js'); console.log('Version:', m.version()); console.log('Languages:', m.supportedLanguages());"
+        shell: bash
+        run: |
+          # Copy the .node file to root so index.js can find it
+          cp npm/${{ matrix.settings.npm-dir }}/*.node . || true
+          ls -la *.node
+          node -e "const m = require('./index.js'); console.log('Version:', m.version()); console.log('Languages:', m.supportedLanguages());"
 
   publish:
     name: Publish
