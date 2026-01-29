@@ -5,6 +5,7 @@
  */
 
 import chalk from 'chalk';
+
 import type { Reporter, ReportData } from './types.js';
 import type { Severity } from 'driftdetect-core';
 

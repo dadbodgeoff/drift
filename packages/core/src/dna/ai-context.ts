@@ -31,15 +31,15 @@ export class AIContextBuilder {
   private buildLevel3(p: StylingDNAProfile): string {
     const lines = [`# Styling Conventions (${p.summary.dominantFramework})`, ''];
     for (const g of Object.values(p.genes)) {
-      if (!g.dominant) continue;
+      if (!g.dominant) {continue;}
       lines.push(`## ${g.name}`, `Use ${g.dominant.name}:`, '```tsx');
       const ex = g.dominant.examples[0];
-      if (ex) lines.push(ex.code);
+      if (ex) {lines.push(ex.code);}
       lines.push('```', '');
     }
     if (p.mutations.length > 0) {
       lines.push('---', `⚠️ ${p.mutations.length} mutations detected`);
-      for (const m of p.mutations.slice(0, 3)) lines.push(`- ${m.file}: ${m.actual}`);
+      for (const m of p.mutations.slice(0, 3)) {lines.push(`- ${m.file}: ${m.actual}`);}
     }
     return lines.join('\n');
   }

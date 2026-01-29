@@ -2,9 +2,10 @@
  * DNA Mutations Command - drift dna mutations
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAStore, type GeneId, type MutationImpact, GENE_IDS } from 'driftdetect-core';
+
 import { createSpinner } from '../../ui/spinner.js';
 
 interface DNAMutationsOptions {
@@ -26,8 +27,8 @@ async function dnaMutationsAction(options: DNAMutationsOptions): Promise<void> {
 
     if (!profile) {
       spinner?.fail('No DNA profile found');
-      if (!options.json) console.log(chalk.gray("Run 'drift dna scan' first."));
-      else console.log(JSON.stringify({ error: 'No DNA profile found' }));
+      if (!options.json) {console.log(chalk.gray("Run 'drift dna scan' first."));}
+      else {console.log(JSON.stringify({ error: 'No DNA profile found' }));}
       return;
     }
 
@@ -71,7 +72,7 @@ async function dnaMutationsAction(options: DNAMutationsOptions): Promise<void> {
 
     // Group by impact
     const byImpact = { high: [] as typeof mutations, medium: [] as typeof mutations, low: [] as typeof mutations };
-    for (const m of mutations) byImpact[m.impact].push(m);
+    for (const m of mutations) {byImpact[m.impact].push(m);}
 
     if (byImpact.high.length > 0) {
       console.log(chalk.red.bold(`High Impact (${byImpact.high.length})`));
@@ -79,7 +80,7 @@ async function dnaMutationsAction(options: DNAMutationsOptions): Promise<void> {
       for (const m of byImpact.high.slice(0, 10)) {
         printMutation(m, options.suggest);
       }
-      if (byImpact.high.length > 10) console.log(chalk.gray(`  ... and ${byImpact.high.length - 10} more`));
+      if (byImpact.high.length > 10) {console.log(chalk.gray(`  ... and ${byImpact.high.length - 10} more`));}
       console.log();
     }
 
@@ -89,7 +90,7 @@ async function dnaMutationsAction(options: DNAMutationsOptions): Promise<void> {
       for (const m of byImpact.medium.slice(0, 10)) {
         printMutation(m, options.suggest);
       }
-      if (byImpact.medium.length > 10) console.log(chalk.gray(`  ... and ${byImpact.medium.length - 10} more`));
+      if (byImpact.medium.length > 10) {console.log(chalk.gray(`  ... and ${byImpact.medium.length - 10} more`));}
       console.log();
     }
 
@@ -99,7 +100,7 @@ async function dnaMutationsAction(options: DNAMutationsOptions): Promise<void> {
       for (const m of byImpact.low.slice(0, 5)) {
         printMutation(m, options.suggest);
       }
-      if (byImpact.low.length > 5) console.log(chalk.gray(`  ... and ${byImpact.low.length - 5} more`));
+      if (byImpact.low.length > 5) {console.log(chalk.gray(`  ... and ${byImpact.low.length - 5} more`));}
     }
 
   } catch (error) {
@@ -113,8 +114,8 @@ function printMutation(m: { file: string; line: number; gene: string; expected: 
   console.log(`  ${chalk.cyan(m.file)}:${m.line}`);
   console.log(`    Gene: ${m.gene}`);
   console.log(`    Found: ${chalk.red(m.actual)} → Expected: ${chalk.green(m.expected)}`);
-  if (m.code) console.log(chalk.gray(`    Code: ${m.code.slice(0, 50)}${m.code.length > 50 ? '...' : ''}`));
-  if (showSuggestion && m.suggestion) console.log(chalk.blue(`    💡 ${m.suggestion}`));
+  if (m.code) {console.log(chalk.gray(`    Code: ${m.code.slice(0, 50)}${m.code.length > 50 ? '...' : ''}`));}
+  if (showSuggestion && m.suggestion) {console.log(chalk.blue(`    💡 ${m.suggestion}`));}
   console.log();
 }
 

@@ -47,10 +47,10 @@ export class GitHubReporter implements Reporter {
 
     if (data.violations.length > 0) {
       const parts: string[] = [];
-      if (data.summary.errors > 0) parts.push(`${data.summary.errors} error(s)`);
-      if (data.summary.warnings > 0) parts.push(`${data.summary.warnings} warning(s)`);
-      if (data.summary.infos > 0) parts.push(`${data.summary.infos} info`);
-      if (data.summary.hints > 0) parts.push(`${data.summary.hints} hint(s)`);
+      if (data.summary.errors > 0) {parts.push(`${data.summary.errors} error(s)`);}
+      if (data.summary.warnings > 0) {parts.push(`${data.summary.warnings} warning(s)`);}
+      if (data.summary.infos > 0) {parts.push(`${data.summary.infos} info`);}
+      if (data.summary.hints > 0) {parts.push(`${data.summary.hints} hint(s)`);}
       lines.push(`::notice::Drift found ${data.summary.total} violation(s): ${parts.join(', ')}`);
     } else {
       lines.push('::notice::Drift: No violations found');

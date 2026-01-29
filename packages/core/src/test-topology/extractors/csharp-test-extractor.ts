@@ -4,8 +4,8 @@
  * Extracts test information from xUnit, NUnit, MSTest, and Moq.
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -14,6 +14,7 @@ import type {
   AssertionInfo,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection
@@ -254,15 +255,15 @@ export class CSharpTestExtractor extends BaseTestExtractor {
             
             // xUnit: constructor is setup, IDisposable.Dispose is teardown
             // NUnit
-            if (attrText.includes('[SetUp]')) setupType = 'beforeEach';
-            else if (attrText.includes('[TearDown]')) setupType = 'afterEach';
-            else if (attrText.includes('[OneTimeSetUp]')) setupType = 'beforeAll';
-            else if (attrText.includes('[OneTimeTearDown]')) setupType = 'afterAll';
+            if (attrText.includes('[SetUp]')) {setupType = 'beforeEach';}
+            else if (attrText.includes('[TearDown]')) {setupType = 'afterEach';}
+            else if (attrText.includes('[OneTimeSetUp]')) {setupType = 'beforeAll';}
+            else if (attrText.includes('[OneTimeTearDown]')) {setupType = 'afterAll';}
             // MSTest
-            else if (attrText.includes('[TestInitialize]')) setupType = 'beforeEach';
-            else if (attrText.includes('[TestCleanup]')) setupType = 'afterEach';
-            else if (attrText.includes('[ClassInitialize]')) setupType = 'beforeAll';
-            else if (attrText.includes('[ClassCleanup]')) setupType = 'afterAll';
+            else if (attrText.includes('[TestInitialize]')) {setupType = 'beforeEach';}
+            else if (attrText.includes('[TestCleanup]')) {setupType = 'afterEach';}
+            else if (attrText.includes('[ClassInitialize]')) {setupType = 'beforeAll';}
+            else if (attrText.includes('[ClassCleanup]')) {setupType = 'afterAll';}
           }
 
           if (setupType) {
@@ -313,7 +314,7 @@ export class CSharpTestExtractor extends BaseTestExtractor {
     
     // Look for attribute_list siblings before the method
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       attributes.push(sibling);
       sibling = sibling.previousNamedSibling;
     }

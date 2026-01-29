@@ -7,6 +7,7 @@
  */
 
 import * as fs from 'node:fs/promises';
+
 import type { QualityGateResult, OutputFormat, ReporterOptions } from '../types.js';
 
 /**

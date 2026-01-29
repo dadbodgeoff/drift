@@ -5,6 +5,8 @@
  * be extracted into named constants.
  */
 
+import { inferCategory } from './categorizer.js';
+
 import type {
   MagicValue,
   MagicValueOccurrence,
@@ -12,7 +14,6 @@ import type {
   IssueSeverity,
   ConstantLanguage,
 } from '../types.js';
-import { inferCategory } from './categorizer.js';
 
 /**
  * Configuration for magic value detection
@@ -133,7 +134,7 @@ export class MagicValueDetector {
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       const line = lines[lineIndex];
-      if (!line) continue;
+      if (!line) {continue;}
       const lineNumber = lineIndex + 1;
 
       // Skip comment lines
@@ -214,7 +215,7 @@ export class MagicValueDetector {
 
     while ((match = numberPattern.exec(line)) !== null) {
       const value = match[1];
-      if (!value) continue;
+      if (!value) {continue;}
 
       // Skip if it looks like part of a version string
       const beforeMatch = line.slice(Math.max(0, match.index - 5), match.index);
@@ -362,11 +363,11 @@ export class MagicValueDetector {
       const num = parseFloat(value);
 
       // Common patterns
-      if (num === 60) return 'SECONDS_PER_MINUTE';
-      if (num === 3600) return 'SECONDS_PER_HOUR';
-      if (num === 86400) return 'SECONDS_PER_DAY';
-      if (num === 1024) return 'BYTES_PER_KB';
-      if (num === 1048576) return 'BYTES_PER_MB';
+      if (num === 60) {return 'SECONDS_PER_MINUTE';}
+      if (num === 3600) {return 'SECONDS_PER_HOUR';}
+      if (num === 86400) {return 'SECONDS_PER_DAY';}
+      if (num === 1024) {return 'BYTES_PER_KB';}
+      if (num === 1048576) {return 'BYTES_PER_MB';}
 
       // Generic number name
       if (Number.isInteger(num)) {
@@ -429,9 +430,9 @@ export class MagicValueDetector {
     }
 
     // Severity based on occurrence count
-    if (occurrenceCount >= 10) return 'high';
-    if (occurrenceCount >= 5) return 'medium';
-    if (occurrenceCount >= 3) return 'low';
+    if (occurrenceCount >= 10) {return 'high';}
+    if (occurrenceCount >= 5) {return 'medium';}
+    if (occurrenceCount >= 3) {return 'low';}
     return 'info';
   }
 
@@ -509,13 +510,13 @@ export class MagicValueDetector {
    * Infer language from file path
    */
   private inferLanguage(filePath: string): ConstantLanguage {
-    if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) return 'typescript';
-    if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) return 'javascript';
-    if (filePath.endsWith('.py')) return 'python';
-    if (filePath.endsWith('.java')) return 'java';
-    if (filePath.endsWith('.cs')) return 'csharp';
-    if (filePath.endsWith('.php')) return 'php';
-    if (filePath.endsWith('.go')) return 'go';
+    if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {return 'typescript';}
+    if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) {return 'javascript';}
+    if (filePath.endsWith('.py')) {return 'python';}
+    if (filePath.endsWith('.java')) {return 'java';}
+    if (filePath.endsWith('.cs')) {return 'csharp';}
+    if (filePath.endsWith('.php')) {return 'php';}
+    if (filePath.endsWith('.go')) {return 'go';}
     return 'typescript'; // Default
   }
 
@@ -524,7 +525,7 @@ export class MagicValueDetector {
    */
   private extractContext(lines: string[], lineIndex: number): string {
     const line = lines[lineIndex];
-    if (!line) return '';
+    if (!line) {return '';}
     const trimmed = line.trim();
     return trimmed.length <= 100 ? trimmed : trimmed.slice(0, 97) + '...';
   }
@@ -535,7 +536,7 @@ export class MagicValueDetector {
   private findContainingFunction(lines: string[], lineIndex: number): string | undefined {
     for (let i = lineIndex - 1; i >= 0; i--) {
       const line = lines[i];
-      if (!line) continue;
+      if (!line) {continue;}
 
       // Function patterns
       const match = line.match(

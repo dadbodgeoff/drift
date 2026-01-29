@@ -23,14 +23,15 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import {
   isTypeScriptTreeSitterAvailable,
   isJavaScriptTreeSitterAvailable,
   createParserForFile,
 } from '../../parsers/tree-sitter/typescript-loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 /**
  * TypeScript/JavaScript data access extractor using tree-sitter
@@ -97,9 +98,9 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
 
   private getParserExtension(filePath: string): string {
     const lower = filePath.toLowerCase();
-    if (lower.endsWith('.tsx')) return '.tsx';
-    if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) return '.ts';
-    if (lower.endsWith('.jsx')) return '.jsx';
+    if (lower.endsWith('.tsx')) {return '.tsx';}
+    if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) {return '.ts';}
+    if (lower.endsWith('.jsx')) {return '.jsx';}
     return '.js';
   }
 
@@ -195,7 +196,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
         }
         
         const funcNode = current.childForFieldName('function');
-        if (!funcNode) break;
+        if (!funcNode) {break;}
         
         if (funcNode.type === 'member_expression') {
           const propNode = funcNode.childForFieldName('property');
@@ -240,17 +241,17 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
     const fromIndex = chain.names.indexOf('from');
-    if (fromIndex === -1) return null;
+    if (fromIndex === -1) {return null;}
 
     // Get table name from .from('table')
     const fromArgs = chain.args[fromIndex];
-    if (!fromArgs || fromArgs.length === 0) return null;
+    if (!fromArgs || fromArgs.length === 0) {return null;}
 
     const tableArg = fromArgs[0];
-    if (!tableArg) return null;
+    if (!tableArg) {return null;}
 
     const table = this.extractStringValue(tableArg);
-    if (!table) return null;
+    if (!table) {return null;}
 
     // Determine operation from the chain
     let operation: DataOperation = 'read';
@@ -334,12 +335,12 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract field name from a where clause method call
    */
   private extractWhereClauseField(args: TreeSitterNode[]): string | null {
-    if (args.length === 0) return null;
+    if (args.length === 0) {return null;}
 
     // For methods like .eq('field', value), .where('field', value)
     // The first argument is typically the field name
     const firstArg = args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     // Direct string argument: .eq('email', value)
     const strValue = this.extractStringValue(firstArg);
@@ -369,22 +370,22 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 3) return null;
+    if (chain.names.length < 3) {return null;}
     
     const firstPart = chain.names[0]?.toLowerCase();
-    if (!firstPart?.includes('prisma')) return null;
+    if (!firstPart?.includes('prisma')) {return null;}
 
     const modelName = chain.names[1];
     const methodName = chain.names[2];
     
-    if (!modelName || !methodName) return null;
+    if (!modelName || !methodName) {return null;}
 
     // Skip if model name looks like a method
     const prismaClientMethods = ['$connect', '$disconnect', '$transaction', '$queryRaw', '$executeRaw'];
-    if (prismaClientMethods.includes(modelName)) return null;
+    if (prismaClientMethods.includes(modelName)) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Extract fields from select/include
     let fields: string[] = [];
@@ -415,25 +416,25 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const receiverName = chain.names[0];
     const methodName = chain.names[1];
     
-    if (!receiverName || !methodName) return null;
+    if (!receiverName || !methodName) {return null;}
 
     const isRepository = receiverName.toLowerCase().includes('repository') ||
                         receiverName.toLowerCase().includes('repo');
     const isEntity = /^[A-Z]/.test(receiverName) && 
                     !['Array', 'Object', 'String', 'Number', 'Boolean', 'Promise', 'Map', 'Set'].includes(receiverName);
 
-    if (!isRepository && !isEntity) return null;
+    if (!isRepository && !isEntity) {return null;}
 
     const typeormMethods = ['find', 'findOne', 'findOneBy', 'findBy', 'findAndCount', 'save', 'insert', 'update', 'delete', 'remove', 'count'];
-    if (!typeormMethods.includes(methodName)) return null;
+    if (!typeormMethods.includes(methodName)) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createAccessPoint({
       table: this.inferTableFromName(receiverName),
@@ -456,19 +457,19 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const modelName = chain.names[0];
     const methodName = chain.names[1];
     
-    if (!modelName || !methodName) return null;
-    if (!/^[A-Z]/.test(modelName)) return null;
+    if (!modelName || !methodName) {return null;}
+    if (!/^[A-Z]/.test(modelName)) {return null;}
 
     const sequelizeMethods = ['findAll', 'findOne', 'findByPk', 'findOrCreate', 'create', 'bulkCreate', 'update', 'destroy', 'count'];
-    if (!sequelizeMethods.includes(methodName)) return null;
+    if (!sequelizeMethods.includes(methodName)) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Extract fields from attributes option
     let fields: string[] = [];
@@ -499,20 +500,20 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
     const fromIndex = chain.names.indexOf('from');
-    if (fromIndex === -1) return null;
+    if (fromIndex === -1) {return null;}
 
     const hasSelect = chain.names.includes('select') || chain.names.includes('selectDistinct');
     const hasInsert = chain.names.includes('insert');
     const hasUpdate = chain.names.includes('update');
     const hasDelete = chain.names.includes('delete');
 
-    if (!hasSelect && !hasInsert && !hasUpdate && !hasDelete) return null;
+    if (!hasSelect && !hasInsert && !hasUpdate && !hasDelete) {return null;}
 
     const fromArgs = chain.args[fromIndex];
-    if (!fromArgs || fromArgs.length === 0) return null;
+    if (!fromArgs || fromArgs.length === 0) {return null;}
 
     const tableArg = fromArgs[0];
-    if (!tableArg) return null;
+    if (!tableArg) {return null;}
 
     let table = 'unknown';
     let tableFromLiteral = false;
@@ -528,9 +529,9 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     }
 
     let operation: DataOperation = 'read';
-    if (hasInsert) operation = 'write';
-    if (hasUpdate) operation = 'write';
-    if (hasDelete) operation = 'delete';
+    if (hasInsert) {operation = 'write';}
+    if (hasUpdate) {operation = 'write';}
+    if (hasDelete) {operation = 'delete';}
 
     return this.createAccessPoint({
       table,
@@ -554,19 +555,19 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const firstPart = chain.names[0]?.toLowerCase();
-    if (!firstPart?.includes('knex') && !firstPart?.includes('db')) return null;
+    if (!firstPart?.includes('knex') && !firstPart?.includes('db')) {return null;}
 
     const firstArgs = chain.args[0];
-    if (!firstArgs || firstArgs.length === 0) return null;
+    if (!firstArgs || firstArgs.length === 0) {return null;}
 
     const tableArg = firstArgs[0];
-    if (!tableArg) return null;
+    if (!tableArg) {return null;}
 
     const table = this.extractStringValue(tableArg);
-    if (!table) return null;
+    if (!table) {return null;}
 
     let operation: DataOperation = 'read';
     for (const method of chain.names) {
@@ -598,13 +599,13 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const modelName = chain.names[0];
     const methodName = chain.names[1];
     
-    if (!modelName || !methodName) return null;
-    if (!/^[A-Z]/.test(modelName)) return null;
+    if (!modelName || !methodName) {return null;}
+    if (!/^[A-Z]/.test(modelName)) {return null;}
 
     const mongooseMethods = {
       read: ['find', 'findOne', 'findById', 'findOneAndUpdate', 'findByIdAndUpdate',
@@ -626,7 +627,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'delete';
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Extract fields from projection
     let fields: string[] = [];
@@ -670,23 +671,23 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     const queryMethods = ['query', 'execute', 'raw', 'rawQuery', '$queryRaw', '$executeRaw', 'sql'];
     const methodIndex = chain.names.findIndex(n => queryMethods.includes(n));
     
-    if (methodIndex === -1) return null;
+    if (methodIndex === -1) {return null;}
 
     const methodArgs = chain.args[methodIndex];
-    if (!methodArgs || methodArgs.length === 0) return null;
+    if (!methodArgs || methodArgs.length === 0) {return null;}
 
     const sqlArg = methodArgs[0];
-    if (!sqlArg) return null;
+    if (!sqlArg) {return null;}
 
     let sqlText = this.extractStringValue(sqlArg);
     if (!sqlText && sqlArg.type === 'template_string') {
       sqlText = sqlArg.text;
     }
 
-    if (!sqlText) return null;
+    if (!sqlText) {return null;}
 
     const { table, operation, fields } = this.parseSQLStatement(sqlText);
-    if (!table || table === 'unknown') return null;
+    if (!table || table === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -713,28 +714,28 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
   ): void {
     // Get the tag name
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let tagName = '';
     if (funcNode.type === 'identifier') {
       tagName = funcNode.text;
     } else if (funcNode.type === 'member_expression') {
       const propNode = funcNode.childForFieldName('property');
-      if (propNode) tagName = propNode.text;
+      if (propNode) {tagName = propNode.text;}
     }
 
     const sqlTags = ['sql', 'Sql', 'SQL', 'raw', 'query'];
-    if (!sqlTags.includes(tagName)) return;
+    if (!sqlTags.includes(tagName)) {return;}
 
     // Get the template content
     const templateNode = node.children.find(c => c.type === 'template_string');
-    if (!templateNode) return;
+    if (!templateNode) {return;}
 
     const sqlText = templateNode.text;
-    if (!sqlText) return;
+    if (!sqlText) {return;}
 
     const { table, operation, fields } = this.parseSQLStatement(sqlText);
-    if (!table || table === 'unknown') return;
+    if (!table || table === 'unknown') {return;}
 
     const accessPoint = this.createAccessPoint({
       table,
@@ -779,9 +780,9 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
     const intoMatch = sql.match(/INTO\s+["'`]?(\w+)["'`]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`]?(\w+)["'`]?/i);
 
-    if (fromMatch?.[1]) table = fromMatch[1];
-    else if (intoMatch?.[1]) table = intoMatch[1];
-    else if (updateMatch?.[1]) table = updateMatch[1];
+    if (fromMatch?.[1]) {table = fromMatch[1];}
+    else if (intoMatch?.[1]) {table = intoMatch[1];}
+    else if (updateMatch?.[1]) {table = updateMatch[1];}
 
     if (operation === 'read') {
       const selectMatch = sql.match(/SELECT\s+(.+?)\s+FROM/i);
@@ -803,7 +804,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract string value from a node
    */
   private extractStringValue(node: TreeSitterNode | null): string | null {
-    if (!node) return null;
+    if (!node) {return null;}
 
     if (node.type === 'string') {
       // Remove quotes
@@ -821,7 +822,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract fields from an object literal
    */
   private extractFieldsFromObject(node: TreeSitterNode | null): string[] {
-    if (!node) return [];
+    if (!node) {return [];}
     
     const fields: string[] = [];
 
@@ -856,7 +857,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract fields from Prisma select/include options
    */
   private extractPrismaFields(node: TreeSitterNode | null): string[] {
-    if (!node || node.type !== 'object') return [];
+    if (node?.type !== 'object') {return [];}
 
     const fields: string[] = [];
 
@@ -866,7 +867,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
         const valueNode = child.childForFieldName('value');
         
         if (keyNode && (keyNode.text === 'select' || keyNode.text === 'include')) {
-          if (valueNode && valueNode.type === 'object') {
+          if (valueNode?.type === 'object') {
             for (const selectChild of valueNode.children) {
               if (selectChild.type === 'pair') {
                 const selectKey = selectChild.childForFieldName('key');
@@ -887,7 +888,7 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract fields from Sequelize attributes option
    */
   private extractSequelizeFields(node: TreeSitterNode | null): string[] {
-    if (!node || node.type !== 'object') return [];
+    if (node?.type !== 'object') {return [];}
 
     const fields: string[] = [];
 
@@ -896,8 +897,8 @@ export class TypeScriptDataAccessExtractor extends BaseDataAccessExtractor {
         const keyNode = child.childForFieldName('key');
         const valueNode = child.childForFieldName('value');
         
-        if (keyNode && keyNode.text === 'attributes') {
-          if (valueNode && valueNode.type === 'array') {
+        if (keyNode?.text === 'attributes') {
+          if (valueNode?.type === 'array') {
             for (const elem of valueNode.children) {
               if (elem.type === 'string') {
                 fields.push(elem.text.replace(/^['"`]|['"`]$/g, ''));

@@ -6,6 +6,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -58,7 +59,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
     while ((match = funcDeclPattern.exec(cleanSource)) !== null) {
       const name = match[1]!;
       const key = `func:${name}:${this.getLineNumber(originalSource, match.index)}`;
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const startLine = this.getLineNumber(originalSource, match.index);
@@ -77,7 +78,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
         isExported,
         isAsync,
       };
-      if (returnType) funcOpts.returnType = returnType;
+      if (returnType) {funcOpts.returnType = returnType;}
 
       functions.push(this.createFunction(funcOpts));
     }
@@ -90,7 +91,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
     while ((match = arrowPattern.exec(cleanSource)) !== null) {
       const name = match[1]!;
       const key = `arrow:${name}:${this.getLineNumber(originalSource, match.index)}`;
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const startLine = this.getLineNumber(originalSource, match.index);
@@ -124,7 +125,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
     while ((match = singleParamArrowPattern.exec(cleanSource)) !== null) {
       const name = match[1]!;
       const key = `arrow-single:${name}:${this.getLineNumber(originalSource, match.index)}`;
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const startLine = this.getLineNumber(originalSource, match.index);
@@ -169,7 +170,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
       const isExported = match[0].startsWith('export');
 
       const baseClasses: string[] = [];
-      if (match[2]) baseClasses.push(match[2]);
+      if (match[2]) {baseClasses.push(match[2]);}
 
       // Extract method names from class body
       const classBody = cleanSource.slice(match.index, endIndex);
@@ -306,7 +307,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
             isReExport: !!source,
             line,
           };
-          if (source) exportOpts.source = source;
+          if (source) {exportOpts.source = source;}
           exports.push(this.createExport(exportOpts));
         }
       }
@@ -361,11 +362,11 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip common non-call patterns
-      if (['if', 'for', 'while', 'switch', 'catch'].includes(receiver)) continue;
+      if (['if', 'for', 'while', 'switch', 'catch'].includes(receiver)) {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -384,11 +385,11 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip keywords and common non-function patterns
-      if (['if', 'for', 'while', 'switch', 'catch', 'function', 'return', 'throw', 'new', 'typeof', 'instanceof'].includes(calleeName)) continue;
+      if (['if', 'for', 'while', 'switch', 'catch', 'function', 'return', 'throw', 'new', 'typeof', 'instanceof'].includes(calleeName)) {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -406,7 +407,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `new:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({
@@ -425,7 +426,7 @@ export class TypeScriptRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `jsx:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({

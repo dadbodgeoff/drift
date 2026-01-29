@@ -374,10 +374,10 @@ function extractSeaOrmPatterns(
     frameworks.add('sea-orm');
     
     let operation: DataOperation = 'unknown';
-    if (fullMatch.includes('find')) operation = 'read';
-    else if (fullMatch.includes('insert')) operation = 'write';
-    else if (fullMatch.includes('update')) operation = 'write';
-    else if (fullMatch.includes('delete')) operation = 'delete';
+    if (fullMatch.includes('find')) {operation = 'read';}
+    else if (fullMatch.includes('insert')) {operation = 'write';}
+    else if (fullMatch.includes('update')) {operation = 'write';}
+    else if (fullMatch.includes('delete')) {operation = 'delete';}
     
     accessPoints.push(createDataAccessPoint(
       filePath,

@@ -7,14 +7,16 @@
  * @requirements 29.1, 38.1
  */
 
-import { Command } from 'commander';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { PatternStore, getProjectRegistry, generateInstallationId, type TelemetryConfig } from 'driftdetect-core';
-import { createSpinner, status } from '../ui/spinner.js';
+
 import { promptInitOptions, confirmPrompt } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 
 export interface InitOptions {
   /** Initialize from Cheatcode2026 scaffold */

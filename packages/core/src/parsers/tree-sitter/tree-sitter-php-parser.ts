@@ -10,13 +10,14 @@
  * @requirements PHP/Laravel Language Support
  */
 
-import type { Position, ASTNode, AST, ParseResult } from '../types.js';
-import type { TreeSitterNode, TreeSitterParser } from './types.js';
 import {
   isPhpTreeSitterAvailable,
   createPhpParser,
   getPhpLoadingError,
 } from './php-loader.js';
+
+import type { Position, ASTNode, AST, ParseResult } from '../types.js';
+import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================
 // PHP-Specific Types
@@ -252,11 +253,11 @@ export class TreeSitterPhpParser {
 
   private extractNamespace(root: TreeSitterNode): PhpNamespaceInfo | null {
     const nsNode = this.findChildByType(root, 'namespace_definition');
-    if (!nsNode) return null;
+    if (!nsNode) {return null;}
 
     const nameNode = this.findChildByType(nsNode, 'namespace_name') ??
                      this.findChildByType(nsNode, 'qualified_name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     return {
       name: nameNode.text,
@@ -270,11 +271,11 @@ export class TreeSitterPhpParser {
 
     this.findNodesOfType(root, 'namespace_use_declaration', (node) => {
       const useClause = this.findChildByType(node, 'namespace_use_clause');
-      if (!useClause) return;
+      if (!useClause) {return;}
 
       const nameNode = this.findChildByType(useClause, 'qualified_name') ??
                        this.findChildByType(useClause, 'namespace_name');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const aliasNode = this.findChildByType(useClause, 'namespace_aliasing_clause');
       const alias = aliasNode ? this.findChildByType(aliasNode, 'name')?.text ?? null : null;
@@ -282,8 +283,8 @@ export class TreeSitterPhpParser {
       // Determine type (class, function, const)
       let type: 'class' | 'function' | 'const' = 'class';
       for (const child of node.children) {
-        if (child.text === 'function') type = 'function';
-        else if (child.text === 'const') type = 'const';
+        if (child.text === 'function') {type = 'function';}
+        else if (child.text === 'const') {type = 'const';}
       }
 
       statements.push({
@@ -303,7 +304,7 @@ export class TreeSitterPhpParser {
 
     this.findNodesOfType(root, 'class_declaration', (node) => {
       const classInfo = this.parseClass(node, namespace);
-      if (classInfo) classes.push(classInfo);
+      if (classInfo) {classes.push(classInfo);}
     });
 
     return classes;
@@ -311,7 +312,7 @@ export class TreeSitterPhpParser {
 
   private parseClass(node: TreeSitterNode, namespace: string | null): PhpClassInfo | null {
     const nameNode = this.findChildByType(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const fqn = namespace ? `${namespace}\\${name}` : name;
@@ -322,9 +323,9 @@ export class TreeSitterPhpParser {
     let isReadonly = false;
 
     for (const child of node.children) {
-      if (child.type === 'abstract_modifier') isAbstract = true;
-      if (child.type === 'final_modifier') isFinal = true;
-      if (child.type === 'readonly_modifier') isReadonly = true;
+      if (child.type === 'abstract_modifier') {isAbstract = true;}
+      if (child.type === 'final_modifier') {isFinal = true;}
+      if (child.type === 'readonly_modifier') {isReadonly = true;}
     }
 
     // Extract extends
@@ -389,15 +390,15 @@ export class TreeSitterPhpParser {
     for (const child of bodyNode.children) {
       if (child.type === 'property_declaration') {
         const prop = this.parseProperty(child);
-        if (prop) properties.push(prop);
+        if (prop) {properties.push(prop);}
       } else if (child.type === 'method_declaration') {
         const method = this.parseMethod(child);
-        if (method) methods.push(method);
+        if (method) {methods.push(method);}
       } else if (child.type === 'use_declaration') {
         // Trait use
         this.findNodesOfType(child, 'qualified_name', (n) => traits.push(n.text));
         this.findNodesOfType(child, 'name', (n) => {
-          if (!traits.includes(n.text)) traits.push(n.text);
+          if (!traits.includes(n.text)) {traits.push(n.text);}
         });
       }
     }
@@ -415,8 +416,8 @@ export class TreeSitterPhpParser {
       if (child.type === 'visibility_modifier') {
         visibility = child.text as 'public' | 'protected' | 'private';
       }
-      if (child.type === 'static_modifier') isStatic = true;
-      if (child.type === 'readonly_modifier') isReadonly = true;
+      if (child.type === 'static_modifier') {isStatic = true;}
+      if (child.type === 'readonly_modifier') {isReadonly = true;}
     }
 
     // Extract type
@@ -425,10 +426,10 @@ export class TreeSitterPhpParser {
 
     // Extract property element
     const propElement = this.findChildByType(node, 'property_element');
-    if (!propElement) return null;
+    if (!propElement) {return null;}
 
     const varNode = this.findChildByType(propElement, 'variable_name');
-    if (!varNode) return null;
+    if (!varNode) {return null;}
 
     const name = varNode.text.replace(/^\$/, '');
 
@@ -453,7 +454,7 @@ export class TreeSitterPhpParser {
 
   private parseMethod(node: TreeSitterNode): PhpMethodInfo | null {
     const nameNode = this.findChildByType(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     let visibility: 'public' | 'protected' | 'private' = 'public';
     let isStatic = false;
@@ -464,9 +465,9 @@ export class TreeSitterPhpParser {
       if (child.type === 'visibility_modifier') {
         visibility = child.text as 'public' | 'protected' | 'private';
       }
-      if (child.type === 'static_modifier') isStatic = true;
-      if (child.type === 'abstract_modifier') isAbstract = true;
-      if (child.type === 'final_modifier') isFinal = true;
+      if (child.type === 'static_modifier') {isStatic = true;}
+      if (child.type === 'abstract_modifier') {isAbstract = true;}
+      if (child.type === 'final_modifier') {isFinal = true;}
     }
 
     // Extract parameters
@@ -499,7 +500,7 @@ export class TreeSitterPhpParser {
     for (const child of paramsNode.children) {
       if (child.type === 'simple_parameter' || child.type === 'property_promotion_parameter') {
         const param = this.parseParameter(child);
-        if (param) params.push(param);
+        if (param) {params.push(param);}
       }
     }
 
@@ -508,7 +509,7 @@ export class TreeSitterPhpParser {
 
   private parseParameter(node: TreeSitterNode): PhpParameterInfo | null {
     const varNode = this.findChildByType(node, 'variable_name');
-    if (!varNode) return null;
+    if (!varNode) {return null;}
 
     const name = varNode.text.replace(/^\$/, '');
 
@@ -527,8 +528,8 @@ export class TreeSitterPhpParser {
     let visibility: 'public' | 'protected' | 'private' | null = null;
 
     for (const child of node.children) {
-      if (child.type === 'variadic_parameter') isVariadic = true;
-      if (child.type === 'reference_modifier') isByReference = true;
+      if (child.type === 'variadic_parameter') {isVariadic = true;}
+      if (child.type === 'reference_modifier') {isByReference = true;}
       if (child.type === 'visibility_modifier') {
         visibility = child.text as 'public' | 'protected' | 'private';
         isPromoted = true;
@@ -554,7 +555,7 @@ export class TreeSitterPhpParser {
 
     this.findNodesOfType(root, 'interface_declaration', (node) => {
       const nameNode = this.findChildByType(node, 'name');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const name = nameNode.text;
       const fqn = namespace ? `${namespace}\\${name}` : name;
@@ -565,7 +566,7 @@ export class TreeSitterPhpParser {
       if (extendsNode) {
         this.findNodesOfType(extendsNode, 'qualified_name', (n) => extendsList.push(n.text));
         this.findNodesOfType(extendsNode, 'name', (n) => {
-          if (!extendsList.includes(n.text)) extendsList.push(n.text);
+          if (!extendsList.includes(n.text)) {extendsList.push(n.text);}
         });
       }
 
@@ -576,7 +577,7 @@ export class TreeSitterPhpParser {
         for (const child of bodyNode.children) {
           if (child.type === 'method_declaration') {
             const method = this.parseMethod(child);
-            if (method) methods.push(method);
+            if (method) {methods.push(method);}
           }
         }
       }
@@ -601,7 +602,7 @@ export class TreeSitterPhpParser {
 
     this.findNodesOfType(root, 'trait_declaration', (node) => {
       const nameNode = this.findChildByType(node, 'name');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const name = nameNode.text;
       const fqn = namespace ? `${namespace}\\${name}` : name;
@@ -631,7 +632,7 @@ export class TreeSitterPhpParser {
 
     this.findNodesOfType(root, 'enum_declaration', (node) => {
       const nameNode = this.findChildByType(node, 'name');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const name = nameNode.text;
       const fqn = namespace ? `${namespace}\\${name}` : name;
@@ -641,8 +642,8 @@ export class TreeSitterPhpParser {
       const backingNode = this.findChildByType(node, 'enum_declaration_list');
       if (backingNode) {
         const typeNode = this.findChildByType(backingNode, 'primitive_type');
-        if (typeNode?.text === 'string') backingType = 'string';
-        else if (typeNode?.text === 'int') backingType = 'int';
+        if (typeNode?.text === 'string') {backingType = 'string';}
+        else if (typeNode?.text === 'int') {backingType = 'int';}
       }
 
       // Implements
@@ -672,7 +673,7 @@ export class TreeSitterPhpParser {
             }
           } else if (child.type === 'method_declaration') {
             const method = this.parseMethod(child);
-            if (method) methods.push(method);
+            if (method) {methods.push(method);}
           }
         }
       }
@@ -703,7 +704,7 @@ export class TreeSitterPhpParser {
         this.findNodesOfType(child, 'attribute', (attrNode) => {
           const nameNode = this.findChildByType(attrNode, 'qualified_name') ??
                            this.findChildByType(attrNode, 'name');
-          if (!nameNode) return;
+          if (!nameNode) {return;}
 
           const args: string[] = [];
           const argsNode = this.findChildByType(attrNode, 'arguments');
@@ -762,7 +763,7 @@ export class TreeSitterPhpParser {
 
   private findChildByType(node: TreeSitterNode, type: string): TreeSitterNode | null {
     for (const child of node.children) {
-      if (child.type === type) return child;
+      if (child.type === type) {return child;}
     }
     return null;
   }
@@ -772,7 +773,7 @@ export class TreeSitterPhpParser {
     type: string,
     callback: (node: TreeSitterNode) => void
   ): void {
-    if (node.type === type) callback(node);
+    if (node.type === type) {callback(node);}
     for (const child of node.children) {
       this.findNodesOfType(child, type, callback);
     }

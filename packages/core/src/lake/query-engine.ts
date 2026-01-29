@@ -13,6 +13,13 @@
 
 import { EventEmitter } from 'node:events';
 
+
+import { IndexStore } from './index-store.js';
+import { ManifestStore } from './manifest-store.js';
+import { PatternShardStore } from './pattern-shard-store.js';
+import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
+import { ViewStore } from './view-store.js';
+
 import type {
   StatusView,
   PatternSummary,
@@ -21,14 +28,6 @@ import type {
   DataLakeConfig,
   ViewType,
 } from './types.js';
-
-import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
-
-import { ManifestStore } from './manifest-store.js';
-import { ViewStore } from './view-store.js';
-import { IndexStore } from './index-store.js';
-import { PatternShardStore } from './pattern-shard-store.js';
-
 import type { Pattern, PatternCategory, PatternStatus } from '../store/types.js';
 
 // ============================================================================
@@ -546,7 +545,7 @@ export class QueryEngine extends EventEmitter {
 
   /** Decode cursor - kept for future pagination implementation */
   // @ts-expect-error - Will be used when pagination is fully implemented
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private decodeCursor(cursor: string): { offset: number } | null {
     try {
       return JSON.parse(Buffer.from(cursor, 'base64url').toString());

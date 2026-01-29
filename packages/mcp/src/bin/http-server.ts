@@ -27,12 +27,14 @@
  *   # Then configure your MCP client to connect to http://localhost:3000
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
 import { createServer, type IncomingMessage, type ServerResponse, type Server as HttpServer } from 'http';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
 import { type Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+
 import { createEnterpriseMCPServer } from '../enterprise-server.js';
 
 // Server version (matches enterprise-server)
@@ -58,7 +60,7 @@ function getActiveProjectRoot(): string {
       // Find the active project
       if (data.projects && Array.isArray(data.projects)) {
         const activeProject = data.projects.find((p: { isActive?: boolean }) => p.isActive === true);
-        if (activeProject && activeProject.path && fs.existsSync(activeProject.path)) {
+        if (activeProject?.path && fs.existsSync(activeProject.path)) {
           return activeProject.path;
         }
         

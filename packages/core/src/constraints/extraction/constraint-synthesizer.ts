@@ -7,6 +7,10 @@
 
 import { createHash } from 'node:crypto';
 
+
+import { CONSTRAINT_SCHEMA_VERSION as SCHEMA_VERSION } from '../types.js';
+
+import type { ConstraintStore } from '../store/constraint-store.js';
 import type {
   Constraint,
   ConstraintStatus,
@@ -15,9 +19,6 @@ import type {
   ExtractionStats,
   ExtractionOptions,
 } from '../types.js';
-
-import { CONSTRAINT_SCHEMA_VERSION as SCHEMA_VERSION } from '../types.js';
-import type { ConstraintStore } from '../store/constraint-store.js';
 import type { DetectedInvariant, InvariantDetector } from './invariant-detector.js';
 
 // =============================================================================
@@ -202,19 +203,19 @@ export class ConstraintSynthesizer {
     const used = new Set<number>();
 
     for (let i = 0; i < constraints.length; i++) {
-      if (used.has(i)) continue;
+      if (used.has(i)) {continue;}
 
       const current = constraints[i];
-      if (!current) continue;
+      if (!current) {continue;}
       
       const similar: Constraint[] = [current];
 
       // Find similar constraints
       for (let j = i + 1; j < constraints.length; j++) {
-        if (used.has(j)) continue;
+        if (used.has(j)) {continue;}
 
         const other = constraints[j];
-        if (!other) continue;
+        if (!other) {continue;}
         
         if (this.areSimilar(current, other, threshold)) {
           similar.push(other);
@@ -240,14 +241,14 @@ export class ConstraintSynthesizer {
    */
   private areSimilar(a: Constraint, b: Constraint, threshold: number): boolean {
     // Must be same category
-    if (a.category !== b.category) return false;
+    if (a.category !== b.category) {return false;}
 
     // Must be same type
-    if (a.invariant.type !== b.invariant.type) return false;
+    if (a.invariant.type !== b.invariant.type) {return false;}
 
     // Check name similarity
     const nameSimilarity = this.stringSimilarity(a.name, b.name);
-    if (nameSimilarity < threshold) return false;
+    if (nameSimilarity < threshold) {return false;}
 
     // Check condition similarity
     const conditionSimilarity = this.stringSimilarity(
@@ -396,15 +397,15 @@ export class ConstraintSynthesizer {
   private hasChanged(newC: Constraint, oldC: Constraint): boolean {
     // Check confidence change
     const confidenceDelta = Math.abs(newC.confidence.score - oldC.confidence.score);
-    if (confidenceDelta > 0.05) return true;
+    if (confidenceDelta > 0.05) {return true;}
 
     // Check evidence change
     const evidenceDelta = Math.abs(newC.confidence.evidence - oldC.confidence.evidence);
-    if (evidenceDelta > 5) return true;
+    if (evidenceDelta > 5) {return true;}
 
     // Check violation change
     const violationDelta = Math.abs(newC.confidence.violations - oldC.confidence.violations);
-    if (violationDelta > 3) return true;
+    if (violationDelta > 3) {return true;}
 
     return false;
   }

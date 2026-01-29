@@ -8,6 +8,7 @@
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
 import type {
   ConstantFileShard,
   ConstantIndex,

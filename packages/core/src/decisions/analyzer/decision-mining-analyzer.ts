@@ -5,6 +5,16 @@
  * Coordinates git walking, semantic extraction, clustering, and synthesis.
  */
 
+import {
+  createAllCommitExtractors,
+  type CommitExtractorOptions,
+} from '../extractors/index.js';
+import {
+  GitWalker,
+  createGitWalker,
+  type GitWalkResult,
+} from '../git/index.js';
+
 import type {
   GitCommit,
   CommitSemanticExtraction,
@@ -19,15 +29,6 @@ import type {
   DecisionStatus,
   MiningError,
 } from '../types.js';
-import {
-  GitWalker,
-  createGitWalker,
-  type GitWalkResult,
-} from '../git/index.js';
-import {
-  createAllCommitExtractors,
-  type CommitExtractorOptions,
-} from '../extractors/index.js';
 
 // ============================================================================
 // Analyzer Class
@@ -55,11 +56,11 @@ export class DecisionMiningAnalyzer {
     const walkerOpts: Parameters<typeof createGitWalker>[0] = {
       rootDir: options.rootDir,
     };
-    if (options.since !== undefined) walkerOpts.since = options.since;
-    if (options.until !== undefined) walkerOpts.until = options.until;
-    if (options.maxCommits !== undefined) walkerOpts.maxCommits = options.maxCommits;
-    if (options.includeMergeCommits !== undefined) walkerOpts.includeMergeCommits = options.includeMergeCommits;
-    if (options.excludePaths !== undefined) walkerOpts.excludePaths = options.excludePaths;
+    if (options.since !== undefined) {walkerOpts.since = options.since;}
+    if (options.until !== undefined) {walkerOpts.until = options.until;}
+    if (options.maxCommits !== undefined) {walkerOpts.maxCommits = options.maxCommits;}
+    if (options.includeMergeCommits !== undefined) {walkerOpts.includeMergeCommits = options.includeMergeCommits;}
+    if (options.excludePaths !== undefined) {walkerOpts.excludePaths = options.excludePaths;}
     
     this.gitWalker = createGitWalker(walkerOpts);
 
@@ -68,8 +69,8 @@ export class DecisionMiningAnalyzer {
       rootDir: options.rootDir,
       includeFunctions: true,
     };
-    if (options.usePatternData !== undefined) extractorOptions.includePatterns = options.usePatternData;
-    if (options.verbose !== undefined) extractorOptions.verbose = options.verbose;
+    if (options.usePatternData !== undefined) {extractorOptions.includePatterns = options.usePatternData;}
+    if (options.verbose !== undefined) {extractorOptions.verbose = options.verbose;}
 
     this.extractors = createAllCommitExtractors(extractorOptions);
   }
@@ -195,7 +196,7 @@ export class DecisionMiningAnalyzer {
     
     for (const file of commit.files) {
       if (file.language !== 'other' && file.language !== 'config' && file.language !== 'docs') {
-        const lang = file.language as DecisionLanguage;
+        const lang = file.language;
         languageCounts.set(lang, (languageCounts.get(lang) || 0) + 1);
       }
     }
@@ -245,7 +246,7 @@ export class DecisionMiningAnalyzer {
 
     for (let i = 0; i < sorted.length; i++) {
       const current = sorted[i];
-      if (!current || used.has(current.commit.sha)) continue;
+      if (!current || used.has(current.commit.sha)) {continue;}
 
       const cluster = this.buildCluster(sorted, i, used);
       
@@ -281,11 +282,11 @@ export class DecisionMiningAnalyzer {
 
     for (let j = seedIndex + 1; j < extractions.length; j++) {
       const candidate = extractions[j];
-      if (!candidate || used.has(candidate.commit.sha)) continue;
+      if (!candidate || used.has(candidate.commit.sha)) {continue;}
 
       // Check temporal proximity
       const timeDiff = candidate.commit.date.getTime() - seed.commit.date.getTime();
-      if (timeDiff > temporalThreshold) break;
+      if (timeDiff > temporalThreshold) {break;}
 
       // Check similarity
       const similarity = this.calculateSimilarity(seed, candidate);
@@ -697,8 +698,8 @@ export class DecisionMiningAnalyzer {
    * Convert numeric score to confidence level
    */
   private scoreToLevel(score: number): DecisionConfidence {
-    if (score >= 0.7) return 'high';
-    if (score >= 0.4) return 'medium';
+    if (score >= 0.7) {return 'high';}
+    if (score >= 0.4) {return 'medium';}
     return 'low';
   }
 

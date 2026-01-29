@@ -8,6 +8,8 @@
  * @requirements Java/Spring Boot Language Support
  */
 
+import { extractAnnotations, extractParameterAnnotations } from './annotation-extractor.js';
+
 import type { Position } from '../../types.js';
 import type { TreeSitterNode } from '../types.js';
 import type {
@@ -19,7 +21,6 @@ import type {
   JavaAccessibility,
   JavaImportInfo,
 } from './types.js';
-import { extractAnnotations, extractParameterAnnotations } from './annotation-extractor.js';
 
 // ============================================
 // Position Helpers
@@ -97,9 +98,9 @@ function parseModifier(node: TreeSitterNode): JavaModifier | null {
  * Derive accessibility from modifiers.
  */
 function deriveAccessibility(modifiers: JavaModifier[]): JavaAccessibility {
-  if (modifiers.includes('public')) return 'public';
-  if (modifiers.includes('private')) return 'private';
-  if (modifiers.includes('protected')) return 'protected';
+  if (modifiers.includes('public')) {return 'public';}
+  if (modifiers.includes('private')) {return 'private';}
+  if (modifiers.includes('protected')) {return 'protected';}
   return 'package-private';
 }
 

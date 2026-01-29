@@ -152,17 +152,18 @@ export {
 // Data Lake Facade
 // ============================================================================
 
-import type { DataLakeConfig } from './types.js';
-import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
-import { ManifestStore } from './manifest-store.js';
-import { ViewStore } from './view-store.js';
-import { IndexStore } from './index-store.js';
-import { PatternShardStore } from './pattern-shard-store.js';
-import { SecurityShardStore } from './security-shard-store.js';
-import { ExamplesStore } from './examples-store.js';
 import { CallGraphShardStore } from './callgraph-shard-store.js';
+import { ExamplesStore } from './examples-store.js';
+import { IndexStore } from './index-store.js';
+import { ManifestStore } from './manifest-store.js';
+import { PatternShardStore } from './pattern-shard-store.js';
 import { QueryEngine } from './query-engine.js';
+import { SecurityShardStore } from './security-shard-store.js';
+import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
 import { ViewMaterializer } from './view-materializer.js';
+import { ViewStore } from './view-store.js';
+
+import type { DataLakeConfig } from './types.js';
 import type { Pattern } from '../store/types.js';
 
 /**
@@ -216,7 +217,7 @@ export class DataLake {
    * Initialize the data lake
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     await Promise.all([
       this.manifest.initialize(),

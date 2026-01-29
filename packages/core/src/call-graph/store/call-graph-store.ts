@@ -10,6 +10,12 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+} from '../../native/index.js';
+
 import type {
   CallGraph,
   SerializedCallGraph,
@@ -17,10 +23,6 @@ import type {
   FunctionNode,
 } from '../types.js';
 
-import {
-  isNativeAvailable,
-  isCallGraphAvailable,
-} from '../../native/index.js';
 
 // ============================================================================
 // Constants
@@ -305,7 +307,7 @@ export class CallGraphStore {
         const shardFiles = await fs.readdir(filesDir);
         
         for (const shardFile of shardFiles) {
-          if (!shardFile.endsWith('.json')) continue;
+          if (!shardFile.endsWith('.json')) {continue;}
           
           try {
             const shardPath = path.join(filesDir, shardFile);
@@ -576,7 +578,7 @@ export class CallGraphStore {
    * Get functions in a file
    */
   getFunctionsInFile(file: string): FunctionNode[] {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     const functions: FunctionNode[] = [];
     for (const [, func] of this.graph.functions) {
@@ -591,7 +593,7 @@ export class CallGraphStore {
    * Get function at a specific line
    */
   getFunctionAtLine(file: string, line: number): FunctionNode | null {
-    if (!this.graph) return null;
+    if (!this.graph) {return null;}
 
     let best: FunctionNode | null = null;
     let bestSize = Infinity;

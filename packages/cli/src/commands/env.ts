@@ -7,10 +7,11 @@
  * @requirements Environment Variable Detection Feature
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createEnvScanner,
   createEnvStore,

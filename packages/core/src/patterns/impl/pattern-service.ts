@@ -10,14 +10,10 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import type {
-  Pattern,
-  PatternCategory,
-  PatternStatus,
-  ConfidenceLevel,
-  PatternSummary,
-} from '../types.js';
+import { DEFAULT_SERVICE_CONFIG } from '../service.js';
 import { PATTERN_CATEGORIES, toPatternSummary } from '../types.js';
+
+import type { IPatternRepository, PatternQueryOptions, PatternQueryResult, PatternFilter } from '../repository.js';
 import type {
   IPatternService,
   PatternSystemStatus,
@@ -29,8 +25,13 @@ import type {
   SearchOptions,
   PatternServiceConfig,
 } from '../service.js';
-import { DEFAULT_SERVICE_CONFIG } from '../service.js';
-import type { IPatternRepository, PatternQueryOptions, PatternQueryResult, PatternFilter } from '../repository.js';
+import type {
+  Pattern,
+  PatternCategory,
+  PatternStatus,
+  ConfidenceLevel,
+  PatternSummary,
+} from '../types.js';
 
 // ============================================================================
 // Language Detection
@@ -172,7 +173,7 @@ export class PatternService implements IPatternService {
     byStatus: Record<PatternStatus, number>,
     byConfidence: Record<ConfidenceLevel, number>
   ): number {
-    if (patterns.length === 0) return 100;
+    if (patterns.length === 0) {return 100;}
 
     // Factors:
     // 1. Approval rate (40% weight)
@@ -210,9 +211,9 @@ export class PatternService implements IPatternService {
     for (const pattern of patterns) {
       const summary = summaries.get(pattern.category)!;
       summary.count++;
-      if (pattern.status === 'approved') summary.approvedCount++;
-      if (pattern.status === 'discovered') summary.discoveredCount++;
-      if (pattern.confidenceLevel === 'high') summary.highConfidenceCount++;
+      if (pattern.status === 'approved') {summary.approvedCount++;}
+      if (pattern.status === 'discovered') {summary.discoveredCount++;}
+      if (pattern.confidenceLevel === 'high') {summary.highConfidenceCount++;}
     }
 
     // Return only categories with patterns
@@ -310,7 +311,7 @@ export class PatternService implements IPatternService {
     maxExamples: number = 3
   ): Promise<PatternWithExamples | null> {
     const pattern = await this.repository.get(id);
-    if (!pattern) return null;
+    if (!pattern) {return null;}
 
     // Extract code examples from locations
     const codeExamples = await this.extractCodeExamples(

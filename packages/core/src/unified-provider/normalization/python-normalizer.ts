@@ -10,8 +10,9 @@
  * - Django/FastAPI patterns
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -73,7 +74,7 @@ export class PythonNormalizer extends BaseNormalizer {
         const funcNode = this.getChildByField(current, 'function');
         const argsNode = this.getChildByField(current, 'arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -313,7 +314,7 @@ export class PythonNormalizer extends BaseNormalizer {
       if (node.type === 'function_definition') {
         const className = this.findParentClassName(node);
         const func = this.extractFunctionDefinition(node, filePath, className);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -326,7 +327,7 @@ export class PythonNormalizer extends BaseNormalizer {
     className: string | null
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -377,7 +378,7 @@ export class PythonNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -414,7 +415,7 @@ export class PythonNormalizer extends BaseNormalizer {
     const decorators: string[] = [];
     let sibling = node.previousNamedSibling;
 
-    while (sibling && sibling.type === 'decorator') {
+    while (sibling?.type === 'decorator') {
       decorators.unshift(sibling.text);
       sibling = sibling.previousNamedSibling;
     }
@@ -448,7 +449,7 @@ export class PythonNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'class_definition') {
         const cls = this.extractClassDefinition(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -457,7 +458,7 @@ export class PythonNormalizer extends BaseNormalizer {
 
   private extractClassDefinition(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -514,10 +515,10 @@ export class PythonNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'import_statement') {
         const imp = this.extractImportStatement(node);
-        if (imp) imports.push(imp);
+        if (imp) {imports.push(imp);}
       } else if (node.type === 'import_from_statement') {
         const imp = this.extractImportFromStatement(node);
-        if (imp) imports.push(imp);
+        if (imp) {imports.push(imp);}
       }
     });
 
@@ -551,7 +552,7 @@ export class PythonNormalizer extends BaseNormalizer {
       }
     }
 
-    if (names.length === 0) return null;
+    if (names.length === 0) {return null;}
 
     return this.createImport({
       source: names[0]?.imported ?? '',
@@ -595,7 +596,7 @@ export class PythonNormalizer extends BaseNormalizer {
       }
     }
 
-    if (names.length === 0) return null;
+    if (names.length === 0) {return null;}
 
     return this.createImport({
       source: moduleName,

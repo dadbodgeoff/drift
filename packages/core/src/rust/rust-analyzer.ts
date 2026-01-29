@@ -17,11 +17,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { createRustHybridExtractor, type RustHybridExtractor } from '../call-graph/extractors/rust-hybrid-extractor.js';
+
 import { extractRustDataAccess } from '../call-graph/extractors/rust-data-access-extractor.js';
+import { createRustHybridExtractor, type RustHybridExtractor } from '../call-graph/extractors/rust-hybrid-extractor.js';
 import { RustTreeSitterParser } from '../parsers/tree-sitter/tree-sitter-rust-parser.js';
-import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
+
 import type { DataAccessPoint } from '../boundaries/types.js';
+import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
 
 // ============================================================================
 // Types
@@ -223,7 +225,7 @@ export class RustAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const isTestFile = file.includes('/tests/') || file.endsWith('_test.rs');
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       // Extract code structure using hybrid extractor (AST + regex fallback)
       const result = this.extractor.extract(source, relPath);
@@ -239,7 +241,7 @@ export class RustAnalyzer {
       // Detect frameworks from imports
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Organize by crate
@@ -350,7 +352,7 @@ export class RustAnalyzer {
       // Extract custom error enums from AST
       for (const enumDef of astResult.enums) {
         if (enumDef.derives.includes('Error') || enumDef.name.endsWith('Error')) {
-          if (enumDef.derives.includes('Error')) thiserrorDerives++;
+          if (enumDef.derives.includes('Error')) {thiserrorDerives++;}
           customErrors.push({
             name: enumDef.name,
             file: relPath,
@@ -387,10 +389,10 @@ export class RustAnalyzer {
         const lineNum = i + 1;
 
         // Count Result types
-        if (/Result\s*</.test(line)) resultTypes++;
+        if (/Result\s*</.test(line)) {resultTypes++;}
 
         // Count anyhow usage
-        if (/anyhow::/.test(line) || /use anyhow/.test(line)) anyhowUsage++;
+        if (/anyhow::/.test(line) || /use anyhow/.test(line)) {anyhowUsage++;}
 
         // Error propagation with ?
         if (line.includes('?') && !line.includes('//')) {
@@ -516,9 +518,9 @@ export class RustAnalyzer {
 
     // Check Cargo.toml for runtime
     const cargoInfo = await this.parseCargoToml();
-    if (cargoInfo.dependencies.includes('tokio')) runtime = 'tokio';
-    else if (cargoInfo.dependencies.includes('async-std')) runtime = 'async-std';
-    else if (cargoInfo.dependencies.includes('smol')) runtime = 'smol';
+    if (cargoInfo.dependencies.includes('tokio')) {runtime = 'tokio';}
+    else if (cargoInfo.dependencies.includes('async-std')) {runtime = 'async-std';}
+    else if (cargoInfo.dependencies.includes('smol')) {runtime = 'smol';}
 
     for (const file of rustFiles) {
       const source = await fs.promises.readFile(file, 'utf-8');
@@ -603,7 +605,7 @@ export class RustAnalyzer {
           return relativePath.includes(pattern.replace(/\*\*/g, ''));
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -674,7 +676,7 @@ export class RustAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importPath.includes(prefix)) return name;
+      if (importPath.includes(prefix)) {return name;}
     }
 
     return null;
@@ -686,10 +688,10 @@ export class RustAnalyzer {
 
     // Determine framework from imports
     let framework = 'unknown';
-    if (source.includes('actix_web') || source.includes('actix-web')) framework = 'actix-web';
-    else if (source.includes('axum::')) framework = 'axum';
-    else if (source.includes('rocket::')) framework = 'rocket';
-    else if (source.includes('warp::')) framework = 'warp';
+    if (source.includes('actix_web') || source.includes('actix-web')) {framework = 'actix-web';}
+    else if (source.includes('axum::')) {framework = 'axum';}
+    else if (source.includes('rocket::')) {framework = 'rocket';}
+    else if (source.includes('warp::')) {framework = 'warp';}
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;

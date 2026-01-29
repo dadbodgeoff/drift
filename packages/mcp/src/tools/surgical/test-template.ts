@@ -10,10 +10,12 @@
  * Solves: Tests are the most convention-heavy code. Every codebase is different.
  */
 
-import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
-import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 
 // ============================================================================
 // Types

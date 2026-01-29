@@ -11,9 +11,10 @@
  * - new User({ name: 'John' }).save()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Mongoose pattern matcher
@@ -42,22 +43,22 @@ export class MongooseMatcher extends BaseMatcher {
 
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Model must be PascalCase
-    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) return null;
+    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) {return null;}
 
     // Skip common JS classes
     const commonClasses = [
       'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise',
       'Map', 'Set', 'Date', 'Error', 'RegExp', 'JSON', 'Math',
     ];
-    if (commonClasses.includes(chain.receiver)) return null;
+    if (commonClasses.includes(chain.receiver)) {return null;}
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const methodSegment = chain.segments[0];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const operation = this.getOperation(methodSegment.name);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Infer collection name from model (MongoDB uses collections)
     const table = this.inferTableName(chain.receiver);
@@ -75,14 +76,14 @@ export class MongooseMatcher extends BaseMatcher {
   private getOperation(methodName: string): DataOperation | null {
     // Some methods can be both read and write (findOneAndUpdate)
     // We categorize by primary intent
-    if (this.deleteMethods.includes(methodName)) return 'delete';
-    if (this.writeMethods.includes(methodName)) return 'write';
-    if (this.readMethods.includes(methodName)) return 'read';
+    if (this.deleteMethods.includes(methodName)) {return 'delete';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
+    if (this.readMethods.includes(methodName)) {return 'read';}
     return null;
   }
 
   private extractFields(args: NormalizedArg[], methodName: string): string[] {
-    if (args.length === 0) return [];
+    if (args.length === 0) {return [];}
 
     const fields: string[] = [];
 

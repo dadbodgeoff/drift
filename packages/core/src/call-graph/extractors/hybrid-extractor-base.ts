@@ -8,6 +8,15 @@
  * merge results with confidence tracking.
  */
 
+import {
+  type ExtractionQuality,
+  type HybridExtractorConfig,
+  DEFAULT_HYBRID_CONFIG,
+  EXTRACTION_CONFIDENCE,
+  createDefaultQuality,
+  mergeQualities,
+} from './types.js';
+
 import type {
   CallGraphLanguage,
   FileExtractionResult,
@@ -18,14 +27,6 @@ import type {
   ClassExtraction,
 } from '../types.js';
 import type { BaseRegexExtractor } from './regex/base-regex-extractor.js';
-import {
-  type ExtractionQuality,
-  type HybridExtractorConfig,
-  DEFAULT_HYBRID_CONFIG,
-  EXTRACTION_CONFIDENCE,
-  createDefaultQuality,
-  mergeQualities,
-} from './types.js';
 
 /**
  * Extended file extraction result with quality metrics
@@ -75,7 +76,7 @@ export abstract class HybridExtractorBase {
         const treeSitterResult = this.extractWithTreeSitter(source, filePath);
         
         // If tree-sitter succeeded with good results, return them
-        if (treeSitterResult && treeSitterResult.errors.length === 0) {
+        if (treeSitterResult?.errors.length === 0) {
           const quality = this.createTreeSitterQuality(treeSitterResult, startTime);
           
           // Check if we got meaningful results

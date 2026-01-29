@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type { SourceLocation } from '../types.js';
 
 // ============================================================================
@@ -103,7 +104,7 @@ export class CodeBehindLinker {
 
     // Extract class info
     const classMatch = codeBehindContent.match(CODE_BEHIND_PATTERNS.classDeclaration);
-    if (!classMatch) return null;
+    if (!classMatch) {return null;}
 
     const namespace = classMatch[1] ?? '';
     const className = classMatch[2] ?? '';
@@ -142,7 +143,7 @@ export class CodeBehindLinker {
       const handlerName = match[2] ?? '';
       
       // Skip if it's a binding or not an event
-      if (handlerName.includes('{') || !this.isEventName(eventName)) continue;
+      if (handlerName.includes('{') || !this.isEventName(eventName)) {continue;}
       
       xamlHandlers.set(handlerName, eventName);
     }
@@ -194,7 +195,7 @@ export class CodeBehindLinker {
       while ((match = usagePattern.exec(codeBehindContent)) !== null) {
         // Skip the field declaration itself
         const context = codeBehindContent.slice(Math.max(0, match.index - 50), match.index);
-        if (context.includes('private') || context.includes('internal')) continue;
+        if (context.includes('private') || context.includes('internal')) {continue;}
 
         usages.push({
           file: codeBehindPath,

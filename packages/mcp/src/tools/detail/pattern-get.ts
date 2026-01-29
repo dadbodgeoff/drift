@@ -8,8 +8,9 @@
  * The service-based approach is preferred for new code.
  */
 
-import type { PatternStore, IPatternService } from 'driftdetect-core';
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
+
+import type { PatternStore, IPatternService } from 'driftdetect-core';
 
 export interface PatternLocation {
   file: string;

@@ -7,6 +7,11 @@
  * Follows the same pattern as call-graph/extractors/hybrid-extractor-base.ts
  */
 
+import {
+  DEFAULT_CONSTANT_HYBRID_CONFIG,
+  CONSTANT_EXTRACTION_CONFIDENCE,
+} from '../types.js';
+
 import type {
   ConstantLanguage,
   FileConstantResult,
@@ -15,10 +20,6 @@ import type {
   ConstantReference,
   ConstantExtractionQuality,
   ConstantHybridConfig,
-} from '../types.js';
-import {
-  DEFAULT_CONSTANT_HYBRID_CONFIG,
-  CONSTANT_EXTRACTION_CONFIDENCE,
 } from '../types.js';
 import type { BaseConstantRegexExtractor } from './regex/base-regex.js';
 
@@ -62,7 +63,7 @@ export abstract class BaseConstantExtractor {
         const treeSitterResult = this.extractWithTreeSitter(source, filePath);
 
         // If tree-sitter succeeded with good results, return them
-        if (treeSitterResult && treeSitterResult.errors.length === 0) {
+        if (treeSitterResult?.errors.length === 0) {
           const quality = this.createTreeSitterQuality(treeSitterResult, startTime);
 
           // Check if we got meaningful results

@@ -8,13 +8,13 @@
  * @requirements 29.3
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
-import type { Violation, Severity } from 'driftdetect-core';
-import { createCLIPatternService } from '../services/pattern-service-factory.js';
-import { createSpinner, status } from '../ui/spinner.js';
+import { Command } from 'commander';
+
+
 import { getStagedFiles } from '../git/staged-files.js';
 import {
   TextReporter,
@@ -24,6 +24,10 @@ import {
   type Reporter,
   type ReportData,
 } from '../reporters/index.js';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
+import { createSpinner, status } from '../ui/spinner.js';
+
+import type { Violation, Severity } from 'driftdetect-core';
 
 export interface CheckOptions {
   /** Check only staged files */
@@ -307,10 +311,10 @@ async function checkAction(options: CheckOptions): Promise<void> {
     console.log(chalk.bold('Summary'));
     console.log(chalk.gray('─'.repeat(40)));
     console.log(`  Total violations: ${chalk.cyan(violations.length)}`);
-    if (errorCount > 0) console.log(`  Errors:           ${chalk.red(errorCount)}`);
-    if (warningCount > 0) console.log(`  Warnings:         ${chalk.yellow(warningCount)}`);
-    if (infoCount > 0) console.log(`  Info:             ${chalk.blue(infoCount)}`);
-    if (hintCount > 0) console.log(`  Hints:            ${chalk.gray(hintCount)}`);
+    if (errorCount > 0) {console.log(`  Errors:           ${chalk.red(errorCount)}`);}
+    if (warningCount > 0) {console.log(`  Warnings:         ${chalk.yellow(warningCount)}`);}
+    if (infoCount > 0) {console.log(`  Info:             ${chalk.blue(infoCount)}`);}
+    if (hintCount > 0) {console.log(`  Hints:            ${chalk.gray(hintCount)}`);}
     console.log();
   }
 

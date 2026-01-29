@@ -8,10 +8,12 @@
  * @requirements 29.4
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import {

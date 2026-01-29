@@ -12,7 +12,6 @@
  * Also extracts from Django model definitions.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -20,13 +19,15 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class DjangoFieldExtractor extends BaseFieldExtractor {
   readonly name = 'django';
   readonly framework: ORMFramework = 'django';
   readonly languages = ['python'];
   
   matches(content: string, language: string): boolean {
-    if (language !== 'python') return false;
+    if (language !== 'python') {return false;}
     return (
       content.includes('.objects.') ||
       content.includes('models.Model') ||
@@ -163,7 +164,7 @@ export class DjangoFieldExtractor extends BaseFieldExtractor {
     
     while ((match = modelPattern.exec(content)) !== null) {
       const modelName = match[1];
-      if (!modelName) continue;
+      if (!modelName) {continue;}
       
       const startLine = content.substring(0, match.index).split('\n').length;
       
@@ -175,7 +176,7 @@ export class DjangoFieldExtractor extends BaseFieldExtractor {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line === undefined) continue;
+        if (line === undefined) {continue;}
         
         // Check if we've exited the class (non-indented, non-empty line)
         if (i > 0 && line.length > 0 && !line.startsWith(' ') && !line.startsWith('\t')) {

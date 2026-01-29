@@ -78,7 +78,7 @@ export class TypeScriptTestRegexExtractor {
     while ((match = importPattern.exec(content)) !== null) {
       const source = match[1]!;
       const framework = FRAMEWORK_PATTERNS[source];
-      if (framework) return framework;
+      if (framework) {return framework;}
     }
 
     // Check require
@@ -86,15 +86,15 @@ export class TypeScriptTestRegexExtractor {
     while ((match = requirePattern.exec(content)) !== null) {
       const source = match[1]!;
       const framework = FRAMEWORK_PATTERNS[source];
-      if (framework) return framework;
+      if (framework) {return framework;}
     }
 
     // Check for global usage
-    if (/\bvi\.(mock|spyOn|fn)\b/.test(content)) return 'vitest';
-    if (/\bjest\.(mock|spyOn|fn)\b/.test(content)) return 'jest';
+    if (/\bvi\.(mock|spyOn|fn)\b/.test(content)) {return 'vitest';}
+    if (/\bjest\.(mock|spyOn|fn)\b/.test(content)) {return 'jest';}
     
     // Default to jest if we see test/describe/it
-    if (/\b(describe|it|test)\s*\(/.test(content)) return 'jest';
+    if (/\b(describe|it|test)\s*\(/.test(content)) {return 'jest';}
 
     return 'unknown';
   }
@@ -228,7 +228,7 @@ export class TypeScriptTestRegexExtractor {
       const name = match[1]!;
       
       // Skip test framework calls
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       
       if (!seen.has(name)) {
         seen.add(name);
@@ -240,7 +240,7 @@ export class TypeScriptTestRegexExtractor {
     const methodPattern = /\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g;
     while ((match = methodPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -380,8 +380,8 @@ export class TypeScriptTestRegexExtractor {
   }
 
   private isExternalModule(modulePath: string): boolean {
-    if (modulePath.startsWith('.') || modulePath.startsWith('/')) return false;
-    if (modulePath.startsWith('@/') || modulePath.startsWith('~/')) return false;
+    if (modulePath.startsWith('.') || modulePath.startsWith('/')) {return false;}
+    if (modulePath.startsWith('@/') || modulePath.startsWith('~/')) {return false;}
     return true;
   }
 
@@ -401,13 +401,13 @@ export class TypeScriptTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
     
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

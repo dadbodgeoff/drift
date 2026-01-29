@@ -17,14 +17,17 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
-import type { DataAccessPoint } from '../../boundaries/types.js';
-import { TypeScriptDataAccessExtractor } from './typescript-data-access-extractor.js';
-import { PythonDataAccessExtractor } from './python-data-access-extractor.js';
+
 import { CSharpDataAccessExtractor } from './csharp-data-access-extractor.js';
 import { JavaDataAccessExtractor } from './java-data-access-extractor.js';
 import { PhpDataAccessExtractor } from './php-data-access-extractor.js';
+import { PythonDataAccessExtractor } from './python-data-access-extractor.js';
+import { TypeScriptDataAccessExtractor } from './typescript-data-access-extractor.js';
+
 import type { BaseDataAccessExtractor } from './data-access-extractor.js';
+import type { DataAccessPoint } from '../../boundaries/types.js';
 
 // ============================================================================
 // Types
@@ -85,22 +88,22 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
     stack.languages.push('typescript', 'javascript');
 
     // Detect ORMs
-    if (allDeps['@supabase/supabase-js']) stack.orms.push('supabase');
-    if (allDeps['@prisma/client'] || allDeps['prisma']) stack.orms.push('prisma');
-    if (allDeps['typeorm']) stack.orms.push('typeorm');
-    if (allDeps['sequelize']) stack.orms.push('sequelize');
-    if (allDeps['drizzle-orm']) stack.orms.push('drizzle');
-    if (allDeps['knex']) stack.orms.push('knex');
-    if (allDeps['mongoose']) stack.orms.push('mongoose');
-    if (allDeps['pg'] || allDeps['mysql2'] || allDeps['better-sqlite3']) stack.orms.push('raw-sql');
+    if (allDeps['@supabase/supabase-js']) {stack.orms.push('supabase');}
+    if (allDeps['@prisma/client'] || allDeps['prisma']) {stack.orms.push('prisma');}
+    if (allDeps['typeorm']) {stack.orms.push('typeorm');}
+    if (allDeps['sequelize']) {stack.orms.push('sequelize');}
+    if (allDeps['drizzle-orm']) {stack.orms.push('drizzle');}
+    if (allDeps['knex']) {stack.orms.push('knex');}
+    if (allDeps['mongoose']) {stack.orms.push('mongoose');}
+    if (allDeps['pg'] || allDeps['mysql2'] || allDeps['better-sqlite3']) {stack.orms.push('raw-sql');}
 
     // Detect frameworks
-    if (allDeps['next']) stack.frameworks.push('nextjs');
-    if (allDeps['express']) stack.frameworks.push('express');
-    if (allDeps['fastify']) stack.frameworks.push('fastify');
-    if (allDeps['@nestjs/core']) stack.frameworks.push('nestjs');
-    if (allDeps['react']) stack.frameworks.push('react');
-    if (allDeps['vue']) stack.frameworks.push('vue');
+    if (allDeps['next']) {stack.frameworks.push('nextjs');}
+    if (allDeps['express']) {stack.frameworks.push('express');}
+    if (allDeps['fastify']) {stack.frameworks.push('fastify');}
+    if (allDeps['@nestjs/core']) {stack.frameworks.push('nestjs');}
+    if (allDeps['react']) {stack.frameworks.push('react');}
+    if (allDeps['vue']) {stack.frameworks.push('vue');}
   } catch {
     // No package.json
   }
@@ -121,16 +124,16 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
     if (pythonDeps) {
       stack.languages.push('python');
 
-      if (pythonDeps.includes('django')) stack.orms.push('django');
-      if (pythonDeps.includes('sqlalchemy')) stack.orms.push('sqlalchemy');
-      if (pythonDeps.includes('supabase')) stack.orms.push('supabase-python');
-      if (pythonDeps.includes('tortoise')) stack.orms.push('tortoise');
-      if (pythonDeps.includes('peewee')) stack.orms.push('peewee');
-      if (pythonDeps.includes('psycopg') || pythonDeps.includes('pymysql')) stack.orms.push('raw-sql');
+      if (pythonDeps.includes('django')) {stack.orms.push('django');}
+      if (pythonDeps.includes('sqlalchemy')) {stack.orms.push('sqlalchemy');}
+      if (pythonDeps.includes('supabase')) {stack.orms.push('supabase-python');}
+      if (pythonDeps.includes('tortoise')) {stack.orms.push('tortoise');}
+      if (pythonDeps.includes('peewee')) {stack.orms.push('peewee');}
+      if (pythonDeps.includes('psycopg') || pythonDeps.includes('pymysql')) {stack.orms.push('raw-sql');}
 
-      if (pythonDeps.includes('fastapi')) stack.frameworks.push('fastapi');
-      if (pythonDeps.includes('flask')) stack.frameworks.push('flask');
-      if (pythonDeps.includes('django')) stack.frameworks.push('django');
+      if (pythonDeps.includes('fastapi')) {stack.frameworks.push('fastapi');}
+      if (pythonDeps.includes('flask')) {stack.frameworks.push('flask');}
+      if (pythonDeps.includes('django')) {stack.frameworks.push('django');}
     }
   } catch {
     // No Python deps
@@ -144,9 +147,9 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
         stack.languages.push('csharp');
         const csprojContent = await fs.readFile(path.join(rootDir, entry), 'utf-8');
         
-        if (csprojContent.includes('Microsoft.EntityFrameworkCore')) stack.orms.push('ef-core');
-        if (csprojContent.includes('Dapper')) stack.orms.push('dapper');
-        if (csprojContent.includes('Microsoft.AspNetCore')) stack.frameworks.push('aspnet');
+        if (csprojContent.includes('Microsoft.EntityFrameworkCore')) {stack.orms.push('ef-core');}
+        if (csprojContent.includes('Dapper')) {stack.orms.push('dapper');}
+        if (csprojContent.includes('Microsoft.AspNetCore')) {stack.frameworks.push('aspnet');}
         break;
       }
     }
@@ -173,12 +176,12 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       if (javaDeps.includes('spring-data-jpa') || javaDeps.includes('spring-boot-starter-data-jpa')) {
         stack.orms.push('spring-data-jpa');
       }
-      if (javaDeps.includes('hibernate')) stack.orms.push('hibernate');
-      if (javaDeps.includes('mybatis')) stack.orms.push('mybatis');
-      if (javaDeps.includes('jooq')) stack.orms.push('jooq');
-      if (javaDeps.includes('jdbc')) stack.orms.push('jdbc');
+      if (javaDeps.includes('hibernate')) {stack.orms.push('hibernate');}
+      if (javaDeps.includes('mybatis')) {stack.orms.push('mybatis');}
+      if (javaDeps.includes('jooq')) {stack.orms.push('jooq');}
+      if (javaDeps.includes('jdbc')) {stack.orms.push('jdbc');}
 
-      if (javaDeps.includes('spring-boot')) stack.frameworks.push('spring-boot');
+      if (javaDeps.includes('spring-boot')) {stack.frameworks.push('spring-boot');}
     }
   } catch {
     // No Java deps
@@ -197,8 +200,8 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       stack.frameworks.push('laravel');
       stack.orms.push('eloquent');
     }
-    if (allDeps['doctrine/orm']) stack.orms.push('doctrine');
-    if (allDeps['illuminate/database']) stack.orms.push('eloquent');
+    if (allDeps['doctrine/orm']) {stack.orms.push('doctrine');}
+    if (allDeps['illuminate/database']) {stack.orms.push('eloquent');}
   } catch {
     // No composer.json
   }
@@ -260,20 +263,20 @@ export class SemanticDataAccessScanner {
 
     for (const file of files) {
       // Skip type definition files - they don't contain runtime data access
-      if (file.endsWith('.d.ts')) continue;
+      if (file.endsWith('.d.ts')) {continue;}
 
       // Skip test files by filename pattern
-      if (this.isTestFile(file)) continue;
+      if (this.isTestFile(file)) {continue;}
 
       const extractor = this.getExtractor(file);
-      if (!extractor) continue;
+      if (!extractor) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);
         const source = await fs.readFile(filePath, 'utf-8');
 
         // Skip files that don't look like they have data access
-        if (!this.mightHaveDataAccess(source, detectedStack)) continue;
+        if (!this.mightHaveDataAccess(source, detectedStack)) {continue;}
 
         stats.filesScanned++;
 
@@ -421,7 +424,7 @@ export class SemanticDataAccessScanner {
       // But allow if they also have actual data access
       const hasDataAccess = ['.from(', '.query(', 'SELECT', 'prisma.', 'DbContext', '.Where(']
         .some(p => content.includes(p));
-      if (!hasDataAccess) return false;
+      if (!hasDataAccess) {return false;}
     }
 
     // If we detected specific ORMs, prioritize those patterns
@@ -446,7 +449,7 @@ export class SemanticDataAccessScanner {
 
       for (const orm of stack.orms) {
         const patterns = ormPatterns[orm];
-        if (patterns && patterns.some(p => content.includes(p))) {
+        if (patterns?.some(p => content.includes(p))) {
           return true;
         }
       }
@@ -502,36 +505,36 @@ export class SemanticDataAccessScanner {
     const lower = context.toLowerCase();
 
     // JavaScript/TypeScript ORMs
-    if (lower.includes('supabase') || (lower.includes('.from(') && lower.includes('.select('))) return 'supabase';
-    if (lower.includes('prisma')) return 'prisma';
-    if (lower.includes('repository') && !lower.includes('jpa')) return 'typeorm';
-    if (lower.includes('sequelize') || lower.includes('.findall(')) return 'sequelize';
-    if (lower.includes('drizzle')) return 'drizzle';
-    if (lower.includes('knex')) return 'knex';
-    if (lower.includes('mongoose') || lower.includes('schema(')) return 'mongoose';
+    if (lower.includes('supabase') || (lower.includes('.from(') && lower.includes('.select('))) {return 'supabase';}
+    if (lower.includes('prisma')) {return 'prisma';}
+    if (lower.includes('repository') && !lower.includes('jpa')) {return 'typeorm';}
+    if (lower.includes('sequelize') || lower.includes('.findall(')) {return 'sequelize';}
+    if (lower.includes('drizzle')) {return 'drizzle';}
+    if (lower.includes('knex')) {return 'knex';}
+    if (lower.includes('mongoose') || lower.includes('schema(')) {return 'mongoose';}
 
     // Python ORMs
-    if (lower.includes('.objects.')) return 'django';
-    if (lower.includes('session.query') || lower.includes('sqlalchemy')) return 'sqlalchemy';
+    if (lower.includes('.objects.')) {return 'django';}
+    if (lower.includes('session.query') || lower.includes('sqlalchemy')) {return 'sqlalchemy';}
 
     // C# ORMs
-    if (lower.includes('dbcontext') || lower.includes('.tolistasync(')) return 'ef-core';
-    if (lower.includes('.query<') || lower.includes('.queryasync<')) return 'dapper';
-    if (lower.includes('executereader') || lower.includes('executenonquery')) return 'ado-net';
+    if (lower.includes('dbcontext') || lower.includes('.tolistasync(')) {return 'ef-core';}
+    if (lower.includes('.query<') || lower.includes('.queryasync<')) {return 'dapper';}
+    if (lower.includes('executereader') || lower.includes('executenonquery')) {return 'ado-net';}
 
     // Java ORMs
-    if (lower.includes('jparepository') || lower.includes('crudrepository')) return 'spring-data-jpa';
-    if (lower.includes('entitymanager') || lower.includes('session.get')) return 'hibernate';
-    if (lower.includes('@select') || lower.includes('@insert')) return 'mybatis';
-    if (lower.includes('dsl.select') || lower.includes('insertinto')) return 'jooq';
+    if (lower.includes('jparepository') || lower.includes('crudrepository')) {return 'spring-data-jpa';}
+    if (lower.includes('entitymanager') || lower.includes('session.get')) {return 'hibernate';}
+    if (lower.includes('@select') || lower.includes('@insert')) {return 'mybatis';}
+    if (lower.includes('dsl.select') || lower.includes('insertinto')) {return 'jooq';}
 
     // PHP ORMs
-    if (lower.includes('::where(') || lower.includes('::find(') || lower.includes('eloquent')) return 'eloquent';
-    if (lower.includes('db::table') || lower.includes('db::select')) return 'laravel-db';
-    if (lower.includes('getrepository(') || lower.includes('->persist(')) return 'doctrine';
+    if (lower.includes('::where(') || lower.includes('::find(') || lower.includes('eloquent')) {return 'eloquent';}
+    if (lower.includes('db::table') || lower.includes('db::select')) {return 'laravel-db';}
+    if (lower.includes('getrepository(') || lower.includes('->persist(')) {return 'doctrine';}
 
     // Raw SQL
-    if (/\b(select|insert|update|delete)\b/i.test(context)) return 'raw-sql';
+    if (/\b(select|insert|update|delete)\b/i.test(context)) {return 'raw-sql';}
 
     return null;
   }

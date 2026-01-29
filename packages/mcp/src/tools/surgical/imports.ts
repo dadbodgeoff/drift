@@ -10,9 +10,11 @@
  * Solves: Every codebase has different import conventions. AI guesses wrong.
  */
 
-import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
-import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 import * as path from 'node:path';
+
+import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 
 // ============================================================================
 // Types

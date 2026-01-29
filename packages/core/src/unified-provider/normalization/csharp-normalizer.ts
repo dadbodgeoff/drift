@@ -10,8 +10,9 @@
  * - Entity Framework patterns
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -73,7 +74,7 @@ export class CSharpNormalizer extends BaseNormalizer {
         const funcNode = current.childForFieldName('function');
         const argsNode = current.childForFieldName('arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -299,11 +300,11 @@ export class CSharpNormalizer extends BaseNormalizer {
       if (node.type === 'method_declaration') {
         const className = this.findParentClassName(node);
         const func = this.extractMethodDeclaration(node, filePath, className, currentNamespace);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'constructor_declaration') {
         const className = this.findParentClassName(node);
         const func = this.extractConstructorDeclaration(node, filePath, className, currentNamespace);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -317,7 +318,7 @@ export class CSharpNormalizer extends BaseNormalizer {
     _currentNamespace: string | null
   ): UnifiedFunction | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(node.childForFieldName('parameters'));
@@ -390,7 +391,7 @@ export class CSharpNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -418,7 +419,7 @@ export class CSharpNormalizer extends BaseNormalizer {
     const attributes: string[] = [];
 
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       for (const attr of sibling.children) {
         if (attr.type === 'attribute') {
           attributes.unshift(`[${attr.text}]`);
@@ -432,7 +433,7 @@ export class CSharpNormalizer extends BaseNormalizer {
 
   private hasModifier(node: TreeSitterNode, modifier: string): boolean {
     for (const child of node.children) {
-      if (child.type === 'modifier' && child.text === modifier) return true;
+      if (child.type === 'modifier' && child.text === modifier) {return true;}
     }
     return false;
   }
@@ -469,7 +470,7 @@ export class CSharpNormalizer extends BaseNormalizer {
           node.type === 'record_declaration' ||
           node.type === 'interface_declaration') {
         const cls = this.extractClassDeclaration(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -478,7 +479,7 @@ export class CSharpNormalizer extends BaseNormalizer {
 
   private extractClassDeclaration(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -500,7 +501,7 @@ export class CSharpNormalizer extends BaseNormalizer {
       for (const member of bodyNode.children) {
         if (member.type === 'method_declaration') {
           const methodNameNode = member.childForFieldName('name');
-          if (methodNameNode) methods.push(methodNameNode.text);
+          if (methodNameNode) {methods.push(methodNameNode.text);}
         }
       }
     }
@@ -533,7 +534,7 @@ export class CSharpNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'using_directive') {
         const imp = this.extractUsingDirective(node);
-        if (imp) imports.push(imp);
+        if (imp) {imports.push(imp);}
       }
     });
 
@@ -542,7 +543,7 @@ export class CSharpNormalizer extends BaseNormalizer {
 
   private extractUsingDirective(node: TreeSitterNode): UnifiedImport | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const namespaceName = nameNode.text;
 

@@ -5,12 +5,13 @@
  * These exist purely for backward compatibility with existing code.
  */
 
-import type { DataAccessPoint } from '../../boundaries/types.js';
-import type { CallGraphLanguage } from '../../call-graph/types.js';
 import {
   UnifiedDataAccessAdapter,
   createUnifiedDataAccessAdapter,
 } from '../integration/unified-data-access-adapter.js';
+
+import type { DataAccessPoint } from '../../boundaries/types.js';
+import type { CallGraphLanguage } from '../../call-graph/types.js';
 
 /**
  * Result type for data access extraction

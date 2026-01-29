@@ -291,8 +291,8 @@ export abstract class BaseDataAccessExtractor {
     // Operation factor (0.2 weight)
     // - 1.0: Clear operation (read/write/delete)
     // - 0.3: Unknown operation
-    let operationScore = opts.operation !== 'unknown' ? 1.0 : 0.3;
-    let operationClear = opts.operation !== 'unknown';
+    const operationScore = opts.operation !== 'unknown' ? 1.0 : 0.3;
+    const operationClear = opts.operation !== 'unknown';
 
     // Framework factor (0.2 weight)
     // - 1.0: Known ORM/framework matched
@@ -308,7 +308,7 @@ export abstract class BaseDataAccessExtractor {
     // Literal factor (0.1 weight)
     // - 1.0: Table name from string literal
     // - 0.5: Table name from variable/inference
-    let literalScore = opts.tableFromLiteral ? 1.0 : 0.5;
+    const literalScore = opts.tableFromLiteral ? 1.0 : 0.5;
 
     // Build explanation
     const explanationParts: string[] = [];

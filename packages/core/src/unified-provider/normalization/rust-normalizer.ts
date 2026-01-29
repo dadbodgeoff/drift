@@ -14,8 +14,9 @@
  * @requirements Rust Language Support
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -90,7 +91,7 @@ export class RustNormalizer extends BaseNormalizer {
         const funcNode = this.getChildByField(current, 'function');
         const argsNode = this.getChildByField(current, 'arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -353,7 +354,7 @@ export class RustNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'function_item') {
         const func = this.extractFunctionItem(node, filePath, moduleName, null);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'impl_item') {
         const implFunctions = this.extractImplFunctions(node, filePath, moduleName);
         functions.push(...implFunctions);
@@ -376,7 +377,7 @@ export class RustNormalizer extends BaseNormalizer {
     implName: string | null
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -427,7 +428,7 @@ export class RustNormalizer extends BaseNormalizer {
     const typeNode = this.getChildByField(node, 'type');
     const traitNode = this.getChildByField(node, 'trait');
 
-    if (!typeNode) return functions;
+    if (!typeNode) {return functions;}
 
     let implName = this.extractTypeName(typeNode);
     if (traitNode) {
@@ -440,7 +441,7 @@ export class RustNormalizer extends BaseNormalizer {
       for (const child of bodyNode.children) {
         if (child.type === 'function_item') {
           const func = this.extractFunctionItem(child, filePath, moduleName, implName);
-          if (func) functions.push(func);
+          if (func) {functions.push(func);}
         }
       }
     }
@@ -449,7 +450,7 @@ export class RustNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -471,7 +472,7 @@ export class RustNormalizer extends BaseNormalizer {
   }
 
   private hasSelfParameter(paramsNode: TreeSitterNode | null): boolean {
-    if (!paramsNode) return false;
+    if (!paramsNode) {return false;}
 
     for (const child of paramsNode.children) {
       if (child.type === 'self_parameter') {
@@ -541,13 +542,13 @@ export class RustNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'struct_item') {
         const cls = this.extractStructItem(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       } else if (node.type === 'enum_item') {
         const cls = this.extractEnumItem(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       } else if (node.type === 'trait_item') {
         const cls = this.extractTraitItem(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -556,7 +557,7 @@ export class RustNormalizer extends BaseNormalizer {
 
   private extractStructItem(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -577,7 +578,7 @@ export class RustNormalizer extends BaseNormalizer {
 
   private extractEnumItem(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -598,7 +599,7 @@ export class RustNormalizer extends BaseNormalizer {
 
   private extractTraitItem(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');

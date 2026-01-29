@@ -5,6 +5,7 @@
  */
 
 import { BaseGeneExtractor, type AlleleDefinition, type FileExtractionResult, type DetectedAllele } from './base-extractor.js';
+
 import type { GeneId } from '../types.js';
 
 export class AnimationApproachExtractor extends BaseGeneExtractor {
@@ -65,7 +66,7 @@ export class AnimationApproachExtractor extends BaseGeneExtractor {
     const isComponent = this.isComponentFile(filePath, content);
 
     for (const def of this.getAlleleDefinitions()) {
-      if (def.id === 'no-animation') continue;
+      if (def.id === 'no-animation') {continue;}
 
       // Check import patterns
       if (def.importPatterns) {

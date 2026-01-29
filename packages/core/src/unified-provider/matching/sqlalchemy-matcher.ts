@@ -12,9 +12,10 @@
  * - delete(users).where(users.c.id == 1)
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * SQLAlchemy pattern matcher
@@ -33,11 +34,11 @@ export class SQLAlchemyMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: session.query(Model)
     const sessionMatch = this.matchSessionPattern(chain);
-    if (sessionMatch) return sessionMatch;
+    if (sessionMatch) {return sessionMatch;}
 
     // Pattern 2: select(Model) / insert(table) / update(table) / delete(table)
     const coreMatch = this.matchCorePattern(chain);
-    if (coreMatch) return coreMatch;
+    if (coreMatch) {return coreMatch;}
 
     return null;
   }
@@ -70,7 +71,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
 
   private handleQueryPattern(chain: UnifiedCallChain, queryIndex: number): PatternMatchResult | null {
     const querySegment = chain.segments[queryIndex];
-    if (!querySegment?.args[0]) return null;
+    if (!querySegment?.args[0]) {return null;}
 
     // Get model name from query(Model)
     const modelArg = querySegment.args[0];
@@ -84,7 +85,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
 
     for (let i = queryIndex + 1; i < chain.segments.length; i++) {
       const segment = chain.segments[i];
-      if (!segment) continue;
+      if (!segment) {continue;}
 
       if (segment.name === 'delete') {
         operation = 'delete';
@@ -111,7 +112,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
 
   private handleAddPattern(chain: UnifiedCallChain, addIndex: number): PatternMatchResult | null {
     const addSegment = chain.segments[addIndex];
-    if (!addSegment?.args[0]) return null;
+    if (!addSegment?.args[0]) {return null;}
 
     // Try to infer model from the argument
     const arg = addSegment.args[0];
@@ -135,7 +136,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
 
   private handleDeletePattern(chain: UnifiedCallChain, deleteIndex: number): PatternMatchResult | null {
     const deleteSegment = chain.segments[deleteIndex];
-    if (!deleteSegment?.args[0]) return null;
+    if (!deleteSegment?.args[0]) {return null;}
 
     const arg = deleteSegment.args[0];
     let modelName = 'unknown';
@@ -158,7 +159,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
   private matchCorePattern(chain: UnifiedCallChain): PatternMatchResult | null {
     // Look for select/insert/update/delete as first segment
     const firstSegment = chain.segments[0];
-    if (!firstSegment?.isCall) return null;
+    if (!firstSegment?.isCall) {return null;}
 
     const method = firstSegment.name;
     if (!['select', 'insert', 'update', 'delete'].includes(method)) {
@@ -167,7 +168,7 @@ export class SQLAlchemyMatcher extends BaseMatcher {
 
     // Get table/model from first argument
     const tableArg = firstSegment.args[0];
-    if (!tableArg) return null;
+    if (!tableArg) {return null;}
 
     const tableName = tableArg.type === 'identifier'
       ? this.inferTableName(tableArg.value)

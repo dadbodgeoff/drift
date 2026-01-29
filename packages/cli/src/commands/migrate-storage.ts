@@ -19,13 +19,15 @@
  *   └── ...
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createSpinner, status } from '../ui/spinner.js';
-import { confirmPrompt } from '../ui/prompts.js';
+
+import chalk from 'chalk';
+import { Command } from 'commander';
 import { UnifiedFilePatternRepository } from 'driftdetect-core';
+
+import { confirmPrompt } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 
 // ============================================================================
 // Helpers
@@ -79,7 +81,7 @@ async function createBackup(rootDir: string): Promise<string> {
 }
 
 function copyDirSync(src: string, dest: string): void {
-  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(src)) {return;}
 
   fs.mkdirSync(dest, { recursive: true });
   const entries = fs.readdirSync(src, { withFileTypes: true });
@@ -160,7 +162,7 @@ async function migrateAction(options: MigrateOptions): Promise<void> {
 
     for (const statusDir of ['discovered', 'approved', 'ignored']) {
       const dir = path.join(rootDir, '.drift', 'patterns', statusDir);
-      if (!fs.existsSync(dir)) continue;
+      if (!fs.existsSync(dir)) {continue;}
 
       const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
       for (const file of files) {

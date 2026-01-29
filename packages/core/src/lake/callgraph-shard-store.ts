@@ -18,10 +18,15 @@
  * - Incremental updates per file
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import {
+  LAKE_DIRS,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   CallGraphShard,
@@ -30,10 +35,6 @@ import type {
   DataLakeConfig,
 } from './types.js';
 
-import {
-  LAKE_DIRS,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
 
 // ============================================================================
 // Constants
@@ -233,7 +234,7 @@ export class CallGraphShardStore extends EventEmitter {
 
     for (const fileHash of fileHashes) {
       const shard = await this.getFileShard(fileHash);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       const entryPointCount = shard.functions.filter(f => f.isEntryPoint).length;
       const dataAccessorCount = shard.functions.filter(f => f.isDataAccessor).length;
@@ -487,7 +488,7 @@ export class CallGraphShardStore extends EventEmitter {
 
     for (const fileHash of fileHashes) {
       const shard = await this.getFileShard(fileHash);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       for (const fn of shard.functions.filter(f => f.isEntryPoint)) {
         const tables = [...new Set(fn.dataAccess.map(da => da.table))];
@@ -534,10 +535,10 @@ export class CallGraphShardStore extends EventEmitter {
     
     for (const fileHash of fileHashes) {
       const shard = await this.getFileShard(fileHash);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       const fn = shard.functions.find(f => f.id === functionId);
-      if (fn) return fn;
+      if (fn) {return fn;}
     }
     
     return null;
@@ -552,7 +553,7 @@ export class CallGraphShardStore extends EventEmitter {
 
     for (const fileHash of fileHashes) {
       const shard = await this.getFileShard(fileHash);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       for (const fn of shard.functions) {
         if (fn.dataAccess.some(da => da.table === table)) {
@@ -573,7 +574,7 @@ export class CallGraphShardStore extends EventEmitter {
 
     for (const fileHash of fileHashes) {
       const shard = await this.getFileShard(fileHash);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       for (const fn of shard.functions) {
         for (const da of fn.dataAccess) {
@@ -623,13 +624,13 @@ export class CallGraphShardStore extends EventEmitter {
     const nameLower = name.toLowerCase();
     const fileLower = file.toLowerCase();
 
-    if (fileLower.includes('controller')) return 'controller';
-    if (fileLower.includes('route')) return 'route';
-    if (fileLower.includes('handler')) return 'handler';
-    if (fileLower.includes('api')) return 'api';
+    if (fileLower.includes('controller')) {return 'controller';}
+    if (fileLower.includes('route')) {return 'route';}
+    if (fileLower.includes('handler')) {return 'handler';}
+    if (fileLower.includes('api')) {return 'api';}
     
-    if (nameLower.includes('handler')) return 'handler';
-    if (nameLower.includes('controller')) return 'controller';
+    if (nameLower.includes('handler')) {return 'handler';}
+    if (nameLower.includes('controller')) {return 'controller';}
     if (nameLower.startsWith('get') || nameLower.startsWith('post') || 
         nameLower.startsWith('put') || nameLower.startsWith('delete')) {
       return 'api';

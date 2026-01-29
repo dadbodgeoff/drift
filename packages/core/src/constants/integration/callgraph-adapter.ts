@@ -5,11 +5,12 @@
  * Enables tracking of constant usage through function calls.
  */
 
+import { ConstantStore } from '../store/constant-store.js';
+
 import type {
   ConstantExtraction,
   ConstantReference,
 } from '../types.js';
-import { ConstantStore } from '../store/constant-store.js';
 
 // ============================================================================
 // Types
@@ -393,10 +394,10 @@ export class ConstantCallGraphAdapter {
     const visited = new Set<string>();
 
     const traverse = async (funcName: string, filePath: string, depth: number) => {
-      if (depth > this.config.maxDepth) return;
+      if (depth > this.config.maxDepth) {return;}
 
       const key = `${filePath}:${funcName}`;
-      if (visited.has(key)) return;
+      if (visited.has(key)) {return;}
       visited.add(key);
 
       reachable.push({ name: funcName, file: filePath });
@@ -461,23 +462,23 @@ export class ConstantCallGraphAdapter {
   ): 'low' | 'medium' | 'high' | 'critical' {
     // Security constants are always at least medium risk
     if (constant.category === 'security') {
-      if (impactScore >= 50) return 'critical';
-      if (impactScore >= 25) return 'high';
+      if (impactScore >= 50) {return 'critical';}
+      if (impactScore >= 25) {return 'high';}
       return 'medium';
     }
 
     // API constants are higher risk
     if (constant.category === 'api') {
-      if (impactScore >= 60) return 'critical';
-      if (impactScore >= 40) return 'high';
-      if (impactScore >= 20) return 'medium';
+      if (impactScore >= 60) {return 'critical';}
+      if (impactScore >= 40) {return 'high';}
+      if (impactScore >= 20) {return 'medium';}
       return 'low';
     }
 
     // Standard risk levels
-    if (impactScore >= 70) return 'critical';
-    if (impactScore >= 50) return 'high';
-    if (impactScore >= 25) return 'medium';
+    if (impactScore >= 70) {return 'critical';}
+    if (impactScore >= 50) {return 'high';}
+    if (impactScore >= 25) {return 'medium';}
     return 'low';
   }
 }

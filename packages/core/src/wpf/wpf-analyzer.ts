@@ -7,7 +7,14 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
+
+import { ViewModelHybridExtractor, createViewModelHybridExtractor } from './extractors/viewmodel-hybrid-extractor.js';
+import { XamlHybridExtractor, createXamlHybridExtractor } from './extractors/xaml-hybrid-extractor.js';
+import { DataContextResolver, createDataContextResolver } from './linkers/datacontext-resolver.js';
+import { ViewModelLinker, createViewModelLinker } from './linkers/viewmodel-linker.js';
+
 import type {
   XamlExtractionResult,
   ViewModelAnalysis,
@@ -18,10 +25,6 @@ import type {
   MvvmViolation,
   BindingError,
 } from './types.js';
-import { XamlHybridExtractor, createXamlHybridExtractor } from './extractors/xaml-hybrid-extractor.js';
-import { ViewModelHybridExtractor, createViewModelHybridExtractor } from './extractors/viewmodel-hybrid-extractor.js';
-import { DataContextResolver, createDataContextResolver } from './linkers/datacontext-resolver.js';
-import { ViewModelLinker, createViewModelLinker } from './linkers/viewmodel-linker.js';
 
 // ============================================================================
 // Configuration
@@ -167,7 +170,7 @@ export class WpfAnalyzer {
 
         // Check exclusions
         const isExcluded = excludePatterns.some((p: string) => minimatch(relPath, p));
-        if (isExcluded) continue;
+        if (isExcluded) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath, relPath);

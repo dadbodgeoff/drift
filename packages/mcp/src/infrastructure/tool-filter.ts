@@ -14,8 +14,10 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+
 import { shouldIgnoreDirectory } from 'driftdetect-core';
+
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Supported languages with their detection markers
@@ -228,7 +230,7 @@ export function detectProjectLanguages(projectRoot: string): Language[] {
 function scanForExtensions(dir: string, maxDepth: number, currentDepth = 0): Set<string> {
   const extensions = new Set<string>();
   
-  if (currentDepth >= maxDepth) return extensions;
+  if (currentDepth >= maxDepth) {return extensions;}
   
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -247,7 +249,7 @@ function scanForExtensions(dir: string, maxDepth: number, currentDepth = 0): Set
         subExtensions.forEach(ext => extensions.add(ext));
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
-        if (ext) extensions.add(ext);
+        if (ext) {extensions.add(ext);}
       }
     }
   } catch {

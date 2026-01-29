@@ -7,9 +7,10 @@
  * @requirements 2.2 - WHEN a file changes, THE Scanner SHALL perform incremental analysis only on affected files
  */
 
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { createHash } from 'node:crypto';
+
 import type { FileInfo } from './types.js';
 
 /**

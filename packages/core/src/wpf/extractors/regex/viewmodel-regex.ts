@@ -156,7 +156,7 @@ export class ViewModelRegexExtractor {
    * Extract base class from inheritance string
    */
   private extractBaseClass(inheritance: string): string | undefined {
-    if (!inheritance) return undefined;
+    if (!inheritance) {return undefined;}
 
     // Split by comma and get first non-interface
     const parts = inheritance.split(',').map(p => p.trim());
@@ -220,7 +220,7 @@ export class ViewModelRegexExtractor {
       const backingField = `_${match[2]}`;
       const name = match[3] ?? '';
 
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {continue;}
       seen.add(name);
 
       const line = this.getLineNumber(content, match.index);
@@ -244,7 +244,7 @@ export class ViewModelRegexExtractor {
       const type = match[1] ?? '';
       const name = match[2] ?? '';
 
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {continue;}
       seen.add(name);
 
       const line = this.getLineNumber(content, match.index);
@@ -267,7 +267,7 @@ export class ViewModelRegexExtractor {
       const fieldName = match[2] ?? '';
       const name = this.toPascalCase(fieldName);
 
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {continue;}
       seen.add(name);
 
       const line = this.getLineNumber(content, match.index);
@@ -335,7 +335,7 @@ export class ViewModelRegexExtractor {
     while ((match = VIEWMODEL_REGEX_PATTERNS.commandProperty.exec(content)) !== null) {
       const name = match[1] ?? '';
 
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {continue;}
       seen.add(name);
 
       const line = this.getLineNumber(content, match.index);
@@ -360,7 +360,7 @@ export class ViewModelRegexExtractor {
       const executeMethod = match[2];
       const canExecuteMethod = match[3];
 
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {continue;}
       seen.add(name);
 
       const line = this.getLineNumber(content, match.index);
@@ -381,7 +381,7 @@ export class ViewModelRegexExtractor {
       const methodName = match[1] ?? '';
       const commandName = `${methodName}Command`;
 
-      if (seen.has(commandName)) continue;
+      if (seen.has(commandName)) {continue;}
       seen.add(commandName);
 
       const line = this.getLineNumber(content, match.index);

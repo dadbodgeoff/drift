@@ -6,8 +6,8 @@
  * @requirements 29.1
  */
 
-import ora, { type Ora } from 'ora';
 import chalk from 'chalk';
+import ora, { type Ora } from 'ora';
 
 /**
  * Spinner configuration options

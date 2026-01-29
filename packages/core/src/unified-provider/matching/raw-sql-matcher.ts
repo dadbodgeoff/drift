@@ -8,9 +8,10 @@
  * - cursor.execute("SELECT * FROM users")
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Raw SQL pattern matcher
@@ -34,14 +35,14 @@ export class RawSqlMatcher extends BaseMatcher {
       this.queryMethods.includes(s.name) && s.isCall
     );
 
-    if (queryIndex === -1) return null;
+    if (queryIndex === -1) {return null;}
 
     const segment = chain.segments[queryIndex];
-    if (!segment || segment.args.length === 0) return null;
+    if (!segment || segment.args.length === 0) {return null;}
 
     // Get the SQL string from the first argument
     const firstArg = segment.args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     let sqlText: string | null = null;
 
@@ -52,7 +53,7 @@ export class RawSqlMatcher extends BaseMatcher {
       sqlText = firstArg.value;
     }
 
-    if (!sqlText) return null;
+    if (!sqlText) {return null;}
 
     // Parse the SQL to extract table, operation, and fields
     const parsed = this.parseSql(sqlText);

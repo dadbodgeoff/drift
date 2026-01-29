@@ -5,8 +5,9 @@
  * Use these to protect enterprise features in CLI commands, MCP tools, etc.
  */
 
-import type { EnterpriseFeature, LicenseTier, FeatureCheckResult } from './types.js';
 import { getLicenseManager } from './license-manager.js';
+
+import type { EnterpriseFeature, LicenseTier, FeatureCheckResult } from './types.js';
 
 // =============================================================================
 // Types

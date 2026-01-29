@@ -12,7 +12,15 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
+
+import { 
+  TableNameValidator, 
+  createTableNameValidator,
+  type TableNameValidatorConfig 
+} from './table-name-validator.js';
+
 import type {
   BoundaryStoreConfig,
   DataAccessMap,
@@ -24,11 +32,6 @@ import type {
   BoundaryRules,
   BoundaryViolation,
 } from './types.js';
-import { 
-  TableNameValidator, 
-  createTableNameValidator,
-  type TableNameValidatorConfig 
-} from './table-name-validator.js';
 
 // ============================================================================
 // Constants
@@ -315,7 +318,7 @@ export class BoundaryStore {
     let ruleApplies = false;
 
     // Check table restrictions
-    if (rule.tables && rule.tables.includes(accessPoint.table)) {
+    if (rule.tables?.includes(accessPoint.table)) {
       ruleApplies = true;
     }
 

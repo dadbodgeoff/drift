@@ -211,7 +211,7 @@ export class WpfCallGraphAdapter {
    * Add DataContext inheritance edge
    */
   private addDataContextEdge(dc: DataContextResolution): void {
-    if (!dc.resolvedType) return;
+    if (!dc.resolvedType) {return;}
 
     const sourceId = `xaml:${dc.xamlFile}:root`;
     const targetId = `csharp:${dc.resolvedType}`;

@@ -17,11 +17,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { createCppHybridExtractor, type CppHybridExtractor } from '../call-graph/extractors/cpp-hybrid-extractor.js';
+
 import { extractCppDataAccess } from '../call-graph/extractors/cpp-data-access-extractor.js';
+import { createCppHybridExtractor, type CppHybridExtractor } from '../call-graph/extractors/cpp-hybrid-extractor.js';
 import { CppTreeSitterParser } from '../parsers/tree-sitter/tree-sitter-cpp-parser.js';
-import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
+
 import type { DataAccessPoint } from '../boundaries/types.js';
+import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
 
 // ============================================================================
 // Types
@@ -220,7 +222,7 @@ export class CppAnalyzer {
       }
 
       const isTestFile = file.includes('/test') || file.includes('_test.') || file.includes('Test.');
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       // Extract code structure using hybrid extractor (AST + regex fallback)
       const result = this.extractor.extract(source, relPath);
@@ -228,7 +230,7 @@ export class CppAnalyzer {
       // Detect frameworks from includes
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Count templates and virtual methods
@@ -633,7 +635,7 @@ export class CppAnalyzer {
           return relativePath.includes(pattern.replace(/\*\*/g, ''));
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -703,7 +705,7 @@ export class CppAnalyzer {
     };
 
     for (const [pattern, name] of Object.entries(frameworks)) {
-      if (includePath.includes(pattern)) return name;
+      if (includePath.includes(pattern)) {return name;}
     }
 
     return null;
@@ -714,11 +716,11 @@ export class CppAnalyzer {
     classMap: Map<string, CppClass>,
     visited: Set<string>
   ): number {
-    if (visited.has(className)) return 0;
+    if (visited.has(className)) {return 0;}
     visited.add(className);
 
     const cls = classMap.get(className);
-    if (!cls || cls.baseClasses.length === 0) return 0;
+    if (!cls || cls.baseClasses.length === 0) {return 0;}
 
     let maxDepth = 0;
     for (const base of cls.baseClasses) {
@@ -734,11 +736,11 @@ export class CppAnalyzer {
     hierarchy: Map<string, string[]>,
     visited: Set<string> = new Set()
   ): number {
-    if (visited.has(baseClass)) return 0;
+    if (visited.has(baseClass)) {return 0;}
     visited.add(baseClass);
 
     const derived = hierarchy.get(baseClass);
-    if (!derived || derived.length === 0) return 1;
+    if (!derived || derived.length === 0) {return 1;}
 
     let maxDepth = 0;
     for (const d of derived) {

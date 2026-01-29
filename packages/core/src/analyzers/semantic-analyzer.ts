@@ -8,7 +8,6 @@
  * @requirements 3.5 - Parser SHALL provide a unified AST query interface across all languages
  */
 
-import type { AST, ASTNode } from '../parsers/types.js';
 import type {
   SemanticAnalysisResult,
   SymbolInfo,
@@ -22,6 +21,7 @@ import type {
   SourceLocation,
   ParameterInfo,
 } from './types.js';
+import type { AST, ASTNode } from '../parsers/types.js';
 
 /**
  * Options for semantic analysis
@@ -169,7 +169,7 @@ export class SemanticAnalyzer {
 
     while (currentScopeId !== null) {
       const scope = this.scopes.get(currentScopeId);
-      if (!scope) break;
+      if (!scope) {break;}
 
       const symbol = scope.symbols.get(name);
       if (symbol) {
@@ -194,7 +194,7 @@ export class SemanticAnalyzer {
 
     while (currentScopeId !== null) {
       const scope = this.scopes.get(currentScopeId);
-      if (!scope) break;
+      if (!scope) {break;}
 
       // Add symbols from this scope (don't override closer scopes)
       for (const [name, symbol] of scope.symbols) {
@@ -323,7 +323,7 @@ export class SemanticAnalyzer {
     scopeId: string
   ): void {
     const scope = this.scopes.get(scopeId);
-    if (!scope) return;
+    if (!scope) {return;}
 
     // Check for shadowing in parent scopes
     if (this.options.detectShadowing !== false) {
@@ -655,7 +655,7 @@ export class SemanticAnalyzer {
   private collectVariableDeclarator(node: ASTNode, scopeId: string): void {
     // Handle destructuring patterns
     const pattern = node.children[0];
-    if (!pattern) return;
+    if (!pattern) {return;}
 
     if (pattern.type === 'identifier' || pattern.type === 'Identifier') {
       const symbol = this.createSymbol(pattern.text, 'variable', scopeId, {
@@ -1209,7 +1209,7 @@ export class SemanticAnalyzer {
 
     const paramsNode = this.findChildByType(node, 'formal_parameters') ||
                        this.findChildByType(node, 'parameters');
-    if (!paramsNode) return params;
+    if (!paramsNode) {return params;}
 
     for (const child of paramsNode.children) {
       if (child.type === 'required_parameter' || child.type === 'optional_parameter' ||
@@ -1286,12 +1286,12 @@ export class SemanticAnalyzer {
     end: { row: number; column: number }
   ): boolean {
     // Check if position is after start
-    if (position.row < start.row) return false;
-    if (position.row === start.row && position.column < start.column) return false;
+    if (position.row < start.row) {return false;}
+    if (position.row === start.row && position.column < start.column) {return false;}
 
     // Check if position is before end
-    if (position.row > end.row) return false;
-    if (position.row === end.row && position.column > end.column) return false;
+    if (position.row > end.row) {return false;}
+    if (position.row === end.row && position.column > end.column) {return false;}
 
     return true;
   }

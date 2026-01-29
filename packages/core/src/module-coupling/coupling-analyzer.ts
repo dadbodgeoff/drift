@@ -94,11 +94,11 @@ export class ModuleCouplingAnalyzer {
       for (const call of func.calls) {
         for (const candidate of call.resolvedCandidates) {
           const targetFunc = this.callGraph.functions.get(candidate);
-          if (!targetFunc) continue;
+          if (!targetFunc) {continue;}
 
           const targetModule = targetFunc.file;
-          if (targetModule === modulePath) continue; // Skip self-imports
-          if (!this.options.includeExternal && this.isExternalModule(targetModule)) continue;
+          if (targetModule === modulePath) {continue;} // Skip self-imports
+          if (!this.options.includeExternal && this.isExternalModule(targetModule)) {continue;}
 
           // Create or update edge
           if (!importMap.has(modulePath)) {
@@ -129,11 +129,11 @@ export class ModuleCouplingAnalyzer {
       // This captures cross-module calls even when resolvedCandidates is empty
       for (const calledByInfo of func.calledBy) {
         const callerFunc = this.callGraph.functions.get(calledByInfo.callerId);
-        if (!callerFunc) continue;
+        if (!callerFunc) {continue;}
 
         const callerModule = callerFunc.file;
-        if (callerModule === modulePath) continue; // Skip same-module calls
-        if (!this.options.includeExternal && this.isExternalModule(callerModule)) continue;
+        if (callerModule === modulePath) {continue;} // Skip same-module calls
+        if (!this.options.includeExternal && this.isExternalModule(callerModule)) {continue;}
 
         // Create or update edge (caller imports this module)
         if (!importMap.has(callerModule)) {
@@ -218,10 +218,10 @@ export class ModuleCouplingAnalyzer {
    * Analyze coupling for a specific module
    */
   analyzeModule(modulePath: string): ModuleCouplingAnalysis | null {
-    if (!this.graph) return null;
+    if (!this.graph) {return null;}
 
     const module = this.graph.modules.get(modulePath);
-    if (!module) return null;
+    if (!module) {return null;}
 
     // Get direct dependencies with details
     const directDependencies = module.imports.map(dep => {
@@ -268,10 +268,10 @@ export class ModuleCouplingAnalyzer {
    * Analyze refactor impact for a module
    */
   analyzeRefactorImpact(modulePath: string): RefactorImpact | null {
-    if (!this.graph) return null;
+    if (!this.graph) {return null;}
 
     const module = this.graph.modules.get(modulePath);
-    if (!module) return null;
+    if (!module) {return null;}
 
     const transitiveDependents = this.getTransitiveDependents(modulePath);
     
@@ -306,7 +306,7 @@ export class ModuleCouplingAnalyzer {
    * Get all dependency cycles
    */
   getCycles(options: CycleDetectionOptions = {}): DependencyCycle[] {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     let cycles = this.graph.cycles;
 
@@ -327,7 +327,7 @@ export class ModuleCouplingAnalyzer {
    * Get coupling hotspots
    */
   getHotspots(options: HotspotOptions = {}): Array<{ path: string; coupling: number; metrics: CouplingMetrics }> {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     const { limit = 10, minCoupling = 5 } = options;
 
@@ -349,7 +349,7 @@ export class ModuleCouplingAnalyzer {
    * Get unused exports across all modules
    */
   getUnusedExports(): UnusedExportAnalysis[] {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     const results: UnusedExportAnalysis[] = [];
 
@@ -403,8 +403,8 @@ export class ModuleCouplingAnalyzer {
   }
 
   private inferExportKind(func: FunctionNode): ExportedSymbol['kind'] {
-    if (func.className) return 'class';
-    if (func.name.startsWith('use')) return 'function'; // React hooks
+    if (func.className) {return 'class';}
+    if (func.name.startsWith('use')) {return 'function';} // React hooks
     return 'function';
   }
 
@@ -435,9 +435,9 @@ export class ModuleCouplingAnalyzer {
   private determineRole(node: ModuleNode): ModuleRole {
     const { Ca, Ce } = node.metrics;
     
-    if (Ca === 0 && Ce === 0) return 'isolated';
-    if (Ca > Ce * 2) return 'hub';        // Many depend on this
-    if (Ce > Ca * 2) return 'authority';  // Depends on many
+    if (Ca === 0 && Ce === 0) {return 'isolated';}
+    if (Ca > Ce * 2) {return 'hub';}        // Many depend on this
+    if (Ce > Ca * 2) {return 'authority';}  // Depends on many
     return 'balanced';
   }
 
@@ -482,7 +482,7 @@ export class ModuleCouplingAnalyzer {
       const node = modules.get(v);
       if (node) {
         for (const w of node.imports) {
-          if (!modules.has(w)) continue; // Skip external
+          if (!modules.has(w)) {continue;} // Skip external
           
           if (!index.has(w)) {
             strongConnect(w);
@@ -556,8 +556,8 @@ export class ModuleCouplingAnalyzer {
       return m && (m.metrics.Ca + m.metrics.Ce) > 10;
     });
 
-    if (hasEntryPoint || path.length > 5) return 'critical';
-    if (hasHighCoupling || path.length > 3) return 'warning';
+    if (hasEntryPoint || path.length > 5) {return 'critical';}
+    if (hasHighCoupling || path.length > 3) {return 'warning';}
     return 'info';
   }
 
@@ -574,7 +574,7 @@ export class ModuleCouplingAnalyzer {
       const fromNode = modules.get(from);
       const toNode = modules.get(to);
       
-      if (!fromNode || !toNode) continue;
+      if (!fromNode || !toNode) {continue;}
 
       // Prefer breaking edges from unstable to stable modules
       const effort = this.estimateBreakEffort(fromNode, toNode);
@@ -596,9 +596,9 @@ export class ModuleCouplingAnalyzer {
 
   private estimateBreakEffort(from: ModuleNode, to: ModuleNode): BreakEffort {
     // Low effort if from is unstable (easy to change)
-    if (from.metrics.instability > 0.7) return 'low';
+    if (from.metrics.instability > 0.7) {return 'low';}
     // High effort if to is a hub (many depend on it)
-    if (to.role === 'hub') return 'high';
+    if (to.role === 'hub') {return 'high';}
     return 'medium';
   }
 
@@ -672,14 +672,14 @@ export class ModuleCouplingAnalyzer {
   }
 
   private getTransitiveDependencies(modulePath: string): string[] {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     const visited = new Set<string>();
     const queue = [modulePath];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current)) continue;
+      if (visited.has(current)) {continue;}
       visited.add(current);
 
       const node = this.graph.modules.get(current);
@@ -697,14 +697,14 @@ export class ModuleCouplingAnalyzer {
   }
 
   private getTransitiveDependents(modulePath: string): string[] {
-    if (!this.graph) return [];
+    if (!this.graph) {return [];}
 
     const visited = new Set<string>();
     const queue = [modulePath];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current)) continue;
+      if (visited.has(current)) {continue;}
       visited.add(current);
 
       const node = this.graph.modules.get(current);
@@ -772,11 +772,11 @@ export class ModuleCouplingAnalyzer {
     module: ModuleNode | undefined, 
     edge: ImportEdge | undefined
   ): BreakEffort {
-    if (!module) return 'medium';
+    if (!module) {return 'medium';}
     
     const symbolCount = edge?.symbols.length ?? 0;
-    if (symbolCount > 5) return 'high';
-    if (symbolCount > 2) return 'medium';
+    if (symbolCount > 5) {return 'high';}
+    if (symbolCount > 2) {return 'medium';}
     return 'low';
   }
 
@@ -784,9 +784,9 @@ export class ModuleCouplingAnalyzer {
     totalAffected: number, 
     module: ModuleNode
   ): 'low' | 'medium' | 'high' | 'critical' {
-    if (totalAffected > 20 || module.role === 'hub') return 'critical';
-    if (totalAffected > 10) return 'high';
-    if (totalAffected > 5) return 'medium';
+    if (totalAffected > 20 || module.role === 'hub') {return 'critical';}
+    if (totalAffected > 10) {return 'high';}
+    if (totalAffected > 5) {return 'medium';}
     return 'low';
   }
 

@@ -5,6 +5,13 @@
  * Provides common utilities for pattern matching and result building.
  */
 
+import {
+  type ExtractionQuality,
+  type LanguagePatterns,
+  EXTRACTION_CONFIDENCE,
+  createDefaultQuality,
+} from '../types.js';
+
 import type {
   CallGraphLanguage,
   FileExtractionResult,
@@ -15,12 +22,6 @@ import type {
   ClassExtraction,
   ParameterInfo,
 } from '../../types.js';
-import {
-  type ExtractionQuality,
-  type LanguagePatterns,
-  EXTRACTION_CONFIDENCE,
-  createDefaultQuality,
-} from '../types.js';
 
 /**
  * Abstract base class for regex-based extractors
@@ -189,7 +190,7 @@ export abstract class BaseRegexExtractor {
    * Parse parameter string into ParameterInfo array
    */
   protected parseParameters(paramString: string): ParameterInfo[] {
-    if (!paramString || !paramString.trim()) return [];
+    if (!paramString?.trim()) {return [];}
 
     const params: ParameterInfo[] = [];
     let depth = 0;
@@ -213,7 +214,7 @@ export abstract class BaseRegexExtractor {
         current += char;
       } else if (!inString && char === ',' && depth === 0) {
         const param = this.parseParameter(current.trim());
-        if (param) params.push(param);
+        if (param) {params.push(param);}
         current = '';
       } else {
         current += char;
@@ -222,7 +223,7 @@ export abstract class BaseRegexExtractor {
 
     if (current.trim()) {
       const param = this.parseParameter(current.trim());
-      if (param) params.push(param);
+      if (param) {params.push(param);}
     }
 
     return params;
@@ -232,11 +233,11 @@ export abstract class BaseRegexExtractor {
    * Parse a single parameter
    */
   protected parseParameter(paramStr: string): ParameterInfo | null {
-    if (!paramStr) return null;
+    if (!paramStr) {return null;}
 
     // Handle rest parameters
     const isRest = paramStr.startsWith('...');
-    if (isRest) paramStr = paramStr.slice(3);
+    if (isRest) {paramStr = paramStr.slice(3);}
 
     // Handle default values
     const hasDefault = paramStr.includes('=');
@@ -257,7 +258,7 @@ export abstract class BaseRegexExtractor {
     // Clean up name (remove optional marker, etc.)
     name = name.replace(/\?$/, '').trim();
 
-    if (!name) return null;
+    if (!name) {return null;}
 
     return { name, type, hasDefault, isRest };
   }
@@ -285,7 +286,7 @@ export abstract class BaseRegexExtractor {
         inString = false;
         continue;
       }
-      if (inString) continue;
+      if (inString) {continue;}
 
       // Handle braces
       if (char === '{') {

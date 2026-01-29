@@ -6,10 +6,11 @@
  * to produce unified extraction results.
  */
 
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
-import { getParserRegistry, detectLanguage } from '../parsing/parser-registry.js';
-import { getNormalizer } from '../normalization/index.js';
 import { getMatcherRegistry } from '../matching/matcher-registry.js';
+import { getNormalizer } from '../normalization/index.js';
+import { getParserRegistry, detectLanguage } from '../parsing/parser-registry.js';
+
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedLanguage,
   UnifiedExtractionResult,
@@ -98,7 +99,7 @@ export class UnifiedLanguageProvider {
     // Extract and normalize
     const normalizeStart = performance.now();
     const result = this.extractWithNormalizer(
-      tree.rootNode as TreeSitterNode,
+      tree.rootNode,
       source,
       filePath,
       language,

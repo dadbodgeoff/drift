@@ -4,8 +4,9 @@
  * Calculates the health score and genetic diversity metrics for a DNA profile.
  */
 
-import type { Gene, GeneId, Mutation, DNAThresholds } from './types.js';
 import { DEFAULT_DNA_THRESHOLDS } from './types.js';
+
+import type { Gene, GeneId, Mutation, DNAThresholds } from './types.js';
 
 export class HealthCalculator {
   private readonly thresholds: DNAThresholds;
@@ -16,7 +17,7 @@ export class HealthCalculator {
 
   calculateHealthScore(genes: Record<GeneId, Gene>, mutations: Mutation[]): number {
     const geneArray = Object.values(genes);
-    if (geneArray.length === 0) return 0;
+    if (geneArray.length === 0) {return 0;}
 
     const avgConsistency = this.calculateAverageConsistency(geneArray);
     const consistencyScore = avgConsistency * 40;
@@ -36,7 +37,7 @@ export class HealthCalculator {
 
   calculateGeneticDiversity(genes: Record<GeneId, Gene>): number {
     const geneArray = Object.values(genes);
-    if (geneArray.length === 0) return 0;
+    if (geneArray.length === 0) {return 0;}
 
     let totalDiversity = 0;
     for (const gene of geneArray) {
@@ -54,17 +55,17 @@ export class HealthCalculator {
   }
 
   private calculateAverageConsistency(genes: Gene[]): number {
-    if (genes.length === 0) return 0;
+    if (genes.length === 0) {return 0;}
     return genes.reduce((sum, gene) => sum + gene.consistency, 0) / genes.length;
   }
 
   private calculateAverageConfidence(genes: Gene[]): number {
-    if (genes.length === 0) return 0;
+    if (genes.length === 0) {return 0;}
     return genes.reduce((sum, gene) => sum + gene.confidence, 0) / genes.length;
   }
 
   private calculateMutationPenalty(mutations: Mutation[], genes: Gene[]): number {
-    if (mutations.length === 0) return 0;
+    if (mutations.length === 0) {return 0;}
 
     let totalFiles = 0;
     for (const gene of genes) {
@@ -72,7 +73,7 @@ export class HealthCalculator {
         totalFiles += allele.fileCount;
       }
     }
-    if (totalFiles === 0) return 0;
+    if (totalFiles === 0) {return 0;}
 
     let weightedMutations = 0;
     for (const mutation of mutations) {
@@ -86,7 +87,7 @@ export class HealthCalculator {
   }
 
   private calculateDominantCoverage(genes: Gene[]): number {
-    if (genes.length === 0) return 0;
+    if (genes.length === 0) {return 0;}
     const genesWithDominant = genes.filter(
       gene => gene.dominant !== null && gene.dominant.frequency >= this.thresholds.dominantMinFrequency
     );
@@ -96,15 +97,15 @@ export class HealthCalculator {
   private calculateEntropy(frequencies: number[]): number {
     let entropy = 0;
     for (const freq of frequencies) {
-      if (freq > 0) entropy -= freq * Math.log2(freq);
+      if (freq > 0) {entropy -= freq * Math.log2(freq);}
     }
     return entropy;
   }
 
   getHealthLevel(score: number): 'excellent' | 'good' | 'fair' | 'poor' {
-    if (score >= 90) return 'excellent';
-    if (score >= 70) return 'good';
-    if (score >= 50) return 'fair';
+    if (score >= 90) {return 'excellent';}
+    if (score >= 70) {return 'good';}
+    if (score >= 50) {return 'fair';}
     return 'poor';
   }
 

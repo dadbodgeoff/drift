@@ -85,7 +85,7 @@ export function detectWrappers(
 
   // Pass 1: Find direct wrappers (depth 1)
   for (const func of context.functions) {
-    if (!includeTestFiles && isTestFile(func.file)) continue;
+    if (!includeTestFiles && isTestFile(func.file)) {continue;}
 
     const calledPrimitives = func.calls
       .filter((c) => primitiveNames.has(c.calleeName))
@@ -115,8 +115,8 @@ export function detectWrappers(
     const newWrappers: Array<[string, WrapperFunction]> = [];
 
     for (const func of context.functions) {
-      if (wrappers.has(func.qualifiedName)) continue;
-      if (!includeTestFiles && isTestFile(func.file)) continue;
+      if (wrappers.has(func.qualifiedName)) {continue;}
+      if (!includeTestFiles && isTestFile(func.file)) {continue;}
 
       const calledWrappers = func.calls
         .filter((c) => wrappers.has(c.calleeName) || wrappers.has(c.calleeQualifiedName || ''))
@@ -249,7 +249,7 @@ function detectFactoryPattern(func: FunctionInfo): boolean {
  * Detect if function is higher-order (takes function as parameter)
  */
 function detectHigherOrderPattern(func: FunctionInfo): boolean {
-  if (!func.parameters) return false;
+  if (!func.parameters) {return false;}
 
   return func.parameters.some((p) => {
     const type = p.type?.toLowerCase() || '';

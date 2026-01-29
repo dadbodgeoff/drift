@@ -11,7 +11,6 @@
  * - .order('field')
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -19,13 +18,15 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class SupabaseFieldExtractor extends BaseFieldExtractor {
   readonly name = 'supabase';
   readonly framework: ORMFramework = 'supabase';
   readonly languages = ['typescript', 'javascript'];
   
   matches(content: string, language: string): boolean {
-    if (!this.languages.includes(language)) return false;
+    if (!this.languages.includes(language)) {return false;}
     return (
       content.includes('supabase') ||
       content.includes('@supabase/supabase-js') ||

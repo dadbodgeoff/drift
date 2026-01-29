@@ -13,6 +13,7 @@ import {
   type WrapperCluster,
   type WrapperFunction,
 } from 'driftdetect-core/wrappers';
+
 import { createResponseBuilder, metrics } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -158,10 +159,10 @@ export async function handleMiddleware(
   
   for (const mw of middlewareList) {
     byType[mw.type] = (byType[mw.type] ?? 0) + 1;
-    if (mw.type === 'auth') authCount++;
-    if (mw.type === 'logging') loggingCount++;
-    if (mw.type === 'validation') validationCount++;
-    if (mw.type === 'error') errorCount++;
+    if (mw.type === 'auth') {authCount++;}
+    if (mw.type === 'logging') {loggingCount++;}
+    if (mw.type === 'validation') {validationCount++;}
+    if (mw.type === 'error') {errorCount++;}
   }
   
   const data: MiddlewareData = {
@@ -220,13 +221,13 @@ function detectFramework(wrapper: WrapperFunction): string | undefined {
   const primitives = wrapper.primitiveSignature.join(' ').toLowerCase();
   const name = wrapper.name.toLowerCase();
   
-  if (primitives.includes('express') || name.includes('express')) return 'express';
-  if (primitives.includes('koa')) return 'koa';
-  if (primitives.includes('fastify')) return 'fastify';
-  if (primitives.includes('nestjs') || primitives.includes('@nestjs')) return 'nestjs';
-  if (primitives.includes('laravel') || primitives.includes('illuminate')) return 'laravel';
-  if (primitives.includes('spring') || primitives.includes('@controller')) return 'spring';
-  if (primitives.includes('gin') || primitives.includes('echo') || primitives.includes('fiber')) return 'go';
+  if (primitives.includes('express') || name.includes('express')) {return 'express';}
+  if (primitives.includes('koa')) {return 'koa';}
+  if (primitives.includes('fastify')) {return 'fastify';}
+  if (primitives.includes('nestjs') || primitives.includes('@nestjs')) {return 'nestjs';}
+  if (primitives.includes('laravel') || primitives.includes('illuminate')) {return 'laravel';}
+  if (primitives.includes('spring') || primitives.includes('@controller')) {return 'spring';}
+  if (primitives.includes('gin') || primitives.includes('echo') || primitives.includes('fiber')) {return 'go';}
   
   return undefined;
 }
@@ -236,16 +237,16 @@ function isMiddlewarePattern(wrapper: WrapperFunction): boolean {
   const params = wrapper.parameterSignature?.join(' ').toLowerCase() ?? '';
   
   // Common middleware naming patterns
-  if (name.includes('middleware')) return true;
-  if (name.includes('interceptor')) return true;
-  if (name.includes('guard')) return true;
-  if (name.includes('filter')) return true;
+  if (name.includes('middleware')) {return true;}
+  if (name.includes('interceptor')) {return true;}
+  if (name.includes('guard')) {return true;}
+  if (name.includes('filter')) {return true;}
   
   // Express-style (req, res, next)
-  if (params.includes('req') && params.includes('res') && params.includes('next')) return true;
+  if (params.includes('req') && params.includes('res') && params.includes('next')) {return true;}
   
   // Koa-style (ctx, next)
-  if (params.includes('ctx') && params.includes('next')) return true;
+  if (params.includes('ctx') && params.includes('next')) {return true;}
   
   return false;
 }

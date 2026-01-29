@@ -7,20 +7,23 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
+
+import { CSharpEnvExtractor } from './extractors/csharp-env-extractor.js';
+import { GoEnvExtractor } from './extractors/go-env-extractor.js';
+import { JavaEnvExtractor } from './extractors/java-env-extractor.js';
+import { PhpEnvExtractor } from './extractors/php-env-extractor.js';
+import { PythonEnvExtractor } from './extractors/python-env-extractor.js';
+import { TypeScriptEnvExtractor } from './extractors/typescript-env-extractor.js';
+
+import type { BaseEnvExtractor } from './extractors/base-env-extractor.js';
 import type {
   EnvAccessMap,
   EnvAccessPoint,
   EnvVarInfo,
   EnvScanResult,
 } from './types.js';
-import type { BaseEnvExtractor } from './extractors/base-env-extractor.js';
-import { TypeScriptEnvExtractor } from './extractors/typescript-env-extractor.js';
-import { PythonEnvExtractor } from './extractors/python-env-extractor.js';
-import { JavaEnvExtractor } from './extractors/java-env-extractor.js';
-import { CSharpEnvExtractor } from './extractors/csharp-env-extractor.js';
-import { PhpEnvExtractor } from './extractors/php-env-extractor.js';
-import { GoEnvExtractor } from './extractors/go-env-extractor.js';
 
 // ============================================================================
 // Types
@@ -75,17 +78,17 @@ export class EnvScanner {
 
     for (const file of files) {
       // Skip type definition files
-      if (file.endsWith('.d.ts')) continue;
+      if (file.endsWith('.d.ts')) {continue;}
 
       const extractor = this.getExtractor(file);
-      if (!extractor) continue;
+      if (!extractor) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);
         const source = await fs.readFile(filePath, 'utf-8');
 
         // Quick check if file might have env access
-        if (!this.mightHaveEnvAccess(source)) continue;
+        if (!this.mightHaveEnvAccess(source)) {continue;}
 
         stats.filesScanned++;
 
@@ -230,7 +233,7 @@ export class EnvScanner {
     for (const [file, points] of accessPoints) {
       for (const point of points) {
         // Skip internal markers
-        if (point.varName.startsWith('__')) continue;
+        if (point.varName.startsWith('__')) {continue;}
 
         // Add to all access points
         allAccessPoints[point.id] = point;
@@ -255,9 +258,9 @@ export class EnvScanner {
           stats.totalVariables++;
 
           // Track by sensitivity
-          if (point.sensitivity === 'secret') stats.secretVariables++;
-          else if (point.sensitivity === 'credential') stats.credentialVariables++;
-          else if (point.sensitivity === 'config') stats.configVariables++;
+          if (point.sensitivity === 'secret') {stats.secretVariables++;}
+          else if (point.sensitivity === 'credential') {stats.credentialVariables++;}
+          else if (point.sensitivity === 'config') {stats.configVariables++;}
         }
 
         const varInfo = variables[point.varName];

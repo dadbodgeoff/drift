@@ -11,7 +11,7 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
   const match = raw.match(/\[Http(Get|Post|Put|Delete|Patch|Head|Options)/i);
-  if (match && match[1]) {
+  if (match?.[1]) {
     return match[1].toUpperCase() as HttpMethod;
   }
   return undefined;
@@ -30,7 +30,7 @@ function extractPath(raw: string): string | undefined {
  */
 function extractRoles(raw: string): string[] | undefined {
   const rolesMatch = raw.match(/Roles\s*=\s*["']([^"']+)["']/);
-  if (rolesMatch && rolesMatch[1]) {
+  if (rolesMatch?.[1]) {
     return rolesMatch[1].split(',').map(r => r.trim());
   }
   return undefined;

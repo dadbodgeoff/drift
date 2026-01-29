@@ -10,7 +10,6 @@
  * Also extracts from SQLAlchemy model definitions.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -18,13 +17,15 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class SQLAlchemyFieldExtractor extends BaseFieldExtractor {
   readonly name = 'sqlalchemy';
   readonly framework: ORMFramework = 'sqlalchemy';
   readonly languages = ['python'];
   
   matches(content: string, language: string): boolean {
-    if (language !== 'python') return false;
+    if (language !== 'python') {return false;}
     return (
       content.includes('session.query') ||
       content.includes('declarative_base') ||
@@ -128,7 +129,7 @@ export class SQLAlchemyFieldExtractor extends BaseFieldExtractor {
     
     while ((match = modelPattern.exec(content)) !== null) {
       const modelName = match[1];
-      if (!modelName) continue;
+      if (!modelName) {continue;}
       
       const startLine = content.substring(0, match.index).split('\n').length;
       
@@ -141,7 +142,7 @@ export class SQLAlchemyFieldExtractor extends BaseFieldExtractor {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line === undefined) continue;
+        if (line === undefined) {continue;}
         
         // Check if we've exited the class
         if (i > 0 && line.length > 0 && !line.startsWith(' ') && !line.startsWith('\t')) {

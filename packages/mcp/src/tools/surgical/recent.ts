@@ -10,9 +10,10 @@
  * Solves: AI writes code using OLD patterns because it read an old file.
  */
 
-import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+
+import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 
 const execAsync = promisify(exec);
 
@@ -218,9 +219,9 @@ function parseCommitType(message: string): string {
   
   // Fallback heuristics
   const lower = message.toLowerCase();
-  if (lower.includes('fix') || lower.includes('bug')) return 'fix';
-  if (lower.includes('add') || lower.includes('new') || lower.includes('implement')) return 'feat';
-  if (lower.includes('refactor') || lower.includes('clean') || lower.includes('improve')) return 'refactor';
+  if (lower.includes('fix') || lower.includes('bug')) {return 'fix';}
+  if (lower.includes('add') || lower.includes('new') || lower.includes('implement')) {return 'feat';}
+  if (lower.includes('refactor') || lower.includes('clean') || lower.includes('improve')) {return 'refactor';}
   
   return 'other';
 }

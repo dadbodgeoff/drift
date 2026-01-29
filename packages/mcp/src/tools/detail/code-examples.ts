@@ -8,10 +8,12 @@
  * The service-based approach is preferred for new code.
  */
 
-import type { PatternStore, PatternCategory, IPatternService } from 'driftdetect-core';
-import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
+
+import type { PatternStore, PatternCategory, IPatternService } from 'driftdetect-core';
 
 export interface CodeExample {
   patternId: string;
@@ -128,10 +130,10 @@ export async function handleCodeExamplesWithService(
       }
       
       // Limit total examples
-      if (examples.length >= maxExamples * 5) break;
+      if (examples.length >= maxExamples * 5) {break;}
     }
     
-    if (examples.length >= maxExamples * 5) break;
+    if (examples.length >= maxExamples * 5) {break;}
   }
   
   const data: CodeExamplesData = {
@@ -244,10 +246,10 @@ export async function handleCodeExamples(
       }
       
       // Limit total examples
-      if (examples.length >= maxExamples * 5) break;
+      if (examples.length >= maxExamples * 5) {break;}
     }
     
-    if (examples.length >= maxExamples * 5) break;
+    if (examples.length >= maxExamples * 5) {break;}
   }
   
   const data: CodeExamplesData = {

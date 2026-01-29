@@ -8,6 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
+
 import type { TreeSitterParser, TreeSitterLanguage } from './types.js';
 
 // Create require function for ESM compatibility
@@ -233,10 +234,10 @@ export function resetTypeScriptLoader(): void {
  * Load tree-sitter core module.
  */
 function loadTreeSitterCore(): void {
-  if (cachedTreeSitter) return;
+  if (cachedTreeSitter) {return;}
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedTreeSitter = require('tree-sitter') as new () => TreeSitterParser;
   } catch (error) {
     throw new Error(
@@ -258,7 +259,7 @@ function loadTypeScriptTreeSitter(): void {
 
   try {
     // tree-sitter-typescript exports an object with typescript and tsx languages
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const tsModule = require('tree-sitter-typescript') as {
       typescript: TreeSitterLanguage;
       tsx: TreeSitterLanguage;
@@ -287,7 +288,7 @@ function loadJavaScriptTreeSitter(): void {
   loadTreeSitterCore();
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedJavaScriptLanguage = require('tree-sitter-javascript') as TreeSitterLanguage;
   } catch (error) {
     throw new Error(

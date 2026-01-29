@@ -11,18 +11,19 @@
  * The service-based approach is preferred for new code.
  */
 
-import type { 
-  PatternStore, 
-  PatternCategory, 
-  DataLake,
-  IPatternService,
-} from 'driftdetect-core';
 import { 
   createResponseBuilder, 
   cursorManager,
   Errors,
   type PaginationInfo,
 } from '../../infrastructure/index.js';
+
+import type { 
+  PatternStore, 
+  PatternCategory, 
+  DataLake,
+  IPatternService,
+} from 'driftdetect-core';
 
 export interface PatternSummary {
   id: string;

@@ -9,8 +9,9 @@
  * - Eloquent/Laravel patterns
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -286,11 +287,11 @@ export class PhpNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'function_definition') {
         const func = this.extractFunctionDefinition(node, filePath, currentNamespace);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'method_declaration') {
         const className = this.findParentClassName(node);
         const func = this.extractMethodDeclaration(node, filePath, className, currentNamespace);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -303,7 +304,7 @@ export class PhpNormalizer extends BaseNormalizer {
     currentNamespace: string | null
   ): UnifiedFunction | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const qualifiedName = currentNamespace ? `${currentNamespace}\\${name}` : name;
@@ -344,7 +345,7 @@ export class PhpNormalizer extends BaseNormalizer {
     _currentNamespace: string | null
   ): UnifiedFunction | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const isConstructor = name === '__construct';
@@ -382,7 +383,7 @@ export class PhpNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -413,7 +414,7 @@ export class PhpNormalizer extends BaseNormalizer {
     const attributes: string[] = [];
 
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       for (const attr of sibling.children) {
         if (attr.type === 'attribute') {
           attributes.unshift(`#[${attr.text}]`);
@@ -427,10 +428,10 @@ export class PhpNormalizer extends BaseNormalizer {
 
   private hasModifier(node: TreeSitterNode, modifier: string): boolean {
     for (const child of node.children) {
-      if (child.type === 'visibility_modifier' && child.text === modifier) return true;
-      if (child.type === 'static_modifier' && modifier === 'static') return true;
-      if (child.type === 'abstract_modifier' && modifier === 'abstract') return true;
-      if (child.type === 'final_modifier' && modifier === 'final') return true;
+      if (child.type === 'visibility_modifier' && child.text === modifier) {return true;}
+      if (child.type === 'static_modifier' && modifier === 'static') {return true;}
+      if (child.type === 'abstract_modifier' && modifier === 'abstract') {return true;}
+      if (child.type === 'final_modifier' && modifier === 'final') {return true;}
     }
     return false;
   }
@@ -469,7 +470,7 @@ export class PhpNormalizer extends BaseNormalizer {
           node.type === 'interface_declaration' ||
           node.type === 'trait_declaration') {
         const cls = this.extractClassDeclaration(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -478,7 +479,7 @@ export class PhpNormalizer extends BaseNormalizer {
 
   private extractClassDeclaration(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -510,7 +511,7 @@ export class PhpNormalizer extends BaseNormalizer {
       for (const member of bodyNode.children) {
         if (member.type === 'method_declaration') {
           const methodNameNode = member.childForFieldName('name');
-          if (methodNameNode) methods.push(methodNameNode.text);
+          if (methodNameNode) {methods.push(methodNameNode.text);}
         }
       }
     }

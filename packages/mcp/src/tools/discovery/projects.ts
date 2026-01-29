@@ -296,9 +296,9 @@ export async function handleProjects(
 
         // Register new project
         const options: ProjectRegistrationOptions = {};
-        if (args.project) options.name = args.project;
-        if (args.description) options.description = args.description;
-        if (args.tags) options.tags = args.tags;
+        if (args.project) {options.name = args.project;}
+        if (args.description) {options.description = args.description;}
+        if (args.tags) {options.tags = args.tags;}
 
         const project = await registry.register(args.path, options);
 

@@ -10,6 +10,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -141,10 +142,10 @@ export class PatternComplianceGate extends BaseGate {
   private filterPatterns(patterns: Pattern[], config: PatternComplianceConfig): Pattern[] {
     return patterns.filter(p => {
       // Filter by approval status
-      if (config.approvedOnly && p.status !== 'approved') return false;
+      if (config.approvedOnly && p.status !== 'approved') {return false;}
       
       // Filter by confidence
-      if (p.confidence < config.minPatternConfidence) return false;
+      if (p.confidence < config.minPatternConfidence) {return false;}
       
       // Filter by category
       if (config.categories.length > 0 && !config.categories.includes(p.category)) {

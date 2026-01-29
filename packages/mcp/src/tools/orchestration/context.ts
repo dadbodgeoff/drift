@@ -12,6 +12,9 @@
  * Enhanced with Language Intelligence for cross-language semantic analysis.
  */
 
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 import {
   PatternStore,
   ManifestStore,
@@ -27,9 +30,8 @@ import {
   type Constraint,
   type ConstraintCategory,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // =============================================================================
 // Types
@@ -203,8 +205,8 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
           p.locations.some(l => l.file.toLowerCase().includes(focusLower))
         )
         .sort((a, b) => {
-          if (a.category === 'errors' && b.category !== 'errors') return -1;
-          if (b.category === 'errors' && a.category !== 'errors') return 1;
+          if (a.category === 'errors' && b.category !== 'errors') {return -1;}
+          if (b.category === 'errors' && a.category !== 'errors') {return 1;}
           return b.confidence.score - a.confidence.score;
         });
     },
@@ -340,8 +342,8 @@ const INTENT_STRATEGIES: Record<TaskIntent, IntentStrategy> = {
           p.locations.some(l => l.file.toLowerCase().includes(focusLower))
         )
         .sort((a, b) => {
-          if (a.category === 'testing' && b.category !== 'testing') return -1;
-          if (b.category === 'testing' && a.category !== 'testing') return 1;
+          if (a.category === 'testing' && b.category !== 'testing') {return -1;}
+          if (b.category === 'testing' && a.category !== 'testing') {return 1;}
           return b.confidence.score - a.confidence.score;
         });
     },
@@ -417,7 +419,7 @@ export async function handleContext(
   
   // Filter to relevant categories and prioritize
   const categoryPatterns = allPatterns.filter(p => 
-    strategy.categories.includes(p.category as PatternCategory)
+    strategy.categories.includes(p.category)
   );
   const prioritizedPatterns = strategy.prioritizePatterns(categoryPatterns, focus);
   
@@ -1095,7 +1097,7 @@ async function getRelevantConstraints(
     filtered.sort((a, b) => {
       const levelOrder = { error: 0, warning: 1, info: 2 };
       const levelDiff = levelOrder[a.enforcement.level] - levelOrder[b.enforcement.level];
-      if (levelDiff !== 0) return levelDiff;
+      if (levelDiff !== 0) {return levelDiff;}
       return b.confidence.score - a.confidence.score;
     });
     
@@ -1294,14 +1296,14 @@ async function findFilesMatchingFocus(projectRoot: string, focus: string): Promi
   const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php'];
   
   async function searchDir(dir: string, depth: number = 0): Promise<void> {
-    if (depth > 5) return; // Limit depth
-    if (results.length >= 10) return; // Limit results
+    if (depth > 5) {return;} // Limit depth
+    if (results.length >= 10) {return;} // Limit results
     
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       
       for (const entry of entries) {
-        if (results.length >= 10) break;
+        if (results.length >= 10) {break;}
         
         const fullPath = path.join(dir, entry.name);
         const relativePath = path.relative(projectRoot, fullPath);

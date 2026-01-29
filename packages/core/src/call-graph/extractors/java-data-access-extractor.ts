@@ -20,13 +20,14 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import {
   isJavaTreeSitterAvailable,
   createJavaParser,
 } from '../../parsers/tree-sitter/java-loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 /**
  * Java data access extractor using tree-sitter
@@ -186,18 +187,18 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const receiverName = chain.names[0];
     const methodName = chain.names[1];
     
-    if (!receiverName || !methodName) return null;
+    if (!receiverName || !methodName) {return null;}
 
     // Check if receiver looks like a repository
     const isRepository = receiverName.toLowerCase().includes('repository') ||
                         receiverName.toLowerCase().includes('repo') ||
                         receiverName.toLowerCase().includes('dao');
-    if (!isRepository) return null;
+    if (!isRepository) {return null;}
 
     // Spring Data JPA method patterns
     const springDataMethods = {
@@ -246,7 +247,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Infer table from repository name
     const table = this.inferTableFromRepositoryName(receiverName);
@@ -272,7 +273,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     const fields: string[] = [];
     
     // Remove OrderBy, Distinct, etc. suffixes
-    let cleanPart = fieldPart
+    const cleanPart = fieldPart
       .replace(/OrderBy.*$/, '')
       .replace(/Distinct$/, '')
       .replace(/First\d*$/, '')
@@ -282,7 +283,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     const parts = cleanPart.split(/(?:And|Or)(?=[A-Z])/);
     
     for (const part of parts) {
-      if (!part) continue;
+      if (!part) {continue;}
       
       // Remove comparison suffixes
       const fieldName = part
@@ -310,12 +311,12 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const receiverName = chain.names[0]?.toLowerCase() ?? '';
     const methodName = chain.names[1];
     
-    if (!methodName) return null;
+    if (!methodName) {return null;}
 
     // Check if receiver looks like EntityManager
     if (!receiverName.includes('entitymanager') && !receiverName.includes('em') &&
@@ -340,7 +341,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'delete';
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to extract entity class from find(Entity.class, id)
     const methodArgs = chain.args[1];
@@ -377,12 +378,12 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const receiverName = chain.names[0]?.toLowerCase() ?? '';
     const methodName = chain.names[1];
     
-    if (!methodName) return null;
+    if (!methodName) {return null;}
 
     // Check if receiver looks like Hibernate Session
     if (!receiverName.includes('session') && receiverName !== 'sess') {
@@ -407,7 +408,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'delete';
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to extract entity class
     const methodArgs = chain.args[1];
@@ -443,17 +444,17 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const receiverName = chain.names[0]?.toLowerCase() ?? '';
     const methodName = chain.names[1];
     
-    if (!methodName) return null;
+    if (!methodName) {return null;}
 
     // Check if receiver looks like JDBC Statement/PreparedStatement
     const isJdbc = receiverName.includes('statement') || receiverName.includes('stmt') ||
                    receiverName.includes('ps') || receiverName.includes('pstmt');
-    if (!isJdbc) return null;
+    if (!isJdbc) {return null;}
 
     const jdbcMethods = {
       read: ['executeQuery'],
@@ -468,7 +469,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'write';
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to extract SQL from argument
     let table = 'unknown';
@@ -515,7 +516,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     const hasDelete = chain.names.includes('deleteFrom') || chain.names.includes('delete');
     const hasFrom = chain.names.includes('from');
 
-    if (!hasSelect && !hasInsert && !hasUpdate && !hasDelete) return null;
+    if (!hasSelect && !hasInsert && !hasUpdate && !hasDelete) {return null;}
 
     let operation: DataOperation = 'read';
     let table = 'unknown';
@@ -552,7 +553,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (table === 'unknown' && !hasFrom) return null;
+    if (table === 'unknown' && !hasFrom) {return null;}
 
     return this.createAccessPoint({
       table,
@@ -579,7 +580,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     _source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const annotationName = nameNode.text;
     
@@ -587,11 +588,11 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     const sqlAnnotations = ['Query', 'Select', 'Insert', 'Update', 'Delete',
                            'NativeQuery', 'NamedQuery', 'NamedNativeQuery'];
     
-    if (!sqlAnnotations.includes(annotationName)) return;
+    if (!sqlAnnotations.includes(annotationName)) {return;}
 
     // Get annotation arguments
     const argsNode = node.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     // Find the SQL string in the annotation
     let sqlText = '';
@@ -609,7 +610,7 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!sqlText) return;
+    if (!sqlText) {return;}
 
     // Determine operation from annotation name or SQL
     let operation: DataOperation = 'unknown';
@@ -694,19 +695,19 @@ export class JavaDataAccessExtractor extends BaseDataAccessExtractor {
     let table = 'unknown';
     const fields: string[] = [];
 
-    if (upperSql.startsWith('SELECT')) operation = 'read';
-    else if (upperSql.startsWith('INSERT')) operation = 'write';
-    else if (upperSql.startsWith('UPDATE')) operation = 'write';
-    else if (upperSql.startsWith('DELETE')) operation = 'delete';
+    if (upperSql.startsWith('SELECT')) {operation = 'read';}
+    else if (upperSql.startsWith('INSERT')) {operation = 'write';}
+    else if (upperSql.startsWith('UPDATE')) {operation = 'write';}
+    else if (upperSql.startsWith('DELETE')) {operation = 'delete';}
 
     // Handle JPQL/HQL (FROM Entity) and SQL (FROM table)
     const fromMatch = sql.match(/FROM\s+["'`]?(\w+)["'`]?/i);
     const intoMatch = sql.match(/INTO\s+["'`]?(\w+)["'`]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`]?(\w+)["'`]?/i);
 
-    if (fromMatch?.[1]) table = this.inferTableFromName(fromMatch[1]);
-    else if (intoMatch?.[1]) table = this.inferTableFromName(intoMatch[1]);
-    else if (updateMatch?.[1]) table = this.inferTableFromName(updateMatch[1]);
+    if (fromMatch?.[1]) {table = this.inferTableFromName(fromMatch[1]);}
+    else if (intoMatch?.[1]) {table = this.inferTableFromName(intoMatch[1]);}
+    else if (updateMatch?.[1]) {table = this.inferTableFromName(updateMatch[1]);}
 
     return { table, operation, fields };
   }

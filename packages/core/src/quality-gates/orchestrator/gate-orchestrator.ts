@@ -7,6 +7,12 @@
  * Coordinates gate execution and aggregates results.
  */
 
+import { GateRegistry, getGateRegistry } from './gate-registry.js';
+import { ParallelExecutor } from './parallel-executor.js';
+import { ResultAggregator } from './result-aggregator.js';
+import { PolicyEvaluator } from '../policy/policy-evaluator.js';
+import { PolicyLoader } from '../policy/policy-loader.js';
+
 import type {
   QualityGateOptions,
   QualityGateResult,
@@ -21,11 +27,6 @@ import type {
   HealthSnapshot,
   CustomRule,
 } from '../types.js';
-import { GateRegistry, getGateRegistry } from './gate-registry.js';
-import { ParallelExecutor } from './parallel-executor.js';
-import { ResultAggregator } from './result-aggregator.js';
-import { PolicyLoader } from '../policy/policy-loader.js';
-import { PolicyEvaluator } from '../policy/policy-evaluator.js';
 
 /**
  * Main orchestrator for quality gates.
@@ -242,7 +243,7 @@ export class GateOrchestrator {
     const inputs: Array<{ gateId: GateId; input: GateInput }> = [];
     for (const gateId of gatesToRun) {
       const config = policy.gates[gateId];
-      if (config === 'skip') continue;
+      if (config === 'skip') {continue;}
 
       inputs.push({
         gateId,

@@ -5,13 +5,14 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
   EnumMember,
   ConstantKind,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * TypeScript/JavaScript constant regex extractor
@@ -33,9 +34,9 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
     while ((match = asConstPattern.exec(source)) !== null) {
       const isExported = !!match[1];
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const rawValue = match[3];
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
       const docComment = this.extractDocComment(source, line);
@@ -67,9 +68,9 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
     while ((match = freezePattern.exec(source)) !== null) {
       const isExported = !!match[1];
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const rawValue = match[3];
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
       const docComment = this.extractDocComment(source, line);
@@ -106,10 +107,10 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
     while ((match = constPattern.exec(source)) !== null) {
       const isExported = !!match[1];
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[3]?.trim();
       const rawValue = match[4]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
 
@@ -167,10 +168,10 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
 
     while ((match = staticReadonlyPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[2]?.trim();
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
 
@@ -222,9 +223,9 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
       const isExported = !!match[1];
       const isConst = !!match[2];
       const name = match[3];
-      if (!name) continue;
+      if (!name) {continue;}
       const body = match[4];
-      if (!body) continue;
+      if (!body) {continue;}
       const line = this.getLineNumber(source, match.index);
       const endLine = this.getLineNumber(source, match.index + match[0].length);
       const docComment = this.extractDocComment(source, line);
@@ -277,7 +278,7 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
       const memberMatch = trimmed.match(/^(\w+)\s*(?:=\s*(.+?))?[,}]?\s*(?:\/\/.*)?$/);
       if (memberMatch) {
         const name = memberMatch[1];
-        if (!name) continue;
+        if (!name) {continue;}
         const rawValue = memberMatch[2]?.trim();
 
         let value: string | number | undefined;
@@ -330,10 +331,10 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
       return num;
     }
 
-    if (rawValue === 'true') return true;
-    if (rawValue === 'false') return false;
-    if (rawValue === 'null') return null;
-    if (rawValue === 'undefined') return null;
+    if (rawValue === 'true') {return true;}
+    if (rawValue === 'false') {return false;}
+    if (rawValue === 'null') {return null;}
+    if (rawValue === 'undefined') {return null;}
 
     return null;
   }
@@ -345,7 +346,7 @@ export class TypeScriptConstantRegexExtractor extends BaseConstantRegexExtractor
     const beforePosition = source.slice(0, position);
     const classMatch = beforePosition.match(/class\s+(\w+)(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s]+)?\s*\{[^}]*$/);
 
-    if (classMatch && classMatch[1]) {
+    if (classMatch?.[1]) {
       return classMatch[1];
     }
 

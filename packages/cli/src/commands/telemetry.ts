@@ -5,18 +5,20 @@
  * All telemetry is opt-in and privacy-first.
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createTelemetryClient,
   generateInstallationId,
   DEFAULT_TELEMETRY_CONFIG,
   type TelemetryConfig,
 } from 'driftdetect-core';
-import { createSpinner, status } from '../ui/spinner.js';
+
 import { confirmPrompt } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 
 // ============================================================================
 // Constants

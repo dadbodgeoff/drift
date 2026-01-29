@@ -5,10 +5,12 @@
  * Helps users resolve problems without searching documentation.
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface TroubleshootOptions {
@@ -344,7 +346,7 @@ async function runDiagnostics(rootDir: string): Promise<DiagnosticResult> {
   
   // Run checks
   const nodeIssue = checkNodeVersion();
-  if (nodeIssue) issues.push(nodeIssue);
+  if (nodeIssue) {issues.push(nodeIssue);}
   
   const initIssue = await checkInitialized(rootDir);
   if (initIssue) {
@@ -359,10 +361,10 @@ async function runDiagnostics(rootDir: string): Promise<DiagnosticResult> {
   }
   
   const configIssue = await checkConfig(rootDir);
-  if (configIssue) issues.push(configIssue);
+  if (configIssue) {issues.push(configIssue);}
   
   const patternsIssue = await checkPatterns(rootDir);
-  if (patternsIssue) issues.push(patternsIssue);
+  if (patternsIssue) {issues.push(patternsIssue);}
   
   const driftignoreIssues = await checkDriftignore(rootDir);
   issues.push(...driftignoreIssues);
@@ -371,7 +373,7 @@ async function runDiagnostics(rootDir: string): Promise<DiagnosticResult> {
   issues.push(...largeDirIssues);
   
   const cacheIssue = await checkCache(rootDir);
-  if (cacheIssue) issues.push(cacheIssue);
+  if (cacheIssue) {issues.push(cacheIssue);}
   
   const mcpIssues = await checkMcpSetup(rootDir);
   issues.push(...mcpIssues);

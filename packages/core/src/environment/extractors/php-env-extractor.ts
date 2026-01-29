@@ -12,6 +12,7 @@
  */
 
 import { BaseEnvExtractor } from './base-env-extractor.js';
+
 import type { EnvLanguage, EnvExtractionResult } from '../types.js';
 
 /**
@@ -60,7 +61,7 @@ export class PhpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -90,7 +91,7 @@ export class PhpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -128,10 +129,10 @@ export class PhpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       // Skip common server variables
-      if (serverVars.has(varName)) continue;
+      if (serverVars.has(varName)) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -162,7 +163,7 @@ export class PhpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -195,7 +196,7 @@ export class PhpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);

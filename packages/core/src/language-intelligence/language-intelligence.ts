@@ -5,7 +5,9 @@
  * Provides cross-language semantic queries and normalization.
  */
 
-import type { CallGraphLanguage } from '../call-graph/types.js';
+import { registerAllFrameworks } from './frameworks/index.js';
+import { createAllNormalizers, getNormalizerForFile } from './normalizers/index.js';
+
 import type {
   LanguageIntelligenceConfig,
   NormalizedExtractionResult,
@@ -16,8 +18,7 @@ import type {
   SemanticCategory,
   LanguageNormalizer,
 } from './types.js';
-import { registerAllFrameworks } from './frameworks/index.js';
-import { createAllNormalizers, getNormalizerForFile } from './normalizers/index.js';
+import type { CallGraphLanguage } from '../call-graph/types.js';
 
 /**
  * Language Intelligence
@@ -46,7 +47,7 @@ export class LanguageIntelligence {
    * Registers all framework patterns and creates normalizers
    */
   initialize(): void {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     // Register all built-in framework patterns
     registerAllFrameworks();
@@ -97,7 +98,7 @@ export class LanguageIntelligence {
   ): NormalizedFunction[] {
     return files.flatMap(f =>
       f.functions.filter(fn => {
-        if (!fn.semantics.isDataAccessor) return false;
+        if (!fn.semantics.isDataAccessor) {return false;}
         if (table) {
           return fn.semantics.dataAccess.some(da => da.table === table);
         }
@@ -213,7 +214,7 @@ export class LanguageIntelligence {
 
     for (const fn of functions) {
       for (const d of fn.normalizedDecorators) {
-        if (d.framework) frameworksSet.add(d.framework);
+        if (d.framework) {frameworksSet.add(d.framework);}
         languagesSet.add(d.language);
       }
     }
@@ -246,7 +247,7 @@ export class LanguageIntelligence {
     this.ensureInitialized();
 
     const normalizer = this.normalizers.get(language);
-    if (!normalizer) return null;
+    if (!normalizer) {return null;}
 
     const frameworks = normalizer.detectFrameworks(''); // Empty source, just use all registered
     const normalized = normalizer.normalizeDecorator(decorator, frameworks);
@@ -283,11 +284,11 @@ export class LanguageIntelligence {
       for (const fn of file.functions) {
         totalFunctions++;
 
-        if (fn.semantics.isEntryPoint) entryPoints++;
-        if (fn.semantics.isDataAccessor) dataAccessors++;
-        if (fn.semantics.isInjectable) injectables++;
-        if (fn.semantics.isAuthHandler) authHandlers++;
-        if (fn.semantics.isTestCase) testCases++;
+        if (fn.semantics.isEntryPoint) {entryPoints++;}
+        if (fn.semantics.isDataAccessor) {dataAccessors++;}
+        if (fn.semantics.isInjectable) {injectables++;}
+        if (fn.semantics.isAuthHandler) {authHandlers++;}
+        if (fn.semantics.isTestCase) {testCases++;}
 
         for (const d of fn.normalizedDecorators) {
           if (d.framework) {

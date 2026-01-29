@@ -11,8 +11,8 @@
  * - CppUnit
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -22,6 +22,7 @@ import type {
   TestFramework,
   FixtureInfo,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Extractor Implementation
@@ -276,7 +277,7 @@ export class CppTestExtractor extends BaseTestExtractor {
 
   private findFunctionName(node: Parser.SyntaxNode): Parser.SyntaxNode | null {
     const declarator = node.childForFieldName('declarator');
-    if (!declarator) return null;
+    if (!declarator) {return null;}
 
     const visit = (n: Parser.SyntaxNode): Parser.SyntaxNode | null => {
       if (n.type === 'identifier' || n.type === 'field_identifier') {
@@ -284,7 +285,7 @@ export class CppTestExtractor extends BaseTestExtractor {
       }
       for (const child of n.children) {
         const result = visit(child);
-        if (result) return result;
+        if (result) {return result;}
       }
       return null;
     };

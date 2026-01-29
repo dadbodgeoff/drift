@@ -21,10 +21,11 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import { isTreeSitterAvailable, createPythonParser } from '../../parsers/tree-sitter/loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 /**
  * Python data access extractor using tree-sitter
@@ -146,7 +147,7 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
         }
         
         const funcNode = current.childForFieldName('function');
-        if (!funcNode) break;
+        if (!funcNode) {break;}
         
         if (funcNode.type === 'attribute') {
           const attrNode = funcNode.childForFieldName('attribute');
@@ -190,23 +191,23 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
   ): ReturnType<typeof this.createAccessPoint> | null {
     // Look for .objects. in the chain
     const objectsIndex = chain.names.indexOf('objects');
-    if (objectsIndex === -1 || objectsIndex === 0) return null;
+    if (objectsIndex === -1 || objectsIndex === 0) {return null;}
 
     // Model name is before 'objects'
     const modelName = chain.names[objectsIndex - 1];
-    if (!modelName || !/^[A-Z]/.test(modelName)) return null;
+    if (!modelName || !/^[A-Z]/.test(modelName)) {return null;}
 
     // Method is after 'objects'
     const methodName = chain.names[objectsIndex + 1];
-    if (!methodName) return null;
+    if (!methodName) {return null;}
 
     const djangoMethods = ['get', 'filter', 'exclude', 'all', 'first', 'last', 'create', 'update', 'delete', 
                           'get_or_create', 'update_or_create', 'bulk_create', 'bulk_update', 'count', 'exists',
                           'values', 'values_list', 'annotate', 'aggregate', 'order_by', 'distinct'];
-    if (!djangoMethods.includes(methodName)) return null;
+    if (!djangoMethods.includes(methodName)) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Extract fields from values() or values_list()
     let fields: string[] = [];
@@ -265,17 +266,17 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
   ): ReturnType<typeof this.createAccessPoint> | null {
     // Look for .query() in the chain
     const queryIndex = chain.names.indexOf('query');
-    if (queryIndex === -1) return null;
+    if (queryIndex === -1) {return null;}
 
     // Get model from query(Model) argument
     const queryArgs = chain.args[queryIndex];
-    if (!queryArgs || queryArgs.length === 0) return null;
+    if (!queryArgs || queryArgs.length === 0) {return null;}
 
     const modelArg = queryArgs[0];
-    if (!modelArg || modelArg.type !== 'identifier') return null;
+    if (modelArg?.type !== 'identifier') {return null;}
 
     const modelName = modelArg.text;
-    if (!/^[A-Z]/.test(modelName)) return null;
+    if (!/^[A-Z]/.test(modelName)) {return null;}
 
     // Determine operation from chain
     let operation: DataOperation = 'read';
@@ -320,18 +321,18 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
   ): ReturnType<typeof this.createAccessPoint> | null {
     // Look for .table() or .from() in the chain
     const tableIndex = chain.names.findIndex(n => n === 'table' || n === 'from');
-    if (tableIndex === -1) return null;
+    if (tableIndex === -1) {return null;}
 
     // Check if it looks like supabase
     const firstPart = chain.names[0]?.toLowerCase();
-    if (!firstPart?.includes('supabase') && !firstPart?.includes('client')) return null;
+    if (!firstPart?.includes('supabase') && !firstPart?.includes('client')) {return null;}
 
     // Get table name from .table('name') or .from('name')
     const tableArgs = chain.args[tableIndex];
-    if (!tableArgs || tableArgs.length === 0) return null;
+    if (!tableArgs || tableArgs.length === 0) {return null;}
 
     const tableArg = tableArgs[0];
-    if (!tableArg || tableArg.type !== 'string') return null;
+    if (tableArg?.type !== 'string') {return null;}
 
     // Extract string content (remove quotes)
     const table = tableArg.text.replace(/^['"]|['"]$/g, '');
@@ -406,10 +407,10 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract field name from a where clause method call
    */
   private extractWhereClauseField(args: TreeSitterNode[]): string | null {
-    if (args.length === 0) return null;
+    if (args.length === 0) {return null;}
 
     const firstArg = args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     // String argument: .eq('email', value)
     if (firstArg.type === 'string') {
@@ -441,23 +442,23 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
     filePath: string,
     _source: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const modelName = chain.names[0];
     const methodName = chain.names[1];
 
-    if (!modelName || !methodName) return null;
-    if (!/^[A-Z]/.test(modelName)) return null;
+    if (!modelName || !methodName) {return null;}
+    if (!/^[A-Z]/.test(modelName)) {return null;}
 
     const tortoiseMethods = ['filter', 'get', 'get_or_none', 'all', 'first', 'create', 'update', 'delete',
                             'get_or_create', 'update_or_create', 'bulk_create', 'bulk_update', 'count', 'exists'];
-    if (!tortoiseMethods.includes(methodName)) return null;
+    if (!tortoiseMethods.includes(methodName)) {return null;}
 
     // Skip if it looks like Django (has .objects)
-    if (chain.names.includes('objects')) return null;
+    if (chain.names.includes('objects')) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createAccessPoint({
       table: this.inferTableFromName(modelName),
@@ -481,23 +482,23 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
     filePath: string,
     _source: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const modelName = chain.names[0];
     const methodName = chain.names[1];
 
-    if (!modelName || !methodName) return null;
-    if (!/^[A-Z]/.test(modelName)) return null;
+    if (!modelName || !methodName) {return null;}
+    if (!/^[A-Z]/.test(modelName)) {return null;}
 
     const peeweeMethods = ['select', 'get', 'get_or_none', 'get_or_create', 'create', 'insert', 'insert_many',
                           'update', 'delete', 'delete_instance'];
-    if (!peeweeMethods.includes(methodName)) return null;
+    if (!peeweeMethods.includes(methodName)) {return null;}
 
     // Skip if it looks like Django (has .objects)
-    if (chain.names.includes('objects')) return null;
+    if (chain.names.includes('objects')) {return null;}
 
     const operation = this.detectOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createAccessPoint({
       table: this.inferTableFromName(modelName),
@@ -525,13 +526,13 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
     const sqlMethods = ['execute', 'executemany', 'raw', 'executescript', 'mogrify'];
     const methodIndex = chain.names.findIndex(n => sqlMethods.includes(n));
     
-    if (methodIndex === -1) return null;
+    if (methodIndex === -1) {return null;}
 
     const methodArgs = chain.args[methodIndex];
-    if (!methodArgs || methodArgs.length === 0) return null;
+    if (!methodArgs || methodArgs.length === 0) {return null;}
 
     const sqlArg = methodArgs[0];
-    if (!sqlArg) return null;
+    if (!sqlArg) {return null;}
 
     let sqlText = '';
     if (sqlArg.type === 'string') {
@@ -541,11 +542,11 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
       sqlText = sqlArg.text;
     }
 
-    if (!sqlText) return null;
+    if (!sqlText) {return null;}
 
     // Parse SQL to extract table and operation
     const { table, operation, fields } = this.parseSQLStatement(sqlText);
-    if (!table || table === 'unknown') return null;
+    if (!table || table === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -586,9 +587,9 @@ export class PythonDataAccessExtractor extends BaseDataAccessExtractor {
     const intoMatch = sql.match(/INTO\s+["'`]?(\w+)["'`]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`]?(\w+)["'`]?/i);
 
-    if (fromMatch?.[1]) table = fromMatch[1];
-    else if (intoMatch?.[1]) table = intoMatch[1];
-    else if (updateMatch?.[1]) table = updateMatch[1];
+    if (fromMatch?.[1]) {table = fromMatch[1];}
+    else if (intoMatch?.[1]) {table = intoMatch[1];}
+    else if (updateMatch?.[1]) {table = updateMatch[1];}
 
     // Extract fields from SELECT
     if (operation === 'read') {

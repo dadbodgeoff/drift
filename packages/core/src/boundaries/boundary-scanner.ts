@@ -10,19 +10,22 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
-import type {
-  DataAccessPoint,
-  ORMModel,
-  SensitiveField,
-  BoundaryScanResult,
-} from './types.js';
+
 import { BoundaryStore, createBoundaryStore } from './boundary-store.js';
 import { DataAccessLearner, createDataAccessLearner, type LearnedDataAccessConventions } from './data-access-learner.js';
 import {
   extractFieldsFromLine,
   extractModelsFromContent,
 } from './field-extractors/index.js';
+
+import type {
+  DataAccessPoint,
+  ORMModel,
+  SensitiveField,
+  BoundaryScanResult,
+} from './types.js';
 
 // ============================================================================
 // Types
@@ -335,12 +338,12 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (!line) continue;
+    if (!line) {continue;}
     
     const trimmed = line.trim();
     
     // Skip empty lines
-    if (!trimmed) continue;
+    if (!trimmed) {continue;}
     
     // Skip single-line comments
     if (trimmed.startsWith('//') || trimmed.startsWith('#') || 
@@ -367,7 +370,7 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
           const fieldKey = `${match[0].toLowerCase()}:${i + 1}`;
           
           // Skip duplicates
-          if (seenFields.has(fieldKey)) continue;
+          if (seenFields.has(fieldKey)) {continue;}
           
           // Calculate confidence
           const confidence = calculateSensitiveFieldConfidence(
@@ -378,7 +381,7 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
           );
           
           // Skip low-confidence detections (below 0.5 threshold)
-          if (confidence < 0.5) continue;
+          if (confidence < 0.5) {continue;}
           
           // Try to extract table name from context
           let table: string | null = null;
@@ -386,17 +389,17 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
           // Look for class/model name in surrounding lines
           for (let j = Math.max(0, i - 10); j < i; j++) {
             const prevLine = lines[j];
-            if (!prevLine) continue;
+            if (!prevLine) {continue;}
             
             const classMatch = prevLine.match(/class\s+(\w+)/);
             const modelMatch = prevLine.match(/model\s+(\w+)/);
             const tableMatch = prevLine.match(/Table\s*\(\s*["'](\w+)["']/);
             const fromMatch = prevLine.match(/\.from\s*\(\s*["'](\w+)["']/);
             
-            if (classMatch?.[1]) table = classMatch[1];
-            if (modelMatch?.[1]) table = modelMatch[1];
-            if (tableMatch?.[1]) table = tableMatch[1];
-            if (fromMatch?.[1]) table = fromMatch[1];
+            if (classMatch?.[1]) {table = classMatch[1];}
+            if (modelMatch?.[1]) {table = modelMatch[1];}
+            if (tableMatch?.[1]) {table = tableMatch[1];}
+            if (fromMatch?.[1]) {table = fromMatch[1];}
           }
 
           seenFields.add(fieldKey);
@@ -752,78 +755,78 @@ const COMMON_FIELD_PATTERNS: Array<{ pattern: RegExp; fields: string[] }> = [
 function extractTableName(line: string, context: string[]): string {
   // Strategy 1: Supabase .from('table_name')
   const supabaseFrom = line.match(/\.from\s*\(\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/i);
-  if (supabaseFrom?.[1]) return supabaseFrom[1];
+  if (supabaseFrom?.[1]) {return supabaseFrom[1];}
 
   // Strategy 2: Supabase with template literal .from(`table_name`)
   const supabaseTemplate = line.match(/\.from\s*\(\s*`([a-zA-Z_][a-zA-Z0-9_]*)`/i);
-  if (supabaseTemplate?.[1]) return supabaseTemplate[1];
+  if (supabaseTemplate?.[1]) {return supabaseTemplate[1];}
 
   // Strategy 3: Prisma prisma.tableName.
   const prisma = line.match(/prisma\.([a-zA-Z_][a-zA-Z0-9_]*)\./i);
-  if (prisma?.[1]) return prisma[1];
+  if (prisma?.[1]) {return prisma[1];}
 
   // Strategy 4: Drizzle db.select().from(tableName) or db.insert(tableName)
   const drizzleFrom = line.match(/\.from\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)/i);
   if (drizzleFrom?.[1] && !drizzleFrom[1].startsWith('"') && !drizzleFrom[1].startsWith("'")) {
     const hint = TABLE_NAME_HINTS[drizzleFrom[1].toLowerCase()];
-    if (hint) return hint;
+    if (hint) {return hint;}
     return drizzleFrom[1];
   }
 
   // Strategy 5: SQL FROM clause
   const sqlFrom = line.match(/FROM\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-  if (sqlFrom?.[1]) return sqlFrom[1];
+  if (sqlFrom?.[1]) {return sqlFrom[1];}
 
   // Strategy 6: SQL INTO clause
   const sqlInto = line.match(/INTO\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-  if (sqlInto?.[1]) return sqlInto[1];
+  if (sqlInto?.[1]) {return sqlInto[1];}
 
   // Strategy 7: SQL UPDATE clause
   const sqlUpdate = line.match(/UPDATE\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-  if (sqlUpdate?.[1]) return sqlUpdate[1];
+  if (sqlUpdate?.[1]) {return sqlUpdate[1];}
 
   // Strategy 8: SQL DELETE FROM clause
   const sqlDelete = line.match(/DELETE\s+FROM\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-  if (sqlDelete?.[1]) return sqlDelete[1];
+  if (sqlDelete?.[1]) {return sqlDelete[1];}
 
   // Strategy 9: Django Model.objects
   const djangoModel = line.match(/([A-Z][a-zA-Z0-9]*)\.objects/);
-  if (djangoModel?.[1]) return djangoModel[1].toLowerCase() + 's';
+  if (djangoModel?.[1]) {return djangoModel[1].toLowerCase() + 's';}
 
   // Strategy 10: SQLAlchemy session.query(Model)
   const sqlalchemyQuery = line.match(/\.query\s*\(\s*([A-Z][a-zA-Z0-9]*)\s*\)/);
-  if (sqlalchemyQuery?.[1]) return sqlalchemyQuery[1].toLowerCase() + 's';
+  if (sqlalchemyQuery?.[1]) {return sqlalchemyQuery[1].toLowerCase() + 's';}
 
   // Strategy 11: TypeORM getRepository(Entity)
   const typeormRepo = line.match(/getRepository\s*\(\s*([A-Z][a-zA-Z0-9]*)\s*\)/);
-  if (typeormRepo?.[1]) return typeormRepo[1].toLowerCase() + 's';
+  if (typeormRepo?.[1]) {return typeormRepo[1].toLowerCase() + 's';}
 
   // Strategy 12: Sequelize Model.findAll/create/etc
   const sequelizeModel = line.match(/([A-Z][a-zA-Z0-9]*)\.(?:find|create|update|destroy|bulkCreate)/);
-  if (sequelizeModel?.[1]) return sequelizeModel[1].toLowerCase() + 's';
+  if (sequelizeModel?.[1]) {return sequelizeModel[1].toLowerCase() + 's';}
 
   // Strategy 13: Mongoose Model.find/save/etc
   const mongooseModel = line.match(/([A-Z][a-zA-Z0-9]*)\.(?:find|findOne|findById|create|save|updateOne|deleteOne)/);
-  if (mongooseModel?.[1]) return mongooseModel[1].toLowerCase() + 's';
+  if (mongooseModel?.[1]) {return mongooseModel[1].toLowerCase() + 's';}
 
   // Strategy 14: Knex table('name')
   const knexTable = line.match(/\.table\s*\(\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/i);
-  if (knexTable?.[1]) return knexTable[1];
+  if (knexTable?.[1]) {return knexTable[1];}
 
   // Strategy 15: Generic ORM pattern - look for variable assignment with table hint
   const varAssignment = line.match(/(?:const|let|var)\s+(\w+)\s*=.*\.(?:from|table|query)/i);
   if (varAssignment?.[1]) {
     const hint = TABLE_NAME_HINTS[varAssignment[1].toLowerCase()];
-    if (hint) return hint;
+    if (hint) {return hint;}
   }
 
   // Strategy 16: Look in surrounding context for table hints
   for (const ctxLine of context) {
     const tableHint = ctxLine.match(/table\s*[=:]\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/i);
-    if (tableHint?.[1]) return tableHint[1];
+    if (tableHint?.[1]) {return tableHint[1];}
     
     const collectionHint = ctxLine.match(/collection\s*[=:]\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/i);
-    if (collectionHint?.[1]) return collectionHint[1];
+    if (collectionHint?.[1]) {return collectionHint[1];}
   }
 
   // Strategy 17: Infer from common variable names in the line
@@ -862,14 +865,14 @@ function extractFields(line: string, content?: string, language?: string): strin
 
   // Extract from .eq('field', value) or .match({ field: value })
   const eqMatch = line.match(/\.eq\s*\(\s*["'](\w+)["']/i);
-  if (eqMatch?.[1]) fields.push(eqMatch[1]);
+  if (eqMatch?.[1]) {fields.push(eqMatch[1]);}
 
   // Extract from object keys in .insert({ field: value })
   const insertMatch = line.match(/\.(?:insert|update|upsert)\s*\(\s*\{([^}]+)\}/i);
   if (insertMatch?.[1]) {
     const keyMatches = insertMatch[1].matchAll(/(\w+)\s*:/g);
     for (const m of keyMatches) {
-      if (m[1]) fields.push(m[1]);
+      if (m[1]) {fields.push(m[1]);}
     }
   }
 
@@ -937,7 +940,7 @@ export class BoundaryScanner {
         const filePath = path.join(this.config.rootDir, file);
         const language = getLanguage(file);
         
-        if (!language && !file.endsWith('.prisma')) continue;
+        if (!language && !file.endsWith('.prisma')) {continue;}
 
         try {
           const content = await fs.readFile(filePath, 'utf-8');
@@ -970,7 +973,7 @@ export class BoundaryScanner {
       const filePath = path.join(this.config.rootDir, file);
       const language = getLanguage(file);
       
-      if (!language && !file.endsWith('.prisma')) continue;
+      if (!language && !file.endsWith('.prisma')) {continue;}
 
       try {
         const content = await fs.readFile(filePath, 'utf-8');
@@ -1034,7 +1037,7 @@ export class BoundaryScanner {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!line) continue;
+      if (!line) {continue;}
       
       // Skip comments
       const trimmed = line.trim();
@@ -1046,11 +1049,11 @@ export class BoundaryScanner {
       // Get surrounding context
       const contextStart = Math.max(0, i - 5);
       const contextEnd = Math.min(lines.length, i + 5);
-      const context = lines.slice(contextStart, contextEnd).filter(l => l !== undefined) as string[];
+      const context = lines.slice(contextStart, contextEnd).filter(l => l !== undefined);
 
       // Check if this line has a data access pattern
       const operation = this.detectOperation(line);
-      if (!operation) continue;
+      if (!operation) {continue;}
 
       // Try to extract table name using multiple strategies
       let table = 'unknown';
@@ -1112,7 +1115,7 @@ export class BoundaryScanner {
    * Extract table name using learned patterns
    */
   private extractTableWithLearning(line: string, context: string[]): string | null {
-    if (!this.learnedConventions) return null;
+    if (!this.learnedConventions) {return null;}
 
     // Check if any learned table pattern matches
     for (const [tableName] of this.learnedConventions.tables) {
@@ -1129,7 +1132,7 @@ export class BoundaryScanner {
       const varName = (varMatch[1] || varMatch[2])?.toLowerCase();
       if (varName) {
         const inferredTable = this.learner.inferTableFromVariable(varName);
-        if (inferredTable) return inferredTable;
+        if (inferredTable) {return inferredTable;}
       }
     }
 

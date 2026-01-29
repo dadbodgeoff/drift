@@ -10,8 +10,9 @@
  * - Tagged templates: sql`SELECT * FROM users`
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -77,7 +78,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
         const funcNode = this.getChildByField(current, 'function');
         const argsNode = this.getChildByField(current, 'arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -283,14 +284,14 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'function_declaration') {
         const func = this.extractFunctionDeclaration(node, filePath, null);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'method_definition') {
         const className = this.findParentClassName(node);
         const func = this.extractMethodDefinition(node, filePath, className);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'variable_declarator') {
         const func = this.extractVariableFunction(node, filePath);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -303,7 +304,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     className: string | null
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -343,7 +344,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     className: string | null
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -385,8 +386,8 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     const nameNode = this.getChildByField(node, 'name');
     const valueNode = this.getChildByField(node, 'value');
 
-    if (!nameNode || !valueNode) return null;
-    if (valueNode.type !== 'arrow_function' && valueNode.type !== 'function') return null;
+    if (!nameNode || !valueNode) {return null;}
+    if (valueNode.type !== 'arrow_function' && valueNode.type !== 'function') {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(valueNode, 'parameters'));
@@ -422,7 +423,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -456,7 +457,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     const decorators: string[] = [];
     let sibling = node.previousNamedSibling;
 
-    while (sibling && sibling.type === 'decorator') {
+    while (sibling?.type === 'decorator') {
       decorators.unshift(sibling.text);
       sibling = sibling.previousNamedSibling;
     }
@@ -479,7 +480,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
   private isExported(node: TreeSitterNode): boolean {
     // Check for export keyword in parent
     const parent = node.parent;
-    if (parent?.type === 'export_statement') return true;
+    if (parent?.type === 'export_statement') {return true;}
 
     // Check for export modifier
     return node.children.some(c => c.type === 'export');
@@ -499,7 +500,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'class_declaration' || node.type === 'class') {
         const cls = this.extractClassDeclaration(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -508,7 +509,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
 
   private extractClassDeclaration(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -534,7 +535,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
       for (const member of bodyNode.children) {
         if (member.type === 'method_definition') {
           const methodName = this.getChildByField(member, 'name');
-          if (methodName) methods.push(methodName.text);
+          if (methodName) {methods.push(methodName.text);}
         }
       }
     }
@@ -567,7 +568,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'import_statement') {
         const imp = this.extractImportStatement(node);
-        if (imp) imports.push(imp);
+        if (imp) {imports.push(imp);}
       }
     });
 
@@ -576,7 +577,7 @@ export class TypeScriptNormalizer extends BaseNormalizer {
 
   private extractImportStatement(node: TreeSitterNode): UnifiedImport | null {
     const sourceNode = this.getChildByField(node, 'source');
-    if (!sourceNode) return null;
+    if (!sourceNode) {return null;}
 
     const source = this.unquoteString(sourceNode.text);
     const names: Array<{ imported: string; local: string; isDefault: boolean; isNamespace: boolean }> = [];

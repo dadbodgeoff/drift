@@ -4,8 +4,8 @@
  * Extracts test information from JUnit 4/5, TestNG, and Mockito.
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -14,6 +14,7 @@ import type {
   AssertionInfo,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection
@@ -167,10 +168,10 @@ export class JavaTestExtractor extends BaseTestExtractor {
           this.walkNode(modifiers, (child) => {
             if (child.type === 'marker_annotation' || child.type === 'annotation') {
               const text = child.text;
-              if (text.includes('@Mock')) mockAnnotation = '@Mock';
-              else if (text.includes('@MockBean')) mockAnnotation = '@MockBean';
-              else if (text.includes('@Spy')) mockAnnotation = '@Spy';
-              else if (text.includes('@InjectMocks')) mockAnnotation = '@InjectMocks';
+              if (text.includes('@Mock')) {mockAnnotation = '@Mock';}
+              else if (text.includes('@MockBean')) {mockAnnotation = '@MockBean';}
+              else if (text.includes('@Spy')) {mockAnnotation = '@Spy';}
+              else if (text.includes('@InjectMocks')) {mockAnnotation = '@InjectMocks';}
             }
           });
 
@@ -233,15 +234,15 @@ export class JavaTestExtractor extends BaseTestExtractor {
             if (child.type === 'marker_annotation' || child.type === 'annotation') {
               const text = child.text;
               // JUnit 5
-              if (text.includes('@BeforeEach')) setupType = 'beforeEach';
-              else if (text.includes('@AfterEach')) setupType = 'afterEach';
-              else if (text.includes('@BeforeAll')) setupType = 'beforeAll';
-              else if (text.includes('@AfterAll')) setupType = 'afterAll';
+              if (text.includes('@BeforeEach')) {setupType = 'beforeEach';}
+              else if (text.includes('@AfterEach')) {setupType = 'afterEach';}
+              else if (text.includes('@BeforeAll')) {setupType = 'beforeAll';}
+              else if (text.includes('@AfterAll')) {setupType = 'afterAll';}
               // JUnit 4
-              else if (text.includes('@Before')) setupType = 'beforeEach';
-              else if (text.includes('@After')) setupType = 'afterEach';
-              else if (text.includes('@BeforeClass')) setupType = 'beforeAll';
-              else if (text.includes('@AfterClass')) setupType = 'afterAll';
+              else if (text.includes('@Before')) {setupType = 'beforeEach';}
+              else if (text.includes('@After')) {setupType = 'afterEach';}
+              else if (text.includes('@BeforeClass')) {setupType = 'beforeAll';}
+              else if (text.includes('@AfterClass')) {setupType = 'afterAll';}
             }
           });
 

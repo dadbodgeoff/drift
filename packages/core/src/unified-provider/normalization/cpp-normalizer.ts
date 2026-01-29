@@ -14,8 +14,9 @@
  * @requirements C++ Language Support
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -78,7 +79,7 @@ export class CppNormalizer extends BaseNormalizer {
         const funcNode = this.getChildByField(current, 'function');
         const argsNode = this.getChildByField(current, 'arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -290,7 +291,7 @@ export class CppNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'function_definition') {
         const func = this.extractFunctionDefinition(node, filePath, null);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'class_specifier' || node.type === 'struct_specifier') {
         const classFunctions = this.extractClassMethods(node, filePath);
         functions.push(...classFunctions);
@@ -306,10 +307,10 @@ export class CppNormalizer extends BaseNormalizer {
     className: string | null
   ): UnifiedFunction | null {
     const declaratorNode = this.getChildByField(node, 'declarator');
-    if (!declaratorNode) return null;
+    if (!declaratorNode) {return null;}
 
     const name = this.extractFunctionName(declaratorNode);
-    if (!name) return null;
+    if (!name) {return null;}
 
     const params = this.extractParameters(declaratorNode);
     const returnTypeNode = this.getChildByField(node, 'type');
@@ -361,11 +362,11 @@ export class CppNormalizer extends BaseNormalizer {
       this.traverseNode(bodyNode, child => {
         if (child.type === 'function_definition') {
           const func = this.extractFunctionDefinition(child, filePath, className);
-          if (func) functions.push(func);
+          if (func) {functions.push(func);}
         } else if (child.type === 'declaration') {
           // Method declaration (not definition)
           const func = this.extractMethodDeclaration(child, filePath, className);
-          if (func) functions.push(func);
+          if (func) {functions.push(func);}
         }
       });
     }
@@ -379,10 +380,10 @@ export class CppNormalizer extends BaseNormalizer {
     className: string
   ): UnifiedFunction | null {
     const declaratorNode = this.getChildByField(node, 'declarator');
-    if (!declaratorNode) return null;
+    if (!declaratorNode) {return null;}
 
     const name = this.extractFunctionName(declaratorNode);
-    if (!name) return null;
+    if (!name) {return null;}
 
     const params = this.extractParameters(declaratorNode);
     const returnTypeNode = this.getChildByField(node, 'type');
@@ -440,7 +441,7 @@ export class CppNormalizer extends BaseNormalizer {
     const params: UnifiedParameter[] = [];
 
     const paramsNode = this.findParameterList(declaratorNode);
-    if (!paramsNode) return params;
+    if (!paramsNode) {return params;}
 
     for (const child of paramsNode.children) {
       if (child.type === 'parameter_declaration') {
@@ -471,7 +472,7 @@ export class CppNormalizer extends BaseNormalizer {
         return child;
       }
       const found = this.findParameterList(child);
-      if (found) return found;
+      if (found) {return found;}
     }
 
     return null;
@@ -520,10 +521,10 @@ export class CppNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'class_specifier') {
         const cls = this.extractClassSpecifier(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       } else if (node.type === 'struct_specifier') {
         const cls = this.extractStructSpecifier(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -532,7 +533,7 @@ export class CppNormalizer extends BaseNormalizer {
 
   private extractClassSpecifier(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses = this.extractBaseClasses(node);
@@ -554,7 +555,7 @@ export class CppNormalizer extends BaseNormalizer {
 
   private extractStructSpecifier(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses = this.extractBaseClasses(node);
@@ -601,7 +602,7 @@ export class CppNormalizer extends BaseNormalizer {
           const declaratorNode = this.getChildByField(child, 'declarator');
           if (declaratorNode) {
             const name = this.extractFunctionName(declaratorNode);
-            if (name) methods.push(name);
+            if (name) {methods.push(name);}
           }
         }
       });

@@ -5,12 +5,13 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
   ConstantKind,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * Go constant regex extractor
@@ -32,10 +33,10 @@ export class GoConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = singleConstPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[2];
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       // Skip if inside a const block (will be handled separately)
       const beforeMatch = source.slice(0, match.index);
@@ -83,7 +84,7 @@ export class GoConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = constBlockPattern.exec(source)) !== null) {
       const blockContent = match[1];
-      if (!blockContent) continue;
+      if (!blockContent) {continue;}
       const blockStartLine = this.getLineNumber(source, match.index);
       
       this.parseConstBlock(blockContent, blockStartLine, filePath, constants);
@@ -95,10 +96,10 @@ export class GoConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = varPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[2];
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -158,10 +159,10 @@ export class GoConstantRegexExtractor extends BaseConstantRegexExtractor {
 
       // Match: Name Type = value, Name = value, or just Name (iota continuation)
       const constMatch = trimmed.match(/^(\w+)\s*(?:(\w+)\s*)?(?:=\s*(.+?))?(?:\s*\/\/.*)?$/);
-      if (!constMatch) continue;
+      if (!constMatch) {continue;}
 
       const name = constMatch[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = constMatch[2] ?? lastType;
       const rawValue = constMatch[3]?.trim();
 
@@ -328,9 +329,9 @@ export class GoConstantRegexExtractor extends BaseConstantRegexExtractor {
     }
 
     // Boolean
-    if (trimmed === 'true') return true;
-    if (trimmed === 'false') return false;
-    if (trimmed === 'nil') return null;
+    if (trimmed === 'true') {return true;}
+    if (trimmed === 'false') {return false;}
+    if (trimmed === 'nil') {return null;}
 
     // iota
     if (trimmed === 'iota') {

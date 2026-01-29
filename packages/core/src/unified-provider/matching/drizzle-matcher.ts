@@ -9,9 +9,10 @@
  * - db.delete(users).where(eq(users.id, 1))
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Drizzle pattern matcher
@@ -35,13 +36,13 @@ export class DrizzleMatcher extends BaseMatcher {
 
     // Determine operation
     let operation: DataOperation = 'read';
-    if (hasInsert) operation = 'write';
-    if (hasUpdate) operation = 'write';
-    if (hasDelete) operation = 'delete';
+    if (hasInsert) {operation = 'write';}
+    if (hasUpdate) {operation = 'write';}
+    if (hasDelete) {operation = 'delete';}
 
     // Find table name
     const table = this.extractTableName(chain, operation);
-    if (!table) return null;
+    if (!table) {return null;}
 
     // Extract fields
     const fields = this.extractFields(chain, operation);

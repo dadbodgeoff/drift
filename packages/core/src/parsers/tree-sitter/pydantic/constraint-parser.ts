@@ -45,7 +45,7 @@ export class ConstraintParser {
     };
 
     for (const arg of args) {
-      if (!arg.isKeyword || !arg.name) continue;
+      if (!arg.isKeyword || !arg.name) {continue;}
 
       this.parseConstraintArg(arg.name, arg.value, constraints);
     }
@@ -185,14 +185,14 @@ export class ConstraintParser {
   private parseSimpleDict(value: string): Record<string, unknown> | null {
     // Remove braces
     const inner = value.slice(1, -1).trim();
-    if (!inner) return {};
+    if (!inner) {return {};}
 
     const result: Record<string, unknown> = {};
     const pairs = this.splitDictPairs(inner);
 
     for (const pair of pairs) {
       const colonIndex = pair.indexOf(':');
-      if (colonIndex === -1) continue;
+      if (colonIndex === -1) {continue;}
 
       const key = this.parseString(pair.slice(0, colonIndex).trim());
       const val = pair.slice(colonIndex + 1).trim();
@@ -230,8 +230,8 @@ export class ConstraintParser {
       }
 
       if (!inString) {
-        if (char === '{' || char === '[' || char === '(') depth++;
-        else if (char === '}' || char === ']' || char === ')') depth--;
+        if (char === '{' || char === '[' || char === '(') {depth++;}
+        else if (char === '}' || char === ']' || char === ')') {depth--;}
         else if (char === ',' && depth === 0) {
           pairs.push(current.trim());
           current = '';
@@ -256,9 +256,9 @@ export class ConstraintParser {
     const trimmed = value.trim();
 
     // Boolean
-    if (trimmed === 'True') return true;
-    if (trimmed === 'False') return false;
-    if (trimmed === 'None') return null;
+    if (trimmed === 'True') {return true;}
+    if (trimmed === 'False') {return false;}
+    if (trimmed === 'None') {return null;}
 
     // Number
     const num = parseFloat(trimmed);
@@ -291,7 +291,7 @@ export class ConstraintParser {
    */
   private parseSimpleList(value: string): unknown[] {
     const inner = value.slice(1, -1).trim();
-    if (!inner) return [];
+    if (!inner) {return [];}
 
     const items = this.splitDictPairs(inner); // Same splitting logic works
     return items.map((item) => this.parseValue(item));

@@ -6,6 +6,7 @@
  */
 
 import * as path from 'node:path';
+
 import type {
   GitCommit,
   GitFileChange,
@@ -326,7 +327,7 @@ export class GitWalker {
       // Check for commit header line (format: SHA|shortSHA|subject|body|author|email|date|parents)
       if (line.includes('|') && line.match(/^[a-f0-9]{40}\|/)) {
         // Save previous commit
-        if (currentCommit && currentCommit.sha) {
+        if (currentCommit?.sha) {
           currentCommit.files = currentFiles;
           currentCommit.body = bodyLines.join('\n').trim();
           commits.push(currentCommit as GitCommit);
@@ -365,7 +366,7 @@ export class GitWalker {
         const filePath = statusMatch[2];
         const newPath = statusMatch[3];
         
-        if (!status || !filePath) continue;
+        if (!status || !filePath) {continue;}
         
         const effectivePath = newPath || filePath;
         const classification = classifyFile(effectivePath);
@@ -395,7 +396,7 @@ export class GitWalker {
         const deletions = numstatMatch[2];
         const filePath = numstatMatch[3];
         
-        if (!additions || !deletions || !filePath) continue;
+        if (!additions || !deletions || !filePath) {continue;}
         
         const file = currentFiles.find(f => f.path === filePath || f.previousPath === filePath);
         if (file) {
@@ -412,7 +413,7 @@ export class GitWalker {
     }
 
     // Don't forget the last commit
-    if (currentCommit && currentCommit.sha) {
+    if (currentCommit?.sha) {
       currentCommit.files = currentFiles;
       currentCommit.body = bodyLines.join('\n').trim();
       commits.push(currentCommit as GitCommit);
@@ -489,7 +490,7 @@ export class GitWalker {
             this.matchGlob(f.path, pattern)
           )
         );
-        if (!hasIncluded) return false;
+        if (!hasIncluded) {return false;}
       }
 
       // Check if all files are excluded
@@ -499,7 +500,7 @@ export class GitWalker {
             this.matchGlob(f.path, pattern)
           )
         );
-        if (allExcluded) return false;
+        if (allExcluded) {return false;}
       }
 
       return true;

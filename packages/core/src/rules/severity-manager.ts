@@ -13,14 +13,15 @@
  * @requirements 24.5 - THE Enforcement_System SHALL support severity escalation after N violations
  */
 
-import type { PatternCategory, Severity } from '../store/types.js';
+import { SEVERITY_ORDER } from './types.js';
+
 import type {
   Violation,
   SeverityConfig,
   SeverityEscalationConfig,
   SeverityEscalationRule,
 } from './types.js';
-import { SEVERITY_ORDER } from './types.js';
+import type { PatternCategory, Severity } from '../store/types.js';
 
 // ============================================================================
 // Default Severity Configuration

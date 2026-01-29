@@ -1,7 +1,9 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { StylingDNAProfile, DNAStoreConfig, EvolutionEntry } from './types.js';
+
 import { DEFAULT_DNA_STORE_CONFIG } from './types.js';
+
+import type { StylingDNAProfile, DNAStoreConfig, EvolutionEntry } from './types.js';
 
 export type DNAStoreEvents = 'saved' | 'loaded' | 'error';
 

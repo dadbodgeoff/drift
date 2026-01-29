@@ -368,10 +368,10 @@ function generateClusterName(
   const namingPatterns = detectNamingPatterns(members);
   if (namingPatterns.length > 0) {
     const pattern = namingPatterns[0];
-    if (pattern && pattern.startsWith('use')) return 'Custom Hooks';
-    if (pattern && pattern.endsWith('Service')) return 'Service Wrappers';
-    if (pattern && pattern.endsWith('Handler')) return 'Event Handlers';
-    if (pattern && pattern.endsWith('Query')) return 'Query Hooks';
+    if (pattern?.startsWith('use')) {return 'Custom Hooks';}
+    if (pattern?.endsWith('Service')) {return 'Service Wrappers';}
+    if (pattern?.endsWith('Handler')) {return 'Event Handlers';}
+    if (pattern?.endsWith('Query')) {return 'Query Hooks';}
   }
 
   // Fall back to category + primitives
@@ -430,10 +430,10 @@ function generateNameSuggestions(
   // Based on naming patterns
   const patterns = detectNamingPatterns(members);
   for (const pattern of patterns) {
-    if (pattern && pattern.startsWith('use')) suggestions.push('Custom Hooks');
-    if (pattern && pattern.endsWith('Service')) suggestions.push('Service Layer');
-    if (pattern && pattern.endsWith('Repository')) suggestions.push('Repository Pattern');
-    if (pattern && pattern.endsWith('Factory')) suggestions.push('Factory Pattern');
+    if (pattern && pattern.startsWith('use')) {suggestions.push('Custom Hooks');}
+    if (pattern && pattern.endsWith('Service')) {suggestions.push('Service Layer');}
+    if (pattern && pattern.endsWith('Repository')) {suggestions.push('Repository Pattern');}
+    if (pattern && pattern.endsWith('Factory')) {suggestions.push('Factory Pattern');}
   }
 
   // Based on category
@@ -497,7 +497,7 @@ export function findRelatedClusters(
   const clusterPrimitives = new Set(cluster.primitiveSignature);
 
   return allClusters.filter((c) => {
-    if (c.id === cluster.id) return false;
+    if (c.id === cluster.id) {return false;}
     return c.primitiveSignature.some((p) => clusterPrimitives.has(p));
   });
 }

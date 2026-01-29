@@ -19,6 +19,7 @@ import {
   type PackageContextOptions,
   type PackageContext,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
 
 // =============================================================================

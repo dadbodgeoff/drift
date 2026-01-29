@@ -9,7 +9,6 @@
  * @requirements 3.5 - Parser SHALL provide a unified AST query interface across all languages
  */
 
-import type { AST, ASTNode } from '../parsers/types.js';
 import type {
   FlowAnalysisResult,
   ControlFlowGraph,
@@ -20,6 +19,7 @@ import type {
   DataFlowVariable,
   SourceLocation,
 } from './types.js';
+import type { AST, ASTNode } from '../parsers/types.js';
 
 /**
  * Options for flow analysis
@@ -703,7 +703,7 @@ export class FlowAnalyzer {
 
           for (const stmt of caseBody) {
             caseCurrentPreds = this.buildCFG(stmt, caseCurrentPreds, switchContext);
-            if (caseCurrentPreds.length === 0) break;
+            if (caseCurrentPreds.length === 0) {break;}
           }
 
           // Fallthrough to next case
@@ -1132,14 +1132,14 @@ export class FlowAnalyzer {
    * Mark all reachable nodes starting from entry.
    */
   private markReachableNodes(): void {
-    if (!this.entryNodeId) return;
+    if (!this.entryNodeId) {return;}
 
     const visited = new Set<string>();
     const queue = [this.entryNodeId];
 
     while (queue.length > 0) {
       const nodeId = queue.shift()!;
-      if (visited.has(nodeId)) continue;
+      if (visited.has(nodeId)) {continue;}
 
       visited.add(nodeId);
       const node = this.nodes.get(nodeId);

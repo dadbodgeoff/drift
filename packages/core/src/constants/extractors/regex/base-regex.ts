@@ -5,6 +5,9 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { inferCategory } from '../../analysis/categorizer.js';
+import { CONSTANT_EXTRACTION_CONFIDENCE } from '../../types.js';
+
 import type {
   ConstantLanguage,
   FileConstantResult,
@@ -13,8 +16,6 @@ import type {
   ConstantExtractionQuality,
   ConstantKind,
 } from '../../types.js';
-import { CONSTANT_EXTRACTION_CONFIDENCE } from '../../types.js';
-import { inferCategory } from '../../analysis/categorizer.js';
 
 /**
  * Abstract base class for regex-based constant extractors
@@ -201,14 +202,14 @@ export abstract class BaseConstantRegexExtractor {
     // Look for JSDoc/JavaDoc style comments
     while (i >= 0) {
       const line = lines[i]?.trim();
-      if (!line && line !== '') break; // undefined check
+      if (!line && line !== '') {break;} // undefined check
       
       // End of block comment
       if (line.endsWith('*/')) {
         // Find start of block comment
         while (i >= 0) {
           const blockLine = lines[i]?.trim();
-          if (!blockLine && blockLine !== '') break;
+          if (!blockLine && blockLine !== '') {break;}
           comments.unshift(blockLine);
           if (blockLine.startsWith('/*') || blockLine.startsWith('/**')) {
             break;

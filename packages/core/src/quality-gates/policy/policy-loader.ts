@@ -9,8 +9,10 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { QualityPolicy, GateId, GateConfig } from '../types.js';
+
 import { DEFAULT_POLICIES } from './default-policies.js';
+
+import type { QualityPolicy, GateId, GateConfig } from '../types.js';
 
 /**
  * Loads quality gate policies from various sources.
@@ -139,7 +141,7 @@ export class PolicyLoader {
       const files = await fs.readdir(customDir);
       
       for (const file of files) {
-        if (!file.endsWith('.json')) continue;
+        if (!file.endsWith('.json')) {continue;}
         
         try {
           const content = await fs.readFile(path.join(customDir, file), 'utf-8');
@@ -202,11 +204,11 @@ export class PolicyLoader {
     let specificity = 0;
     const scope = policy.scope;
 
-    if (scope.branches && scope.branches.length > 0) specificity += 10;
-    if (scope.paths && scope.paths.length > 0) specificity += 5;
-    if (scope.authors && scope.authors.length > 0) specificity += 3;
-    if (scope.includeFiles && scope.includeFiles.length > 0) specificity += 2;
-    if (scope.excludeFiles && scope.excludeFiles.length > 0) specificity += 1;
+    if (scope.branches && scope.branches.length > 0) {specificity += 10;}
+    if (scope.paths && scope.paths.length > 0) {specificity += 5;}
+    if (scope.authors && scope.authors.length > 0) {specificity += 3;}
+    if (scope.includeFiles && scope.includeFiles.length > 0) {specificity += 2;}
+    if (scope.excludeFiles && scope.excludeFiles.length > 0) {specificity += 1;}
 
     return specificity;
   }
@@ -230,7 +232,7 @@ export class PolicyLoader {
       const branchMatches = scope.branches.some(pattern => 
         this.matchGlob(context.branch, pattern)
       );
-      if (!branchMatches) return false;
+      if (!branchMatches) {return false;}
     }
 
     // Check paths
@@ -238,7 +240,7 @@ export class PolicyLoader {
       const pathMatches = context.paths.some(p =>
         scope.paths!.some(pattern => this.matchGlob(p, pattern))
       );
-      if (!pathMatches) return false;
+      if (!pathMatches) {return false;}
     }
 
     // Check author
@@ -246,7 +248,7 @@ export class PolicyLoader {
       const authorMatches = scope.authors.some(pattern =>
         this.matchGlob(context.author!, pattern)
       );
-      if (!authorMatches) return false;
+      if (!authorMatches) {return false;}
     }
 
     return true;

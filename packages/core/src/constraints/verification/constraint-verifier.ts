@@ -7,6 +7,7 @@
 
 import * as path from 'node:path';
 
+import type { ConstraintStore } from '../store/constraint-store.js';
 import type {
   Constraint,
   ConstraintLanguage,
@@ -17,7 +18,6 @@ import type {
   VerificationMetadata,
 } from '../types.js';
 
-import type { ConstraintStore } from '../store/constraint-store.js';
 
 // =============================================================================
 // Types
@@ -672,8 +672,8 @@ export class ConstraintVerifier {
       const errors = violations.filter(v => v.severity === 'error').length;
       const warnings = violations.filter(v => v.severity === 'warning').length;
 
-      if (errors > 0) parts.push(`${errors} error(s)`);
-      if (warnings > 0) parts.push(`${warnings} warning(s)`);
+      if (errors > 0) {parts.push(`${errors} error(s)`);}
+      if (warnings > 0) {parts.push(`${warnings} warning(s)`);}
     }
 
     parts.push(`${satisfied.length} passed`);
@@ -721,18 +721,18 @@ export class ConstraintVerifier {
 
     for (let i = 0; i < lines.length; i++) {
       const currentLine = lines[i];
-      if (!currentLine) continue;
+      if (!currentLine) {continue;}
 
       for (const pattern of patterns) {
         const match = currentLine.match(pattern.regex);
-        if (match && match[1]) {
+        if (match?.[1]) {
           // Look for decorators above
           const decorators: string[] = [];
           for (let j = i - 1; j >= 0 && j >= i - 5; j--) {
             const prevLine = lines[j];
-            if (!prevLine) continue;
+            if (!prevLine) {continue;}
             const decoratorMatch = prevLine.match(pattern.decoratorRegex);
-            if (decoratorMatch && decoratorMatch[1]) {
+            if (decoratorMatch?.[1]) {
               decorators.push(decoratorMatch[1]);
             } else if (prevLine.trim() && !prevLine.trim().startsWith('//')) {
               break;
@@ -783,11 +783,11 @@ export class ConstraintVerifier {
 
     for (let i = 0; i < lines.length; i++) {
       const currentLine = lines[i];
-      if (!currentLine) continue;
+      if (!currentLine) {continue;}
 
       for (const pattern of patterns) {
         const match = currentLine.match(pattern.regex);
-        if (match && match[1]) {
+        if (match?.[1]) {
           const classEntry: {
             name: string;
             line: number;
@@ -847,30 +847,30 @@ export class ConstraintVerifier {
     const lines = context.content.split('\n');
 
     for (const line of lines) {
-      if (!line) continue;
+      if (!line) {continue;}
       
       // TypeScript/JavaScript
       const tsMatch = line.match(/import\s+.*from\s+['"]([^'"]+)['"]/);
-      if (tsMatch?.[1]) imports.push(tsMatch[1]);
+      if (tsMatch?.[1]) {imports.push(tsMatch[1]);}
 
       // Python
       const pyMatch = line.match(/(?:from\s+(\S+)\s+)?import\s+(\S+)/);
       if (pyMatch) {
         const importPath = pyMatch[1] ?? pyMatch[2];
-        if (importPath) imports.push(importPath);
+        if (importPath) {imports.push(importPath);}
       }
 
       // Java
       const javaMatch = line.match(/import\s+(?:static\s+)?([^;]+);/);
-      if (javaMatch?.[1]) imports.push(javaMatch[1]);
+      if (javaMatch?.[1]) {imports.push(javaMatch[1]);}
 
       // C#
       const csMatch = line.match(/using\s+(?:static\s+)?([^;]+);/);
-      if (csMatch?.[1]) imports.push(csMatch[1]);
+      if (csMatch?.[1]) {imports.push(csMatch[1]);}
 
       // PHP
       const phpMatch = line.match(/use\s+([^;]+);/);
-      if (phpMatch?.[1]) imports.push(phpMatch[1]);
+      if (phpMatch?.[1]) {imports.push(phpMatch[1]);}
     }
 
     return imports;
@@ -946,7 +946,7 @@ export class ConstraintVerifier {
 
     for (let i = startLine; i < lines.length; i++) {
       const currentLine = lines[i];
-      if (!currentLine) continue;
+      if (!currentLine) {continue;}
 
       // Count braces
       for (const char of currentLine) {
@@ -960,13 +960,13 @@ export class ConstraintVerifier {
 
       // Check for error handling
       if (language === 'python') {
-        if (/\btry\s*:/.test(currentLine)) return true;
+        if (/\btry\s*:/.test(currentLine)) {return true;}
       } else {
-        if (/\btry\s*\{/.test(currentLine)) return true;
+        if (/\btry\s*\{/.test(currentLine)) {return true;}
       }
 
       // End of function
-      if (started && braceCount === 0) break;
+      if (started && braceCount === 0) {break;}
     }
 
     return false;

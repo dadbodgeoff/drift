@@ -2,9 +2,10 @@
  * DNA Gene Command - drift dna gene <id>
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAStore, GENE_IDS, type GeneId } from 'driftdetect-core';
+
 import { createSpinner } from '../../ui/spinner.js';
 
 interface DNAGeneOptions {

@@ -8,6 +8,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -94,7 +95,7 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
@@ -141,7 +142,7 @@ export class RustRegexExtractor extends BaseRegexExtractor {
         const methodStartLine = this.getLineNumber(originalSource, implStart + methodMatch.index);
         const key = `${implType}.${methodName}:${methodStartLine}`;
 
-        if (seen.has(key)) continue;
+        if (seen.has(key)) {continue;}
         seen.add(key);
 
         const methodEndIndex = this.findBlockEnd(implBody, methodMatch.index);
@@ -174,14 +175,14 @@ export class RustRegexExtractor extends BaseRegexExtractor {
    * Parse Rust parameter string
    */
   private parseRustParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     const parts = this.splitRustParams(paramsStr);
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       // Handle self parameters
       if (trimmed === 'self' || trimmed === '&self' || trimmed === '&mut self' || trimmed === 'mut self') {
@@ -210,8 +211,8 @@ export class RustRegexExtractor extends BaseRegexExtractor {
     let depth = 0;
 
     for (const char of paramsStr) {
-      if (char === '(' || char === '[' || char === '{' || char === '<') depth++;
-      else if (char === ')' || char === ']' || char === '}' || char === '>') depth--;
+      if (char === '(' || char === '[' || char === '{' || char === '<') {depth++;}
+      else if (char === ')' || char === ']' || char === '}' || char === '>') {depth--;}
       else if (char === ',' && depth === 0) {
         parts.push(current.trim());
         current = '';
@@ -219,7 +220,7 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       }
       current += char;
     }
-    if (current.trim()) parts.push(current.trim());
+    if (current.trim()) {parts.push(current.trim());}
 
     return parts;
   }
@@ -569,8 +570,8 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(receiver) || keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(receiver) || keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       calls.push(
@@ -594,8 +595,8 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${path}::${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       calls.push(
@@ -618,8 +619,8 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       calls.push(
@@ -640,7 +641,7 @@ export class RustRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(

@@ -115,9 +115,9 @@ export class ParserRegistry {
     if (language === 'typescript' || language === 'javascript') {
       if (filePath) {
         const lower = filePath.toLowerCase();
-        if (lower.endsWith('.tsx')) return 'tsx';
-        if (lower.endsWith('.jsx')) return 'jsx';
-        if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) return 'ts';
+        if (lower.endsWith('.tsx')) {return 'tsx';}
+        if (lower.endsWith('.jsx')) {return 'jsx';}
+        if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) {return 'ts';}
       }
       return language === 'typescript' ? 'ts' : 'js';
     }

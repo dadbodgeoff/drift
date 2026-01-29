@@ -16,6 +16,7 @@ import {
   type GateId,
   type OutputFormat,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================

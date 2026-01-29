@@ -37,7 +37,7 @@ export function parseDiff(diffString: string): ParsedDiff[] {
   for (const line of lines) {
     // New file diff header
     if (line.startsWith('diff --git')) {
-      if (currentDiff && currentDiff.file) {
+      if (currentDiff?.file) {
         if (currentHunk) {
           currentDiff.hunks = currentDiff.hunks || [];
           currentDiff.hunks.push(currentHunk as DiffHunk);
@@ -57,7 +57,7 @@ export function parseDiff(diffString: string): ParsedDiff[] {
       continue;
     }
 
-    if (!currentDiff) continue;
+    if (!currentDiff) {continue;}
 
     // File paths
     if (line.startsWith('--- a/')) {
@@ -150,7 +150,7 @@ export function parseDiff(diffString: string): ParsedDiff[] {
   }
 
   // Don't forget the last diff
-  if (currentDiff && currentDiff.file) {
+  if (currentDiff?.file) {
     if (currentHunk) {
       currentDiff.hunks = currentDiff.hunks || [];
       currentDiff.hunks.push(currentHunk as DiffHunk);
@@ -286,7 +286,7 @@ export function analyzeArchitecturalSignals(
 
   for (const diff of diffs) {
     // Skip binary files
-    if (diff.isBinary) continue;
+    if (diff.isBinary) {continue;}
 
     // Get all additions as a single string for pattern matching
     const additions = diff.hunks
@@ -364,11 +364,11 @@ function parseRequirementsTxt(content: string): ManifestDependency[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('-')) continue;
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('-')) {continue;}
 
     // Match: package==version, package>=version, package~=version, etc.
     const match = trimmed.match(/^([a-zA-Z0-9_-]+)(?:\[.*\])?(?:([<>=!~]+)(.+))?$/);
-    if (match && match[1]) {
+    if (match?.[1]) {
       deps.push({
         name: match[1],
         version: match[3] ?? '*',

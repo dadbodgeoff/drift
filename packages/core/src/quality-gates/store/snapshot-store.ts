@@ -8,6 +8,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type { HealthSnapshot } from '../types.js';
 
 /**
@@ -45,7 +46,7 @@ export class SnapshotStore {
       const files = await fs.readdir(branchDir);
       const jsonFiles = files.filter(f => f.endsWith('.json')).sort().reverse();
 
-      if (jsonFiles.length === 0) return null;
+      if (jsonFiles.length === 0) {return null;}
 
       const content = await fs.readFile(path.join(branchDir, jsonFiles[0]!), 'utf-8');
       return JSON.parse(content);
@@ -58,14 +59,14 @@ export class SnapshotStore {
    * Get snapshot by commit SHA.
    */
   async getByCommit(branch: string, commitSha: string): Promise<HealthSnapshot | null> {
-    if (!commitSha) return null;
+    if (!commitSha) {return null;}
     
     try {
       const branchDir = path.join(this.snapshotsDir, this.sanitizeBranch(branch));
       const files = await fs.readdir(branchDir);
 
       for (const file of files) {
-        if (!file.endsWith('.json')) continue;
+        if (!file.endsWith('.json')) {continue;}
         const content = await fs.readFile(path.join(branchDir, file), 'utf-8');
         const snapshot = JSON.parse(content) as HealthSnapshot;
         if (snapshot.commitSha === commitSha) {

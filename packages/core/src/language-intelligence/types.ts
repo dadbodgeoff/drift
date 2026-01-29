@@ -6,8 +6,8 @@
  * normalization without modifying any existing code.
  */
 
-import type { CallGraphLanguage, FunctionExtraction, FileExtractionResult } from '../call-graph/types.js';
 import type { DataAccessPoint } from '../boundaries/types.js';
+import type { CallGraphLanguage, FunctionExtraction, FileExtractionResult } from '../call-graph/types.js';
 
 // ============================================================================
 // Semantic Categories

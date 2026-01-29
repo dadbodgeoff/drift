@@ -9,14 +9,16 @@
  * @requirements Phase 3 - File-level tracking for incremental updates
  */
 
-import { Command } from 'commander';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+
 import chalk from 'chalk';
-import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
+import { Command } from 'commander';
 import { PatternStore, getDefaultIgnoreDirectories } from 'driftdetect-core';
+import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
+
 import type { Pattern, PatternCategory } from 'driftdetect-core';
 
 // ============================================================================
@@ -327,12 +329,12 @@ async function detectPatternsInFile(
   // Determine language
   type SupportedLanguage = 'typescript' | 'javascript' | 'python' | 'css' | 'json' | 'markdown';
   let language: SupportedLanguage = 'typescript';
-  if (['.ts', '.tsx'].includes(ext)) language = 'typescript';
-  else if (['.js', '.jsx'].includes(ext)) language = 'javascript';
-  else if (['.py'].includes(ext)) language = 'python';
-  else if (['.css', '.scss'].includes(ext)) language = 'css';
-  else if (['.json'].includes(ext)) language = 'json';
-  else if (['.md'].includes(ext)) language = 'markdown';
+  if (['.ts', '.tsx'].includes(ext)) {language = 'typescript';}
+  else if (['.js', '.jsx'].includes(ext)) {language = 'javascript';}
+  else if (['.py'].includes(ext)) {language = 'python';}
+  else if (['.css', '.scss'].includes(ext)) {language = 'css';}
+  else if (['.json'].includes(ext)) {language = 'json';}
+  else if (['.md'].includes(ext)) {language = 'markdown';}
   
   const isTestFile = /\.(test|spec)\.[jt]sx?$/.test(filePath) || 
                      filePath.includes('__tests__') ||
@@ -589,9 +591,9 @@ function printViolations(
   const warnings = violations.filter(v => v.severity === 'warning');
   
   let summary = '';
-  if (errors.length > 0) summary += chalk.red(`${errors.length} error${errors.length > 1 ? 's' : ''}`);
+  if (errors.length > 0) {summary += chalk.red(`${errors.length} error${errors.length > 1 ? 's' : ''}`);}
   if (warnings.length > 0) {
-    if (summary) summary += ', ';
+    if (summary) {summary += ', ';}
     summary += chalk.yellow(`${warnings.length} warning${warnings.length > 1 ? 's' : ''}`);
   }
   
@@ -688,7 +690,7 @@ async function watchCommand(options: WatchOptions): Promise<void> {
   const SAVE_DEBOUNCE_MS = 1000;
   
   function scheduleSave(): void {
-    if (!store || !fileMap) return;
+    if (!store || !fileMap) {return;}
     
     if (saveTimeout) {
       clearTimeout(saveTimeout);
@@ -698,8 +700,8 @@ async function watchCommand(options: WatchOptions): Promise<void> {
       try {
         // Use file locking for concurrent write protection (Phase 4)
         await withLock(rootDir, 'drift-watch', async () => {
-          await store!.saveAll();
-          await saveFileMap(rootDir, fileMap!);
+          await store.saveAll();
+          await saveFileMap(rootDir, fileMap);
         });
         if (verbose) {
           console.log(`${timestamp()} ${chalk.gray('Saved patterns to disk')}`);
@@ -838,7 +840,7 @@ async function watchCommand(options: WatchOptions): Promise<void> {
   function watchDirectory(dir: string): void {
     try {
       const watcher = fs.watch(dir, { recursive: true }, (eventType, filename) => {
-        if (!filename) return;
+        if (!filename) {return;}
         
         const fullPath = path.join(dir, filename);
         

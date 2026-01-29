@@ -87,10 +87,10 @@ export abstract class BaseMatcher implements PatternMatcher {
    */
   protected getFirstStringArg(chain: UnifiedCallChain, segmentIndex: number): string | null {
     const segment = chain.segments[segmentIndex];
-    if (!segment || segment.args.length === 0) return null;
+    if (!segment || segment.args.length === 0) {return null;}
 
     const firstArg = segment.args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     if (firstArg.type === 'string' && firstArg.stringValue) {
       return firstArg.stringValue;
@@ -104,7 +104,7 @@ export abstract class BaseMatcher implements PatternMatcher {
    */
   protected getStringArgs(chain: UnifiedCallChain, segmentIndex: number): string[] {
     const segment = chain.segments[segmentIndex];
-    if (!segment) return [];
+    if (!segment) {return [];}
 
     return segment.args
       .filter(a => a.type === 'string' && a.stringValue)
@@ -115,7 +115,7 @@ export abstract class BaseMatcher implements PatternMatcher {
    * Extract fields from a string argument (comma-separated)
    */
   protected extractFieldsFromString(str: string): string[] {
-    if (str === '*') return [];
+    if (str === '*') {return [];}
 
     return str
       .split(',')
@@ -134,7 +134,7 @@ export abstract class BaseMatcher implements PatternMatcher {
    * Extract fields from an object argument
    */
   protected extractFieldsFromObject(arg: NormalizedArg): string[] {
-    if (arg.type !== 'object' || !arg.properties) return [];
+    if (arg.type !== 'object' || !arg.properties) {return [];}
     return Object.keys(arg.properties);
   }
 
@@ -142,7 +142,7 @@ export abstract class BaseMatcher implements PatternMatcher {
    * Extract fields from an array argument
    */
   protected extractFieldsFromArray(arg: NormalizedArg): string[] {
-    if (arg.type !== 'array' || !arg.elements) return [];
+    if (arg.type !== 'array' || !arg.elements) {return [];}
 
     return arg.elements
       .filter(e => e.type === 'string' && e.stringValue)
@@ -218,10 +218,10 @@ export abstract class BaseMatcher implements PatternMatcher {
    */
   protected extractWhereField(chain: UnifiedCallChain, segmentIndex: number): string | null {
     const segment = chain.segments[segmentIndex];
-    if (!segment || segment.args.length === 0) return null;
+    if (!segment || segment.args.length === 0) {return null;}
 
     const firstArg = segment.args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     // String argument: .eq('field', value)
     if (firstArg.type === 'string' && firstArg.stringValue) {

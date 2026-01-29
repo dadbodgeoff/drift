@@ -51,22 +51,27 @@ import {
 } from './infrastructure/index.js';
 
 // Tool definitions
-import { ALL_TOOLS, TOOL_CATEGORIES } from './tools/registry.js';
 
 // Discovery handlers
-import { handleStatus, handleStatusWithService } from './tools/discovery/status.js';
+import { handleAudit, type AuditArgs } from './tools/analysis/audit.js';
+import { handleConstants } from './tools/analysis/constants.js';
+import { handleConstraints } from './tools/analysis/constraints.js';
+import { handleCoupling } from './tools/analysis/coupling.js';
+import { handleErrorHandling } from './tools/analysis/error-handling.js';
+import { handleTestTopology } from './tools/analysis/test-topology.js';
+import { handleCodeExamples, handleCodeExamplesWithService } from './tools/detail/code-examples.js';
+import { handlePatternGet, handlePatternGetWithService } from './tools/detail/pattern-get.js';
 import { handleCapabilities } from './tools/discovery/capabilities.js';
+import { handleStatus, handleStatusWithService } from './tools/discovery/status.js';
 
 // Exploration handlers
+import { handleContractsList } from './tools/exploration/contracts-list.js';
 import { handlePatternsList, handlePatternsListWithService } from './tools/exploration/patterns-list.js';
 import { handleSecuritySummary } from './tools/exploration/security-summary.js';
-import { handleContractsList } from './tools/exploration/contracts-list.js';
 import { handleTrends } from './tools/exploration/trends.js';
 import { handleEnv } from './tools/exploration/env.js';
 
 // Detail handlers
-import { handlePatternGet, handlePatternGetWithService } from './tools/detail/pattern-get.js';
-import { handleCodeExamples, handleCodeExamplesWithService } from './tools/detail/code-examples.js';
 import { handleFilesList } from './tools/detail/files-list.js';
 import { handleFilePatterns } from './tools/detail/file-patterns.js';
 import { handleImpactAnalysis } from './tools/detail/impact-analysis.js';
@@ -78,20 +83,16 @@ import { handleWrappers } from './tools/detail/wrappers.js';
 import { handleProjects } from './tools/discovery/projects.js';
 
 // Orchestration handlers
+import { handleExplain } from './tools/generation/explain.js';
+import { handleSuggestChanges } from './tools/generation/suggest-changes.js';
+import { handleValidateChange } from './tools/generation/validate-change.js';
 import { handleContext, handlePackageContext } from './tools/orchestration/index.js';
 
 // Generation handlers (new AI-powered tools)
-import { handleSuggestChanges } from './tools/generation/suggest-changes.js';
-import { handleValidateChange } from './tools/generation/validate-change.js';
-import { handleExplain } from './tools/generation/explain.js';
 
 // Analysis handlers (L5-L7 layers)
-import { handleTestTopology } from './tools/analysis/test-topology.js';
-import { handleCoupling } from './tools/analysis/coupling.js';
-import { handleErrorHandling } from './tools/analysis/error-handling.js';
 import { handleDecisions } from './tools/analysis/decisions.js';
 import { handleSimulate } from './tools/analysis/simulate.js';
-import { handleConstraints } from './tools/analysis/constraints.js';
 import { executeWpfTool, type WpfArgs } from './tools/analysis/wpf.js';
 import { executeGoTool, type GoArgs } from './tools/analysis/go.js';
 import { executeRustTool, type RustArgs } from './tools/analysis/rust.js';
@@ -100,23 +101,22 @@ import { executeTypeScriptTool, type TypeScriptArgs } from './tools/analysis/typ
 import { executePythonTool, type PythonArgs } from './tools/analysis/python.js';
 import { executeJavaTool, type JavaArgs } from './tools/analysis/java.js';
 import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
-import { handleAudit, type AuditArgs } from './tools/analysis/audit.js';
-import { handleConstants } from './tools/analysis/constants.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
+import { ALL_TOOLS, TOOL_CATEGORIES } from './tools/registry.js';
 
 // Surgical handlers (ultra-focused tools)
-import { handleSignature } from './tools/surgical/signature.js';
 import { handleCallers } from './tools/surgical/callers.js';
-import { handleImports } from './tools/surgical/imports.js';
-import { handlePrevalidate, handlePrevalidateWithService } from './tools/surgical/prevalidate.js';
-import { handleSimilar } from './tools/surgical/similar.js';
-import { handleType } from './tools/surgical/type.js';
-import { handleRecent } from './tools/surgical/recent.js';
-import { handleTestTemplate } from './tools/surgical/test-template.js';
 import { handleDependencies } from './tools/surgical/dependencies.js';
-import { handleMiddleware } from './tools/surgical/middleware.js';
-import { handleHooks } from './tools/surgical/hooks.js';
 import { handleErrors } from './tools/surgical/errors.js';
+import { handleHooks } from './tools/surgical/hooks.js';
+import { handleImports } from './tools/surgical/imports.js';
+import { handleMiddleware } from './tools/surgical/middleware.js';
+import { handlePrevalidate, handlePrevalidateWithService } from './tools/surgical/prevalidate.js';
+import { handleRecent } from './tools/surgical/recent.js';
+import { handleSignature } from './tools/surgical/signature.js';
+import { handleSimilar } from './tools/surgical/similar.js';
+import { handleTestTemplate } from './tools/surgical/test-template.js';
+import { handleType } from './tools/surgical/type.js';
 
 export interface EnterpriseMCPConfig {
   projectRoot: string;
@@ -237,7 +237,7 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       let effectivePatternService = patternService;
       
       // Check for project parameter or fall back to active project from registry
-      const requestedProject = (args as Record<string, unknown>)['project'] as string | undefined;
+      const requestedProject = (args)['project'] as string | undefined;
       
       // Resolve the effective project root:
       // 1. If project parameter is provided, use that
@@ -283,7 +283,7 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       }
 
       // Check cache
-      const cacheKey = cache?.generateKey(name, args as Record<string, unknown>);
+      const cacheKey = cache?.generateKey(name, args);
       if (cache && cacheKey) {
         const cached = await cache.get(cacheKey);
         if (cached) {

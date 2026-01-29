@@ -5,13 +5,14 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
   EnumMember,
   ConstantKind,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * Python constant regex extractor
@@ -33,10 +34,10 @@ export class PythonConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = moduleConstPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const typeHint = match[2]?.trim();
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -87,10 +88,10 @@ export class PythonConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = classConstPattern.exec(source)) !== null) {
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const typeHint = match[3]?.trim();
       const rawValue = match[4]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -145,7 +146,7 @@ export class PythonConstantRegexExtractor extends BaseConstantRegexExtractor {
     let match: RegExpExecArray | null;
     while ((match = enumPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const baseType = match[2];
       const line = this.getLineNumber(source, match.index);
       const docComment = this.extractDocComment(source, line);
@@ -211,7 +212,7 @@ export class PythonConstantRegexExtractor extends BaseConstantRegexExtractor {
       const memberMatch = trimmed.match(/^([A-Z][A-Z0-9_]*)\s*=\s*(.+?)(?:\s*#.*)?$/);
       if (memberMatch) {
         const memberName = memberMatch[1];
-        if (!memberName) continue;
+        if (!memberName) {continue;}
         const rawValue = memberMatch[2]?.trim();
 
         let value: string | number | undefined;
@@ -272,9 +273,9 @@ export class PythonConstantRegexExtractor extends BaseConstantRegexExtractor {
     }
 
     // Booleans
-    if (rawValue === 'True') return true;
-    if (rawValue === 'False') return false;
-    if (rawValue === 'None') return null;
+    if (rawValue === 'True') {return true;}
+    if (rawValue === 'False') {return false;}
+    if (rawValue === 'None') {return null;}
 
     return null;
   }

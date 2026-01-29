@@ -6,8 +6,8 @@
  * @requirements WPF Framework Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createWpfAnalyzer,
   createWpfDataFlowTracer,
@@ -15,6 +15,7 @@ import {
   type ViewModelLink,
   type BindingError,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface WpfOptions {

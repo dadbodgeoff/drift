@@ -5,9 +5,10 @@
  * Supports Spring Boot framework patterns.
  */
 
-import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import { JavaCallGraphExtractor } from '../../call-graph/extractors/java-extractor.js';
 import { BaseLanguageNormalizer } from '../base-normalizer.js';
+
+import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import type { NormalizedDecorator, DecoratorArguments } from '../types.js';
 
 /**
@@ -53,7 +54,7 @@ export class JavaNormalizer extends BaseLanguageNormalizer {
 
     for (const pattern of valuePatterns) {
       const match = raw.match(pattern);
-      if (match && match[1] !== undefined) {
+      if (match?.[1] !== undefined) {
         args.path = match[1];
         break;
       }

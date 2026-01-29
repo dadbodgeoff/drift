@@ -19,13 +19,14 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import {
   isCSharpTreeSitterAvailable,
   createCSharpParser,
 } from '../../parsers/tree-sitter/csharp-loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 /**
  * C# data access extractor using tree-sitter
@@ -169,7 +170,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.length < 2) return null;
+    if (chain.length < 2) {return null;}
 
     const firstPart = chain[0]?.names[0]?.toLowerCase() ?? '';
     if (!firstPart.includes('context') && !firstPart.includes('db') && !firstPart.startsWith('_')) {
@@ -177,7 +178,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
     }
 
     const tablePart = chain[1]?.names[0];
-    if (!tablePart || !/^[A-Z]/.test(tablePart)) return null;
+    if (!tablePart || !/^[A-Z]/.test(tablePart)) {return null;}
 
     const efMethods = {
       read: ['Where', 'FirstOrDefault', 'FirstOrDefaultAsync', 'First', 'FirstAsync', 
@@ -196,7 +197,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
 
     for (const item of chain) {
       const methodName = item.names[0];
-      if (!methodName) continue;
+      if (!methodName) {continue;}
       
       if (efMethods.write.includes(methodName)) {
         operation = 'write';
@@ -237,7 +238,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
     
     // Find lambda expression in arguments
     const argsNode = node.childForFieldName('arguments');
-    if (!argsNode) return fields;
+    if (!argsNode) {return fields;}
 
     // Recursively search for member access expressions
     const findMemberAccess = (n: TreeSitterNode): void => {
@@ -272,10 +273,10 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
                           'Execute', 'ExecuteAsync', 'ExecuteScalar', 'ExecuteScalarAsync'];
 
     const methodItem = chain.find(item => dapperMethods.includes(item.names[0] ?? ''));
-    if (!methodItem) return null;
+    if (!methodItem) {return null;}
 
     const argsNode = methodItem.node.childForFieldName('arguments');
-    if (!argsNode) return null;
+    if (!argsNode) {return null;}
 
     let sqlText = '';
     for (const arg of argsNode.children) {
@@ -288,10 +289,10 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!sqlText) return null;
+    if (!sqlText) {return null;}
 
     const { table, operation, fields } = this.parseSQLStatement(sqlText);
-    if (!table || table === 'unknown') return null;
+    if (!table || table === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -335,7 +336,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createAccessPoint({
       table: 'unknown',
@@ -365,12 +366,12 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
                           'FromSqlRaw', 'FromSqlInterpolated'];
 
     const methodItem = chain.find(item => rawSqlMethods.includes(item.names[0] ?? ''));
-    if (!methodItem) return null;
+    if (!methodItem) {return null;}
 
-    if (!chain.some(item => item.names[0] === 'Database')) return null;
+    if (!chain.some(item => item.names[0] === 'Database')) {return null;}
 
     const argsNode = methodItem.node.childForFieldName('arguments');
-    if (!argsNode) return null;
+    if (!argsNode) {return null;}
 
     let sqlText = '';
     for (const arg of argsNode.children) {
@@ -384,7 +385,7 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!sqlText) return null;
+    if (!sqlText) {return null;}
 
     const { table, operation, fields } = this.parseSQLStatement(sqlText);
 
@@ -412,10 +413,10 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
     _source: string
   ): void {
     const fromClause = node.children.find(c => c.type === 'from_clause');
-    if (!fromClause) return;
+    if (!fromClause) {return;}
 
     const inExpr = fromClause.childForFieldName('expression');
-    if (!inExpr) return;
+    if (!inExpr) {return;}
 
     let tableName = 'unknown';
     if (inExpr.type === 'member_access_expression') {
@@ -452,18 +453,18 @@ export class CSharpDataAccessExtractor extends BaseDataAccessExtractor {
     let table = 'unknown';
     const fields: string[] = [];
 
-    if (upperSql.startsWith('SELECT')) operation = 'read';
-    else if (upperSql.startsWith('INSERT')) operation = 'write';
-    else if (upperSql.startsWith('UPDATE')) operation = 'write';
-    else if (upperSql.startsWith('DELETE')) operation = 'delete';
+    if (upperSql.startsWith('SELECT')) {operation = 'read';}
+    else if (upperSql.startsWith('INSERT')) {operation = 'write';}
+    else if (upperSql.startsWith('UPDATE')) {operation = 'write';}
+    else if (upperSql.startsWith('DELETE')) {operation = 'delete';}
 
     const fromMatch = sql.match(/FROM\s+["'`\[]?(\w+)["'`\]]?/i);
     const intoMatch = sql.match(/INTO\s+["'`\[]?(\w+)["'`\]]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`\[]?(\w+)["'`\]]?/i);
 
-    if (fromMatch?.[1]) table = fromMatch[1];
-    else if (intoMatch?.[1]) table = intoMatch[1];
-    else if (updateMatch?.[1]) table = updateMatch[1];
+    if (fromMatch?.[1]) {table = fromMatch[1];}
+    else if (intoMatch?.[1]) {table = intoMatch[1];}
+    else if (updateMatch?.[1]) {table = updateMatch[1];}
 
     return { table, operation, fields };
   }

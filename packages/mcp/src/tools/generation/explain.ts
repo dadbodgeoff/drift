@@ -8,14 +8,16 @@
  * - CallGraphStore: Call relationships and reachability
  */
 
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 import {
   PatternStore, ManifestStore, BoundaryStore, CallGraphStore,
   createCallGraphAnalyzer,
   type Pattern, type DataAccessPoint,
 } from 'driftdetect-core';
+
 import { createResponseBuilder } from '../../infrastructure/index.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 export type ExplanationDepth = 'summary' | 'detailed' | 'comprehensive';
 export type ExplanationFocus = 'security' | 'performance' | 'architecture' | 'testing';
@@ -108,8 +110,8 @@ async function analyzeCode(
   const summary = buildSummary(file, purpose, context, patternAnalysis, security, semantics);
   
   const result: CodeExplanation = { summary, purpose, context, patterns: patternAnalysis, dependencies, insights, nextSteps };
-  if (security) result.security = security;
-  if (semantics) result.semantics = semantics;
+  if (security) {result.security = security;}
+  if (semantics) {result.semantics = semantics;}
   return result;
 }
 
@@ -121,10 +123,10 @@ function inferPurpose(file: string, dataAccessPoints: DataAccessPoint[]): string
     const operations = [...new Set(dataAccessPoints.map(a => a.operation))];
     return `Data access layer for ${tables.join(', ')} (${operations.join(', ')})`;
   }
-  if (/controller/i.test(fileName)) return 'HTTP request handler';
-  if (/service/i.test(fileName)) return 'Business logic service';
-  if (/repository/i.test(fileName)) return 'Data access layer';
-  if (/middleware/i.test(fileName)) return 'Request/response interceptor';
+  if (/controller/i.test(fileName)) {return 'HTTP request handler';}
+  if (/service/i.test(fileName)) {return 'Business logic service';}
+  if (/repository/i.test(fileName)) {return 'Data access layer';}
+  if (/middleware/i.test(fileName)) {return 'Request/response interceptor';}
   return 'Module providing specific functionality';
 }
 
@@ -132,14 +134,14 @@ function inferContext(file: string, patterns: Pattern[], dataAccessPoints: DataA
   const parts = file.split('/');
   const module = parts.length > 1 ? parts[parts.length - 2] ?? 'root' : 'root';
   let role = 'utility';
-  if (dataAccessPoints.length > 0) role = 'data layer';
-  else if (patterns.some(p => p.category === 'api')) role = 'API layer';
-  else if (patterns.some(p => p.category === 'data-access')) role = 'data layer';
+  if (dataAccessPoints.length > 0) {role = 'data layer';}
+  else if (patterns.some(p => p.category === 'api')) {role = 'API layer';}
+  else if (patterns.some(p => p.category === 'data-access')) {role = 'data layer';}
   
   let importance: 'critical' | 'high' | 'medium' | 'low' = 'medium';
   const sensitivePatterns = ['password', 'secret', 'token', 'api_key', 'ssn'];
-  if (dataAccessPoints.some(a => a.fields.some(f => sensitivePatterns.some(p => f.toLowerCase().includes(p))))) importance = 'critical';
-  else if (dataAccessPoints.length > 0) importance = 'high';
+  if (dataAccessPoints.some(a => a.fields.some(f => sensitivePatterns.some(p => f.toLowerCase().includes(p))))) {importance = 'critical';}
+  else if (dataAccessPoints.length > 0) {importance = 'high';}
   return { module, role, importance };
 }
 
@@ -173,7 +175,7 @@ async function extractDependencies(dataAccessPoints: DataAccessPoint[], file: st
           if (callerFunc) {
             // Transform __module__ to <module-level> for cleaner display
             const displayName = callerFunc.qualifiedName === '__module__' ? '<module-level>' : callerFunc.qualifiedName;
-            if (!usedBy.includes(displayName)) usedBy.push(displayName);
+            if (!usedBy.includes(displayName)) {usedBy.push(displayName);}
           }
         }
       }
@@ -191,9 +193,9 @@ async function analyzeSecurityContext(file: string, dataAccessPoints: DataAccess
   
   for (const access of dataAccessPoints) {
     for (const field of access.fields) {
-      if (sensitivePatterns.some(p => field.toLowerCase().includes(p)) && !sensitiveData.includes(field)) sensitiveData.push(field);
+      if (sensitivePatterns.some(p => field.toLowerCase().includes(p)) && !sensitiveData.includes(field)) {sensitiveData.push(field);}
     }
-    if (access.isRawSql) concerns.push(`Raw SQL at line ${access.line}`);
+    if (access.isRawSql) {concerns.push(`Raw SQL at line ${access.line}`);}
   }
   
   try {
@@ -205,16 +207,16 @@ async function analyzeSecurityContext(file: string, dataAccessPoints: DataAccess
         const reachable = analyzer.getReachableDataFromFunction(`${file}:${func.name}`, { sensitiveOnly: true, maxDepth: 5 });
         for (const sf of reachable.sensitiveFields) {
           const fieldName = `${sf.field.table}.${sf.field.field}`;
-          if (!reachableSensitiveFields.includes(fieldName)) reachableSensitiveFields.push(fieldName);
+          if (!reachableSensitiveFields.includes(fieldName)) {reachableSensitiveFields.push(fieldName);}
         }
       }
     }
   } catch { /* Call graph not available */ }
   
-  if (!sensitiveData.length && !concerns.length && !reachableSensitiveFields.length) return undefined;
+  if (!sensitiveData.length && !concerns.length && !reachableSensitiveFields.length) {return undefined;}
   const accessLevel = file.includes('admin') ? 'admin-only' : file.includes('api') ? 'public' : 'internal';
   const result: CodeExplanation['security'] = { sensitiveData, accessLevel, concerns };
-  if (reachableSensitiveFields.length > 0) result.reachableSensitiveFields = reachableSensitiveFields;
+  if (reachableSensitiveFields.length > 0) {result.reachableSensitiveFields = reachableSensitiveFields;}
   return result;
 }
 
@@ -227,7 +229,7 @@ function detectFrameworks(dataAccessPoints: DataAccessPoint[]): string[] {
     'drizzle': 'Drizzle', 'knex': 'Knex', 'doctrine': 'Doctrine',
   };
   for (const access of dataAccessPoints) {
-    if (access.framework) frameworks.add(frameworkNames[access.framework] || access.framework);
+    if (access.framework) {frameworks.add(frameworkNames[access.framework] || access.framework);}
   }
   return Array.from(frameworks);
 }
@@ -239,29 +241,29 @@ function generateInsights(_file: string, patterns: Pattern[], _deps: CodeExplana
     const tables = [...new Set(dataAccessPoints.map(a => a.table))];
     insights.push(`Accesses ${dataAccessPoints.length} data point(s) across ${tables.length} table(s)`);
   }
-  if (patterns.length) insights.push(`Participates in ${patterns.length} pattern(s)`);
-  if (security?.concerns.length) insights.push(`⚠️ ${security.concerns.length} security concern(s)`);
-  if (security?.reachableSensitiveFields?.length) insights.push(`🔒 Can reach ${security.reachableSensitiveFields.length} sensitive field(s)`);
+  if (patterns.length) {insights.push(`Participates in ${patterns.length} pattern(s)`);}
+  if (security?.concerns.length) {insights.push(`⚠️ ${security.concerns.length} security concern(s)`);}
+  if (security?.reachableSensitiveFields?.length) {insights.push(`🔒 Can reach ${security.reachableSensitiveFields.length} sensitive field(s)`);}
   return insights;
 }
 
 function generateNextSteps(file: string, patterns: Pattern[], security: CodeExplanation['security'] | undefined, dataAccessPoints: DataAccessPoint[], _focus?: ExplanationFocus): string[] {
   const steps: string[] = [];
-  if (security?.concerns.length) steps.push('Run drift_suggest_changes with issue="security"');
-  if (security?.reachableSensitiveFields?.length) steps.push('Use drift_reachability to trace sensitive data');
+  if (security?.concerns.length) {steps.push('Run drift_suggest_changes with issue="security"');}
+  if (security?.reachableSensitiveFields?.length) {steps.push('Use drift_reachability to trace sensitive data');}
   const outliers = patterns.filter(p => p.outliers.some(o => o.file === file));
-  if (outliers.length && outliers[0]) steps.push(`Review pattern "${outliers[0].name}" with drift_pattern_get`);
-  if (dataAccessPoints.some(a => a.isRawSql)) steps.push('Review raw SQL queries for injection vulnerabilities');
-  if (!steps.length) steps.push('Use drift_code_examples to see similar implementations');
+  if (outliers.length && outliers[0]) {steps.push(`Review pattern "${outliers[0].name}" with drift_pattern_get`);}
+  if (dataAccessPoints.some(a => a.isRawSql)) {steps.push('Review raw SQL queries for injection vulnerabilities');}
+  if (!steps.length) {steps.push('Use drift_code_examples to see similar implementations');}
   return steps;
 }
 
 function buildSummary(file: string, purpose: string, context: CodeExplanation['context'], patterns: CodeExplanation['patterns'], security: CodeExplanation['security'] | undefined, semantics?: CodeExplanation['semantics']): string {
   const fileName = path.basename(file);
   let summary = `**${fileName}** is a ${context.importance}-importance ${context.role} file. ${purpose}. `;
-  if (semantics) summary += `${semantics.dataAccessPoints} data access point(s). `;
+  if (semantics) {summary += `${semantics.dataAccessPoints} data access point(s). `;}
   const deviates = patterns.filter(p => p.compliance === 'deviates').length;
-  if (deviates) summary += `⚠️ Deviates from ${deviates} pattern(s). `;
-  if (security?.concerns.length) summary += `🔒 ${security.concerns.length} security concern(s).`;
+  if (deviates) {summary += `⚠️ Deviates from ${deviates} pattern(s). `;}
+  if (security?.concerns.length) {summary += `🔒 ${security.concerns.length} security concern(s).`;}
   return summary;
 }

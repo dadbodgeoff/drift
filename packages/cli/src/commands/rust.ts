@@ -6,9 +6,10 @@
  * @requirements Rust Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { createRustAnalyzer, type RustRoute, type RustErrorPattern, type RustCrate } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface RustOptions {

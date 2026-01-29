@@ -8,15 +8,10 @@
  */
 
 import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as os from 'node:os';
+import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  createAllDetectorsArray,
-  getDetectorCounts,
-  type BaseDetector,
-  type DetectionContext,
-} from 'driftdetect-detectors';
+
 import {
   type Language,
   type PatternMatch,
@@ -29,6 +24,13 @@ import {
   type PatternMatchResult,
   OutlierDetector,
 } from 'driftdetect-core';
+import {
+  createAllDetectorsArray,
+  getDetectorCounts,
+  type BaseDetector,
+  type DetectionContext,
+} from 'driftdetect-detectors';
+
 import type {
   DetectorWorkerTask,
   DetectorWorkerResult,
@@ -273,7 +275,7 @@ function getLanguage(filePath: string): Language | null {
 }
 
 function isDetectorApplicable(detector: BaseDetector, language: Language | null): boolean {
-  if (!language) return false;
+  if (!language) {return false;}
   const info = detector.getInfo();
   return info.supportedLanguages.includes(language);
 }
@@ -337,7 +339,7 @@ export class ScannerService {
    * Initialize the scanner service
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     // Create all detectors (needed for counts even in worker mode)
     this.detectors = await createAllDetectorsArray();
@@ -411,7 +413,7 @@ export class ScannerService {
    * This runs warmup tasks in parallel so all workers load detectors simultaneously
    */
   private async warmupWorkers(): Promise<void> {
-    if (!this.pool) return;
+    if (!this.pool) {return;}
     
     const numWorkers = this.config.workerThreads!;
     const warmupTasks = Array(numWorkers).fill(null).map(() => ({
@@ -565,8 +567,8 @@ export class ScannerService {
           line: p.location.line,
           column: p.location.column,
         };
-        if (p.location.endLine !== undefined) loc.endLine = p.location.endLine;
-        if (p.location.endColumn !== undefined) loc.endColumn = p.location.endColumn;
+        if (p.location.endLine !== undefined) {loc.endLine = p.location.endLine;}
+        if (p.location.endColumn !== undefined) {loc.endColumn = p.location.endColumn;}
         
         const pattern: FileScanResult['patterns'][0] = {
           patternId: p.patternId,
@@ -574,10 +576,10 @@ export class ScannerService {
           confidence: p.confidence,
           location: loc,
         };
-        if (p.isOutlier !== undefined) pattern.isOutlier = p.isOutlier;
-        if (p.outlierReason !== undefined) pattern.outlierReason = p.outlierReason;
-        if (p.matchedText !== undefined) pattern.matchedText = p.matchedText;
-        if (p.metadata !== undefined) pattern.metadata = p.metadata;
+        if (p.isOutlier !== undefined) {pattern.isOutlier = p.isOutlier;}
+        if (p.outlierReason !== undefined) {pattern.outlierReason = p.outlierReason;}
+        if (p.matchedText !== undefined) {pattern.matchedText = p.matchedText;}
+        if (p.metadata !== undefined) {pattern.metadata = p.metadata;}
         return pattern;
       });
 
@@ -600,11 +602,11 @@ export class ScannerService {
           line: match.location.line,
           column: match.location.column,
         };
-        if (match.location.endLine !== undefined) enhancedLocation.endLine = match.location.endLine;
-        if (match.location.endColumn !== undefined) enhancedLocation.endColumn = match.location.endColumn;
-        if (match.isOutlier !== undefined) enhancedLocation.isOutlier = match.isOutlier;
-        if (match.outlierReason !== undefined) enhancedLocation.outlierReason = match.outlierReason;
-        if (match.matchedText !== undefined) enhancedLocation.matchedText = match.matchedText;
+        if (match.location.endLine !== undefined) {enhancedLocation.endLine = match.location.endLine;}
+        if (match.location.endColumn !== undefined) {enhancedLocation.endColumn = match.location.endColumn;}
+        if (match.isOutlier !== undefined) {enhancedLocation.isOutlier = match.isOutlier;}
+        if (match.outlierReason !== undefined) {enhancedLocation.outlierReason = match.outlierReason;}
+        if (match.matchedText !== undefined) {enhancedLocation.matchedText = match.matchedText;}
         enhancedLocation.confidence = match.confidence;
         
         if (existing) {
@@ -632,7 +634,7 @@ export class ScannerService {
             occurrences: 1,
             outlierCount: match.isOutlier ? 1 : 0,
           };
-          if (match.metadata !== undefined) newPattern.metadata = match.metadata;
+          if (match.metadata !== undefined) {newPattern.metadata = match.metadata;}
           patternMap.set(key, newPattern);
         }
 
@@ -663,7 +665,7 @@ export class ScannerService {
 
     for (const pattern of patterns) {
       // Skip patterns with too few locations for statistical analysis
-      if (pattern.locations.length < 5) continue;
+      if (pattern.locations.length < 5) {continue;}
 
       // Convert locations to PatternMatchResult format for outlier detection
       // Handle exactOptionalPropertyTypes by only including defined values
@@ -681,10 +683,10 @@ export class ScannerService {
           timestamp: new Date(),
         };
         // Only add optional properties if they have values
-        if (loc.endLine !== undefined) result.location.endLine = loc.endLine;
-        if (loc.endColumn !== undefined) result.location.endColumn = loc.endColumn;
-        if (loc.matchedText !== undefined) result.matchedText = loc.matchedText;
-        if (loc.outlierReason !== undefined) result.outlierReason = loc.outlierReason;
+        if (loc.endLine !== undefined) {result.location.endLine = loc.endLine;}
+        if (loc.endColumn !== undefined) {result.location.endColumn = loc.endColumn;}
+        if (loc.matchedText !== undefined) {result.matchedText = loc.matchedText;}
+        if (loc.outlierReason !== undefined) {result.outlierReason = loc.outlierReason;}
         return result;
       });
 
@@ -781,7 +783,7 @@ export class ScannerService {
         skipped: totalDetectorsSkipped,
       },
       workerStats: this.pool ? {
-        threadsUsed: (this.pool.threads as unknown[]).length,
+        threadsUsed: (this.pool.threads).length,
         tasksCompleted: this.pool.completed,
       } : undefined,
       manifest,
@@ -931,8 +933,8 @@ export class ScannerService {
                 line: match.location.line,
                 column: match.location.column,
               };
-              if (match.location.endLine !== undefined) enhancedLocation.endLine = match.location.endLine;
-              if (match.location.endColumn !== undefined) enhancedLocation.endColumn = match.location.endColumn;
+              if (match.location.endLine !== undefined) {enhancedLocation.endLine = match.location.endLine;}
+              if (match.location.endColumn !== undefined) {enhancedLocation.endColumn = match.location.endColumn;}
               
               // Build file pattern
               const filePattern: FileScanResult['patterns'][0] = {
@@ -941,11 +943,11 @@ export class ScannerService {
                 confidence: match.confidence,
                 location: enhancedLocation,
               };
-              if (match.isOutlier !== undefined) filePattern.isOutlier = match.isOutlier;
-              if (extendedMatch.outlierReason !== undefined) filePattern.outlierReason = extendedMatch.outlierReason;
-              if (extendedMatch.matchedText !== undefined) filePattern.matchedText = extendedMatch.matchedText;
+              if (match.isOutlier !== undefined) {filePattern.isOutlier = match.isOutlier;}
+              if (extendedMatch.outlierReason !== undefined) {filePattern.outlierReason = extendedMatch.outlierReason;}
+              if (extendedMatch.matchedText !== undefined) {filePattern.matchedText = extendedMatch.matchedText;}
               const metadata = extendedMatch.metadata ?? result.metadata?.custom;
-              if (metadata !== undefined) filePattern.metadata = metadata;
+              if (metadata !== undefined) {filePattern.metadata = metadata;}
               filePatterns.push(filePattern);
 
               const key = match.patternId;
@@ -958,11 +960,11 @@ export class ScannerService {
                 column: match.location.column,
                 confidence: match.confidence,
               };
-              if (match.location.endLine !== undefined) aggLocation.endLine = match.location.endLine;
-              if (match.location.endColumn !== undefined) aggLocation.endColumn = match.location.endColumn;
-              if (match.isOutlier !== undefined) aggLocation.isOutlier = match.isOutlier;
-              if (extendedMatch.outlierReason !== undefined) aggLocation.outlierReason = extendedMatch.outlierReason;
-              if (extendedMatch.matchedText !== undefined) aggLocation.matchedText = extendedMatch.matchedText;
+              if (match.location.endLine !== undefined) {aggLocation.endLine = match.location.endLine;}
+              if (match.location.endColumn !== undefined) {aggLocation.endColumn = match.location.endColumn;}
+              if (match.isOutlier !== undefined) {aggLocation.isOutlier = match.isOutlier;}
+              if (extendedMatch.outlierReason !== undefined) {aggLocation.outlierReason = extendedMatch.outlierReason;}
+              if (extendedMatch.matchedText !== undefined) {aggLocation.matchedText = extendedMatch.matchedText;}
               
               if (existing) {
                 addUniqueLocation(existing.locations, aggLocation);
@@ -988,7 +990,7 @@ export class ScannerService {
                   outlierCount: match.isOutlier ? 1 : 0,
                 };
                 const patternMetadata = extendedMatch.metadata ?? result.metadata?.custom;
-                if (patternMetadata !== undefined) newPattern.metadata = patternMetadata;
+                if (patternMetadata !== undefined) {newPattern.metadata = patternMetadata;}
                 patternMap.set(key, newPattern);
               }
 
@@ -1028,7 +1030,7 @@ export class ScannerService {
             // Process violations (same as before)
             let violationsToProcess = result.violations;
             if (violationsToProcess.length === 0 && result.metadata?.custom) {
-              const customData = result.metadata.custom as Record<string, unknown>;
+              const customData = result.metadata.custom;
               const customViolations = customData['violations'] as Array<{
                 type?: string;
                 file: string;
@@ -1128,7 +1130,7 @@ export class ScannerService {
 
     for (const pattern of patterns) {
       // Skip patterns with too few locations for statistical analysis
-      if (pattern.locations.length < 5) continue;
+      if (pattern.locations.length < 5) {continue;}
 
       // Convert locations to PatternMatchResult format for outlier detection
       // Handle exactOptionalPropertyTypes by only including defined values
@@ -1146,10 +1148,10 @@ export class ScannerService {
           timestamp: new Date(),
         };
         // Only add optional properties if they have values
-        if (loc.endLine !== undefined) result.location.endLine = loc.endLine;
-        if (loc.endColumn !== undefined) result.location.endColumn = loc.endColumn;
-        if (loc.matchedText !== undefined) result.matchedText = loc.matchedText;
-        if (loc.outlierReason !== undefined) result.outlierReason = loc.outlierReason;
+        if (loc.endLine !== undefined) {result.location.endLine = loc.endLine;}
+        if (loc.endColumn !== undefined) {result.location.endColumn = loc.endColumn;}
+        if (loc.matchedText !== undefined) {result.matchedText = loc.matchedText;}
+        if (loc.outlierReason !== undefined) {result.outlierReason = loc.outlierReason;}
         return result;
       });
 
@@ -1296,71 +1298,71 @@ export class ScannerService {
 
     if (language === 'typescript' || language === 'javascript') {
       const classMatch = trimmed.match(/^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/);
-      if (classMatch && classMatch[1]) {
+      if (classMatch?.[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const funcMatch = trimmed.match(/^(?:export\s+)?(?:async\s+)?function\s+(\w+)/);
-      if (funcMatch && funcMatch[1]) {
+      if (funcMatch?.[1]) {
         return { type: 'function', name: funcMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const arrowMatch = trimmed.match(/^(?:export\s+)?const\s+(\w+)\s*=/);
-      if (arrowMatch && arrowMatch[1]) {
+      if (arrowMatch?.[1]) {
         return { type: 'function', name: arrowMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const interfaceMatch = trimmed.match(/^(?:export\s+)?interface\s+(\w+)/);
-      if (interfaceMatch && interfaceMatch[1]) {
+      if (interfaceMatch?.[1]) {
         return { type: 'interface', name: interfaceMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const typeMatch = trimmed.match(/^(?:export\s+)?type\s+(\w+)/);
-      if (typeMatch && typeMatch[1]) {
+      if (typeMatch?.[1]) {
         return { type: 'type', name: typeMatch[1], signature: trimmed.substring(0, 80) };
       }
     }
 
     if (language === 'python') {
       const classMatch = trimmed.match(/^class\s+(\w+)/);
-      if (classMatch && classMatch[1]) {
+      if (classMatch?.[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const defMatch = trimmed.match(/^(?:async\s+)?def\s+(\w+)/);
-      if (defMatch && defMatch[1]) {
+      if (defMatch?.[1]) {
         return { type: 'function', name: defMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const decoratorMatch = trimmed.match(/^@(\w+)/);
-      if (decoratorMatch && decoratorMatch[1]) {
+      if (decoratorMatch?.[1]) {
         return { type: 'decorator', name: decoratorMatch[1], signature: trimmed };
       }
     }
 
     if (language === 'php') {
       const classMatch = trimmed.match(/^(?:abstract\s+|final\s+)?class\s+(\w+)/);
-      if (classMatch && classMatch[1]) {
+      if (classMatch?.[1]) {
         return { type: 'class', name: classMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const interfaceMatch = trimmed.match(/^interface\s+(\w+)/);
-      if (interfaceMatch && interfaceMatch[1]) {
+      if (interfaceMatch?.[1]) {
         return { type: 'interface', name: interfaceMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const traitMatch = trimmed.match(/^trait\s+(\w+)/);
-      if (traitMatch && traitMatch[1]) {
+      if (traitMatch?.[1]) {
         return { type: 'class', name: traitMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const funcMatch = trimmed.match(/^(?:public|protected|private)?\s*(?:static\s+)?function\s+(\w+)/);
-      if (funcMatch && funcMatch[1]) {
+      if (funcMatch?.[1]) {
         return { type: 'function', name: funcMatch[1], signature: trimmed.substring(0, 80) };
       }
 
       const attrMatch = trimmed.match(/^#\[(\w+)/);
-      if (attrMatch && attrMatch[1]) {
+      if (attrMatch?.[1]) {
         return { type: 'decorator', name: attrMatch[1], signature: trimmed };
       }
     }

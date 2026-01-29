@@ -6,8 +6,9 @@
  * @requirements 29.1
  */
 
-import Table from 'cli-table3';
 import chalk from 'chalk';
+import Table from 'cli-table3';
+
 import type { Severity } from 'driftdetect-core';
 
 /**

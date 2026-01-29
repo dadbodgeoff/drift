@@ -5,8 +5,9 @@
  * Identifies regressions, improvements, and stability.
  */
 
-import type { HistoryStore, PatternTrend } from 'driftdetect-core';
 import { createResponseBuilder } from '../../infrastructure/index.js';
+
+import type { HistoryStore, PatternTrend } from 'driftdetect-core';
 
 export interface TrendItem {
   patternId: string;
@@ -46,8 +47,8 @@ function getPeriodStartDate(period: string): string {
   const now = new Date();
   let daysAgo = 7;
   
-  if (period === '30d') daysAgo = 30;
-  else if (period === '90d') daysAgo = 90;
+  if (period === '30d') {daysAgo = 30;}
+  else if (period === '90d') {daysAgo = 90;}
   
   const startDate = new Date(now);
   startDate.setDate(startDate.getDate() - daysAgo);
@@ -104,7 +105,7 @@ export async function handleTrends(
       patternId: t.patternId,
       patternName: t.patternName,
       category: t.category,
-      type: t.type as 'regression' | 'improvement' | 'stable',
+      type: t.type,
       metric: t.metric,
       change: {
         from: t.previousValue,
@@ -140,10 +141,10 @@ export async function handleTrends(
   
   // Sort: regressions first, then by severity
   trends.sort((a, b) => {
-    if (a.type === 'regression' && b.type !== 'regression') return -1;
-    if (b.type === 'regression' && a.type !== 'regression') return 1;
-    if (a.severity === 'critical' && b.severity !== 'critical') return -1;
-    if (b.severity === 'critical' && a.severity !== 'critical') return 1;
+    if (a.type === 'regression' && b.type !== 'regression') {return -1;}
+    if (b.type === 'regression' && a.type !== 'regression') {return 1;}
+    if (a.severity === 'critical' && b.severity !== 'critical') {return -1;}
+    if (b.severity === 'critical' && a.severity !== 'critical') {return 1;}
     return Math.abs(b.change.deltaPercent) - Math.abs(a.change.deltaPercent);
   });
   

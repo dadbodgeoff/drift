@@ -6,8 +6,8 @@
  * @requirements 29.1
  */
 
-import { SingleBar, MultiBar, Presets } from 'cli-progress';
 import chalk from 'chalk';
+import { SingleBar, MultiBar, Presets } from 'cli-progress';
 
 /**
  * Progress bar configuration options

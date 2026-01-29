@@ -11,10 +11,13 @@
  *   drift files --json src/api/
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
-import type { PatternCategory } from 'driftdetect-core';
+import { Command } from 'commander';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
+
+import type { PatternCategory } from 'driftdetect-core';
+
 
 export const filesCommand = new Command('files')
   .description('Show patterns in a file')

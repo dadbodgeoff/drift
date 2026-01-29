@@ -5,7 +5,6 @@
  * Combines multiple factors into actionable priority scores.
  */
 
-import type { SensitivityType, DataOperation } from '../../boundaries/types.js';
 import type {
   FindingSeverity,
   FindingCategory,
@@ -18,6 +17,7 @@ import type {
   SensitiveFieldImpact,
   EntryPointInfo,
 } from './types.js';
+import type { SensitivityType, DataOperation } from '../../boundaries/types.js';
 
 // ============================================================================
 // Scoring Weights
@@ -373,7 +373,7 @@ export class ImpactScorer {
     blastRadius: BlastRadius
   ): PriorityTier {
     // P0: Critical - immediate action required
-    if (score >= 90) return 'P0';
+    if (score >= 90) {return 'P0';}
     if (
       score >= 80 &&
       dataImpact.sensitiveFields.some((f) => f.field.sensitivityType === 'credentials')
@@ -388,15 +388,15 @@ export class ImpactScorer {
     }
 
     // P1: High - fix within 24 hours
-    if (score >= 75) return 'P1';
-    if (score >= 65 && dataImpact.classification === 'catastrophic') return 'P1';
+    if (score >= 75) {return 'P1';}
+    if (score >= 65 && dataImpact.classification === 'catastrophic') {return 'P1';}
 
     // P2: Medium - fix within 1 week
-    if (score >= 50) return 'P2';
-    if (score >= 40 && dataImpact.regulations.length > 0) return 'P2';
+    if (score >= 50) {return 'P2';}
+    if (score >= 40 && dataImpact.regulations.length > 0) {return 'P2';}
 
     // P3: Low - fix within 1 month
-    if (score >= 25) return 'P3';
+    if (score >= 25) {return 'P3';}
 
     // P4: Minimal - fix when convenient
     return 'P4';
@@ -406,11 +406,11 @@ export class ImpactScorer {
    * Classify impact level
    */
   private classifyImpact(score: number): ImpactClassification {
-    if (score >= 90) return 'catastrophic';
-    if (score >= 70) return 'severe';
-    if (score >= 50) return 'significant';
-    if (score >= 30) return 'moderate';
-    if (score >= 10) return 'minimal';
+    if (score >= 90) {return 'catastrophic';}
+    if (score >= 70) {return 'severe';}
+    if (score >= 50) {return 'significant';}
+    if (score >= 30) {return 'moderate';}
+    if (score >= 10) {return 'minimal';}
     return 'none';
   }
 
@@ -421,10 +421,10 @@ export class ImpactScorer {
     score: number,
     hasPublicUnauth: boolean
   ): BlastRadiusClassification {
-    if (hasPublicUnauth && score >= 70) return 'critical';
-    if (score >= 70) return 'high';
-    if (score >= 50) return 'medium';
-    if (score >= 25) return 'low';
+    if (hasPublicUnauth && score >= 70) {return 'critical';}
+    if (score >= 70) {return 'high';}
+    if (score >= 50) {return 'medium';}
+    if (score >= 25) {return 'low';}
     return 'contained';
   }
 }

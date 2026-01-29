@@ -8,9 +8,10 @@
  * - supabase.from('table').delete().eq('id', 1)
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Supabase pattern matcher
@@ -27,7 +28,7 @@ export class SupabaseMatcher extends BaseMatcher {
     if (fromIndex === -1) {
       // Also check for from_ (Python SDK uses this)
       const fromUnderscoreIndex = this.findSegment(chain, 'from_');
-      if (fromUnderscoreIndex === -1) return null;
+      if (fromUnderscoreIndex === -1) {return null;}
       return this.matchFromIndex(chain, fromUnderscoreIndex);
     }
 
@@ -37,7 +38,7 @@ export class SupabaseMatcher extends BaseMatcher {
   private matchFromIndex(chain: UnifiedCallChain, fromIndex: number): PatternMatchResult | null {
     // Get table name from .from('table')
     const table = this.getFirstStringArg(chain, fromIndex);
-    if (!table) return null;
+    if (!table) {return null;}
 
     // Determine operation and extract fields
     let operation: DataOperation = 'read';
@@ -46,7 +47,7 @@ export class SupabaseMatcher extends BaseMatcher {
 
     for (let i = fromIndex + 1; i < chain.segments.length; i++) {
       const segment = chain.segments[i];
-      if (!segment) continue;
+      if (!segment) {continue;}
 
       const method = segment.name;
 
@@ -65,7 +66,7 @@ export class SupabaseMatcher extends BaseMatcher {
           const arg = segment.args[0];
           if (arg.type === 'object') {
             fields = this.extractFieldsFromObject(arg);
-          } else if (arg.type === 'array' && arg.elements && arg.elements[0]) {
+          } else if (arg.type === 'array' && arg.elements?.[0]) {
             // Array of objects - get fields from first element
             fields = this.extractFieldsFromObject(arg.elements[0]);
           }

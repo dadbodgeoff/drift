@@ -301,7 +301,7 @@ export class DeadCodeDetector {
     if (func.className) {
       // Methods might be called via interface/base class
       possibleFalsePositives.push('interface-impl');
-      if (confidence === 'high') confidence = 'medium';
+      if (confidence === 'high') {confidence = 'medium';}
     }
 
     if (this.hasUsedDecorator(func)) {
@@ -311,7 +311,7 @@ export class DeadCodeDetector {
 
     if (this.looksLikeCallback(func)) {
       possibleFalsePositives.push('callback');
-      if (confidence === 'high') confidence = 'medium';
+      if (confidence === 'high') {confidence = 'medium';}
     }
 
     if (this.looksLikeDynamicCall(func)) {
@@ -321,7 +321,7 @@ export class DeadCodeDetector {
 
     if (this.looksLikeEventHandler(func)) {
       possibleFalsePositives.push('event-handler');
-      if (confidence === 'high') confidence = 'medium';
+      if (confidence === 'high') {confidence = 'medium';}
     }
 
     if (this.looksLikeDI(func)) {
@@ -331,7 +331,7 @@ export class DeadCodeDetector {
 
     if (this.looksLikeSerializer(func)) {
       possibleFalsePositives.push('serialization');
-      if (confidence === 'high') confidence = 'medium';
+      if (confidence === 'high') {confidence = 'medium';}
     }
 
     // Check for decorator factory pattern (nested functions named 'decorator', 'wrapper', etc.)
@@ -512,9 +512,9 @@ export class DeadCodeDetector {
 
     for (const c of candidates) {
       // By confidence
-      if (c.confidence === 'high') highConfidence++;
-      else if (c.confidence === 'medium') mediumConfidence++;
-      else lowConfidence++;
+      if (c.confidence === 'high') {highConfidence++;}
+      else if (c.confidence === 'medium') {mediumConfidence++;}
+      else {lowConfidence++;}
 
       // By language
       byLanguage[c.language] = (byLanguage[c.language] ?? 0) + 1;

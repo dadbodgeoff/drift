@@ -11,8 +11,9 @@
  * @module simulation/scorers/impact-scorer
  */
 
-import type { CallGraph } from '../../call-graph/types.js';
 import { ImpactAnalyzer, type ImpactAnalysisResult } from '../../call-graph/analysis/impact-analyzer.js';
+
+import type { CallGraph } from '../../call-graph/types.js';
 import type {
   SimulationApproach,
   ImpactMetrics,
@@ -215,9 +216,9 @@ export class ImpactScorer {
    * Get risk level from score
    */
   private getRiskLevel(score: number): RiskLevel {
-    if (score >= 75) return 'critical';
-    if (score >= 50) return 'high';
-    if (score >= 25) return 'medium';
+    if (score >= 75) {return 'critical';}
+    if (score >= 50) {return 'high';}
+    if (score >= 25) {return 'medium';}
     return 'low';
   }
 

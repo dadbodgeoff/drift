@@ -141,7 +141,7 @@ export const JAVA_MAP_TYPES = [
  * @returns The mapped contract type
  */
 export function mapJavaType(javaType: string): string {
-  if (!javaType) return 'unknown';
+  if (!javaType) {return 'unknown';}
 
   // Clean up whitespace
   const cleanType = javaType.trim();
@@ -156,20 +156,20 @@ export function mapJavaType(javaType: string): string {
 
   // Handle Optional<T>
   const optionalMatch = baseType.match(/^Optional<(.+)>$/);
-  if (optionalMatch && optionalMatch[1]) {
+  if (optionalMatch?.[1]) {
     const innerType = mapJavaType(optionalMatch[1]);
     return `${innerType} | null`;
   }
 
   // Handle ResponseEntity<T> - unwrap to inner type
   const responseEntityMatch = baseType.match(/^ResponseEntity<(.+)>$/);
-  if (responseEntityMatch && responseEntityMatch[1]) {
+  if (responseEntityMatch?.[1]) {
     return mapJavaType(responseEntityMatch[1]);
   }
 
   // Handle HttpEntity<T> - unwrap to inner type
   const httpEntityMatch = baseType.match(/^HttpEntity<(.+)>$/);
-  if (httpEntityMatch && httpEntityMatch[1]) {
+  if (httpEntityMatch?.[1]) {
     return mapJavaType(httpEntityMatch[1]);
   }
 
@@ -188,7 +188,7 @@ export function mapJavaType(javaType: string): string {
 
   // Handle Mono<T> and Flux<T> (WebFlux reactive types)
   const monoMatch = baseType.match(/^Mono<(.+)>$/);
-  if (monoMatch && monoMatch[1]) {
+  if (monoMatch?.[1]) {
     return mapJavaType(monoMatch[1]);
   }
 
@@ -199,7 +199,7 @@ export function mapJavaType(javaType: string): string {
 
   // Handle CompletableFuture<T>
   const futureMatch = baseType.match(/^(?:CompletableFuture|Future|ListenableFuture)<(.+)>$/);
-  if (futureMatch && futureMatch[1]) {
+  if (futureMatch?.[1]) {
     return mapJavaType(futureMatch[1]);
   }
 
@@ -236,7 +236,7 @@ export function mapJavaType(javaType: string): string {
   // Handle generic types we don't recognize - return the base type name in lowercase
   // This allows custom DTOs to be identified
   const genericMatch = baseType.match(/^(\w+)<.+>$/);
-  if (genericMatch && genericMatch[1]) {
+  if (genericMatch?.[1]) {
     return genericMatch[1].toLowerCase();
   }
 
@@ -322,7 +322,7 @@ export function unwrapType(javaType: string): string {
 
   for (const pattern of wrapperPatterns) {
     const match = javaType.match(pattern);
-    if (match && match[1]) {
+    if (match?.[1]) {
       return match[1];
     }
   }

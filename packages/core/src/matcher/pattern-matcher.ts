@@ -8,7 +8,6 @@
  * @requirements 5.1 - Pattern matching with confidence scoring
  */
 
-import type { ASTNode } from '../parsers/types.js';
 import type {
   PatternDefinition,
   PatternMatchResult,
@@ -20,6 +19,7 @@ import type {
   ASTMatchConfig,
   RegexMatchConfig,
 } from './types.js';
+import type { ASTNode } from '../parsers/types.js';
 
 /**
  * Cache entry for match results
@@ -504,7 +504,7 @@ export class PatternMatcher {
     let currentIndex = 0;
     for (let lineNum = 0; lineNum < lines.length; lineNum++) {
       const line = lines[lineNum];
-      if (line === undefined) continue;
+      if (line === undefined) {continue;}
       
       const lineLength = line.length + 1; // +1 for newline
       if (currentIndex + lineLength > index) {

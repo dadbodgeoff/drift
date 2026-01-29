@@ -12,10 +12,11 @@
  *   drift export -o report.md       # Write to file
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   exportManifest,
   estimateTokens,
@@ -25,6 +26,7 @@ import {
   type ManifestPattern,
   type Manifest,
 } from 'driftdetect-core';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
 
 const VALID_FORMATS: ExportFormat[] = ['json', 'ai-context', 'summary', 'markdown'];

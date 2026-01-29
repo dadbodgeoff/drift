@@ -5,13 +5,14 @@
  * Shows verified contracts, mismatches, and discovered endpoints.
  */
 
-import type { ContractStore, Contract } from 'driftdetect-core';
 import { 
   createResponseBuilder, 
   cursorManager,
   Errors,
   type PaginationInfo,
 } from '../../infrastructure/index.js';
+
+import type { ContractStore, Contract } from 'driftdetect-core';
 
 export interface ContractSummary {
   id: string;
@@ -97,8 +98,8 @@ export async function handleContractsList(
   
   // Sort: mismatches first, then by endpoint
   allContracts.sort((a, b) => {
-    if (a.status === 'mismatch' && b.status !== 'mismatch') return -1;
-    if (b.status === 'mismatch' && a.status !== 'mismatch') return 1;
+    if (a.status === 'mismatch' && b.status !== 'mismatch') {return -1;}
+    if (b.status === 'mismatch' && a.status !== 'mismatch') {return 1;}
     return a.endpoint.localeCompare(b.endpoint);
   });
   

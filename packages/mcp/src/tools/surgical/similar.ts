@@ -10,8 +10,9 @@
  * Solves: AI needs to see an example but there are 50 options. Which is most relevant?
  */
 
-import type { CallGraphStore, FunctionNode, PatternStore } from 'driftdetect-core';
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, FunctionNode, PatternStore } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -271,14 +272,14 @@ function buildPreview(func: FunctionNode): string {
   }
   
   // Export + async
-  if (func.isExported) parts.push('export');
-  if (func.isAsync) parts.push('async');
+  if (func.isExported) {parts.push('export');}
+  if (func.isAsync) {parts.push('async');}
   parts.push('function');
   parts.push(func.name);
   
   // Parameters (abbreviated)
   const params = func.parameters.slice(0, 3).map(p => {
-    if (p.type) return `${p.name}: ${p.type}`;
+    if (p.type) {return `${p.name}: ${p.type}`;}
     return p.name;
   });
   if (func.parameters.length > 3) {
@@ -313,9 +314,9 @@ function analyzeConventions(funcs: FunctionNode[]): SimilarConventions {
   const hasPascalCase = names.some(n => /^[A-Z][a-zA-Z]*$/.test(n));
   
   let naming = 'mixed';
-  if (hasCamelCase && !hasSnakeCase) naming = 'camelCase';
-  else if (hasSnakeCase && !hasCamelCase) naming = 'snake_case';
-  else if (hasPascalCase) naming = 'PascalCase';
+  if (hasCamelCase && !hasSnakeCase) {naming = 'camelCase';}
+  else if (hasSnakeCase && !hasCamelCase) {naming = 'snake_case';}
+  else if (hasPascalCase) {naming = 'PascalCase';}
   
   // Error handling (check return types)
   const returnTypes = funcs.map(f => f.returnType).filter(Boolean);

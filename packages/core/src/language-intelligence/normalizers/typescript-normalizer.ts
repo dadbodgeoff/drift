@@ -5,9 +5,10 @@
  * Supports NestJS, Express, and other TypeScript frameworks.
  */
 
-import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import { TypeScriptCallGraphExtractor } from '../../call-graph/extractors/typescript-extractor.js';
 import { BaseLanguageNormalizer } from '../base-normalizer.js';
+
+import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import type { NormalizedDecorator, DecoratorArguments } from '../types.js';
 
 /**
@@ -46,7 +47,7 @@ export class TypeScriptNormalizer extends BaseLanguageNormalizer {
 
     // Extract path from route decorators: @Get("/path") or @Controller("/api")
     const pathMatch = raw.match(/\(\s*["']([^"']+)["']/);
-    if (pathMatch && pathMatch[1] !== undefined) {
+    if (pathMatch?.[1] !== undefined) {
       args.path = pathMatch[1];
     }
 

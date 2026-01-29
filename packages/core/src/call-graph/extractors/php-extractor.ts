@@ -20,17 +20,18 @@
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
+import {
+  isPhpTreeSitterAvailable,
+  createPhpParser,
+} from '../../parsers/tree-sitter/php-loader.js';
+
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   CallGraphLanguage,
   FileExtractionResult,
   ParameterInfo,
   CallExtraction,
 } from '../types.js';
-import {
-  isPhpTreeSitterAvailable,
-  createPhpParser,
-} from '../../parsers/tree-sitter/php-loader.js';
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 
 /**
  * PHP call graph extractor using tree-sitter
@@ -67,7 +68,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
       const tree = this.parser.parse(source);
       
       // Extract namespace
-      let currentNamespace: string | null = null;
+      const currentNamespace: string | null = null;
       
       this.visitNode(tree.rootNode, result, source, null, currentNamespace);
       
@@ -220,7 +221,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
   ): void {
     if (node.type === 'function_call_expression') {
       const funcNode = node.childForFieldName('function');
-      if (!funcNode) return;
+      if (!funcNode) {return;}
 
       let calleeName: string;
       let receiver: string | undefined;
@@ -258,7 +259,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     } else if (node.type === 'member_call_expression') {
       const nameNode = node.childForFieldName('name');
       const objectNode = node.childForFieldName('object');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const argsNode = node.childForFieldName('arguments');
       let argumentCount = 0;
@@ -283,7 +284,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     } else if (node.type === 'scoped_call_expression') {
       const nameNode = node.childForFieldName('name');
       const scopeNode = node.childForFieldName('scope');
-      if (!nameNode) return;
+      if (!nameNode) {return;}
 
       const argsNode = node.childForFieldName('arguments');
       let argumentCount = 0;
@@ -320,7 +321,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
         }
       }
 
-      if (!calleeName) return;
+      if (!calleeName) {return;}
 
       const argsNode = node.childForFieldName('arguments');
       let argumentCount = 0;
@@ -378,7 +379,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const className = nameNode.text;
     const fullClassName = currentNamespace ? `${currentNamespace}\\${className}` : className;
@@ -448,7 +449,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const interfaceName = nameNode.text;
     const fullName = currentNamespace ? `${currentNamespace}\\${interfaceName}` : interfaceName;
@@ -505,7 +506,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const traitName = nameNode.text;
     const fullName = currentNamespace ? `${currentNamespace}\\${traitName}` : traitName;
@@ -552,7 +553,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     let qualifiedName = currentNamespace ? `${currentNamespace}\\${name}` : name;
@@ -800,7 +801,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     _currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isStatic = this.hasModifier(node, 'static');
@@ -893,7 +894,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -951,13 +952,13 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     result: FileExtractionResult
   ): void {
     const argsNode = node.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     for (const arg of argsNode.children) {
-      if (arg.type !== 'argument') continue;
+      if (arg.type !== 'argument') {continue;}
       
       const argExpr = arg.namedChildren[0];
-      if (!argExpr) continue;
+      if (!argExpr) {continue;}
       
       // String callback: 'functionName' or "functionName"
       if (argExpr.type === 'string' || argExpr.type === 'encapsed_string') {
@@ -1032,13 +1033,13 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     }
     
     // Need exactly 2 elements: [object/class, method]
-    if (elements.length !== 2) return;
+    if (elements.length !== 2) {return;}
     
     const [first, second] = elements;
-    if (!first || !second) return;
+    if (!first || !second) {return;}
     
     // Second element should be a string (method name)
-    if (second.type !== 'string' && second.type !== 'encapsed_string') return;
+    if (second.type !== 'string' && second.type !== 'encapsed_string') {return;}
     
     const methodName = second.text.replace(/^['"]|['"]$/g, '');
     let receiver: string | undefined;
@@ -1081,7 +1082,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     const nameNode = node.childForFieldName('name');
     const objectNode = node.childForFieldName('object');
 
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const calleeName = nameNode.text;
     const receiver = objectNode?.text;
@@ -1122,7 +1123,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
     const nameNode = node.childForFieldName('name');
     const scopeNode = node.childForFieldName('scope');
 
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const calleeName = nameNode.text;
     const receiver = scopeNode?.text;
@@ -1175,7 +1176,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
       }
     }
 
-    if (!calleeName) return;
+    if (!calleeName) {return;}
 
     // Count arguments
     const argsNode = node.childForFieldName('arguments');
@@ -1270,7 +1271,7 @@ export class PhpCallGraphExtractor extends BaseCallGraphExtractor {
 
     // Look for attribute_list siblings before the node
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       for (const attr of sibling.children) {
         if (attr.type === 'attribute') {
           attributes.unshift(`#[${attr.text}]`);

@@ -25,9 +25,21 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
 
 import { shouldIgnoreDirectory, shouldIgnoreExtension } from '../scanner/default-ignores.js';
+import { GraphBuilder } from './analysis/graph-builder.js';
+import { ReachabilityEngine } from './analysis/reachability.js';
+import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
+import { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
+import { GoCallGraphExtractor } from './extractors/go-extractor.js';
+import { JavaCallGraphExtractor } from './extractors/java-extractor.js';
+import { PhpCallGraphExtractor } from './extractors/php-extractor.js';
+import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
+import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
+import { CallGraphStore, createCallGraphStore } from './store/call-graph-store.js';
+
 import type {
   CallGraph,
   ReachabilityResult,
@@ -38,17 +50,6 @@ import type {
   CodeLocation,
   FunctionNode,
 } from './types.js';
-
-import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
-import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
-import { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
-import { JavaCallGraphExtractor } from './extractors/java-extractor.js';
-import { PhpCallGraphExtractor } from './extractors/php-extractor.js';
-import { GoCallGraphExtractor } from './extractors/go-extractor.js';
-import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
-import { GraphBuilder } from './analysis/graph-builder.js';
-import { ReachabilityEngine } from './analysis/reachability.js';
-import { CallGraphStore, createCallGraphStore } from './store/call-graph-store.js';
 import type { DataAccessPoint } from '../boundaries/types.js';
 
 // Re-export types
@@ -231,7 +232,7 @@ export class CallGraphAnalyzer {
 
     for (const file of files) {
       const extractor = this.getExtractor(file);
-      if (!extractor) continue;
+      if (!extractor) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);

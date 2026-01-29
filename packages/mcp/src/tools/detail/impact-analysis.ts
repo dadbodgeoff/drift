@@ -10,6 +10,7 @@ import {
   createImpactAnalyzer,
   type ImpactAnalysisResult,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 export interface AffectedCaller {

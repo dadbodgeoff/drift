@@ -104,9 +104,9 @@ export const CONFIDENCE_THRESHOLDS = {
  * Compute confidence level from score
  */
 export function computeConfidenceLevel(score: number): ConfidenceLevel {
-  if (score >= CONFIDENCE_THRESHOLDS.high) return 'high';
-  if (score >= CONFIDENCE_THRESHOLDS.medium) return 'medium';
-  if (score >= CONFIDENCE_THRESHOLDS.low) return 'low';
+  if (score >= CONFIDENCE_THRESHOLDS.high) {return 'high';}
+  if (score >= CONFIDENCE_THRESHOLDS.medium) {return 'medium';}
+  if (score >= CONFIDENCE_THRESHOLDS.low) {return 'low';}
   return 'uncertain';
 }
 

@@ -10,9 +10,10 @@
  * - User.objects.filter(id=1).delete()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Django ORM pattern matcher
@@ -42,7 +43,7 @@ export class DjangoMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Look for .objects. pattern
     const objectsIndex = chain.segments.findIndex(s => s.name === 'objects');
-    if (objectsIndex === -1) return null;
+    if (objectsIndex === -1) {return null;}
 
     // Model should be before .objects
     let modelName: string;
@@ -55,7 +56,7 @@ export class DjangoMatcher extends BaseMatcher {
     }
 
     // Model must be PascalCase
-    if (!/^[A-Z][a-zA-Z0-9]*$/.test(modelName)) return null;
+    if (!/^[A-Z][a-zA-Z0-9]*$/.test(modelName)) {return null;}
 
     // Find the operation method
     let operation: DataOperation = 'read';
@@ -63,7 +64,7 @@ export class DjangoMatcher extends BaseMatcher {
 
     for (let i = objectsIndex + 1; i < chain.segments.length; i++) {
       const segment = chain.segments[i];
-      if (!segment) continue;
+      if (!segment) {continue;}
 
       if (this.deleteMethods.includes(segment.name)) {
         operation = 'delete';

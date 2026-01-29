@@ -11,13 +11,14 @@
  * @requirements Go Language Support
  */
 
-import type { Position, ASTNode, AST, ParseResult } from '../types.js';
-import type { TreeSitterNode, TreeSitterParser } from './types.js';
 import {
   isGoTreeSitterAvailable,
   createGoParser,
   getGoLoadingError,
 } from './go-loader.js';
+
+import type { Position, ASTNode, AST, ParseResult } from '../types.js';
+import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================
 // Go-Specific Types
@@ -457,7 +458,7 @@ export class TreeSitterGoParser {
         const nameNode = this.findChildByType(child, 'identifier');
         const typeNode = child.childForFieldName('type');
 
-        if (!typeNode) continue;
+        if (!typeNode) {continue;}
 
         let typeName: string;
         let isPointer = false;

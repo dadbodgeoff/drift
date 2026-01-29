@@ -4,17 +4,18 @@
  * Discovers framework primitives from imports, decorators, and usage patterns.
  */
 
-import type {
-  DetectedPrimitive,
-  SupportedLanguage,
-  FrameworkDetectionResult,
-} from '../types.js';
 import {
   ALL_PRIMITIVES,
   findPrimitiveFramework,
   looksLikePrimitive,
   getPrimitiveNames,
 } from './registry.js';
+
+import type {
+  DetectedPrimitive,
+  SupportedLanguage,
+  FrameworkDetectionResult,
+} from '../types.js';
 
 // =============================================================================
 // Types
@@ -145,7 +146,7 @@ export function detectFrameworks(context: DiscoveryContext): FrameworkDetectionR
   // 2. Check imports
   for (const imp of context.imports) {
     for (const [framework, packages] of Object.entries(FRAMEWORK_PACKAGE_MAP)) {
-      if (seen.has(framework)) continue;
+      if (seen.has(framework)) {continue;}
 
       const matches = packages.some(
         (pkg) => imp.source === pkg || imp.source.startsWith(`${pkg}/`)
@@ -295,7 +296,7 @@ function discoverFromBootstrap(
 
   for (const fw of frameworks) {
     const frameworkPrimitives = registry[fw.framework];
-    if (!frameworkPrimitives) continue;
+    if (!frameworkPrimitives) {continue;}
 
     for (const [category, names] of Object.entries(frameworkPrimitives)) {
       for (const name of names) {
@@ -323,7 +324,7 @@ function discoverFromImports(context: DiscoveryContext): DetectedPrimitive[] {
 
   for (const imp of context.imports) {
     // Skip internal imports
-    if (isInternalImport(imp.source)) continue;
+    if (isInternalImport(imp.source)) {continue;}
 
     for (const nameInfo of imp.names) {
       const name = nameInfo.imported;
@@ -369,7 +370,7 @@ function discoverFromDecorators(context: DiscoveryContext): DetectedPrimitive[] 
   const seen = new Set<string>();
 
   for (const dec of context.decorators) {
-    if (seen.has(dec.name)) continue;
+    if (seen.has(dec.name)) {continue;}
     seen.add(dec.name);
 
     // Check if it's a known primitive
@@ -409,8 +410,8 @@ function discoverFromFrequency(
   }
 
   for (const [name, count] of usageCounts) {
-    if (alreadySeen.has(name)) continue;
-    if (count < FREQUENCY_THRESHOLD) continue;
+    if (alreadySeen.has(name)) {continue;}
+    if (count < FREQUENCY_THRESHOLD) {continue;}
 
     // Only consider if it looks like a utility/primitive
     if (looksLikeUtilityFunction(name)) {
@@ -454,11 +455,11 @@ function extractFrameworkFromImport(source: string): string {
 
 function looksLikeUtilityFunction(name: string): boolean {
   // Short, generic names are more likely primitives
-  if (name.length < 20) return true;
+  if (name.length < 20) {return true;}
 
   // Common utility prefixes
   const utilityPrefixes = ['get', 'set', 'create', 'make', 'build', 'use', 'with', 'to', 'from', 'parse', 'format'];
-  if (utilityPrefixes.some((p) => name.toLowerCase().startsWith(p))) return true;
+  if (utilityPrefixes.some((p) => name.toLowerCase().startsWith(p))) {return true;}
 
   return false;
 }

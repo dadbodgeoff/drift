@@ -38,18 +38,18 @@ export * from './middleware.js';
 export * from './hooks.js';
 export * from './errors.js';
 
-import { signatureToolDefinition } from './signature.js';
 import { callersToolDefinition } from './callers.js';
-import { importsToolDefinition } from './imports.js';
-import { prevalidateToolDefinition } from './prevalidate.js';
-import { similarToolDefinition } from './similar.js';
-import { typeToolDefinition } from './type.js';
-import { recentToolDefinition } from './recent.js';
-import { testTemplateToolDefinition } from './test-template.js';
 import { dependenciesToolDefinition } from './dependencies.js';
-import { middlewareToolDefinition } from './middleware.js';
-import { hooksToolDefinition } from './hooks.js';
 import { errorsToolDefinition } from './errors.js';
+import { hooksToolDefinition } from './hooks.js';
+import { importsToolDefinition } from './imports.js';
+import { middlewareToolDefinition } from './middleware.js';
+import { prevalidateToolDefinition } from './prevalidate.js';
+import { recentToolDefinition } from './recent.js';
+import { signatureToolDefinition } from './signature.js';
+import { similarToolDefinition } from './similar.js';
+import { testTemplateToolDefinition } from './test-template.js';
+import { typeToolDefinition } from './type.js';
 
 /**
  * All surgical tools

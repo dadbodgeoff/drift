@@ -18,6 +18,11 @@
  * @requirements 5.6 - Uncertain: score < 0.50
  */
 
+import {
+  CONFIDENCE_THRESHOLDS,
+  DEFAULT_CONFIDENCE_WEIGHTS,
+} from './types.js';
+
 import type {
   ConfidenceScore,
   ConfidenceLevel,
@@ -25,10 +30,6 @@ import type {
   ConfidenceInput,
 } from './types.js';
 
-import {
-  CONFIDENCE_THRESHOLDS,
-  DEFAULT_CONFIDENCE_WEIGHTS,
-} from './types.js';
 
 /**
  * Configuration for age normalization

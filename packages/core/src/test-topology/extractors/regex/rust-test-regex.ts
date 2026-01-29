@@ -60,19 +60,19 @@ export class RustTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check for tokio test
-    if (content.includes('#[tokio::test]')) return 'tokio-test';
+    if (content.includes('#[tokio::test]')) {return 'tokio-test';}
 
     // Check for proptest
-    if (content.includes('proptest!') || content.includes('use proptest')) return 'proptest';
+    if (content.includes('proptest!') || content.includes('use proptest')) {return 'proptest';}
 
     // Check for criterion benchmarks
-    if (content.includes('criterion_group!') || content.includes('use criterion')) return 'criterion';
+    if (content.includes('criterion_group!') || content.includes('use criterion')) {return 'criterion';}
 
     // Check for rstest
-    if (content.includes('#[rstest]') || content.includes('use rstest')) return 'rstest';
+    if (content.includes('#[rstest]') || content.includes('use rstest')) {return 'rstest';}
 
     // Check for standard test attribute
-    if (content.includes('#[test]') || content.includes('#[cfg(test)]')) return 'rust-test';
+    if (content.includes('#[test]') || content.includes('#[cfg(test)]')) {return 'rust-test';}
 
     return 'unknown';
   }
@@ -123,7 +123,7 @@ export class RustTestRegexExtractor {
       const directCalls = this.extractFunctionCalls(testBody);
 
       // Check if already added by previous pattern
-      if (testCases.some(t => t.name === name && t.line === line)) continue;
+      if (testCases.some(t => t.name === name && t.line === line)) {continue;}
 
       testCases.push({
         id: `${filePath}:${name}:${line}`,
@@ -155,7 +155,7 @@ export class RustTestRegexExtractor {
       const directCalls = this.extractFunctionCalls(testBody);
 
       // Check if already added
-      if (testCases.some(t => t.name === name && t.line === line)) continue;
+      if (testCases.some(t => t.name === name && t.line === line)) {continue;}
 
       testCases.push({
         id: `${filePath}:${name}:${line}`,
@@ -195,7 +195,7 @@ export class RustTestRegexExtractor {
         const line = this.getLineNumber(content, absoluteIndex);
 
         // Check if already added
-        if (testCases.some(t => t.name === name && t.line === line)) continue;
+        if (testCases.some(t => t.name === name && t.line === line)) {continue;}
 
         const testBody = this.extractTestBody(content, line);
         const directCalls = this.extractFunctionCalls(testBody);
@@ -293,7 +293,7 @@ export class RustTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -304,7 +304,7 @@ export class RustTestRegexExtractor {
     const methodPattern = /\.([a-z_][a-z0-9_]*)\s*\(/g;
     while ((match = methodPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -315,7 +315,7 @@ export class RustTestRegexExtractor {
     const pathPattern = /::([a-z_][a-z0-9_]*)\s*\(/g;
     while ((match = pathPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -616,13 +616,13 @@ export class RustTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
 
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
 
     return {
       assertionCount,

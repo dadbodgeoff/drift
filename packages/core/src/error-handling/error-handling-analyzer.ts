@@ -112,7 +112,7 @@ export class ErrorHandlingAnalyzer {
    * Get aggregate metrics
    */
   getMetrics(): ErrorHandlingMetrics | null {
-    if (!this.topology) return null;
+    if (!this.topology) {return null;}
 
     const functions = Array.from(this.topology.functions.values());
     const totalFunctions = functions.length;
@@ -162,7 +162,7 @@ export class ErrorHandlingAnalyzer {
    */
   getSummary(): ErrorHandlingSummary | null {
     const metrics = this.getMetrics();
-    if (!metrics || !this.topology) return null;
+    if (!metrics || !this.topology) {return null;}
 
     const coveragePercent = metrics.totalFunctions > 0
       ? Math.round((metrics.functionsWithTryCatch / metrics.totalFunctions) * 100)
@@ -271,13 +271,13 @@ export class ErrorHandlingAnalyzer {
    * Get detailed analysis for a function
    */
   getFunctionAnalysis(funcId: string): FunctionErrorAnalysis | null {
-    if (!this.topology || !this.callGraph) return null;
+    if (!this.topology || !this.callGraph) {return null;}
 
     const profile = this.topology.functions.get(funcId);
-    if (!profile) return null;
+    if (!profile) {return null;}
 
     const func = this.callGraph.functions.get(funcId);
-    if (!func) return null;
+    if (!func) {return null;}
 
     // Find incoming errors (from callees)
     const incomingErrors: FunctionErrorAnalysis['incomingErrors'] = [];
@@ -378,7 +378,7 @@ export class ErrorHandlingAnalyzer {
    * Find error handling gaps
    */
   getGaps(options: GapDetectionOptions = {}): ErrorHandlingGap[] {
-    if (!this.topology) return [];
+    if (!this.topology) {return [];}
 
     const { minSeverity = 'low', limit = 20, includeSuggestions = true, files } = options;
     const gaps: ErrorHandlingGap[] = [];
@@ -388,7 +388,7 @@ export class ErrorHandlingAnalyzer {
 
     for (const [funcId, profile] of this.topology.functions) {
       // Filter by files if specified
-      if (files && !files.some(f => profile.file.includes(f))) continue;
+      if (files && !files.some(f => profile.file.includes(f))) {continue;}
 
       // Check for various gaps
       if (profile.canThrow && !profile.hasTryCatch) {
@@ -478,7 +478,7 @@ export class ErrorHandlingAnalyzer {
    * Get error boundaries
    */
   getBoundaries(options: BoundaryAnalysisOptions = {}): ErrorBoundary[] {
-    if (!this.topology) return [];
+    if (!this.topology) {return [];}
 
     let boundaries = this.topology.boundaries;
 
@@ -497,7 +497,7 @@ export class ErrorHandlingAnalyzer {
    * Get unhandled error paths
    */
   getUnhandledPaths(minSeverity: ErrorSeverity = 'low'): UnhandledErrorPath[] {
-    if (!this.topology) return [];
+    if (!this.topology) {return [];}
 
     const severityOrder: Record<ErrorSeverity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
     const minOrder = severityOrder[minSeverity];
@@ -538,8 +538,8 @@ export class ErrorHandlingAnalyzer {
   }
 
   private isAsyncFunction(func: FunctionNode): boolean {
-    if ((func as any).isAsync) return true;
-    if (func.name.includes('async')) return true;
+    if ((func as any).isAsync) {return true;}
+    if (func.name.includes('async')) {return true;}
     return func.returnType?.includes('Promise') ?? false;
   }
 
@@ -557,26 +557,26 @@ export class ErrorHandlingAnalyzer {
     let score = 50; // Base score
 
     // Positive factors
-    if (profile.hasTryCatch) score += 20;
-    if (profile.catchClauses?.some(c => c.action === 'recover')) score += 15;
-    if (profile.catchClauses?.some(c => c.action === 'transform')) score += 10;
-    if (profile.catchClauses?.some(c => c.preservesError)) score += 5;
-    if (profile.asyncHandling?.hasAsyncTryCatch) score += 10;
-    if (profile.asyncHandling?.hasCatch) score += 5;
+    if (profile.hasTryCatch) {score += 20;}
+    if (profile.catchClauses?.some(c => c.action === 'recover')) {score += 15;}
+    if (profile.catchClauses?.some(c => c.action === 'transform')) {score += 10;}
+    if (profile.catchClauses?.some(c => c.preservesError)) {score += 5;}
+    if (profile.asyncHandling?.hasAsyncTryCatch) {score += 10;}
+    if (profile.asyncHandling?.hasCatch) {score += 5;}
 
     // Negative factors
-    if (profile.canThrow && !profile.hasTryCatch) score -= 20;
-    if (profile.catchClauses?.some(c => c.action === 'swallow')) score -= 25;
-    if (profile.catchClauses?.some(c => c.errorType === 'any')) score -= 5;
-    if (profile.asyncHandling?.hasUnhandledPromises) score -= 20;
+    if (profile.canThrow && !profile.hasTryCatch) {score -= 20;}
+    if (profile.catchClauses?.some(c => c.action === 'swallow')) {score -= 25;}
+    if (profile.catchClauses?.some(c => c.errorType === 'any')) {score -= 5;}
+    if (profile.asyncHandling?.hasUnhandledPromises) {score -= 20;}
 
     return Math.max(0, Math.min(100, score));
   }
 
   private scoreToQuality(score: number): ErrorHandlingQuality {
-    if (score >= 80) return 'excellent';
-    if (score >= 60) return 'good';
-    if (score >= 40) return 'fair';
+    if (score >= 80) {return 'excellent';}
+    if (score >= 60) {return 'good';}
+    if (score >= 40) {return 'fair';}
     return 'poor';
   }
 
@@ -585,7 +585,7 @@ export class ErrorHandlingAnalyzer {
     func: FunctionNode, 
     profile: ErrorHandlingProfile
   ): ErrorBoundary | null {
-    if (!this.callGraph) return null;
+    if (!this.callGraph) {return null;}
 
     // Find what this function catches from
     const catchesFrom: string[] = [];
@@ -598,7 +598,7 @@ export class ErrorHandlingAnalyzer {
       }
     }
 
-    if (catchesFrom.length === 0) return null;
+    if (catchesFrom.length === 0) {return null;}
 
     // Detect framework boundaries
     const isFrameworkBoundary = this.isFrameworkBoundary(func);
@@ -631,18 +631,18 @@ export class ErrorHandlingAnalyzer {
     const className = func.className?.toLowerCase() ?? '';
     
     // React error boundaries
-    if (name === 'componentdidcatch' || className.includes('errorboundary')) return true;
+    if (name === 'componentdidcatch' || className.includes('errorboundary')) {return true;}
     
     // Express/Koa middleware
-    if (func.parameters?.length === 4) return true; // (err, req, res, next)
+    if (func.parameters?.length === 4) {return true;} // (err, req, res, next)
     
     // NestJS exception filters
-    if (className.includes('filter') && name === 'catch') return true;
+    if (className.includes('filter') && name === 'catch') {return true;}
     
     // Spring exception handlers
     if ((func as any).annotations?.some((a: string) => 
       a.includes('ExceptionHandler') || a.includes('ControllerAdvice')
-    )) return true;
+    )) {return true;}
 
     return false;
   }
@@ -668,7 +668,7 @@ export class ErrorHandlingAnalyzer {
     throwerId: string,
     functions: Map<string, ErrorHandlingProfile>
   ): ErrorPropagationChain | null {
-    if (!this.callGraph) return null;
+    if (!this.callGraph) {return null;}
 
     const path: string[] = [throwerId];
     let current = throwerId;
@@ -708,7 +708,7 @@ export class ErrorHandlingAnalyzer {
 
       // Move to first caller (simplified - real impl would explore all paths)
       const nextCaller = func.calledBy[0]?.callerId;
-      if (!nextCaller || path.includes(nextCaller)) break; // Avoid cycles
+      if (!nextCaller || path.includes(nextCaller)) {break;} // Avoid cycles
       
       path.push(nextCaller);
       current = nextCaller;
@@ -748,13 +748,13 @@ export class ErrorHandlingAnalyzer {
   }
 
   private calculatePathSeverity(entryProfile?: ErrorHandlingProfile): ErrorSeverity {
-    if (!entryProfile) return 'medium';
+    if (!entryProfile) {return 'medium';}
 
     // Entry points and exported functions are more critical
     const func = this.callGraph?.functions.get(entryProfile.functionId);
-    if (func?.isExported) return 'critical';
+    if (func?.isExported) {return 'critical';}
     // Check if file is an entry point
-    if (this.callGraph?.entryPoints.includes(entryProfile.file)) return 'critical';
+    if (this.callGraph?.entryPoints.includes(entryProfile.file)) {return 'critical';}
 
     return 'medium';
   }
@@ -819,9 +819,9 @@ export class ErrorHandlingAnalyzer {
     // Function importance
     const func = this.callGraph?.functions.get(profile.functionId);
     const isEntryPointFile = this.callGraph?.entryPoints.includes(profile.file) ?? false;
-    if (func?.isExported) score += 15;
-    if (isEntryPointFile) score += 20;
-    if ((func?.calledBy.length ?? 0) > 5) score += 10;
+    if (func?.isExported) {score += 15;}
+    if (isEntryPointFile) {score += 20;}
+    if ((func?.calledBy.length ?? 0) > 5) {score += 10;}
 
     return Math.min(100, score);
   }

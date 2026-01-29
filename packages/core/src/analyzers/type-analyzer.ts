@@ -7,7 +7,6 @@
  * @requirements 3.5 - Parser SHALL provide a unified AST query interface across all languages
  */
 
-import type { AST, ASTNode } from '../parsers/types.js';
 import type {
   TypeInfo,
   TypeKind,
@@ -16,6 +15,7 @@ import type {
   TypeAnalysisError,
   SourceLocation,
 } from './types.js';
+import type { AST, ASTNode } from '../parsers/types.js';
 
 /**
  * Options for type extraction

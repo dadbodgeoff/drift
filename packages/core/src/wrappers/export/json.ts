@@ -311,7 +311,7 @@ export function parseJsonExport(json: string): Partial<WrapperExportResult> {
  * Validate export format
  */
 export function validateExport(data: unknown): data is WrapperExportResult {
-  if (typeof data !== 'object' || data === null) return false;
+  if (typeof data !== 'object' || data === null) {return false;}
 
   const obj = data as Record<string, unknown>;
 

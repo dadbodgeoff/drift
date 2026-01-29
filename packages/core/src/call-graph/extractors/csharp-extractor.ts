@@ -19,17 +19,18 @@
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
+import {
+  isCSharpTreeSitterAvailable,
+  createCSharpParser,
+} from '../../parsers/tree-sitter/csharp-loader.js';
+
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   CallGraphLanguage,
   FileExtractionResult,
   ParameterInfo,
   CallExtraction,
 } from '../types.js';
-import {
-  isCSharpTreeSitterAvailable,
-  createCSharpParser,
-} from '../../parsers/tree-sitter/csharp-loader.js';
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 
 /**
  * C# call graph extractor using tree-sitter
@@ -167,7 +168,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const className = nameNode.text;
     const fullClassName = currentNamespace ? `${currentNamespace}.${className}` : className;
@@ -227,7 +228,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const interfaceName = nameNode.text;
     const fullName = currentNamespace ? `${currentNamespace}.${interfaceName}` : interfaceName;
@@ -275,7 +276,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isStatic = this.hasModifier(node, 'static');
@@ -571,7 +572,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     parentFunctionName: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const qualifiedName = `${parentFunctionName}.${name}`;
@@ -815,7 +816,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     result: FileExtractionResult
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const namespaceName = nameNode.text;
 
@@ -838,7 +839,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -901,7 +902,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const typeNode = node.childForFieldName('type');
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -1011,7 +1012,7 @@ export class CSharpCallGraphExtractor extends BaseCallGraphExtractor {
 
     // Look for attribute_list siblings before the node
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       for (const attr of sibling.children) {
         if (attr.type === 'attribute') {
           attributes.unshift(`[${attr.text}]`);

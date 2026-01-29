@@ -23,10 +23,15 @@
  * - Category-level checksums for cache invalidation
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import {
+  LAKE_DIRS,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   PatternShard,
@@ -35,12 +40,6 @@ import type {
   PatternMetadata,
   DataLakeConfig,
 } from './types.js';
-
-import {
-  LAKE_DIRS,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
-
 import type { Pattern, PatternCategory } from '../store/types.js';
 
 // ============================================================================
@@ -147,7 +146,7 @@ export class PatternShardStore extends EventEmitter {
     // Search all cached shards first
     for (const shard of this.shardCache.values()) {
       const pattern = shard.patterns.find(p => p.id === id);
-      if (pattern) return pattern;
+      if (pattern) {return pattern;}
     }
     
     // Load all shards and search
@@ -155,7 +154,7 @@ export class PatternShardStore extends EventEmitter {
     for (const cat of categories) {
       const patterns = await this.getByCategory(cat);
       const pattern = patterns.find(p => p.id === id);
-      if (pattern) return pattern;
+      if (pattern) {return pattern;}
     }
     
     return null;

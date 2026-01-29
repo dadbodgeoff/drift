@@ -14,6 +14,7 @@
  * @see PATTERN-SYSTEM-CONSOLIDATION.md
  */
 
+import type { PatternQueryOptions, PatternQueryResult } from './repository.js';
 import type {
   Pattern,
   PatternCategory,
@@ -21,7 +22,6 @@ import type {
   ConfidenceLevel,
   PatternSummary,
 } from './types.js';
-import type { PatternQueryOptions, PatternQueryResult } from './repository.js';
 
 // ============================================================================
 // Status Types

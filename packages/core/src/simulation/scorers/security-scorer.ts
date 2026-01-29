@@ -10,8 +10,9 @@
  * @module simulation/scorers/security-scorer
  */
 
-import type { CallGraph } from '../../call-graph/types.js';
 import { ReachabilityEngine } from '../../call-graph/analysis/reachability.js';
+
+import type { CallGraph } from '../../call-graph/types.js';
 import type {
   SimulationApproach,
   SecurityMetrics,
@@ -109,7 +110,7 @@ export class SecurityScorer {
         // Collect data access
         for (const access of result.reachableAccess) {
           const key = `${access.access.table}:${access.access.fields.join(',')}:${access.access.operation}`;
-          if (seenAccess.has(key)) continue;
+          if (seenAccess.has(key)) {continue;}
           seenAccess.add(key);
 
           const sensitivity = this.classifySensitivity(access.access.table, access.access.fields);
@@ -138,7 +139,7 @@ export class SecurityScorer {
    * Get function IDs in a file
    */
   private getFunctionsInFile(file: string): string[] {
-    if (!this.config.callGraph) return [];
+    if (!this.config.callGraph) {return [];}
 
     const functions: string[] = [];
     for (const [id, func] of this.config.callGraph.functions) {

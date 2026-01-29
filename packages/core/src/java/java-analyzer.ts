@@ -11,7 +11,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { createJavaHybridExtractor } from '../call-graph/extractors/java-hybrid-extractor.js';
+
 import type { FunctionExtraction, ClassExtraction, CallExtraction, ImportExtraction } from '../call-graph/types.js';
 
 // ============================================================================
@@ -169,14 +171,14 @@ export class JavaAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const isTestFile = this.isTestFile(file);
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       const result = this.extractor.extract(source, file);
 
       // Detect frameworks from imports
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Count annotations
@@ -398,7 +400,7 @@ export class JavaAnalyzer {
           return relativePath.includes(pattern);
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -460,7 +462,7 @@ export class JavaAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importSource.startsWith(prefix)) return name;
+      if (importSource.startsWith(prefix)) {return name;}
     }
 
     return null;
@@ -498,10 +500,10 @@ export class JavaAnalyzer {
       while ((match = springPattern.exec(line)) !== null) {
         const annotation = match[1]!;
         let method = 'GET';
-        if (annotation.toLowerCase().includes('post')) method = 'POST';
-        else if (annotation.toLowerCase().includes('put')) method = 'PUT';
-        else if (annotation.toLowerCase().includes('delete')) method = 'DELETE';
-        else if (annotation.toLowerCase().includes('patch')) method = 'PATCH';
+        if (annotation.toLowerCase().includes('post')) {method = 'POST';}
+        else if (annotation.toLowerCase().includes('put')) {method = 'PUT';}
+        else if (annotation.toLowerCase().includes('delete')) {method = 'DELETE';}
+        else if (annotation.toLowerCase().includes('patch')) {method = 'PATCH';}
 
         routes.push({
           method,
@@ -550,7 +552,7 @@ export class JavaAnalyzer {
   private extractNextMethod(lines: string[], annotationLine: number): string {
     for (let i = annotationLine + 1; i < Math.min(annotationLine + 10, lines.length); i++) {
       const match = lines[i]!.match(/(?:public|private|protected)?\s*(?:\w+\s+)?(\w+)\s*\(/);
-      if (match && !lines[i]!.trim().startsWith('@')) return match[1]!;
+      if (match && !lines[i]!.trim().startsWith('@')) {return match[1]!;}
     }
     return 'unknown';
   }
@@ -635,10 +637,10 @@ export class JavaAnalyzer {
 
   private normalizeOperation(op: string): string {
     const opLower = op.toLowerCase();
-    if (['find', 'findall', 'findby', 'get', 'getone', 'getbyid', 'query', 'createquery', 'count', 'exists'].some(o => opLower.includes(o))) return 'read';
-    if (['save', 'saveall', 'persist', 'merge', 'insert'].some(o => opLower.includes(o))) return 'write';
-    if (['update'].some(o => opLower.includes(o))) return 'update';
-    if (['delete', 'remove'].some(o => opLower.includes(o))) return 'delete';
+    if (['find', 'findall', 'findby', 'get', 'getone', 'getbyid', 'query', 'createquery', 'count', 'exists'].some(o => opLower.includes(o))) {return 'read';}
+    if (['save', 'saveall', 'persist', 'merge', 'insert'].some(o => opLower.includes(o))) {return 'write';}
+    if (['update'].some(o => opLower.includes(o))) {return 'update';}
+    if (['delete', 'remove'].some(o => opLower.includes(o))) {return 'delete';}
     return 'unknown';
   }
 
@@ -672,10 +674,10 @@ export class JavaAnalyzer {
   private determineAnnotationTarget(lines: string[], annotationLine: number): 'class' | 'method' | 'field' | 'parameter' {
     for (let i = annotationLine + 1; i < Math.min(annotationLine + 5, lines.length); i++) {
       const line = lines[i]!.trim();
-      if (line.startsWith('@')) continue;
-      if (/\bclass\s+/.test(line) || /\binterface\s+/.test(line) || /\benum\s+/.test(line)) return 'class';
-      if (/\b(public|private|protected)?\s*\w+\s+\w+\s*\(/.test(line)) return 'method';
-      if (/\b(public|private|protected)?\s*\w+\s+\w+\s*[;=]/.test(line)) return 'field';
+      if (line.startsWith('@')) {continue;}
+      if (/\bclass\s+/.test(line) || /\binterface\s+/.test(line) || /\benum\s+/.test(line)) {return 'class';}
+      if (/\b(public|private|protected)?\s*\w+\s+\w+\s*\(/.test(line)) {return 'method';}
+      if (/\b(public|private|protected)?\s*\w+\s+\w+\s*[;=]/.test(line)) {return 'field';}
     }
     return 'method';
   }

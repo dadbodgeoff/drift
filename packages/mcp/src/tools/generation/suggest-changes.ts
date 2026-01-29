@@ -12,6 +12,9 @@
  * - CallGraphAnalyzer: Security and reachability analysis
  */
 
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 import {
   PatternStore,
   BoundaryStore,
@@ -21,9 +24,8 @@ import {
   type ErrorHandlingGap,
   type DataAccessPoint,
 } from 'driftdetect-core';
+
 import { createResponseBuilder } from '../../infrastructure/index.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // =============================================================================
 // Types
@@ -234,7 +236,7 @@ function analyzeOutliers(
   
   for (const pattern of patterns) {
     // Skip if looking for specific pattern and this isn't it
-    if (specificPatternId && pattern.id !== specificPatternId) continue;
+    if (specificPatternId && pattern.id !== specificPatternId) {continue;}
     
     // Find outliers in this file
     const fileOutliers = pattern.outliers.filter(o => o.file === file);
@@ -358,7 +360,7 @@ async function analyzeSecurityIssues(
       
       for (const func of fileFunctions) {
         // Skip module-level pseudo-functions
-        if (func.name === '__module__') continue;
+        if (func.name === '__module__') {continue;}
         
         const reachable = callGraphAnalyzer.getReachableDataFromFunction(
           `${file}:${func.name}`,

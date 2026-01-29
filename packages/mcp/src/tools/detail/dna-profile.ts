@@ -5,8 +5,9 @@
  * Shows how components are styled with confidence scores and exemplar files.
  */
 
-import type { DNAStore, GeneId } from 'driftdetect-core';
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
+
+import type { DNAStore, GeneId } from 'driftdetect-core';
 
 export interface GeneProfile {
   id: string;

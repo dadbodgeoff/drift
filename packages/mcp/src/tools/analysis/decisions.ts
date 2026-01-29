@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createDecisionMiningAnalyzer,
   type MinedDecision,
@@ -14,6 +15,7 @@ import {
   type DecisionMiningSummary,
   type DecisionCategory,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -268,7 +270,7 @@ async function handleForFile(
     d.cluster.filesAffected.some(f => f.includes(file) || file.includes(f))
   );
 
-  let summaryText = `📜 ${matching.length} decisions affect ${file}.`;
+  const summaryText = `📜 ${matching.length} decisions affect ${file}.`;
 
   const hints = {
     nextActions: matching.length > 0
@@ -320,7 +322,7 @@ async function handleTimeline(
     decisions,
   }));
 
-  let summaryText = `📅 ${sorted.length} decisions across ${timeline.length} months.`;
+  const summaryText = `📅 ${sorted.length} decisions across ${timeline.length} months.`;
 
   const hints = {
     nextActions: ['View specific decision for details'],
@@ -365,7 +367,7 @@ async function handleSearch(
     d.category.toLowerCase().includes(queryLower)
   ).slice(0, limit ?? 10);
 
-  let summaryText = `🔍 ${results.length} decisions match "${query}".`;
+  const summaryText = `🔍 ${results.length} decisions match "${query}".`;
 
   const hints = {
     nextActions: results.length > 0

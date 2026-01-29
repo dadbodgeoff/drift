@@ -5,6 +5,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -78,7 +79,7 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Find end of function by looking for next line with same or less indentation
@@ -106,7 +107,7 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
         isAsync,
         decorators,
       };
-      if (returnType) funcOpts.returnType = returnType;
+      if (returnType) {funcOpts.returnType = returnType;}
 
       functions.push(this.createFunction(funcOpts));
     }
@@ -182,14 +183,14 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
    * Parse Python parameters
    */
   private parsePythonParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     const parts = paramsStr.split(',');
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed || trimmed === 'self' || trimmed === 'cls') continue;
+      if (!trimmed || trimmed === 'self' || trimmed === 'cls') {continue;}
 
       // Handle *args and **kwargs
       const isRest = trimmed.startsWith('*');
@@ -423,11 +424,11 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip self.method calls for now (they're internal)
-      if (receiver === 'self' || receiver === 'cls') continue;
+      if (receiver === 'self' || receiver === 'cls') {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -446,11 +447,11 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip keywords
-      if (['if', 'for', 'while', 'with', 'except', 'def', 'class', 'return', 'yield', 'raise', 'assert', 'print', 'lambda'].includes(calleeName)) continue;
+      if (['if', 'for', 'while', 'with', 'except', 'def', 'class', 'return', 'yield', 'raise', 'assert', 'print', 'lambda'].includes(calleeName)) {continue;}
 
       // Check if it looks like a class instantiation (PascalCase)
       const isConstructorCall = /^[A-Z]/.test(calleeName);
@@ -471,7 +472,7 @@ export class PythonRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `@${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({

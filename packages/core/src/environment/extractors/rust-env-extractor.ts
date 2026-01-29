@@ -12,6 +12,7 @@
  */
 
 import { BaseEnvExtractor } from './base-env-extractor.js';
+
 import type { EnvLanguage, EnvExtractionResult } from '../types.js';
 
 /**
@@ -60,7 +61,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -90,7 +91,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -120,7 +121,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = varPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -176,7 +177,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
       let match;
       while ((match = pattern.exec(source)) !== null) {
         const varName = match[1];
-        if (!varName) continue;
+        if (!varName) {continue;}
         
         const pos = this.getPosition(source, match.index);
         const context = this.getContext(source, match.index);
@@ -201,7 +202,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = prefixPattern.exec(source)) !== null) {
       const prefix = match[1];
-      if (!prefix) continue;
+      if (!prefix) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -250,7 +251,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = prefixedPattern.exec(source)) !== null) {
       const prefix = match[1];
-      if (!prefix) continue;
+      if (!prefix) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -273,7 +274,7 @@ export class RustEnvExtractor extends BaseEnvExtractor {
     
     while ((match = attrPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);

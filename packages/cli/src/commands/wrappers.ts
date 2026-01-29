@@ -11,19 +11,20 @@
  *   drift wrappers --min-confidence 0.8  # Filter by confidence
  */
 
-import { Command } from 'commander';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
+import {
+  isNativeAvailable,
+  analyzeWrappersWithFallback,
+} from 'driftdetect-core';
 import {
   createWrapperScanner,
   type WrapperScanResult,
   type WrapperCluster,
   type WrapperFunction,
 } from 'driftdetect-core/wrappers';
-import {
-  isNativeAvailable,
-  analyzeWrappersWithFallback,
-} from 'driftdetect-core';
 
 // =============================================================================
 // Command Definition
@@ -352,13 +353,13 @@ function printResults(result: WrapperScanResult, verbose: boolean): void {
 
   // Category breakdown
   const categoryBreakdown = Object.entries(analysis.summary.wrappersByCategory)
-    .filter(([, count]) => (count as number) > 0)
-    .sort((a, b) => (b[1] as number) - (a[1] as number));
+    .filter(([, count]) => (count) > 0)
+    .sort((a, b) => (b[1]) - (a[1]));
 
   if (categoryBreakdown.length > 0) {
     console.log(chalk.bold('📈 Wrappers by Category\n'));
     for (const [category, count] of categoryBreakdown) {
-      const numCount = count as number;
+      const numCount = count;
       const bar = '█'.repeat(Math.min(numCount, 30));
       console.log(`  ${chalk.cyan(category.padEnd(20))} ${bar} ${numCount}`);
     }

@@ -272,17 +272,17 @@ export const SENSITIVE_VAR_PATTERNS: Record<EnvSensitivity, RegExp[]> = {
 export function classifyEnvSensitivity(varName: string): EnvSensitivity {
   // Check secret patterns first (highest priority)
   for (const pattern of SENSITIVE_VAR_PATTERNS.secret) {
-    if (pattern.test(varName)) return 'secret';
+    if (pattern.test(varName)) {return 'secret';}
   }
   
   // Check credential patterns
   for (const pattern of SENSITIVE_VAR_PATTERNS.credential) {
-    if (pattern.test(varName)) return 'credential';
+    if (pattern.test(varName)) {return 'credential';}
   }
   
   // Check config patterns
   for (const pattern of SENSITIVE_VAR_PATTERNS.config) {
-    if (pattern.test(varName)) return 'config';
+    if (pattern.test(varName)) {return 'config';}
   }
   
   return 'unknown';

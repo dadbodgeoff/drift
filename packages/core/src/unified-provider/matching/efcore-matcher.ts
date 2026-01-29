@@ -9,9 +9,10 @@
  * - _context.SaveChangesAsync()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Entity Framework Core pattern matcher
@@ -54,11 +55,11 @@ export class EFCoreMatcher extends BaseMatcher {
       return null;
     }
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     // First segment should be the DbSet (table name)
     const dbSetSegment = chain.segments[0];
-    if (!dbSetSegment) return null;
+    if (!dbSetSegment) {return null;}
 
     // DbSet access is typically not a call (property access)
     // e.g., _context.Users.Where(...)

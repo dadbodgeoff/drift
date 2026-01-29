@@ -20,12 +20,13 @@
  * ```
  */
 
-import type { CallGraph, FunctionNode, CallPathNode } from '../types.js';
-import type { DataAccessPoint, SensitiveField } from '../../boundaries/types.js';
-import { ReachabilityEngine } from '../analysis/reachability.js';
-import { SensitivityClassifier, createSensitivityClassifier } from './sensitivity-classifier.js';
 import { ImpactScorer, createImpactScorer } from './impact-scorer.js';
 import { RemediationGenerator, createRemediationGenerator } from './remediation-generator.js';
+import { SensitivityClassifier, createSensitivityClassifier } from './sensitivity-classifier.js';
+import { ReachabilityEngine } from '../analysis/reachability.js';
+
+import type { DataAccessPoint, SensitiveField } from '../../boundaries/types.js';
+import type { CallGraph, FunctionNode, CallPathNode } from '../types.js';
 import type {
   SecurityFinding,
   EnrichedFinding,
@@ -299,7 +300,7 @@ export class EnrichmentEngine {
     const regulationsSet = new Set<DataRegulation>();
 
     for (const access of reachabilityResult.reachableAccess) {
-      if (access.access.confidence < minConfidence) continue;
+      if (access.access.confidence < minConfidence) {continue;}
 
       tablesSet.add(access.access.table);
 
@@ -436,11 +437,11 @@ export class EnrichmentEngine {
 
     for (const entryPointId of this.graph.entryPoints) {
       const entryFunc = this.graph.functions.get(entryPointId);
-      if (!entryFunc) continue;
+      if (!entryFunc) {continue;}
 
       // BFS to find path from entry point to target
       const path = this.findPath(entryPointId, targetId);
-      if (path.length === 0) continue;
+      if (path.length === 0) {continue;}
 
       entryPoints.push({
         functionId: entryPointId,
@@ -463,7 +464,7 @@ export class EnrichmentEngine {
   private findPath(fromId: string, toId: string): CallPathNode[] {
     if (fromId === toId) {
       const func = this.graph.functions.get(fromId);
-      if (!func) return [];
+      if (!func) {return [];}
       return [{
         functionId: fromId,
         functionName: func.qualifiedName,
@@ -476,7 +477,7 @@ export class EnrichmentEngine {
     const queue: Array<{ id: string; path: CallPathNode[] }> = [];
 
     const fromFunc = this.graph.functions.get(fromId);
-    if (!fromFunc) return [];
+    if (!fromFunc) {return [];}
 
     queue.push({
       id: fromId,
@@ -491,19 +492,19 @@ export class EnrichmentEngine {
     while (queue.length > 0) {
       const { id, path } = queue.shift()!;
 
-      if (visited.has(id)) continue;
+      if (visited.has(id)) {continue;}
       visited.add(id);
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       for (const call of func.calls) {
-        if (!call.resolved) continue;
+        if (!call.resolved) {continue;}
 
         for (const candidateId of call.resolvedCandidates) {
           if (candidateId === toId) {
             const targetFunc = this.graph.functions.get(toId);
-            if (!targetFunc) continue;
+            if (!targetFunc) {continue;}
             return [
               ...path,
               {
@@ -567,11 +568,11 @@ export class EnrichmentEngine {
 
     while (callerQueue.length > 0 && affected.length < 100) {
       const { id, distance } = callerQueue.shift()!;
-      if (visited.has(id)) continue;
+      if (visited.has(id)) {continue;}
       visited.add(id);
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       affected.push({
         functionId: id,
@@ -606,11 +607,11 @@ export class EnrichmentEngine {
 
     while (calleeQueue.length > 0 && affected.length < 100) {
       const { id, distance } = calleeQueue.shift()!;
-      if (visited.has(id)) continue;
+      if (visited.has(id)) {continue;}
       visited.add(id);
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       affected.push({
         functionId: id,

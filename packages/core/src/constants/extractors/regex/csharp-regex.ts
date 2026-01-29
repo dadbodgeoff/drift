@@ -5,13 +5,14 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
   EnumMember,
   ConstantKind,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * C# constant regex extractor
@@ -36,12 +37,12 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
       const visibility = match[1] ?? 'private';
       const type = match[3];
       const name = match[4];
-      if (!name || !type) continue;
+      if (!name || !type) {continue;}
       const rawValue = match[5]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       // Skip if name doesn't look like a constant (PascalCase or UPPER_CASE)
-      if (!/^[A-Z]/.test(name)) continue;
+      if (!/^[A-Z]/.test(name)) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -84,12 +85,12 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
       const visibility = match[1] ?? 'private';
       const type = match[4];
       const name = match[5];
-      if (!name || !type) continue;
+      if (!name || !type) {continue;}
       const rawValue = match[6]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       // Skip if name doesn't look like a constant
-      if (!/^[A-Z]/.test(name)) continue;
+      if (!/^[A-Z]/.test(name)) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -146,10 +147,10 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
       const isFlags = !!match[1];
       const visibility = match[2] ?? 'internal';
       const name = match[3];
-      if (!name) continue;
+      if (!name) {continue;}
       const backingType = match[4] ?? 'int';
       const body = match[5];
-      if (!body) continue;
+      if (!body) {continue;}
       const line = this.getLineNumber(source, match.index);
       const endLine = this.getLineNumber(source, match.index + match[0].length);
       const docComment = this.extractDocComment(source, line);
@@ -201,7 +202,7 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
       const memberMatch = trimmed.match(/^(\w+)\s*(?:=\s*([^,]+))?\s*,?\s*(?:\/\/.*)?$/);
       if (memberMatch) {
         const memberName = memberMatch[1];
-        if (!memberName) continue;
+        if (!memberName) {continue;}
         const rawValue = memberMatch[2]?.trim();
 
         let value: number | undefined;
@@ -340,9 +341,9 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
     }
 
     // Boolean
-    if (trimmed === 'true') return true;
-    if (trimmed === 'false') return false;
-    if (trimmed === 'null') return null;
+    if (trimmed === 'true') {return true;}
+    if (trimmed === 'false') {return false;}
+    if (trimmed === 'null') {return null;}
 
     return null;
   }
@@ -354,7 +355,7 @@ export class CSharpConstantRegexExtractor extends BaseConstantRegexExtractor {
     const beforePosition = source.slice(0, position);
     const classMatch = beforePosition.match(/(class|struct|record)\s+(\w+)(?:<[^>]+>)?(?:\s*:\s*[\w,\s<>]+)?\s*\{[^}]*$/);
 
-    if (classMatch && classMatch[2]) {
+    if (classMatch?.[2]) {
       return classMatch[2];
     }
 

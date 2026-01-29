@@ -8,6 +8,8 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import { ContractStore, type Contract } from 'driftdetect-core';
 import {
   extractBackendEndpoints,
   extractFrontendApiCalls,
@@ -16,7 +18,6 @@ import {
   type ExtractedEndpoint,
   type ExtractedApiCall,
 } from 'driftdetect-detectors';
-import { ContractStore, type Contract } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -179,7 +180,7 @@ export class ContractScanner {
       const filePath = path.join(this.config.rootDir, file);
       const language = getLanguage(file);
       
-      if (!language) continue;
+      if (!language) {continue;}
 
       try {
         const content = await fs.readFile(filePath, 'utf-8');

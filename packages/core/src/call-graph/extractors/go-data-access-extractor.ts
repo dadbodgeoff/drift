@@ -11,10 +11,11 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import { isGoTreeSitterAvailable, createGoParser } from '../../parsers/tree-sitter/go-loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 export class GoDataAccessExtractor extends BaseDataAccessExtractor {
   readonly language: CallGraphLanguage = 'go';
@@ -184,7 +185,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
         gormChainMethods.includes(n)
     );
 
-    if (!hasGormMethod) return null;
+    if (!hasGormMethod) {return null;}
 
     // Determine operation from terminal method
     let operation: DataOperation = 'unknown';
@@ -222,7 +223,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (operation === 'unknown') return null;
+    if (operation === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -254,7 +255,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
     const sqlxWriteMethods = ['Exec', 'NamedExec', 'MustExec'];
 
     const lastMethod = chain.names[chain.names.length - 1];
-    if (!lastMethod) return null;
+    if (!lastMethod) {return null;}
 
     let operation: DataOperation = 'unknown';
     let table = 'unknown';
@@ -265,7 +266,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'write';
     }
 
-    if (operation === 'unknown') return null;
+    if (operation === 'unknown') {return null;}
 
     // Try to extract SQL from string argument
     const methodArgs = chain.args[chain.args.length - 1];
@@ -313,7 +314,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
     const sqlWriteMethods = ['Exec', 'ExecContext'];
 
     const lastMethod = chain.names[chain.names.length - 1];
-    if (!lastMethod) return null;
+    if (!lastMethod) {return null;}
 
     let operation: DataOperation = 'unknown';
     let table = 'unknown';
@@ -324,7 +325,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'write';
     }
 
-    if (operation === 'unknown') return null;
+    if (operation === 'unknown') {return null;}
 
     // Try to extract SQL from string argument
     const methodArgs = chain.args[chain.args.length - 1];
@@ -372,7 +373,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
 
     // Check for Ent patterns
     const hasEntBuilder = chain.names.some((n) => entBuilderMethods.includes(n));
-    if (!hasEntBuilder) return null;
+    if (!hasEntBuilder) {return null;}
 
     let operation: DataOperation = 'unknown';
     let table = 'unknown';
@@ -394,12 +395,12 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
 
     // Refine based on terminal method
     for (const method of chain.names) {
-      if (entReadMethods.includes(method)) operation = 'read';
-      else if (entWriteMethods.includes(method)) operation = 'write';
-      else if (entDeleteMethods.includes(method) && chain.names.includes('Delete')) operation = 'delete';
+      if (entReadMethods.includes(method)) {operation = 'read';}
+      else if (entWriteMethods.includes(method)) {operation = 'write';}
+      else if (entDeleteMethods.includes(method) && chain.names.includes('Delete')) {operation = 'delete';}
     }
 
-    if (operation === 'unknown') return null;
+    if (operation === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -429,15 +430,15 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
     const bunBuilders = ['NewSelect', 'NewInsert', 'NewUpdate', 'NewDelete', 'NewRaw'];
 
     const hasBuilder = chain.names.some((n) => bunBuilders.includes(n));
-    if (!hasBuilder) return null;
+    if (!hasBuilder) {return null;}
 
     let operation: DataOperation = 'unknown';
     let table = 'unknown';
 
-    if (chain.names.includes('NewSelect')) operation = 'read';
-    else if (chain.names.includes('NewInsert')) operation = 'write';
-    else if (chain.names.includes('NewUpdate')) operation = 'write';
-    else if (chain.names.includes('NewDelete')) operation = 'delete';
+    if (chain.names.includes('NewSelect')) {operation = 'read';}
+    else if (chain.names.includes('NewInsert')) {operation = 'write';}
+    else if (chain.names.includes('NewUpdate')) {operation = 'write';}
+    else if (chain.names.includes('NewDelete')) {operation = 'delete';}
 
     // Try to get table from Model() argument
     const modelIdx = chain.names.indexOf('Model');
@@ -448,7 +449,7 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (operation === 'unknown') return null;
+    if (operation === 'unknown') {return null;}
 
     return this.createAccessPoint({
       table,
@@ -503,18 +504,18 @@ export class GoDataAccessExtractor extends BaseDataAccessExtractor {
     let operation: DataOperation = 'unknown';
     let table = 'unknown';
 
-    if (upperSql.startsWith('SELECT')) operation = 'read';
-    else if (upperSql.startsWith('INSERT')) operation = 'write';
-    else if (upperSql.startsWith('UPDATE')) operation = 'write';
-    else if (upperSql.startsWith('DELETE')) operation = 'delete';
+    if (upperSql.startsWith('SELECT')) {operation = 'read';}
+    else if (upperSql.startsWith('INSERT')) {operation = 'write';}
+    else if (upperSql.startsWith('UPDATE')) {operation = 'write';}
+    else if (upperSql.startsWith('DELETE')) {operation = 'delete';}
 
     const fromMatch = sql.match(/FROM\s+["'`]?(\w+)["'`]?/i);
     const intoMatch = sql.match(/INTO\s+["'`]?(\w+)["'`]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`]?(\w+)["'`]?/i);
 
-    if (fromMatch?.[1]) table = fromMatch[1].toLowerCase();
-    else if (intoMatch?.[1]) table = intoMatch[1].toLowerCase();
-    else if (updateMatch?.[1]) table = updateMatch[1].toLowerCase();
+    if (fromMatch?.[1]) {table = fromMatch[1].toLowerCase();}
+    else if (intoMatch?.[1]) {table = intoMatch[1].toLowerCase();}
+    else if (updateMatch?.[1]) {table = updateMatch[1].toLowerCase();}
 
     return { table, operation, fields: [] };
   }

@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createErrorHandlingAnalyzer,
   createCallGraphAnalyzer,
@@ -18,6 +19,7 @@ import {
   type FunctionErrorAnalysis,
   type ErrorSeverity,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -222,8 +224,8 @@ async function handleGaps(
   }
 
   let summaryText = `🔍 ${gaps.length} error handling gaps. `;
-  if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
-  if (bySeverity.high > 0) summaryText += `🟡 ${bySeverity.high} high. `;
+  if (bySeverity.critical > 0) {summaryText += `🔴 ${bySeverity.critical} critical. `;}
+  if (bySeverity.high > 0) {summaryText += `🟡 ${bySeverity.high} high. `;}
 
   const hints = {
     nextActions: gaps.length > 0
@@ -354,8 +356,8 @@ async function handleUnhandled(
   }
 
   let summaryText = `⚠️ ${paths.length} unhandled error paths. `;
-  if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
-  if (bySeverity.high > 0) summaryText += `🟡 ${bySeverity.high} high.`;
+  if (bySeverity.critical > 0) {summaryText += `🔴 ${bySeverity.critical} critical. `;}
+  if (bySeverity.high > 0) {summaryText += `🟡 ${bySeverity.high} high.`;}
 
   const hints = {
     nextActions: paths.length > 0

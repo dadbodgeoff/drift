@@ -55,13 +55,13 @@ export class PHPTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check use statements
-    if (/use\s+PHPUnit\\/.test(content)) return 'phpunit';
-    if (/use\s+.*\\Pest/.test(content) || /use\s+function\s+Pest\\/.test(content)) return 'pest';
-    if (/use\s+Codeception\\/.test(content)) return 'codeception';
+    if (/use\s+PHPUnit\\/.test(content)) {return 'phpunit';}
+    if (/use\s+.*\\Pest/.test(content) || /use\s+function\s+Pest\\/.test(content)) {return 'pest';}
+    if (/use\s+Codeception\\/.test(content)) {return 'codeception';}
     
     // Check for Pest-style tests
     if (/\b(?:test|it)\s*\(\s*['"]/.test(content)) {
-      if (/pest/i.test(content)) return 'pest';
+      if (/pest/i.test(content)) {return 'pest';}
     }
     
     // Check for PHPUnit TestCase
@@ -256,7 +256,7 @@ export class PHPTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -267,7 +267,7 @@ export class PHPTestRegexExtractor {
     const methodPattern = /->\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
     while ((match = methodPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -549,13 +549,13 @@ export class PHPTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
     
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

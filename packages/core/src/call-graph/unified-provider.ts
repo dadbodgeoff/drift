@@ -13,6 +13,18 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+
+
+
+import { CallGraphShardStore, type CallGraphIndex } from '../lake/callgraph-shard-store.js';
+import { CallGraphStore } from './store/call-graph-store.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  analyzeReachabilitySqlite,
+  analyzeInverseReachabilitySqlite,
+} from '../native/index.js';
+
 import type {
   CallGraph,
   FunctionNode,
@@ -26,23 +38,12 @@ import type {
   InverseAccessPath,
   CallGraphLanguage,
 } from './types.js';
-
+import type { DataAccessPoint } from '../boundaries/types.js';
 import type {
   CallGraphShard,
   FunctionEntry,
   DataAccessRef,
 } from '../lake/types.js';
-
-import type { DataAccessPoint } from '../boundaries/types.js';
-
-import { CallGraphShardStore, type CallGraphIndex } from '../lake/callgraph-shard-store.js';
-import { CallGraphStore } from './store/call-graph-store.js';
-import {
-  isNativeAvailable,
-  isCallGraphAvailable,
-  analyzeReachabilitySqlite,
-  analyzeInverseReachabilitySqlite,
-} from '../native/index.js';
 
 // Types
 export interface UnifiedCallGraphProviderConfig {
@@ -195,16 +196,16 @@ export class UnifiedCallGraphProvider {
   async getFunction(id: string): Promise<UnifiedFunction | null> {
     if (this.format === 'legacy' && this.legacyGraph) {
       const node = this.legacyGraph.functions.get(id);
-      if (!node) return null;
+      if (!node) {return null;}
       return this.nodeToUnified(node);
     }
     
     if (this.format === 'sharded') {
       const file = this.parseFileFromId(id);
-      if (!file) return null;
+      if (!file) {return null;}
       
       const shard = await this.loadShard(file);
-      if (!shard) return null;
+      if (!shard) {return null;}
       
       const entry = shard.functions.find(f => f.id === id);
       return entry ? this.entryToUnified(entry, shard.file) : null;
@@ -226,7 +227,7 @@ export class UnifiedCallGraphProvider {
     
     if (this.format === 'sharded') {
       const shard = await this.loadShard(file);
-      if (!shard) return [];
+      if (!shard) {return [];}
       return shard.functions.map(f => this.entryToUnified(f, shard.file));
     }
     
@@ -376,7 +377,7 @@ export class UnifiedCallGraphProvider {
             field: {
               field: sf.field,
               table: sf.table ?? null,
-              sensitivityType: sf.sensitivityType as 'pii' | 'credentials' | 'financial' | 'health',
+              sensitivityType: sf.sensitivityType,
               file: sf.file,
               line: sf.line,
               confidence: sf.confidence,
@@ -416,12 +417,12 @@ export class UnifiedCallGraphProvider {
     
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current.id) || current.depth > maxDepth) continue;
+      if (visited.has(current.id) || current.depth > maxDepth) {continue;}
       visited.add(current.id);
       maxDepthReached = Math.max(maxDepthReached, current.depth);
       
       const func = await this.getFunction(current.id);
-      if (!func) continue;
+      if (!func) {continue;}
       
       for (const access of func.dataAccess) {
         tablesSet.add(access.table);
@@ -558,7 +559,7 @@ export class UnifiedCallGraphProvider {
     
     for (const accessorId of accessorIds) {
       const accessor = await this.getFunction(accessorId);
-      if (!accessor) continue;
+      if (!accessor) {continue;}
       
       const visited = new Set<string>();
       const queue: Array<{ id: string; path: CallPathNode[]; depth: number }> = [
@@ -567,7 +568,7 @@ export class UnifiedCallGraphProvider {
       
       while (queue.length > 0) {
         const current = queue.shift()!;
-        if (visited.has(current.id) || current.depth > maxDepth) continue;
+        if (visited.has(current.id) || current.depth > maxDepth) {continue;}
         visited.add(current.id);
         
         if (entryPointIdSet.has(current.id)) {
@@ -596,7 +597,7 @@ export class UnifiedCallGraphProvider {
         }
         
         const func = await this.getFunction(current.id);
-        if (!func) continue;
+        if (!func) {continue;}
         
         for (const callerId of func.callerIds) {
           if (!visited.has(callerId)) {

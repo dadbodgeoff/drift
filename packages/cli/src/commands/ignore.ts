@@ -8,14 +8,16 @@
  * @requirements 29.6
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { loadProjectConfig, createTelemetryClient, type TelemetryConfig } from 'driftdetect-core';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
-import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptIgnoreReason } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
 
 export interface IgnoreOptions {
@@ -40,7 +42,7 @@ async function recordIgnoreTelemetry(
 ): Promise<void> {
   try {
     const projectConfig = await loadProjectConfig(rootDir);
-    if (!projectConfig.telemetry?.enabled) return;
+    if (!projectConfig.telemetry?.enabled) {return;}
     
     const driftDir = path.join(rootDir, DRIFT_DIR);
     const telemetryClient = createTelemetryClient(driftDir, projectConfig.telemetry as TelemetryConfig);

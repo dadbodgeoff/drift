@@ -9,6 +9,7 @@
  */
 
 import { BaseGeneExtractor, type AlleleDefinition, type FileExtractionResult, type DetectedAllele } from './base-extractor.js';
+
 import type { GeneId } from '../types.js';
 
 export class ErrorResponseFormatExtractor extends BaseGeneExtractor {
@@ -127,7 +128,7 @@ export class ErrorResponseFormatExtractor extends BaseGeneExtractor {
 
   isBackendFile(filePath: string, content: string): boolean {
     const backendExts = ['.py', '.ts', '.js', '.java', '.php', '.go', '.rs', '.cs'];
-    if (!backendExts.some(ext => filePath.endsWith(ext))) return false;
+    if (!backendExts.some(ext => filePath.endsWith(ext))) {return false;}
 
     // Check for error handling patterns
     const errorPatterns = [

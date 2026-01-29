@@ -5,8 +5,8 @@
  * BEFORE code generation, scoring them by friction, impact, and pattern alignment.
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createSimulationEngine,
   createCallGraphAnalyzer,
@@ -19,6 +19,7 @@ import {
   type SimulationConstraint,
   type SimulatedApproach,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface SimulateOptions {

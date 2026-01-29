@@ -7,10 +7,10 @@
  * @module pydantic/validator-extractor
  */
 
-import type { TreeSitterNode } from '../types.js';
-import type { PydanticValidatorInfo } from '../types.js';
-import type { ExtractionContext, RawValidatorData, ValidatorDecoratorType, ValidatorMode } from './types.js';
 import { extractPositionRange } from './types.js';
+
+import type { TreeSitterNode , PydanticValidatorInfo } from '../types.js';
+import type { ExtractionContext, RawValidatorData, ValidatorDecoratorType, ValidatorMode } from './types.js';
 
 // ============================================
 // Validator Extractor Class
@@ -130,7 +130,7 @@ export class ValidatorExtractor {
   ): ValidatorDecoratorType | null {
     // Get the decorator content (call or identifier)
     const content = decorator.namedChildren[0];
-    if (!content) return null;
+    if (!content) {return null;}
 
     let name: string;
 
@@ -190,7 +190,7 @@ export class ValidatorExtractor {
   ): RawValidatorData | null {
     // Get function name
     const nameNode = funcDef.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
     const name = nameNode.text;
 
     // Get decorator arguments
@@ -228,12 +228,12 @@ export class ValidatorExtractor {
   ): Map<string | null, string> {
     const args = new Map<string | null, string>();
 
-    if (!content || content.type !== 'call') {
+    if (content?.type !== 'call') {
       return args;
     }
 
     const argsNode = content.childForFieldName('arguments');
-    if (!argsNode) return args;
+    if (!argsNode) {return args;}
 
     let positionalIndex = 0;
     for (const child of argsNode.namedChildren) {

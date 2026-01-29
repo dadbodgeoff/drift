@@ -7,9 +7,10 @@
  * @license Apache-2.0
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { createCppAnalyzer, type CppClass, type CppMemoryPattern, type CppModule, type CppTemplate } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface CppOptions {
@@ -269,13 +270,13 @@ async function classesAction(targetPath: string | undefined, options: CppOptions
 
     // Inheritance depth
     const deepInheritance = Object.entries(result.inheritanceDepth)
-      .filter(([, depth]) => (depth as number) > 2)
-      .sort((a, b) => (b[1] as number) - (a[1] as number));
+      .filter(([, depth]) => (depth) > 2)
+      .sort((a, b) => (b[1]) - (a[1]));
 
     if (deepInheritance.length > 0) {
       console.log(chalk.bold('Deep Inheritance (depth > 2):'));
       for (const [name, depth] of deepInheritance.slice(0, 5)) {
-        console.log(`  ${name}: ${chalk.yellow(depth as number)} levels`);
+        console.log(`  ${name}: ${chalk.yellow(depth)} levels`);
       }
       console.log();
     }

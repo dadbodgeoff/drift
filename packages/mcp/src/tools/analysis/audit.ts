@@ -13,6 +13,7 @@ import {
   type AuditResult,
   type AuditOptions,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -179,7 +180,7 @@ export async function handleAudit(
         }
 
         const warnings: string[] = [];
-        if (result.degradation && result.degradation.trend === 'declining') {
+        if (result.degradation?.trend === 'declining') {
           warnings.push(`Quality declining: health dropped ${Math.abs(result.degradation.healthScoreDelta)} points`);
         }
         if (result.summary.likelyFalsePositives > 5) {

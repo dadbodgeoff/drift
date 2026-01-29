@@ -12,15 +12,17 @@
  * Returns compliance score, violations, and suggestions for improvement.
  */
 
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 import {
   PatternStore,
   createUnifiedScanner,
   type Pattern,
   type DataAccessPoint,
 } from 'driftdetect-core';
+
 import { createResponseBuilder } from '../../infrastructure/index.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // =============================================================================
 // Types
@@ -192,8 +194,8 @@ export async function handleValidateChange(
   
   // Factor in semantic validation
   let semanticScore = 100;
-  if (semanticValidation.dataAccess.rawSql > 0) semanticScore -= 20;
-  if (semanticValidation.dataAccess.sensitiveFields > 0) semanticScore -= 10;
+  if (semanticValidation.dataAccess.rawSql > 0) {semanticScore -= 20;}
+  if (semanticValidation.dataAccess.sensitiveFields > 0) {semanticScore -= 10;}
   
   const patternScore = Math.round(((compliantCount * 100) + (partialCount * 50)) / totalPatterns);
   const overallScore = Math.round((patternScore + semanticScore) / 2);
@@ -291,7 +293,7 @@ function filterRelevantPatterns(
   
   return patterns.filter(p => {
     // Include if pattern category is relevant
-    if (relevantCategories.includes(p.category)) return true;
+    if (relevantCategories.includes(p.category)) {return true;}
     
     // Include if pattern has locations in similar files
     const hasRelevantLocations = p.locations.some(l => 
@@ -392,7 +394,7 @@ function validateSemanticPattern(
 ): { matches: number; total: number; violations: Omit<PatternViolation, 'patternId' | 'patternName' | 'confidence'>[] } {
   const violations: Omit<PatternViolation, 'patternId' | 'patternName' | 'confidence'>[] = [];
   let matches = 0;
-  let total = dataAccessPoints.length || 1;
+  const total = dataAccessPoints.length || 1;
   
   switch (pattern.category) {
     case 'data-access':

@@ -8,6 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
+
 import type { TreeSitterParser, TreeSitterLanguage } from './types.js';
 
 // Create require function for ESM compatibility
@@ -156,7 +157,7 @@ function loadJavaTreeSitter(): void {
 
   try {
     // Dynamic require for optional dependencies
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedTreeSitter = require('tree-sitter') as new () => TreeSitterParser;
   } catch (error) {
     throw new Error(
@@ -166,7 +167,7 @@ function loadJavaTreeSitter(): void {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedJavaLanguage = require('tree-sitter-java') as TreeSitterLanguage;
   } catch (error) {
     // Clear tree-sitter cache since we can't use it without Java

@@ -91,8 +91,8 @@ export const EXCLUSION_RULES: ExclusionRule[] = [
     description: 'Exclude wrappers that just re-export primitives',
     applies: (w) => {
       // If wrapper has only 1 primitive and no additional logic indicators
-      if (w.primitiveSignature.length !== 1) return false;
-      if (w.isFactory || w.isHigherOrder || w.isDecorator) return false;
+      if (w.primitiveSignature.length !== 1) {return false;}
+      if (w.isFactory || w.isHigherOrder || w.isDecorator) {return false;}
       // Check if name is just the primitive name with minor variation
       const primName = w.primitiveSignature[0]?.toLowerCase() || '';
       const wrapperName = w.name.toLowerCase();
@@ -220,16 +220,16 @@ export function applyClusterExclusions(
 ): WrapperCluster[] {
   return clusters.filter((cluster) => {
     // Exclude clusters that are too small after exclusions
-    if (cluster.wrappers.length < minClusterSize) return false;
+    if (cluster.wrappers.length < minClusterSize) {return false;}
 
     // Exclude low-confidence clusters
-    if (cluster.confidence < minConfidence) return false;
+    if (cluster.confidence < minConfidence) {return false;}
 
     // Exclude clusters with only test files
     const nonTestFiles = cluster.wrappers.filter(
       (w) => !isTestFile(w.file)
     );
-    if (nonTestFiles.length === 0) return false;
+    if (nonTestFiles.length === 0) {return false;}
 
     return true;
   });

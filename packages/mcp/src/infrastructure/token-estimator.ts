@@ -31,7 +31,7 @@ export class TokenEstimator {
    * Estimate tokens for a string
    */
   estimate(text: string): number {
-    if (!text) return 0;
+    if (!text) {return 0;}
     
     const contentType = this.detectContentType(text);
     const charsPerToken = TokenEstimator.CHARS_PER_TOKEN[contentType];

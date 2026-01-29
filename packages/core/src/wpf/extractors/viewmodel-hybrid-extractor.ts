@@ -5,17 +5,18 @@
  * Detects INotifyPropertyChanged, commands, and observable properties.
  */
 
-import type {
-  ViewModelAnalysis,
-  ViewModelProperty,
-  ViewModelCommand,
-} from '../types.js';
 import { ViewModelRegexExtractor } from './regex/viewmodel-regex.js';
 import {
   isCSharpTreeSitterAvailable,
   createCSharpParser,
 } from '../../parsers/tree-sitter/csharp-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type {
+  ViewModelAnalysis,
+  ViewModelProperty,
+  ViewModelCommand,
+} from '../types.js';
 
 // ============================================================================
 // Configuration
@@ -196,7 +197,7 @@ export class ViewModelHybridExtractor {
    */
   private extractBaseClass(classNode: TreeSitterNode): string | undefined {
     const basesNode = classNode.childForFieldName('bases');
-    if (!basesNode) return undefined;
+    if (!basesNode) {return undefined;}
 
     // Find first non-interface base
     for (const child of basesNode.children) {
@@ -259,7 +260,7 @@ export class ViewModelHybridExtractor {
   ): ViewModelProperty[] {
     const properties: ViewModelProperty[] = [];
     const bodyNode = classNode.children.find(c => c.type === 'declaration_list');
-    if (!bodyNode) return properties;
+    if (!bodyNode) {return properties;}
 
     for (const member of bodyNode.children) {
       if (member.type === 'property_declaration') {
@@ -290,7 +291,7 @@ export class ViewModelHybridExtractor {
     const nameNode = node.childForFieldName('name');
     const typeNode = node.childForFieldName('type');
 
-    if (!nameNode || !typeNode) return null;
+    if (!nameNode || !typeNode) {return null;}
 
     const name = nameNode.text;
     const type = typeNode.text;
@@ -303,8 +304,8 @@ export class ViewModelHybridExtractor {
       for (const accessor of accessorList.children) {
         if (accessor.type === 'accessor_declaration') {
           const accessorName = accessor.children[0]?.text;
-          if (accessorName === 'get') hasGetter = true;
-          if (accessorName === 'set') hasSetter = true;
+          if (accessorName === 'get') {hasGetter = true;}
+          if (accessorName === 'set') {hasSetter = true;}
         }
       }
     }
@@ -339,7 +340,7 @@ export class ViewModelHybridExtractor {
     // Check for [ObservableProperty] attribute
     let hasObservableAttr = false;
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       if (sibling.text.includes('ObservableProperty')) {
         hasObservableAttr = true;
         break;
@@ -347,17 +348,17 @@ export class ViewModelHybridExtractor {
       sibling = sibling.previousNamedSibling;
     }
 
-    if (!hasObservableAttr) return null;
+    if (!hasObservableAttr) {return null;}
 
     // Extract field info
     const declarator = node.children.find(c => c.type === 'variable_declaration');
-    if (!declarator) return null;
+    if (!declarator) {return null;}
 
     const typeNode = declarator.childForFieldName('type');
     const varDeclarator = declarator.children.find(c => c.type === 'variable_declarator');
     const nameNode = varDeclarator?.childForFieldName('name');
 
-    if (!typeNode || !nameNode) return null;
+    if (!typeNode || !nameNode) {return null;}
 
     const fieldName = nameNode.text;
     const type = typeNode.text;
@@ -390,7 +391,7 @@ export class ViewModelHybridExtractor {
   ): ViewModelCommand[] {
     const commands: ViewModelCommand[] = [];
     const bodyNode = classNode.children.find(c => c.type === 'declaration_list');
-    if (!bodyNode) return commands;
+    if (!bodyNode) {return commands;}
 
     for (const member of bodyNode.children) {
       if (member.type === 'property_declaration') {
@@ -421,7 +422,7 @@ export class ViewModelHybridExtractor {
     const typeNode = node.childForFieldName('type');
     const nameNode = node.childForFieldName('name');
 
-    if (!typeNode || !nameNode) return null;
+    if (!typeNode || !nameNode) {return null;}
 
     const type = typeNode.text;
     const name = nameNode.text;
@@ -430,7 +431,7 @@ export class ViewModelHybridExtractor {
     const commandTypes = ['ICommand', 'IRelayCommand', 'IAsyncRelayCommand', 'RelayCommand', 'DelegateCommand', 'AsyncRelayCommand'];
     const isCommand = commandTypes.some(ct => type.includes(ct));
 
-    if (!isCommand) return null;
+    if (!isCommand) {return null;}
 
     // Find execute and canExecute methods
     const { executeMethod, canExecuteMethod } = this.findCommandMethods(content, name);
@@ -459,7 +460,7 @@ export class ViewModelHybridExtractor {
     // Check for [RelayCommand] attribute
     let hasRelayCommandAttr = false;
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       if (sibling.text.includes('RelayCommand')) {
         hasRelayCommandAttr = true;
         break;
@@ -467,12 +468,12 @@ export class ViewModelHybridExtractor {
       sibling = sibling.previousNamedSibling;
     }
 
-    if (!hasRelayCommandAttr) return null;
+    if (!hasRelayCommandAttr) {return null;}
 
     const nameNode = node.childForFieldName('name');
     const returnTypeNode = node.childForFieldName('type');
 
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const methodName = nameNode.text;
     const returnType = returnTypeNode?.text ?? 'void';
@@ -596,10 +597,10 @@ export class ViewModelHybridExtractor {
    * Find a node of specific type
    */
   private findNode(node: TreeSitterNode, type: string): TreeSitterNode | null {
-    if (node.type === type) return node;
+    if (node.type === type) {return node;}
     for (const child of node.children) {
       const found = this.findNode(child, type);
-      if (found) return found;
+      if (found) {return found;}
     }
     return null;
   }

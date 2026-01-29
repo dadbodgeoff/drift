@@ -10,21 +10,17 @@
 
 import { EventEmitter } from 'node:events';
 
-import type {
-  Pattern as UnifiedPattern,
-  PatternCategory,
-  PatternStatus,
-  PatternSummary,
-  ConfidenceLevel,
-  Severity,
-  DetectionMethod,
-} from '../types.js';
-import { computeConfidenceLevel, toPatternSummary } from '../types.js';
 import {
   PatternNotFoundError,
   InvalidStatusTransitionError,
   PatternAlreadyExistsError,
 } from '../errors.js';
+import { computeConfidenceLevel, toPatternSummary } from '../types.js';
+
+
+// Import the existing PatternStore and Pattern types
+import type { PatternStore } from '../../store/pattern-store.js';
+import type { Pattern as LegacyPattern, PatternLocation as LegacyPatternLocation, OutlierLocation as LegacyOutlierLocation } from '../../store/types.js';
 import type {
   IPatternRepository,
   PatternRepositoryEventType,
@@ -34,10 +30,15 @@ import type {
   PatternFilter,
   PatternSort,
 } from '../repository.js';
-
-// Import the existing PatternStore and Pattern types
-import type { PatternStore } from '../../store/pattern-store.js';
-import type { Pattern as LegacyPattern, PatternLocation as LegacyPatternLocation, OutlierLocation as LegacyOutlierLocation } from '../../store/types.js';
+import type {
+  Pattern as UnifiedPattern,
+  PatternCategory,
+  PatternStatus,
+  PatternSummary,
+  ConfidenceLevel,
+  Severity,
+  DetectionMethod,
+} from '../types.js';
 
 // ============================================================================
 // Type Conversion Helpers
@@ -234,7 +235,7 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
   // ==========================================================================
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
     await this.store.initialize();
     this.initialized = true;
     this.emit('patterns:loaded', undefined, { count: this.store.getAll().length });
@@ -271,7 +272,7 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
     this.ensureInitialized();
 
     const legacy = this.store.get(id);
-    if (!legacy) return null;
+    if (!legacy) {return null;}
 
     return legacyToUnified(legacy);
   }
@@ -308,7 +309,7 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
     this.ensureInitialized();
 
     const existing = this.store.get(id);
-    if (!existing) return false;
+    if (!existing) {return false;}
 
     this.store.delete(id);
     return true;
@@ -352,39 +353,39 @@ export class PatternStoreAdapter extends EventEmitter implements IPatternReposit
 
   private applyFilter(patterns: UnifiedPattern[], filter: PatternFilter): UnifiedPattern[] {
     return patterns.filter((p) => {
-      if (filter.ids && !filter.ids.includes(p.id)) return false;
-      if (filter.categories && !filter.categories.includes(p.category)) return false;
-      if (filter.statuses && !filter.statuses.includes(p.status)) return false;
-      if (filter.minConfidence !== undefined && p.confidence < filter.minConfidence) return false;
-      if (filter.maxConfidence !== undefined && p.confidence > filter.maxConfidence) return false;
-      if (filter.confidenceLevels && !filter.confidenceLevels.includes(p.confidenceLevel)) return false;
-      if (filter.severities && !filter.severities.includes(p.severity)) return false;
+      if (filter.ids && !filter.ids.includes(p.id)) {return false;}
+      if (filter.categories && !filter.categories.includes(p.category)) {return false;}
+      if (filter.statuses && !filter.statuses.includes(p.status)) {return false;}
+      if (filter.minConfidence !== undefined && p.confidence < filter.minConfidence) {return false;}
+      if (filter.maxConfidence !== undefined && p.confidence > filter.maxConfidence) {return false;}
+      if (filter.confidenceLevels && !filter.confidenceLevels.includes(p.confidenceLevel)) {return false;}
+      if (filter.severities && !filter.severities.includes(p.severity)) {return false;}
       if (filter.files) {
         const hasFile = p.locations.some((loc) => filter.files!.includes(loc.file));
-        if (!hasFile) return false;
+        if (!hasFile) {return false;}
       }
       if (filter.hasOutliers !== undefined) {
         const hasOutliers = p.outliers.length > 0;
-        if (filter.hasOutliers !== hasOutliers) return false;
+        if (filter.hasOutliers !== hasOutliers) {return false;}
       }
       if (filter.tags) {
         const hasTags = filter.tags.some((tag) => p.tags.includes(tag));
-        if (!hasTags) return false;
+        if (!hasTags) {return false;}
       }
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
         const matches =
           p.name.toLowerCase().includes(searchLower) ||
           p.description.toLowerCase().includes(searchLower);
-        if (!matches) return false;
+        if (!matches) {return false;}
       }
       if (filter.createdAfter) {
         const firstSeen = new Date(p.firstSeen);
-        if (firstSeen < filter.createdAfter) return false;
+        if (firstSeen < filter.createdAfter) {return false;}
       }
       if (filter.createdBefore) {
         const firstSeen = new Date(p.firstSeen);
-        if (firstSeen > filter.createdBefore) return false;
+        if (firstSeen > filter.createdBefore) {return false;}
       }
 
       return true;

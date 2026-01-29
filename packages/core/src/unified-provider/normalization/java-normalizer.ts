@@ -10,8 +10,9 @@
  * - Spring/JPA patterns
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -257,11 +258,11 @@ export class JavaNormalizer extends BaseNormalizer {
       if (node.type === 'method_declaration') {
         const className = this.findParentClassName(node);
         const func = this.extractMethodDeclaration(node, filePath, className, currentPackage);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'constructor_declaration') {
         const className = this.findParentClassName(node);
         const func = this.extractConstructorDeclaration(node, filePath, className, currentPackage);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -275,7 +276,7 @@ export class JavaNormalizer extends BaseNormalizer {
     _currentPackage: string | null
   ): UnifiedFunction | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(node.childForFieldName('parameters'));
@@ -347,7 +348,7 @@ export class JavaNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -396,10 +397,10 @@ export class JavaNormalizer extends BaseNormalizer {
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.text === modifier) return true;
+          if (mod.text === modifier) {return true;}
         }
       }
-      if (child.text === modifier) return true;
+      if (child.text === modifier) {return true;}
     }
     return false;
   }
@@ -434,7 +435,7 @@ export class JavaNormalizer extends BaseNormalizer {
           node.type === 'interface_declaration' ||
           node.type === 'enum_declaration') {
         const cls = this.extractClassDeclaration(node, filePath);
-        if (cls) classes.push(cls);
+        if (cls) {classes.push(cls);}
       }
     });
 
@@ -443,7 +444,7 @@ export class JavaNormalizer extends BaseNormalizer {
 
   private extractClassDeclaration(node: TreeSitterNode, filePath: string): UnifiedClass | null {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -455,7 +456,7 @@ export class JavaNormalizer extends BaseNormalizer {
       const typeNode = superclassNode.children.find(c => 
         c.type === 'type_identifier' || c.type === 'scoped_type_identifier' || c.type === 'generic_type'
       );
-      if (typeNode) baseClasses.push(typeNode.text);
+      if (typeNode) {baseClasses.push(typeNode.text);}
     }
 
     // Get interfaces
@@ -474,7 +475,7 @@ export class JavaNormalizer extends BaseNormalizer {
       for (const member of bodyNode.children) {
         if (member.type === 'method_declaration') {
           const methodNameNode = member.childForFieldName('name');
-          if (methodNameNode) methods.push(methodNameNode.text);
+          if (methodNameNode) {methods.push(methodNameNode.text);}
         }
       }
     }
@@ -507,7 +508,7 @@ export class JavaNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'import_declaration') {
         const imp = this.extractImportDeclaration(node);
-        if (imp) imports.push(imp);
+        if (imp) {imports.push(imp);}
       }
     });
 
@@ -526,7 +527,7 @@ export class JavaNormalizer extends BaseNormalizer {
       }
     }
 
-    if (!importPath) return null;
+    if (!importPath) {return null;}
 
     const parts = importPath.split('.');
     const localName = isWildcard ? '*' : (parts.pop() ?? importPath);

@@ -5,9 +5,10 @@
  * Supports FastAPI, Flask, and Django framework patterns.
  */
 
-import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import { PythonCallGraphExtractor } from '../../call-graph/extractors/python-extractor.js';
 import { BaseLanguageNormalizer } from '../base-normalizer.js';
+
+import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import type { NormalizedDecorator, DecoratorArguments } from '../types.js';
 
 /**
@@ -48,13 +49,13 @@ export class PythonNormalizer extends BaseLanguageNormalizer {
 
     // Extract path from route decorators: @app.route("/path") or @router.get("/path")
     const pathMatch = raw.match(/\(\s*["']([^"']+)["']/);
-    if (pathMatch && pathMatch[1] !== undefined) {
+    if (pathMatch?.[1] !== undefined) {
       args.path = pathMatch[1];
     }
 
     // Extract methods from Flask route: @app.route("/path", methods=["GET", "POST"])
     const methodsMatch = raw.match(/methods\s*=\s*\[([^\]]+)\]/);
-    if (methodsMatch && methodsMatch[1]) {
+    if (methodsMatch?.[1]) {
       const methods = methodsMatch[1]
         .match(/["'](\w+)["']/g)
         ?.map(m => m.replace(/["']/g, '').toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH');
@@ -79,7 +80,7 @@ export class PythonNormalizer extends BaseLanguageNormalizer {
     for (const decorator of decorators) {
       if (decorator.name === 'Depends' || decorator.raw.includes('Depends(')) {
         const depMatch = decorator.raw.match(/Depends\s*\(\s*(\w+)/);
-        if (depMatch && depMatch[1]) {
+        if (depMatch?.[1]) {
           deps.push(depMatch[1]);
         }
       }

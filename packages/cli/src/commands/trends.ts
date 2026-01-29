@@ -4,8 +4,8 @@
  * View pattern regressions and improvements over time.
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { HistoryStore } from 'driftdetect-core';
 
 export interface TrendsCommandOptions {

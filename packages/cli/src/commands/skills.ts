@@ -12,13 +12,15 @@
  * - drift skills search    - Search skills by keyword
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { createSpinner, status } from '../ui/spinner.js';
+
+import chalk from 'chalk';
+import { Command } from 'commander';
+
 import { confirmPrompt, selectPrompt } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 
 // ESM compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -72,7 +74,7 @@ function getSkillsDirectory(): string {
 function parseSkillMd(content: string): SkillMetadata | null {
   // Parse YAML frontmatter
   const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch || !frontmatterMatch[1]) return null;
+  if (!frontmatterMatch?.[1]) {return null;}
 
   const frontmatter = frontmatterMatch[1];
   const metadata: Record<string, unknown> = {};
@@ -90,7 +92,7 @@ function parseSkillMd(content: string): SkillMetadata | null {
 
     if (inMetadata && line.startsWith('  ')) {
       const match = line.match(/^\s+(\w+):\s*(.+)/);
-      if (match && match[1]) {
+      if (match?.[1]) {
         metadataObj[match[1]] = match[2]?.trim() ?? '';
       }
     } else if (line.includes(':')) {
@@ -127,18 +129,18 @@ function discoverSkills(skillsDir: string): Skill[] {
   const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    if (entry.name.startsWith('_')) continue; // Skip templates
+    if (!entry.isDirectory()) {continue;}
+    if (entry.name.startsWith('_')) {continue;} // Skip templates
 
     const skillPath = path.join(skillsDir, entry.name);
     const skillMdPath = path.join(skillPath, 'SKILL.md');
 
-    if (!fs.existsSync(skillMdPath)) continue;
+    if (!fs.existsSync(skillMdPath)) {continue;}
 
     const content = fs.readFileSync(skillMdPath, 'utf-8');
     const metadata = parseSkillMd(content);
 
-    if (!metadata) continue;
+    if (!metadata) {continue;}
 
     // Get all files in skill directory
     const files = fs.readdirSync(skillPath);
@@ -167,12 +169,12 @@ function formatCategory(category?: string): string {
     database: chalk.red,
     frontend: chalk.rgb(255, 165, 0),
   };
-  if (!category) return chalk.gray('general');
+  if (!category) {return chalk.gray('general');}
   return (colors[category] ?? chalk.gray)(category);
 }
 
 function formatTime(time?: string): string {
-  if (!time) return chalk.gray('-');
+  if (!time) {return chalk.gray('-');}
   return chalk.white(time);
 }
 
@@ -199,7 +201,7 @@ async function listAction(options: ListOptions): Promise<void> {
   skills.sort((a, b) => {
     const catA = a.metadata?.category || 'zzz';
     const catB = b.metadata?.category || 'zzz';
-    if (catA !== catB) return catA.localeCompare(catB);
+    if (catA !== catB) {return catA.localeCompare(catB);}
     return a.name.localeCompare(b.name);
   });
 
@@ -396,7 +398,7 @@ async function infoAction(skillName?: string): Promise<void> {
 
   // Extract first section after frontmatter
   const bodyMatch = content.match(/^---[\s\S]*?---\n\n([\s\S]*?)(?=\n## |$)/);
-  if (bodyMatch && bodyMatch[1]) {
+  if (bodyMatch?.[1]) {
     console.log(chalk.bold('  Preview:'));
     console.log();
     const preview = bodyMatch[1].split('\n').slice(0, 10).map(l => '    ' + l).join('\n');

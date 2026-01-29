@@ -6,13 +6,13 @@
  * between functions in the call graph.
  */
 
+import type { DataAccessPoint } from '../../boundaries/types.js';
 import type {
   CallGraph,
   FunctionNode,
   CallPathNode,
   CodeLocation,
 } from '../types.js';
-import type { DataAccessPoint } from '../../boundaries/types.js';
 
 // ============================================================================
 // Types
@@ -243,15 +243,15 @@ export class PathFinder {
     while (queue.length > 0) {
       const { id, depth } = queue.shift()!;
 
-      if (reachable.has(id) || depth > maxDepth) continue;
+      if (reachable.has(id) || depth > maxDepth) {continue;}
       reachable.add(id);
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       for (const call of func.calls) {
-        if (!call.resolved && !includeUnresolved) continue;
-        if (call.confidence < minConfidence) continue;
+        if (!call.resolved && !includeUnresolved) {continue;}
+        if (call.confidence < minConfidence) {continue;}
 
         for (const candidateId of call.resolvedCandidates) {
           if (!reachable.has(candidateId)) {
@@ -278,11 +278,11 @@ export class PathFinder {
     while (queue.length > 0) {
       const { id, depth } = queue.shift()!;
 
-      if (callers.has(id) || depth > maxDepth) continue;
+      if (callers.has(id) || depth > maxDepth) {continue;}
       callers.add(id);
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       for (const callSite of func.calledBy) {
         if (!callers.has(callSite.callerId)) {
@@ -372,11 +372,11 @@ export class PathFinder {
       const { id, path, depth, minConf, hasUnresolved } = current;
       nodesVisited++;
 
-      if (depth > maxDepth) continue;
+      if (depth > maxDepth) {continue;}
 
       // Skip if we've visited this node at a lower depth (optimization)
       const prevDepth = visited.get(id);
-      if (prevDepth !== undefined && prevDepth < depth) continue;
+      if (prevDepth !== undefined && prevDepth < depth) {continue;}
       visited.set(id, depth);
 
       // Check if we reached the target
@@ -391,19 +391,19 @@ export class PathFinder {
       }
 
       const func = this.graph.functions.get(id);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Explore calls
       for (const call of func.calls) {
-        if (!call.resolved && !includeUnresolved) continue;
-        if (call.confidence < minConfidence) continue;
+        if (!call.resolved && !includeUnresolved) {continue;}
+        if (call.confidence < minConfidence) {continue;}
 
         for (const candidateId of call.resolvedCandidates) {
           const candidate = this.graph.functions.get(candidateId);
-          if (!candidate) continue;
+          if (!candidate) {continue;}
 
           // Don't revisit nodes in the current path (avoid cycles)
-          if (path.some((n) => n.functionId === candidateId)) continue;
+          if (path.some((n) => n.functionId === candidateId)) {continue;}
 
           queue.push({
             id: candidateId,

@@ -14,9 +14,10 @@
  * @requirements Go Language Support
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * GORM pattern matcher
@@ -45,11 +46,11 @@ export class GORMMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: db.Method() where db is a GORM database instance
     const dbMatch = this.matchDbPattern(chain);
-    if (dbMatch) return dbMatch;
+    if (dbMatch) {return dbMatch;}
 
     // Pattern 2: tx.Method() for transaction patterns
     const txMatch = this.matchTransactionPattern(chain);
-    if (txMatch) return txMatch;
+    if (txMatch) {return txMatch;}
 
     return null;
   }
@@ -79,7 +80,7 @@ export class GORMMatcher extends BaseMatcher {
   }
 
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     // Find the terminal operation (last method that determines operation type)
     let operation: DataOperation | null = null;
@@ -89,7 +90,7 @@ export class GORMMatcher extends BaseMatcher {
 
     for (let i = 0; i < chain.segments.length; i++) {
       const segment = chain.segments[i];
-      if (!segment?.isCall) continue;
+      if (!segment?.isCall) {continue;}
 
       const methodName = segment.name;
 
@@ -119,12 +120,12 @@ export class GORMMatcher extends BaseMatcher {
         // Try to extract table from operation argument
         if (!table && segment.args.length > 0) {
           const argTable = this.extractModelName(segment.args[0]!);
-          if (argTable) table = argTable;
+          if (argTable) {table = argTable;}
         }
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // If no table found, try to infer from receiver
     if (!table) {
@@ -145,9 +146,9 @@ export class GORMMatcher extends BaseMatcher {
   }
 
   private getOperation(methodName: string): DataOperation | null {
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
-    if (this.deleteMethods.includes(methodName)) return 'delete';
+    if (this.readMethods.includes(methodName)) {return 'read';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
+    if (this.deleteMethods.includes(methodName)) {return 'delete';}
     return null;
   }
 
@@ -206,7 +207,7 @@ export class GORMMatcher extends BaseMatcher {
   private extractWhereFields(args: NormalizedArg[]): string[] {
     const fields: string[] = [];
 
-    if (args.length === 0) return fields;
+    if (args.length === 0) {return fields;}
 
     const firstArg = args[0]!;
 

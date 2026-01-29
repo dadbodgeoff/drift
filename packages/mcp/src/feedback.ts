@@ -58,7 +58,7 @@ export class FeedbackManager {
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
     
     await fs.mkdir(this.feedbackDir, { recursive: true });
     await this.loadFeedback();
@@ -177,7 +177,7 @@ export class FeedbackManager {
    */
   shouldExcludeFile(file: string): boolean {
     const score = this.locationScores.get(file);
-    if (!score) return false;
+    if (!score) {return false;}
     
     // Exclude if we have high confidence that this file produces bad examples
     return score.boost < -0.5 && score.confidence > 0.5;
@@ -198,8 +198,8 @@ export class FeedbackManager {
     for (const f of this.feedback) {
       const key = `${f.category}/${f.patternName}`;
       const counts = patternCounts.get(key) || { good: 0, bad: 0 };
-      if (f.rating === 'good') counts.good++;
-      else if (f.rating === 'bad') counts.bad++;
+      if (f.rating === 'good') {counts.good++;}
+      else if (f.rating === 'bad') {counts.bad++;}
       patternCounts.set(key, counts);
     }
     

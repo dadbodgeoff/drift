@@ -5,12 +5,13 @@
  */
 
 import { Command } from 'commander';
-import { dnaScanCommand } from './scan.js';
-import { dnaStatusCommand } from './status.js';
+
+import { dnaExportCommand } from './export.js';
 import { dnaGeneCommand } from './gene.js';
 import { dnaMutationsCommand } from './mutations.js';
 import { dnaPlaybookCommand } from './playbook.js';
-import { dnaExportCommand } from './export.js';
+import { dnaScanCommand } from './scan.js';
+import { dnaStatusCommand } from './status.js';
 
 export const dnaCommand = new Command('dna')
   .description('Styling DNA analysis and management')

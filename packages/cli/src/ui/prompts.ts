@@ -7,6 +7,7 @@
  */
 
 import { confirm, select, input, checkbox } from '@inquirer/prompts';
+
 import type { Severity } from 'driftdetect-core';
 
 /**

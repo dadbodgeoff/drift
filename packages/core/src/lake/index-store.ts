@@ -11,9 +11,15 @@
  * - by-entry-point: entry point → reachable function IDs
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
+import {
+  LAKE_DIRS,
+  INDEX_FILES,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   FileIndex,
@@ -23,13 +29,6 @@ import type {
   DataLakeConfig,
   IndexType,
 } from './types.js';
-
-import {
-  LAKE_DIRS,
-  INDEX_FILES,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
-
 import type { Pattern, PatternCategory } from '../store/types.js';
 
 // ============================================================================

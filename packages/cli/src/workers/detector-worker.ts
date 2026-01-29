@@ -11,11 +11,13 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createAllDetectorsArray,
   type BaseDetector,
   type DetectionContext,
 } from 'driftdetect-detectors';
+
 import type { Language, PatternMatch } from 'driftdetect-core';
 
 // ============================================================================
@@ -238,7 +240,7 @@ function getLanguage(filePath: string): Language | null {
 }
 
 function isDetectorApplicable(detector: BaseDetector, language: Language | null): boolean {
-  if (!language) return false;
+  if (!language) {return false;}
   const info = detector.getInfo();
   return info.supportedLanguages.includes(language);
 }
@@ -314,7 +316,7 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
   }
   
   // Regular file processing
-  const scanTask = task as DetectorWorkerTask;
+  const scanTask = task;
   const startTime = Date.now();
   const language = getLanguage(scanTask.file);
 
@@ -392,8 +394,8 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
             line: match.location.line,
             column: match.location.column,
           };
-          if (match.location.endLine !== undefined) location.endLine = match.location.endLine;
-          if (match.location.endColumn !== undefined) location.endColumn = match.location.endColumn;
+          if (match.location.endLine !== undefined) {location.endLine = match.location.endLine;}
+          if (match.location.endColumn !== undefined) {location.endColumn = match.location.endColumn;}
           
           // Build pattern match, only including defined values
           const patternMatch: WorkerPatternMatch = {
@@ -407,10 +409,10 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
             location,
             isOutlier: match.isOutlier,
           };
-          if (extendedMatch.outlierReason !== undefined) patternMatch.outlierReason = extendedMatch.outlierReason;
-          if (extendedMatch.matchedText !== undefined) patternMatch.matchedText = extendedMatch.matchedText;
+          if (extendedMatch.outlierReason !== undefined) {patternMatch.outlierReason = extendedMatch.outlierReason;}
+          if (extendedMatch.matchedText !== undefined) {patternMatch.matchedText = extendedMatch.matchedText;}
           const metadata = extendedMatch.metadata ?? result.metadata?.custom;
-          if (metadata !== undefined) patternMatch.metadata = metadata;
+          if (metadata !== undefined) {patternMatch.metadata = metadata;}
           
           patterns.push(patternMatch);
         }
@@ -420,7 +422,7 @@ export default async function processFile(task: DetectorWorkerTask | WarmupTask)
 
         // Check for violations in custom metadata
         if (violationsToProcess.length === 0 && result.metadata?.custom) {
-          const customData = result.metadata.custom as Record<string, unknown>;
+          const customData = result.metadata.custom;
           const customViolations = customData['violations'] as Array<{
             type?: string;
             file: string;

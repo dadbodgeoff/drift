@@ -10,13 +10,14 @@
  * This is a fallback extractor that works across all languages.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
   type ModelExtractionResult,
   type ExtractedField,
 } from './types.js';
+
+import type { ORMFramework } from '../types.js';
 
 export class RawSQLFieldExtractor extends BaseFieldExtractor {
   readonly name = 'raw-sql';
@@ -153,7 +154,7 @@ export class RawSQLFieldExtractor extends BaseFieldExtractor {
     
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed || trimmed === '*') continue;
+      if (!trimmed || trimmed === '*') {continue;}
       
       // Handle table.field
       const dotMatch = trimmed.match(/(?:\w+\.)?(\w+)(?:\s+(?:AS\s+)?(\w+))?$/i);
@@ -230,8 +231,8 @@ export class RawSQLFieldExtractor extends BaseFieldExtractor {
     let depth = 0;
     
     for (const char of str) {
-      if (char === '(') depth++;
-      else if (char === ')') depth--;
+      if (char === '(') {depth++;}
+      else if (char === ')') {depth--;}
       else if (char === ',' && depth === 0) {
         parts.push(current);
         current = '';
@@ -240,7 +241,7 @@ export class RawSQLFieldExtractor extends BaseFieldExtractor {
       current += char;
     }
     
-    if (current) parts.push(current);
+    if (current) {parts.push(current);}
     return parts;
   }
   

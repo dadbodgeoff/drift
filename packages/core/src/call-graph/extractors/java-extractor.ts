@@ -17,16 +17,17 @@
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
+import {
+  isJavaTreeSitterAvailable,
+  createJavaParser,
+} from '../../parsers/tree-sitter/java-loader.js';
+
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   CallGraphLanguage,
   FileExtractionResult,
   ParameterInfo,
 } from '../types.js';
-import {
-  isJavaTreeSitterAvailable,
-  createJavaParser,
-} from '../../parsers/tree-sitter/java-loader.js';
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 
 /**
  * Java call graph extractor using tree-sitter
@@ -146,7 +147,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     currentPackage: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const className = nameNode.text;
     const fullClassName = currentPackage ? `${currentPackage}.${className}` : className;
@@ -218,7 +219,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     currentPackage: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const interfaceName = nameNode.text;
     const fullName = currentPackage ? `${currentPackage}.${interfaceName}` : interfaceName;
@@ -277,7 +278,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     parentFunction: string | null = null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isStatic = this.hasModifier(node, 'static');
@@ -403,7 +404,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
       }
     }
 
-    if (!importPath) return;
+    if (!importPath) {return;}
 
     const parts = importPath.split('.');
     const localName = isWildcard ? '*' : (parts.pop() ?? importPath);
@@ -428,7 +429,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const calleeName = nameNode.text;
     let receiver: string | undefined;
@@ -480,7 +481,7 @@ export class JavaCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const typeNode = node.childForFieldName('type');
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;

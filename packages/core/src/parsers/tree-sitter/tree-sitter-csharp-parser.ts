@@ -9,9 +9,10 @@
  */
 
 import { BaseParser } from '../base-parser.js';
-import type { AST, ASTNode, Language, ParseResult, Position } from '../types.js';
-import { isCSharpTreeSitterAvailable, createCSharpParser, getCSharpLoadingError } from './csharp-loader.js';
 import { CSharpASTConverter } from './csharp-ast-converter.js';
+import { isCSharpTreeSitterAvailable, createCSharpParser, getCSharpLoadingError } from './csharp-loader.js';
+
+import type { AST, ASTNode, Language, ParseResult, Position } from '../types.js';
 import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================
@@ -950,9 +951,9 @@ export class TreeSitterCSharpParser extends BaseParser {
           info.attributes.push(...this.parseAttributeList(child));
           break;
         case 'modifier':
-          if (child.text === 'public') info.accessibility = 'public';
-          else if (child.text === 'internal') info.accessibility = 'internal';
-          else if (child.text === 'private') info.accessibility = 'private';
+          if (child.text === 'public') {info.accessibility = 'public';}
+          else if (child.text === 'internal') {info.accessibility = 'internal';}
+          else if (child.text === 'private') {info.accessibility = 'private';}
           break;
         case 'base_list':
           const bases = this.parseBaseList(child);
@@ -1279,11 +1280,11 @@ export class TreeSitterCSharpParser extends BaseParser {
           info.attributes.push(...this.parseAttributeList(child));
           break;
         case 'modifier':
-          if (child.text === 'public') info.accessibility = 'public';
-          else if (child.text === 'private') info.accessibility = 'private';
-          else if (child.text === 'protected') info.accessibility = 'protected';
-          else if (child.text === 'internal') info.accessibility = 'internal';
-          else if (child.text === 'static') info.isStatic = true;
+          if (child.text === 'public') {info.accessibility = 'public';}
+          else if (child.text === 'private') {info.accessibility = 'private';}
+          else if (child.text === 'protected') {info.accessibility = 'protected';}
+          else if (child.text === 'internal') {info.accessibility = 'internal';}
+          else if (child.text === 'static') {info.isStatic = true;}
           break;
         case 'parameter_list':
           info.parameters = this.parseParameters(child);
@@ -1345,11 +1346,11 @@ export class TreeSitterCSharpParser extends BaseParser {
           break;
         case 'parameter_modifier':
         case 'modifier':
-          if (child.text === 'ref') info.isRef = true;
-          else if (child.text === 'out') info.isOut = true;
-          else if (child.text === 'in') info.isIn = true;
-          else if (child.text === 'params') info.isParams = true;
-          else if (child.text === 'this') info.isThis = true;
+          if (child.text === 'ref') {info.isRef = true;}
+          else if (child.text === 'out') {info.isOut = true;}
+          else if (child.text === 'in') {info.isIn = true;}
+          else if (child.text === 'params') {info.isParams = true;}
+          else if (child.text === 'this') {info.isThis = true;}
           break;
         case 'predefined_type':
         case 'generic_name':

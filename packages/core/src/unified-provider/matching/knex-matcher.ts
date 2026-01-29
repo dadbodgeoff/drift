@@ -9,9 +9,10 @@
  * - knex('users').where('id', 1).delete()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Knex pattern matcher
@@ -47,10 +48,10 @@ export class KnexMatcher extends BaseMatcher {
     }
 
     // First segment should be the table call: knex('users')
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const firstSegment = chain.segments[0];
-    if (!firstSegment?.isCall) return null;
+    if (!firstSegment?.isCall) {return null;}
 
     // Skip if this looks like raw SQL (query, execute, etc.)
     if (this.rawSqlMethods.includes(firstSegment.name)) {
@@ -80,7 +81,7 @@ export class KnexMatcher extends BaseMatcher {
       }
     }
 
-    if (!table) return null;
+    if (!table) {return null;}
 
     // Determine operation from chain methods
     let operation: DataOperation = 'read';

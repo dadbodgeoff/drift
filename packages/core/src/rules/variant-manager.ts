@@ -11,10 +11,12 @@
  * @requirements 26.5 - THE Variant_System SHALL store variants in .drift/patterns/variants/
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import { VARIANTS_FILE_VERSION } from '../store/types.js';
 
 import type {
   PatternVariant,
@@ -23,7 +25,6 @@ import type {
   PatternLocation,
 } from '../store/types.js';
 
-import { VARIANTS_FILE_VERSION } from '../store/types.js';
 
 // ============================================================================
 // Constants

@@ -8,6 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
+
 import type { TreeSitterParser, TreeSitterLanguage } from './types.js';
 
 // Create require function for ESM compatibility
@@ -156,7 +157,7 @@ function loadPhpTreeSitter(): void {
 
   try {
     // Dynamic require for optional dependencies
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedTreeSitter = require('tree-sitter') as new () => TreeSitterParser;
   } catch (error) {
     throw new Error(
@@ -167,7 +168,7 @@ function loadPhpTreeSitter(): void {
 
   try {
     // tree-sitter-php exports an object with php and php_only languages
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const phpModule = require('tree-sitter-php') as { php: TreeSitterLanguage; php_only?: TreeSitterLanguage };
     // Use the 'php' language which includes HTML support
     cachedPhpLanguage = phpModule.php ?? phpModule as unknown as TreeSitterLanguage;

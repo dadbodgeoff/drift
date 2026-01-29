@@ -17,15 +17,16 @@ export { RawSQLFieldExtractor, createRawSQLExtractor } from './raw-sql-extractor
 export { GORMFieldExtractor, createGORMExtractor } from './gorm-extractor.js';
 export { DieselFieldExtractor, createDieselExtractor } from './diesel-extractor.js';
 
+import { createDieselExtractor } from './diesel-extractor.js';
+import { createDjangoExtractor } from './django-extractor.js';
+import { createGORMExtractor } from './gorm-extractor.js';
+import { createPrismaExtractor } from './prisma-extractor.js';
+import { createRawSQLExtractor } from './raw-sql-extractor.js';
+import { createSQLAlchemyExtractor } from './sqlalchemy-extractor.js';
+import { createSupabaseExtractor } from './supabase-extractor.js';
+
 import type { FieldExtractor, ExtractedField, LineExtractionResult } from './types.js';
 import type { ORMFramework } from '../types.js';
-import { createSupabaseExtractor } from './supabase-extractor.js';
-import { createPrismaExtractor } from './prisma-extractor.js';
-import { createDjangoExtractor } from './django-extractor.js';
-import { createSQLAlchemyExtractor } from './sqlalchemy-extractor.js';
-import { createRawSQLExtractor } from './raw-sql-extractor.js';
-import { createGORMExtractor } from './gorm-extractor.js';
-import { createDieselExtractor } from './diesel-extractor.js';
 
 /**
  * All available field extractors

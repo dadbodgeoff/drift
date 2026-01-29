@@ -2,9 +2,10 @@
  * DNA Status Command - drift dna status
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAStore, GENE_IDS } from 'driftdetect-core';
+
 import { createSpinner } from '../../ui/spinner.js';
 
 interface DNAStatusOptions {
@@ -70,7 +71,7 @@ async function dnaStatusAction(options: DNAStatusOptions): Promise<void> {
     if (profile.mutations.length > 0) {
       console.log(chalk.bold(`Mutations: ${profile.mutations.length}`));
       const byImpact = { high: 0, medium: 0, low: 0 };
-      for (const m of profile.mutations) byImpact[m.impact]++;
+      for (const m of profile.mutations) {byImpact[m.impact]++;}
       console.log(`  ${chalk.red('High')}: ${byImpact.high}  ${chalk.yellow('Medium')}: ${byImpact.medium}  ${chalk.gray('Low')}: ${byImpact.low}`);
       console.log();
     }
@@ -106,9 +107,9 @@ async function dnaStatusAction(options: DNAStatusOptions): Promise<void> {
 }
 
 function colorScore(score: number): string {
-  if (score >= 90) return chalk.green(`${score}/100`);
-  if (score >= 70) return chalk.yellow(`${score}/100`);
-  if (score >= 50) return chalk.hex('#FFA500')(`${score}/100`);
+  if (score >= 90) {return chalk.green(`${score}/100`);}
+  if (score >= 70) {return chalk.yellow(`${score}/100`);}
+  if (score >= 50) {return chalk.hex('#FFA500')(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 

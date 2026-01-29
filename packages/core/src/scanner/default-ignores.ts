@@ -535,7 +535,7 @@ const ignoreExtensionSet = new Set(DEFAULT_IGNORE_EXTENSIONS);
 
 export function shouldIgnoreExtension(filePath: string): boolean {
   const ext = filePath.split('.').pop()?.toLowerCase();
-  if (!ext) return false;
+  if (!ext) {return false;}
   return ignoreExtensionSet.has(ext);
 }
 

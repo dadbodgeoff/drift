@@ -5,6 +5,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -59,11 +60,11 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip if this looks like a control structure
-      if (['if', 'for', 'while', 'switch', 'catch', 'try'].includes(name)) continue;
+      if (['if', 'for', 'while', 'switch', 'catch', 'try'].includes(name)) {continue;}
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
       const endLine = this.getLineNumber(originalSource, endIndex);
@@ -86,7 +87,7 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
         isConstructor,
         decorators,
       };
-      if (!isConstructor) funcOpts.returnType = returnType;
+      if (!isConstructor) {funcOpts.returnType = returnType;}
 
       functions.push(this.createFunction(funcOpts));
     }
@@ -118,7 +119,7 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
    * Parse Java parameters
    */
   private parseJavaParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     
@@ -128,8 +129,8 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
     let depth = 0;
 
     for (const char of paramsStr) {
-      if (char === '<') depth++;
-      else if (char === '>') depth--;
+      if (char === '<') {depth++;}
+      else if (char === '>') {depth--;}
       else if (char === ',' && depth === 0) {
         parts.push(current.trim());
         current = '';
@@ -137,11 +138,11 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       }
       current += char;
     }
-    if (current.trim()) parts.push(current.trim());
+    if (current.trim()) {parts.push(current.trim());}
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       // Handle varargs
       const isRest = trimmed.includes('...');
@@ -180,7 +181,7 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       const endLine = this.getLineNumber(originalSource, endIndex);
 
       const baseClasses: string[] = [];
-      if (match[2]) baseClasses.push(match[2].replace(/<[^>]+>/, ''));
+      if (match[2]) {baseClasses.push(match[2].replace(/<[^>]+>/, ''));}
       if (match[3]) {
         const interfaces = match[3].split(',').map(i => i.trim().replace(/<[^>]+>/, '')).filter(i => i);
         baseClasses.push(...interfaces);
@@ -354,11 +355,11 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip this.method calls for now
-      if (receiver === 'this' || receiver === 'super') continue;
+      if (receiver === 'this' || receiver === 'super') {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -380,11 +381,11 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip keywords
-      if (['if', 'for', 'while', 'switch', 'catch', 'try', 'return', 'throw', 'new', 'class', 'interface', 'enum', 'synchronized', 'assert'].includes(calleeName)) continue;
+      if (['if', 'for', 'while', 'switch', 'catch', 'try', 'return', 'throw', 'new', 'class', 'interface', 'enum', 'synchronized', 'assert'].includes(calleeName)) {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -401,7 +402,7 @@ export class JavaRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `new:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({

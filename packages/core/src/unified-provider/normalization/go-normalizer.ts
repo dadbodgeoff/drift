@@ -13,8 +13,9 @@
  * @requirements Go Language Support
  */
 
-import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import { BaseNormalizer } from './base-normalizer.js';
+
+import type { TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   UnifiedCallChain,
   CallChainSegment,
@@ -76,7 +77,7 @@ export class GoNormalizer extends BaseNormalizer {
         const funcNode = this.getChildByField(current, 'function');
         const argsNode = this.getChildByField(current, 'arguments');
 
-        if (!funcNode) break;
+        if (!funcNode) {break;}
 
         const args = argsNode ? this.normalizeArguments(argsNode) : [];
 
@@ -280,7 +281,7 @@ export class GoNormalizer extends BaseNormalizer {
    */
   private isStructLiteral(node: TreeSitterNode): boolean {
     const typeNode = this.getChildByField(node, 'type');
-    if (!typeNode) return false;
+    if (!typeNode) {return false;}
 
     // Type identifier (struct name) or qualified type (pkg.Struct)
     return typeNode.type === 'type_identifier' ||
@@ -314,10 +315,10 @@ export class GoNormalizer extends BaseNormalizer {
     this.traverseNode(rootNode, node => {
       if (node.type === 'function_declaration') {
         const func = this.extractFunctionDeclaration(node, filePath, packageName);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       } else if (node.type === 'method_declaration') {
         const func = this.extractMethodDeclaration(node, filePath, packageName);
-        if (func) functions.push(func);
+        if (func) {functions.push(func);}
       }
     });
 
@@ -341,7 +342,7 @@ export class GoNormalizer extends BaseNormalizer {
     packageName: string
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -383,7 +384,7 @@ export class GoNormalizer extends BaseNormalizer {
   ): UnifiedFunction | null {
     const nameNode = this.getChildByField(node, 'name');
     const receiverNode = this.getChildByField(node, 'receiver');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
 
     const name = nameNode.text;
     const params = this.extractParameters(this.getChildByField(node, 'parameters'));
@@ -442,7 +443,7 @@ export class GoNormalizer extends BaseNormalizer {
   }
 
   private extractParameters(paramsNode: TreeSitterNode | null): UnifiedParameter[] {
-    if (!paramsNode) return [];
+    if (!paramsNode) {return [];}
 
     const params: UnifiedParameter[] = [];
 
@@ -513,7 +514,7 @@ export class GoNormalizer extends BaseNormalizer {
         for (const child of node.children) {
           if (child.type === 'type_spec') {
             const cls = this.extractTypeSpec(child, filePath);
-            if (cls) classes.push(cls);
+            if (cls) {classes.push(cls);}
           }
         }
       }
@@ -526,7 +527,7 @@ export class GoNormalizer extends BaseNormalizer {
     const nameNode = this.getChildByField(node, 'name');
     const typeNode = this.getChildByField(node, 'type');
 
-    if (!nameNode || !typeNode) return null;
+    if (!nameNode || !typeNode) {return null;}
 
     // Only extract structs and interfaces
     if (typeNode.type !== 'struct_type' && typeNode.type !== 'interface_type') {
@@ -602,7 +603,7 @@ export class GoNormalizer extends BaseNormalizer {
         const importSpecs = this.findNodesOfTypeGo(node, 'import_spec');
         for (const spec of importSpecs) {
           const imp = this.extractImportSpec(spec);
-          if (imp) imports.push(imp);
+          if (imp) {imports.push(imp);}
         }
       }
     });
@@ -614,7 +615,7 @@ export class GoNormalizer extends BaseNormalizer {
     const pathNode = this.getChildByField(node, 'path') ??
                      node.children.find(c => c.type === 'interpreted_string_literal');
 
-    if (!pathNode) return null;
+    if (!pathNode) {return null;}
 
     const path = this.unquoteString(pathNode.text);
     const packageName = path.split('/').pop() ?? path;

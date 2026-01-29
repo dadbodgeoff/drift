@@ -6,8 +6,8 @@
  * @module simulation/language-strategies/types
  */
 
-import type { TaskCategory, ApproachStrategy } from '../types.js';
 import type { CallGraphLanguage } from '../../call-graph/types.js';
+import type { TaskCategory, ApproachStrategy } from '../types.js';
 
 /** Strategy template for a specific language/framework */
 export interface StrategyTemplate {

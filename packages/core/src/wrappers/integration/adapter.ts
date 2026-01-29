@@ -14,25 +14,22 @@ import type {
   ImportExtraction,
   CallGraphLanguage,
 } from '../../call-graph/types.js';
-
-import type {
-  SupportedLanguage,
-  DetectedPrimitive,
-} from '../types.js';
-
 import type {
   FunctionInfo,
   ParameterInfo,
   CallInfo,
   DetectionContext,
 } from '../detection/detector.js';
-
 import type {
   ImportInfo,
   DecoratorUsage,
   FunctionUsage,
   DiscoveryContext,
 } from '../primitives/discovery.js';
+import type {
+  SupportedLanguage,
+  DetectedPrimitive,
+} from '../types.js';
 
 // =============================================================================
 // Language Mapping
@@ -198,7 +195,7 @@ export function buildDetectionContext(
 
   for (const extraction of extractions) {
     const mappedLang = mapLanguage(extraction.language);
-    if (!mappedLang) continue;
+    if (!mappedLang) {continue;}
 
     for (const func of extraction.functions) {
       functions.push(

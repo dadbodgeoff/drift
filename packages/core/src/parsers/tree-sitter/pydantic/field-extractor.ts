@@ -7,12 +7,12 @@
  * @module pydantic/field-extractor
  */
 
-import type { TreeSitterNode } from '../types.js';
-import type { PydanticFieldInfo, FieldConstraints } from '../types.js';
-import type { ExtractionContext, RawFieldData, FieldArgument } from './types.js';
-import { extractPositionRange } from './types.js';
-import { TypeResolver } from './type-resolver.js';
 import { ConstraintParser } from './constraint-parser.js';
+import { TypeResolver } from './type-resolver.js';
+import { extractPositionRange } from './types.js';
+
+import type { TreeSitterNode , PydanticFieldInfo, FieldConstraints } from '../types.js';
+import type { ExtractionContext, RawFieldData, FieldArgument } from './types.js';
 
 // ============================================
 // Field Extractor Class
@@ -73,7 +73,7 @@ export class FieldExtractor {
     // Handle expression_statement wrapper
     if (node.type === 'expression_statement') {
       const inner = node.namedChildren[0];
-      if (!inner) return null;
+      if (!inner) {return null;}
       return this.extractField(inner, context);
     }
 
@@ -100,7 +100,7 @@ export class FieldExtractor {
   private extractRawFieldData(node: TreeSitterNode): RawFieldData | null {
     // Get the left side (should be identifier with type annotation)
     const left = node.childForFieldName('left');
-    if (!left) return null;
+    if (!left) {return null;}
 
     // Check for type annotation
     const typeNode = node.childForFieldName('type');
@@ -176,7 +176,7 @@ export class FieldExtractor {
    * Extract arguments from a call's argument_list.
    */
   private extractCallArguments(argsNode: TreeSitterNode | null): FieldArgument[] {
-    if (!argsNode) return [];
+    if (!argsNode) {return [];}
 
     const args: FieldArgument[] = [];
 
@@ -259,21 +259,21 @@ export class FieldExtractor {
    */
   private isFieldRequired(raw: RawFieldData, isOptional: boolean): boolean {
     // If Optional type, not required
-    if (isOptional) return false;
+    if (isOptional) {return false;}
 
     // If has default value, not required
-    if (raw.defaultValue !== null) return false;
+    if (raw.defaultValue !== null) {return false;}
 
     // If Field() with default or default_factory, not required
     if (raw.usesField) {
       const hasDefault = raw.fieldArguments.some(
         (arg) => arg.name === 'default' || arg.name === 'default_factory'
       );
-      if (hasDefault) return false;
+      if (hasDefault) {return false;}
 
       // Check for ... (Ellipsis) as first positional arg (required marker)
       const firstPositional = raw.fieldArguments.find((arg) => !arg.isKeyword);
-      if (firstPositional?.value === '...') return true;
+      if (firstPositional?.value === '...') {return true;}
     }
 
     return true;
@@ -283,7 +283,7 @@ export class FieldExtractor {
    * Extract the actual default value (not Field() call).
    */
   private extractDefaultValue(raw: RawFieldData): string | null {
-    if (!raw.defaultValue) return null;
+    if (!raw.defaultValue) {return null;}
 
     // If using Field(), extract default from arguments
     if (raw.usesField) {
@@ -310,7 +310,7 @@ export class FieldExtractor {
     name: string
   ): string | null {
     const arg = args.find((a) => a.name === name);
-    if (!arg) return null;
+    if (!arg) {return null;}
 
     // Remove quotes from string value
     const value = arg.value;

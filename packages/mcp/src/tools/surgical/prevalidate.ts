@@ -10,8 +10,9 @@
  * Solves: AI writes code, saves it, THEN finds out it violates patterns.
  */
 
-import type { PatternStore, IPatternService } from 'driftdetect-core';
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { PatternStore, IPatternService } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -82,9 +83,9 @@ export async function handlePrevalidate(
   // Calculate score (100 - penalties)
   let score = 100;
   for (const v of violations) {
-    if (v.severity === 'error') score -= 20;
-    else if (v.severity === 'warning') score -= 10;
-    else score -= 5;
+    if (v.severity === 'error') {score -= 20;}
+    else if (v.severity === 'warning') {score -= 10;}
+    else {score -= 5;}
   }
   score = Math.max(0, score);
   
@@ -173,9 +174,9 @@ export async function handlePrevalidateWithService(
   // Calculate score
   let score = 100;
   for (const v of violations) {
-    if (v.severity === 'error') score -= 20;
-    else if (v.severity === 'warning') score -= 10;
-    else score -= 5;
+    if (v.severity === 'error') {score -= 20;}
+    else if (v.severity === 'warning') {score -= 10;}
+    else {score -= 5;}
   }
   score = Math.max(0, score);
   
@@ -184,10 +185,10 @@ export async function handlePrevalidateWithService(
   const expectedPatterns = relevantPatterns
     .filter(p => {
       // Include patterns that match common directory conventions
-      if (targetDir.includes('api') && p.category === 'api') return true;
-      if (targetDir.includes('auth') && p.category === 'auth') return true;
-      if (targetDir.includes('test') && p.category === 'testing') return true;
-      if (targetDir.includes('component') && p.category === 'components') return true;
+      if (targetDir.includes('api') && p.category === 'api') {return true;}
+      if (targetDir.includes('auth') && p.category === 'auth') {return true;}
+      if (targetDir.includes('test') && p.category === 'testing') {return true;}
+      if (targetDir.includes('component') && p.category === 'components') {return true;}
       return false;
     })
     .map(p => p.name);

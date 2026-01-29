@@ -289,7 +289,7 @@ export class ConstantSecurityScanner {
     // Check against patterns
     for (const pattern of this.patterns) {
       // Check name pattern
-      if (pattern.namePattern && pattern.namePattern.test(constant.name)) {
+      if (pattern.namePattern?.test(constant.name)) {
         // Only flag if value looks like a real secret (not empty/placeholder)
         if (this.looksLikeRealSecret(valueStr)) {
           return this.createSecret(constant, pattern.type, pattern.severity, pattern.name);
@@ -297,7 +297,7 @@ export class ConstantSecurityScanner {
       }
 
       // Check value pattern
-      if (pattern.valuePattern && pattern.valuePattern.test(valueStr)) {
+      if (pattern.valuePattern?.test(valueStr)) {
         return this.createSecret(constant, pattern.type, pattern.severity, pattern.name);
       }
     }
@@ -419,10 +419,10 @@ export class ConstantSecurityScanner {
    * Check if a value looks like a real secret (not placeholder)
    */
   private looksLikeRealSecret(value: string): boolean {
-    if (!value || value.length < 8) return false;
+    if (!value || value.length < 8) {return false;}
 
     // Check for placeholder patterns
-    if (this.looksLikePlaceholder(value)) return false;
+    if (this.looksLikePlaceholder(value)) {return false;}
 
     // Check for reasonable entropy
     const entropy = this.calculateEntropy(value);
@@ -469,7 +469,7 @@ export class ConstantSecurityScanner {
    * Calculate Shannon entropy of a string
    */
   private calculateEntropy(str: string): number {
-    if (!str || str.length === 0) return 0;
+    if (!str || str.length === 0) {return 0;}
 
     const freq = new Map<string, number>();
     for (const char of str) {
@@ -507,7 +507,7 @@ export class ConstantSecurityScanner {
    * Check if value is allowlisted
    */
   private isAllowlistedValue(value: string | number | boolean | null | undefined): boolean {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {return false;}
 
     for (const pattern of this.config.allowlistValues) {
       if (pattern.test(value)) {

@@ -7,12 +7,13 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { JavaRegexExtractor } from './regex/java-regex.js';
-import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import {
   isJavaTreeSitterAvailable,
   createJavaParser,
 } from '../../parsers/tree-sitter/java-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -124,7 +125,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     currentClass: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const parametersNode = node.childForFieldName('parameters');
@@ -139,8 +140,8 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.type === 'static') isStatic = true;
-          if (mod.type === 'public') isPublic = true;
+          if (mod.type === 'static') {isStatic = true;}
+          if (mod.type === 'public') {isPublic = true;}
           if (mod.type === 'marker_annotation' || mod.type === 'annotation') {
             decorators.push(mod.text);
           }
@@ -193,7 +194,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.type === 'public') isPublic = true;
+          if (mod.type === 'public') {isPublic = true;}
         }
       }
     }
@@ -228,7 +229,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -269,7 +270,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.type === 'public') isPublic = true;
+          if (mod.type === 'public') {isPublic = true;}
         }
       }
     }
@@ -297,7 +298,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -315,7 +316,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.type === 'public') isPublic = true;
+          if (mod.type === 'public') {isPublic = true;}
         }
       }
     }
@@ -339,13 +340,13 @@ export class JavaHybridExtractor extends HybridExtractorBase {
 
   private extractEnumDeclaration(node: TreeSitterNode, result: FileExtractionResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     let isPublic = false;
     for (const child of node.children) {
       if (child.type === 'modifiers') {
         for (const mod of child.children) {
-          if (mod.type === 'public') isPublic = true;
+          if (mod.type === 'public') {isPublic = true;}
         }
       }
     }
@@ -375,7 +376,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
       }
     }
 
-    if (!source) return;
+    if (!source) {return;}
 
     const className = isWildcard ? '*' : source.split('.').pop() ?? source;
 
@@ -411,7 +412,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
     const objectNode = node.childForFieldName('object');
     const argsNode = node.childForFieldName('arguments');
 
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     let argumentCount = 0;
     if (argsNode) {
@@ -436,7 +437,7 @@ export class JavaHybridExtractor extends HybridExtractorBase {
 
   private extractObjectCreation(node: TreeSitterNode, result: FileExtractionResult): void {
     const typeNode = node.childForFieldName('type');
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     const argsNode = node.childForFieldName('arguments');
     let argumentCount = 0;

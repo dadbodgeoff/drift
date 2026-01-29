@@ -12,6 +12,14 @@
  * - Error handling (error boundary patterns)
  */
 
+
+import type { BoundaryStore } from '../../boundaries/boundary-store.js';
+import type { CallGraphStore } from '../../call-graph/store/call-graph-store.js';
+import type { CallGraph, FunctionNode } from '../../call-graph/types.js';
+import type { ErrorHandlingAnalyzer } from '../../error-handling/error-handling-analyzer.js';
+import type { PatternStore } from '../../store/pattern-store.js';
+import type { Pattern, PatternLocation, OutlierLocation } from '../../store/types.js';
+import type { TestTopologyAnalyzer } from '../../test-topology/test-topology-analyzer.js';
 import type {
   Constraint,
   ConstraintCategory,
@@ -22,14 +30,6 @@ import type {
   ConstraintLanguage,
   ExtractionOptions,
 } from '../types.js';
-
-import type { PatternStore } from '../../store/pattern-store.js';
-import type { Pattern, PatternLocation, OutlierLocation } from '../../store/types.js';
-import type { CallGraphStore } from '../../call-graph/store/call-graph-store.js';
-import type { CallGraph, FunctionNode } from '../../call-graph/types.js';
-import type { BoundaryStore } from '../../boundaries/boundary-store.js';
-import type { TestTopologyAnalyzer } from '../../test-topology/test-topology-analyzer.js';
-import type { ErrorHandlingAnalyzer } from '../../error-handling/error-handling-analyzer.js';
 
 // =============================================================================
 // Types
@@ -162,7 +162,7 @@ export class InvariantDetector {
     options: ExtractionOptions
   ): DetectedInvariant | null {
     // Only convert patterns with enough evidence
-    if (pattern.locations.length < 3) return null;
+    if (pattern.locations.length < 3) {return null;}
 
     const category = pattern.category as ConstraintCategory;
     const language = this.detectLanguageFromPattern(pattern);
@@ -246,7 +246,7 @@ export class InvariantDetector {
 
     // Load call graph
     const graph = await store.load();
-    if (!graph) return invariants;
+    if (!graph) {return invariants;}
 
     // Detect auth-before-data-access invariants
     const authInvariants = this.detectAuthBeforeDataAccess(graph);
@@ -271,12 +271,12 @@ export class InvariantDetector {
     
     for (const id of entryPointIds) {
       const func = graph.functions.get(id);
-      if (func && func.dataAccess && func.dataAccess.length > 0) {
+      if (func?.dataAccess && func.dataAccess.length > 0) {
         entryPointsWithData.push(func);
       }
     }
 
-    if (entryPointsWithData.length < 3) return invariants;
+    if (entryPointsWithData.length < 3) {return invariants;}
 
     // Group by whether they have auth in the call chain
     const withAuth: FunctionNode[] = [];
@@ -367,11 +367,11 @@ export class InvariantDetector {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current)) continue;
+      if (visited.has(current)) {continue;}
       visited.add(current);
 
       const node = graph.functions.get(current);
-      if (!node) continue;
+      if (!node) {continue;}
 
       // Check if this function is auth-related
       if (authPatterns.some(p => p.test(node.name))) {
@@ -407,10 +407,10 @@ export class InvariantDetector {
     
     for (const id of entryPointIds) {
       const func = graph.functions.get(id);
-      if (func) entryPoints.push(func);
+      if (func) {entryPoints.push(func);}
     }
 
-    if (entryPoints.length < 3) return invariants;
+    if (entryPoints.length < 3) {return invariants;}
 
     // Check for validation patterns
     const validationPatterns = [
@@ -501,11 +501,11 @@ export class InvariantDetector {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current)) continue;
+      if (visited.has(current)) {continue;}
       visited.add(current);
 
       const node = graph.functions.get(current);
-      if (!node) continue;
+      if (!node) {continue;}
 
       if (patterns.some(p => p.test(node.name))) {
         return true;
@@ -542,11 +542,11 @@ export class InvariantDetector {
     try {
       await store.initialize();
       const accessMap = store.getAccessMap();
-      if (!accessMap) return invariants;
+      if (!accessMap) {return invariants;}
 
       // Detect data access layer invariants from access points
       const accessPoints = Object.values(accessMap.accessPoints);
-      if (accessPoints.length < 3) return invariants;
+      if (accessPoints.length < 3) {return invariants;}
 
       // Group by table
       const byTable = new Map<string, Array<{ file: string; accessor: string; line: number }>>();
@@ -564,7 +564,7 @@ export class InvariantDetector {
 
       // For each table with enough accesses, check for consistent access layer
       for (const [table, accesses] of byTable) {
-        if (accesses.length < 3) continue;
+        if (accesses.length < 3) {continue;}
 
         // Extract access layers
         const layerCounts = new Map<string, number>();
@@ -668,7 +668,7 @@ export class InvariantDetector {
     // Group sensitive fields by table
     const sensitiveByTable = new Map<string, string[]>();
     for (const field of accessMap.sensitiveFields) {
-      if (!field.table) continue; // Skip fields without table info
+      if (!field.table) {continue;} // Skip fields without table info
       const fields = sensitiveByTable.get(field.table) ?? [];
       fields.push(field.field);
       sensitiveByTable.set(field.table, fields);
@@ -750,7 +750,7 @@ export class InvariantDetector {
 
     // Get summary statistics
     const summary = analyzer.getSummary();
-    if (!summary || summary.totalFunctions < 5) return invariants;
+    if (!summary || summary.totalFunctions < 5) {return invariants;}
 
     // If most functions are tested, create a test coverage invariant
     const coverageRatio = summary.coveredFunctions / summary.totalFunctions;
@@ -876,7 +876,7 @@ export class InvariantDetector {
     const topology = analyzer.getTopology();
     const summary = analyzer.getSummary();
     
-    if (!topology || !summary || summary.totalFunctions < 5) return invariants;
+    if (!topology || !summary || summary.totalFunctions < 5) {return invariants;}
 
     // Detect async error handling patterns
     const asyncFunctions: Array<{ file: string; line: number; name: string; hasHandling: boolean }> = [];
@@ -1073,15 +1073,15 @@ export class InvariantDetector {
     const extensions = new Set<string>();
     for (const loc of pattern.locations) {
       const ext = loc.file.split('.').pop()?.toLowerCase();
-      if (ext) extensions.add(ext);
+      if (ext) {extensions.add(ext);}
     }
 
-    if (extensions.has('ts') || extensions.has('tsx')) return 'typescript';
-    if (extensions.has('js') || extensions.has('jsx')) return 'javascript';
-    if (extensions.has('py')) return 'python';
-    if (extensions.has('java')) return 'java';
-    if (extensions.has('cs')) return 'csharp';
-    if (extensions.has('php')) return 'php';
+    if (extensions.has('ts') || extensions.has('tsx')) {return 'typescript';}
+    if (extensions.has('js') || extensions.has('jsx')) {return 'javascript';}
+    if (extensions.has('py')) {return 'python';}
+    if (extensions.has('java')) {return 'java';}
+    if (extensions.has('cs')) {return 'csharp';}
+    if (extensions.has('php')) {return 'php';}
 
     return 'all';
   }
@@ -1091,7 +1091,7 @@ export class InvariantDetector {
     const config = pattern.detector;
 
     if (config?.config && typeof config.config === 'object') {
-      const detectorConfig = config.config as Record<string, unknown>;
+      const detectorConfig = config.config;
       
       if (Array.isArray(detectorConfig['decorators']) && detectorConfig['decorators'].length > 0) {
         predicate.functionMustHave = {
@@ -1135,7 +1135,7 @@ export class InvariantDetector {
     const directories = new Set<string>();
     for (const loc of pattern.locations) {
       const dir = loc.file.split('/').slice(0, -1).join('/');
-      if (dir) directories.add(dir);
+      if (dir) {directories.add(dir);}
     }
 
     if (directories.size > 0) {

@@ -7,9 +7,10 @@
  * @module pydantic/inheritance-resolver
  */
 
+import { PYDANTIC_BASE_CLASSES } from './types.js';
+
 import type { PydanticModelInfo, PydanticFieldInfo, TypeInfo } from '../types.js';
 import type { BaseClassInfo } from './types.js';
-import { PYDANTIC_BASE_CLASSES } from './types.js';
 
 // ============================================
 // Inheritance Resolver Class

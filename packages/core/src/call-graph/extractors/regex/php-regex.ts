@@ -5,6 +5,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -59,7 +60,7 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
@@ -81,7 +82,7 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
         isExported: isPublic,
         isConstructor: name === '__construct',
       };
-      if (returnType) funcOpts.returnType = returnType;
+      if (returnType) {funcOpts.returnType = returnType;}
 
       functions.push(this.createFunction(funcOpts));
     }
@@ -93,14 +94,14 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
    * Parse PHP parameters
    */
   private parsePhpParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     const parts = paramsStr.split(',');
 
     for (const part of parts) {
       let trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       let type: string | undefined;
       let hasDefault = false;
@@ -156,7 +157,7 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const endLine = this.getLineNumber(originalSource, endIndex);
 
       const baseClasses: string[] = [];
-      if (match[2]) baseClasses.push(match[2]);
+      if (match[2]) {baseClasses.push(match[2]);}
       if (match[3]) {
         const interfaces = match[3].split(',').map(i => i.trim()).filter(i => i);
         baseClasses.push(...interfaces);
@@ -346,7 +347,7 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}->${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({
@@ -367,11 +368,11 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}::${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip self:: and parent:: for now
-      if (receiver === 'self' || receiver === 'parent' || receiver === 'static') continue;
+      if (receiver === 'self' || receiver === 'parent' || receiver === 'static') {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -390,11 +391,11 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip keywords and language constructs
-      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'function', 'return', 'throw', 'new', 'array', 'list', 'isset', 'empty', 'unset', 'echo', 'print'].includes(calleeName)) continue;
+      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'function', 'return', 'throw', 'new', 'array', 'list', 'isset', 'empty', 'unset', 'echo', 'print'].includes(calleeName)) {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -411,7 +412,7 @@ export class PhpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `new:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({

@@ -55,14 +55,14 @@ export class CSharpTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check using statements
-    if (/using\s+Xunit/.test(content) || /using\s+xUnit/.test(content)) return 'xunit';
-    if (/using\s+NUnit/.test(content)) return 'nunit';
-    if (/using\s+Microsoft\.VisualStudio\.TestTools\.UnitTesting/.test(content)) return 'mstest';
+    if (/using\s+Xunit/.test(content) || /using\s+xUnit/.test(content)) {return 'xunit';}
+    if (/using\s+NUnit/.test(content)) {return 'nunit';}
+    if (/using\s+Microsoft\.VisualStudio\.TestTools\.UnitTesting/.test(content)) {return 'mstest';}
     
     // Check attributes
-    if (/\[Fact\]|\[Theory\]/.test(content)) return 'xunit';
-    if (/\[Test\]|\[TestCase\(/.test(content)) return 'nunit';
-    if (/\[TestMethod\]|\[DataTestMethod\]/.test(content)) return 'mstest';
+    if (/\[Fact\]|\[Theory\]/.test(content)) {return 'xunit';}
+    if (/\[Test\]|\[TestCase\(/.test(content)) {return 'nunit';}
+    if (/\[TestMethod\]|\[DataTestMethod\]/.test(content)) {return 'mstest';}
 
     return 'unknown';
   }
@@ -186,7 +186,7 @@ export class CSharpTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -417,13 +417,13 @@ export class CSharpTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
     
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

@@ -282,10 +282,10 @@ export class CommitParser {
     description: string;
   } | null {
     const match = subject.match(CONVENTIONAL_COMMIT_REGEX);
-    if (!match) return null;
+    if (!match) {return null;}
 
     const [, typeStr, scope, breaking, description] = match;
-    if (!typeStr || !description) return null;
+    if (!typeStr || !description) {return null;}
     
     const normalizedType = typeStr.toLowerCase() as ConventionalCommitType;
 
@@ -316,7 +316,7 @@ export class CommitParser {
    * Detect breaking changes
    */
   private detectBreakingChange(message: string, conventionalBreaking?: boolean): boolean {
-    if (conventionalBreaking) return true;
+    if (conventionalBreaking) {return true;}
 
     const upperMessage = message.toUpperCase();
     return BREAKING_CHANGE_INDICATORS.some(indicator =>
@@ -334,7 +334,7 @@ export class CommitParser {
     for (const line of lines) {
       // Match "Key: Value" or "Key #Value" patterns
       const match = line.match(/^([A-Z][A-Za-z-]+)(?::\s*|\s+#)(.+)$/);
-      if (match && match[1] && match[2]) {
+      if (match?.[1] && match[2]) {
         tokens.push({
           key: match[1],
           value: match[2].trim(),
@@ -376,7 +376,7 @@ export class CommitParser {
 
       while ((match = regex.exec(message)) !== null) {
         const id = pattern.action ? match[2] : match[1];
-        if (!id) continue;
+        if (!id) {continue;}
         
         const key = `${pattern.type}:${id}`;
 

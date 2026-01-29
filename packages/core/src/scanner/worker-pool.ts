@@ -468,11 +468,11 @@ export class WorkerPool<TInput, TOutput> extends EventEmitter {
   getTask(taskId: string): Task<TInput, TOutput> | undefined {
     // Check active tasks
     const active = this.activeTasks.get(taskId);
-    if (active) return active;
+    if (active) {return active;}
 
     // Check completed tasks
     const completed = this.completedTasks.get(taskId);
-    if (completed) return completed;
+    if (completed) {return completed;}
 
     // Check queue
     return this.taskQueue.find((t) => t.id === taskId);

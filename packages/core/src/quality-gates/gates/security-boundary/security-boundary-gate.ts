@@ -10,6 +10,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -147,7 +148,7 @@ export class SecurityBoundaryGate extends BaseGate {
     // Analyze each changed function for data access
     for (const funcId of changedFunctions) {
       const node = callGraph.nodes.get(funcId);
-      if (!node) continue;
+      if (!node) {continue;}
 
       // Check if function accesses sensitive data
       // In full implementation, this would use SemanticDataAccessScanner
@@ -242,11 +243,11 @@ export class SecurityBoundaryGate extends BaseGate {
 
     while (queue.length > 0) {
       const { nodeId, depth } = queue.shift()!;
-      if (visited.has(nodeId) || depth > maxDepth) continue;
+      if (visited.has(nodeId) || depth > maxDepth) {continue;}
       visited.add(nodeId);
 
       const node = callGraph.nodes.get(nodeId);
-      if (!node) continue;
+      if (!node) {continue;}
 
       // Check if this function is an auth function
       if (authPatterns.some(pattern => 
@@ -280,7 +281,7 @@ export class SecurityBoundaryGate extends BaseGate {
 
     while (depth < maxDepth) {
       const node = callGraph.nodes.get(current);
-      if (!node) break;
+      if (!node) {break;}
 
       path.unshift(node.name);
 

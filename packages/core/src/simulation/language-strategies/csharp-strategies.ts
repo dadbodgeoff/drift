@@ -103,7 +103,7 @@ export class CSharpStrategyProvider implements LanguageStrategyProvider {
       ? this.frameworks.find(f => f.name === framework)
       : this.frameworks[0];
     
-    if (!fw) return [];
+    if (!fw) {return [];}
     
     return fw.strategies.filter(s => 
       s.applicableCategories.includes(category) || 

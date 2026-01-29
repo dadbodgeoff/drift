@@ -8,10 +8,11 @@
  * @requirements Phase 4 - CLI Integration
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 
 export interface ParserOptions {
   /** Test parsing a specific file */
@@ -260,7 +261,7 @@ interface TestResult {
  * Count nodes in an AST (generic implementation)
  */
 function countASTNodes(ast: unknown): number {
-  if (!ast || typeof ast !== 'object') return 0;
+  if (!ast || typeof ast !== 'object') {return 0;}
   
   let count = 1;
   const node = ast as Record<string, unknown>;
@@ -704,9 +705,9 @@ async function parserAction(options: ParserOptions): Promise<void> {
     console.log(chalk.green('Java: Using semantic detectors (tree-sitter optional).'));
   } else {
     const missing: string[] = [];
-    if (!pythonInfo.treeSitterAvailable) missing.push('Python');
-    if (!csharpInfo.treeSitterAvailable) missing.push('C#');
-    if (!phpInfo.treeSitterAvailable) missing.push('PHP');
+    if (!pythonInfo.treeSitterAvailable) {missing.push('Python');}
+    if (!csharpInfo.treeSitterAvailable) {missing.push('C#');}
+    if (!phpInfo.treeSitterAvailable) {missing.push('PHP');}
     if (missing.length > 0) {
       console.log(chalk.yellow(`Tree-sitter not available for: ${missing.join(', ')}`));
       console.log(chalk.gray('Install tree-sitter packages for improved parsing accuracy.'));

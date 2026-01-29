@@ -5,8 +5,9 @@
  * These are the "smart" tools that reduce cognitive load on the AI.
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { packageContextToolDefinition } from './package-context.js';
+
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export const ORCHESTRATION_TOOLS: Tool[] = [
   {

@@ -7,9 +7,12 @@
  * Scopes patterns, constraints, and examples to minimize token usage.
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
+import { PackageDetector } from './package-detector.js';
+
 import type {
   PackageContextOptions,
   PackageContext,
@@ -22,7 +25,7 @@ import type {
   DetectedPackage,
   ContextEventType,
 } from './types.js';
-import { PackageDetector } from './package-detector.js';
+
 
 const DEFAULT_MAX_TOKENS = 8000;
 const TOKENS_PER_CHAR = 0.25;
@@ -111,7 +114,7 @@ export class PackageContextGenerator extends EventEmitter {
         try {
           const files = await fs.readdir(statusDir);
           for (const file of files) {
-            if (!file.endsWith('.json')) continue;
+            if (!file.endsWith('.json')) {continue;}
             try {
               const content = await fs.readFile(path.join(statusDir, file), 'utf-8');
               const data = JSON.parse(content) as Record<string, unknown>;
@@ -124,12 +127,12 @@ export class PackageContextGenerator extends EventEmitter {
                 // Nested format: { category, patterns: [...] }
                 for (const pattern of patternList) {
                   const result = await this.processPattern(pattern, category, pkg, options);
-                  if (result) patterns.push(result);
+                  if (result) {patterns.push(result);}
                 }
               } else {
                 // Flat format: single pattern object
                 const result = await this.processPattern(data, category, pkg, options);
-                if (result) patterns.push(result);
+                if (result) {patterns.push(result);}
               }
             } catch { /* skip invalid files */ }
           }
@@ -147,7 +150,7 @@ export class PackageContextGenerator extends EventEmitter {
   ): Promise<ContextPattern | null> {
     // Filter by category if specified
     const patternCategory = (pattern['category'] as string) || (pattern['subcategory'] as string) || category;
-    if (options.categories?.length && !options.categories.includes(patternCategory)) return null;
+    if (options.categories?.length && !options.categories.includes(patternCategory)) {return null;}
     
     // Get confidence - handle both nested and flat formats
     let confidence = 0.5;
@@ -158,12 +161,12 @@ export class PackageContextGenerator extends EventEmitter {
       confidence = (confidenceObj['score'] as number) ?? 0.5;
     }
     
-    if (options.minConfidence && confidence < options.minConfidence) return null;
+    if (options.minConfidence && confidence < options.minConfidence) {return null;}
     
     // Get locations
     const locations = (pattern['locations'] as Array<{ file: string; line?: number }>) || [];
     const packageLocations = locations.filter(loc => this.isFileInPackage(loc.file, pkg));
-    if (packageLocations.length === 0) return null;
+    if (packageLocations.length === 0) {return null;}
     
     const contextPattern: ContextPattern = {
       id: (pattern['id'] as string) || 'unknown',
@@ -177,7 +180,7 @@ export class PackageContextGenerator extends EventEmitter {
     // Add snippet if requested
     if (options.includeSnippets && packageLocations[0]) {
       const example = await this.extractSnippet(packageLocations[0].file, packageLocations[0].line);
-      if (example) contextPattern.example = example;
+      if (example) {contextPattern.example = example;}
     }
     
     return contextPattern;
@@ -192,14 +195,14 @@ export class PackageContextGenerator extends EventEmitter {
         try {
           const files = await fs.readdir(statusDir);
           for (const file of files) {
-            if (!file.endsWith('.json')) continue;
+            if (!file.endsWith('.json')) {continue;}
             try {
               const content = await fs.readFile(path.join(statusDir, file), 'utf-8');
               const constraint = JSON.parse(content) as Record<string, unknown>;
               const scope = constraint['scope'] as Record<string, unknown> | undefined;
               if (scope) {
                 const packages = scope['packages'] as string[] | undefined;
-                if (packages && !packages.includes(pkg.name) && !packages.includes('*')) continue;
+                if (packages && !packages.includes(pkg.name) && !packages.includes('*')) {continue;}
               }
               constraints.push({ id: (constraint['id'] as string) || file.replace('.json', ''), name: (constraint['name'] as string) || 'Unknown', category: (constraint['category'] as string) || 'general', enforcement: (constraint['enforcement'] as 'error' | 'warning' | 'info') || 'warning', condition: (constraint['condition'] as string) || '', guidance: (constraint['guidance'] as string) || '' });
             } catch { /* skip */ }
@@ -216,17 +219,17 @@ export class PackageContextGenerator extends EventEmitter {
     try {
       const files = await fs.readdir(callgraphDir);
       for (const file of files) {
-        if (!file.endsWith('.json')) continue;
+        if (!file.endsWith('.json')) {continue;}
         try {
           const content = await fs.readFile(path.join(callgraphDir, file), 'utf-8');
           const data = JSON.parse(content) as Record<string, unknown>;
           const filePath = (data['file'] as string) || '';
-          if (!this.isFileInPackage(filePath, pkg)) continue;
+          if (!this.isFileInPackage(filePath, pkg)) {continue;}
           const entries = (data['entryPoints'] as Array<Record<string, unknown>>) || [];
           for (const entry of entries) {
             const ep: ContextEntryPoint = { name: (entry['name'] as string) || 'unknown', file: filePath, type: (entry['type'] as string) || 'function' };
-            if (entry['method']) ep.method = entry['method'] as string;
-            if (entry['path']) ep.path = entry['path'] as string;
+            if (entry['method']) {ep.method = entry['method'] as string;}
+            if (entry['path']) {ep.path = entry['path'] as string;}
             entryPoints.push(ep);
           }
         } catch { /* skip */ }
@@ -241,14 +244,14 @@ export class PackageContextGenerator extends EventEmitter {
     try {
       const files = await fs.readdir(securityDir);
       for (const file of files) {
-        if (!file.endsWith('.json')) continue;
+        if (!file.endsWith('.json')) {continue;}
         try {
           const content = await fs.readFile(path.join(securityDir, file), 'utf-8');
           const data = JSON.parse(content) as Record<string, unknown>;
           const accesses = (data['accesses'] as Array<Record<string, unknown>>) || [];
           for (const access of accesses) {
             const filePath = (access['file'] as string) || '';
-            if (!this.isFileInPackage(filePath, pkg)) continue;
+            if (!this.isFileInPackage(filePath, pkg)) {continue;}
             accessors.push({ name: (access['function'] as string) || 'unknown', file: filePath, tables: (access['tables'] as string[]) || [], accessesSensitive: (access['sensitive'] as boolean) || false });
           }
         } catch { /* skip */ }
@@ -281,7 +284,7 @@ export class PackageContextGenerator extends EventEmitter {
       categoryGroups.set(pattern.category, group);
     }
     for (const [category, categoryPatterns] of categoryGroups) {
-      if (categoryPatterns.length >= 2) keyInsights.push(`${category}: ${categoryPatterns.length} patterns detected`);
+      if (categoryPatterns.length >= 2) {keyInsights.push(`${category}: ${categoryPatterns.length} patterns detected`);}
     }
     for (const pattern of patterns.filter(p => p.confidence >= 0.8).slice(0, 5)) {
       commonPatterns.push(`${pattern.name} (${pattern.occurrences} occurrences)`);
@@ -296,10 +299,10 @@ export class PackageContextGenerator extends EventEmitter {
     const dependencies: Array<{ name: string; patterns: ContextPattern[] }> = [];
     for (const depName of pkg.internalDependencies) {
       const depPkg = await this.packageDetector.getPackage(depName);
-      if (!depPkg) continue;
+      if (!depPkg) {continue;}
       const depPatterns = await this.loadPackagePatterns(depPkg, { ...options, includeSnippets: false });
       const markedPatterns = depPatterns.map(p => ({ ...p, fromDependency: depName }));
-      if (markedPatterns.length > 0) dependencies.push({ name: depName, patterns: markedPatterns.slice(0, 10) });
+      if (markedPatterns.length > 0) {dependencies.push({ name: depName, patterns: markedPatterns.slice(0, 10) });}
     }
     return dependencies;
   }
@@ -310,7 +313,7 @@ export class PackageContextGenerator extends EventEmitter {
   private trimContext(context: PackageContext, maxTokens: number): void {
     let currentTokens = this.estimateTokens(context);
     if (currentTokens > maxTokens && context.dependencies) { context.dependencies = context.dependencies.slice(0, 2); currentTokens = this.estimateTokens(context); }
-    if (currentTokens > maxTokens) { for (const pattern of context.patterns) delete pattern.example; currentTokens = this.estimateTokens(context); }
+    if (currentTokens > maxTokens) { for (const pattern of context.patterns) {delete pattern.example;} currentTokens = this.estimateTokens(context); }
     if (currentTokens > maxTokens) { context.patterns = context.patterns.slice(0, 20); currentTokens = this.estimateTokens(context); }
     if (currentTokens > maxTokens) { context.keyFiles = context.keyFiles.slice(0, 5); currentTokens = this.estimateTokens(context); }
     if (currentTokens > maxTokens) { context.entryPoints = context.entryPoints.slice(0, 10); currentTokens = this.estimateTokens(context); }
@@ -320,36 +323,36 @@ export class PackageContextGenerator extends EventEmitter {
 
   private buildSystemPrompt(context: PackageContext): string {
     const lines = [`# Package: ${context.package.name}`, '', `Language: ${context.package.language}`, `Path: ${context.package.path}`];
-    if (context.package.description) lines.push(`Description: ${context.package.description}`);
+    if (context.package.description) {lines.push(`Description: ${context.package.description}`);}
     lines.push('', '## Summary', `- ${context.summary.totalPatterns} patterns detected`, `- ${context.summary.totalConstraints} constraints apply`, `- ${context.summary.totalEntryPoints} entry points`, `- ${context.summary.totalDataAccessors} data accessors`);
     return lines.join('\n');
   }
 
   private buildConventions(context: PackageContext): string {
-    if (context.patterns.length === 0) return '';
+    if (context.patterns.length === 0) {return '';}
     const lines = ['## Conventions'];
     for (const pattern of context.patterns.slice(0, 10)) {
       lines.push(`\n### ${pattern.name}`, `Category: ${pattern.category}`, `Confidence: ${(pattern.confidence * 100).toFixed(0)}%`, `Occurrences: ${pattern.occurrences}`);
-      if (pattern.example) lines.push('```', pattern.example, '```');
+      if (pattern.example) {lines.push('```', pattern.example, '```');}
     }
     return lines.join('\n');
   }
 
   private buildExamples(context: PackageContext): string {
     const patternsWithExamples = context.patterns.filter(p => p.example);
-    if (patternsWithExamples.length === 0) return '';
+    if (patternsWithExamples.length === 0) {return '';}
     const lines = ['## Examples'];
-    for (const pattern of patternsWithExamples.slice(0, 5)) lines.push(`\n### ${pattern.name}`, '```', pattern.example!, '```');
+    for (const pattern of patternsWithExamples.slice(0, 5)) {lines.push(`\n### ${pattern.name}`, '```', pattern.example!, '```');}
     return lines.join('\n');
   }
 
   private buildConstraints(context: PackageContext): string {
-    if (context.constraints.length === 0) return '';
+    if (context.constraints.length === 0) {return '';}
     const lines = ['## Constraints'];
     for (const constraint of context.constraints) {
       lines.push(`\n### ${constraint.name}`, `Level: ${constraint.enforcement}`);
-      if (constraint.condition) lines.push(`Condition: ${constraint.condition}`);
-      if (constraint.guidance) lines.push(`Guidance: ${constraint.guidance}`);
+      if (constraint.condition) {lines.push(`Condition: ${constraint.condition}`);}
+      if (constraint.guidance) {lines.push(`Guidance: ${constraint.guidance}`);}
     }
     return lines.join('\n');
   }
@@ -357,7 +360,7 @@ export class PackageContextGenerator extends EventEmitter {
   private isFileInPackage(filePath: string, pkg: DetectedPackage): boolean {
     const normalizedFile = filePath.replace(/\\/g, '/');
     const normalizedPkg = pkg.path.replace(/\\/g, '/');
-    if (normalizedPkg === '.') return !normalizedFile.includes('/packages/') && !normalizedFile.includes('/apps/');
+    if (normalizedPkg === '.') {return !normalizedFile.includes('/packages/') && !normalizedFile.includes('/apps/');}
     return normalizedFile.startsWith(normalizedPkg + '/') || normalizedFile === normalizedPkg;
   }
 

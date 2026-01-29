@@ -15,6 +15,9 @@
  */
 
 import { BaseCallGraphExtractor } from './base-extractor.js';
+import { isTreeSitterAvailable, createPythonParser } from '../../parsers/tree-sitter/loader.js';
+
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 import type {
   CallGraphLanguage,
   FileExtractionResult,
@@ -22,8 +25,6 @@ import type {
   ParameterInfo,
   CallExtraction,
 } from '../types.js';
-import { isTreeSitterAvailable, createPythonParser } from '../../parsers/tree-sitter/loader.js';
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 
 /**
  * Python call graph extractor using tree-sitter
@@ -197,7 +198,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isMethod = currentClass !== null;
@@ -206,7 +207,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     // Get decorators
     const decorators: string[] = [];
     let prevSibling = node.previousNamedSibling;
-    while (prevSibling && prevSibling.type === 'decorator') {
+    while (prevSibling?.type === 'decorator') {
       decorators.unshift(prevSibling.text);
       prevSibling = prevSibling.previousNamedSibling;
     }
@@ -350,7 +351,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): CallExtraction[] | null {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return null;
+    if (!funcNode) {return null;}
 
     const calls: CallExtraction[] = [];
     let calleeName: string;
@@ -476,7 +477,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const argsNode = node.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     for (const child of argsNode.children) {
       // Direct function reference passed as argument
@@ -532,7 +533,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     _source: string
   ): void {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -637,7 +638,7 @@ export class PythonCallGraphExtractor extends BaseCallGraphExtractor {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
 

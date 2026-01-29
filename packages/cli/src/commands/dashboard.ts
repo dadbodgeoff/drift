@@ -4,10 +4,12 @@
  * Launch the local web dashboard for visualizing patterns and violations.
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
+
 import { createSpinner } from '../ui/spinner.js';
 
 // Dashboard server interface for dynamic import

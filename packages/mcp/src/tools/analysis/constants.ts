@@ -23,6 +23,7 @@ import {
   type InconsistentConstant,
   type IssueSeverity,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -377,7 +378,7 @@ async function handleGet(
 
   if (constant) {
     const sameFile = allConstants
-      .filter((c) => c.file === constant!.file && c.id !== constant!.id)
+      .filter((c) => c.file === constant.file && c.id !== constant.id)
       .slice(0, 3);
     for (const c of sameFile) {
       relatedConstants.push({ id: c.id, name: c.name, reason: 'same_file' });
@@ -386,8 +387,8 @@ async function handleGet(
     const sameCategory = allConstants
       .filter(
         (c) =>
-          c.category === constant!.category &&
-          c.id !== constant!.id &&
+          c.category === constant.category &&
+          c.id !== constant.id &&
           !sameFile.some((sf) => sf.id === c.id)
       )
       .slice(0, 2);
@@ -622,7 +623,7 @@ async function handleInconsistent(
     total: result.inconsistencies.length,
   };
 
-  let summary = `⚡ ${result.inconsistencies.length} constants have inconsistent values across files.`;
+  const summary = `⚡ ${result.inconsistencies.length} constants have inconsistent values across files.`;
 
   return builder
     .withSummary(summary)

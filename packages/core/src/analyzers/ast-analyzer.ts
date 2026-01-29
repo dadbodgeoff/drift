@@ -7,13 +7,13 @@
  * @requirements 3.5 - Parser SHALL provide a unified AST query interface across all languages
  */
 
-import type { AST, ASTNode, Position } from '../parsers/types.js';
 import type {
   ASTAnalysisResult,
   ASTStats,
   PatternMatch,
   SourceLocation,
 } from './types.js';
+import type { AST, ASTNode, Position } from '../parsers/types.js';
 
 /**
  * Pattern definition for AST matching
@@ -779,12 +779,12 @@ export class ASTAnalyzer {
    */
   private positionInRange(position: Position, start: Position, end: Position): boolean {
     // Check if position is after start
-    if (position.row < start.row) return false;
-    if (position.row === start.row && position.column < start.column) return false;
+    if (position.row < start.row) {return false;}
+    if (position.row === start.row && position.column < start.column) {return false;}
 
     // Check if position is before end
-    if (position.row > end.row) return false;
-    if (position.row === end.row && position.column > end.column) return false;
+    if (position.row > end.row) {return false;}
+    if (position.row === end.row && position.column > end.column) {return false;}
 
     return true;
   }
@@ -793,8 +793,8 @@ export class ASTAnalyzer {
    * Check if position a is after position b.
    */
   private isAfterPosition(a: Position, b: Position): boolean {
-    if (a.row > b.row) return true;
-    if (a.row === b.row && a.column >= b.column) return true;
+    if (a.row > b.row) {return true;}
+    if (a.row === b.row && a.column >= b.column) {return true;}
     return false;
   }
 
@@ -802,8 +802,8 @@ export class ASTAnalyzer {
    * Check if position a is before position b.
    */
   private isBeforePosition(a: Position, b: Position): boolean {
-    if (a.row < b.row) return true;
-    if (a.row === b.row && a.column <= b.column) return true;
+    if (a.row < b.row) {return true;}
+    if (a.row === b.row && a.column <= b.column) {return true;}
     return false;
   }
 }

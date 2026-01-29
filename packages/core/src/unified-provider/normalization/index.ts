@@ -12,15 +12,16 @@ export { GoNormalizer } from './go-normalizer.js';
 export { RustNormalizer } from './rust-normalizer.js';
 export { CppNormalizer } from './cpp-normalizer.js';
 
-import type { UnifiedLanguage, CallChainNormalizer } from '../types.js';
-import { TypeScriptNormalizer } from './typescript-normalizer.js';
-import { PythonNormalizer } from './python-normalizer.js';
-import { JavaNormalizer } from './java-normalizer.js';
-import { PhpNormalizer } from './php-normalizer.js';
+import { CppNormalizer } from './cpp-normalizer.js';
 import { CSharpNormalizer } from './csharp-normalizer.js';
 import { GoNormalizer } from './go-normalizer.js';
+import { JavaNormalizer } from './java-normalizer.js';
+import { PhpNormalizer } from './php-normalizer.js';
+import { PythonNormalizer } from './python-normalizer.js';
 import { RustNormalizer } from './rust-normalizer.js';
-import { CppNormalizer } from './cpp-normalizer.js';
+import { TypeScriptNormalizer } from './typescript-normalizer.js';
+
+import type { UnifiedLanguage, CallChainNormalizer } from '../types.js';
 
 /**
  * Normalizer registry

@@ -9,7 +9,7 @@
  */
 
 import { Command } from 'commander';
-import { VERSION } from '../index.js';
+
 import {
   initCommand,
   scanCommand,
@@ -55,6 +55,7 @@ import {
   nextStepsCommand,
   troubleshootCommand,
 } from '../commands/index.js';
+import { VERSION } from '../index.js';
 
 /**
  * Create and configure the main CLI program

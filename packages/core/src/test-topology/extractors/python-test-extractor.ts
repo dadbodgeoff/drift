@@ -4,8 +4,8 @@
  * Extracts test information from pytest, unittest, and other Python test frameworks.
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -15,6 +15,7 @@ import type {
   TestFramework,
   FixtureInfo,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection
@@ -69,7 +70,7 @@ export class PythonTestExtractor extends BaseTestExtractor {
 
     for (const imp of imports) {
       const framework = FRAMEWORK_IMPORTS[imp];
-      if (framework) return framework;
+      if (framework) {return framework;}
     }
 
     // Check for pytest fixtures
@@ -237,10 +238,10 @@ export class PythonTestExtractor extends BaseTestExtractor {
           let type: SetupBlock['type'] | null = null;
 
           // unittest style
-          if (name === 'setUp') type = 'setUp';
-          else if (name === 'tearDown') type = 'tearDown';
-          else if (name === 'setUpClass') type = 'beforeAll';
-          else if (name === 'tearDownClass') type = 'afterAll';
+          if (name === 'setUp') {type = 'setUp';}
+          else if (name === 'tearDown') {type = 'tearDown';}
+          else if (name === 'setUpClass') {type = 'beforeAll';}
+          else if (name === 'tearDownClass') {type = 'afterAll';}
 
           if (type) {
             const calls = this.extractFunctionCalls(bodyNode);

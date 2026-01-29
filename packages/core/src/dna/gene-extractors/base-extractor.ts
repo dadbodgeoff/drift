@@ -50,7 +50,7 @@ export abstract class BaseGeneExtractor {
   }
 
   isComponentFile(fp: string, c: string): boolean {
-    if (!['.tsx', '.jsx', '.vue', '.svelte'].some(e => fp.endsWith(e))) return false;
+    if (!['.tsx', '.jsx', '.vue', '.svelte'].some(e => fp.endsWith(e))) {return false;}
     return [/export\s+(default\s+)?function\s+\w+/, /<template>/].some(p => p.test(c));
   }
 
@@ -72,12 +72,12 @@ export abstract class BaseGeneExtractor {
       r.totalFiles++;
       const imp = this.extractImports(c);
       const ex = this.extractFromFile(fp, c, imp);
-      if (ex.isComponent) r.componentFiles++;
+      if (ex.isComponent) {r.componentFiles++;}
       for (const det of ex.detectedAlleles) {
         r.alleleCounts.set(det.alleleId, (r.alleleCounts.get(det.alleleId) ?? 0) + 1);
         r.alleleFiles.get(det.alleleId)?.add(fp);
         const exs = r.alleleExamples.get(det.alleleId);
-        if (exs && exs.length < 5) exs.push({ file: fp, line: det.line, code: det.code, context: det.context ?? '' });
+        if (exs && exs.length < 5) {exs.push({ file: fp, line: det.line, code: det.code, context: det.context ?? '' });}
       }
     }
     return r;
@@ -86,11 +86,11 @@ export abstract class BaseGeneExtractor {
   protected buildGene(a: AggregatedExtractionResult): Gene {
     const alleles: Allele[] = [];
     let tot = 0;
-    for (const c of a.alleleCounts.values()) tot += c;
+    for (const c of a.alleleCounts.values()) {tot += c;}
     for (const d of this.getAlleleDefinitions()) {
       const cnt = a.alleleCounts.get(d.id) ?? 0;
       const fs = a.alleleFiles.get(d.id) ?? new Set();
-      if (cnt > 0) alleles.push({ id: d.id, name: d.name, description: d.description, frequency: tot > 0 ? cnt / tot : 0, fileCount: fs.size, pattern: d.patterns.map(p => p.source).join('|'), examples: a.alleleExamples.get(d.id) ?? [], isDominant: false });
+      if (cnt > 0) {alleles.push({ id: d.id, name: d.name, description: d.description, frequency: tot > 0 ? cnt / tot : 0, fileCount: fs.size, pattern: d.patterns.map(p => p.source).join('|'), examples: a.alleleExamples.get(d.id) ?? [], isDominant: false });}
     }
     alleles.sort((x, y) => y.frequency - x.frequency);
     let dom: Allele | null = null;

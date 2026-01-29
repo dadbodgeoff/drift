@@ -5,7 +5,13 @@
  * builds test-to-code mappings, and calculates coverage metrics.
  */
 
-import type Parser from 'tree-sitter';
+import { BaseTestExtractor } from './extractors/base-test-extractor.js';
+import { CSharpTestExtractor } from './extractors/csharp-test-extractor.js';
+import { JavaTestExtractor } from './extractors/java-test-extractor.js';
+import { PHPTestExtractor } from './extractors/php-test-extractor.js';
+import { PythonTestExtractor } from './extractors/python-test-extractor.js';
+import { TypeScriptTestExtractor } from './extractors/typescript-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -20,13 +26,8 @@ import type {
   TestFramework,
   ReachType,
 } from './types.js';
-import { BaseTestExtractor } from './extractors/base-test-extractor.js';
-import { TypeScriptTestExtractor } from './extractors/typescript-test-extractor.js';
-import { PythonTestExtractor } from './extractors/python-test-extractor.js';
-import { JavaTestExtractor } from './extractors/java-test-extractor.js';
-import { CSharpTestExtractor } from './extractors/csharp-test-extractor.js';
-import { PHPTestExtractor } from './extractors/php-test-extractor.js';
 import type { CallGraph, FunctionNode } from '../call-graph/types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Types
@@ -92,7 +93,7 @@ export class TestTopologyAnalyzer {
    */
   extractFromFile(content: string, filePath: string): TestExtraction | null {
     const extractor = this.getExtractorForFile(filePath);
-    if (!extractor) return null;
+    if (!extractor) {return null;}
 
     const extraction = extractor.extract(content, filePath);
     
@@ -146,7 +147,7 @@ export class TestTopologyAnalyzer {
    * Get coverage for a source file
    */
   getCoverage(sourceFile: string): TestCoverage | null {
-    if (!this.callGraph) return null;
+    if (!this.callGraph) {return null;}
 
     const functions: FunctionCoverageInfo[] = [];
     const tests: TestCoverageInfo[] = [];
@@ -154,7 +155,7 @@ export class TestTopologyAnalyzer {
 
     // Find all functions in this file
     for (const [funcId, func] of this.callGraph.functions) {
-      if (func.file !== sourceFile) continue;
+      if (func.file !== sourceFile) {continue;}
 
       const coveringTests = this.functionToTests.get(funcId);
       const isCovered = coveringTests !== undefined && coveringTests.size > 0;
@@ -171,7 +172,7 @@ export class TestTopologyAnalyzer {
       // Collect test info
       if (coveringTests) {
         for (const testId of coveringTests) {
-          if (seenTests.has(testId)) continue;
+          if (seenTests.has(testId)) {continue;}
           seenTests.add(testId);
 
           const testInfo = this.getTestInfo(testId);
@@ -210,20 +211,20 @@ export class TestTopologyAnalyzer {
     const { minRisk = 'low', limit = 50, includeReasons = true } = options;
     const uncovered: UncoveredFunction[] = [];
 
-    if (!this.callGraph) return uncovered;
+    if (!this.callGraph) {return uncovered;}
 
     const riskThresholds = { low: 0, medium: 30, high: 60 };
     const minRiskScore = riskThresholds[minRisk];
 
     for (const [funcId, func] of this.callGraph.functions) {
       // Skip test files
-      if (this.isTestFile(func.file)) continue;
+      if (this.isTestFile(func.file)) {continue;}
 
       const coveringTests = this.functionToTests.get(funcId);
-      if (coveringTests && coveringTests.size > 0) continue;
+      if (coveringTests && coveringTests.size > 0) {continue;}
 
       const riskScore = this.calculateRiskScore(func);
-      if (riskScore < minRiskScore) continue;
+      if (riskScore < minRiskScore) {continue;}
 
       const possibleReasons = includeReasons 
         ? this.inferUncoveredReasons(func)
@@ -267,10 +268,10 @@ export class TestTopologyAnalyzer {
     // Find tests that cover changed functions
     for (const funcId of changedFunctions) {
       const tests = this.functionToTests.get(funcId);
-      if (!tests) continue;
+      if (!tests) {continue;}
 
       for (const testId of tests) {
-        if (selectedTests.has(testId)) continue;
+        if (selectedTests.has(testId)) {continue;}
 
         const testInfo = this.getTestInfo(testId);
         if (testInfo) {
@@ -419,7 +420,7 @@ export class TestTopologyAnalyzer {
       const coveredSourceFiles = new Set<string>();
 
       for (const [funcId, func] of this.callGraph.functions) {
-        if (this.isTestFile(func.file)) continue;
+        if (this.isTestFile(func.file)) {continue;}
 
         sourceFiles.add(func.file);
         totalFunctions++;
@@ -485,7 +486,7 @@ export class TestTopologyAnalyzer {
   }
 
   private resolveFunctionId(callName: string, fromFile: string): string | null {
-    if (!this.callGraph) return null;
+    if (!this.callGraph) {return null;}
 
     // Try exact match first
     for (const [funcId, func] of this.callGraph.functions) {
@@ -507,18 +508,18 @@ export class TestTopologyAnalyzer {
 
   private findTransitiveCalls(directCalls: Set<string>): Set<string> {
     const transitive = new Set<string>();
-    if (!this.callGraph) return transitive;
+    if (!this.callGraph) {return transitive;}
 
     const visited = new Set<string>();
     const queue = Array.from(directCalls);
 
     while (queue.length > 0) {
       const funcId = queue.shift()!;
-      if (visited.has(funcId)) continue;
+      if (visited.has(funcId)) {continue;}
       visited.add(funcId);
 
       const func = this.callGraph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       for (const call of func.calls) {
         for (const candidate of call.resolvedCandidates) {
@@ -545,7 +546,7 @@ export class TestTopologyAnalyzer {
   private getTestInfo(testId: string): TestCase | null {
     for (const extraction of this.testExtractions.values()) {
       for (const test of extraction.testCases) {
-        if (test.id === testId) return test;
+        if (test.id === testId) {return test;}
       }
     }
     return null;
@@ -553,7 +554,7 @@ export class TestTopologyAnalyzer {
 
   private getReachType(testId: string, funcId: string): ReachType {
     const testFunctions = this.testToFunctions.get(testId);
-    if (!testFunctions) return 'transitive';
+    if (!testFunctions) {return 'transitive';}
 
     const testInfo = this.getTestInfo(testId);
     if (testInfo?.directCalls.some(c => this.resolveFunctionId(c, testInfo.file) === funcId)) {
@@ -575,25 +576,25 @@ export class TestTopologyAnalyzer {
   }
 
   private isMockedOnly(funcId: string, coveringTests: Set<string> | undefined): boolean {
-    if (!coveringTests) return false;
+    if (!coveringTests) {return false;}
 
     // Check if all covering tests mock this function
     for (const testId of coveringTests) {
       const testInfo = this.getTestInfo(testId);
-      if (!testInfo) continue;
+      if (!testInfo) {continue;}
 
       const extraction = this.testExtractions.get(testInfo.file);
-      if (!extraction) continue;
+      if (!extraction) {continue;}
 
       const func = this.callGraph?.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Check if any mock targets this function
       const isMocked = extraction.mocks.some(m => 
         m.target.includes(func.name) || m.target.includes(func.qualifiedName)
       );
 
-      if (!isMocked) return false;
+      if (!isMocked) {return false;}
     }
 
     return true;

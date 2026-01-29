@@ -8,6 +8,7 @@
  */
 
 import { BaseParser } from './base-parser.js';
+
 import type { AST, ASTNode, Language, ParseResult, Position } from './types.js';
 
 /**
@@ -309,7 +310,7 @@ export class JSONParser extends BaseParser {
   private convertYamlToJson(source: string): string {
     const lines = source.split('\n');
     const stack: Array<{ indent: number; value: Record<string, unknown> | unknown[] }> = [];
-    let currentObject: Record<string, unknown> = {};
+    const currentObject: Record<string, unknown> = {};
     let rootValue: unknown = currentObject;
 
     for (let i = 0; i < lines.length; i++) {
@@ -368,14 +369,14 @@ export class JSONParser extends BaseParser {
           if (valueStr === '' || valueStr === '|' || valueStr === '>') {
             // Nested object or multi-line string
             const newObj: Record<string, unknown> = {};
-            (parent as Record<string, unknown>)[key] = newObj;
+            (parent)[key] = newObj;
             stack.push({ indent, value: newObj });
           } else if (valueStr.startsWith('[') && valueStr.endsWith(']')) {
             // Inline array
-            (parent as Record<string, unknown>)[key] = this.parseYamlInlineArray(valueStr);
+            (parent)[key] = this.parseYamlInlineArray(valueStr);
           } else {
             // Simple value
-            (parent as Record<string, unknown>)[key] = this.parseYamlValue(valueStr);
+            (parent)[key] = this.parseYamlValue(valueStr);
           }
         }
       }
@@ -438,15 +439,15 @@ export class JSONParser extends BaseParser {
     }
 
     // Boolean
-    if (value === 'true' || value === 'yes' || value === 'on') return true;
-    if (value === 'false' || value === 'no' || value === 'off') return false;
+    if (value === 'true' || value === 'yes' || value === 'on') {return true;}
+    if (value === 'false' || value === 'no' || value === 'off') {return false;}
 
     // Null
-    if (value === 'null' || value === '~' || value === '') return null;
+    if (value === 'null' || value === '~' || value === '') {return null;}
 
     // Number
     const num = Number(value);
-    if (!isNaN(num) && value !== '') return num;
+    if (!isNaN(num) && value !== '') {return num;}
 
     // String
     return value;
@@ -457,7 +458,7 @@ export class JSONParser extends BaseParser {
    */
   private parseYamlInlineArray(value: string): unknown[] {
     const inner = value.slice(1, -1).trim();
-    if (!inner) return [];
+    if (!inner) {return [];}
 
     return inner.split(',').map(item => this.parseYamlValue(item.trim()));
   }
@@ -541,12 +542,12 @@ export class JSONParser extends BaseParser {
    * Get the JSON value type.
    */
   private getValueType(value: unknown): JSONValueType {
-    if (value === null) return 'null';
-    if (Array.isArray(value)) return 'array';
-    if (typeof value === 'object') return 'object';
-    if (typeof value === 'string') return 'string';
-    if (typeof value === 'number') return 'number';
-    if (typeof value === 'boolean') return 'boolean';
+    if (value === null) {return 'null';}
+    if (Array.isArray(value)) {return 'array';}
+    if (typeof value === 'object') {return 'object';}
+    if (typeof value === 'string') {return 'string';}
+    if (typeof value === 'number') {return 'number';}
+    if (typeof value === 'boolean') {return 'boolean';}
     return 'null';
   }
 

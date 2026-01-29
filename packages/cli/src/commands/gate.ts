@@ -12,10 +12,11 @@
  *   drift gate --ci               # CI mode with JSON output
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   GateOrchestrator,
   TextReporter,
@@ -214,7 +215,7 @@ function determineExitCode(
   result: QualityGateResult,
   failOn: 'error' | 'warning' | 'none'
 ): number {
-  if (failOn === 'none') return 0;
+  if (failOn === 'none') {return 0;}
   
   if (failOn === 'warning') {
     return result.status === 'passed' ? 0 : 1;

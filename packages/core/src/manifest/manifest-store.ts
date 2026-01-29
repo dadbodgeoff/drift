@@ -13,6 +13,7 @@
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
 import type {
   Manifest,
   ManifestPattern,
@@ -194,12 +195,12 @@ export class ManifestStore {
    * Remove patterns for a file (before re-scanning)
    */
   clearFilePatterns(filePath: string): void {
-    if (!this.manifest) return;
+    if (!this.manifest) {return;}
 
     const relativePath = path.relative(this.projectRoot, filePath);
     const fileEntry = this.manifest.files[relativePath];
 
-    if (!fileEntry) return;
+    if (!fileEntry) {return;}
 
     // Remove this file's locations from each pattern
     for (const patternId of fileEntry.patterns) {
@@ -224,7 +225,7 @@ export class ManifestStore {
    * Query patterns by various criteria
    */
   queryPatterns(query: PatternQuery): PatternQueryResult[] {
-    if (!this.manifest) return [];
+    if (!this.manifest) {return [];}
 
     const results: PatternQueryResult[] = [];
 
@@ -260,7 +261,7 @@ export class ManifestStore {
         locations = locations.filter(loc => this.matchGlob(loc.file, pathPattern));
       }
 
-      if (locations.length === 0) continue;
+      if (locations.length === 0) {continue;}
 
       // Apply limit
       const limitedLocations = query.limit ? locations.slice(0, query.limit) : locations;
@@ -281,28 +282,28 @@ export class ManifestStore {
    * Query patterns in a specific file
    */
   queryFile(query: FileQuery): FileQueryResult | null {
-    if (!this.manifest) return null;
+    if (!this.manifest) {return null;}
 
     // Handle glob patterns
     const matchingFiles = Object.keys(this.manifest.files).filter(f =>
       this.matchGlob(f, query.path)
     );
 
-    if (matchingFiles.length === 0) return null;
+    if (matchingFiles.length === 0) {return null;}
 
     // For now, return first matching file
     const filePath = matchingFiles[0];
-    if (!filePath) return null;
+    if (!filePath) {return null;}
     
     const fileEntry = this.manifest.files[filePath];
 
-    if (!fileEntry) return null;
+    if (!fileEntry) {return null;}
 
     const patterns: FileQueryResult['patterns'] = [];
 
     for (const patternId of fileEntry.patterns) {
       const pattern = this.manifest.patterns[patternId];
-      if (!pattern) continue;
+      if (!pattern) {continue;}
 
       // Filter by category
       if (query.category && pattern.category !== query.category) {
@@ -338,7 +339,7 @@ export class ManifestStore {
    * Get all patterns
    */
   getAllPatterns(): ManifestPattern[] {
-    if (!this.manifest) return [];
+    if (!this.manifest) {return [];}
     return Object.values(this.manifest.patterns);
   }
 
@@ -346,7 +347,7 @@ export class ManifestStore {
    * Get patterns by category
    */
   getPatternsByCategory(category: PatternCategory): ManifestPattern[] {
-    if (!this.manifest) return [];
+    if (!this.manifest) {return [];}
     return Object.values(this.manifest.patterns).filter(p => p.category === category);
   }
 
@@ -369,7 +370,7 @@ export class ManifestStore {
   // ============================================================================
 
   private addFilePattern(filePath: string, patternId: string, hash: string): void {
-    if (!this.manifest) return;
+    if (!this.manifest) {return;}
 
     if (!this.manifest.files[filePath]) {
       this.manifest.files[filePath] = {
@@ -423,7 +424,7 @@ export class ManifestStore {
   }
 
   private calculateCodebaseHash(): string {
-    if (!this.manifest) return '';
+    if (!this.manifest) {return '';}
 
     // Hash all file hashes together
     const fileHashes = Object.values(this.manifest.files)

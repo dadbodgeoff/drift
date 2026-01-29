@@ -11,10 +11,12 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { createGoHybridExtractor, type GoHybridExtractor } from '../call-graph/extractors/go-hybrid-extractor.js';
+
 import { createGoDataAccessExtractor, type GoDataAccessExtractor } from '../call-graph/extractors/go-data-access-extractor.js';
-import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
+import { createGoHybridExtractor, type GoHybridExtractor } from '../call-graph/extractors/go-hybrid-extractor.js';
+
 import type { DataAccessPoint } from '../boundaries/types.js';
+import type { FunctionExtraction, ClassExtraction, CallExtraction } from '../call-graph/types.js';
 
 // ============================================================================
 // Types
@@ -233,7 +235,7 @@ export class GoAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const isTestFile = file.endsWith('_test.go');
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       // Extract code structure
       const result = this.extractor.extract(source, file);
@@ -245,7 +247,7 @@ export class GoAnalyzer {
       // Detect frameworks from imports
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Organize by package
@@ -580,7 +582,7 @@ export class GoAnalyzer {
           return relativePath.includes(pattern);
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -629,7 +631,7 @@ export class GoAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importPath.startsWith(prefix)) return name;
+      if (importPath.startsWith(prefix)) {return name;}
     }
 
     return null;
@@ -749,9 +751,9 @@ export class GoAnalyzer {
 
   private extractGoroutineFunc(line: string): string {
     const match = line.match(/go\s+(\w+(?:\.\w+)?)\s*\(/);
-    if (match) return match[1]!;
+    if (match) {return match[1]!;}
 
-    if (/go\s+func\s*\(/.test(line)) return 'anonymous';
+    if (/go\s+func\s*\(/.test(line)) {return 'anonymous';}
 
     return 'unknown';
   }

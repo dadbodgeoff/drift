@@ -6,26 +6,10 @@
  */
 
 import * as fs from 'node:fs/promises';
-import type { Dirent } from 'node:fs';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
 
-import type { FileExtractionResult } from '../../call-graph/types.js';
-import { TypeScriptCallGraphExtractor } from '../../call-graph/extractors/typescript-extractor.js';
-import { PythonCallGraphExtractor } from '../../call-graph/extractors/python-extractor.js';
-import { JavaCallGraphExtractor } from '../../call-graph/extractors/java-extractor.js';
-import { CSharpCallGraphExtractor } from '../../call-graph/extractors/csharp-extractor.js';
-import { PhpCallGraphExtractor } from '../../call-graph/extractors/php-extractor.js';
-import type { BaseCallGraphExtractor } from '../../call-graph/extractors/base-extractor.js';
-
-import type {
-  WrapperAnalysisResult,
-  SupportedLanguage,
-  WrapperFunction,
-  WrapperCluster,
-} from '../types.js';
-
-import { analyzeWrappers, type AnalysisOptions } from '../index.js';
 import {
   mapLanguage,
   buildDiscoveryContext,
@@ -35,6 +19,22 @@ import {
   type AdapterOptions,
   type ExtractionStats,
 } from './adapter.js';
+import { CSharpCallGraphExtractor } from '../../call-graph/extractors/csharp-extractor.js';
+import { JavaCallGraphExtractor } from '../../call-graph/extractors/java-extractor.js';
+import { PhpCallGraphExtractor } from '../../call-graph/extractors/php-extractor.js';
+import { PythonCallGraphExtractor } from '../../call-graph/extractors/python-extractor.js';
+import { TypeScriptCallGraphExtractor } from '../../call-graph/extractors/typescript-extractor.js';
+import { analyzeWrappers, type AnalysisOptions } from '../index.js';
+
+import type { BaseCallGraphExtractor } from '../../call-graph/extractors/base-extractor.js';
+import type { FileExtractionResult } from '../../call-graph/types.js';
+import type {
+  WrapperAnalysisResult,
+  SupportedLanguage,
+  WrapperFunction,
+  WrapperCluster,
+} from '../types.js';
+import type { Dirent } from 'node:fs';
 
 // =============================================================================
 // Types
@@ -142,7 +142,7 @@ export class WrapperScanner {
 
     for (const file of files) {
       const extractor = this.getExtractor(file);
-      if (!extractor) continue;
+      if (!extractor) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);
@@ -220,7 +220,7 @@ export class WrapperScanner {
 
     for (const file of files) {
       const extractor = this.getExtractor(file);
-      if (!extractor) continue;
+      if (!extractor) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);
@@ -291,13 +291,13 @@ export class WrapperScanner {
     const walk = async (dir: string, relativePath: string = ''): Promise<void> => {
       let entries: Dirent[];
       try {
-        entries = await fs.readdir(dir, { withFileTypes: true }) as Dirent[];
+        entries = await fs.readdir(dir, { withFileTypes: true });
       } catch {
         return; // Skip inaccessible directories
       }
 
       for (const entry of entries) {
-        const entryName = entry.name as string;
+        const entryName = entry.name;
         const fullPath = path.join(dir, entryName);
         const relPath = relativePath ? `${relativePath}/${entryName}` : entryName;
 
@@ -342,7 +342,7 @@ export class WrapperScanner {
 
     for (const extraction of extractions) {
       const lang = mapLanguage(extraction.language);
-      if (!lang) continue;
+      if (!lang) {continue;}
 
       const existing = byLanguage.get(lang) || [];
       byLanguage.set(lang, [...existing, extraction]);

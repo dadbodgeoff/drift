@@ -5,11 +5,11 @@
  * Maps fields to sensitivity types and regulatory implications.
  */
 
-import type { SensitivityType } from '../../boundaries/types.js';
 import type {
   DataSensitivityProfile,
   DataRegulation,
 } from './types.js';
+import type { SensitivityType } from '../../boundaries/types.js';
 
 // ============================================================================
 // Sensitivity Patterns

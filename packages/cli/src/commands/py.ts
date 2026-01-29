@@ -6,14 +6,14 @@
  * @requirements Python Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createPythonAnalyzer,
   type PyRoute,
   type PyErrorPattern,
-  type PyDecorator,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface PyOptions {
@@ -410,7 +410,7 @@ async function decoratorsAction(targetPath: string | undefined, options: PyOptio
 
     if (options.verbose) {
       console.log(chalk.bold('Decorators:'));
-      for (const dec of result.decorators.slice(0, 20) as PyDecorator[]) {
+      for (const dec of result.decorators.slice(0, 20)) {
         console.log(`  @${chalk.cyan(dec.name)}`);
         console.log(chalk.gray(`    ${dec.file}:${dec.line}`));
       }

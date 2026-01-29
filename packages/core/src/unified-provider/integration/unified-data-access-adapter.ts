@@ -6,10 +6,11 @@
  * extraction format and the legacy DataAccessPoint format.
  */
 
+import { UnifiedLanguageProvider, createUnifiedProvider } from '../provider/unified-language-provider.js';
+
 import type { DataAccessPoint } from '../../boundaries/types.js';
 import type { FileExtractionResult, FunctionExtraction, CallExtraction, ImportExtraction, ExportExtraction, ClassExtraction, CallGraphLanguage } from '../../call-graph/types.js';
 import type { UnifiedExtractionResult, UnifiedDataAccess, UnifiedFunction, UnifiedClass, UnifiedImport, UnifiedExport, UnifiedLanguage } from '../types.js';
-import { UnifiedLanguageProvider, createUnifiedProvider } from '../provider/unified-language-provider.js';
 
 /**
  * Convert UnifiedLanguage to CallGraphLanguage
@@ -121,7 +122,7 @@ export function toFileExtractionResult(result: UnifiedExtractionResult): FileExt
     // We extract individual calls from the chain
     for (let i = 0; i < chain.segments.length; i++) {
       const segment = chain.segments[i];
-      if (!segment) continue;
+      if (!segment) {continue;}
       
       if (segment.isCall) {
         const prevSegment = i > 0 ? chain.segments[i - 1] : undefined;

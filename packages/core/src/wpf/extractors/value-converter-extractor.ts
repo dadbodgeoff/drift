@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type { SourceLocation } from '../types.js';
 
 // ============================================================================
@@ -244,7 +245,7 @@ export class ValueConverterExtractor {
       : VALUE_CONVERTER_PATTERNS.convertMethod;
 
     const match = content.match(pattern);
-    if (!match) return null;
+    if (!match) {return null;}
 
     const body = match[1] ?? '';
     const hasImplementation = !VALUE_CONVERTER_PATTERNS.throwNotImplemented.test(body) &&
@@ -272,7 +273,7 @@ export class ValueConverterExtractor {
       : VALUE_CONVERTER_PATTERNS.convertBackMethod;
 
     const match = content.match(pattern);
-    if (!match) return null;
+    if (!match) {return null;}
 
     const body = match[1] ?? '';
     const hasImplementation = !VALUE_CONVERTER_PATTERNS.throwNotImplemented.test(body) &&
@@ -314,13 +315,13 @@ export class ValueConverterExtractor {
   getConverter(nameOrKey: string): ValueConverterInfo | null {
     // Try direct lookup
     let converter = this.converters.get(nameOrKey);
-    if (converter) return converter;
+    if (converter) {return converter;}
 
     // Try resource key lookup
     const className = this.resourceKeyToClass.get(nameOrKey);
     if (className) {
       converter = this.converters.get(className);
-      if (converter) return converter;
+      if (converter) {return converter;}
     }
 
     return null;

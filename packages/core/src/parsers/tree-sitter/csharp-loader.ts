@@ -8,6 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
+
 import type { TreeSitterParser, TreeSitterLanguage } from './types.js';
 
 // Create require function for ESM compatibility
@@ -139,7 +140,7 @@ function loadCSharpTreeSitter(): void {
 
   try {
     // Dynamic require for optional dependencies
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedTreeSitter = require('tree-sitter') as new () => TreeSitterParser;
   } catch (error) {
     throw new Error(
@@ -149,7 +150,7 @@ function loadCSharpTreeSitter(): void {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     cachedCSharpLanguage = require('tree-sitter-c-sharp') as TreeSitterLanguage;
   } catch (error) {
     // Clear tree-sitter cache since we can't use it without C#

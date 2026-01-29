@@ -14,8 +14,9 @@
  * The service-based approach is preferred for new code.
  */
 
-import type { PatternStore, DataLake, StatusView, IPatternService } from 'driftdetect-core';
 import { createResponseBuilder } from '../../infrastructure/index.js';
+
+import type { PatternStore, DataLake, StatusView, IPatternService } from 'driftdetect-core';
 
 export interface StatusData {
   health: {

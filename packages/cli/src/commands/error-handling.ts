@@ -4,10 +4,11 @@
  * Analyze error handling patterns, detect gaps, and find unhandled error paths.
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createErrorHandlingAnalyzer,
   createCallGraphAnalyzer,
@@ -20,6 +21,7 @@ import {
   type FunctionErrorAnalysis,
   type ErrorSeverity,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface ErrorHandlingOptions {
@@ -116,7 +118,7 @@ async function buildAction(options: ErrorHandlingOptions): Promise<void> {
             type: (g.gapType === 'swallowed-error' ? 'swallowed' : 
                    g.gapType === 'unhandled-async' ? 'unhandled-async' :
                    g.gapType === 'missing-boundary' ? 'no-boundary' :
-                   g.gapType === 'bare-catch' ? 'bare-catch' : 'swallowed') as 'swallowed' | 'unhandled-async' | 'no-boundary' | 'bare-catch',
+                   g.gapType === 'bare-catch' ? 'bare-catch' : 'swallowed'),
             count: 1,
             severity: g.severity as ErrorSeverity,
           })),
@@ -763,20 +765,20 @@ function formatFunctionAnalysis(analysis: FunctionErrorAnalysis): void {
 // ============================================================================
 
 function getCoverageColor(percent: number): string {
-  if (percent >= 80) return chalk.green(`${percent}%`);
-  if (percent >= 50) return chalk.yellow(`${percent}%`);
+  if (percent >= 80) {return chalk.green(`${percent}%`);}
+  if (percent >= 50) {return chalk.yellow(`${percent}%`);}
   return chalk.red(`${percent}%`);
 }
 
 function getQualityColor(score: number): string {
-  if (score >= 70) return chalk.green(`${score}/100`);
-  if (score >= 50) return chalk.yellow(`${score}/100`);
+  if (score >= 70) {return chalk.green(`${score}/100`);}
+  if (score >= 50) {return chalk.yellow(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 
 function getUnhandledColor(count: number): string {
-  if (count === 0) return chalk.green.bold('0');
-  if (count <= 5) return chalk.yellow.bold(String(count));
+  if (count === 0) {return chalk.green.bold('0');}
+  if (count <= 5) {return chalk.yellow.bold(String(count));}
   return chalk.red.bold(String(count));
 }
 
@@ -823,12 +825,12 @@ export function createErrorHandlingCommand(): Command {
   cmd
     .command('build')
     .description('Build error handling analysis')
-    .action(() => buildAction(cmd.opts() as ErrorHandlingOptions));
+    .action(() => buildAction(cmd.opts()));
 
   cmd
     .command('status')
     .description('Show error handling overview')
-    .action(() => statusAction(cmd.opts() as ErrorHandlingOptions));
+    .action(() => statusAction(cmd.opts()));
 
   cmd
     .command('gaps')
@@ -840,7 +842,7 @@ export function createErrorHandlingCommand(): Command {
   cmd
     .command('boundaries')
     .description('List error boundaries')
-    .action(() => boundariesAction(cmd.opts() as ErrorHandlingOptions));
+    .action(() => boundariesAction(cmd.opts()));
 
   cmd
     .command('unhandled')
@@ -851,7 +853,7 @@ export function createErrorHandlingCommand(): Command {
   cmd
     .command('analyze <function>')
     .description('Analyze specific function error handling')
-    .action((func) => analyzeAction(func, cmd.opts() as ErrorHandlingOptions));
+    .action((func) => analyzeAction(func, cmd.opts()));
 
   return cmd;
 }

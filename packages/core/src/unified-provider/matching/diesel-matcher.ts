@@ -11,9 +11,10 @@
  * @requirements Rust Language Support
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Diesel pattern matcher
@@ -35,11 +36,11 @@ export class DieselMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: diesel::* functions
     const dieselMatch = this.matchDieselPattern(chain);
-    if (dieselMatch) return dieselMatch;
+    if (dieselMatch) {return dieselMatch;}
 
     // Pattern 2: table::table.* chains
     const tableMatch = this.matchTablePattern(chain);
-    if (tableMatch) return tableMatch;
+    if (tableMatch) {return tableMatch;}
 
     return null;
   }
@@ -78,7 +79,7 @@ export class DieselMatcher extends BaseMatcher {
   }
 
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     let operation: DataOperation | null = null;
     let table: string | null = null;
@@ -90,7 +91,7 @@ export class DieselMatcher extends BaseMatcher {
     }
 
     for (const segment of chain.segments) {
-      if (!segment.isCall) continue;
+      if (!segment.isCall) {continue;}
 
       const methodName = segment.name;
 
@@ -99,7 +100,7 @@ export class DieselMatcher extends BaseMatcher {
         operation = 'write';
         if (segment.args.length > 0) {
           const argTable = this.extractTableFromArg(segment.args[0]!);
-          if (argTable) table = argTable;
+          if (argTable) {table = argTable;}
         }
       }
 
@@ -108,7 +109,7 @@ export class DieselMatcher extends BaseMatcher {
         operation = 'write';
         if (segment.args.length > 0) {
           const argTable = this.extractTableFromArg(segment.args[0]!);
-          if (argTable) table = argTable;
+          if (argTable) {table = argTable;}
         }
       }
 
@@ -117,26 +118,26 @@ export class DieselMatcher extends BaseMatcher {
         operation = 'delete';
         if (segment.args.length > 0) {
           const argTable = this.extractTableFromArg(segment.args[0]!);
-          if (argTable) table = argTable;
+          if (argTable) {table = argTable;}
         }
       }
 
       // Check for select (indicates read)
       if (methodName === 'select') {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
         // Extract fields from select
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
       // Check for filter (might contain field references)
       if (methodName === 'filter') {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
@@ -144,7 +145,7 @@ export class DieselMatcher extends BaseMatcher {
       if (methodName === 'set') {
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
@@ -155,22 +156,22 @@ export class DieselMatcher extends BaseMatcher {
 
       // Check for load methods (read operation)
       if (this.loadMethods.includes(methodName)) {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
       }
 
       // Check for execute method
       if (this.executeMethods.includes(methodName)) {
-        if (!operation) operation = 'write';
+        if (!operation) {operation = 'write';}
       }
 
       // Check for order, limit, offset (read indicators)
       if (methodName === 'order' || methodName === 'order_by' ||
           methodName === 'limit' || methodName === 'offset') {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createMatch({
       table: table ?? 'unknown',

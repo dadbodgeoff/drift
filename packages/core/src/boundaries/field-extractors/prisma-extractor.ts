@@ -10,7 +10,6 @@
  * Also extracts from schema.prisma model definitions.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -18,14 +17,16 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class PrismaFieldExtractor extends BaseFieldExtractor {
   readonly name = 'prisma';
   readonly framework: ORMFramework = 'prisma';
   readonly languages = ['typescript', 'javascript', 'prisma'];
   
   matches(content: string, language: string): boolean {
-    if (language === 'prisma') return true;
-    if (!['typescript', 'javascript'].includes(language)) return false;
+    if (language === 'prisma') {return true;}
+    if (!['typescript', 'javascript'].includes(language)) {return false;}
     return (
       content.includes('prisma.') ||
       content.includes('@prisma/client') ||
@@ -122,7 +123,7 @@ export class PrismaFieldExtractor extends BaseFieldExtractor {
     while ((match = modelPattern.exec(content)) !== null) {
       const modelName = match[1];
       const modelBody = match[2];
-      if (!modelName || !modelBody) continue;
+      if (!modelName || !modelBody) {continue;}
       
       const startLine = content.substring(0, match.index).split('\n').length;
       const endLine = startLine + modelBody.split('\n').length;
@@ -132,7 +133,7 @@ export class PrismaFieldExtractor extends BaseFieldExtractor {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]?.trim();
-        if (!line || line.startsWith('//') || line.startsWith('@@')) continue;
+        if (!line || line.startsWith('//') || line.startsWith('@@')) {continue;}
         
         // Parse field: name Type @attributes
         const fieldMatch = line.match(/^(\w+)\s+(\w+)(\?)?/);

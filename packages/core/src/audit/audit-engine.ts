@@ -8,7 +8,9 @@
  */
 
 import * as crypto from 'node:crypto';
-import type { Pattern } from '../store/types.js';
+
+import { HEALTH_SCORE_WEIGHTS } from './types.js';
+
 import type {
   AuditResult,
   AuditSummary,
@@ -22,7 +24,7 @@ import type {
   CategoryAuditSummary,
   AuditRecommendation,
 } from './types.js';
-import { HEALTH_SCORE_WEIGHTS } from './types.js';
+import type { Pattern } from '../store/types.js';
 
 // =============================================================================
 // Constants
@@ -111,7 +113,7 @@ export class AuditEngine {
 
     for (let i = 0; i < patterns.length; i++) {
       const patternA = patterns[i]!;
-      if (processed.has(patternA.id)) continue;
+      if (processed.has(patternA.id)) {continue;}
 
       const group: string[] = [patternA.id];
       const groupNames: string[] = [patternA.name];
@@ -123,10 +125,10 @@ export class AuditEngine {
 
       for (let j = i + 1; j < patterns.length; j++) {
         const patternB = patterns[j]!;
-        if (processed.has(patternB.id)) continue;
+        if (processed.has(patternB.id)) {continue;}
 
         // Skip if different categories (unlikely to be duplicates)
-        if (patternA.category !== patternB.category) continue;
+        if (patternA.category !== patternB.category) {continue;}
 
         // Get file set for pattern B
         const filesB = new Set(patternB.locations.map(l => `${l.file}:${l.line}`));
@@ -177,7 +179,7 @@ export class AuditEngine {
     let patternsMatchingCallGraph = 0;
     let patternsNotInCallGraph = 0;
     let constraintAlignmentScore = 1.0;
-    let testCoverageAlignmentScore = 1.0;
+    const testCoverageAlignmentScore = 1.0;
 
     // For now, we do basic validation
     // Full call graph / constraint integration would require loading those stores
@@ -345,7 +347,7 @@ export class AuditEngine {
     crossValidation: CrossValidationResult,
     duplicates: DuplicateGroup[]
   ): number {
-    if (patterns.length === 0) return 100;
+    if (patterns.length === 0) {return 100;}
 
     // Average confidence
     const avgConfidence = patterns.reduce((sum, p) => sum + p.confidence.score, 0) / patterns.length;

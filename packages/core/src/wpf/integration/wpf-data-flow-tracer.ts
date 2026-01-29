@@ -352,7 +352,7 @@ export class WpfDataFlowTracer {
     xamlFile: string
   ): { path: string; line: number } | null {
     const xaml = this.xamlFiles.get(xamlFile);
-    if (!xaml) return null;
+    if (!xaml) {return null;}
 
     for (const binding of xaml.bindings) {
       if (binding.elementName === elementName || binding.elementName.includes(elementName)) {
@@ -371,7 +371,7 @@ export class WpfDataFlowTracer {
     xamlFile: string
   ): { binding: string; line: number } | null {
     const xaml = this.xamlFiles.get(xamlFile);
-    if (!xaml) return null;
+    if (!xaml) {return null;}
 
     for (const command of xaml.commands) {
       if (command.elementName === elementName || command.elementName.includes(elementName)) {
@@ -394,7 +394,7 @@ export class WpfDataFlowTracer {
     let reachesDatabase = false;
 
     const vm = this.viewModels.get(vmClass);
-    if (!vm) return { steps, sensitiveData, reachesDatabase };
+    if (!vm) {return { steps, sensitiveData, reachesDatabase };}
 
     // Check if property accesses database
     const content = this.csharpContents.get(vm.filePath) ?? '';
@@ -501,8 +501,8 @@ export class WpfDataFlowTracer {
    * Calculate confidence score for a trace
    */
   private calculateConfidence(steps: DataFlowStep[]): number {
-    if (steps.length === 0) return 0;
-    if (steps.length === 1 && steps[0]?.location.includes('not found')) return 0;
+    if (steps.length === 0) {return 0;}
+    if (steps.length === 1 && steps[0]?.location.includes('not found')) {return 0;}
 
     // Base confidence
     let confidence = 0.5;

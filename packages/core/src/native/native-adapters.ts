@@ -10,6 +10,14 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { createCallGraphAnalyzer } from '../call-graph/index.js';
+import { createConstantScanner, type FileConstantResult } from '../constants/index.js';
+import { createEnvScanner } from '../environment/index.js';
+import { createErrorHandlingAnalyzer } from '../error-handling/index.js';
+import { ModuleCouplingAnalyzer } from '../module-coupling/coupling-analyzer.js';
+import { ParserManager } from '../parsers/parser-manager.js';
+import { createTestTopologyAnalyzer } from '../test-topology/index.js';
+
 import {
   isNativeAvailable,
   type ParseResult,
@@ -24,13 +32,6 @@ import {
 } from './index.js';
 
 // Import TypeScript implementations for fallback
-import { ParserManager } from '../parsers/parser-manager.js';
-import { ModuleCouplingAnalyzer } from '../module-coupling/coupling-analyzer.js';
-import { createTestTopologyAnalyzer } from '../test-topology/index.js';
-import { createErrorHandlingAnalyzer } from '../error-handling/index.js';
-import { createEnvScanner } from '../environment/index.js';
-import { createConstantScanner, type FileConstantResult } from '../constants/index.js';
-import { createCallGraphAnalyzer } from '../call-graph/index.js';
 
 // ============================================================================
 // Native Module Reference
@@ -264,7 +265,7 @@ export async function analyzeTestTopologyWithFallback(
   
   // Extract tests from files
   for (const file of files) {
-    if (!isTestFile(file)) continue;
+    if (!isTestFile(file)) {continue;}
     try {
       const content = await fs.readFile(path.join(rootDir, file), 'utf-8');
       analyzer.extractFromFile(content, file);
@@ -431,7 +432,7 @@ export async function analyzeConstantsWithFallback(
   const inconsistencies: ConstantsResult['inconsistencies'] = [];
   
   for (const fileResult of scanResult.files) {
-    if (!fileResult.result) continue;
+    if (!fileResult.result) {continue;}
     
     const result: FileConstantResult = fileResult.result;
     const file = fileResult.file;

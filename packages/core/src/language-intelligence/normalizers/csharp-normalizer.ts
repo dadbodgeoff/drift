@@ -5,9 +5,10 @@
  * Supports ASP.NET Core framework patterns.
  */
 
-import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import { CSharpCallGraphExtractor } from '../../call-graph/extractors/csharp-extractor.js';
 import { BaseLanguageNormalizer } from '../base-normalizer.js';
+
+import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import type { NormalizedDecorator, DecoratorArguments } from '../types.js';
 
 /**
@@ -47,13 +48,13 @@ export class CSharpNormalizer extends BaseLanguageNormalizer {
 
     // Extract string value: [Attribute("value")] or [Route("path")]
     const valueMatch = raw.match(/\(\s*["']([^"']+)["']/);
-    if (valueMatch && valueMatch[1] !== undefined) {
+    if (valueMatch?.[1] !== undefined) {
       args.path = valueMatch[1];
     }
 
     // Extract named parameters: [Authorize(Roles = "Admin")]
     const rolesMatch = raw.match(/Roles\s*=\s*["']([^"']+)["']/);
-    if (rolesMatch && rolesMatch[1]) {
+    if (rolesMatch?.[1]) {
       args.roles = rolesMatch[1].split(',').map(r => r.trim());
     }
 

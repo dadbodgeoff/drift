@@ -5,7 +5,8 @@
  * Provides common functionality for semantic normalization.
  */
 
-import type { CallGraphLanguage, FunctionExtraction, FileExtractionResult } from '../call-graph/types.js';
+import { getFrameworkRegistry } from './framework-registry.js';
+
 import type {
   LanguageNormalizer,
   NormalizedDecorator,
@@ -15,7 +16,7 @@ import type {
   FunctionSemantics,
   DecoratorArguments,
 } from './types.js';
-import { getFrameworkRegistry } from './framework-registry.js';
+import type { CallGraphLanguage, FunctionExtraction, FileExtractionResult } from '../call-graph/types.js';
 
 /**
  * Abstract base class for language normalizers
@@ -149,7 +150,7 @@ export abstract class BaseLanguageNormalizer implements LanguageNormalizer {
 
     // Try to extract path-like argument
     const pathMatch = raw.match(/["']([^"']+)["']/);
-    if (pathMatch && pathMatch[1] !== undefined) {
+    if (pathMatch?.[1] !== undefined) {
       args.path = pathMatch[1];
     }
 

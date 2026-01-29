@@ -8,9 +8,10 @@
  * Run: node drift/packages/core/dist/call-graph/demo.js
  */
 
-import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
 import { GraphBuilder } from './analysis/graph-builder.js';
 import { ReachabilityEngine } from './analysis/reachability.js';
+import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
+
 import type { CallGraph, FunctionNode } from './types.js';
 import type { DataAccessPoint } from '../boundaries/types.js';
 

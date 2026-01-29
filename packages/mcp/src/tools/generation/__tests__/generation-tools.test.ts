@@ -4,9 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { handleExplain } from '../explain.js';
 import { handleSuggestChanges } from '../suggest-changes.js';
 import { handleValidateChange } from '../validate-change.js';
-import { handleExplain } from '../explain.js';
+
 import type { PatternStore, BoundaryStore, ManifestStore, CallGraphStore } from 'driftdetect-core';
 
 // Mock stores

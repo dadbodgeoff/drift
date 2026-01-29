@@ -271,7 +271,7 @@ export class ResponseCache {
   }
   
   private async getFromL2<T>(key: string): Promise<CachedResponse<T> | null> {
-    if (!this.config.l2CacheDir) return null;
+    if (!this.config.l2CacheDir) {return null;}
     
     try {
       const filePath = this.getL2Path(key);
@@ -283,7 +283,7 @@ export class ResponseCache {
   }
   
   private async setToL2(key: string, cached: CachedResponse): Promise<void> {
-    if (!this.config.l2CacheDir) return;
+    if (!this.config.l2CacheDir) {return;}
     
     try {
       const filePath = this.getL2Path(key);
@@ -295,7 +295,7 @@ export class ResponseCache {
   }
   
   private async deleteFromL2(key: string): Promise<void> {
-    if (!this.config.l2CacheDir) return;
+    if (!this.config.l2CacheDir) {return;}
     
     try {
       const filePath = this.getL2Path(key);
@@ -306,7 +306,7 @@ export class ResponseCache {
   }
   
   private async clearL2(): Promise<void> {
-    if (!this.config.l2CacheDir) return;
+    if (!this.config.l2CacheDir) {return;}
     
     try {
       await fs.rm(this.config.l2CacheDir, { recursive: true, force: true });

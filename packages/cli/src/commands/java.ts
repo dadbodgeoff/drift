@@ -6,14 +6,15 @@
  * @requirements Java Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createJavaAnalyzer,
   type JavaRoute,
   type JavaErrorPattern,
   type JavaAnnotation,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface JavaOptions {
@@ -417,7 +418,7 @@ async function annotationsAction(targetPath: string | undefined, options: JavaOp
 
     if (options.verbose) {
       console.log(chalk.bold('Annotations:'));
-      for (const ann of result.annotations.slice(0, 20) as JavaAnnotation[]) {
+      for (const ann of result.annotations.slice(0, 20)) {
         console.log(`  @${chalk.cyan(ann.name)} (${ann.target})`);
         console.log(chalk.gray(`    ${ann.file}:${ann.line}`));
       }

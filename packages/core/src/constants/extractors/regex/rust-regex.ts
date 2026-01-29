@@ -5,6 +5,8 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
@@ -12,7 +14,6 @@ import type {
   ConstantKind,
   ConstantLanguage,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * Rust constant regex extractor
@@ -35,10 +36,10 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
     while ((match = constPattern.exec(source)) !== null) {
       const isExported = !!match[1];
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[3]?.trim();
       const rawValue = match[4]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
       const docComment = this.extractDocComment(source, line);
@@ -76,10 +77,10 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
       const isExported = !!match[1];
       const isMut = !!match[2];
       const name = match[3];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[4]?.trim();
       const rawValue = match[5]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
 
@@ -120,10 +121,10 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = lazyStaticPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[2]?.trim();
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
 
@@ -163,10 +164,10 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
     while ((match = onceCellPattern.exec(source)) !== null) {
       const isExported = !!match[1];
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const type = match[3]?.trim();
       const rawValue = match[4]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
 
@@ -216,9 +217,9 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
       const attributes = match[1]?.trim() ?? '';
       const isExported = !!match[2];
       const name = match[3];
-      if (!name) continue;
+      if (!name) {continue;}
       const body = match[4];
-      if (!body) continue;
+      if (!body) {continue;}
       const line = this.getLineNumber(source, match.index);
       const endLine = this.getLineNumber(source, match.index + match[0].length);
       const docComment = this.extractDocComment(source, line);
@@ -274,7 +275,7 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
 
       // Simple variant: Name,
       const simpleMatch = trimmed.match(/^(\w+)\s*,?\s*(?:\/\/.*)?$/);
-      if (simpleMatch && simpleMatch[1]) {
+      if (simpleMatch?.[1]) {
         members.push({
           name: simpleMatch[1],
           line: currentLine,
@@ -285,7 +286,7 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
 
       // Variant with value: Name = value,
       const valueMatch = trimmed.match(/^(\w+)\s*=\s*(.+?)\s*,?\s*(?:\/\/.*)?$/);
-      if (valueMatch && valueMatch[1]) {
+      if (valueMatch?.[1]) {
         const name = valueMatch[1];
         const rawValue = valueMatch[2]?.trim();
 
@@ -314,7 +315,7 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
 
       // Tuple variant: Name(Type),
       const tupleMatch = trimmed.match(/^(\w+)\s*\([^)]*\)\s*,?\s*(?:\/\/.*)?$/);
-      if (tupleMatch && tupleMatch[1]) {
+      if (tupleMatch?.[1]) {
         members.push({
           name: tupleMatch[1],
           line: currentLine,
@@ -325,7 +326,7 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
 
       // Struct variant: Name { ... },
       const structMatch = trimmed.match(/^(\w+)\s*\{/);
-      if (structMatch && structMatch[1]) {
+      if (structMatch?.[1]) {
         members.push({
           name: structMatch[1],
           line: currentLine,
@@ -375,8 +376,8 @@ export class RustConstantRegexExtractor extends BaseConstantRegexExtractor {
     }
 
     // Boolean
-    if (rawValue === 'true') return true;
-    if (rawValue === 'false') return false;
+    if (rawValue === 'true') {return true;}
+    if (rawValue === 'false') {return false;}
 
     return null;
   }

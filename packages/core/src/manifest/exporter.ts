@@ -400,7 +400,7 @@ function summarizeLocations(
   const result: SemanticLocation[] = [];
   let fileCount = 0;
   for (const [, fileLocs] of byFile) {
-    if (fileCount >= 10) break;
+    if (fileCount >= 10) {break;}
     const firstLoc = fileLocs[0];
     if (firstLoc) {
       result.push(firstLoc);

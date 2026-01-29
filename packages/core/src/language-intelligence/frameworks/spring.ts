@@ -11,7 +11,7 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
   const match = raw.match(/@(Get|Post|Put|Delete|Patch)Mapping/i);
-  if (match && match[1]) {
+  if (match?.[1]) {
     return match[1].toUpperCase() as HttpMethod;
   }
   return undefined;
@@ -30,7 +30,7 @@ function extractPath(raw: string): string | undefined {
 
   for (const pattern of patterns) {
     const match = raw.match(pattern);
-    if (match && match[1] !== undefined) {
+    if (match?.[1] !== undefined) {
       return match[1];
     }
   }

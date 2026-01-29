@@ -2,11 +2,13 @@
  * DNA Playbook Command - drift dna playbook
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAStore, PlaybookGenerator } from 'driftdetect-core';
+
 import { createSpinner } from '../../ui/spinner.js';
 
 interface DNAPlaybookOptions {

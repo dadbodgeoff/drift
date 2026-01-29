@@ -10,7 +10,6 @@
  * Also extracts from Diesel model definitions.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -18,13 +17,15 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class DieselFieldExtractor extends BaseFieldExtractor {
   readonly name = 'diesel';
   readonly framework: ORMFramework = 'diesel';
   readonly languages = ['rust'];
   
   matches(content: string, language: string): boolean {
-    if (language !== 'rust') return false;
+    if (language !== 'rust') {return false;}
     return (
       content.includes('diesel::') ||
       content.includes('#[derive(Queryable)]') ||
@@ -108,7 +109,7 @@ export class DieselFieldExtractor extends BaseFieldExtractor {
       const tableName = match[1];
       const modelName = match[2];
       const structBody = match[3];
-      if (!modelName || !structBody) continue;
+      if (!modelName || !structBody) {continue;}
       
       const startLine = content.substring(0, match.index).split('\n').length;
       const endLine = startLine + structBody.split('\n').length;
@@ -118,7 +119,7 @@ export class DieselFieldExtractor extends BaseFieldExtractor {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]?.trim();
-        if (!line || line.startsWith('//')) continue;
+        if (!line || line.startsWith('//')) {continue;}
         
         // Parse field: pub field_name: Type,
         const fieldMatch = line.match(/(?:pub\s+)?(\w+)\s*:\s*(\S+)/);

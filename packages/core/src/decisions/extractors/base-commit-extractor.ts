@@ -5,6 +5,11 @@
  * Each language extractor analyzes code changes to detect architectural signals.
  */
 
+import {
+  CommitParser,
+  analyzeDependencyChangesSync,
+} from '../git/index.js';
+
 import type {
   GitCommit,
   CommitSemanticExtraction,
@@ -15,10 +20,6 @@ import type {
   ArchitecturalSignal,
   DecisionLanguage,
 } from '../types.js';
-import {
-  CommitParser,
-  analyzeDependencyChangesSync,
-} from '../git/index.js';
 
 // ============================================================================
 // Base Extractor
@@ -381,7 +382,7 @@ export abstract class BaseCommitExtractor {
     for (const file of commit.files) {
       const lang = file.language;
       if (lang !== 'other' && lang !== 'config' && lang !== 'docs') {
-        languages.add(lang as DecisionLanguage);
+        languages.add(lang);
       }
     }
 

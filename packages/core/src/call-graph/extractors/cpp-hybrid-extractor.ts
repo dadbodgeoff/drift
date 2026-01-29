@@ -10,11 +10,12 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { CppRegexExtractor } from './regex/cpp-regex.js';
-import type { BaseRegexExtractor } from './regex/base-regex-extractor.js';
-import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
 import { isCppTreeSitterAvailable, createCppParser } from '../../parsers/tree-sitter/cpp-loader.js';
-import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+
+import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
+import type { BaseRegexExtractor } from './regex/base-regex-extractor.js';
 import type { HybridExtractorConfig } from './types.js';
+import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
 
 /**
  * C++ hybrid extractor combining tree-sitter and regex
@@ -140,10 +141,10 @@ export class CppHybridExtractor extends HybridExtractorBase {
     _source: string
   ): void {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return;
+    if (!declaratorNode) {return;}
 
     const { name, className } = this.extractFunctionName(declaratorNode);
-    if (!name) return;
+    if (!name) {return;}
 
     const typeNode = node.childForFieldName('type');
     const bodyNode = node.childForFieldName('body');
@@ -186,13 +187,13 @@ export class CppHybridExtractor extends HybridExtractorBase {
     _source: string
   ): void {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return;
+    if (!declaratorNode) {return;}
 
     // Check if this is a function declaration
-    if (!this.isFunctionDeclarator(declaratorNode)) return;
+    if (!this.isFunctionDeclarator(declaratorNode)) {return;}
 
     const { name, className } = this.extractFunctionName(declaratorNode);
-    if (!name) return;
+    if (!name) {return;}
 
     const typeNode = node.childForFieldName('type');
     const qualifiedName = this.buildQualifiedName(name, className ?? this.currentClass);
@@ -228,7 +229,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const bodyNode = node.childForFieldName('body');
@@ -261,12 +262,12 @@ export class CppHybridExtractor extends HybridExtractorBase {
         } else if (child.type === 'function_definition') {
           this.extractFunctionDefinition(child, result, source);
           const fnName = this.extractFunctionNameFromNode(child);
-          if (fnName) methods.push(fnName);
+          if (fnName) {methods.push(fnName);}
         } else if (child.type === 'declaration') {
           if (this.isFunctionDeclarator(child.childForFieldName('declarator'))) {
             this.extractDeclaration(child, result, source);
             const fnName = this.extractFunctionNameFromNode(child);
-            if (fnName) methods.push(fnName);
+            if (fnName) {methods.push(fnName);}
           }
         } else if (child.type === 'template_declaration') {
           this.extractTemplateDeclaration(child, result, source);
@@ -293,7 +294,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
    */
   private extractEnumSpecifier(node: TreeSitterNode, result: FileExtractionResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     result.classes.push({
       name: nameNode.text,
@@ -339,7 +340,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
    */
   private extractInclude(node: TreeSitterNode, result: FileExtractionResult): void {
     const pathNode = node.childForFieldName('path');
-    if (!pathNode) return;
+    if (!pathNode) {return;}
 
     const pathText = pathNode.text;
     const isSystem = pathText.startsWith('<');
@@ -385,7 +386,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
     const funcNode = node.childForFieldName('function');
     const argsNode = node.childForFieldName('arguments');
 
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -488,7 +489,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
 
   private extractFunctionNameFromNode(node: TreeSitterNode): string | null {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return null;
+    if (!declaratorNode) {return null;}
     const { name } = this.extractFunctionName(declaratorNode);
     return name;
   }
@@ -514,13 +515,13 @@ export class CppHybridExtractor extends HybridExtractorBase {
       }
       for (const child of n.children) {
         const result = findParams(child);
-        if (result) return result;
+        if (result) {return result;}
       }
       return null;
     };
 
     const paramsNode = findParams(declaratorNode);
-    if (!paramsNode) return params;
+    if (!paramsNode) {return params;}
 
     for (const child of paramsNode.children) {
       if (child.type === 'parameter_declaration') {
@@ -533,7 +534,7 @@ export class CppHybridExtractor extends HybridExtractorBase {
 
         if (declarator) {
           const { name: paramName } = this.extractFunctionName(declarator);
-          if (paramName) name = paramName;
+          if (paramName) {name = paramName;}
         }
 
         params.push({ name, type: typeText, hasDefault: !!defaultValue, isRest: false });
@@ -550,20 +551,20 @@ export class CppHybridExtractor extends HybridExtractorBase {
   private hasSpecifier(node: TreeSitterNode, specifier: string): boolean {
     for (const child of node.children) {
       if (child.type === 'storage_class_specifier' || child.type === 'type_qualifier') {
-        if (child.text === specifier) return true;
+        if (child.text === specifier) {return true;}
       }
-      if (child.text === specifier) return true;
+      if (child.text === specifier) {return true;}
     }
     return false;
   }
 
   private isFunctionDeclarator(node: TreeSitterNode | null): boolean {
-    if (!node) return false;
+    if (!node) {return false;}
 
     const visit = (n: TreeSitterNode): boolean => {
-      if (n.type === 'function_declarator') return true;
+      if (n.type === 'function_declarator') {return true;}
       for (const child of n.children) {
-        if (visit(child)) return true;
+        if (visit(child)) {return true;}
       }
       return false;
     };
@@ -573,9 +574,9 @@ export class CppHybridExtractor extends HybridExtractorBase {
 
   private updateAccessSpecifier(node: TreeSitterNode): void {
     const text = node.text.replace(':', '').trim();
-    if (text === 'public') this.currentAccessSpecifier = 'public';
-    else if (text === 'protected') this.currentAccessSpecifier = 'protected';
-    else if (text === 'private') this.currentAccessSpecifier = 'private';
+    if (text === 'public') {this.currentAccessSpecifier = 'public';}
+    else if (text === 'protected') {this.currentAccessSpecifier = 'protected';}
+    else if (text === 'private') {this.currentAccessSpecifier = 'private';}
   }
 
   private extractAttributes(node: TreeSitterNode): string[] {

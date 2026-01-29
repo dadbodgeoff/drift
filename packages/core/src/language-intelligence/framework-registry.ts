@@ -5,8 +5,8 @@
  * and lookup of framework-specific decorator/annotation patterns.
  */
 
-import type { CallGraphLanguage } from '../call-graph/types.js';
 import type { FrameworkPattern, DecoratorMapping, DecoratorSemantics } from './types.js';
+import type { CallGraphLanguage } from '../call-graph/types.js';
 
 /**
  * Framework Registry

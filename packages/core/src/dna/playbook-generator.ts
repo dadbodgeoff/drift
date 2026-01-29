@@ -29,7 +29,7 @@ export class PlaybookGenerator {
       for (const m of profile.mutations.slice(0, 10)) {
         lines.push(`- **${m.file}:${m.line}** - ${m.actual} (expected: ${m.expected})`);
       }
-      if (profile.mutations.length > 10) lines.push(`- ... and ${profile.mutations.length - 10} more`);
+      if (profile.mutations.length > 10) {lines.push(`- ... and ${profile.mutations.length - 10} more`);}
     }
 
     return lines.join('\n');
@@ -41,12 +41,12 @@ export class PlaybookGenerator {
       lines.push(`**Our Pattern**: ${gene.dominant.name}`, '', gene.dominant.description, '');
       if (gene.dominant.examples.length > 0) {
         const ex = gene.dominant.examples[0];
-        if (ex) lines.push('```tsx', ex.code, '```', '');
+        if (ex) {lines.push('```tsx', ex.code, '```', '');}
       }
       lines.push('**Exemplar Files**:', '');
-      for (const f of gene.exemplars.slice(0, 3)) lines.push(`- \`${f}\``);
+      for (const f of gene.exemplars.slice(0, 3)) {lines.push(`- \`${f}\``);}
       const avoid = gene.alleles.filter(a => !a.isDominant).map(a => a.name);
-      if (avoid.length > 0) lines.push('', '**Avoid**:', '', ...avoid.map(a => `- ${a}`));
+      if (avoid.length > 0) {lines.push('', '**Avoid**:', '', ...avoid.map(a => `- ${a}`));}
     } else {
       lines.push('*No dominant pattern established*', '');
     }

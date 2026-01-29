@@ -123,7 +123,7 @@ export class ConstantReferenceFinder {
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       const line = lines[lineIndex];
-      if (!line) continue;
+      if (!line) {continue;}
       const lineNumber = lineIndex + 1;
 
       // Skip the definition line
@@ -257,7 +257,7 @@ export class ConstantReferenceFinder {
     // Search backwards for function definition
     for (let i = lineIndex - 1; i >= 0; i--) {
       const line = lines[i];
-      if (!line) continue;
+      if (!line) {continue;}
 
       // TypeScript/JavaScript function patterns
       const tsMatch = line.match(/(?:async\s+)?(?:function\s+(\w+)|(\w+)\s*(?:=|:)\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>|(\w+)\s*\([^)]*\)\s*\{)/);
@@ -305,7 +305,7 @@ export class ConstantReferenceFinder {
     // Search backwards for class definition
     for (let i = lineIndex - 1; i >= 0; i--) {
       const line = lines[i];
-      if (!line) continue;
+      if (!line) {continue;}
 
       const classMatch = line.match(/(?:class|interface|struct|enum)\s+(\w+)/);
       if (classMatch) {
@@ -321,7 +321,7 @@ export class ConstantReferenceFinder {
    */
   private extractContext(lines: string[], lineIndex: number): string {
     const line = lines[lineIndex];
-    if (!line) return '';
+    if (!line) {return '';}
 
     // Return trimmed line, max 100 chars
     const trimmed = line.trim();

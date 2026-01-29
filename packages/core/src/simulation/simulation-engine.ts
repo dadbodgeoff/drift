@@ -13,8 +13,14 @@
  * @module simulation/simulation-engine
  */
 
-import type { CallGraph, CallGraphLanguage } from '../call-graph/types.js';
-import type { IPatternService } from '../patterns/service.js';
+import { ApproachGenerator } from './approach-generator.js';
+import {
+  FrictionScorer,
+  ImpactScorer,
+  PatternAlignmentScorer,
+  SecurityScorer,
+} from './scorers/index.js';
+
 import type {
   SimulationTask,
   SimulationApproach,
@@ -25,13 +31,8 @@ import type {
   ApproachTradeoff,
   TaskCategory,
 } from './types.js';
-import { ApproachGenerator } from './approach-generator.js';
-import {
-  FrictionScorer,
-  ImpactScorer,
-  PatternAlignmentScorer,
-  SecurityScorer,
-} from './scorers/index.js';
+import type { CallGraph, CallGraphLanguage } from '../call-graph/types.js';
+import type { IPatternService } from '../patterns/service.js';
 
 // ============================================================================
 // Types
@@ -126,8 +127,8 @@ export class SimulationEngine {
     const dataSources: string[] = [];
 
     // Track data sources
-    if (this.config.callGraph) dataSources.push('call-graph');
-    if (this.config.patternService) dataSources.push('patterns');
+    if (this.config.callGraph) {dataSources.push('call-graph');}
+    if (this.config.patternService) {dataSources.push('patterns');}
 
     // Step 1: Generate approaches
     const generated = await this.approachGenerator.generate(
@@ -436,21 +437,21 @@ export class SimulationEngine {
     const cons: string[] = [];
 
     // Friction
-    if (friction.codeChurn < 30) pros.push('Minimal code changes');
-    else if (friction.codeChurn > 60) cons.push('Significant code changes required');
+    if (friction.codeChurn < 30) {pros.push('Minimal code changes');}
+    else if (friction.codeChurn > 60) {cons.push('Significant code changes required');}
 
-    if (friction.testingEffort < 40) pros.push('Easy to test');
-    else if (friction.testingEffort > 70) cons.push('Extensive testing required');
+    if (friction.testingEffort < 40) {pros.push('Easy to test');}
+    else if (friction.testingEffort > 70) {cons.push('Extensive testing required');}
 
-    if (friction.learningCurve < 30) pros.push('Uses familiar patterns');
-    else if (friction.learningCurve > 60) cons.push('Steep learning curve');
+    if (friction.learningCurve < 30) {pros.push('Uses familiar patterns');}
+    else if (friction.learningCurve > 60) {cons.push('Steep learning curve');}
 
     // Impact
-    if (impact.filesAffected < 5) pros.push('Localized changes');
-    else if (impact.filesAffected > 15) cons.push('Changes spread across many files');
+    if (impact.filesAffected < 5) {pros.push('Localized changes');}
+    else if (impact.filesAffected > 15) {cons.push('Changes spread across many files');}
 
-    if (impact.entryPointsAffected === 0) pros.push('No API changes');
-    else if (impact.entryPointsAffected > 5) cons.push('Multiple API endpoints affected');
+    if (impact.entryPointsAffected === 0) {pros.push('No API changes');}
+    else if (impact.entryPointsAffected > 5) {cons.push('Multiple API endpoints affected');}
 
     // Alignment
     if (alignment.alignedPatterns.length > 0) {
@@ -459,10 +460,10 @@ export class SimulationEngine {
     if (alignment.conflictingPatterns.length > 0) {
       cons.push(`Conflicts with ${alignment.conflictingPatterns.length} pattern(s)`);
     }
-    if (alignment.wouldBeOutlier) cons.push('May become a pattern outlier');
+    if (alignment.wouldBeOutlier) {cons.push('May become a pattern outlier');}
 
     // Security
-    if (security.securityRisk < 20) pros.push('Low security risk');
+    if (security.securityRisk < 20) {pros.push('Low security risk');}
     if (security.warnings.length > 0) {
       cons.push(`${security.warnings.length} security consideration(s)`);
     }

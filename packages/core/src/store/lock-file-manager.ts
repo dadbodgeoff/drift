@@ -8,9 +8,11 @@
  * @requirements 4.7 - THE drift.lock file SHALL contain a snapshot of approved patterns for version control
  */
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+
+import { LOCK_FILE_VERSION } from './types.js';
 
 import type {
   Pattern,
@@ -19,7 +21,6 @@ import type {
   PatternCategory,
 } from './types.js';
 
-import { LOCK_FILE_VERSION } from './types.js';
 
 // ============================================================================
 // Constants
@@ -506,7 +507,7 @@ export class LockFileManager {
     differences.sort((a, b) => {
       const typeOrder = { removed: 0, added: 1, modified: 2 };
       const typeCompare = typeOrder[a.type] - typeOrder[b.type];
-      if (typeCompare !== 0) return typeCompare;
+      if (typeCompare !== 0) {return typeCompare;}
       return a.patternId.localeCompare(b.patternId);
     });
 

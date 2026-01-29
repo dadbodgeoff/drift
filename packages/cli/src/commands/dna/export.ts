@@ -2,9 +2,10 @@
  * DNA Export Command - drift dna export
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAStore, AIContextBuilder, PlaybookGenerator, type ContextLevel, GENE_IDS, type GeneId } from 'driftdetect-core';
+
 import { createSpinner } from '../../ui/spinner.js';
 
 interface DNAExportOptions {
@@ -78,7 +79,7 @@ async function dnaExportAction(options: DNAExportOptions): Promise<void> {
         const level = parseInt(options.level ?? '3', 10) as ContextLevel;
         const validLevel = [1, 2, 3, 4].includes(level) ? level : 3;
         const builder = new AIContextBuilder();
-        console.log(builder.build(filteredProfile, validLevel as ContextLevel));
+        console.log(builder.build(filteredProfile, validLevel));
         break;
     }
 

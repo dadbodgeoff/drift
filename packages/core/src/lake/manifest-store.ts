@@ -11,10 +11,16 @@
  * - Incremental updates
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import {
+  LAKE_VERSION,
+  LAKE_DIRS,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   DriftManifest,
@@ -29,13 +35,6 @@ import type {
   ViewMeta,
   DataLakeConfig,
 } from './types.js';
-
-import {
-  LAKE_VERSION,
-  LAKE_DIRS,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
-
 import type { PatternCategory } from '../store/types.js';
 
 // ============================================================================
@@ -254,7 +253,7 @@ export class ManifestStore extends EventEmitter {
 
   isViewStale(view: keyof ViewFreshness): boolean {
     const meta = this.getViewFreshness()[view];
-    if (meta.stale) return true;
+    if (meta.stale) {return true;}
 
     // Check TTL
     const age = Date.now() - new Date(meta.generatedAt).getTime();

@@ -6,14 +6,15 @@
  * @requirements TypeScript Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createTypeScriptAnalyzer,
   type TSRoute,
   type TSErrorPattern,
   type TSDecorator,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface TsOptions {

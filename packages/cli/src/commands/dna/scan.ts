@@ -2,11 +2,13 @@
  * DNA Scan Command - drift dna scan
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { DNAAnalyzer, DNAStore, PlaybookGenerator, FRONTEND_GENE_IDS, BACKEND_GENE_IDS } from 'driftdetect-core';
+
 import { createSpinner, status } from '../../ui/spinner.js';
 
 interface DNAScanOptions {
@@ -146,9 +148,9 @@ async function dnaScanAction(options: DNAScanOptions): Promise<void> {
 }
 
 function colorScore(score: number): string {
-  if (score >= 90) return chalk.green(`${score}/100`);
-  if (score >= 70) return chalk.yellow(`${score}/100`);
-  if (score >= 50) return chalk.hex('#FFA500')(`${score}/100`);
+  if (score >= 90) {return chalk.green(`${score}/100`);}
+  if (score >= 70) {return chalk.yellow(`${score}/100`);}
+  if (score >= 50) {return chalk.hex('#FFA500')(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 

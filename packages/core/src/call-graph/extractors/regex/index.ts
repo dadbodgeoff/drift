@@ -31,16 +31,17 @@ export {
   mergeQualities,
 } from '../types.js';
 
-import type { CallGraphLanguage } from '../../types.js';
-import { TypeScriptRegexExtractor } from './typescript-regex.js';
-import { PythonRegexExtractor } from './python-regex.js';
-import { PhpRegexExtractor } from './php-regex.js';
-import { JavaRegexExtractor } from './java-regex.js';
+import { CppRegexExtractor } from './cpp-regex.js';
 import { CSharpRegexExtractor } from './csharp-regex.js';
 import { GoRegexExtractor } from './go-regex.js';
+import { JavaRegexExtractor } from './java-regex.js';
+import { PhpRegexExtractor } from './php-regex.js';
+import { PythonRegexExtractor } from './python-regex.js';
 import { RustRegexExtractor } from './rust-regex.js';
-import { CppRegexExtractor } from './cpp-regex.js';
+import { TypeScriptRegexExtractor } from './typescript-regex.js';
+
 import type { BaseRegexExtractor } from './base-regex-extractor.js';
+import type { CallGraphLanguage } from '../../types.js';
 
 /**
  * Get the appropriate regex extractor for a language

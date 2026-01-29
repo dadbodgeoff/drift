@@ -7,9 +7,10 @@
  * @module pydantic/type-resolver
  */
 
+import { PYTHON_TYPE_MAP } from './types.js';
+
 import type { TypeInfo } from '../types.js';
 import type { ExtractionContext, ParsedType } from './types.js';
-import { PYTHON_TYPE_MAP } from './types.js';
 
 // ============================================
 // Type Resolver Class
@@ -125,9 +126,9 @@ export class TypeResolver {
   private containsUnionOperator(typeStr: string): boolean {
     let depth = 0;
     for (const char of typeStr) {
-      if (char === '[' || char === '(') depth++;
-      else if (char === ']' || char === ')') depth--;
-      else if (char === '|' && depth === 0) return true;
+      if (char === '[' || char === '(') {depth++;}
+      else if (char === ']' || char === ')') {depth--;}
+      else if (char === '|' && depth === 0) {return true;}
     }
     return false;
   }
@@ -364,8 +365,8 @@ export class TypeResolver {
     const firstValue = literalValues[0];
     let base = 'string';
     if (firstValue !== undefined) {
-      if (/^-?\d+$/.test(firstValue)) base = 'number';
-      else if (firstValue === 'True' || firstValue === 'False') base = 'boolean';
+      if (/^-?\d+$/.test(firstValue)) {base = 'number';}
+      else if (firstValue === 'True' || firstValue === 'False') {base = 'boolean';}
     }
 
     return {

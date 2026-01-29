@@ -9,17 +9,20 @@
  */
 
 import { BaseParser } from '../base-parser.js';
+import { mergeConfig } from './config.js';
+import { isTreeSitterAvailable, createPythonParser } from './loader.js';
+import { PydanticExtractor } from './pydantic/pydantic-extractor.js';
+import { PythonASTConverter } from './python-ast-converter.js';
+
 import type { AST, ASTNode, Language, ParseResult } from '../types.js';
+import type { PythonParserConfig } from './config.js';
 import type {
   TreeSitterParser,
   TreeSitterTree,
   PydanticModelInfo,
 } from './types.js';
-import { PythonASTConverter } from './python-ast-converter.js';
-import { isTreeSitterAvailable, createPythonParser } from './loader.js';
-import type { PythonParserConfig } from './config.js';
-import { mergeConfig } from './config.js';
-import { PydanticExtractor } from './pydantic/pydantic-extractor.js';
+
+
 
 // ============================================
 // Extended Parse Result

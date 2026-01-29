@@ -5,10 +5,11 @@
  * Analyzes commits to discover and synthesize ADRs (Architecture Decision Records).
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createDecisionMiningAnalyzer,
   type MinedDecision,
@@ -18,6 +19,7 @@ import {
   type DecisionConfidence,
   type DecisionStatus,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface DecisionsOptions {
@@ -158,9 +160,9 @@ async function mineAction(options: DecisionsOptions): Promise<void> {
       rootDir,
       minConfidence,
     };
-    if (since !== undefined) analyzerOpts.since = since;
-    if (until !== undefined) analyzerOpts.until = until;
-    if (options.verbose !== undefined) analyzerOpts.verbose = options.verbose;
+    if (since !== undefined) {analyzerOpts.since = since;}
+    if (until !== undefined) {analyzerOpts.until = until;}
+    if (options.verbose !== undefined) {analyzerOpts.verbose = options.verbose;}
     
     const analyzer = createDecisionMiningAnalyzer(analyzerOpts);
 
@@ -849,7 +851,7 @@ export function createDecisionsCommand(): Command {
   cmd
     .command('status')
     .description('Show decision mining summary')
-    .action(() => statusAction(cmd.opts() as DecisionsOptions));
+    .action(() => statusAction(cmd.opts()));
 
   cmd
     .command('list')
@@ -862,22 +864,22 @@ export function createDecisionsCommand(): Command {
   cmd
     .command('show <id>')
     .description('Show decision details')
-    .action((id) => showAction(id, cmd.opts() as DecisionsOptions));
+    .action((id) => showAction(id, cmd.opts()));
 
   cmd
     .command('export')
     .description('Export decisions as markdown ADRs')
-    .action(() => exportAction(cmd.opts() as DecisionsOptions));
+    .action(() => exportAction(cmd.opts()));
 
   cmd
     .command('confirm <id>')
     .description('Confirm a draft decision')
-    .action((id) => confirmAction(id, cmd.opts() as DecisionsOptions));
+    .action((id) => confirmAction(id, cmd.opts()));
 
   cmd
     .command('for-file <file>')
     .description('Find decisions affecting a file')
-    .action((file) => forFileAction(file, cmd.opts() as DecisionsOptions));
+    .action((file) => forFileAction(file, cmd.opts()));
 
   cmd
     .command('timeline')

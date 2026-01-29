@@ -7,10 +7,11 @@
  * @requirements Call Graph Feature
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createCallGraphAnalyzer,
   createStreamingCallGraphBuilder,
@@ -34,6 +35,7 @@ import {
   type DetectedStack,
   type BuildConfig,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 /**
@@ -1068,7 +1070,7 @@ async function functionAction(name: string, options: CallGraphOptions): Promise<
 
   console.log(`File: ${chalk.cyan(func.file)}:${func.startLine}`);
   console.log(`Language: ${chalk.cyan(func.language)}`);
-  if (func.className) console.log(`Class: ${chalk.cyan(func.className)}`);
+  if (func.className) {console.log(`Class: ${chalk.cyan(func.className)}`);}
   console.log(`Exported: ${func.isExported ? chalk.green('yes') : chalk.gray('no')}`);
   console.log(`Async: ${func.isAsync ? chalk.green('yes') : chalk.gray('no')}`);
   console.log();
@@ -1649,8 +1651,8 @@ async function coverageAction(options: CallGraphOptions & { sensitive?: boolean 
  * Get color function based on coverage percentage
  */
 function getCoverageColor(percent: number): (text: string) => string {
-  if (percent >= 80) return chalk.green;
-  if (percent >= 50) return chalk.yellow;
+  if (percent >= 80) {return chalk.green;}
+  if (percent >= 50) {return chalk.yellow;}
   return chalk.red;
 }
 

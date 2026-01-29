@@ -11,9 +11,10 @@
  * @requirements Rust Language Support
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * SeaORM pattern matcher
@@ -45,21 +46,21 @@ export class SeaORMMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: Entity::method() chains
     const entityMatch = this.matchEntityPattern(chain);
-    if (entityMatch) return entityMatch;
+    if (entityMatch) {return entityMatch;}
 
     // Pattern 2: sea_orm::* patterns
     const seaOrmMatch = this.matchSeaOrmPattern(chain);
-    if (seaOrmMatch) return seaOrmMatch;
+    if (seaOrmMatch) {return seaOrmMatch;}
 
     return null;
   }
 
   private matchEntityPattern(chain: UnifiedCallChain): PatternMatchResult | null {
     // Check if first segment is a SeaORM method
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const firstSegment = chain.segments[0]!;
-    if (!firstSegment.isCall) return null;
+    if (!firstSegment.isCall) {return null;}
 
     const isSeaOrmMethod =
       this.findMethods.includes(firstSegment.name) ||
@@ -88,7 +89,7 @@ export class SeaORMMatcher extends BaseMatcher {
   }
 
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     let operation: DataOperation | null = null;
     let table: string | null = null;
@@ -100,7 +101,7 @@ export class SeaORMMatcher extends BaseMatcher {
     }
 
     for (const segment of chain.segments) {
-      if (!segment.isCall) continue;
+      if (!segment.isCall) {continue;}
 
       const methodName = segment.name;
 
@@ -129,14 +130,14 @@ export class SeaORMMatcher extends BaseMatcher {
       if (methodName === 'filter') {
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
       if (methodName === 'select' || methodName === 'column') {
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
@@ -144,29 +145,29 @@ export class SeaORMMatcher extends BaseMatcher {
       if (methodName === 'set') {
         for (const arg of segment.args) {
           const field = this.extractFieldFromArg(arg);
-          if (field) fields.push(field);
+          if (field) {fields.push(field);}
         }
       }
 
       // Check for fetch methods (confirms read)
       if (this.fetchMethods.includes(methodName)) {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
       }
 
       // Check for exec (confirms write/delete)
       if (methodName === 'exec' || methodName === 'exec_with_returning') {
-        if (!operation) operation = 'write';
+        if (!operation) {operation = 'write';}
       }
 
       // Check for order_by, limit, offset (read indicators)
       if (methodName === 'order_by' || methodName === 'order_by_asc' ||
           methodName === 'order_by_desc' || methodName === 'limit' ||
           methodName === 'offset') {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createMatch({
       table: table ?? 'unknown',

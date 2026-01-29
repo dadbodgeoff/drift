@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { PatternStore, type Pattern, type Location } from 'driftdetect-core';
 
 // ============================================================================
@@ -91,24 +92,24 @@ function scoreLocation(_loc: Location, filePath: string): number {
   let score = 1.0;
   
   // Penalize documentation files
-  if (/\.md$/i.test(filePath)) score *= 0.1;
-  if (/README/i.test(filePath)) score *= 0.1;
+  if (/\.md$/i.test(filePath)) {score *= 0.1;}
+  if (/README/i.test(filePath)) {score *= 0.1;}
   
   // Penalize config files
-  if (/\.ya?ml$/i.test(filePath)) score *= 0.2;
-  if (/\.json$/i.test(filePath)) score *= 0.3;
+  if (/\.ya?ml$/i.test(filePath)) {score *= 0.2;}
+  if (/\.json$/i.test(filePath)) {score *= 0.3;}
   
   // Boost source code files
-  if (/\.(ts|tsx|js|jsx)$/i.test(filePath)) score *= 1.5;
-  if (/\.(py|rb|go|rs|java)$/i.test(filePath)) score *= 1.5;
+  if (/\.(ts|tsx|js|jsx)$/i.test(filePath)) {score *= 1.5;}
+  if (/\.(py|rb|go|rs|java)$/i.test(filePath)) {score *= 1.5;}
   
   // Boost files in src/ directories
-  if (/\/src\//i.test(filePath)) score *= 1.3;
-  if (/\/lib\//i.test(filePath)) score *= 1.2;
+  if (/\/src\//i.test(filePath)) {score *= 1.3;}
+  if (/\/lib\//i.test(filePath)) {score *= 1.2;}
   
   // Penalize test files slightly (still useful but prefer production code)
-  if (/\.(test|spec)\./i.test(filePath)) score *= 0.7;
-  if (/\/__tests__\//i.test(filePath)) score *= 0.7;
+  if (/\.(test|spec)\./i.test(filePath)) {score *= 0.7;}
+  if (/\/__tests__\//i.test(filePath)) {score *= 0.7;}
   
   return score;
 }
@@ -447,11 +448,11 @@ export class PackManager {
       excludedCount += excludedFromPattern;
 
       for (const { loc } of scoredLocations) {
-        if (seenFiles.has(loc.file)) continue;
-        if (examples.length >= maxExamples) break;
+        if (seenFiles.has(loc.file)) {continue;}
+        if (examples.length >= maxExamples) {break;}
 
         const lines = await getFileLines(loc.file);
-        if (lines.length === 0) continue;
+        if (lines.length === 0) {continue;}
 
         // Check for deprecation markers
         const content = fileContentCache.get(loc.file) || '';
@@ -645,10 +646,10 @@ export class PackManager {
     const suggestions: SuggestedPack[] = [];
     for (const [key, data] of comboCounts) {
       // Skip if already a pack
-      if (existingPackKeys.has(key)) continue;
+      if (existingPackKeys.has(key)) {continue;}
       
       // Only suggest if used at least 3 times
-      if (data.count < 3) continue;
+      if (data.count < 3) {continue;}
       
       // Generate a name from categories
       const name = `custom_${data.categories.slice(0, 2).join('_')}`;
@@ -755,7 +756,7 @@ export class PackManager {
     const coOccurrence = new Map<string, number>();
     
     for (const categories of fileCategories.values()) {
-      if (categories.size < 2) continue;
+      if (categories.size < 2) {continue;}
       
       const catArray = Array.from(categories).sort();
       // Generate pairs and triples
@@ -780,8 +781,8 @@ export class PackManager {
     );
     
     for (const [key, count] of coOccurrence) {
-      if (count < 5) continue;
-      if (existingPackKeys.has(key)) continue;
+      if (count < 5) {continue;}
+      if (existingPackKeys.has(key)) {continue;}
       
       const categories = key.split(',');
       const name = `inferred_${categories.slice(0, 2).join('_')}`;

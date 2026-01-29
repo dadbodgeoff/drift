@@ -7,12 +7,13 @@
  * @requirements 2.1, 2.8
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import { createHash } from 'node:crypto';
+import * as fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
-import type { Language } from '../parsers/types.js';
+
 import type {
   ScanOptions,
   ScanResult,
@@ -24,6 +25,7 @@ import type {
   ScanProgress,
   ScanProgressCallback,
 } from './types.js';
+import type { Language } from '../parsers/types.js';
 
 // Import ignore using require for proper CJS interop
 const require = createRequire(import.meta.url);

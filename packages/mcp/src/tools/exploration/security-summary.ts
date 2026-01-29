@@ -7,8 +7,9 @@
  * - Data flow summary
  */
 
-import type { BoundaryStore } from 'driftdetect-core';
 import { createResponseBuilder } from '../../infrastructure/index.js';
+
+import type { BoundaryStore } from 'driftdetect-core';
 
 export interface SecuritySummaryData {
   overview: {

@@ -4,8 +4,8 @@
  * Extracts test information from PHPUnit, Pest, and Codeception.
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -14,6 +14,7 @@ import type {
   AssertionInfo,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection
@@ -291,10 +292,10 @@ export class PHPTestExtractor extends BaseTestExtractor {
           const name = nameNode.text;
           let type: SetupBlock['type'] | null = null;
 
-          if (name === 'setUp') type = 'setUp';
-          else if (name === 'tearDown') type = 'tearDown';
-          else if (name === 'setUpBeforeClass') type = 'beforeAll';
-          else if (name === 'tearDownAfterClass') type = 'afterAll';
+          if (name === 'setUp') {type = 'setUp';}
+          else if (name === 'tearDown') {type = 'tearDown';}
+          else if (name === 'setUpBeforeClass') {type = 'beforeAll';}
+          else if (name === 'tearDownAfterClass') {type = 'afterAll';}
 
           if (type) {
             const calls = this.extractFunctionCalls(bodyNode);
@@ -316,10 +317,10 @@ export class PHPTestExtractor extends BaseTestExtractor {
           const fnName = fnNode.text;
           let type: SetupBlock['type'] | null = null;
 
-          if (fnName === 'beforeEach') type = 'beforeEach';
-          else if (fnName === 'afterEach') type = 'afterEach';
-          else if (fnName === 'beforeAll') type = 'beforeAll';
-          else if (fnName === 'afterAll') type = 'afterAll';
+          if (fnName === 'beforeEach') {type = 'beforeEach';}
+          else if (fnName === 'afterEach') {type = 'afterEach';}
+          else if (fnName === 'beforeAll') {type = 'beforeAll';}
+          else if (fnName === 'afterAll') {type = 'afterAll';}
 
           if (type && argsNode) {
             const bodyArg = argsNode.namedChild(0);
@@ -432,7 +433,7 @@ export class PHPTestExtractor extends BaseTestExtractor {
     // Handle argument wrapper
     if (node.type === 'argument') {
       const child = node.namedChild(0);
-      if (child) text = child.text;
+      if (child) {text = child.text;}
     }
     // Remove quotes
     if ((text.startsWith('"') && text.endsWith('"')) ||
@@ -447,7 +448,7 @@ export class PHPTestExtractor extends BaseTestExtractor {
     // Handle argument wrapper
     if (node.type === 'argument') {
       const child = node.namedChild(0);
-      if (child) text = child.text;
+      if (child) {text = child.text;}
     }
     // Handle ::class syntax
     if (text.endsWith('::class')) {

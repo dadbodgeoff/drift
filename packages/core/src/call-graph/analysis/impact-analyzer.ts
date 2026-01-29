@@ -10,12 +10,12 @@
  * - Sensitive data paths affected (security impact)
  */
 
+import type { DataAccessPoint } from '../../boundaries/types.js';
 import type {
   CallGraph,
   FunctionNode,
   CallPathNode,
 } from '../types.js';
-import type { DataAccessPoint } from '../../boundaries/types.js';
 
 // ============================================================================
 // Types
@@ -201,7 +201,7 @@ export class ImpactAnalyzer {
     // Initialize queue with direct callers of all changed functions
     for (const funcId of functionIds) {
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Add the changed function's path node
       const changedNode: CallPathNode = {
@@ -232,7 +232,7 @@ export class ImpactAnalyzer {
       visited.add(funcId);
 
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Build path to this function
       const currentPath: CallPathNode[] = [
@@ -318,7 +318,7 @@ export class ImpactAnalyzer {
 
       for (const access of dataAccess) {
         const sensitivity = this.classifySensitivity(access);
-        if (sensitivity === 'unknown') continue;
+        if (sensitivity === 'unknown') {continue;}
 
         // Find entry points that can reach this data through the changed code
         for (const entryPoint of affectedEntryPoints) {
@@ -358,11 +358,11 @@ export class ImpactAnalyzer {
 
     while (queue.length > 0) {
       const funcId = queue.shift()!;
-      if (visited.has(funcId)) continue;
+      if (visited.has(funcId)) {continue;}
       visited.add(funcId);
 
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Collect data access
       access.push(...func.dataAccess);

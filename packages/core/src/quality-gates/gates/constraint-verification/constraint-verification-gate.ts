@@ -11,6 +11,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -133,12 +134,12 @@ export class ConstraintVerificationGate extends BaseGate {
   ): Constraint[] {
     return constraints.filter(c => {
       // Filter by status
-      if (c.status === 'approved' && !config.enforceApproved) return false;
-      if (c.status === 'discovered' && !config.enforceDiscovered) return false;
-      if (c.status === 'ignored') return false;
+      if (c.status === 'approved' && !config.enforceApproved) {return false;}
+      if (c.status === 'discovered' && !config.enforceDiscovered) {return false;}
+      if (c.status === 'ignored') {return false;}
       
       // Filter by confidence
-      if (c.confidence < config.minConfidence) return false;
+      if (c.confidence < config.minConfidence) {return false;}
       
       // Filter by category
       if (config.categories.length > 0 && !config.categories.includes(c.category)) {
@@ -294,7 +295,7 @@ export class ConstraintVerificationGate extends BaseGate {
     skipped: SkippedConstraint[];
   }): number {
     const total = results.satisfied.length + results.violated.length;
-    if (total === 0) return 100;
+    if (total === 0) {return 100;}
     
     const passRate = (results.satisfied.length / total) * 100;
     return Math.round(passRate);

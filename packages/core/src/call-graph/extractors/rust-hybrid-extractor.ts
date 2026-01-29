@@ -9,9 +9,10 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { RustRegexExtractor } from './regex/rust-regex.js';
-import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
 import { isRustTreeSitterAvailable, createRustParser } from '../../parsers/tree-sitter/rust-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -144,7 +145,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     currentModule: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -197,7 +198,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     const typeNode = node.childForFieldName('type');
     const traitNode = node.childForFieldName('trait');
 
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     let implName = this.extractTypeName(typeNode);
 
@@ -225,7 +226,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     _currentModule: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -272,7 +273,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     _currentModule: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -296,7 +297,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     _currentModule: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibilityModifier(node, 'pub');
@@ -316,7 +317,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
    */
   private extractUseDeclaration(node: TreeSitterNode, result: FileExtractionResult): void {
     const argumentNode = node.childForFieldName('argument');
-    if (!argumentNode) return;
+    if (!argumentNode) {return;}
 
     const imports = this.extractUseTree(argumentNode);
 
@@ -409,7 +410,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     const funcNode = node.childForFieldName('function');
     const argsNode = node.childForFieldName('arguments');
 
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -460,7 +461,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
     const receiverNode = node.childForFieldName('value');
     const argsNode = node.childForFieldName('arguments');
 
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const calleeName = nameNode.text;
     const receiver = receiverNode?.text;
@@ -483,7 +484,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
    */
   private extractMacroInvocation(node: TreeSitterNode, result: FileExtractionResult): void {
     const macroNode = node.childForFieldName('macro');
-    if (!macroNode) return;
+    if (!macroNode) {return;}
 
     const calleeName = macroNode.text + '!';
 
@@ -548,7 +549,7 @@ export class RustHybridExtractor extends HybridExtractorBase {
    * Check if parameters include self
    */
   private hasSelfParameter(parametersNode: TreeSitterNode | null): boolean {
-    if (!parametersNode) return false;
+    if (!parametersNode) {return false;}
 
     for (const child of parametersNode.children) {
       if (child.type === 'self_parameter') {

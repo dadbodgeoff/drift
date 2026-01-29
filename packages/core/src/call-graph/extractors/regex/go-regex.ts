@@ -6,6 +6,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -80,7 +81,7 @@ export class GoRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
@@ -117,7 +118,7 @@ export class GoRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${receiverType}.${name}:${startLine}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
@@ -149,14 +150,14 @@ export class GoRegexExtractor extends BaseRegexExtractor {
    * Parse Go parameter string
    */
   private parseGoParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     const parts = this.splitGoParams(paramsStr);
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       // Handle variadic: name ...type
       const isVariadic = trimmed.includes('...');
@@ -188,8 +189,8 @@ export class GoRegexExtractor extends BaseRegexExtractor {
     let depth = 0;
 
     for (const char of paramsStr) {
-      if (char === '(' || char === '[' || char === '{' || char === '<') depth++;
-      else if (char === ')' || char === ']' || char === '}' || char === '>') depth--;
+      if (char === '(' || char === '[' || char === '{' || char === '<') {depth++;}
+      else if (char === ')' || char === ']' || char === '}' || char === '>') {depth--;}
       else if (char === ',' && depth === 0) {
         parts.push(current.trim());
         current = '';
@@ -197,7 +198,7 @@ export class GoRegexExtractor extends BaseRegexExtractor {
       }
       current += char;
     }
-    if (current.trim()) parts.push(current.trim());
+    if (current.trim()) {parts.push(current.trim());}
 
     return parts;
   }
@@ -378,7 +379,7 @@ export class GoRegexExtractor extends BaseRegexExtractor {
 
       for (const importLine of importLines) {
         const trimmed = importLine.trim();
-        if (!trimmed || trimmed.startsWith('//')) continue;
+        if (!trimmed || trimmed.startsWith('//')) {continue;}
 
         const lineMatch = trimmed.match(/^(?:(\w+|\.)\s+)?"([^"]+)"$/);
         if (lineMatch) {
@@ -501,8 +502,8 @@ export class GoRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(receiver) || keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(receiver) || keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       calls.push(
@@ -524,8 +525,8 @@ export class GoRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       calls.push(

@@ -10,7 +10,6 @@
  * Also extracts from GORM model definitions.
  */
 
-import type { ORMFramework } from '../types.js';
 import {
   BaseFieldExtractor,
   type LineExtractionResult,
@@ -18,13 +17,15 @@ import {
   type ExtractedField,
 } from './types.js';
 
+import type { ORMFramework } from '../types.js';
+
 export class GORMFieldExtractor extends BaseFieldExtractor {
   readonly name = 'gorm';
   readonly framework: ORMFramework = 'gorm';
   readonly languages = ['go'];
   
   matches(content: string, language: string): boolean {
-    if (language !== 'go') return false;
+    if (language !== 'go') {return false;}
     return (
       content.includes('gorm.Model') ||
       content.includes('gorm.DB') ||
@@ -124,7 +125,7 @@ export class GORMFieldExtractor extends BaseFieldExtractor {
     while ((match = structPattern.exec(content)) !== null) {
       const modelName = match[1];
       const structBody = match[2];
-      if (!modelName || !structBody) continue;
+      if (!modelName || !structBody) {continue;}
       
       // Check if this struct has gorm tags or embeds gorm.Model
       if (!structBody.includes('gorm:') && !structBody.includes('gorm.Model')) {
@@ -139,7 +140,7 @@ export class GORMFieldExtractor extends BaseFieldExtractor {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]?.trim();
-        if (!line || line.startsWith('//')) continue;
+        if (!line || line.startsWith('//')) {continue;}
         
         // Parse field: FieldName Type `gorm:"column:field_name"`
         const fieldMatch = line.match(/^\s*(\w+)\s+(\S+)(?:\s+`([^`]+)`)?/);
@@ -149,7 +150,7 @@ export class GORMFieldExtractor extends BaseFieldExtractor {
           const tags = fieldMatch[3] ?? '';
           
           // Skip embedded gorm.Model
-          if (fieldType === 'gorm.Model') continue;
+          if (fieldType === 'gorm.Model') {continue;}
           
           // Extract column name from gorm tag if present
           const columnMatch = tags.match(/gorm:"[^"]*column:(\w+)/);

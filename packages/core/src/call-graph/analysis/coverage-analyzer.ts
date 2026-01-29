@@ -9,11 +9,11 @@
  * - Coverage gaps for sensitive fields
  */
 
+import type { DataAccessPoint, SensitivityType } from '../../boundaries/types.js';
 import type {
   CallGraph,
   CallPathNode,
 } from '../types.js';
-import type { DataAccessPoint, SensitivityType } from '../../boundaries/types.js';
 
 // ============================================================================
 // Types
@@ -413,13 +413,13 @@ export class CoverageAnalyzer {
 
     while (queue.length > 0) {
       const funcId = queue.shift()!;
-      if (visited.has(funcId)) continue;
+      if (visited.has(funcId)) {continue;}
       visited.add(funcId);
 
       this.testedFunctions.add(funcId);
 
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Follow all calls from this function
       for (const call of func.calls) {
@@ -478,14 +478,14 @@ export class CoverageAnalyzer {
 
     for (const { access, functionId, sensitivity } of sensitiveAccess) {
       const accessor = this.graph.functions.get(functionId);
-      if (!accessor) continue;
+      if (!accessor) {continue;}
 
       // Find all entry points that can reach this accessor
       const entryPaths = this.findPathsFromEntryPoints(functionId, maxDepth);
 
       for (const { entryPointId, path } of entryPaths) {
         const entryPoint = this.graph.functions.get(entryPointId);
-        if (!entryPoint) continue;
+        if (!entryPoint) {continue;}
 
         // Extract sensitive fields from the access
         const sensitiveFields = this.extractSensitiveFields(access, sensitivity);
@@ -534,7 +534,7 @@ export class CoverageAnalyzer {
     const queue: Array<{ funcId: string; path: CallPathNode[] }> = [];
 
     const targetFunc = this.graph.functions.get(targetId);
-    if (!targetFunc) return results;
+    if (!targetFunc) {return results;}
 
     // Start from target
     const targetNode: CallPathNode = {
@@ -549,7 +549,7 @@ export class CoverageAnalyzer {
     while (queue.length > 0) {
       const { funcId, path } = queue.shift()!;
 
-      if (path.length > maxDepth) continue;
+      if (path.length > maxDepth) {continue;}
 
       // Check if this is an entry point
       if (this.entryPointSet.has(funcId) && funcId !== targetId) {
@@ -560,7 +560,7 @@ export class CoverageAnalyzer {
       }
 
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       // Follow callers
       for (const caller of func.calledBy) {

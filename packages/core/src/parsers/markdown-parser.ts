@@ -8,6 +8,7 @@
  */
 
 import { BaseParser } from './base-parser.js';
+
 import type { AST, ASTNode, Language, ParseResult, Position } from './types.js';
 
 /**
@@ -326,7 +327,7 @@ export class MarkdownParser extends BaseParser {
 
     // Find the closing ---
     const endMatch = source.slice(3).match(/\n---(?:\n|$)/);
-    if (!endMatch || endMatch.index === undefined) {
+    if (endMatch?.index === undefined) {
       return null;
     }
 
@@ -364,7 +365,7 @@ export class MarkdownParser extends BaseParser {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
+      if (!trimmed || trimmed.startsWith('#')) {continue;}
 
       const colonIndex = trimmed.indexOf(':');
       if (colonIndex > 0) {
@@ -372,10 +373,10 @@ export class MarkdownParser extends BaseParser {
         let value: unknown = trimmed.slice(colonIndex + 1).trim();
 
         // Parse value type
-        if (value === 'true') value = true;
-        else if (value === 'false') value = false;
-        else if (value === 'null' || value === '') value = null;
-        else if (!isNaN(Number(value)) && value !== '') value = Number(value);
+        if (value === 'true') {value = true;}
+        else if (value === 'false') {value = false;}
+        else if (value === 'null' || value === '') {value = null;}
+        else if (!isNaN(Number(value)) && value !== '') {value = Number(value);}
         else if (typeof value === 'string' && value.startsWith('"') && value.endsWith('"')) {
           value = value.slice(1, -1);
         } else if (typeof value === 'string' && value.startsWith("'") && value.endsWith("'")) {

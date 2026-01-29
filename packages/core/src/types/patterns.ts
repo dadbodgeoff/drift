@@ -4,8 +4,8 @@
  * @requirements 4.2
  */
 
-import type { PatternCategory, DetectorConfig } from '../store/types.js';
 import type { ConfidenceScore, Location } from '../matcher/types.js';
+import type { PatternCategory, DetectorConfig } from '../store/types.js';
 
 export interface Pattern {
   /** Unique pattern ID */

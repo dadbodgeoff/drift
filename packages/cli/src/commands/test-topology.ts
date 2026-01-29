@@ -5,10 +5,11 @@
  * Answers: "Which tests cover this code?" and "What's the minimum test set?"
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createTestTopologyAnalyzer,
   createCallGraphAnalyzer,
@@ -17,6 +18,7 @@ import {
   type MinimumTestSet,
   type UncoveredFunction,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface TestTopologyOptions {
@@ -70,7 +72,7 @@ async function findTestFiles(rootDir: string, subDir = ''): Promise<string[]> {
     const entries = await fs.readdir(currentDir, { withFileTypes: true });
     
     for (const entry of entries) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name)) {continue;}
       
       const relativePath = path.join(subDir, entry.name);
       
@@ -521,7 +523,7 @@ function formatSummary(summary: TestTopologySummary): void {
 }
 
 function formatMockAnalysis(analysis: MockAnalysis): void {
-  if (analysis.totalMocks === 0) return;
+  if (analysis.totalMocks === 0) {return;}
 
   console.log(chalk.bold('🎭 Mock Summary'));
   console.log(chalk.gray('─'.repeat(50)));
@@ -559,7 +561,7 @@ function formatMockAnalysisDetailed(analysis: MockAnalysis): void {
 function formatUncoveredFunctions(uncovered: UncoveredFunction[]): void {
   for (const func of uncovered) {
     // Skip __module__ entries - they're not useful for test coverage
-    if (func.qualifiedName === '__module__') continue;
+    if (func.qualifiedName === '__module__') {continue;}
     
     const riskColor = func.riskScore >= 60 ? chalk.red : 
                      func.riskScore >= 30 ? chalk.yellow : chalk.gray;
@@ -610,20 +612,20 @@ function formatMinimumTestSet(result: MinimumTestSet, changedFiles: string[]): v
 // ============================================================================
 
 function getQualityColor(score: number): string {
-  if (score >= 70) return chalk.green(`${score}/100`);
-  if (score >= 50) return chalk.yellow(`${score}/100`);
+  if (score >= 70) {return chalk.green(`${score}/100`);}
+  if (score >= 50) {return chalk.yellow(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 
 function getCoverageColor(percent: number): string {
-  if (percent >= 80) return chalk.green(`${percent}%`);
-  if (percent >= 50) return chalk.yellow(`${percent}%`);
+  if (percent >= 80) {return chalk.green(`${percent}%`);}
+  if (percent >= 50) {return chalk.yellow(`${percent}%`);}
   return chalk.red(`${percent}%`);
 }
 
 function getMockRatioColor(ratio: number): string {
-  if (ratio <= 0.3) return chalk.green(`${Math.round(ratio * 100)}%`);
-  if (ratio <= 0.5) return chalk.yellow(`${Math.round(ratio * 100)}%`);
+  if (ratio <= 0.3) {return chalk.green(`${Math.round(ratio * 100)}%`);}
+  if (ratio <= 0.5) {return chalk.yellow(`${Math.round(ratio * 100)}%`);}
   return chalk.red(`${Math.round(ratio * 100)}%`);
 }
 
@@ -659,12 +661,12 @@ export function createTestTopologyCommand(): Command {
   cmd
     .command('build')
     .description('Build test topology from test files')
-    .action(() => buildAction(cmd.opts() as TestTopologyOptions));
+    .action(() => buildAction(cmd.opts()));
 
   cmd
     .command('status')
     .description('Show test topology overview')
-    .action(() => statusAction(cmd.opts() as TestTopologyOptions));
+    .action(() => statusAction(cmd.opts()));
 
   cmd
     .command('uncovered')
@@ -676,12 +678,12 @@ export function createTestTopologyCommand(): Command {
   cmd
     .command('mocks')
     .description('Analyze mock patterns')
-    .action(() => mocksAction(cmd.opts() as TestTopologyOptions));
+    .action(() => mocksAction(cmd.opts()));
 
   cmd
     .command('affected <files...>')
     .description('Get minimum test set for changed files')
-    .action((files) => affectedAction(files, cmd.opts() as TestTopologyOptions));
+    .action((files) => affectedAction(files, cmd.opts()));
 
   return cmd;
 }

@@ -8,7 +8,9 @@
  */
 
 import ts from 'typescript';
+
 import { BaseParser } from './base-parser.js';
+
 import type { AST, ASTNode, Language, ParseResult, Position } from './types.js';
 
 /**

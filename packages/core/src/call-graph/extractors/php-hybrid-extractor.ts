@@ -7,12 +7,13 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { PhpRegexExtractor } from './regex/php-regex.js';
-import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import {
   isPhpTreeSitterAvailable,
   createPhpParser,
 } from '../../parsers/tree-sitter/php-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -122,7 +123,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
     currentClass: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const parametersNode = node.childForFieldName('parameters');
@@ -168,7 +169,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
     className: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const parametersNode = node.childForFieldName('parameters');
@@ -179,7 +180,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
     let isStatic = false;
     let isPublic = true;
     for (const child of node.children) {
-      if (child.type === 'static_modifier') isStatic = true;
+      if (child.type === 'static_modifier') {isStatic = true;}
       if (child.type === 'visibility_modifier') {
         isPublic = child.text === 'public';
       }
@@ -221,7 +222,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const baseClasses: string[] = [];
@@ -279,7 +280,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
 
   private extractInterfaceDeclaration(node: TreeSitterNode, result: FileExtractionResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     result.classes.push({
       name: nameNode.text,
@@ -297,7 +298,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const methods: string[] = [];
@@ -399,7 +400,7 @@ export class PhpHybridExtractor extends HybridExtractorBase {
 
   private extractObjectCreation(node: TreeSitterNode, result: FileExtractionResult): void {
     const typeNode = node.childForFieldName('type');
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     const calleeName = typeNode.text;
     const argsNode = node.childForFieldName('arguments');

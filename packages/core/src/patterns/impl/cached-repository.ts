@@ -10,12 +10,6 @@
 import { EventEmitter } from 'node:events';
 
 import type {
-  Pattern,
-  PatternCategory,
-  PatternStatus,
-  PatternSummary,
-} from '../types.js';
-import type {
   IPatternRepository,
   PatternRepositoryEventType,
   PatternRepositoryEventHandler,
@@ -23,6 +17,12 @@ import type {
   PatternQueryResult,
   PatternFilter,
 } from '../repository.js';
+import type {
+  Pattern,
+  PatternCategory,
+  PatternStatus,
+  PatternSummary,
+} from '../types.js';
 
 // ============================================================================
 // Cache Types

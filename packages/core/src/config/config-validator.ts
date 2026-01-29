@@ -79,14 +79,14 @@ export class ConfigValidationException extends Error {
    * Format errors as a human-readable string with suggestions
    */
   formatErrors(): string {
-    if (this.errors.length === 0) return 'No errors';
+    if (this.errors.length === 0) {return 'No errors';}
 
     return this.errors
       .map((e) => {
         let msg = `  - ${e.path}: ${e.message}`;
-        if (e.expected) msg += `\n    Expected: ${e.expected}`;
-        if (e.actual !== undefined) msg += `\n    Got: ${JSON.stringify(e.actual)}`;
-        if (e.suggestion) msg += `\n    Suggestion: ${e.suggestion}`;
+        if (e.expected) {msg += `\n    Expected: ${e.expected}`;}
+        if (e.actual !== undefined) {msg += `\n    Got: ${JSON.stringify(e.actual)}`;}
+        if (e.suggestion) {msg += `\n    Suggestion: ${e.suggestion}`;}
         return msg;
       })
       .join('\n\n');
@@ -147,7 +147,7 @@ function validateSeverityOverrides(
   severity: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (severity === undefined) return true;
+  if (severity === undefined) {return true;}
 
   if (!isObject(severity)) {
     errors.push({
@@ -186,7 +186,7 @@ function validateIgnorePatterns(
   ignore: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (ignore === undefined) return true;
+  if (ignore === undefined) {return true;}
 
   if (!Array.isArray(ignore)) {
     errors.push({
@@ -235,7 +235,7 @@ function validateAIConfig(
   ai: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (ai === undefined) return true;
+  if (ai === undefined) {return true;}
 
   if (!isObject(ai)) {
     errors.push({
@@ -297,7 +297,7 @@ function validateCIConfig(
   ci: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (ci === undefined) return true;
+  if (ci === undefined) {return true;}
 
   if (!isObject(ci)) {
     errors.push({
@@ -350,7 +350,7 @@ function validateLearningConfig(
   learning: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (learning === undefined) return true;
+  if (learning === undefined) {return true;}
 
   if (!isObject(learning)) {
     errors.push({
@@ -425,7 +425,7 @@ function validatePerformanceConfig(
   performance: unknown,
   errors: ConfigValidationError[]
 ): boolean {
-  if (performance === undefined) return true;
+  if (performance === undefined) {return true;}
 
   if (!isObject(performance)) {
     errors.push({
@@ -600,15 +600,15 @@ export function validatePartialConfig(data: unknown): ConfigValidationResult {
  * @returns Formatted error string
  */
 export function formatConfigErrors(errors: ConfigValidationError[]): string {
-  if (errors.length === 0) return 'No errors';
+  if (errors.length === 0) {return 'No errors';}
 
   const header = `Configuration validation failed with ${errors.length} error(s):\n`;
   const body = errors
     .map((e, i) => {
       let msg = `\n${i + 1}. ${e.path || 'root'}: ${e.message}`;
-      if (e.expected) msg += `\n   Expected: ${e.expected}`;
-      if (e.actual !== undefined) msg += `\n   Got: ${JSON.stringify(e.actual)}`;
-      if (e.suggestion) msg += `\n   💡 ${e.suggestion}`;
+      if (e.expected) {msg += `\n   Expected: ${e.expected}`;}
+      if (e.actual !== undefined) {msg += `\n   Got: ${JSON.stringify(e.actual)}`;}
+      if (e.suggestion) {msg += `\n   💡 ${e.suggestion}`;}
       return msg;
     })
     .join('\n');
@@ -623,7 +623,7 @@ export function formatConfigErrors(errors: ConfigValidationError[]): string {
  * @returns Short summary string
  */
 export function getErrorSummary(errors: ConfigValidationError[]): string {
-  if (errors.length === 0) return 'Configuration is valid';
+  if (errors.length === 0) {return 'Configuration is valid';}
 
   const paths = errors.map((e) => e.path || 'root');
   const uniquePaths = [...new Set(paths)];

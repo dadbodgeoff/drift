@@ -10,6 +10,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -100,9 +101,9 @@ export class CustomRulesGate extends BaseGate {
 
     // Validate inline rules
     for (const rule of c.inlineRules) {
-      if (!rule.id) errors.push('Rule missing id');
-      if (!rule.name) errors.push('Rule missing name');
-      if (!rule.condition) errors.push(`Rule ${rule.id} missing condition`);
+      if (!rule.id) {errors.push('Rule missing id');}
+      if (!rule.name) {errors.push('Rule missing name');}
+      if (!rule.condition) {errors.push(`Rule ${rule.id} missing condition`);}
     }
 
     return { valid: errors.length === 0, errors };
@@ -361,7 +362,7 @@ export class CustomRulesGate extends BaseGate {
     const violations: GateViolation[] = [];
 
     for (const result of results) {
-      if (result.passed) continue;
+      if (result.passed) {continue;}
 
       for (const v of result.violations) {
         violations.push(this.createViolation({
@@ -383,7 +384,7 @@ export class CustomRulesGate extends BaseGate {
    * Calculate score based on results.
    */
   private calculateScore(results: RuleResult[]): number {
-    if (results.length === 0) return 100;
+    if (results.length === 0) {return 100;}
     
     const passed = results.filter(r => r.passed).length;
     return Math.round((passed / results.length) * 100);

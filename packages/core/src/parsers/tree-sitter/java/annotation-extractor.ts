@@ -15,6 +15,8 @@
  * @requirements Java/Spring Boot Language Support
  */
 
+import { DEFAULT_ANNOTATION_OPTIONS, COMMON_SPRING_ANNOTATIONS } from './types.js';
+
 import type { Position } from '../../types.js';
 import type { TreeSitterNode } from '../types.js';
 import type {
@@ -25,7 +27,6 @@ import type {
   AnnotationExtractionOptions,
   JavaImportInfo,
 } from './types.js';
-import { DEFAULT_ANNOTATION_OPTIONS, COMMON_SPRING_ANNOTATIONS } from './types.js';
 
 // ============================================
 // Position Helpers

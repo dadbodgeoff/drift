@@ -30,9 +30,11 @@
  */
 
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import * as os from 'node:os';
+import * as path from 'node:path';
+
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+
 import { createEnterpriseMCPServer } from '../enterprise-server.js';
 
 /**
@@ -51,7 +53,7 @@ function getActiveProjectRoot(): string {
       // Find the active project
       if (data.projects && Array.isArray(data.projects)) {
         const activeProject = data.projects.find((p: { isActive?: boolean }) => p.isActive === true);
-        if (activeProject && activeProject.path && fs.existsSync(activeProject.path)) {
+        if (activeProject?.path && fs.existsSync(activeProject.path)) {
           return activeProject.path;
         }
         

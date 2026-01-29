@@ -169,7 +169,7 @@ export class PolicyEvaluator {
     aggregation: AggregationConfig
   ): number {
     const results = Object.values(gateResults);
-    if (results.length === 0) return 100;
+    if (results.length === 0) {return 100;}
 
     const weights = aggregation.weights ?? {} as Record<GateId, number>;
     let totalWeight = 0;

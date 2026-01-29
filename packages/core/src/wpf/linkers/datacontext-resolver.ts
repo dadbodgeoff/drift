@@ -6,6 +6,7 @@
  */
 
 import * as path from 'node:path';
+
 import type {
   DataContextResolution,
   DataContextStep,
@@ -201,10 +202,10 @@ export class DataContextResolver {
     _bindingPath: string
   ): ViewModelAnalysis | null {
     const resolution = this.xamlFiles.get(xamlPath);
-    if (!resolution) return null;
+    if (!resolution) {return null;}
 
     const dcResolution = this.resolve(xamlPath, resolution);
-    if (!dcResolution.resolvedType) return null;
+    if (!dcResolution.resolvedType) {return null;}
 
     return this.viewModels.get(dcResolution.resolvedType) ?? null;
   }

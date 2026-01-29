@@ -10,10 +10,12 @@
  * Solves: AI sees `user: User` but doesn't know User has 20 fields.
  */
 
-import type { CallGraphStore } from 'driftdetect-core';
-import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -256,13 +258,13 @@ async function extractTypeDefinition(
     
     for (let i = 0; i < patterns.length; i++) {
       const match = content.match(patterns[i]!);
-      if (match && match.index !== undefined) {
+      if (match?.index !== undefined) {
         const startIndex = match.index;
         const lineNumber = content.slice(0, startIndex).split('\n').length;
         
         // Extract the full definition (find matching braces)
         const raw = extractBracedBlock(content, startIndex);
-        if (!raw) continue;
+        if (!raw) {continue;}
         
         // Parse fields from the raw definition
         const shape = parseTypeShape(raw, kinds[i]!);
@@ -288,13 +290,13 @@ async function extractTypeDefinition(
  */
 function extractBracedBlock(content: string, startIndex: number): string | undefined {
   const openBrace = content.indexOf('{', startIndex);
-  if (openBrace === -1) return undefined;
+  if (openBrace === -1) {return undefined;}
   
   let depth = 0;
   let endIndex = openBrace;
   
   for (let i = openBrace; i < content.length; i++) {
-    if (content[i] === '{') depth++;
+    if (content[i] === '{') {depth++;}
     else if (content[i] === '}') {
       depth--;
       if (depth === 0) {
@@ -318,7 +320,7 @@ function parseTypeShape(raw: string, kind: string): Record<string, string> {
   // Extract content between braces
   const braceStart = raw.indexOf('{');
   const braceEnd = raw.lastIndexOf('}');
-  if (braceStart === -1 || braceEnd === -1) return shape;
+  if (braceStart === -1 || braceEnd === -1) {return shape;}
   
   const body = raw.slice(braceStart + 1, braceEnd);
   

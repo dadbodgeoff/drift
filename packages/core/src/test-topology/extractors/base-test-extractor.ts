@@ -5,7 +5,6 @@
  * Provides common utilities and defines the extraction interface.
  */
 
-import type Parser from 'tree-sitter';
 import type {
   TestExtraction,
   TestCase,
@@ -15,6 +14,7 @@ import type {
   TestQualitySignals,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Types
@@ -141,7 +141,7 @@ export abstract class BaseTestExtractor {
                          node.childForFieldName('name') ||
                          node.namedChild(0);
     
-    if (!functionChild) return null;
+    if (!functionChild) {return null;}
 
     // Handle member expressions (obj.method)
     if (functionChild.type === 'member_expression' ||
@@ -218,21 +218,21 @@ export abstract class BaseTestExtractor {
     let score = 50; // Base score
     
     // Assertions
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
     
     // Error cases
-    if (hasErrorCases) score += 15;
+    if (hasErrorCases) {score += 15;}
     
     // Edge cases
-    if (hasEdgeCases) score += 10;
+    if (hasEdgeCases) {score += 10;}
     
     // Mock ratio penalty (high mocking = potentially brittle)
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
     
     // No assertions is bad
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

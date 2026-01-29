@@ -6,13 +6,14 @@
  * @requirements PHP Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createPhpAnalyzer,
   type PhpRoute,
   type PhpErrorPattern,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface PhpOptions {

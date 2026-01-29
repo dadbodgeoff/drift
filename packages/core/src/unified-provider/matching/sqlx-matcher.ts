@@ -12,9 +12,10 @@
  * @requirements Rust Language Support
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * SQLx pattern matcher
@@ -36,15 +37,15 @@ export class SQLxMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: sqlx::query*() chains
     const sqlxMatch = this.matchSqlxPattern(chain);
-    if (sqlxMatch) return sqlxMatch;
+    if (sqlxMatch) {return sqlxMatch;}
 
     // Pattern 2: pool.execute() or pool.fetch*()
     const poolMatch = this.matchPoolPattern(chain);
-    if (poolMatch) return poolMatch;
+    if (poolMatch) {return poolMatch;}
 
     // Pattern 3: Transaction patterns
     const txMatch = this.matchTransactionPattern(chain);
-    if (txMatch) return txMatch;
+    if (txMatch) {return txMatch;}
 
     return null;
   }
@@ -92,7 +93,7 @@ export class SQLxMatcher extends BaseMatcher {
   }
 
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     let operation: DataOperation | null = null;
     let table: string | null = null;
@@ -101,7 +102,7 @@ export class SQLxMatcher extends BaseMatcher {
     let sqlQuery: string | null = null;
 
     for (const segment of chain.segments) {
-      if (!segment.isCall) continue;
+      if (!segment.isCall) {continue;}
 
       const methodName = segment.name;
 
@@ -141,12 +142,12 @@ export class SQLxMatcher extends BaseMatcher {
 
       // Check for fetch methods (read operation)
       if (this.fetchMethods.includes(methodName)) {
-        if (!operation) operation = 'read';
+        if (!operation) {operation = 'read';}
       }
 
       // Check for execute method
       if (this.executeMethods.includes(methodName)) {
-        if (!operation) operation = 'write';
+        if (!operation) {operation = 'write';}
       }
 
       // Check for bind() to extract potential field info
@@ -155,7 +156,7 @@ export class SQLxMatcher extends BaseMatcher {
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createMatch({
       table: table ?? 'unknown',

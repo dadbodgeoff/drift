@@ -13,15 +13,16 @@
  * - drift projects cleanup  - Remove invalid projects
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   getProjectRegistry,
   type RegisteredProject,
   type ProjectHealth,
 } from 'driftdetect-core';
-import { createSpinner, status } from '../ui/spinner.js';
+
 import { confirmPrompt, selectPrompt, inputPrompt } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 
 // ============================================================================
 // Formatters
@@ -56,7 +57,7 @@ function formatLanguage(lang: string): string {
 }
 
 function formatFramework(framework: string): string {
-  if (framework === 'unknown') return chalk.gray('-');
+  if (framework === 'unknown') {return chalk.gray('-');}
   return chalk.white(framework);
 }
 
@@ -66,16 +67,16 @@ function formatDate(isoDate: string): string {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return 'yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  if (diffDays === 0) {return 'today';}
+  if (diffDays === 1) {return 'yesterday';}
+  if (diffDays < 7) {return `${diffDays} days ago`;}
+  if (diffDays < 30) {return `${Math.floor(diffDays / 7)} weeks ago`;}
+  if (diffDays < 365) {return `${Math.floor(diffDays / 30)} months ago`;}
   return `${Math.floor(diffDays / 365)} years ago`;
 }
 
 function truncatePath(p: string, maxLen: number): string {
-  if (p.length <= maxLen) return p;
+  if (p.length <= maxLen) {return p;}
   return '...' + p.slice(-(maxLen - 3));
 }
 

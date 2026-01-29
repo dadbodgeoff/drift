@@ -90,14 +90,14 @@ export class MetricsCollector {
     }
     
     // Update buckets
-    if (value <= 10) buckets.le_10++;
-    if (value <= 50) buckets.le_50++;
-    if (value <= 100) buckets.le_100++;
-    if (value <= 250) buckets.le_250++;
-    if (value <= 500) buckets.le_500++;
-    if (value <= 1000) buckets.le_1000++;
-    if (value <= 2500) buckets.le_2500++;
-    if (value <= 5000) buckets.le_5000++;
+    if (value <= 10) {buckets.le_10++;}
+    if (value <= 50) {buckets.le_50++;}
+    if (value <= 100) {buckets.le_100++;}
+    if (value <= 250) {buckets.le_250++;}
+    if (value <= 500) {buckets.le_500++;}
+    if (value <= 1000) {buckets.le_1000++;}
+    if (value <= 2500) {buckets.le_2500++;}
+    if (value <= 5000) {buckets.le_5000++;}
     buckets.le_inf++;
     buckets.sum += value;
     buckets.count++;

@@ -11,6 +11,7 @@
  */
 
 import { BaseEnvExtractor } from './base-env-extractor.js';
+
 import type { EnvLanguage, EnvExtractionResult } from '../types.js';
 
 /**
@@ -53,7 +54,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -83,7 +84,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = bracketPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -108,7 +109,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = getValuePattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -134,7 +135,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = getSectionPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -157,7 +158,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = connStringPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -186,7 +187,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = appSettingsPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -211,7 +212,7 @@ export class CSharpEnvExtractor extends BaseEnvExtractor {
     
     while ((match = connStringsPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);

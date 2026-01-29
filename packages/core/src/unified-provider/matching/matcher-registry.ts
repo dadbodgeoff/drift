@@ -4,25 +4,25 @@
  * Manages pattern matchers and runs them against call chains.
  */
 
-import type { UnifiedCallChain, PatternMatchResult, PatternMatcher, UnifiedLanguage } from '../types.js';
-import { SupabaseMatcher } from './supabase-matcher.js';
-import { PrismaMatcher } from './prisma-matcher.js';
-import { RawSqlMatcher } from './raw-sql-matcher.js';
-import { TypeORMMatcher } from './typeorm-matcher.js';
-import { SequelizeMatcher } from './sequelize-matcher.js';
+import { DatabaseSqlMatcher } from './database-sql-matcher.js';
+import { DieselMatcher } from './diesel-matcher.js';
+import { DjangoMatcher } from './django-matcher.js';
 import { DrizzleMatcher } from './drizzle-matcher.js';
+import { RawSqlMatcher } from './raw-sql-matcher.js';
+import { SequelizeMatcher } from './sequelize-matcher.js';
 import { KnexMatcher } from './knex-matcher.js';
 import { MongooseMatcher } from './mongoose-matcher.js';
-import { DjangoMatcher } from './django-matcher.js';
 import { SQLAlchemyMatcher } from './sqlalchemy-matcher.js';
 import { EFCoreMatcher } from './efcore-matcher.js';
 import { EloquentMatcher } from './eloquent-matcher.js';
 import { SpringDataMatcher } from './spring-data-matcher.js';
 import { GORMMatcher } from './gorm-matcher.js';
+import { PrismaMatcher } from './prisma-matcher.js';
 import { SQLxMatcher } from './sqlx-matcher.js';
-import { DieselMatcher } from './diesel-matcher.js';
 import { SeaORMMatcher } from './seaorm-matcher.js';
-import { DatabaseSqlMatcher } from './database-sql-matcher.js';
+import { SupabaseMatcher } from './supabase-matcher.js';
+import { TypeORMMatcher } from './typeorm-matcher.js';
+import type { UnifiedCallChain, PatternMatchResult, PatternMatcher, UnifiedLanguage } from '../types.js';
 
 /**
  * Matcher registry - manages all pattern matchers

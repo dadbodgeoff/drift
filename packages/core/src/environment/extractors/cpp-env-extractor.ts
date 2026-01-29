@@ -12,6 +12,7 @@
  */
 
 import { BaseEnvExtractor } from './base-env-extractor.js';
+
 import type { EnvLanguage, EnvExtractionResult } from '../types.js';
 
 /**
@@ -61,7 +62,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -91,7 +92,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -142,7 +143,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = envAccessPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -171,7 +172,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = qEnvValuePattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -199,7 +200,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = qgetenvPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -222,7 +223,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = qEnvVarPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -251,7 +252,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = getEnvVarPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -274,7 +275,7 @@ export class CppEnvExtractor extends BaseEnvExtractor {
     
     while ((match = wgetenvPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);

@@ -6,9 +6,10 @@
  * @requirements Go Language Support
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import { createGoAnalyzer, type GoRoute, type GoErrorPattern, type GoPackage } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface GoOptions {

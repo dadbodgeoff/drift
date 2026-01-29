@@ -9,9 +9,10 @@
  * - userRepository.findByEmailAndActive(email, true)
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Spring Data JPA pattern matcher
@@ -51,14 +52,14 @@ export class SpringDataMatcher extends BaseMatcher {
       return null;
     }
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const methodSegment = chain.segments[0];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const methodName = methodSegment.name;
     const operation = this.getOperation(methodName);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Infer table from repository name
     const table = this.inferTableName(chain.receiver);
@@ -77,16 +78,16 @@ export class SpringDataMatcher extends BaseMatcher {
 
   private getOperation(methodName: string): DataOperation | null {
     // Check exact matches first
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
-    if (this.deleteMethods.includes(methodName)) return 'delete';
+    if (this.readMethods.includes(methodName)) {return 'read';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
+    if (this.deleteMethods.includes(methodName)) {return 'delete';}
 
     // Check prefix patterns for query derivation
     for (const prefix of this.readMethods) {
-      if (methodName.startsWith(prefix)) return 'read';
+      if (methodName.startsWith(prefix)) {return 'read';}
     }
     for (const prefix of this.deleteMethods) {
-      if (methodName.startsWith(prefix)) return 'delete';
+      if (methodName.startsWith(prefix)) {return 'delete';}
     }
 
     return null;
@@ -100,11 +101,11 @@ export class SpringDataMatcher extends BaseMatcher {
     const fields: string[] = [];
 
     // Remove common prefixes
-    let remaining = methodName
+    const remaining = methodName
       .replace(/^(find|read|get|query|search|stream|count|exists|delete|remove)(All|First|Top\d*)?By/, '')
       .replace(/^(OrderBy.*)$/, ''); // Remove OrderBy suffix
 
-    if (!remaining) return fields;
+    if (!remaining) {return fields;}
 
     // Split by And/Or
     const parts = remaining.split(/(?:And|Or)/);

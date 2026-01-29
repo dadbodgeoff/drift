@@ -21,11 +21,34 @@
  * @module patterns/impl/unified-file-repository
  */
 
+import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
 
+import {
+  PatternNotFoundError,
+  InvalidStatusTransitionError,
+  PatternAlreadyExistsError,
+} from '../errors.js';
+import { DEFAULT_REPOSITORY_CONFIG } from '../repository.js';
+import {
+  PATTERN_CATEGORIES,
+  VALID_STATUS_TRANSITIONS,
+  computeConfidenceLevel,
+  toPatternSummary,
+} from '../types.js';
+
+import type {
+  IPatternRepository,
+  PatternRepositoryConfig,
+  PatternRepositoryEventType,
+  PatternRepositoryEventHandler,
+  PatternQueryOptions,
+  PatternQueryResult,
+  PatternFilter,
+  PatternSort,
+} from '../repository.js';
 import type {
   Pattern,
   PatternCategory,
@@ -38,28 +61,8 @@ import type {
   Severity,
   ConfidenceLevel,
 } from '../types.js';
-import {
-  PATTERN_CATEGORIES,
-  VALID_STATUS_TRANSITIONS,
-  computeConfidenceLevel,
-  toPatternSummary,
-} from '../types.js';
-import {
-  PatternNotFoundError,
-  InvalidStatusTransitionError,
-  PatternAlreadyExistsError,
-} from '../errors.js';
-import type {
-  IPatternRepository,
-  PatternRepositoryConfig,
-  PatternRepositoryEventType,
-  PatternRepositoryEventHandler,
-  PatternQueryOptions,
-  PatternQueryResult,
-  PatternFilter,
-  PatternSort,
-} from '../repository.js';
-import { DEFAULT_REPOSITORY_CONFIG } from '../repository.js';
+
+
 
 // ============================================================================
 // Constants
@@ -233,7 +236,7 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
   // ==========================================================================
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     await ensureDir(this.patternsDir);
 
@@ -313,12 +316,12 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
     for (const status of Object.keys(LEGACY_STATUS_DIRS) as PatternStatus[]) {
       const statusDir = path.join(this.patternsDir, LEGACY_STATUS_DIRS[status]);
 
-      if (!(await fileExists(statusDir))) continue;
+      if (!(await fileExists(statusDir))) {continue;}
 
       for (const category of PATTERN_CATEGORIES) {
         const filePath = path.join(statusDir, `${category}.json`);
 
-        if (!(await fileExists(filePath))) continue;
+        if (!(await fileExists(filePath))) {continue;}
 
         try {
           const content = await fs.readFile(filePath, 'utf-8');
@@ -435,7 +438,7 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
    * Save only dirty categories (incremental save)
    */
   async saveIncremental(): Promise<void> {
-    if (this.dirtyCategories.size === 0) return;
+    if (this.dirtyCategories.size === 0) {return;}
 
     const grouped = this.groupPatternsByCategory();
 
@@ -488,7 +491,7 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
   }
 
   private scheduleSave(): void {
-    if (!this.config.autoSave) return;
+    if (!this.config.autoSave) {return;}
 
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -618,39 +621,39 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
 
   private applyFilter(patterns: Pattern[], filter: PatternFilter): Pattern[] {
     return patterns.filter((p) => {
-      if (filter.ids && !filter.ids.includes(p.id)) return false;
-      if (filter.categories && !filter.categories.includes(p.category)) return false;
-      if (filter.statuses && !filter.statuses.includes(p.status)) return false;
-      if (filter.minConfidence !== undefined && p.confidence < filter.minConfidence) return false;
-      if (filter.maxConfidence !== undefined && p.confidence > filter.maxConfidence) return false;
-      if (filter.confidenceLevels && !filter.confidenceLevels.includes(p.confidenceLevel)) return false;
-      if (filter.severities && !filter.severities.includes(p.severity)) return false;
+      if (filter.ids && !filter.ids.includes(p.id)) {return false;}
+      if (filter.categories && !filter.categories.includes(p.category)) {return false;}
+      if (filter.statuses && !filter.statuses.includes(p.status)) {return false;}
+      if (filter.minConfidence !== undefined && p.confidence < filter.minConfidence) {return false;}
+      if (filter.maxConfidence !== undefined && p.confidence > filter.maxConfidence) {return false;}
+      if (filter.confidenceLevels && !filter.confidenceLevels.includes(p.confidenceLevel)) {return false;}
+      if (filter.severities && !filter.severities.includes(p.severity)) {return false;}
       if (filter.files) {
         const hasFile = p.locations.some((loc) => filter.files!.includes(loc.file));
-        if (!hasFile) return false;
+        if (!hasFile) {return false;}
       }
       if (filter.hasOutliers !== undefined) {
         const hasOutliers = p.outliers.length > 0;
-        if (filter.hasOutliers !== hasOutliers) return false;
+        if (filter.hasOutliers !== hasOutliers) {return false;}
       }
       if (filter.tags) {
         const hasTags = filter.tags.some((tag) => p.tags.includes(tag));
-        if (!hasTags) return false;
+        if (!hasTags) {return false;}
       }
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
         const matches =
           p.name.toLowerCase().includes(searchLower) ||
           p.description.toLowerCase().includes(searchLower);
-        if (!matches) return false;
+        if (!matches) {return false;}
       }
       if (filter.createdAfter) {
         const firstSeen = new Date(p.firstSeen);
-        if (firstSeen < filter.createdAfter) return false;
+        if (firstSeen < filter.createdAfter) {return false;}
       }
       if (filter.createdBefore) {
         const firstSeen = new Date(p.firstSeen);
-        if (firstSeen > filter.createdBefore) return false;
+        if (firstSeen > filter.createdBefore) {return false;}
       }
 
       return true;
@@ -846,7 +849,7 @@ export class UnifiedFilePatternRepository extends EventEmitter implements IPatte
     let fileCount = 0;
     for (const category of PATTERN_CATEGORIES) {
       const count = byCategory[category];
-      if (count !== undefined && count > 0) fileCount++;
+      if (count !== undefined && count > 0) {fileCount++;}
     }
 
     return {

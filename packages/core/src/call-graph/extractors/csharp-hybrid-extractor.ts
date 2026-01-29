@@ -7,12 +7,13 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { CSharpRegexExtractor } from './regex/csharp-regex.js';
-import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import {
   isCSharpTreeSitterAvailable,
   createCSharpParser,
 } from '../../parsers/tree-sitter/csharp-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -140,7 +141,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const className = nameNode.text;
     const fullClassName = currentNamespace ? `${currentNamespace}.${className}` : className;
@@ -193,7 +194,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
     currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const interfaceName = nameNode.text;
     const fullName = currentNamespace ? `${currentNamespace}.${interfaceName}` : interfaceName;
@@ -235,7 +236,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
     _currentNamespace: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isStatic = this.hasModifier(node, 'static');
@@ -319,7 +320,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
 
   private extractUsingDirective(node: TreeSitterNode, result: FileExtractionResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const namespaceName = nameNode.text;
 
@@ -338,7 +339,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
 
   private extractInvocationExpression(node: TreeSitterNode, result: FileExtractionResult): void {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -385,7 +386,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
 
   private extractObjectCreation(node: TreeSitterNode, result: FileExtractionResult): void {
     const typeNode = node.childForFieldName('type');
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -473,7 +474,7 @@ export class CSharpHybridExtractor extends HybridExtractorBase {
     const attributes: string[] = [];
 
     let sibling = node.previousNamedSibling;
-    while (sibling && sibling.type === 'attribute_list') {
+    while (sibling?.type === 'attribute_list') {
       for (const attr of sibling.children) {
         if (attr.type === 'attribute') {
           attributes.unshift(`[${attr.text}]`);

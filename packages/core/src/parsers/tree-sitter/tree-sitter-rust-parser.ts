@@ -13,8 +13,9 @@
  * @license Apache-2.0
  */
 
-import type { TreeSitterNode, TreeSitterParser } from './types.js';
 import { isRustTreeSitterAvailable, createRustParser } from './rust-loader.js';
+
+import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================================================
 // Types
@@ -232,7 +233,7 @@ export class RustTreeSitterParser {
    */
   private extractFunction(node: TreeSitterNode, result: RustParseResult, _source: string): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibility(node, 'pub');
@@ -268,7 +269,7 @@ export class RustTreeSitterParser {
    */
   private extractStruct(node: TreeSitterNode, result: RustParseResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibility(node, 'pub');
@@ -291,7 +292,7 @@ export class RustTreeSitterParser {
    */
   private extractEnum(node: TreeSitterNode, result: RustParseResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibility(node, 'pub');
@@ -314,7 +315,7 @@ export class RustTreeSitterParser {
    */
   private extractTrait(node: TreeSitterNode, result: RustParseResult, source: string): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isPublic = this.hasVisibility(node, 'pub');
@@ -342,7 +343,7 @@ export class RustTreeSitterParser {
     const genericsNode = node.childForFieldName('type_parameters');
     const bodyNode = node.childForFieldName('body');
 
-    if (!typeNode) return;
+    if (!typeNode) {return;}
 
     const methods: string[] = [];
     if (bodyNode) {
@@ -374,7 +375,7 @@ export class RustTreeSitterParser {
    */
   private extractUse(node: TreeSitterNode, result: RustParseResult): void {
     const argumentNode = node.childForFieldName('argument');
-    if (!argumentNode) return;
+    if (!argumentNode) {return;}
 
     const isPublic = this.hasVisibility(node, 'pub');
     const { path, items, isGlob, alias } = this.parseUsePath(argumentNode);
@@ -397,7 +398,7 @@ export class RustTreeSitterParser {
    */
   private extractMacro(node: TreeSitterNode, result: RustParseResult): void {
     const macroNode = node.childForFieldName('macro');
-    if (!macroNode) return;
+    if (!macroNode) {return;}
 
     const argsNode = node.children.find(c => c.type === 'token_tree');
 
@@ -546,7 +547,7 @@ export class RustTreeSitterParser {
     for (const child of node.children) {
       if (child.type === 'enum_variant') {
         const nameNode = child.childForFieldName('name');
-        if (!nameNode) continue;
+        if (!nameNode) {continue;}
 
         const name = nameNode.text;
         let kind: 'unit' | 'tuple' | 'struct' = 'unit';
@@ -579,7 +580,7 @@ export class RustTreeSitterParser {
     for (const child of node.children) {
       if (child.type === 'function_signature_item' || child.type === 'function_item') {
         const nameNode = child.childForFieldName('name');
-        if (!nameNode) continue;
+        if (!nameNode) {continue;}
 
         const parametersNode = child.childForFieldName('parameters');
         const returnTypeNode = child.childForFieldName('return_type');

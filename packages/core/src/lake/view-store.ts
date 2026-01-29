@@ -11,9 +11,15 @@
  * - Trends view for pre-computed trend analysis
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
+import {
+  LAKE_DIRS,
+  VIEW_FILES,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   StatusView,
@@ -26,13 +32,6 @@ import type {
   DataLakeConfig,
   ViewType,
 } from './types.js';
-
-import {
-  LAKE_DIRS,
-  VIEW_FILES,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
-
 import type { Pattern } from '../store/types.js';
 
 // ============================================================================

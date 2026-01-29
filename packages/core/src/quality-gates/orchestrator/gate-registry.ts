@@ -27,7 +27,7 @@ export class GateRegistry {
    * Called lazily on first access.
    */
   private async initializeBuiltInGates(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
     this.initialized = true;
 
     // Import gates dynamically to avoid circular dependencies
@@ -91,7 +91,7 @@ export class GateRegistry {
 
     // Check if already instantiated
     let gate = this.gates.get(gateId);
-    if (gate) return gate;
+    if (gate) {return gate;}
 
     // Get factory
     const factory = this.factories.get(gateId);

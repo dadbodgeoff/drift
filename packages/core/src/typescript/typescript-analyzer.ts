@@ -12,7 +12,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { createTypeScriptHybridExtractor } from '../call-graph/extractors/typescript-hybrid-extractor.js';
+
 import type { FunctionExtraction, ClassExtraction, CallExtraction, ImportExtraction } from '../call-graph/types.js';
 
 // ============================================================================
@@ -213,18 +215,18 @@ export class TypeScriptAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const ext = path.extname(file);
-      if (TS_EXTENSIONS.includes(ext)) tsFiles++;
-      if (JS_EXTENSIONS.includes(ext)) jsFiles++;
+      if (TS_EXTENSIONS.includes(ext)) {tsFiles++;}
+      if (JS_EXTENSIONS.includes(ext)) {jsFiles++;}
 
       const isTestFile = this.isTestFile(file);
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       const result = this.extractor.extract(source, file);
 
       // Detect frameworks from imports
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Count components
@@ -495,7 +497,7 @@ export class TypeScriptAnalyzer {
           return relativePath.includes(pattern);
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -550,7 +552,7 @@ export class TypeScriptAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importSource.startsWith(prefix)) return name;
+      if (importSource.startsWith(prefix)) {return name;}
     }
 
     return null;
@@ -592,11 +594,11 @@ export class TypeScriptAnalyzer {
 
   private isReactComponent(name: string, source: string): boolean {
     // Component names start with uppercase
-    if (!/^[A-Z]/.test(name)) return false;
+    if (!/^[A-Z]/.test(name)) {return false;}
 
     // Check if function returns JSX
     const funcPattern = new RegExp(`function\\s+${name}|const\\s+${name}\\s*=`);
-    if (!funcPattern.test(source)) return false;
+    if (!funcPattern.test(source)) {return false;}
 
     // Look for JSX return
     return /<[A-Z]|<[a-z]+[^>]*>/.test(source);
@@ -710,7 +712,7 @@ export class TypeScriptAnalyzer {
   private extractNestHandler(lines: string[], startIndex: number): string {
     for (let i = startIndex + 1; i < Math.min(startIndex + 5, lines.length); i++) {
       const match = lines[i]!.match(/(?:async\s+)?(\w+)\s*\(/);
-      if (match) return match[1]!;
+      if (match) {return match[1]!;}
     }
     return 'unknown';
   }
@@ -970,10 +972,10 @@ export class TypeScriptAnalyzer {
     const deleteOps = ['delete', 'remove', 'destroy', 'deleteOne', 'deleteMany'];
 
     const opLower = op.toLowerCase();
-    if (readOps.some((r) => opLower.includes(r.toLowerCase()))) return 'read';
-    if (writeOps.some((w) => opLower.includes(w.toLowerCase()))) return 'write';
-    if (updateOps.some((u) => opLower.includes(u.toLowerCase()))) return 'update';
-    if (deleteOps.some((d) => opLower.includes(d.toLowerCase()))) return 'delete';
+    if (readOps.some((r) => opLower.includes(r.toLowerCase()))) {return 'read';}
+    if (writeOps.some((w) => opLower.includes(w.toLowerCase()))) {return 'write';}
+    if (updateOps.some((u) => opLower.includes(u.toLowerCase()))) {return 'update';}
+    if (deleteOps.some((d) => opLower.includes(d.toLowerCase()))) {return 'delete';}
     return 'unknown';
   }
 
@@ -1011,10 +1013,10 @@ export class TypeScriptAnalyzer {
     // Look at the next non-decorator line
     for (let i = decoratorLine + 1; i < Math.min(decoratorLine + 10, lines.length); i++) {
       const line = lines[i]!.trim();
-      if (line.startsWith('@')) continue;
-      if (/^(export\s+)?(abstract\s+)?class\s/.test(line)) return 'class';
-      if (/^(async\s+)?(\w+)\s*\(/.test(line)) return 'method';
-      if (/^\w+\s*[?:]/.test(line)) return 'property';
+      if (line.startsWith('@')) {continue;}
+      if (/^(export\s+)?(abstract\s+)?class\s/.test(line)) {return 'class';}
+      if (/^(async\s+)?(\w+)\s*\(/.test(line)) {return 'method';}
+      if (/^\w+\s*[?:]/.test(line)) {return 'property';}
       break;
     }
     return 'method';

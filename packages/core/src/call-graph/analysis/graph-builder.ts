@@ -5,6 +5,7 @@
  * Handles function registration, call resolution, and graph construction.
  */
 
+import type { DataAccessPoint } from '../../boundaries/types.js';
 import type {
   CallGraph,
   FunctionNode,
@@ -17,7 +18,6 @@ import type {
   CallGraphLanguage,
   CallGraphStats,
 } from '../types.js';
-import type { DataAccessPoint } from '../../boundaries/types.js';
 
 /**
  * Options for building the call graph
@@ -155,7 +155,7 @@ export class GraphBuilder {
     for (const call of calls) {
       // Find the containing function
       const containingFunc = this.findContainingFunction(call.line, functions);
-      if (!containingFunc) continue;
+      if (!containingFunc) {continue;}
 
       const containingFunctionId = this.generateFunctionId(
         file,
@@ -497,7 +497,7 @@ export class GraphBuilder {
    */
   private classExists(name: string): boolean {
     for (const [, cls] of this.classes) {
-      if (cls.name === name) return true;
+      if (cls.name === name) {return true;}
     }
     return false;
   }
@@ -646,7 +646,7 @@ export class GraphBuilder {
    * Check if a function is an API route handler based on decorators/attributes
    */
   private isApiRouteHandler(func: FunctionNode): boolean {
-    if (func.decorators.length === 0) return false;
+    if (func.decorators.length === 0) {return false;}
 
     // Python/FastAPI/Flask patterns
     const pythonRoutePatterns = [
@@ -696,7 +696,7 @@ export class GraphBuilder {
    */
   private isControllerMethod(func: FunctionNode): boolean {
     // Must be a public method in a class
-    if (!func.className || !func.isExported) return false;
+    if (!func.className || !func.isExported) {return false;}
 
     // Check if the class name suggests it's a controller
     const controllerPatterns = [
@@ -710,7 +710,7 @@ export class GraphBuilder {
       pattern.test(func.className!)
     );
 
-    if (!isControllerClass) return false;
+    if (!isControllerClass) {return false;}
 
     // Exclude common non-route methods (expanded list to reduce false positives)
     const excludedMethods = [
@@ -736,7 +736,7 @@ export class GraphBuilder {
     ];
 
     const lowerName = func.name.toLowerCase();
-    if (excludedMethods.some(m => lowerName === m.toLowerCase())) return false;
+    if (excludedMethods.some(m => lowerName === m.toLowerCase())) {return false;}
 
     // Exclude methods starting with common helper prefixes
     const excludedPrefixes = [

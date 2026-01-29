@@ -6,10 +6,12 @@
  * Handles contract state transitions (discovered → verified/mismatch/ignored).
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import { CONTRACT_FILE_VERSION } from '../types/contracts.js';
 
 import type {
   Contract,
@@ -24,7 +26,6 @@ import type {
   HttpMethod,
 } from '../types/contracts.js';
 
-import { CONTRACT_FILE_VERSION } from '../types/contracts.js';
 
 // ============================================================================
 // Constants
@@ -308,7 +309,7 @@ export class ContractStore extends EventEmitter {
   }
 
   private scheduleAutoSave(): void {
-    if (!this.config.autoSave) return;
+    if (!this.config.autoSave) {return;}
 
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -371,7 +372,7 @@ export class ContractStore extends EventEmitter {
 
   delete(id: string): boolean {
     const contract = this.contracts.get(id);
-    if (!contract) return false;
+    if (!contract) {return false;}
 
     this.contracts.delete(id);
     this.dirty = true;
@@ -474,34 +475,34 @@ export class ContractStore extends EventEmitter {
 
   private applyFilters(contracts: Contract[], filter: ContractQuery): Contract[] {
     return contracts.filter((contract) => {
-      if (filter.ids && !filter.ids.includes(contract.id)) return false;
+      if (filter.ids && !filter.ids.includes(contract.id)) {return false;}
 
       if (filter.status) {
         const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-        if (!statuses.includes(contract.status)) return false;
+        if (!statuses.includes(contract.status)) {return false;}
       }
 
       if (filter.method) {
         const methods = Array.isArray(filter.method) ? filter.method : [filter.method];
-        if (!methods.includes(contract.method)) return false;
+        if (!methods.includes(contract.method)) {return false;}
       }
 
-      if (filter.endpoint && !contract.endpoint.includes(filter.endpoint)) return false;
+      if (filter.endpoint && !contract.endpoint.includes(filter.endpoint)) {return false;}
 
       if (filter.hasMismatches !== undefined) {
         const hasMismatches = contract.mismatches.length > 0;
-        if (filter.hasMismatches !== hasMismatches) return false;
+        if (filter.hasMismatches !== hasMismatches) {return false;}
       }
 
       if (filter.minMismatches !== undefined && contract.mismatches.length < filter.minMismatches) {
         return false;
       }
 
-      if (filter.backendFile && contract.backend.file !== filter.backendFile) return false;
+      if (filter.backendFile && contract.backend.file !== filter.backendFile) {return false;}
 
       if (filter.frontendFile) {
         const hasFile = contract.frontend.some((f) => f.file === filter.frontendFile);
-        if (!hasFile) return false;
+        if (!hasFile) {return false;}
       }
 
       if (filter.minConfidence !== undefined && contract.confidence.score < filter.minConfidence) {
@@ -510,7 +511,7 @@ export class ContractStore extends EventEmitter {
 
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
-        if (!contract.endpoint.toLowerCase().includes(searchLower)) return false;
+        if (!contract.endpoint.toLowerCase().includes(searchLower)) {return false;}
       }
 
       return true;
@@ -628,7 +629,7 @@ export class ContractStore extends EventEmitter {
       byStatus,
       byMethod,
       totalMismatches,
-      mismatchesByType: mismatchesByType as Record<string, number>,
+      mismatchesByType: mismatchesByType,
       lastUpdated: new Date().toISOString(),
     };
   }

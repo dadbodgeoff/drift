@@ -12,11 +12,11 @@
  * - Track last accessed timestamps for MRU ordering
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import * as os from 'node:os';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 // ============================================================================
 // Types
@@ -241,11 +241,11 @@ async function detectFramework(projectPath: string): Promise<ProjectFramework> {
     const pkg = JSON.parse(content);
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-    if (deps['next']) return 'nextjs';
-    if (deps['react']) return 'react';
-    if (deps['vue']) return 'vue';
-    if (deps['@angular/core']) return 'angular';
-    if (deps['express']) return 'express';
+    if (deps['next']) {return 'nextjs';}
+    if (deps['react']) {return 'react';}
+    if (deps['vue']) {return 'vue';}
+    if (deps['@angular/core']) {return 'angular';}
+    if (deps['express']) {return 'express';}
   } catch {
     // No package.json
   }
@@ -254,9 +254,9 @@ async function detectFramework(projectPath: string): Promise<ProjectFramework> {
   try {
     const reqPath = path.join(projectPath, 'requirements.txt');
     const content = await fs.readFile(reqPath, 'utf-8');
-    if (content.includes('fastapi')) return 'fastapi';
-    if (content.includes('django')) return 'django';
-    if (content.includes('flask')) return 'flask';
+    if (content.includes('fastapi')) {return 'fastapi';}
+    if (content.includes('django')) {return 'django';}
+    if (content.includes('flask')) {return 'flask';}
   } catch {
     // No requirements.txt
   }
@@ -265,7 +265,7 @@ async function detectFramework(projectPath: string): Promise<ProjectFramework> {
   try {
     const pomPath = path.join(projectPath, 'pom.xml');
     const content = await fs.readFile(pomPath, 'utf-8');
-    if (content.includes('spring-boot')) return 'spring';
+    if (content.includes('spring-boot')) {return 'spring';}
   } catch {
     // No pom.xml
   }
@@ -276,7 +276,7 @@ async function detectFramework(projectPath: string): Promise<ProjectFramework> {
     for (const file of files) {
       if (file.endsWith('.csproj')) {
         const content = await fs.readFile(path.join(projectPath, file), 'utf-8');
-        if (content.includes('Microsoft.AspNetCore')) return 'aspnet';
+        if (content.includes('Microsoft.AspNetCore')) {return 'aspnet';}
       }
     }
   } catch {
@@ -537,9 +537,9 @@ export class ProjectRegistry extends EventEmitter {
     healthScore: number
   ): Promise<RegisteredProject> {
     let health: ProjectHealth = 'unknown';
-    if (healthScore >= 80) health = 'healthy';
-    else if (healthScore >= 50) health = 'warning';
-    else if (healthScore >= 0) health = 'critical';
+    if (healthScore >= 80) {health = 'healthy';}
+    else if (healthScore >= 50) {health = 'warning';}
+    else if (healthScore >= 0) {health = 'critical';}
 
     return this.update(projectId, { healthScore, health });
   }
@@ -589,7 +589,7 @@ export class ProjectRegistry extends EventEmitter {
    * Get the active project
    */
   getActive(): RegisteredProject | undefined {
-    if (!this.activeProjectId) return undefined;
+    if (!this.activeProjectId) {return undefined;}
     return this.projects.get(this.activeProjectId);
   }
 

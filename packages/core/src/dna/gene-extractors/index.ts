@@ -19,16 +19,17 @@ export { ErrorResponseFormatExtractor } from './error-response-format.js';
 export { LoggingFormatExtractor } from './logging-format.js';
 export { ConfigPatternExtractor } from './config-pattern.js';
 
-import { VariantHandlingExtractor } from './variant-handling.js';
-import { ResponsiveApproachExtractor } from './responsive-approach.js';
-import { StateStylingExtractor } from './state-styling.js';
-import { ThemingExtractor } from './theming.js';
-import { SpacingPhilosophyExtractor } from './spacing-philosophy.js';
 import { AnimationApproachExtractor } from './animation-approach.js';
 import { ApiResponseFormatExtractor } from './api-response-format.js';
+import { ConfigPatternExtractor } from './config-pattern.js';
 import { ErrorResponseFormatExtractor } from './error-response-format.js';
 import { LoggingFormatExtractor } from './logging-format.js';
-import { ConfigPatternExtractor } from './config-pattern.js';
+import { ResponsiveApproachExtractor } from './responsive-approach.js';
+import { SpacingPhilosophyExtractor } from './spacing-philosophy.js';
+import { StateStylingExtractor } from './state-styling.js';
+import { ThemingExtractor } from './theming.js';
+import { VariantHandlingExtractor } from './variant-handling.js';
+
 import type { BaseGeneExtractor } from './base-extractor.js';
 import type { GeneId } from '../types.js';
 

@@ -5,6 +5,8 @@
  * Creates edges for the call graph integration.
  */
 
+import { DataContextResolver } from './datacontext-resolver.js';
+
 import type {
   ViewModelLink,
   XamlExtractionResult,
@@ -13,7 +15,6 @@ import type {
   ExtractedCommand,
   SourceLocation,
 } from '../types.js';
-import { DataContextResolver } from './datacontext-resolver.js';
 
 // ============================================================================
 // Types
@@ -251,7 +252,7 @@ export class ViewModelLinker {
     if (!vmCommand) {
       // Check if it's a property that might be a command
       const property = viewModel.properties.find(p => p.name === commandPath);
-      if (property && property.type.includes('Command')) {
+      if (property?.type.includes('Command')) {
         return {
           link: {
             xamlFile: xamlPath,

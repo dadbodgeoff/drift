@@ -7,9 +7,10 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { GoRegexExtractor } from './regex/go-regex.js';
-import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
 import { isGoTreeSitterAvailable, createGoParser } from '../../parsers/tree-sitter/go-loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult, ParameterInfo } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -138,7 +139,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
     currentPackage: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isExported = /^[A-Z]/.test(name);
@@ -185,7 +186,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
   ): void {
     const nameNode = node.childForFieldName('name');
     const receiverNode = node.childForFieldName('receiver');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isExported = /^[A-Z]/.test(name);
@@ -263,7 +264,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
         const nameNode = child.childForFieldName('name');
         const typeNode = child.childForFieldName('type');
 
-        if (!nameNode || !typeNode) continue;
+        if (!nameNode || !typeNode) {continue;}
 
         const name = nameNode.text;
         const isExported = /^[A-Z]/.test(name);
@@ -362,7 +363,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
       const pathNode = spec.childForFieldName('path');
       const nameNode = spec.childForFieldName('name');
 
-      if (!pathNode) continue;
+      if (!pathNode) {continue;}
 
       const path = pathNode.text.replace(/^"|"$/g, '');
       const alias = nameNode?.text;
@@ -393,7 +394,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
     const funcNode = node.childForFieldName('function');
     const argsNode = node.childForFieldName('arguments');
 
-    if (!funcNode) return;
+    if (!funcNode) {return;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -543,7 +544,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
       for (const child of node.children) {
         if (child.type === 'parameter_declaration') {
           const typeNode = child.childForFieldName('type');
-          if (typeNode) types.push(typeNode.text);
+          if (typeNode) {types.push(typeNode.text);}
           else {
             const typeChild = child.children.find(
               (c) =>
@@ -552,7 +553,7 @@ export class GoHybridExtractor extends HybridExtractorBase {
                 c.type === 'slice_type' ||
                 c.type === 'map_type'
             );
-            if (typeChild) types.push(typeChild.text);
+            if (typeChild) {types.push(typeChild.text);}
           }
         }
       }

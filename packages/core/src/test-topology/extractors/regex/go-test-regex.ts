@@ -60,17 +60,17 @@ export class GoTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check imports
-    if (content.includes('github.com/stretchr/testify')) return 'testify';
-    if (content.includes('github.com/onsi/ginkgo')) return 'ginkgo';
-    if (content.includes('github.com/onsi/gomega')) return 'gomega';
+    if (content.includes('github.com/stretchr/testify')) {return 'testify';}
+    if (content.includes('github.com/onsi/ginkgo')) {return 'ginkgo';}
+    if (content.includes('github.com/onsi/gomega')) {return 'gomega';}
 
     // Check for standard testing package
-    if (content.includes('*testing.T') || content.includes('*testing.B')) return 'go-testing';
-    if (content.includes('testing.T') || content.includes('testing.B')) return 'go-testing';
+    if (content.includes('*testing.T') || content.includes('*testing.B')) {return 'go-testing';}
+    if (content.includes('testing.T') || content.includes('testing.B')) {return 'go-testing';}
 
     // Check for test function patterns
-    if (/func\s+Test\w+\s*\(/.test(content)) return 'go-testing';
-    if (/func\s+Benchmark\w+\s*\(/.test(content)) return 'go-testing';
+    if (/func\s+Test\w+\s*\(/.test(content)) {return 'go-testing';}
+    if (/func\s+Benchmark\w+\s*\(/.test(content)) {return 'go-testing';}
 
     return 'unknown';
   }
@@ -258,7 +258,7 @@ export class GoTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -269,7 +269,7 @@ export class GoTestRegexExtractor {
     const methodPattern = /\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
     while ((match = methodPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -568,13 +568,13 @@ export class GoTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
 
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
 
     return {
       assertionCount,

@@ -5,9 +5,15 @@
  * Constraints are stored in .drift/constraints/ with category-based sharding.
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
+import {
+  CONSTRAINT_CATEGORIES,
+  CONSTRAINT_STATUSES,
+  CONSTRAINT_LANGUAGES,
+} from '../types.js';
 
 import type {
   Constraint,
@@ -21,11 +27,6 @@ import type {
   ConstraintCounts,
 } from '../types.js';
 
-import {
-  CONSTRAINT_CATEGORIES,
-  CONSTRAINT_STATUSES,
-  CONSTRAINT_LANGUAGES,
-} from '../types.js';
 
 // =============================================================================
 // Types
@@ -81,7 +82,7 @@ export class ConstraintStore extends EventEmitter {
    * Initialize the store, loading all constraints from disk
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     await this.ensureDirectories();
     await this.loadAll();
@@ -121,7 +122,7 @@ export class ConstraintStore extends EventEmitter {
         const files = await fs.readdir(statusDir);
 
         for (const file of files) {
-          if (!file.endsWith('.json')) continue;
+          if (!file.endsWith('.json')) {continue;}
 
           const filePath = path.join(statusDir, file);
           const content = await fs.readFile(filePath, 'utf-8');
@@ -211,7 +212,7 @@ export class ConstraintStore extends EventEmitter {
     this.ensureInitialized();
 
     const existing = this.constraints.get(id);
-    if (!existing) return null;
+    if (!existing) {return null;}
 
     const updated: Constraint = {
       ...existing,
@@ -251,7 +252,7 @@ export class ConstraintStore extends EventEmitter {
     this.ensureInitialized();
 
     const constraint = this.constraints.get(id);
-    if (!constraint) return false;
+    if (!constraint) {return false;}
 
     this.constraints.delete(id);
     await this.removeConstraintFile(constraint);
@@ -266,7 +267,7 @@ export class ConstraintStore extends EventEmitter {
    */
   async approve(id: string, approvedBy?: string): Promise<Constraint | null> {
     const existing = this.get(id);
-    if (!existing) return null;
+    if (!existing) {return null;}
 
     const updates: Partial<Constraint> = {
       status: 'approved',
@@ -291,7 +292,7 @@ export class ConstraintStore extends EventEmitter {
    */
   async ignore(id: string, reason?: string): Promise<Constraint | null> {
     const existing = this.get(id);
-    if (!existing) return null;
+    if (!existing) {return null;}
 
     const updates: Partial<Constraint> = {
       status: 'ignored',

@@ -1,6 +1,8 @@
 import * as crypto from 'node:crypto';
-import type { Gene, GeneId, Mutation, MutationImpact, DNAThresholds } from './types.js';
+
 import { DEFAULT_DNA_THRESHOLDS } from './types.js';
+
+import type { Gene, GeneId, Mutation, MutationImpact, DNAThresholds } from './types.js';
 
 export class MutationDetector {
   private readonly thresholds: DNAThresholds;
@@ -9,11 +11,11 @@ export class MutationDetector {
   detectMutations(genes: Record<GeneId, Gene>, _files: Map<string, string>): Mutation[] {
     const mutations: Mutation[] = [];
     for (const [geneId, gene] of Object.entries(genes) as [GeneId, Gene][]) {
-      if (!gene.dominant) continue;
+      if (!gene.dominant) {continue;}
       const domId = gene.dominant.id;
       const domFreq = gene.dominant.frequency;
       for (const allele of gene.alleles) {
-        if (allele.id === domId) continue;
+        if (allele.id === domId) {continue;}
         for (const ex of allele.examples) {
           mutations.push({
             id: crypto.createHash('sha256').update(`${ex.file}-${geneId}-${allele.id}`).digest('hex').slice(0, 16),
@@ -29,8 +31,8 @@ export class MutationDetector {
   }
 
   private calcImpact(freq: number, domFreq: number): MutationImpact {
-    if (freq < this.thresholds.mutationImpactHigh && domFreq > 0.8) return 'high';
-    if (freq < this.thresholds.mutationImpactMedium) return 'medium';
+    if (freq < this.thresholds.mutationImpactHigh && domFreq > 0.8) {return 'high';}
+    if (freq < this.thresholds.mutationImpactMedium) {return 'medium';}
     return 'low';
   }
 

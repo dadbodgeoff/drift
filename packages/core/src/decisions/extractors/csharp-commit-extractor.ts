@@ -5,16 +5,17 @@
  * Detects framework-specific patterns for ASP.NET Core, Entity Framework, etc.
  */
 
-import type {
-  GitCommit,
-  ArchitecturalSignal,
-  DecisionLanguage,
-} from '../types.js';
 import {
   BaseCommitExtractor,
   type CommitExtractorOptions,
   type ExtractionContext,
 } from './base-commit-extractor.js';
+
+import type {
+  GitCommit,
+  ArchitecturalSignal,
+  DecisionLanguage,
+} from '../types.js';
 
 // ============================================================================
 // C#-Specific Patterns

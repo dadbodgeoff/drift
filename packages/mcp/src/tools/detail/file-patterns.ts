@@ -8,6 +8,7 @@
  */
 
 import { IndexStore, PatternStore } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 export interface FilePatternLocation {
@@ -74,7 +75,7 @@ export async function handleFilePatterns(
   
   for (const patternId of patternIds) {
     const pattern = patternStore.get(patternId);
-    if (!pattern) continue;
+    if (!pattern) {continue;}
     
     // Filter by category if specified
     if (args.category && pattern.category !== args.category) {
@@ -121,7 +122,7 @@ export async function handleFilePatterns(
   
   // Sort by category, then by name
   patterns.sort((a, b) => {
-    if (a.category !== b.category) return a.category.localeCompare(b.category);
+    if (a.category !== b.category) {return a.category.localeCompare(b.category);}
     return a.name.localeCompare(b.name);
   });
   

@@ -6,6 +6,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type {
   EnvAccessMap,
   EnvAccessPoint,
@@ -45,7 +46,7 @@ export class EnvStore {
    * Initialize the store
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     try {
       await this.loadAccessMap();
@@ -79,7 +80,7 @@ export class EnvStore {
    * Get information about a specific variable
    */
   getVariable(varName: string): EnvVarInfo | null {
-    if (!this.accessMap) return null;
+    if (!this.accessMap) {return null;}
     return this.accessMap.variables[varName] ?? null;
   }
 
@@ -87,7 +88,7 @@ export class EnvStore {
    * Get all variables by sensitivity
    */
   getVariablesBySensitivity(sensitivity: EnvSensitivity): EnvVarInfo[] {
-    if (!this.accessMap) return [];
+    if (!this.accessMap) {return [];}
     return Object.values(this.accessMap.variables)
       .filter(v => v.sensitivity === sensitivity);
   }
@@ -110,7 +111,7 @@ export class EnvStore {
    * Get environment access for a file
    */
   getFileAccess(filePattern: string): FileEnvInfo[] {
-    if (!this.accessMap) return [];
+    if (!this.accessMap) {return [];}
 
     const results: FileEnvInfo[] = [];
     const fileAccessMap = new Map<string, EnvAccessPoint[]>();
@@ -147,7 +148,7 @@ export class EnvStore {
    * Get required variables (no default, marked as required)
    */
   getRequiredVariables(): EnvVarInfo[] {
-    if (!this.accessMap) return [];
+    if (!this.accessMap) {return [];}
     return Object.values(this.accessMap.variables)
       .filter(v => v.isRequired && !v.hasDefault);
   }
@@ -156,7 +157,7 @@ export class EnvStore {
    * Get variables without defaults
    */
   getVariablesWithoutDefaults(): EnvVarInfo[] {
-    if (!this.accessMap) return [];
+    if (!this.accessMap) {return [];}
     return Object.values(this.accessMap.variables)
       .filter(v => !v.hasDefault);
   }
@@ -198,7 +199,7 @@ export class EnvStore {
   }
 
   private async saveAccessMap(): Promise<void> {
-    if (!this.accessMap) return;
+    if (!this.accessMap) {return;}
 
     const dirPath = path.join(this.config.rootDir, DRIFT_DIR, ENV_DIR);
     await fs.mkdir(dirPath, { recursive: true });
@@ -209,7 +210,7 @@ export class EnvStore {
 
   private matchesPattern(file: string, pattern: string): boolean {
     // Simple pattern matching
-    if (pattern === '*' || pattern === '**/*') return true;
+    if (pattern === '*' || pattern === '**/*') {return true;}
     if (pattern.startsWith('**/')) {
       return file.includes(pattern.slice(3));
     }

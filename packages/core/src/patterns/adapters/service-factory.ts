@@ -7,11 +7,12 @@
  * @module patterns/adapters/service-factory
  */
 
-import type { PatternStore } from '../../store/pattern-store.js';
-import type { IPatternService, PatternServiceConfig } from '../service.js';
-import type { IPatternRepository } from '../repository.js';
 import { PatternStoreAdapter } from './pattern-store-adapter.js';
 import { PatternService } from '../impl/pattern-service.js';
+
+import type { PatternStore } from '../../store/pattern-store.js';
+import type { IPatternRepository } from '../repository.js';
+import type { IPatternService, PatternServiceConfig } from '../service.js';
 
 /**
  * A wrapper that auto-initializes the repository on first use.

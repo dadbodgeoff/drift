@@ -7,9 +7,10 @@
 
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { PythonRegexExtractor } from './regex/python-regex.js';
-import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import { isTreeSitterAvailable, createPythonParser } from '../../parsers/tree-sitter/loader.js';
+
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage, FileExtractionResult } from '../types.js';
 import type { HybridExtractorConfig } from './types.js';
 
 /**
@@ -159,7 +160,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
   ): void {
     if (node.type === 'call') {
       const call = this.extractCallNode(node);
-      if (call) calls.push(call);
+      if (call) {calls.push(call);}
     }
     
     if (node.type === 'function_definition' || node.type === 'class_definition') {
@@ -182,7 +183,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
     parentFunction: string | null
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const isMethod = currentClass !== null;
@@ -190,7 +191,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
 
     const decorators: string[] = [];
     let prevSibling = node.previousNamedSibling;
-    while (prevSibling && prevSibling.type === 'decorator') {
+    while (prevSibling?.type === 'decorator') {
       decorators.unshift(prevSibling.text);
       prevSibling = prevSibling.previousNamedSibling;
     }
@@ -286,7 +287,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
     const visit = (n: TreeSitterNode): void => {
       if (n.type === 'call') {
         const call = this.extractCallNode(n);
-        if (call) result.calls.push(call);
+        if (call) {result.calls.push(call);}
       }
       if (n.type !== 'function_definition' && n.type !== 'class_definition') {
         for (const child of n.children) {
@@ -305,7 +306,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
    */
   private extractCallExpression(node: TreeSitterNode, result: FileExtractionResult): void {
     const call = this.extractCallNode(node);
-    if (call) result.calls.push(call);
+    if (call) {result.calls.push(call);}
   }
 
   /**
@@ -313,7 +314,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
    */
   private extractCallNode(node: TreeSitterNode): FileExtractionResult['calls'][0] | null {
     const funcNode = node.childForFieldName('function');
-    if (!funcNode) return null;
+    if (!funcNode) {return null;}
 
     let calleeName: string;
     let receiver: string | undefined;
@@ -366,7 +367,7 @@ export class PythonHybridExtractor extends HybridExtractorBase {
     source: string
   ): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
 

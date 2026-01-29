@@ -5,10 +5,11 @@
  * Based on Robert C. Martin's coupling metrics (Ca, Ce, Instability, Abstractness, Distance).
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createModuleCouplingAnalyzer,
   createCallGraphAnalyzer,
@@ -21,6 +22,7 @@ import {
   type UnusedExportAnalysis,
   type CouplingMetrics,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface CouplingOptions {
@@ -116,7 +118,7 @@ async function buildAction(options: CouplingOptions): Promise<void> {
             id: `cycle-${i}`,
             path: c.modules,
             length: c.modules.length,
-            severity: c.severity as 'info' | 'warning' | 'critical',
+            severity: c.severity,
             totalWeight: c.filesAffected,
             breakPoints: [],
           })),
@@ -432,12 +434,12 @@ async function hotspotsAction(options: CouplingOptions): Promise<void> {
   try {
     const data = JSON.parse(
       await fs.readFile(path.join(rootDir, DRIFT_DIR, COUPLING_DIR, 'graph.json'), 'utf-8')
-    );
+    ) as { modules: Record<string, { metrics: { Ca: number; Ce: number; instability: number; abstractness: number; distance: number } }> };
 
-    const modules = Object.entries(data.modules) as [string, { metrics: CouplingMetrics }][];
+    const modules = Object.entries(data.modules);
     const hotspots = modules
-      .map(([path, mod]) => ({
-        path,
+      .map(([modPath, mod]) => ({
+        path: modPath,
         coupling: mod.metrics.Ca + mod.metrics.Ce,
         metrics: mod.metrics,
       }))
@@ -720,9 +722,9 @@ function formatCycleSummary(cycles: DependencyCycle[]): void {
 
   console.log(chalk.bold('🔄 Cycle Summary'));
   console.log(chalk.gray('─'.repeat(50)));
-  if (critical > 0) console.log(`  ${chalk.red('●')} Critical: ${chalk.red.bold(critical)}`);
-  if (warning > 0) console.log(`  ${chalk.yellow('●')} Warning:  ${chalk.yellow.bold(warning)}`);
-  if (info > 0) console.log(`  ${chalk.gray('●')} Info:     ${chalk.gray(info)}`);
+  if (critical > 0) {console.log(`  ${chalk.red('●')} Critical: ${chalk.red.bold(critical)}`);}
+  if (warning > 0) {console.log(`  ${chalk.yellow('●')} Warning:  ${chalk.yellow.bold(warning)}`);}
+  if (info > 0) {console.log(`  ${chalk.gray('●')} Info:     ${chalk.gray(info)}`);}
   console.log();
 }
 
@@ -901,29 +903,29 @@ function formatUnusedExports(unused: UnusedExportAnalysis[]): void {
 // ============================================================================
 
 function getCycleColor(count: number): string {
-  if (count === 0) return chalk.green.bold('0');
-  if (count <= 3) return chalk.yellow.bold(String(count));
+  if (count === 0) {return chalk.green.bold('0');}
+  if (count <= 3) {return chalk.yellow.bold(String(count));}
   return chalk.red.bold(String(count));
 }
 
 function getInstabilityColor(value: number): string {
   // Instability near 0.5 is ideal (balanced)
   const distance = Math.abs(value - 0.5);
-  if (distance <= 0.2) return chalk.green(value.toFixed(2));
-  if (distance <= 0.35) return chalk.yellow(value.toFixed(2));
+  if (distance <= 0.2) {return chalk.green(value.toFixed(2));}
+  if (distance <= 0.35) {return chalk.yellow(value.toFixed(2));}
   return chalk.red(value.toFixed(2));
 }
 
 function getDistanceColor(value: number): string {
   // Distance near 0 is ideal
-  if (value <= 0.2) return chalk.green(value.toFixed(2));
-  if (value <= 0.4) return chalk.yellow(value.toFixed(2));
+  if (value <= 0.2) {return chalk.green(value.toFixed(2));}
+  if (value <= 0.4) {return chalk.yellow(value.toFixed(2));}
   return chalk.red(value.toFixed(2));
 }
 
 function getHealthColor(score: number): string {
-  if (score >= 70) return chalk.green(`${score}/100`);
-  if (score >= 50) return chalk.yellow(`${score}/100`);
+  if (score >= 70) {return chalk.green(`${score}/100`);}
+  if (score >= 50) {return chalk.yellow(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 
@@ -950,12 +952,12 @@ export function createCouplingCommand(): Command {
   cmd
     .command('build')
     .description('Build module coupling graph')
-    .action(() => buildAction(cmd.opts() as CouplingOptions));
+    .action(() => buildAction(cmd.opts()));
 
   cmd
     .command('status')
     .description('Show coupling overview')
-    .action(() => statusAction(cmd.opts() as CouplingOptions));
+    .action(() => statusAction(cmd.opts()));
 
   cmd
     .command('cycles')
@@ -974,12 +976,12 @@ export function createCouplingCommand(): Command {
   cmd
     .command('analyze <module>')
     .description('Analyze specific module coupling')
-    .action((module) => analyzeAction(module, cmd.opts() as CouplingOptions));
+    .action((module) => analyzeAction(module, cmd.opts()));
 
   cmd
     .command('refactor-impact <module>')
     .description('Analyze impact of refactoring a module')
-    .action((module) => refactorImpactAction(module, cmd.opts() as CouplingOptions));
+    .action((module) => refactorImpactAction(module, cmd.opts()));
 
   cmd
     .command('unused-exports')

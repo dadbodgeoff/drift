@@ -10,8 +10,9 @@
  * Solves: AI needs to know impact of changing a function quickly.
  */
 
-import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -129,7 +130,7 @@ export async function handleCallers(
   // Sort by file then line
   directCallers.sort((a, b) => {
     const fileCompare = a.file.localeCompare(b.file);
-    if (fileCompare !== 0) return fileCompare;
+    if (fileCompare !== 0) {return fileCompare;}
     return a.callSite - b.callSite;
   });
   
@@ -145,8 +146,8 @@ export async function handleCallers(
   // Check if this is a public API (called from entry points)
   const isPublicApi = graph.entryPoints.some(ep => {
     const entryFunc = graph.functions.get(ep);
-    if (!entryFunc) return false;
-    return canReach(graph, ep, targetFunc!.id, 5);
+    if (!entryFunc) {return false;}
+    return canReach(graph, ep, targetFunc.id, 5);
   });
   
   const data: CallersData = {
@@ -222,7 +223,7 @@ function findTransitiveCallers(
   
   // Start with direct callers
   const targetFunc = graph.functions.get(targetId);
-  if (!targetFunc) return result;
+  if (!targetFunc) {return result;}
   
   for (const call of targetFunc.calledBy) {
     if (!visited.has(call.callerId)) {
@@ -240,7 +241,7 @@ function findTransitiveCallers(
     const current = queue.shift()!;
     const func = graph.functions.get(current.id);
     
-    if (!func) continue;
+    if (!func) {continue;}
     
     // Add to result if depth > 1 (direct callers handled separately)
     if (current.depth > 1) {
@@ -286,14 +287,14 @@ function canReach(
   while (stack.length > 0) {
     const current = stack.pop()!;
     
-    if (current.id === toId) return true;
-    if (current.depth >= maxDepth) continue;
-    if (visited.has(current.id)) continue;
+    if (current.id === toId) {return true;}
+    if (current.depth >= maxDepth) {continue;}
+    if (visited.has(current.id)) {continue;}
     
     visited.add(current.id);
     
     const func = graph.functions.get(current.id);
-    if (!func) continue;
+    if (!func) {continue;}
     
     for (const call of func.calls) {
       if (call.calleeId && !visited.has(call.calleeId)) {

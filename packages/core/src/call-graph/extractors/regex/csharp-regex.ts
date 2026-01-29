@@ -5,6 +5,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -59,11 +60,11 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${name}:${startLine}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip if this looks like a control structure
-      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'using', 'lock'].includes(name)) continue;
+      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'using', 'lock'].includes(name)) {continue;}
 
       const endIndex = this.findBlockEnd(cleanSource, match.index);
       const endLine = this.getLineNumber(originalSource, endIndex);
@@ -99,11 +100,11 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `ctor:${name}:${startLine}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       
       // Check if this is actually a constructor (class name should be PascalCase and match a class)
-      if (!/^[A-Z]/.test(name)) continue;
-      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'using', 'lock'].includes(name)) continue;
+      if (!/^[A-Z]/.test(name)) {continue;}
+      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'using', 'lock'].includes(name)) {continue;}
 
       seen.add(key);
 
@@ -153,7 +154,7 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
    * Parse C# parameters
    */
   private parseCSharpParameters(paramsStr: string): FunctionExtraction['parameters'] {
-    if (!paramsStr.trim()) return [];
+    if (!paramsStr.trim()) {return [];}
 
     const params: FunctionExtraction['parameters'] = [];
     
@@ -163,8 +164,8 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
     let depth = 0;
 
     for (const char of paramsStr) {
-      if (char === '<') depth++;
-      else if (char === '>') depth--;
+      if (char === '<') {depth++;}
+      else if (char === '>') {depth--;}
       else if (char === ',' && depth === 0) {
         parts.push(current.trim());
         current = '';
@@ -172,15 +173,15 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       }
       current += char;
     }
-    if (current.trim()) parts.push(current.trim());
+    if (current.trim()) {parts.push(current.trim());}
 
     for (const part of parts) {
       let trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       // Handle params keyword (varargs)
       const isRest = trimmed.startsWith('params ');
-      if (isRest) trimmed = trimmed.slice(7);
+      if (isRest) {trimmed = trimmed.slice(7);}
 
       // Handle ref, out, in keywords
       trimmed = trimmed.replace(/^(ref|out|in)\s+/, '');
@@ -416,11 +417,11 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip this.Method calls for now
-      if (receiver === 'this' || receiver === 'base') continue;
+      if (receiver === 'this' || receiver === 'base') {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -439,11 +440,11 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Skip keywords
-      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'return', 'throw', 'new', 'class', 'interface', 'struct', 'enum', 'using', 'lock', 'typeof', 'sizeof', 'nameof', 'default', 'checked', 'unchecked'].includes(calleeName)) continue;
+      if (['if', 'for', 'foreach', 'while', 'switch', 'catch', 'try', 'return', 'throw', 'new', 'class', 'interface', 'struct', 'enum', 'using', 'lock', 'typeof', 'sizeof', 'nameof', 'default', 'checked', 'unchecked'].includes(calleeName)) {continue;}
 
       calls.push(this.createCall({
         calleeName,
@@ -460,7 +461,7 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `new:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({
@@ -480,7 +481,7 @@ export class CSharpRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `linq:${calleeName}:${line}`;
       
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       calls.push(this.createCall({

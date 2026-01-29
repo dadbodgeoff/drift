@@ -7,9 +7,10 @@
  * Supports npm/pnpm/yarn workspaces, Python, Go, Java, C#, PHP, and Rust.
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
 import type {
   PackageManager,
   DetectedPackage,
@@ -126,7 +127,7 @@ export class PackageDetector extends EventEmitter {
     const structure = await this.detect();
     
     const byName = structure.packages.find(p => p.name === nameOrPath);
-    if (byName) return byName;
+    if (byName) {return byName;}
 
     const normalizedPath = nameOrPath.replace(/\\/g, '/');
     const byPath = structure.packages.find(p => 
@@ -134,7 +135,7 @@ export class PackageDetector extends EventEmitter {
       p.path.endsWith(normalizedPath) ||
       normalizedPath.endsWith(p.path)
     );
-    if (byPath) return byPath;
+    if (byPath) {return byPath;}
 
     const byPartialName = structure.packages.find(p => 
       p.name.includes(nameOrPath) || nameOrPath.includes(p.name)
@@ -232,7 +233,7 @@ export class PackageDetector extends EventEmitter {
         const entries = await fs.readdir(fullBasePath, { withFileTypes: true });
         
         for (const entry of entries) {
-          if (!entry.isDirectory()) continue;
+          if (!entry.isDirectory()) {continue;}
           
           const pkgDir = path.join(fullBasePath, entry.name);
           const pkgJsonPath = path.join(pkgDir, 'package.json');
@@ -257,8 +258,8 @@ export class PackageDetector extends EventEmitter {
               isRoot: false,
             };
 
-            if (pkgVersion) detectedPkg.version = pkgVersion;
-            if (pkgDescription) detectedPkg.description = pkgDescription;
+            if (pkgVersion) {detectedPkg.version = pkgVersion;}
+            if (pkgDescription) {detectedPkg.description = pkgDescription;}
 
             packages.push(detectedPkg);
             this.emitEvent('package:detected', pkgName);
@@ -280,8 +281,8 @@ export class PackageDetector extends EventEmitter {
       ...(pkg['devDependencies'] as Record<string, string> || {}),
     };
 
-    if (deps['typescript'] || deps['@types/node']) return 'typescript';
-    if (deps['react'] || deps['vue'] || deps['@angular/core']) return 'typescript';
+    if (deps['typescript'] || deps['@types/node']) {return 'typescript';}
+    if (deps['react'] || deps['vue'] || deps['@angular/core']) {return 'typescript';}
     return 'javascript';
   }
 
@@ -330,7 +331,7 @@ export class PackageDetector extends EventEmitter {
           isRoot: true,
         };
 
-        if (versionMatch?.[1]) detectedPkg.version = versionMatch[1];
+        if (versionMatch?.[1]) {detectedPkg.version = versionMatch[1];}
         packages.push(detectedPkg);
       }
     } catch {
@@ -483,7 +484,7 @@ export class PackageDetector extends EventEmitter {
         isRoot: true,
       };
 
-      if (versionMatch?.[1]) detectedPkg.version = versionMatch[1];
+      if (versionMatch?.[1]) {detectedPkg.version = versionMatch[1];}
       packages.push(detectedPkg);
 
       const modulesMatch = content.match(/<modules>([\s\S]*?)<\/modules>/);
@@ -586,8 +587,8 @@ export class PackageDetector extends EventEmitter {
 
       const version = composer['version'] as string | undefined;
       const description = composer['description'] as string | undefined;
-      if (version) detectedPkg.version = version;
-      if (description) detectedPkg.description = description;
+      if (version) {detectedPkg.version = version;}
+      if (description) {detectedPkg.description = description;}
 
       packages.push(detectedPkg);
     } catch {
@@ -665,7 +666,7 @@ export class PackageDetector extends EventEmitter {
         isRoot: true,
       };
 
-      if (versionMatch?.[1]) detectedPkg.version = versionMatch[1];
+      if (versionMatch?.[1]) {detectedPkg.version = versionMatch[1];}
       packages.push(detectedPkg);
 
       const workspaceMatch = content.match(/\[workspace\]([\s\S]*?)(?:\[|$)/);
@@ -739,8 +740,8 @@ export class PackageDetector extends EventEmitter {
           isRoot: true,
         };
 
-        if (version) detectedPkg.version = version;
-        if (description) detectedPkg.description = description;
+        if (version) {detectedPkg.version = version;}
+        if (description) {detectedPkg.description = description;}
 
         return detectedPkg;
       } catch {
@@ -765,8 +766,8 @@ export class PackageDetector extends EventEmitter {
       type,
       timestamp: new Date().toISOString(),
     };
-    if (packageName) event.packageName = packageName;
-    if (details) event.details = details;
+    if (packageName) {event.packageName = packageName;}
+    if (details) {event.details = details;}
     
     this.emit(type, event);
     this.emit('*', event);

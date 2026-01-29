@@ -7,12 +7,14 @@
  * This is the "what should I do next?" command for new users.
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
-import { createSpinner } from '../ui/spinner.js';
+import { Command } from 'commander';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
+import { createSpinner } from '../ui/spinner.js';
 
 export interface NextStepsOptions {
   format?: 'text' | 'json';
@@ -66,7 +68,7 @@ async function detectLanguages(rootDir: string): Promise<string[]> {
   };
 
   async function scanDir(dir: string, depth = 0): Promise<void> {
-    if (depth > 3) return; // Don't go too deep
+    if (depth > 3) {return;} // Don't go too deep
     
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -140,11 +142,11 @@ async function detectFrameworks(rootDir: string): Promise<string[]> {
     const pkg = JSON.parse(pkgContent);
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     
-    if (deps['react']) frameworks.push('react');
-    if (deps['express']) frameworks.push('express');
-    if (deps['@nestjs/core']) frameworks.push('nestjs');
-    if (deps['fastify']) frameworks.push('fastify');
-    if (deps['koa']) frameworks.push('koa');
+    if (deps['react']) {frameworks.push('react');}
+    if (deps['express']) {frameworks.push('express');}
+    if (deps['@nestjs/core']) {frameworks.push('nestjs');}
+    if (deps['fastify']) {frameworks.push('fastify');}
+    if (deps['koa']) {frameworks.push('koa');}
   } catch {
     // No package.json
   }

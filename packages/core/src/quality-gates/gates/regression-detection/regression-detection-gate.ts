@@ -10,6 +10,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -174,7 +175,7 @@ export class RegressionDetectionGate extends BaseGate {
     // Compare each current pattern
     for (const pattern of currentPatterns) {
       const baselinePattern = baselineMap.get(pattern.id);
-      if (!baselinePattern) continue; // New pattern, not a regression
+      if (!baselinePattern) {continue;} // New pattern, not a regression
 
       const currentOutliers = pattern.outliers?.length ?? 0;
       const currentLocations = pattern.locations?.length ?? 0;
@@ -269,7 +270,7 @@ export class RegressionDetectionGate extends BaseGate {
    */
   private calculateOverallDelta(categoryDeltas: Record<string, number>): number {
     const values = Object.values(categoryDeltas);
-    if (values.length === 0) return 0;
+    if (values.length === 0) {return 0;}
     return values.reduce((sum, v) => sum + v, 0) / values.length;
   }
 
@@ -286,7 +287,7 @@ export class RegressionDetectionGate extends BaseGate {
   ): boolean {
     // Check for severe regressions
     const severeRegressions = comparison.regressions.filter(r => r.severity === 'severe');
-    if (severeRegressions.length > 0) return false;
+    if (severeRegressions.length > 0) {return false;}
 
     // Check for regressions in critical categories
     for (const regression of comparison.regressions) {
@@ -299,7 +300,7 @@ export class RegressionDetectionGate extends BaseGate {
 
     // Check if moderate regressions exceed threshold
     const moderateRegressions = comparison.regressions.filter(r => r.severity === 'moderate');
-    if (moderateRegressions.length > 3) return false;
+    if (moderateRegressions.length > 3) {return false;}
 
     return true;
   }

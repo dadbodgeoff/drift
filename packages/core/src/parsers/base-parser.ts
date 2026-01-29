@@ -417,12 +417,12 @@ export abstract class BaseParser {
    */
   protected positionInRange(position: Position, start: Position, end: Position): boolean {
     // Check if position is after start
-    if (position.row < start.row) return false;
-    if (position.row === start.row && position.column < start.column) return false;
+    if (position.row < start.row) {return false;}
+    if (position.row === start.row && position.column < start.column) {return false;}
 
     // Check if position is before end
-    if (position.row > end.row) return false;
-    if (position.row === end.row && position.column > end.column) return false;
+    if (position.row > end.row) {return false;}
+    if (position.row === end.row && position.column > end.column) {return false;}
 
     return true;
   }
@@ -457,10 +457,10 @@ export abstract class BaseParser {
     const result: string[] = [];
 
     for (let row = start.row; row <= end.row; row++) {
-      if (row >= lines.length) break;
+      if (row >= lines.length) {break;}
 
       const line = lines[row];
-      if (line === undefined) break;
+      if (line === undefined) {break;}
       
       const startCol = row === start.row ? start.column : 0;
       const endCol = row === end.row ? end.column : line.length;

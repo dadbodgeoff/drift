@@ -13,10 +13,13 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { minimatch } from 'minimatch';
-import type { DataAccessPoint } from '../../boundaries/types.js';
-import { UnifiedLanguageProvider, createUnifiedProvider } from '../provider/unified-language-provider.js';
+
 import { toDataAccessPoint } from './unified-data-access-adapter.js';
+import { UnifiedLanguageProvider, createUnifiedProvider } from '../provider/unified-language-provider.js';
+
+import type { DataAccessPoint } from '../../boundaries/types.js';
 import type { UnifiedLanguage } from '../types.js';
 
 // ============================================================================
@@ -79,20 +82,20 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
     stack.languages.push('typescript', 'javascript');
 
     // Detect ORMs
-    if (allDeps['@supabase/supabase-js']) stack.orms.push('supabase');
-    if (allDeps['@prisma/client'] || allDeps['prisma']) stack.orms.push('prisma');
-    if (allDeps['typeorm']) stack.orms.push('typeorm');
-    if (allDeps['sequelize']) stack.orms.push('sequelize');
-    if (allDeps['drizzle-orm']) stack.orms.push('drizzle');
-    if (allDeps['knex']) stack.orms.push('knex');
-    if (allDeps['mongoose']) stack.orms.push('mongoose');
-    if (allDeps['pg'] || allDeps['mysql2'] || allDeps['better-sqlite3']) stack.orms.push('raw-sql');
+    if (allDeps['@supabase/supabase-js']) {stack.orms.push('supabase');}
+    if (allDeps['@prisma/client'] || allDeps['prisma']) {stack.orms.push('prisma');}
+    if (allDeps['typeorm']) {stack.orms.push('typeorm');}
+    if (allDeps['sequelize']) {stack.orms.push('sequelize');}
+    if (allDeps['drizzle-orm']) {stack.orms.push('drizzle');}
+    if (allDeps['knex']) {stack.orms.push('knex');}
+    if (allDeps['mongoose']) {stack.orms.push('mongoose');}
+    if (allDeps['pg'] || allDeps['mysql2'] || allDeps['better-sqlite3']) {stack.orms.push('raw-sql');}
 
     // Detect frameworks
-    if (allDeps['next']) stack.frameworks.push('nextjs');
-    if (allDeps['express']) stack.frameworks.push('express');
-    if (allDeps['fastify']) stack.frameworks.push('fastify');
-    if (allDeps['@nestjs/core']) stack.frameworks.push('nestjs');
+    if (allDeps['next']) {stack.frameworks.push('nextjs');}
+    if (allDeps['express']) {stack.frameworks.push('express');}
+    if (allDeps['fastify']) {stack.frameworks.push('fastify');}
+    if (allDeps['@nestjs/core']) {stack.frameworks.push('nestjs');}
   } catch {
     // No package.json
   }
@@ -113,9 +116,9 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
     if (pythonDeps) {
       stack.languages.push('python');
 
-      if (pythonDeps.includes('django')) stack.orms.push('django');
-      if (pythonDeps.includes('sqlalchemy')) stack.orms.push('sqlalchemy');
-      if (pythonDeps.includes('supabase')) stack.orms.push('supabase-python');
+      if (pythonDeps.includes('django')) {stack.orms.push('django');}
+      if (pythonDeps.includes('sqlalchemy')) {stack.orms.push('sqlalchemy');}
+      if (pythonDeps.includes('supabase')) {stack.orms.push('supabase-python');}
     }
   } catch {
     // No Python deps
@@ -129,9 +132,9 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
         stack.languages.push('csharp');
         const csprojContent = await fs.readFile(path.join(rootDir, entry), 'utf-8');
         
-        if (csprojContent.includes('Microsoft.EntityFrameworkCore')) stack.orms.push('ef-core');
-        if (csprojContent.includes('Dapper')) stack.orms.push('dapper');
-        if (csprojContent.includes('Microsoft.AspNetCore')) stack.frameworks.push('aspnet');
+        if (csprojContent.includes('Microsoft.EntityFrameworkCore')) {stack.orms.push('ef-core');}
+        if (csprojContent.includes('Dapper')) {stack.orms.push('dapper');}
+        if (csprojContent.includes('Microsoft.AspNetCore')) {stack.frameworks.push('aspnet');}
         break;
       }
     }
@@ -158,8 +161,8 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       if (javaDeps.includes('spring-data-jpa') || javaDeps.includes('spring-boot-starter-data-jpa')) {
         stack.orms.push('spring-data-jpa');
       }
-      if (javaDeps.includes('hibernate')) stack.orms.push('hibernate');
-      if (javaDeps.includes('spring-boot')) stack.frameworks.push('spring-boot');
+      if (javaDeps.includes('hibernate')) {stack.orms.push('hibernate');}
+      if (javaDeps.includes('spring-boot')) {stack.frameworks.push('spring-boot');}
     }
   } catch {
     // No Java deps
@@ -178,7 +181,7 @@ async function detectProjectStack(rootDir: string): Promise<DetectedStack> {
       stack.frameworks.push('laravel');
       stack.orms.push('eloquent');
     }
-    if (allDeps['doctrine/orm']) stack.orms.push('doctrine');
+    if (allDeps['doctrine/orm']) {stack.orms.push('doctrine');}
   } catch {
     // No composer.json
   }
@@ -236,17 +239,17 @@ export class UnifiedScanner {
 
     for (const file of files) {
       // Skip type definition files
-      if (file.endsWith('.d.ts')) continue;
+      if (file.endsWith('.d.ts')) {continue;}
 
       // Skip test files
-      if (this.isTestFile(file)) continue;
+      if (this.isTestFile(file)) {continue;}
 
       try {
         const filePath = path.join(this.config.rootDir, file);
         const source = await fs.readFile(filePath, 'utf-8');
 
         // Quick check if file might have data access
-        if (!this.mightHaveDataAccess(source, detectedStack)) continue;
+        if (!this.mightHaveDataAccess(source, detectedStack)) {continue;}
 
         stats.filesScanned++;
 
@@ -355,7 +358,7 @@ export class UnifiedScanner {
 
       for (const orm of stack.orms) {
         const patterns = ormPatterns[orm];
-        if (patterns && patterns.some(p => content.includes(p))) {
+        if (patterns?.some(p => content.includes(p))) {
           return true;
         }
       }

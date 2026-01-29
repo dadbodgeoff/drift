@@ -7,9 +7,10 @@
  * @requirements 4.4 - Pattern history SHALL be tracked in .drift/history/
  */
 
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { EventEmitter } from 'node:events';
+
 import type { Pattern, PatternCategory } from './types.js';
 
 // ============================================================================
@@ -236,8 +237,8 @@ export class HistoryStore extends EventEmitter {
       const date = file.replace('.json', '');
       
       // Filter by date range
-      if (startDate && date < startDate) continue;
-      if (endDate && date > endDate) continue;
+      if (startDate && date < startDate) {continue;}
+      if (endDate && date > endDate) {continue;}
 
       try {
         const content = await fs.readFile(path.join(this.snapshotsDir, file), 'utf-8');

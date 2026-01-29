@@ -8,9 +8,11 @@
  * Solves: AI needs to know existing error types when adding error handling.
  */
 
-import type { CallGraphStore, ErrorHandlingGap, ErrorBoundary } from 'driftdetect-core';
 import { createErrorHandlingAnalyzer } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, ErrorHandlingGap, ErrorBoundary } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -292,14 +294,14 @@ function isErrorClass(name: string): boolean {
 
 function detectErrorBase(func: any): string | undefined {
   // Try to detect what the error extends
-  if (func.extends) return func.extends;
+  if (func.extends) {return func.extends;}
   
   // Common patterns
   const name = func.className?.toLowerCase() ?? '';
-  if (name.includes('http')) return 'HttpError';
-  if (name.includes('validation')) return 'ValidationError';
-  if (name.includes('auth')) return 'AuthError';
-  if (name.includes('notfound')) return 'NotFoundError';
+  if (name.includes('http')) {return 'HttpError';}
+  if (name.includes('validation')) {return 'ValidationError';}
+  if (name.includes('auth')) {return 'AuthError';}
+  if (name.includes('notfound')) {return 'NotFoundError';}
   
   return 'Error';
 }

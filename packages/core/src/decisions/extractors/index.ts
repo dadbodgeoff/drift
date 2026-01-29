@@ -41,13 +41,14 @@ export {
 // Factory Functions
 // ============================================================================
 
+import { CSharpCommitExtractor } from './csharp-commit-extractor.js';
+import { JavaCommitExtractor } from './java-commit-extractor.js';
+import { PhpCommitExtractor } from './php-commit-extractor.js';
+import { PythonCommitExtractor } from './python-commit-extractor.js';
+import { TypeScriptCommitExtractor } from './typescript-commit-extractor.js';
+
 import type { DecisionLanguage } from '../types.js';
 import type { CommitExtractorOptions } from './base-commit-extractor.js';
-import { TypeScriptCommitExtractor } from './typescript-commit-extractor.js';
-import { PythonCommitExtractor } from './python-commit-extractor.js';
-import { JavaCommitExtractor } from './java-commit-extractor.js';
-import { CSharpCommitExtractor } from './csharp-commit-extractor.js';
-import { PhpCommitExtractor } from './php-commit-extractor.js';
 
 /**
  * Create an extractor for a specific language

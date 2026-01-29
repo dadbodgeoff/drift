@@ -13,6 +13,7 @@ import {
   type InverseReachabilityResult,
   type UnifiedCallGraphProvider,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 export interface ReachableData {
@@ -137,7 +138,7 @@ async function handleForwardReachability(
     
     for (const epId of entryPoints) {
       const func = await provider.getFunction(epId);
-      if (func && (func.name === location)) {
+      if (func?.name === location) {
         funcId = epId;
         break;
       }

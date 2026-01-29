@@ -12,19 +12,21 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { CallGraphLanguage, CallGraph } from '../call-graph/types.js';
-import type { IPatternService } from '../patterns/service.js';
-import type {
-  SimulationTask,
-  SimulationApproach,
-  TaskCategory,
-} from './types.js';
+
 import {
   getStrategyProvider,
   detectTaskCategory,
   detectFramework,
   type StrategyTemplate,
 } from './language-strategies/index.js';
+
+import type {
+  SimulationTask,
+  SimulationApproach,
+  TaskCategory,
+} from './types.js';
+import type { CallGraphLanguage, CallGraph } from '../call-graph/types.js';
+import type { IPatternService } from '../patterns/service.js';
 
 // ============================================================================
 // Types

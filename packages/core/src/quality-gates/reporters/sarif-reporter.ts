@@ -8,6 +8,7 @@
  */
 
 import { BaseReporter } from './reporter-interface.js';
+
 import type { QualityGateResult, ReporterOptions } from '../types.js';
 
 /**

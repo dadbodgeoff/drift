@@ -16,6 +16,12 @@ import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+
+import { IndexStore } from './index-store.js';
+import { ManifestStore } from './manifest-store.js';
+import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
+import { ViewStore } from './view-store.js';
+
 import type {
   IncrementalUpdate,
   ViewType,
@@ -27,16 +33,9 @@ import type {
   SecuritySummaryView,
   TrendsView,
 } from './types.js';
-
-import { DEFAULT_DATA_LAKE_CONFIG } from './types.js';
-
-import { ManifestStore } from './manifest-store.js';
-import { ViewStore } from './view-store.js';
-import { IndexStore } from './index-store.js';
-
-import type { Pattern, PatternCategory } from '../store/types.js';
 import type { DataAccessMap, BoundaryViolation } from '../boundaries/types.js';
 import type { TrendSummary } from '../store/history-store.js';
+import type { Pattern, PatternCategory } from '../store/types.js';
 
 // ============================================================================
 // Types
@@ -561,9 +560,9 @@ export class ViewMaterializer extends EventEmitter {
     // BoundarySeverity uses 'error' for critical violations
     const criticalViolations = violations?.filter(v => v.severity === 'error').length ?? 0;
 
-    if (criticalViolations > 0) return 'critical';
-    if (violationCount > 5 || sensitiveCount > 20) return 'high';
-    if (violationCount > 0 || sensitiveCount > 5) return 'medium';
+    if (criticalViolations > 0) {return 'critical';}
+    if (violationCount > 5 || sensitiveCount > 20) {return 'high';}
+    if (violationCount > 0 || sensitiveCount > 5) {return 'medium';}
     return 'low';
   }
 

@@ -10,8 +10,9 @@
  * Solves: AI reads 500-line files just to see a 1-line signature.
  */
 
-import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
+
+import type { CallGraphStore, FunctionNode } from 'driftdetect-core';
 
 // ============================================================================
 // Types
@@ -126,10 +127,10 @@ export async function handleSignature(
     // Exact name match
     const aExact = a.signature.includes(` ${symbol}(`) ? 0 : 1;
     const bExact = b.signature.includes(` ${symbol}(`) ? 0 : 1;
-    if (aExact !== bExact) return aExact - bExact;
+    if (aExact !== bExact) {return aExact - bExact;}
     
     // Exported first
-    if (a.exported !== b.exported) return a.exported ? -1 : 1;
+    if (a.exported !== b.exported) {return a.exported ? -1 : 1;}
     
     // Alphabetical by file
     return a.file.localeCompare(b.file);

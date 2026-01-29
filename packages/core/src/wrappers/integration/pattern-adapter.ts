@@ -5,7 +5,8 @@
  * the existing pattern detection and management system.
  */
 
-import type { WrapperCluster, WrapperFunction, WrapperCategory } from '../types.js';
+import { createPattern } from '../../patterns/types.js';
+
 import type {
   Pattern,
   PatternCategory,
@@ -13,7 +14,7 @@ import type {
   CreatePatternInput,
   Severity,
 } from '../../patterns/types.js';
-import { createPattern } from '../../patterns/types.js';
+import type { WrapperCluster, WrapperFunction, WrapperCategory } from '../types.js';
 
 // =============================================================================
 // Category Mapping
@@ -242,9 +243,9 @@ export function extractWrapperInfo(pattern: Pattern): {
   avgDepth: number;
   maxDepth: number;
 } | null {
-  if (!isWrapperPattern(pattern)) return null;
+  if (!isWrapperPattern(pattern)) {return null;}
 
-  const config = pattern.detector.config as Record<string, unknown>;
+  const config = pattern.detector.config;
 
   return {
     primitiveSignature: (config['primitiveSignature'] as string[]) ?? [],

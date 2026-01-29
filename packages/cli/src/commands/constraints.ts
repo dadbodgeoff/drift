@@ -5,10 +5,11 @@
  * Constraints are invariants that MUST be satisfied by code.
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   createConstraintStore,
   createInvariantDetector,
@@ -18,6 +19,7 @@ import {
   type ConstraintCategory,
   type VerificationResult,
 } from 'driftdetect-core';
+
 import { createSpinner } from '../ui/spinner.js';
 
 export interface ConstraintsOptions {
@@ -692,8 +694,8 @@ function getCategoryIcon(category: string): string {
 
 function getConfidenceColor(score: number): string {
   const percent = Math.round(score * 100);
-  if (score >= 0.9) return chalk.green(`${percent}%`);
-  if (score >= 0.7) return chalk.yellow(`${percent}%`);
+  if (score >= 0.9) {return chalk.green(`${percent}%`);}
+  if (score >= 0.7) {return chalk.yellow(`${percent}%`);}
   return chalk.red(`${percent}%`);
 }
 
@@ -715,7 +717,7 @@ async function findSourceFiles(rootDir: string, subDir = ''): Promise<string[]> 
     const entries = await fs.readdir(currentDir, { withFileTypes: true });
 
     for (const entry of entries) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name)) {continue;}
 
       const relativePath = path.join(subDir, entry.name);
 
@@ -765,17 +767,17 @@ export function createConstraintsCommand(): Command {
   cmd
     .command('show <id>')
     .description('Show constraint details')
-    .action((id) => showAction(id, cmd.opts() as ConstraintsOptions));
+    .action((id) => showAction(id, cmd.opts()));
 
   cmd
     .command('approve <id>')
     .description('Approve a discovered constraint')
-    .action((id) => approveAction(id, cmd.opts() as ConstraintsOptions));
+    .action((id) => approveAction(id, cmd.opts()));
 
   cmd
     .command('ignore <id> [reason]')
     .description('Ignore a constraint')
-    .action((id, reason) => ignoreAction(id, reason, cmd.opts() as ConstraintsOptions));
+    .action((id, reason) => ignoreAction(id, reason, cmd.opts()));
 
   cmd
     .command('verify <file>')

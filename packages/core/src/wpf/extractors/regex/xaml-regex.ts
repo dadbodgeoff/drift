@@ -217,7 +217,7 @@ export class XamlRegexExtractor {
       const line = this.getLineNumber(content, match.index);
       const key = `${property}:${line}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       const parsed = this.parseBindingExpression(bindingExpr, property, filePath, line);

@@ -11,10 +11,13 @@
  *   drift where --json         # Output as JSON
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
-import type { PatternCategory, PatternStatus } from 'driftdetect-core';
+import { Command } from 'commander';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
+
+import type { PatternCategory, PatternStatus } from 'driftdetect-core';
+
 
 export const whereCommand = new Command('where')
   .description('Find pattern locations')
@@ -91,7 +94,7 @@ export const whereCommand = new Command('where')
 
     for (const summary of searchResults) {
       const fullPattern = await service.getPattern(summary.id);
-      if (!fullPattern) continue;
+      if (!fullPattern) {continue;}
 
       const locations = fullPattern.locations.slice(0, limit).map(loc => ({
         file: loc.file,

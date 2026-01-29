@@ -5,9 +5,10 @@
  * Supports Laravel framework patterns.
  */
 
-import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import { PhpCallGraphExtractor } from '../../call-graph/extractors/php-extractor.js';
 import { BaseLanguageNormalizer } from '../base-normalizer.js';
+
+import type { CallGraphLanguage, FileExtractionResult, FunctionExtraction } from '../../call-graph/types.js';
 import type { NormalizedDecorator, DecoratorArguments } from '../types.js';
 
 /**
@@ -47,13 +48,13 @@ export class PhpNormalizer extends BaseLanguageNormalizer {
 
     // Extract string value: #[Route("/path")] or #[Middleware("auth")]
     const valueMatch = raw.match(/\(\s*["']([^"']+)["']/);
-    if (valueMatch && valueMatch[1] !== undefined) {
+    if (valueMatch?.[1] !== undefined) {
       args.path = valueMatch[1];
     }
 
     // Extract methods: #[Route("/path", methods: ["GET", "POST"])]
     const methodsMatch = raw.match(/methods:\s*\[([^\]]+)\]/);
-    if (methodsMatch && methodsMatch[1]) {
+    if (methodsMatch?.[1]) {
       const methods = methodsMatch[1]
         .match(/["'](\w+)["']/g)
         ?.map(m => m.replace(/["']/g, '').toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH');

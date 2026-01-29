@@ -7,14 +7,14 @@
  * @module pydantic/pydantic-extractor
  */
 
-import type { TreeSitterNode, TreeSitterTree } from '../types.js';
-import type { PydanticModelInfo, PydanticFieldInfo } from '../types.js';
-import type { ExtractionContext } from './types.js';
-import { createExtractionContext, PYDANTIC_BASE_CLASSES } from './types.js';
-import { FieldExtractor } from './field-extractor.js';
-import { ValidatorExtractor } from './validator-extractor.js';
 import { ConfigExtractor } from './config-extractor.js';
+import { FieldExtractor } from './field-extractor.js';
 import { InheritanceResolver } from './inheritance-resolver.js';
+import { createExtractionContext, PYDANTIC_BASE_CLASSES } from './types.js';
+import { ValidatorExtractor } from './validator-extractor.js';
+
+import type { TreeSitterNode, TreeSitterTree , PydanticModelInfo, PydanticFieldInfo } from '../types.js';
+import type { ExtractionContext } from './types.js';
 
 // ============================================
 // Pydantic Extractor Class
@@ -94,7 +94,7 @@ export class PydanticExtractor {
     allModels: Map<string, PydanticModelInfo>
   ): PydanticModelInfo | null {
     const model = allModels.get(modelName);
-    if (!model) return null;
+    if (!model) {return null;}
 
     const resolvedFields = this.inheritanceResolver.resolveFields(
       model,
@@ -131,7 +131,7 @@ export class PydanticExtractor {
   ): PydanticModelInfo | null {
     // Get class name
     const nameNode = classNode.childForFieldName('name');
-    if (!nameNode) return null;
+    if (!nameNode) {return null;}
     const name = nameNode.text;
 
     // Get base classes
@@ -144,7 +144,7 @@ export class PydanticExtractor {
 
     // Get class body
     const bodyNode = classNode.childForFieldName('body');
-    if (!bodyNode) return null;
+    if (!bodyNode) {return null;}
 
     // Extract components
     const fields = this.fieldExtractor.extractFields(bodyNode, context);
@@ -203,7 +203,7 @@ export class PydanticExtractor {
 
     for (const classNode of classNodes) {
       const nameNode = classNode.childForFieldName('name');
-      if (!nameNode) continue;
+      if (!nameNode) {continue;}
 
       const bases = this.extractBaseClasses(classNode);
       if (this.isPydanticModel(bases)) {
@@ -243,16 +243,16 @@ export class PydanticExtractor {
     context: ExtractionContext
   ): void {
     this.walkTree(rootNode, (node) => {
-      if (node.type !== 'expression_statement') return;
+      if (node.type !== 'expression_statement') {return;}
 
       const inner = node.namedChildren[0];
-      if (!inner || inner.type !== 'assignment') return;
+      if (inner?.type !== 'assignment') {return;}
 
       const left = inner.childForFieldName('left');
       const right = inner.childForFieldName('right');
 
-      if (!left || !right) return;
-      if (left.type !== 'identifier') return;
+      if (!left || !right) {return;}
+      if (left.type !== 'identifier') {return;}
 
       // Check if this looks like a type alias
       const name = left.text;
@@ -276,7 +276,7 @@ export class PydanticExtractor {
     const bases: string[] = [];
     const argumentList = classNode.childForFieldName('superclasses');
 
-    if (!argumentList) return bases;
+    if (!argumentList) {return bases;}
 
     for (const child of argumentList.namedChildren) {
       // Handle simple identifiers
@@ -309,11 +309,11 @@ export class PydanticExtractor {
   private isPydanticModel(bases: string[]): boolean {
     return bases.some((base) => {
       // Direct match
-      if (PYDANTIC_BASE_CLASSES.has(base)) return true;
+      if (PYDANTIC_BASE_CLASSES.has(base)) {return true;}
 
       // Check without generic args
       const baseName = base.split('[')[0];
-      if (baseName && PYDANTIC_BASE_CLASSES.has(baseName)) return true;
+      if (baseName && PYDANTIC_BASE_CLASSES.has(baseName)) {return true;}
 
       // Check for common patterns
       if (base.includes('BaseModel') || base.includes('BaseSettings')) {
@@ -353,13 +353,13 @@ export class PydanticExtractor {
    * Extract docstring from a class body.
    */
   private extractDocstring(bodyNode: TreeSitterNode): string | null {
-    if (bodyNode.namedChildCount === 0) return null;
+    if (bodyNode.namedChildCount === 0) {return null;}
 
     const firstChild = bodyNode.namedChildren[0];
-    if (firstChild?.type !== 'expression_statement') return null;
+    if (firstChild?.type !== 'expression_statement') {return null;}
 
     const expr = firstChild.namedChildren[0];
-    if (expr?.type !== 'string') return null;
+    if (expr?.type !== 'string') {return null;}
 
     // Remove quotes
     const text = expr.text;

@@ -19,10 +19,15 @@
  * - Incremental updates per table
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
+import {
+  LAKE_DIRS,
+  DEFAULT_DATA_LAKE_CONFIG,
+} from './types.js';
 
 import type {
   AccessMapShard,
@@ -31,10 +36,6 @@ import type {
   DataLakeConfig,
 } from './types.js';
 
-import {
-  LAKE_DIRS,
-  DEFAULT_DATA_LAKE_CONFIG,
-} from './types.js';
 
 // ============================================================================
 // Constants
@@ -220,7 +221,7 @@ export class SecurityShardStore extends EventEmitter {
 
     for (const tableName of tables) {
       const shard = await this.getTableShard(tableName);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       const sensitiveFieldCount = shard.sensitiveFields.length;
       const accessPointCount = shard.accessPoints.length;
@@ -434,7 +435,7 @@ export class SecurityShardStore extends EventEmitter {
 
     for (const tableName of tables) {
       const shard = await this.getTableShard(tableName);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       for (const sf of shard.sensitiveFields) {
         // Count access points that touch this field
@@ -478,7 +479,7 @@ export class SecurityShardStore extends EventEmitter {
 
     for (const tableName of tables) {
       const shard = await this.getTableShard(tableName);
-      if (!shard) continue;
+      if (!shard) {continue;}
 
       const fileAccessPoints = shard.accessPoints.filter(ap => ap.file === file);
       results.push(...fileAccessPoints);
@@ -496,7 +497,7 @@ export class SecurityShardStore extends EventEmitter {
 
     for (const tableName of tables) {
       const shard = await this.getTableShard(tableName);
-      if (!shard || shard.sensitiveFields.length === 0) continue;
+      if (!shard || shard.sensitiveFields.length === 0) {continue;}
 
       const sensitiveFieldNames = new Set(shard.sensitiveFields.map(sf => sf.field));
       const sensitivityMap = new Map(shard.sensitiveFields.map(sf => [sf.field, sf.sensitivity]));

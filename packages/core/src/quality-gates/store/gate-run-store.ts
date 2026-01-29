@@ -8,6 +8,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type { QualityGateResult, GateRunRecord, GateId } from '../types.js';
 
 /**

@@ -5,6 +5,8 @@
  * XAML extraction. Follows Drift's hybrid extraction pattern.
  */
 
+import { XamlRegexExtractor, XAML_REGEX_PATTERNS } from './regex/xaml-regex.js';
+
 import type {
   XamlExtractionResult,
   XamlBinding,
@@ -15,7 +17,6 @@ import type {
   BindingSourceType,
   UpdateSourceTrigger,
 } from '../types.js';
-import { XamlRegexExtractor, XAML_REGEX_PATTERNS } from './regex/xaml-regex.js';
 
 // ============================================================================
 // Configuration

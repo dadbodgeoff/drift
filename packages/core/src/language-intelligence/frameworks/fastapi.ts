@@ -11,7 +11,7 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
   const match = raw.match(/@(?:app|router)\.(get|post|put|delete|patch|head|options)/i);
-  if (match && match[1]) {
+  if (match?.[1]) {
     return match[1].toUpperCase() as HttpMethod;
   }
   return undefined;

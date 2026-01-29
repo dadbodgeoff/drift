@@ -5,13 +5,14 @@
  * Used as fallback when tree-sitter is unavailable.
  */
 
+import { BaseConstantRegexExtractor } from './base-regex.js';
+
 import type {
   ConstantExtraction,
   EnumExtraction,
   EnumMember,
   ConstantKind,
 } from '../../types.js';
-import { BaseConstantRegexExtractor } from './base-regex.js';
 
 /**
  * PHP constant regex extractor
@@ -35,9 +36,9 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
     while ((match = classConstPattern.exec(source)) !== null) {
       const visibility = match[1] ?? 'public';
       const name = match[3];
-      if (!name) continue;
+      if (!name) {continue;}
       const rawValue = match[4]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -77,9 +78,9 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
 
     while ((match = definePattern.exec(source)) !== null) {
       const name = match[2];
-      if (!name) continue;
+      if (!name) {continue;}
       const rawValue = match[3]?.trim();
-      if (!rawValue) continue;
+      if (!rawValue) {continue;}
 
       const line = this.getLineNumber(source, match.index);
       const column = this.getColumnNumber(source, match.index);
@@ -125,10 +126,10 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
     let match: RegExpExecArray | null;
     while ((match = enumPattern.exec(source)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
       const backingType = match[2] ?? 'int';
       const body = match[3];
-      if (!body) continue;
+      if (!body) {continue;}
       const line = this.getLineNumber(source, match.index);
       const endLine = this.getLineNumber(source, match.index + match[0].length);
       const docComment = this.extractDocComment(source, line);
@@ -186,7 +187,7 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
       const memberMatch = trimmed.match(/^case\s+(\w+)\s*(?:=\s*([^;]+))?\s*;/);
       if (memberMatch) {
         const memberName = memberMatch[1];
-        if (!memberName) continue;
+        if (!memberName) {continue;}
         const rawValue = memberMatch[2]?.trim();
 
         let value: string | number | undefined;
@@ -288,9 +289,9 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
     }
 
     // Boolean
-    if (trimmed === 'true') return true;
-    if (trimmed === 'false') return false;
-    if (trimmed === 'null') return null;
+    if (trimmed === 'true') {return true;}
+    if (trimmed === 'false') {return false;}
+    if (trimmed === 'null') {return null;}
 
     return null;
   }
@@ -302,7 +303,7 @@ export class PhpConstantRegexExtractor extends BaseConstantRegexExtractor {
     const beforePosition = source.slice(0, position);
     const classMatch = beforePosition.match(/class\s+(\w+)(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s\\]+)?\s*\{[^}]*$/);
 
-    if (classMatch && classMatch[1]) {
+    if (classMatch?.[1]) {
       return classMatch[1];
     }
 

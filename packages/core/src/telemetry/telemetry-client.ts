@@ -8,9 +8,15 @@
  * - Respects all opt-in settings
  */
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+
+import {
+  DEFAULT_TELEMETRY_CONFIG,
+  DEFAULT_CLIENT_CONFIG,
+} from './types.js';
+
 import type {
   TelemetryConfig,
   TelemetryClientConfig,
@@ -22,10 +28,7 @@ import type {
   UserActionEvent,
   ScanCompletionEvent,
 } from './types.js';
-import {
-  DEFAULT_TELEMETRY_CONFIG,
-  DEFAULT_CLIENT_CONFIG,
-} from './types.js';
+
 
 // ============================================================================
 // Constants
@@ -62,7 +65,7 @@ export class TelemetryClient {
    * Initialize the telemetry client
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
 
     // Load persisted queue
     await this.loadQueue();
@@ -128,7 +131,7 @@ export class TelemetryClient {
     detectionMethod: 'ast' | 'regex' | 'hybrid' | 'semantic';
     language: string;
   }): Promise<void> {
-    if (!this.config.enabled || !this.config.sharePatternSignatures) return;
+    if (!this.config.enabled || !this.config.sharePatternSignatures) {return;}
 
     // Create anonymized signature hash
     const signatureInput = `${data.patternName}:${JSON.stringify(data.detectorConfig)}`;
@@ -167,14 +170,14 @@ export class TelemetryClient {
     featuresEnabled: string[];
     fileCount: number;
   }): Promise<void> {
-    if (!this.config.enabled || !this.config.shareAggregateStats) return;
+    if (!this.config.enabled || !this.config.shareAggregateStats) {return;}
 
     // Determine codebase size tier (anonymized)
     let codebaseSizeTier: 'small' | 'medium' | 'large' | 'enterprise';
-    if (data.fileCount < 100) codebaseSizeTier = 'small';
-    else if (data.fileCount < 1000) codebaseSizeTier = 'medium';
-    else if (data.fileCount < 10000) codebaseSizeTier = 'large';
-    else codebaseSizeTier = 'enterprise';
+    if (data.fileCount < 100) {codebaseSizeTier = 'small';}
+    else if (data.fileCount < 1000) {codebaseSizeTier = 'medium';}
+    else if (data.fileCount < 10000) {codebaseSizeTier = 'large';}
+    else {codebaseSizeTier = 'enterprise';}
 
     const event: AggregateStatsEvent = {
       type: 'aggregate_stats',
@@ -203,7 +206,7 @@ export class TelemetryClient {
     discoveredAt: string;
     isBulkAction: boolean;
   }): Promise<void> {
-    if (!this.config.enabled || !this.config.shareUserActions) return;
+    if (!this.config.enabled || !this.config.shareUserActions) {return;}
 
     // Calculate hours since discovery
     const discoveredTime = new Date(data.discoveredAt).getTime();
@@ -235,7 +238,7 @@ export class TelemetryClient {
     isIncremental: boolean;
     workerCount: number;
   }): Promise<void> {
-    if (!this.config.enabled || !this.config.shareAggregateStats) return;
+    if (!this.config.enabled || !this.config.shareAggregateStats) {return;}
 
     const event: ScanCompletionEvent = {
       type: 'scan_completion',
@@ -421,7 +424,7 @@ export class TelemetryClient {
    * Start periodic flush timer
    */
   private startFlushTimer(): void {
-    if (this.flushTimer) return;
+    if (this.flushTimer) {return;}
 
     this.flushTimer = setInterval(async () => {
       await this.flush();

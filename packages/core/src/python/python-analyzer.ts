@@ -12,7 +12,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { createPythonHybridExtractor } from '../call-graph/extractors/python-hybrid-extractor.js';
+
 import type { FunctionExtraction, ClassExtraction, CallExtraction, ImportExtraction } from '../call-graph/types.js';
 
 // ============================================================================
@@ -183,14 +185,14 @@ export class PythonAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const isTestFile = this.isTestFile(file);
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       const result = this.extractor.extract(source, file);
 
       // Detect frameworks from imports
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Count async functions
@@ -401,7 +403,7 @@ export class PythonAnalyzer {
           let funcAwaitCount = 0;
           for (let i = func.bodyStartLine - 1; i < func.bodyEndLine && i < lines.length; i++) {
             const matches = lines[i]!.match(/\bawait\b/g);
-            if (matches) funcAwaitCount += matches.length;
+            if (matches) {funcAwaitCount += matches.length;}
           }
           asyncFunctions.push({
             name: func.qualifiedName,
@@ -415,8 +417,8 @@ export class PythonAnalyzer {
       // Count total awaits and async context managers
       for (const line of lines) {
         const awaitMatches = line.match(/\bawait\b/g);
-        if (awaitMatches) awaitCalls += awaitMatches.length;
-        if (/async\s+with\b/.test(line)) asyncContextManagers++;
+        if (awaitMatches) {awaitCalls += awaitMatches.length;}
+        if (/async\s+with\b/.test(line)) {asyncContextManagers++;}
       }
     }
 
@@ -451,7 +453,7 @@ export class PythonAnalyzer {
           return relativePath.includes(pattern);
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -517,7 +519,7 @@ export class PythonAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importSource.startsWith(prefix)) return name;
+      if (importSource.startsWith(prefix)) {return name;}
     }
 
     return null;
@@ -615,7 +617,7 @@ export class PythonAnalyzer {
   private extractNextFunction(lines: string[], decoratorLine: number): string {
     for (let i = decoratorLine + 1; i < Math.min(decoratorLine + 10, lines.length); i++) {
       const match = lines[i]!.match(/(?:async\s+)?def\s+(\w+)/);
-      if (match) return match[1]!;
+      if (match) {return match[1]!;}
       // Stop if we hit another decorator or non-decorator line
       if (!lines[i]!.trim().startsWith('@') && lines[i]!.trim() !== '') {
         break;
@@ -688,10 +690,10 @@ export class PythonAnalyzer {
 
   private normalizeOperation(op: string): string {
     const opLower = op.toLowerCase();
-    if (['filter', 'get', 'all', 'first', 'last', 'count', 'exists'].includes(opLower)) return 'read';
-    if (['create', 'save', 'insert'].includes(opLower)) return 'write';
-    if (['update'].includes(opLower)) return 'update';
-    if (['delete', 'remove'].includes(opLower)) return 'delete';
+    if (['filter', 'get', 'all', 'first', 'last', 'count', 'exists'].includes(opLower)) {return 'read';}
+    if (['create', 'save', 'insert'].includes(opLower)) {return 'write';}
+    if (['update'].includes(opLower)) {return 'update';}
+    if (['delete', 'remove'].includes(opLower)) {return 'delete';}
     return 'unknown';
   }
 

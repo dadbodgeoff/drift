@@ -86,7 +86,7 @@ export class ReachabilityEngine {
       visited.add(funcId);
 
       const currentFunc = this.graph.functions.get(funcId);
-      if (!currentFunc) continue;
+      if (!currentFunc) {continue;}
 
       // Build current path
       const currentPath: CallPathNode[] = [
@@ -176,7 +176,7 @@ export class ReachabilityEngine {
     const directAccessors: string[] = [];
     for (const funcId of this.graph.dataAccessors) {
       const func = this.graph.functions.get(funcId);
-      if (!func) continue;
+      if (!func) {continue;}
 
       for (const access of func.dataAccess) {
         if (access.table === table) {
@@ -194,13 +194,13 @@ export class ReachabilityEngine {
 
     for (const accessorId of directAccessors) {
       const accessor = this.graph.functions.get(accessorId);
-      if (!accessor) continue;
+      if (!accessor) {continue;}
 
       // Find the specific access point
       const accessPoint = accessor.dataAccess.find(
         (a) => a.table === table && (!field || a.fields.includes(field))
       );
-      if (!accessPoint) continue;
+      if (!accessPoint) {continue;}
 
       // BFS backwards from accessor to find entry points
       const pathsToAccessor = this.findPathsToFunction(accessorId, maxDepth);
@@ -259,7 +259,7 @@ export class ReachabilityEngine {
     const visited = new Map<string, number>(); // Track minimum depth to reach each node
 
     const fromFunc = this.graph.functions.get(fromId);
-    if (!fromFunc) return paths;
+    if (!fromFunc) {return paths;}
 
     queue.push({
       funcId: fromId,
@@ -276,7 +276,7 @@ export class ReachabilityEngine {
       const current = queue.shift()!;
       const { funcId, path, depth } = current;
 
-      if (depth > maxDepth) continue;
+      if (depth > maxDepth) {continue;}
 
       // Check if we've reached the target
       if (funcId === toId) {
@@ -292,15 +292,15 @@ export class ReachabilityEngine {
       visited.set(funcId, depth);
 
       const currentFunc = this.graph.functions.get(funcId);
-      if (!currentFunc) continue;
+      if (!currentFunc) {continue;}
 
       // Follow calls
       for (const call of currentFunc.calls) {
-        if (!call.resolved) continue;
+        if (!call.resolved) {continue;}
 
         for (const candidateId of call.resolvedCandidates) {
           const candidate = this.graph.functions.get(candidateId);
-          if (!candidate) continue;
+          if (!candidate) {continue;}
 
           queue.push({
             funcId: candidateId,

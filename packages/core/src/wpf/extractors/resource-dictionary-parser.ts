@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import type { XamlResource, XamlResourceType, SourceLocation } from '../types.js';
 
 // ============================================================================

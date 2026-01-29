@@ -611,24 +611,24 @@ export class RemediationGenerator {
     baseEffort: RemediationEffort,
     dataImpact: DataImpact
   ): RemediationEffort {
-    let effort = { ...baseEffort };
+    const effort = { ...baseEffort };
 
     // Increase complexity if many sensitive fields are involved
     if (dataImpact.sensitiveFields.length > 5) {
-      if (effort.complexity === 'simple') effort.complexity = 'moderate';
-      else if (effort.complexity === 'moderate') effort.complexity = 'complex';
+      if (effort.complexity === 'simple') {effort.complexity = 'moderate';}
+      else if (effort.complexity === 'moderate') {effort.complexity = 'complex';}
     }
 
     // Increase regression risk if many tables are affected
     if (dataImpact.tables.length > 3) {
-      if (effort.regressionRisk === 'low') effort.regressionRisk = 'medium';
-      else if (effort.regressionRisk === 'medium') effort.regressionRisk = 'high';
+      if (effort.regressionRisk === 'low') {effort.regressionRisk = 'medium';}
+      else if (effort.regressionRisk === 'medium') {effort.regressionRisk = 'high';}
     }
 
     // Increase time if attack surface is large
     if (dataImpact.attackSurfaceSize > 20) {
-      if (effort.time === 'minutes') effort.time = 'hours';
-      else if (effort.time === 'hours') effort.time = 'days';
+      if (effort.time === 'minutes') {effort.time = 'hours';}
+      else if (effort.time === 'hours') {effort.time = 'days';}
     }
 
     return effort;
@@ -669,7 +669,7 @@ export class RemediationGenerator {
     // Deduplicate by URL
     const seen = new Set<string>();
     return references.filter((ref) => {
-      if (seen.has(ref.url)) return false;
+      if (seen.has(ref.url)) {return false;}
       seen.add(ref.url);
       return true;
     });

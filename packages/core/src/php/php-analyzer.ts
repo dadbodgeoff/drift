@@ -11,7 +11,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { createPhpHybridExtractor } from '../call-graph/extractors/php-hybrid-extractor.js';
+
 import type { FunctionExtraction, ClassExtraction, CallExtraction, ImportExtraction } from '../call-graph/types.js';
 
 // ============================================================================
@@ -177,14 +179,14 @@ export class PhpAnalyzer {
       linesOfCode += source.split('\n').length;
 
       const isTestFile = this.isTestFile(file);
-      if (isTestFile) testFileCount++;
+      if (isTestFile) {testFileCount++;}
 
       const result = this.extractor.extract(source, file);
 
       // Detect frameworks from imports/use statements
       for (const imp of result.imports) {
         const framework = this.detectFramework(imp.source);
-        if (framework) detectedFrameworks.add(framework);
+        if (framework) {detectedFrameworks.add(framework);}
       }
 
       // Count traits and interfaces
@@ -386,9 +388,9 @@ export class PhpAnalyzer {
           const methods: string[] = [];
           // Look for methods in trait
           for (let j = i + 1; j < lines.length; j++) {
-            if (/^\s*\}/.test(lines[j]!)) break;
+            if (/^\s*\}/.test(lines[j]!)) {break;}
             const methodMatch = lines[j]!.match(/function\s+(\w+)/);
-            if (methodMatch) methods.push(methodMatch[1]!);
+            if (methodMatch) {methods.push(methodMatch[1]!);}
           }
           traits.push({
             name: traitMatch[1]!,
@@ -445,7 +447,7 @@ export class PhpAnalyzer {
           return relativePath.includes(pattern);
         });
 
-        if (shouldExclude) continue;
+        if (shouldExclude) {continue;}
 
         if (entry.isDirectory()) {
           await walk(fullPath);
@@ -468,10 +470,10 @@ export class PhpAnalyzer {
       // Detect framework from dependencies
       let framework: string | null = null;
       const deps = { ...pkg.require, ...pkg['require-dev'] };
-      if (deps['laravel/framework']) framework = 'laravel';
-      else if (deps['symfony/framework-bundle']) framework = 'symfony';
-      else if (deps['slim/slim']) framework = 'slim';
-      else if (deps['laravel/lumen-framework']) framework = 'lumen';
+      if (deps['laravel/framework']) {framework = 'laravel';}
+      else if (deps['symfony/framework-bundle']) {framework = 'symfony';}
+      else if (deps['slim/slim']) {framework = 'slim';}
+      else if (deps['laravel/lumen-framework']) {framework = 'lumen';}
 
       return {
         name: pkg.name ?? null,
@@ -496,7 +498,7 @@ export class PhpAnalyzer {
     };
 
     for (const [prefix, name] of Object.entries(frameworks)) {
-      if (importSource.includes(prefix)) return name;
+      if (importSource.includes(prefix)) {return name;}
     }
 
     return null;
@@ -583,11 +585,11 @@ export class PhpAnalyzer {
   private extractLaravelHandler(line: string): string {
     // [Controller::class, 'method']
     const match = line.match(/\[\s*(\w+)::class\s*,\s*['"](\w+)['"]\s*\]/);
-    if (match) return `${match[1]}@${match[2]}`;
+    if (match) {return `${match[1]}@${match[2]}`;}
 
     // 'Controller@method'
     const stringMatch = line.match(/['"](\w+@\w+)['"]/);
-    if (stringMatch) return stringMatch[1]!;
+    if (stringMatch) {return stringMatch[1]!;}
 
     return 'closure';
   }
@@ -619,7 +621,7 @@ export class PhpAnalyzer {
   private extractNextMethod(lines: string[], annotationLine: number): string {
     for (let i = annotationLine + 1; i < Math.min(annotationLine + 10, lines.length); i++) {
       const match = lines[i]!.match(/function\s+(\w+)/);
-      if (match) return match[1]!;
+      if (match) {return match[1]!;}
     }
     return 'unknown';
   }
@@ -718,10 +720,10 @@ export class PhpAnalyzer {
 
   private normalizeOperation(op: string): string {
     const opLower = op.toLowerCase();
-    if (['where', 'find', 'findorfail', 'all', 'first', 'firstorfail', 'get', 'getrepository', 'query'].includes(opLower)) return 'read';
-    if (['create', 'insert', 'save', 'persist', 'push'].includes(opLower)) return 'write';
-    if (['update', 'refresh'].includes(opLower)) return 'update';
-    if (['delete', 'destroy', 'remove'].includes(opLower)) return 'delete';
+    if (['where', 'find', 'findorfail', 'all', 'first', 'firstorfail', 'get', 'getrepository', 'query'].includes(opLower)) {return 'read';}
+    if (['create', 'insert', 'save', 'persist', 'push'].includes(opLower)) {return 'write';}
+    if (['update', 'refresh'].includes(opLower)) {return 'update';}
+    if (['delete', 'destroy', 'remove'].includes(opLower)) {return 'delete';}
     return 'unknown';
   }
 }

@@ -8,8 +8,8 @@
  * - gomock
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -18,6 +18,7 @@ import type {
   AssertionInfo,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection

@@ -16,24 +16,26 @@
  * of any size without hitting heap limits.
  */
 
-import * as fs from 'node:fs/promises';
 import { createReadStream, createWriteStream } from 'node:fs';
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
+
 import { minimatch } from 'minimatch';
 
-import type { DataAccessPoint } from '../boundaries/types.js';
 import { createTableNameValidator, type TableNameValidator } from '../boundaries/table-name-validator.js';
-import type { CallGraphShard, FunctionEntry, DataAccessRef, CallEntry } from '../lake/types.js';
 import { CallGraphShardStore } from '../lake/callgraph-shard-store.js';
 import { shouldIgnoreDirectory, shouldIgnoreExtension } from '../scanner/default-ignores.js';
 import { BaseCallGraphExtractor } from './extractors/base-extractor.js';
-import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
-import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
 import { CSharpCallGraphExtractor } from './extractors/csharp-extractor.js';
+import { GoCallGraphExtractor } from './extractors/go-extractor.js';
 import { JavaCallGraphExtractor } from './extractors/java-extractor.js';
 import { PhpCallGraphExtractor } from './extractors/php-extractor.js';
-import { GoCallGraphExtractor } from './extractors/go-extractor.js';
+import { PythonCallGraphExtractor } from './extractors/python-extractor.js';
+import { TypeScriptCallGraphExtractor } from './extractors/typescript-extractor.js';
+
+import type { DataAccessPoint } from '../boundaries/types.js';
+import type { CallGraphShard, FunctionEntry, DataAccessRef, CallEntry } from '../lake/types.js';
 
 // ============================================================================
 // Types
@@ -210,7 +212,7 @@ export class StreamingCallGraphBuilder {
       
       for (const fileHash of batch) {
         const shard = await this.shardStore.getFileShard(fileHash);
-        if (!shard) continue;
+        if (!shard) {continue;}
         
         let shardModified = false;
         
@@ -281,7 +283,7 @@ export class StreamingCallGraphBuilder {
     try {
       for (const fileHash of fileHashes) {
         const shard = await this.shardStore.getFileShard(fileHash);
-        if (!shard) continue;
+        if (!shard) {continue;}
         
         // Write each function as a single JSON line
         for (const fn of shard.functions) {
@@ -300,8 +302,8 @@ export class StreamingCallGraphBuilder {
       // Close the write stream
       await new Promise<void>((resolve, reject) => {
         writeStream.end((err: Error | null | undefined) => {
-          if (err) reject(err);
-          else resolve();
+          if (err) {reject(err);}
+          else {resolve();}
         });
       });
     }
@@ -340,7 +342,7 @@ export class StreamingCallGraphBuilder {
     });
     
     for await (const line of rl) {
-      if (!line.trim()) continue;
+      if (!line.trim()) {continue;}
       
       try {
         const entry = JSON.parse(line) as { name: string; id: string; file: string };
@@ -418,7 +420,7 @@ export class StreamingCallGraphBuilder {
     dataAccessPoints?: DataAccessPoint[]
   ): Promise<CallGraphShard | null> {
     const extractor = this.getExtractor(file);
-    if (!extractor) return null;
+    if (!extractor) {return null;}
     
     const filePath = path.join(this.config.rootDir, file);
     const source = await fs.readFile(filePath, 'utf-8');

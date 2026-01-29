@@ -10,6 +10,9 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { LicenseValidator } from './license-validator.js';
+import { FEATURE_TIERS, TIER_HIERARCHY } from './types.js';
+
 import type {
   License,
   LicenseTier,
@@ -19,8 +22,6 @@ import type {
   FeatureCheckResult,
 } from './types.js';
 
-import { FEATURE_TIERS, TIER_HIERARCHY } from './types.js';
-import { LicenseValidator } from './license-validator.js';
 
 // =============================================================================
 // Constants

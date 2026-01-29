@@ -9,6 +9,7 @@
  */
 
 import { BaseGeneExtractor, type AlleleDefinition, type FileExtractionResult, type DetectedAllele } from './base-extractor.js';
+
 import type { GeneId } from '../types.js';
 
 export class LoggingFormatExtractor extends BaseGeneExtractor {

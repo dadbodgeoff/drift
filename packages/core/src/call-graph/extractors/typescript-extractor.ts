@@ -15,7 +15,9 @@
  */
 
 import ts from 'typescript';
+
 import { BaseCallGraphExtractor } from './base-extractor.js';
+
 import type {
   CallGraphLanguage,
   FileExtractionResult,
@@ -366,7 +368,7 @@ export class TypeScriptCallGraphExtractor extends BaseCallGraphExtractor {
     source: string,
     parentFunctionName: string
   ): FunctionExtraction | null {
-    if (!ts.isIdentifier(decl.name)) return null;
+    if (!ts.isIdentifier(decl.name)) {return null;}
     
     const func = decl.initializer as ts.ArrowFunction | ts.FunctionExpression;
     const startPos = this.getPosition(decl.getStart(), source);
@@ -678,7 +680,7 @@ export class TypeScriptCallGraphExtractor extends BaseCallGraphExtractor {
     currentClass: string | null,
     parentFunction: string | null
   ): FunctionExtraction | null {
-    if (!node.name) return null;
+    if (!node.name) {return null;}
 
     const startPos = this.getPosition(node.getStart(), source);
     const endPos = this.getPosition(node.getEnd(), source);
@@ -723,7 +725,7 @@ export class TypeScriptCallGraphExtractor extends BaseCallGraphExtractor {
     source: string,
     parentFunction: string | null
   ): FunctionExtraction | null {
-    if (!ts.isIdentifier(decl.name)) return null;
+    if (!ts.isIdentifier(decl.name)) {return null;}
 
     const func = decl.initializer as ts.ArrowFunction | ts.FunctionExpression;
     const startPos = this.getPosition(statement.getStart(), source);
@@ -959,7 +961,7 @@ export class TypeScriptCallGraphExtractor extends BaseCallGraphExtractor {
       }
     }
 
-    if (!name) return null;
+    if (!name) {return null;}
 
     return this.createExport({
       name,

@@ -31,7 +31,6 @@ import type {
   PatternHistory,
   PatternHistoryEvent,
 } from './types.js';
-
 import type { DriftConfig } from '../config/types.js';
 
 // ============================================================================
@@ -196,7 +195,7 @@ function isNonEmptyString(value: unknown): value is string {
  * Check if a value is a valid ISO date string
  */
 function isISODateString(value: unknown): value is string {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {return false;}
   const date = new Date(value);
   return !isNaN(date.getTime()) && value.includes('T');
 }
@@ -226,7 +225,7 @@ function isOneOf<T>(value: unknown, validValues: readonly T[]): value is T {
  * Check if a value is a valid semver version string
  */
 function isSemverVersion(value: unknown): value is string {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {return false;}
   return /^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$/.test(value);
 }
 
@@ -260,23 +259,23 @@ function validatePatternLocation(
     valid = false;
   }
 
-  if (!isPositiveInteger(line) || (line as number) < 1) {
+  if (!isPositiveInteger(line) || (line) < 1) {
     errors.push({ path: `${path}.line`, message: 'Must be a positive integer >= 1', expected: 'number >= 1', actual: line });
     valid = false;
   }
 
-  if (!isPositiveInteger(column) || (column as number) < 1) {
+  if (!isPositiveInteger(column) || (column) < 1) {
     errors.push({ path: `${path}.column`, message: 'Must be a positive integer >= 1', expected: 'number >= 1', actual: column });
     valid = false;
   }
 
   // Optional fields
-  if (endLine !== undefined && (!isPositiveInteger(endLine) || (endLine as number) < 1)) {
+  if (endLine !== undefined && (!isPositiveInteger(endLine) || (endLine) < 1)) {
     errors.push({ path: `${path}.endLine`, message: 'Must be a positive integer >= 1', expected: 'number >= 1', actual: endLine });
     valid = false;
   }
 
-  if (endColumn !== undefined && (!isPositiveInteger(endColumn) || (endColumn as number) < 1)) {
+  if (endColumn !== undefined && (!isPositiveInteger(endColumn) || (endColumn) < 1)) {
     errors.push({ path: `${path}.endColumn`, message: 'Must be a positive integer >= 1', expected: 'number >= 1', actual: endColumn });
     valid = false;
   }
@@ -1213,7 +1212,7 @@ export function validateConfig(data: unknown): ValidationResult<DriftConfig> {
       const maxWorkers = get(performance, 'maxWorkers');
       const cacheEnabled = get(performance, 'cacheEnabled');
       const incrementalAnalysis = get(performance, 'incrementalAnalysis');
-      if (!isPositiveInteger(maxWorkers) || (maxWorkers as number) < 1) {
+      if (!isPositiveInteger(maxWorkers) || (maxWorkers) < 1) {
         errors.push({ path: 'performance.maxWorkers', message: 'Must be a positive integer', expected: 'integer >= 1', actual: maxWorkers });
       }
       if (typeof cacheEnabled !== 'boolean') {
@@ -1249,7 +1248,7 @@ export function validateSinglePattern(data: unknown): ValidationResult<Pattern> 
     return { valid: false, errors };
   }
 
-  return { valid: true, data: data as Pattern };
+  return { valid: true, data: data };
 }
 
 /**
@@ -1264,7 +1263,7 @@ export function validateSingleStoredPattern(data: unknown): ValidationResult<Sto
     return { valid: false, errors };
   }
 
-  return { valid: true, data: data as StoredPattern };
+  return { valid: true, data: data };
 }
 
 // ============================================================================
@@ -1398,13 +1397,13 @@ export function getCurrentVersion(schemaType: keyof typeof SCHEMA_VERSIONS): str
  * Format validation errors as a human-readable string
  */
 export function formatValidationErrors(errors: ValidationError[]): string {
-  if (errors.length === 0) return 'No errors';
+  if (errors.length === 0) {return 'No errors';}
   
   return errors
     .map((e) => {
       let msg = e.path ? `${e.path}: ${e.message}` : e.message;
-      if (e.expected) msg += ` (expected: ${e.expected})`;
-      if (e.actual !== undefined) msg += ` (got: ${JSON.stringify(e.actual)})`;
+      if (e.expected) {msg += ` (expected: ${e.expected})`;}
+      if (e.actual !== undefined) {msg += ` (got: ${JSON.stringify(e.actual)})`;}
       return `  - ${msg}`;
     })
     .join('\n');

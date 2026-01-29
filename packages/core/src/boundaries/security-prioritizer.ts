@@ -8,6 +8,11 @@
  * from noise (button colors, UI preferences).
  */
 
+import {
+  SensitivityClassifier,
+  createSensitivityClassifier,
+} from '../call-graph/enrichment/sensitivity-classifier.js';
+
 import type {
   DataAccessPoint,
   SensitiveField,
@@ -15,10 +20,6 @@ import type {
   SensitivityType,
   DataOperation,
 } from './types.js';
-import {
-  SensitivityClassifier,
-  createSensitivityClassifier,
-} from '../call-graph/enrichment/sensitivity-classifier.js';
 import type {
   DataRegulation,
   PriorityTier,

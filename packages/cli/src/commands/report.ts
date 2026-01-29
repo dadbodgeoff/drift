@@ -8,14 +8,13 @@
  * @requirements 29.7
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
-import type { Violation } from 'driftdetect-core';
-import { createCLIPatternService } from '../services/pattern-service-factory.js';
-import { createSpinner, status } from '../ui/spinner.js';
-import { promptReportFormat, promptCategorySelection } from '../ui/prompts.js';
+import { Command } from 'commander';
+
+
 import {
   TextReporter,
   JsonReporter,
@@ -24,6 +23,11 @@ import {
   type Reporter,
   type ReportData,
 } from '../reporters/index.js';
+import { createCLIPatternService } from '../services/pattern-service-factory.js';
+import { promptReportFormat, promptCategorySelection } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
+
+import type { Violation } from 'driftdetect-core';
 
 export interface ReportOptions {
   /** Output format */
@@ -146,7 +150,7 @@ async function reportAction(options: ReportOptions): Promise<void> {
   // Filter out nulls and by category
   let patterns = approvedPatterns.filter((p): p is NonNullable<typeof p> => p !== null);
   if (categories && categories.length > 0) {
-    patterns = patterns.filter((p) => categories!.includes(p.category));
+    patterns = patterns.filter((p) => categories.includes(p.category));
   }
 
   if (patterns.length === 0) {

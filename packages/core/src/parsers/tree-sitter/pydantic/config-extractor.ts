@@ -7,8 +7,7 @@
  * @module pydantic/config-extractor
  */
 
-import type { TreeSitterNode } from '../types.js';
-import type { PydanticConfigInfo } from '../types.js';
+import type { TreeSitterNode , PydanticConfigInfo } from '../types.js';
 import type { ExtractionContext, RawConfigData, ConfigValue } from './types.js';
 
 // ============================================
@@ -62,16 +61,16 @@ export class ConfigExtractor {
     _context: ExtractionContext
   ): PydanticConfigInfo | null {
     for (const child of bodyNode.namedChildren) {
-      if (child.type !== 'expression_statement') continue;
+      if (child.type !== 'expression_statement') {continue;}
 
       const inner = child.namedChildren[0];
-      if (!inner || inner.type !== 'assignment') continue;
+      if (inner?.type !== 'assignment') {continue;}
 
       const left = inner.childForFieldName('left');
-      if (!left || left.text !== 'model_config') continue;
+      if (left?.text !== 'model_config') {continue;}
 
       const right = inner.childForFieldName('right');
-      if (!right) continue;
+      if (!right) {continue;}
 
       const rawData = this.parseV2ConfigValue(right, inner);
       return this.processRawConfig(rawData);
@@ -132,7 +131,7 @@ export class ConfigExtractor {
     values: Map<string, ConfigValue>
   ): void {
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     for (const child of argsNode.namedChildren) {
       if (child.type === 'keyword_argument') {
@@ -158,13 +157,13 @@ export class ConfigExtractor {
     _context: ExtractionContext
   ): PydanticConfigInfo | null {
     for (const child of bodyNode.namedChildren) {
-      if (child.type !== 'class_definition') continue;
+      if (child.type !== 'class_definition') {continue;}
 
       const nameNode = child.childForFieldName('name');
-      if (!nameNode || nameNode.text !== 'Config') continue;
+      if (nameNode?.text !== 'Config') {continue;}
 
       const configBody = child.childForFieldName('body');
-      if (!configBody) continue;
+      if (!configBody) {continue;}
 
       const rawData = this.parseV1ConfigClass(configBody, child);
       return this.processRawConfig(rawData);
@@ -183,10 +182,10 @@ export class ConfigExtractor {
     const values = new Map<string, ConfigValue>();
 
     for (const child of bodyNode.namedChildren) {
-      if (child.type !== 'expression_statement') continue;
+      if (child.type !== 'expression_statement') {continue;}
 
       const inner = child.namedChildren[0];
-      if (!inner || inner.type !== 'assignment') continue;
+      if (inner?.type !== 'assignment') {continue;}
 
       const left = inner.childForFieldName('left');
       const right = inner.childForFieldName('right');
@@ -285,7 +284,7 @@ export class ConfigExtractor {
     values: Map<string, ConfigValue>
   ): 'allow' | 'forbid' | 'ignore' | null {
     const value = values.get('extra');
-    if (!value) return null;
+    if (!value) {return null;}
 
     const parsed = value.parsed;
     if (typeof parsed === 'string') {
@@ -296,9 +295,9 @@ export class ConfigExtractor {
 
     // Handle v1 style: Extra.allow, Extra.forbid, Extra.ignore
     const raw = value.raw;
-    if (raw.includes('allow')) return 'allow';
-    if (raw.includes('forbid')) return 'forbid';
-    if (raw.includes('ignore')) return 'ignore';
+    if (raw.includes('allow')) {return 'allow';}
+    if (raw.includes('forbid')) {return 'forbid';}
+    if (raw.includes('ignore')) {return 'ignore';}
 
     return null;
   }
@@ -330,7 +329,7 @@ export class ConfigExtractor {
     values: Map<string, ConfigValue>
   ): Record<string, unknown> | null {
     const value = values.get('json_schema_extra') || values.get('schema_extra');
-    if (!value) return null;
+    if (!value) {return null;}
 
     // If it's a simple dict, try to parse it
     if (!value.isComplex && typeof value.parsed === 'object' && value.parsed !== null) {

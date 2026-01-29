@@ -10,6 +10,7 @@
  */
 
 import { BaseGate } from '../base-gate.js';
+
 import type {
   GateId,
   GateInput,
@@ -175,11 +176,11 @@ export class ImpactSimulationGate extends BaseGate {
     // BFS to find all affected nodes
     while (queue.length > 0) {
       const { nodeId, distance } = queue.shift()!;
-      if (visited.has(nodeId)) continue;
+      if (visited.has(nodeId)) {continue;}
       visited.add(nodeId);
 
       const node = callGraph.nodes.get(nodeId);
-      if (!node) continue;
+      if (!node) {continue;}
 
       affectedFunctions.add(nodeId);
       
@@ -304,16 +305,16 @@ export class ImpactSimulationGate extends BaseGate {
     config: ImpactSimulationConfig
   ): boolean {
     // Check file threshold
-    if (impact.filesAffected > config.maxFilesAffected) return false;
+    if (impact.filesAffected > config.maxFilesAffected) {return false;}
 
     // Check function threshold
-    if (impact.functionsAffected > config.maxFunctionsAffected) return false;
+    if (impact.functionsAffected > config.maxFunctionsAffected) {return false;}
 
     // Check entry point threshold
-    if (impact.entryPointsAffected.length > config.maxEntryPointsAffected) return false;
+    if (impact.entryPointsAffected.length > config.maxEntryPointsAffected) {return false;}
 
     // Check friction score
-    if (impact.frictionScore > config.maxFrictionScore) return false;
+    if (impact.frictionScore > config.maxFrictionScore) {return false;}
 
     // Check sensitive data (always fails if present and analysis enabled)
     if (config.analyzeSensitiveData && impact.sensitiveDataPaths.length > 0) {

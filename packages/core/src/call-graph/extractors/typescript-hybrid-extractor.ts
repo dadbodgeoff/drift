@@ -6,8 +6,10 @@
  */
 
 import ts from 'typescript';
+
 import { HybridExtractorBase } from './hybrid-extractor-base.js';
 import { TypeScriptRegexExtractor } from './regex/typescript-regex.js';
+
 import type {
   CallGraphLanguage,
   FileExtractionResult,
@@ -137,7 +139,7 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
           }
         }
       }
-      if (hasFunction) return;
+      if (hasFunction) {return;}
     }
 
     if (ts.isClassDeclaration(node) && node.name) {
@@ -252,16 +254,16 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
     const visit = (n: ts.Node): void => {
       if (ts.isCallExpression(n)) {
         const call = this.extractCallExpression(n, source);
-        if (call) calls.push(call);
+        if (call) {calls.push(call);}
       } else if (ts.isNewExpression(n)) {
         const call = this.extractNewExpression(n, source);
-        if (call) calls.push(call);
+        if (call) {calls.push(call);}
       } else if (ts.isJsxSelfClosingElement(n)) {
         const call = this.extractJsxElement(n.tagName, n, source);
-        if (call) calls.push(call);
+        if (call) {calls.push(call);}
       } else if (ts.isJsxOpeningElement(n)) {
         const call = this.extractJsxElement(n.tagName, n, source);
-        if (call) calls.push(call);
+        if (call) {calls.push(call);}
       }
       ts.forEachChild(n, visit);
     };
@@ -384,7 +386,7 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
     currentClass: string | null,
     parentFunction: string | null
   ): FunctionExtraction | null {
-    if (!node.name) return null;
+    if (!node.name) {return null;}
 
     const startPos = this.getPosition(node.getStart(), source);
     const endPos = this.getPosition(node.getEnd(), source);
@@ -435,7 +437,7 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
     source: string,
     parentFunction: string | null
   ): FunctionExtraction | null {
-    if (!ts.isIdentifier(decl.name)) return null;
+    if (!ts.isIdentifier(decl.name)) {return null;}
 
     const func = decl.initializer as ts.ArrowFunction | ts.FunctionExpression;
     const startPos = this.getPosition(statement.getStart(), source);
@@ -584,7 +586,7 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
    */
   private extractImportDeclaration(node: ts.ImportDeclaration): ImportExtraction | null {
     const moduleSpecifier = node.moduleSpecifier;
-    if (!ts.isStringLiteral(moduleSpecifier)) return null;
+    if (!ts.isStringLiteral(moduleSpecifier)) {return null;}
 
     const source = moduleSpecifier.text;
     const names: ImportExtraction['names'] = [];
@@ -621,7 +623,7 @@ export class TypeScriptHybridExtractor extends HybridExtractorBase {
       }
     }
 
-    if (names.length === 0) return null;
+    if (names.length === 0) {return null;}
 
     return {
       source,

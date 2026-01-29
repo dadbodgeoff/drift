@@ -8,6 +8,7 @@
  */
 
 import { IndexStore, PatternStore } from 'driftdetect-core';
+
 import { createResponseBuilder, createCursor, parseCursor } from '../../infrastructure/index.js';
 
 export interface FileEntry {
@@ -60,7 +61,7 @@ export async function handleFilesList(
   const allFiles = Object.entries(fileIndex.patterns);
   
   // Filter by path pattern (simple glob matching)
-  let filteredFiles = allFiles.filter(([filePath]) => 
+  const filteredFiles = allFiles.filter(([filePath]) => 
     matchGlob(filePath, pathPattern)
   );
   
@@ -145,7 +146,7 @@ export async function handleFilesList(
  * Simple glob matching (supports * and **)
  */
 function matchGlob(filePath: string, pattern: string): boolean {
-  if (pattern === '**/*' || pattern === '*') return true;
+  if (pattern === '**/*' || pattern === '*') {return true;}
   
   // Escape special regex chars first, then handle glob patterns
   const regexPattern = pattern

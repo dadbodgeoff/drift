@@ -8,14 +8,10 @@
  * @requirements 24.1 - THE Enforcement_System SHALL support severity levels: error, warning, info, hint
  */
 
-import type { AST } from '../parsers/types.js';
-import type { Pattern } from '../store/types.js';
-import type {
-  PatternDefinition,
-  PatternMatchResult,
-  MatcherContext,
-  Location,
-} from '../matcher/types.js';
+import { SeverityManager, type SeverityManagerConfig } from './severity-manager.js';
+import { createRangeFromCoords } from './types.js';
+import { PatternMatcher, type MatchOptions } from '../matcher/pattern-matcher.js';
+
 import type {
   Violation,
   ViolationInput,
@@ -24,9 +20,15 @@ import type {
   RuleEvaluationSummary,
   RuleEvaluationError,
 } from './types.js';
-import { PatternMatcher, type MatchOptions } from '../matcher/pattern-matcher.js';
-import { SeverityManager, type SeverityManagerConfig } from './severity-manager.js';
-import { createRangeFromCoords } from './types.js';
+import type {
+  PatternDefinition,
+  PatternMatchResult,
+  MatcherContext,
+  Location,
+} from '../matcher/types.js';
+import type { AST } from '../parsers/types.js';
+import type { Pattern } from '../store/types.js';
+
 
 // ============================================================================
 // Rule Engine Configuration

@@ -10,9 +10,10 @@
  * - getRepository(Entity).find()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * TypeORM pattern matcher
@@ -40,15 +41,15 @@ export class TypeORMMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: repository.method() where repository name contains 'repository' or 'repo'
     const repoMatch = this.matchRepositoryPattern(chain);
-    if (repoMatch) return repoMatch;
+    if (repoMatch) {return repoMatch;}
 
     // Pattern 2: Entity.method() where Entity is PascalCase
     const entityMatch = this.matchEntityPattern(chain);
-    if (entityMatch) return entityMatch;
+    if (entityMatch) {return entityMatch;}
 
     // Pattern 3: getRepository(Entity).method()
     const getRepoMatch = this.matchGetRepositoryPattern(chain);
-    if (getRepoMatch) return getRepoMatch;
+    if (getRepoMatch) {return getRepoMatch;}
 
     return null;
   }
@@ -59,13 +60,13 @@ export class TypeORMMatcher extends BaseMatcher {
       return null;
     }
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const methodSegment = chain.segments[0];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const operation = this.getOperation(methodSegment.name);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     const table = this.inferTableName(chain.receiver);
     const fields = this.extractFields(methodSegment.args);
@@ -81,22 +82,22 @@ export class TypeORMMatcher extends BaseMatcher {
 
   private matchEntityPattern(chain: UnifiedCallChain): PatternMatchResult | null {
     // Entity must be PascalCase and not a common JS class
-    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) return null;
+    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) {return null;}
 
     const commonClasses = [
       'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise',
       'Map', 'Set', 'Date', 'Error', 'RegExp', 'JSON', 'Math',
       'Console', 'Buffer', 'Process',
     ];
-    if (commonClasses.includes(chain.receiver)) return null;
+    if (commonClasses.includes(chain.receiver)) {return null;}
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const methodSegment = chain.segments[0];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const operation = this.getOperation(methodSegment.name);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     const table = this.inferTableName(chain.receiver);
     const fields = this.extractFields(methodSegment.args);
@@ -116,14 +117,14 @@ export class TypeORMMatcher extends BaseMatcher {
       s.name === 'getRepository' && s.isCall
     );
 
-    if (getRepoIndex === -1) return null;
+    if (getRepoIndex === -1) {return null;}
 
     const getRepoSegment = chain.segments[getRepoIndex];
-    if (!getRepoSegment || getRepoSegment.args.length === 0) return null;
+    if (!getRepoSegment || getRepoSegment.args.length === 0) {return null;}
 
     // Get entity name from argument
     const entityArg = getRepoSegment.args[0];
-    if (!entityArg) return null;
+    if (!entityArg) {return null;}
 
     const entityName = entityArg.type === 'identifier'
       ? entityArg.value
@@ -131,10 +132,10 @@ export class TypeORMMatcher extends BaseMatcher {
 
     // Find the method call after getRepository
     const methodSegment = chain.segments[getRepoIndex + 1];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const operation = this.getOperation(methodSegment.name);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     const table = this.inferTableName(entityName);
     const fields = this.extractFields(methodSegment.args);
@@ -149,17 +150,17 @@ export class TypeORMMatcher extends BaseMatcher {
   }
 
   private getOperation(methodName: string): DataOperation | null {
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
-    if (this.deleteMethods.includes(methodName)) return 'delete';
+    if (this.readMethods.includes(methodName)) {return 'read';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
+    if (this.deleteMethods.includes(methodName)) {return 'delete';}
     return null;
   }
 
   private extractFields(args: NormalizedArg[]): string[] {
-    if (args.length === 0) return [];
+    if (args.length === 0) {return [];}
 
     const firstArg = args[0];
-    if (!firstArg || firstArg.type !== 'object' || !firstArg.properties) {
+    if (firstArg?.type !== 'object' || !firstArg.properties) {
       return [];
     }
 
@@ -181,7 +182,7 @@ export class TypeORMMatcher extends BaseMatcher {
     const relationsArg = firstArg.properties['relations'];
     if (relationsArg?.type === 'array' && relationsArg.elements) {
       for (const elem of relationsArg.elements) {
-        if (elem.stringValue) fields.push(elem.stringValue);
+        if (elem.stringValue) {fields.push(elem.stringValue);}
       }
     }
 

@@ -8,11 +8,14 @@
  * @requirements 3.2, 3.4, 3.7
  */
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
-import type { Language, ParseResult, Position } from './types.js';
+
 import { BaseParser } from './base-parser.js';
+
+import type { Language, ParseResult, Position } from './types.js';
+
 
 /**
  * Represents a change in the source code
@@ -498,7 +501,7 @@ export class ParserManager {
               oldLines[oldEnd + matchLength] === newLines[newEnd + matchLength]
             ) {
               matchLength++;
-              if (matchLength >= 3) break; // Consider 3+ matching lines as sync point
+              if (matchLength >= 3) {break;} // Consider 3+ matching lines as sync point
             }
             if (matchLength >= 3 || (oldEnd + matchLength >= oldLines.length && newEnd + matchLength >= newLines.length)) {
               break;
@@ -551,7 +554,7 @@ export class ParserManager {
    */
   // @ts-expect-error - Reserved for future Tree-sitter incremental parsing integration
   private getChangedRegion(changes: TextChange[]): { start: Position; end: Position } | null {
-    if (changes.length === 0) return null;
+    if (changes.length === 0) {return null;}
 
     let minRow = Infinity;
     let minCol = Infinity;

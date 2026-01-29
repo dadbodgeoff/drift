@@ -4,8 +4,8 @@
  * Extracts test information from Jest, Vitest, Mocha, and other JS test frameworks.
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -14,6 +14,7 @@ import type {
   AssertionInfo,
   TestFramework,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Framework Detection
@@ -71,16 +72,16 @@ export class TypeScriptTestExtractor extends BaseTestExtractor {
     // Check imports first
     for (const imp of imports) {
       const framework = FRAMEWORK_IMPORTS[imp];
-      if (framework) return framework;
+      if (framework) {return framework;}
     }
 
     // Check for global usage
     const text = root.text;
-    if (text.includes('vi.mock') || text.includes('vi.spyOn')) return 'vitest';
-    if (text.includes('jest.mock') || text.includes('jest.spyOn')) return 'jest';
+    if (text.includes('vi.mock') || text.includes('vi.spyOn')) {return 'vitest';}
+    if (text.includes('jest.mock') || text.includes('jest.spyOn')) {return 'jest';}
     
     // Default to jest if we see test/describe/it
-    if (/\b(describe|it|test)\s*\(/.test(text)) return 'jest';
+    if (/\b(describe|it|test)\s*\(/.test(text)) {return 'jest';}
 
     return 'unknown';
   }

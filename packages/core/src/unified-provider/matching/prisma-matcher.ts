@@ -9,9 +9,10 @@
  * - prisma.user.delete({ where: {...} })
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Prisma pattern matcher
@@ -55,7 +56,7 @@ export class PrismaMatcher extends BaseMatcher {
 
     // First segment should be the model name
     const modelSegment = chain.segments[0];
-    if (!modelSegment) return null;
+    if (!modelSegment) {return null;}
 
     const modelName = modelSegment.name;
 
@@ -66,7 +67,7 @@ export class PrismaMatcher extends BaseMatcher {
 
     // Second segment should be the operation method
     const methodSegment = chain.segments[1];
-    if (!methodSegment || !methodSegment.isCall) {
+    if (!methodSegment?.isCall) {
       return null;
     }
 
@@ -106,10 +107,10 @@ export class PrismaMatcher extends BaseMatcher {
    * Extract fields from Prisma method arguments
    */
   private extractPrismaFields(args: NormalizedArg[]): string[] {
-    if (args.length === 0) return [];
+    if (args.length === 0) {return [];}
 
     const firstArg = args[0];
-    if (!firstArg || firstArg.type !== 'object' || !firstArg.properties) {
+    if (firstArg?.type !== 'object' || !firstArg.properties) {
       return [];
     }
 

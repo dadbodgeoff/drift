@@ -58,18 +58,18 @@ export class PythonTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check imports
-    if (/import\s+pytest|from\s+pytest/.test(content)) return 'pytest';
-    if (/import\s+unittest|from\s+unittest/.test(content)) return 'unittest';
-    if (/import\s+nose|from\s+nose/.test(content)) return 'nose';
+    if (/import\s+pytest|from\s+pytest/.test(content)) {return 'pytest';}
+    if (/import\s+unittest|from\s+unittest/.test(content)) {return 'unittest';}
+    if (/import\s+nose|from\s+nose/.test(content)) {return 'nose';}
     
     // Check for pytest fixtures
-    if (/@pytest\.fixture/.test(content)) return 'pytest';
+    if (/@pytest\.fixture/.test(content)) {return 'pytest';}
     
     // Check for unittest class
-    if (/class\s+\w+\s*\(\s*(?:unittest\.)?TestCase\s*\)/.test(content)) return 'unittest';
+    if (/class\s+\w+\s*\(\s*(?:unittest\.)?TestCase\s*\)/.test(content)) {return 'unittest';}
     
     // Check for test_ functions (pytest style)
-    if (/^def\s+test_/m.test(content)) return 'pytest';
+    if (/^def\s+test_/m.test(content)) {return 'pytest';}
 
     return 'unknown';
   }
@@ -184,7 +184,7 @@ export class PythonTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -195,7 +195,7 @@ export class PythonTestRegexExtractor {
     const methodPattern = /\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
     while ((match = methodPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -399,7 +399,7 @@ export class PythonTestRegexExtractor {
   }
 
   private isExternalModule(modulePath: string): boolean {
-    if (modulePath.startsWith('.')) return false;
+    if (modulePath.startsWith('.')) {return false;}
     return true;
   }
 
@@ -416,13 +416,13 @@ export class PythonTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
     
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

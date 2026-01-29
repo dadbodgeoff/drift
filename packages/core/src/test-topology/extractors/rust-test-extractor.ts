@@ -11,8 +11,8 @@
  * - rstest parameterized tests
  */
 
-import type Parser from 'tree-sitter';
 import { BaseTestExtractor } from './base-test-extractor.js';
+
 import type {
   TestExtraction,
   TestCase,
@@ -22,6 +22,7 @@ import type {
   TestFramework,
   FixtureInfo,
 } from '../types.js';
+import type Parser from 'tree-sitter';
 
 // ============================================================================
 // Extractor Implementation
@@ -168,7 +169,7 @@ export class RustTestExtractor extends BaseTestExtractor {
 
     while ((match = proptestPattern.exec(content)) !== null) {
       const name = match[1];
-      if (!name) continue;
+      if (!name) {continue;}
 
       const line = this.getLineNumber(content, match.index);
 

@@ -135,7 +135,7 @@ export abstract class BaseGate implements Gate {
     totalChecks: number,
     violations: GateViolation[]
   ): number {
-    if (totalChecks === 0) return 100;
+    if (totalChecks === 0) {return 100;}
     
     const errorWeight = 10;
     const warningWeight = 3;
@@ -167,8 +167,8 @@ export abstract class BaseGate implements Gate {
     const hasErrors = violations.some(v => v.severity === 'error');
     const hasWarnings = violations.some(v => v.severity === 'warning');
     
-    if (hasErrors && blocking) return 'failed';
-    if (hasWarnings) return 'warned';
+    if (hasErrors && blocking) {return 'failed';}
+    if (hasWarnings) {return 'warned';}
     return 'passed';
   }
 

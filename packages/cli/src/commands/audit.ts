@@ -7,10 +7,11 @@
  * @requirements AUDIT-SYSTEM.md
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   AuditEngine,
   AuditStore,
@@ -18,6 +19,7 @@ import {
   type AuditResult,
   type AuditOptions,
 } from 'driftdetect-core';
+
 import { createSpinner, status } from '../ui/spinner.js';
 
 export interface AuditCommandOptions {
@@ -81,8 +83,8 @@ async function resolveProjectRoot(rootOption?: string): Promise<string> {
  * Format health score with color
  */
 function formatHealthScore(score: number): string {
-  if (score >= 85) return chalk.green(`${score}/100`);
-  if (score >= 70) return chalk.yellow(`${score}/100`);
+  if (score >= 85) {return chalk.green(`${score}/100`);}
+  if (score >= 70) {return chalk.yellow(`${score}/100`);}
   return chalk.red(`${score}/100`);
 }
 

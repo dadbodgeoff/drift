@@ -4,8 +4,8 @@
  * Display license status and available features.
  */
 
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   getLicenseManager,
   getLicenseStatus,
@@ -128,7 +128,7 @@ async function licenseAction(options: LicenseOptions): Promise<void> {
       const isAvailable = tierLevel <= currentLevel;
       const features = grouped[tier];
 
-      if (features.length === 0) continue;
+      if (features.length === 0) {continue;}
 
       const tierLabel = isAvailable
         ? chalk.green(`✓ ${tier.toUpperCase()}`)

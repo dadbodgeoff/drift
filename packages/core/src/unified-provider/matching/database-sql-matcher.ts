@@ -12,9 +12,10 @@
  * @requirements Go Language Support
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * database/sql pattern matcher
@@ -40,15 +41,15 @@ export class DatabaseSqlMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: db.Method() where db is a sql.DB instance
     const dbMatch = this.matchDbPattern(chain);
-    if (dbMatch) return dbMatch;
+    if (dbMatch) {return dbMatch;}
 
     // Pattern 2: tx.Method() for transaction patterns
     const txMatch = this.matchTransactionPattern(chain);
-    if (txMatch) return txMatch;
+    if (txMatch) {return txMatch;}
 
     // Pattern 3: stmt.Method() for prepared statement patterns
     const stmtMatch = this.matchStatementPattern(chain);
-    if (stmtMatch) return stmtMatch;
+    if (stmtMatch) {return stmtMatch;}
 
     return null;
   }
@@ -90,10 +91,10 @@ export class DatabaseSqlMatcher extends BaseMatcher {
   }
 
   private analyzeChain(chain: UnifiedCallChain): PatternMatchResult | null {
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const segment = chain.segments[0];
-    if (!segment?.isCall) return null;
+    if (!segment?.isCall) {return null;}
 
     const methodName = segment.name;
     let operation = this.getOperation(methodName);
@@ -101,7 +102,7 @@ export class DatabaseSqlMatcher extends BaseMatcher {
     // For Exec methods, determine operation from SQL
     if (methodName === 'Exec' || methodName === 'ExecContext') {
       const sqlOp = this.getOperationFromSql(segment.args);
-      if (sqlOp) operation = sqlOp;
+      if (sqlOp) {operation = sqlOp;}
     }
 
     // For Prepare methods, try to determine operation from SQL
@@ -110,7 +111,7 @@ export class DatabaseSqlMatcher extends BaseMatcher {
       operation = sqlOp ?? 'read'; // Default to read for prepared statements
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Extract table and fields from SQL query
     const { table, fields } = this.extractFromSql(segment.args);
@@ -128,34 +129,34 @@ export class DatabaseSqlMatcher extends BaseMatcher {
   }
 
   private getOperation(methodName: string): DataOperation | null {
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
+    if (this.readMethods.includes(methodName)) {return 'read';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
     return null;
   }
 
   private getOperationFromSql(args: NormalizedArg[]): DataOperation | null {
     const sql = this.extractSqlString(args);
-    if (!sql) return null;
+    if (!sql) {return null;}
 
     const upperSql = sql.toUpperCase().trim();
 
-    if (upperSql.startsWith('SELECT')) return 'read';
-    if (upperSql.startsWith('INSERT')) return 'write';
-    if (upperSql.startsWith('UPDATE')) return 'write';
-    if (upperSql.startsWith('DELETE')) return 'delete';
-    if (upperSql.startsWith('UPSERT')) return 'write';
-    if (upperSql.startsWith('MERGE')) return 'write';
-    if (upperSql.startsWith('CREATE')) return 'write';
-    if (upperSql.startsWith('ALTER')) return 'write';
-    if (upperSql.startsWith('DROP')) return 'delete';
-    if (upperSql.startsWith('TRUNCATE')) return 'delete';
+    if (upperSql.startsWith('SELECT')) {return 'read';}
+    if (upperSql.startsWith('INSERT')) {return 'write';}
+    if (upperSql.startsWith('UPDATE')) {return 'write';}
+    if (upperSql.startsWith('DELETE')) {return 'delete';}
+    if (upperSql.startsWith('UPSERT')) {return 'write';}
+    if (upperSql.startsWith('MERGE')) {return 'write';}
+    if (upperSql.startsWith('CREATE')) {return 'write';}
+    if (upperSql.startsWith('ALTER')) {return 'write';}
+    if (upperSql.startsWith('DROP')) {return 'delete';}
+    if (upperSql.startsWith('TRUNCATE')) {return 'delete';}
 
     return null;
   }
 
   private extractFromSql(args: NormalizedArg[]): { table: string | null; fields: string[] } {
     const sql = this.extractSqlString(args);
-    if (!sql) return { table: null, fields: [] };
+    if (!sql) {return { table: null, fields: [] };}
 
     const table = this.extractTableFromSql(sql);
     const fields = this.extractFieldsFromSql(sql);
@@ -165,7 +166,7 @@ export class DatabaseSqlMatcher extends BaseMatcher {
 
   private extractSqlString(args: NormalizedArg[]): string | null {
     // SQL is typically the first argument
-    if (args.length === 0) return null;
+    if (args.length === 0) {return null;}
 
     const firstArg = args[0]!;
 
@@ -288,7 +289,7 @@ export class DatabaseSqlMatcher extends BaseMatcher {
       const columns = insertMatch[1]!.split(',');
       for (const col of columns) {
         const field = col.trim().replace(/["`]/g, '');
-        if (field) fields.push(field);
+        if (field) {fields.push(field);}
       }
     }
 
@@ -299,7 +300,7 @@ export class DatabaseSqlMatcher extends BaseMatcher {
       const setParts = setClause.split(',');
       for (const part of setParts) {
         const field = part.split('=')[0]?.trim().replace(/["`]/g, '');
-        if (field) fields.push(field);
+        if (field) {fields.push(field);}
       }
     }
 

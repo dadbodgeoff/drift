@@ -10,13 +10,14 @@ export { TypeScriptNormalizer } from './typescript-normalizer.js';
 export { CSharpNormalizer } from './csharp-normalizer.js';
 export { PhpNormalizer } from './php-normalizer.js';
 
-import type { CallGraphLanguage } from '../../call-graph/types.js';
-import type { LanguageNormalizer } from '../types.js';
+import { CSharpNormalizer } from './csharp-normalizer.js';
 import { JavaNormalizer } from './java-normalizer.js';
+import { PhpNormalizer } from './php-normalizer.js';
 import { PythonNormalizer } from './python-normalizer.js';
 import { TypeScriptNormalizer } from './typescript-normalizer.js';
-import { CSharpNormalizer } from './csharp-normalizer.js';
-import { PhpNormalizer } from './php-normalizer.js';
+
+import type { CallGraphLanguage } from '../../call-graph/types.js';
+import type { LanguageNormalizer } from '../types.js';
 
 /**
  * Create a normalizer for a specific language

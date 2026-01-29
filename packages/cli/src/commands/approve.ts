@@ -8,16 +8,19 @@
  * @requirements 29.5
  */
 
-import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import chalk from 'chalk';
-import type { PatternCategory } from 'driftdetect-core';
-import { loadProjectConfig, createTelemetryClient, type TelemetryConfig } from 'driftdetect-core';
+import { Command } from 'commander';
+
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
-import { createSpinner, status } from '../ui/spinner.js';
 import { confirmPrompt, promptBatchPatternApproval, type PatternChoice } from '../ui/prompts.js';
+import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
+
+import { loadProjectConfig, createTelemetryClient } from 'driftdetect-core';
+import type { PatternCategory, TelemetryConfig } from 'driftdetect-core';
 
 export interface ApproveOptions {
   /** Approve all patterns matching a category */
@@ -49,7 +52,7 @@ async function recordApproveTelemetry(
 ): Promise<void> {
   try {
     const projectConfig = await loadProjectConfig(rootDir);
-    if (!projectConfig.telemetry?.enabled) return;
+    if (!projectConfig.telemetry?.enabled) {return;}
     
     const driftDir = path.join(rootDir, DRIFT_DIR);
     const telemetryClient = createTelemetryClient(driftDir, projectConfig.telemetry as TelemetryConfig);

@@ -20,13 +20,14 @@
  */
 
 import { BaseDataAccessExtractor, type DataAccessExtractionResult } from './data-access-extractor.js';
-import type { CallGraphLanguage } from '../types.js';
-import type { DataOperation } from '../../boundaries/types.js';
 import {
   isPhpTreeSitterAvailable,
   createPhpParser,
 } from '../../parsers/tree-sitter/php-loader.js';
+
+import type { DataOperation } from '../../boundaries/types.js';
 import type { TreeSitterParser, TreeSitterNode } from '../../parsers/tree-sitter/types.js';
+import type { CallGraphLanguage } from '../types.js';
 
 /**
  * PHP data access extractor using tree-sitter
@@ -268,19 +269,19 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
   ): ReturnType<typeof this.createAccessPoint> | null {
     const { className, names, args } = chain;
     
-    if (!className || names.length === 0) return null;
+    if (!className || names.length === 0) {return null;}
 
     // Skip if it's DB:: (handled separately)
-    if (className === 'DB') return null;
+    if (className === 'DB') {return null;}
 
     // Check if it looks like a model (PascalCase, not a framework class)
-    if (!/^[A-Z]/.test(className)) return null;
+    if (!/^[A-Z]/.test(className)) {return null;}
     const frameworkClasses = ['App', 'Auth', 'Cache', 'Config', 'Cookie', 'Crypt', 
                              'Event', 'File', 'Gate', 'Hash', 'Http', 'Lang', 
                              'Log', 'Mail', 'Notification', 'Queue', 'Redirect',
                              'Request', 'Response', 'Route', 'Schema', 'Session',
                              'Storage', 'URL', 'Validator', 'View'];
-    if (frameworkClasses.includes(className)) return null;
+    if (frameworkClasses.includes(className)) {return null;}
 
     const eloquentMethods = {
       read: ['find', 'findOrFail', 'findMany', 'findOrNew', 'first', 'firstOrFail',
@@ -310,7 +311,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       const method = names[i];
       const methodArgs = args[i];
 
-      if (!method) continue;
+      if (!method) {continue;}
 
       if (eloquentMethods.write.includes(method)) {
         operation = 'write';
@@ -337,7 +338,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       }
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     return this.createAccessPoint({
       table: this.inferTableFromName(className),
@@ -356,14 +357,14 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract field name from a where clause method call
    */
   private extractWhereClauseField(args: TreeSitterNode[]): string | null {
-    if (args.length === 0) return null;
+    if (args.length === 0) {return null;}
 
     const firstArg = args[0];
-    if (!firstArg) return null;
+    if (!firstArg) {return null;}
 
     // Handle argument wrapper
     const actualArg = firstArg.type === 'argument' ? firstArg.namedChildren[0] : firstArg;
-    if (!actualArg) return null;
+    if (!actualArg) {return null;}
 
     // String argument: ->where('email', value)
     const strValue = this.extractStringValue(actualArg);
@@ -385,8 +386,8 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
   ): ReturnType<typeof this.createAccessPoint> | null {
     const { className, names, args } = chain;
     
-    if (className !== 'DB') return null;
-    if (names.length === 0) return null;
+    if (className !== 'DB') {return null;}
+    if (names.length === 0) {return null;}
 
     const firstMethod = names[0];
     const firstArgs = args[0];
@@ -396,7 +397,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       const tableArg = firstArgs[0];
       const table = this.extractStringValue(tableArg);
       
-      if (!table) return null;
+      if (!table) {return null;}
 
       // Where clause methods
       const whereClauseMethods = ['where', 'whereIn', 'whereNotIn', 'whereBetween', 
@@ -410,7 +411,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
         const method = names[i];
         const methodArgs = args[i];
 
-        if (!method) continue;
+        if (!method) {continue;}
 
         if (['insert', 'insertOrIgnore', 'insertGetId', 'update', 'upsert',
              'increment', 'decrement'].includes(method)) {
@@ -452,11 +453,11 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     };
 
     let operation: DataOperation | null = null;
-    if (rawMethods.read.includes(firstMethod ?? '')) operation = 'read';
-    else if (rawMethods.write.includes(firstMethod ?? '')) operation = 'write';
-    else if (rawMethods.delete.includes(firstMethod ?? '')) operation = 'delete';
+    if (rawMethods.read.includes(firstMethod ?? '')) {operation = 'read';}
+    else if (rawMethods.write.includes(firstMethod ?? '')) {operation = 'write';}
+    else if (rawMethods.delete.includes(firstMethod ?? '')) {operation = 'delete';}
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to extract table from SQL
     let table = 'unknown';
@@ -493,10 +494,10 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const methodName = chain.names[chain.names.length - 1];
-    if (!methodName) return null;
+    if (!methodName) {return null;}
 
     const instanceMethods = {
       write: ['save', 'update', 'push', 'touch', 'increment', 'decrement',
@@ -511,7 +512,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
       operation = 'delete';
     }
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to infer model from variable name
     const varName = chain.names[0] ?? 'unknown';
@@ -547,12 +548,12 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     const hasRemove = chain.names.includes('remove');
     const hasFlush = chain.names.includes('flush');
 
-    if (!hasGetRepository && !hasPersist && !hasRemove) return null;
+    if (!hasGetRepository && !hasPersist && !hasRemove) {return null;}
 
     let operation: DataOperation = 'read';
-    if (hasPersist || hasFlush) operation = 'write';
-    if (hasRemove) operation = 'delete';
-    if (hasFind) operation = 'read';
+    if (hasPersist || hasFlush) {operation = 'write';}
+    if (hasRemove) {operation = 'delete';}
+    if (hasFind) {operation = 'read';}
 
     // Try to extract entity class from getRepository(Entity::class)
     let table = 'unknown';
@@ -592,7 +593,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     node: TreeSitterNode,
     filePath: string
   ): ReturnType<typeof this.createAccessPoint> | null {
-    if (chain.names.length < 2) return null;
+    if (chain.names.length < 2) {return null;}
 
     const varName = chain.names[0]?.toLowerCase() ?? '';
     const methodName = chain.names[1];
@@ -600,7 +601,7 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     // Check if it looks like PDO
     const isPdo = varName.includes('pdo') || varName.includes('db') ||
                  varName.includes('conn') || varName.includes('stmt');
-    if (!isPdo) return null;
+    if (!isPdo) {return null;}
 
     const pdoMethods = {
       read: ['query', 'prepare'],
@@ -608,10 +609,10 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     };
 
     let operation: DataOperation | null = null;
-    if (pdoMethods.read.includes(methodName ?? '')) operation = 'read';
-    else if (pdoMethods.write.includes(methodName ?? '')) operation = 'write';
+    if (pdoMethods.read.includes(methodName ?? '')) {operation = 'read';}
+    else if (pdoMethods.write.includes(methodName ?? '')) {operation = 'write';}
 
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     // Try to extract SQL
     let table = 'unknown';
@@ -648,12 +649,12 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
    * Extract string value from a node
    */
   private extractStringValue(node: TreeSitterNode | null): string | null {
-    if (!node) return null;
+    if (!node) {return null;}
 
     // Handle argument wrapper
     if (node.type === 'argument') {
       const child = node.namedChildren[0];
-      if (child) return this.extractStringValue(child);
+      if (child) {return this.extractStringValue(child);}
     }
 
     if (node.type === 'string' || node.type === 'encapsed_string') {
@@ -673,18 +674,18 @@ export class PhpDataAccessExtractor extends BaseDataAccessExtractor {
     let table = 'unknown';
     const fields: string[] = [];
 
-    if (upperSql.startsWith('SELECT')) operation = 'read';
-    else if (upperSql.startsWith('INSERT')) operation = 'write';
-    else if (upperSql.startsWith('UPDATE')) operation = 'write';
-    else if (upperSql.startsWith('DELETE')) operation = 'delete';
+    if (upperSql.startsWith('SELECT')) {operation = 'read';}
+    else if (upperSql.startsWith('INSERT')) {operation = 'write';}
+    else if (upperSql.startsWith('UPDATE')) {operation = 'write';}
+    else if (upperSql.startsWith('DELETE')) {operation = 'delete';}
 
     const fromMatch = sql.match(/FROM\s+["'`]?(\w+)["'`]?/i);
     const intoMatch = sql.match(/INTO\s+["'`]?(\w+)["'`]?/i);
     const updateMatch = sql.match(/UPDATE\s+["'`]?(\w+)["'`]?/i);
 
-    if (fromMatch?.[1]) table = fromMatch[1];
-    else if (intoMatch?.[1]) table = intoMatch[1];
-    else if (updateMatch?.[1]) table = updateMatch[1];
+    if (fromMatch?.[1]) {table = fromMatch[1];}
+    else if (intoMatch?.[1]) {table = intoMatch[1];}
+    else if (updateMatch?.[1]) {table = updateMatch[1];}
 
     return { table, operation, fields };
   }

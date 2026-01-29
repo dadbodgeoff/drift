@@ -5,15 +5,16 @@
  * Creates patterns for constant consistency, magic values, and security issues.
  */
 
+import { ConsistencyAnalyzer } from '../analysis/consistency-analyzer.js';
+import { ConstantSecurityScanner } from '../analysis/security-scanner.js';
+import { ConstantStore } from '../store/constant-store.js';
+
 import type {
   ConstantExtraction,
   PotentialSecret,
   InconsistentConstant,
   IssueSeverity,
 } from '../types.js';
-import { ConstantStore } from '../store/constant-store.js';
-import { ConstantSecurityScanner } from '../analysis/security-scanner.js';
-import { ConsistencyAnalyzer } from '../analysis/consistency-analyzer.js';
 
 // ============================================================================
 // Types
@@ -409,8 +410,8 @@ export class ConstantPatternAdapter {
    */
   private getInconsistencySeverity(inconsistency: InconsistentConstant): IssueSeverity {
     // Higher severity for more instances
-    if (inconsistency.instances.length >= 5) return 'high';
-    if (inconsistency.instances.length >= 3) return 'medium';
+    if (inconsistency.instances.length >= 5) {return 'high';}
+    if (inconsistency.instances.length >= 3) {return 'medium';}
     return 'low';
   }
 

@@ -113,7 +113,7 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
       }
       // .eq('field', value)
       const eqMatch = line.match(/\.eq\s*\(\s*["'](\w+)["']/);
-      if (eqMatch?.[1]) fields.push(eqMatch[1]);
+      if (eqMatch?.[1]) {fields.push(eqMatch[1]);}
       return fields;
     },
     confidence: 0.95,
@@ -137,7 +137,7 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
       if (selectMatch?.[1]) {
         const fieldMatches = selectMatch[1].matchAll(/(\w+)\s*:/g);
         for (const m of fieldMatches) {
-          if (m[1]) fields.push(m[1]);
+          if (m[1]) {fields.push(m[1]);}
         }
       }
       return fields;
@@ -163,7 +163,7 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
       if (valuesMatch?.[1]) {
         const fieldMatches = valuesMatch[1].matchAll(/["'](\w+)["']/g);
         for (const m of fieldMatches) {
-          if (m[1]) fields.push(m[1]);
+          if (m[1]) {fields.push(m[1]);}
         }
       }
       // .filter(field=value)
@@ -171,7 +171,7 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
       if (filterMatch?.[1]) {
         const fieldMatches = filterMatch[1].matchAll(/(\w+)\s*=/g);
         for (const m of fieldMatches) {
-          if (m[1]) fields.push(m[1]);
+          if (m[1]) {fields.push(m[1]);}
         }
       }
       return fields;
@@ -263,7 +263,7 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
     ],
     tableExtractor: (line) => {
       const match = line.match(/\.table\s*\(\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/);
-      if (match?.[1]) return match[1];
+      if (match?.[1]) {return match[1];}
       const knexMatch = line.match(/knex\s*\(\s*["']([a-zA-Z_][a-zA-Z0-9_]*)["']/);
       return knexMatch?.[1] ?? null;
     },
@@ -281,11 +281,11 @@ const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
     ],
     tableExtractor: (line) => {
       const fromMatch = line.match(/FROM\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-      if (fromMatch?.[1]) return fromMatch[1];
+      if (fromMatch?.[1]) {return fromMatch[1];}
       const intoMatch = line.match(/INTO\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-      if (intoMatch?.[1]) return intoMatch[1];
+      if (intoMatch?.[1]) {return intoMatch[1];}
       const updateMatch = line.match(/UPDATE\s+["'`]?([a-zA-Z_][a-zA-Z0-9_]*)["'`]?/i);
-      if (updateMatch?.[1]) return updateMatch[1];
+      if (updateMatch?.[1]) {return updateMatch[1];}
       return null;
     },
     fieldExtractor: () => [],
@@ -324,7 +324,7 @@ export class DataAccessLearner {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!line) continue;
+      if (!line) {continue;}
 
       // Skip comments
       const trimmed = line.trim();
@@ -336,7 +336,7 @@ export class DataAccessLearner {
       // Get context (surrounding lines)
       const contextStart = Math.max(0, i - 5);
       const contextEnd = Math.min(lines.length, i + 5);
-      const context = lines.slice(contextStart, contextEnd).filter(l => l !== undefined) as string[];
+      const context = lines.slice(contextStart, contextEnd).filter(l => l !== undefined);
 
       // Try each detected framework's extractor
       for (const framework of detectedFrameworks) {
@@ -374,7 +374,7 @@ export class DataAccessLearner {
     // Always include raw-sql as fallback
     if (!detected.find(f => f.name === 'raw-sql')) {
       const rawSql = FRAMEWORK_SIGNATURES.find(f => f.name === 'raw-sql');
-      if (rawSql) detected.push(rawSql);
+      if (rawSql) {detected.push(rawSql);}
     }
 
     return detected;
@@ -514,15 +514,15 @@ export class DataAccessLearner {
     let pascalCount = 0;
 
     for (const table of tables) {
-      if (table.includes('_')) snakeCount++;
-      else if (table.length > 0 && table[0] === table[0]?.toLowerCase() && /[A-Z]/.test(table)) camelCount++;
-      else if (table.length > 0 && table[0] === table[0]?.toUpperCase()) pascalCount++;
+      if (table.includes('_')) {snakeCount++;}
+      else if (table.length > 0 && table[0] === table[0]?.toLowerCase() && /[A-Z]/.test(table)) {camelCount++;}
+      else if (table.length > 0 && table[0] === table[0]?.toUpperCase()) {pascalCount++;}
     }
 
     const total = tables.length;
-    if (snakeCount > total * 0.6) return 'snake_case';
-    if (camelCount > total * 0.6) return 'camelCase';
-    if (pascalCount > total * 0.6) return 'PascalCase';
+    if (snakeCount > total * 0.6) {return 'snake_case';}
+    if (camelCount > total * 0.6) {return 'camelCase';}
+    if (pascalCount > total * 0.6) {return 'PascalCase';}
     return 'mixed';
   }
 

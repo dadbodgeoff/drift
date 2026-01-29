@@ -7,11 +7,12 @@
  * @requirements 29.2
  */
 
-import { Command } from 'commander';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+
 import chalk from 'chalk';
+import { Command } from 'commander';
 import {
   PatternStore,
   HistoryStore,
@@ -40,11 +41,12 @@ import {
   type TelemetryConfig,
   type BuildConfig,
 } from 'driftdetect-core';
+
+import { createBoundaryScanner, type BoundaryScanResult } from '../services/boundary-scanner.js';
+import { createContractScanner } from '../services/contract-scanner.js';
+import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
-import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
-import { createContractScanner } from '../services/contract-scanner.js';
-import { createBoundaryScanner, type BoundaryScanResult } from '../services/boundary-scanner.js';
 
 export interface ScanCommandOptions {
   /** Specific paths to scan */
@@ -277,14 +279,14 @@ async function detectFrameworks(rootDir: string): Promise<string[]> {
       const pkg = JSON.parse(content);
       const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-      if (deps['next'] && !frameworks.includes('nextjs')) frameworks.push('nextjs');
-      if (deps['react'] && !deps['next'] && !frameworks.includes('react')) frameworks.push('react');
-      if (deps['vue'] && !frameworks.includes('vue')) frameworks.push('vue');
-      if (deps['@angular/core'] && !frameworks.includes('angular')) frameworks.push('angular');
-      if (deps['express'] && !frameworks.includes('express')) frameworks.push('express');
-      if (deps['fastify'] && !frameworks.includes('fastify')) frameworks.push('fastify');
-      if (deps['@nestjs/core'] && !frameworks.includes('nestjs')) frameworks.push('nestjs');
-      if ((deps['svelte'] || deps['@sveltejs/kit']) && !frameworks.includes('svelte')) frameworks.push('svelte');
+      if (deps['next'] && !frameworks.includes('nextjs')) {frameworks.push('nextjs');}
+      if (deps['react'] && !deps['next'] && !frameworks.includes('react')) {frameworks.push('react');}
+      if (deps['vue'] && !frameworks.includes('vue')) {frameworks.push('vue');}
+      if (deps['@angular/core'] && !frameworks.includes('angular')) {frameworks.push('angular');}
+      if (deps['express'] && !frameworks.includes('express')) {frameworks.push('express');}
+      if (deps['fastify'] && !frameworks.includes('fastify')) {frameworks.push('fastify');}
+      if (deps['@nestjs/core'] && !frameworks.includes('nestjs')) {frameworks.push('nestjs');}
+      if ((deps['svelte'] || deps['@sveltejs/kit']) && !frameworks.includes('svelte')) {frameworks.push('svelte');}
     } catch {
       // No package.json at this path
     }
@@ -303,17 +305,17 @@ async function detectFrameworks(rootDir: string): Promise<string[]> {
   try {
     const reqPath = path.join(rootDir, 'requirements.txt');
     const content = await fs.readFile(reqPath, 'utf-8');
-    if (content.includes('fastapi')) frameworks.push('fastapi');
-    if (content.includes('django')) frameworks.push('django');
-    if (content.includes('flask')) frameworks.push('flask');
+    if (content.includes('fastapi')) {frameworks.push('fastapi');}
+    if (content.includes('django')) {frameworks.push('django');}
+    if (content.includes('flask')) {frameworks.push('flask');}
   } catch {
     // No requirements.txt - try pyproject.toml
     try {
       const pyprojectPath = path.join(rootDir, 'pyproject.toml');
       const content = await fs.readFile(pyprojectPath, 'utf-8');
-      if (content.includes('fastapi')) frameworks.push('fastapi');
-      if (content.includes('django')) frameworks.push('django');
-      if (content.includes('flask')) frameworks.push('flask');
+      if (content.includes('fastapi')) {frameworks.push('fastapi');}
+      if (content.includes('django')) {frameworks.push('django');}
+      if (content.includes('flask')) {frameworks.push('flask');}
     } catch {
       // No pyproject.toml
     }
@@ -323,13 +325,13 @@ async function detectFrameworks(rootDir: string): Promise<string[]> {
   try {
     const pomPath = path.join(rootDir, 'pom.xml');
     const content = await fs.readFile(pomPath, 'utf-8');
-    if (content.includes('spring-boot')) frameworks.push('spring');
+    if (content.includes('spring-boot')) {frameworks.push('spring');}
   } catch {
     // No pom.xml - try build.gradle
     try {
       const gradlePath = path.join(rootDir, 'build.gradle');
       const content = await fs.readFile(gradlePath, 'utf-8');
-      if (content.includes('spring')) frameworks.push('spring');
+      if (content.includes('spring')) {frameworks.push('spring');}
     } catch {
       // No build.gradle
     }
@@ -1176,7 +1178,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
               id,
               table: ap.table,
               fields: ap.fields,
-              operation: ap.operation as 'read' | 'write' | 'delete',
+              operation: ap.operation,
               file: ap.file,
               line: ap.line,
               column: 0,
@@ -1189,7 +1191,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
           const sensitiveFields: import('driftdetect-core').SensitiveField[] = nativeResult.sensitiveFields.map(sf => ({
             field: sf.field,
             table: sf.table ?? null,
-            sensitivityType: sf.sensitivityType as 'pii' | 'credentials' | 'financial' | 'health',
+            sensitivityType: sf.sensitivityType,
             file: sf.file,
             line: sf.line,
             confidence: sf.confidence,
@@ -1810,7 +1812,7 @@ async function runTypeScriptTestTopology(
       try {
         const content = await fs.readFile(path.join(rootDir, testFile), 'utf-8');
         const extraction = testAnalyzer.extractFromFile(content, testFile);
-        if (extraction) extractedCount++;
+        if (extraction) {extractedCount++;}
       } catch {
         // Skip files that can't be read
       }

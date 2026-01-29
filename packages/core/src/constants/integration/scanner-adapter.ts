@@ -6,20 +6,22 @@
  */
 
 import { createHash } from 'crypto';
+
+import { CSharpConstantRegexExtractor } from '../extractors/regex/csharp-regex.js';
+import { GoConstantRegexExtractor } from '../extractors/regex/go-regex.js';
+import { JavaConstantRegexExtractor } from '../extractors/regex/java-regex.js';
+import { PhpConstantRegexExtractor } from '../extractors/regex/php-regex.js';
+import { PythonConstantRegexExtractor } from '../extractors/regex/python-regex.js';
+import { TypeScriptConstantRegexExtractor } from '../extractors/regex/typescript-regex.js';
+import { ConstantStore } from '../store/constant-store.js';
+
+import type { BaseConstantRegexExtractor } from '../extractors/regex/base-regex.js';
 import type {
   ConstantLanguage,
   FileConstantResult,
   ConstantExtractionQuality,
   ConstantHybridConfig,
 } from '../types.js';
-import { ConstantStore } from '../store/constant-store.js';
-import { TypeScriptConstantRegexExtractor } from '../extractors/regex/typescript-regex.js';
-import { PythonConstantRegexExtractor } from '../extractors/regex/python-regex.js';
-import { JavaConstantRegexExtractor } from '../extractors/regex/java-regex.js';
-import { CSharpConstantRegexExtractor } from '../extractors/regex/csharp-regex.js';
-import { PhpConstantRegexExtractor } from '../extractors/regex/php-regex.js';
-import { GoConstantRegexExtractor } from '../extractors/regex/go-regex.js';
-import type { BaseConstantRegexExtractor } from '../extractors/regex/base-regex.js';
 
 // ============================================================================
 // Types
@@ -163,7 +165,7 @@ export class ConstantScannerAdapter {
    * Initialize the adapter
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     await this.store.initialize();
 

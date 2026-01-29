@@ -195,6 +195,11 @@ export {
 // High-Level Analysis API
 // =============================================================================
 
+import { clusterWrappers, getMostCommonPrimitives } from './clustering/clusterer.js';
+import { applyExclusions, applyClusterExclusions, getLanguageExclusions, type ExclusionRule } from './clustering/exclusions.js';
+import { detectWrappers, calculateWrapperStats, type DetectionContext } from './detection/detector.js';
+import { discoverPrimitives, detectFrameworks, type DiscoveryContext } from './primitives/discovery.js';
+
 import type {
   WrapperAnalysisResult,
   WrapperSummary,
@@ -202,10 +207,6 @@ import type {
   WrapperCategory,
   FrameworkInfo,
 } from './types.js';
-import { discoverPrimitives, detectFrameworks, type DiscoveryContext } from './primitives/discovery.js';
-import { detectWrappers, calculateWrapperStats, type DetectionContext } from './detection/detector.js';
-import { clusterWrappers, getMostCommonPrimitives } from './clustering/clusterer.js';
-import { applyExclusions, applyClusterExclusions, getLanguageExclusions, type ExclusionRule } from './clustering/exclusions.js';
 
 export interface AnalysisOptions {
   /** Minimum confidence for clusters (0-1) */

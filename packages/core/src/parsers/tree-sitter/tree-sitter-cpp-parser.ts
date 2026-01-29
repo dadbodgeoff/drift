@@ -14,8 +14,9 @@
  * @license Apache-2.0
  */
 
-import type { TreeSitterNode, TreeSitterParser } from './types.js';
 import { isCppTreeSitterAvailable, createCppParser } from './cpp-loader.js';
+
+import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================================================
 // Types
@@ -246,10 +247,10 @@ export class CppTreeSitterParser {
    */
   private extractFunction(node: TreeSitterNode, result: CppParseResult, _source: string): void {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return;
+    if (!declaratorNode) {return;}
 
     const { name, className } = this.extractFunctionName(declaratorNode);
-    if (!name) return;
+    if (!name) {return;}
 
     const typeNode = node.childForFieldName('type');
 
@@ -302,10 +303,10 @@ export class CppTreeSitterParser {
    */
   private extractFunctionDeclaration(node: TreeSitterNode, result: CppParseResult, _source: string): void {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return;
+    if (!declaratorNode) {return;}
 
     const { name, className } = this.extractFunctionName(declaratorNode);
-    if (!name) return;
+    if (!name) {return;}
 
     const typeNode = node.childForFieldName('type');
 
@@ -347,7 +348,7 @@ export class CppTreeSitterParser {
    */
   private extractClass(node: TreeSitterNode, result: CppParseResult, source: string): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const name = nameNode.text;
     const kind = node.type === 'class_specifier' ? 'class' : 'struct';
@@ -530,7 +531,7 @@ export class CppTreeSitterParser {
    */
   private extractInclude(node: TreeSitterNode, result: CppParseResult): void {
     const pathNode = node.childForFieldName('path');
-    if (!pathNode) return;
+    if (!pathNode) {return;}
 
     const pathText = pathNode.text;
     const isSystem = pathText.startsWith('<');
@@ -548,7 +549,7 @@ export class CppTreeSitterParser {
    */
   private extractMacro(node: TreeSitterNode, result: CppParseResult): void {
     const nameNode = node.childForFieldName('name');
-    if (!nameNode) return;
+    if (!nameNode) {return;}
 
     const macro: CppMacro = {
       name: nameNode.text,
@@ -648,7 +649,7 @@ export class CppTreeSitterParser {
 
   private extractFunctionNameFromNode(node: TreeSitterNode): string | null {
     const declaratorNode = node.childForFieldName('declarator');
-    if (!declaratorNode) return null;
+    if (!declaratorNode) {return null;}
     const { name } = this.extractFunctionName(declaratorNode);
     return name;
   }
@@ -674,13 +675,13 @@ export class CppTreeSitterParser {
       }
       for (const child of n.children) {
         const result = findParams(child);
-        if (result) return result;
+        if (result) {return result;}
       }
       return null;
     };
 
     const paramsNode = findParams(declaratorNode);
-    if (!paramsNode) return params;
+    if (!paramsNode) {return params;}
 
     for (const child of paramsNode.children) {
       if (child.type === 'parameter_declaration') {
@@ -693,7 +694,7 @@ export class CppTreeSitterParser {
 
         if (declarator) {
           const { name: paramName } = this.extractFunctionName(declarator);
-          if (paramName) name = paramName;
+          if (paramName) {name = paramName;}
         }
 
         params.push({
@@ -760,10 +761,10 @@ export class CppTreeSitterParser {
             // Check siblings for access specifier and virtual
             let sibling = baseChild.previousSibling;
             while (sibling) {
-              if (sibling.text === 'public') accessSpecifier = 'public';
-              else if (sibling.text === 'protected') accessSpecifier = 'protected';
-              else if (sibling.text === 'private') accessSpecifier = 'private';
-              else if (sibling.text === 'virtual') isVirtual = true;
+              if (sibling.text === 'public') {accessSpecifier = 'public';}
+              else if (sibling.text === 'protected') {accessSpecifier = 'protected';}
+              else if (sibling.text === 'private') {accessSpecifier = 'private';}
+              else if (sibling.text === 'virtual') {isVirtual = true;}
               sibling = sibling.previousSibling;
             }
 
@@ -784,10 +785,10 @@ export class CppTreeSitterParser {
     const typeNode = node.childForFieldName('type');
     const declaratorNode = node.childForFieldName('declarator');
 
-    if (!declaratorNode) return null;
+    if (!declaratorNode) {return null;}
 
     const { name } = this.extractFunctionName(declaratorNode);
-    if (!name) return null;
+    if (!name) {return null;}
 
     const typeText = typeNode?.text ?? 'unknown';
 
@@ -808,9 +809,9 @@ export class CppTreeSitterParser {
   private hasSpecifier(node: TreeSitterNode, specifier: string): boolean {
     for (const child of node.children) {
       if (child.type === 'storage_class_specifier' || child.type === 'type_qualifier') {
-        if (child.text === specifier) return true;
+        if (child.text === specifier) {return true;}
       }
-      if (child.text === specifier) return true;
+      if (child.text === specifier) {return true;}
     }
     return false;
   }
@@ -833,12 +834,12 @@ export class CppTreeSitterParser {
   }
 
   private isFunctionDeclarator(node: TreeSitterNode | null): boolean {
-    if (!node) return false;
+    if (!node) {return false;}
 
     const visit = (n: TreeSitterNode): boolean => {
-      if (n.type === 'function_declarator') return true;
+      if (n.type === 'function_declarator') {return true;}
       for (const child of n.children) {
-        if (visit(child)) return true;
+        if (visit(child)) {return true;}
       }
       return false;
     };
@@ -857,9 +858,9 @@ export class CppTreeSitterParser {
 
   private updateAccessSpecifier(node: TreeSitterNode): void {
     const text = node.text.replace(':', '').trim();
-    if (text === 'public') this.currentAccessSpecifier = 'public';
-    else if (text === 'protected') this.currentAccessSpecifier = 'protected';
-    else if (text === 'private') this.currentAccessSpecifier = 'private';
+    if (text === 'public') {this.currentAccessSpecifier = 'public';}
+    else if (text === 'protected') {this.currentAccessSpecifier = 'protected';}
+    else if (text === 'private') {this.currentAccessSpecifier = 'private';}
   }
 }
 

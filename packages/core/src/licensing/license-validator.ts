@@ -5,6 +5,8 @@
  * Supports both JWT-based licenses and simple activation keys.
  */
 
+import { FEATURE_TIERS, TIER_HIERARCHY } from './types.js';
+
 import type {
   License,
   LicenseTier,
@@ -12,7 +14,6 @@ import type {
   EnterpriseFeature,
 } from './types.js';
 
-import { FEATURE_TIERS, TIER_HIERARCHY } from './types.js';
 
 // =============================================================================
 // Constants
@@ -63,7 +64,7 @@ export class LicenseValidator {
    * Decode a license key to get full license details
    */
   decode(key: string): License | null {
-    if (!key) return null;
+    if (!key) {return null;}
 
     const trimmedKey = key.trim();
 
@@ -160,7 +161,7 @@ export class LicenseValidator {
   private decodeJWT(token: string): License | null {
     try {
       const parts = token.split('.');
-      if (parts.length !== 3) return null;
+      if (parts.length !== 3) {return null;}
 
       // Decode payload (middle part)
       const payload = JSON.parse(
@@ -191,7 +192,7 @@ export class LicenseValidator {
   private verifyJWTSignature(token: string): boolean {
     try {
       const parts = token.split('.');
-      if (parts.length !== 3) return false;
+      if (parts.length !== 3) {return false;}
 
       // In production, use proper crypto verification
       // For now, we do a simple check that the signature exists

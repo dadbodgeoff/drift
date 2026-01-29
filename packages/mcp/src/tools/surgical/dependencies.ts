@@ -18,6 +18,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import { createResponseBuilder, Errors, metrics } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -286,9 +287,9 @@ async function parsePythonDeps(rootDir: string): Promise<DependencyInfo[]> {
       
       for (const line of content.split('\n')) {
         const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('-')) continue;
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('-')) {continue;}
         const match = trimmed.match(/^([a-zA-Z0-9_-]+)([<>=!~]+.*)?$/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           const name = match[1];
           const version = match[2] ?? '*';
           if (!deps.some(d => d.name === name)) {
@@ -308,12 +309,12 @@ async function parsePythonDeps(rootDir: string): Promise<DependencyInfo[]> {
       
       // Simple regex for dependencies array
       const depsMatch = content.match(/dependencies\s*=\s*\[([\s\S]*?)\]/);
-      if (depsMatch && depsMatch[1]) {
+      if (depsMatch?.[1]) {
         const depLines = depsMatch[1].match(/"([^"]+)"/g) ?? [];
         for (const dep of depLines) {
           const clean = dep.replace(/"/g, '');
           const match = clean.match(/^([a-zA-Z0-9_-]+)/);
-          if (match && match[1] && !deps.some(d => d.name === match[1])) {
+          if (match?.[1] && !deps.some(d => d.name === match[1])) {
             deps.push({ name: match[1], version: '*', type: 'prod', category: categorize(match[1]), language: 'python', source });
           }
         }
@@ -360,10 +361,10 @@ async function parseGoMod(rootDir: string): Promise<DependencyInfo[]> {
       
       // Parse require block
       const requireMatch = content.match(/require\s*\(([\s\S]*?)\)/);
-      if (requireMatch && requireMatch[1]) {
+      if (requireMatch?.[1]) {
         for (const line of requireMatch[1].split('\n')) {
           const match = line.trim().match(/^(\S+)\s+(\S+)/);
-          if (match && match[1] && match[2]) {
+          if (match?.[1] && match[2]) {
             const name = match[1];
             const version = match[2];
             if (!deps.some(d => d.name === name)) {
@@ -475,7 +476,7 @@ async function findFiles(rootDir: string, patterns: string[], exclude: string[] 
           for (const pattern of patterns) {
             if (pattern.includes('*')) {
               const regex = new RegExp('^' + pattern.replace('*', '.*') + '$');
-              if (regex.test(entry.name)) results.push(fullPath);
+              if (regex.test(entry.name)) {results.push(fullPath);}
             } else if (entry.name === pattern) {
               results.push(fullPath);
             }
@@ -498,8 +499,8 @@ function categorize(name: string): string {
       }
     }
   }
-  if (lower.includes('test') || lower.includes('mock')) return 'testing';
-  if (lower.includes('db') || lower.includes('sql')) return 'database';
+  if (lower.includes('test') || lower.includes('mock')) {return 'testing';}
+  if (lower.includes('db') || lower.includes('sql')) {return 'database';}
   return 'other';
 }
 

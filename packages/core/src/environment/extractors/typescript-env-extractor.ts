@@ -12,6 +12,7 @@
  */
 
 import { BaseEnvExtractor } from './base-env-extractor.js';
+
 import type { EnvLanguage, EnvExtractionResult } from '../types.js';
 
 /**
@@ -63,7 +64,7 @@ export class TypeScriptEnvExtractor extends BaseEnvExtractor {
     
     while ((match = dotPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -87,7 +88,7 @@ export class TypeScriptEnvExtractor extends BaseEnvExtractor {
     
     while ((match = bracketPattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -97,7 +98,7 @@ export class TypeScriptEnvExtractor extends BaseEnvExtractor {
       const exists = result.accessPoints.some(ap => 
         ap.line === pos.line && ap.varName === varName
       );
-      if (exists) continue;
+      if (exists) {continue;}
       
       result.accessPoints.push(this.createAccessPoint({
         varName,
@@ -123,7 +124,7 @@ export class TypeScriptEnvExtractor extends BaseEnvExtractor {
     
     while ((match = pattern.exec(source)) !== null) {
       const varName = match[1];
-      if (!varName) continue;
+      if (!varName) {continue;}
       
       const pos = this.getPosition(source, match.index);
       const context = this.getContext(source, match.index);
@@ -186,7 +187,7 @@ export class TypeScriptEnvExtractor extends BaseEnvExtractor {
       let match;
       while ((match = pattern.exec(source)) !== null) {
         const varName = match[1];
-        if (!varName) continue;
+        if (!varName) {continue;}
         
         const pos = this.getPosition(source, match.index);
         const context = this.getContext(source, match.index);

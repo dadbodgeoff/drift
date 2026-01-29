@@ -10,9 +10,10 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import type { IPatternRepository, PatternRepositoryConfig } from '../repository.js';
 import { FilePatternRepository } from './file-repository.js';
 import { UnifiedFilePatternRepository, type UnifiedRepositoryConfig } from './unified-file-repository.js';
+
+import type { IPatternRepository, PatternRepositoryConfig } from '../repository.js';
 
 // ============================================================================
 // Types

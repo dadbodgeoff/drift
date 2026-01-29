@@ -12,6 +12,14 @@
  * @requirements 25.5 - THE Quick_Fix_System SHALL mark the preferred fix for one-click application
  */
 
+import {
+  createTextEdit,
+  createInsertEdit,
+  createDeleteEdit,
+  createWorkspaceEdit,
+  createPosition,
+} from './types.js';
+
 import type {
   Violation,
   QuickFix,
@@ -22,13 +30,6 @@ import type {
   TextEdit,
   Range,
   Position,
-} from './types.js';
-import {
-  createTextEdit,
-  createInsertEdit,
-  createDeleteEdit,
-  createWorkspaceEdit,
-  createPosition,
 } from './types.js';
 
 // ============================================================================
@@ -240,14 +241,14 @@ export class WrapFixStrategy implements FixStrategy {
 
     if (startLine === endLine) {
       const line = lines[startLine];
-      if (line === undefined) return null;
+      if (line === undefined) {return null;}
       return line.substring(range.start.character, range.end.character);
     }
 
     const extractedLines: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
       const line = lines[i];
-      if (line === undefined) continue;
+      if (line === undefined) {continue;}
       if (i === startLine) {
         extractedLines.push(line.substring(range.start.character));
       } else if (i === endLine) {
@@ -289,7 +290,7 @@ export class WrapFixStrategy implements FixStrategy {
 
   private detectIndent(code: string): string {
     const match = code.match(/^(\s*)/);
-    return match && match[1] ? match[1] : '';
+    return match?.[1] ? match[1] : '';
   }
 }
 
@@ -363,14 +364,14 @@ export class ExtractFixStrategy implements FixStrategy {
 
     if (startLine === endLine) {
       const line = lines[startLine];
-      if (line === undefined) return null;
+      if (line === undefined) {return null;}
       return line.substring(range.start.character, range.end.character);
     }
 
     const extractedLines: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
       const line = lines[i];
-      if (line === undefined) continue;
+      if (line === undefined) {continue;}
       if (i === startLine) {
         extractedLines.push(line.substring(range.start.character));
       } else if (i === endLine) {
@@ -452,7 +453,7 @@ export class ImportFixStrategy implements FixStrategy {
 
     // Try to extract module name from violation message
     const moduleMatch = violation.message.match(/['"]([^'"]+)['"]/);
-    if (moduleMatch && moduleMatch[1]) {
+    if (moduleMatch?.[1]) {
       return `import { } from '${moduleMatch[1]}';`;
     }
 
@@ -644,14 +645,14 @@ export class MoveFixStrategy implements FixStrategy {
 
     if (startLine === endLine) {
       const line = lines[startLine];
-      if (line === undefined) return null;
+      if (line === undefined) {return null;}
       return line.substring(range.start.character, range.end.character);
     }
 
     const extractedLines: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
       const line = lines[i];
-      if (line === undefined) continue;
+      if (line === undefined) {continue;}
       if (i === startLine) {
         extractedLines.push(line.substring(range.start.character));
       } else if (i === endLine) {
@@ -666,7 +667,7 @@ export class MoveFixStrategy implements FixStrategy {
   private determineTargetLocation(_violation: Violation, expected: string): Position | null {
     // Try to parse target line from expected
     const lineMatch = expected.match(/line\s*(\d+)/i);
-    if (lineMatch && lineMatch[1]) {
+    if (lineMatch?.[1]) {
       const targetLine = parseInt(lineMatch[1], 10) - 1; // Convert to 0-indexed
       return createPosition(targetLine, 0);
     }
@@ -987,7 +988,7 @@ export class QuickFixGenerator {
 
     while (remaining > 0 && currentLine < lines.length) {
       const line = lines[currentLine];
-      if (line === undefined) break;
+      if (line === undefined) {break;}
 
       const availableChars = line.length - currentChar;
       if (availableChars <= 0) {
@@ -1197,14 +1198,14 @@ export class QuickFixGenerator {
 
     if (startLine === endLine) {
       const line = lines[startLine];
-      if (line === undefined) return '';
+      if (line === undefined) {return '';}
       return line.substring(range.start.character, range.end.character);
     }
 
     const extractedLines: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
       const line = lines[i];
-      if (line === undefined) continue;
+      if (line === undefined) {continue;}
       if (i === startLine) {
         extractedLines.push(line.substring(range.start.character));
       } else if (i === endLine) {
@@ -1231,7 +1232,7 @@ export class QuickFixGenerator {
     // Handle single-line edit
     if (startLine === endLine) {
       const line = lines[startLine];
-      if (line === undefined) return content;
+      if (line === undefined) {return content;}
       const before = line.substring(0, edit.range.start.character);
       const after = line.substring(edit.range.end.character);
       lines[startLine] = before + edit.newText + after;
@@ -1241,7 +1242,7 @@ export class QuickFixGenerator {
     // Handle multi-line edit
     const firstLine = lines[startLine];
     const lastLine = lines[endLine];
-    if (firstLine === undefined || lastLine === undefined) return content;
+    if (firstLine === undefined || lastLine === undefined) {return content;}
 
     const before = firstLine.substring(0, edit.range.start.character);
     const after = lastLine.substring(edit.range.end.character);

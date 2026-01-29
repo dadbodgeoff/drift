@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createModuleCouplingAnalyzer,
   createCallGraphAnalyzer,
@@ -17,6 +18,7 @@ import {
   type UnusedExportAnalysis,
   type CouplingMetrics,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -278,9 +280,9 @@ async function handleCycles(
   };
 
   let summaryText = `🔄 ${cycles.length} cycles. `;
-  if (bySeverity.critical > 0) summaryText += `🔴 ${bySeverity.critical} critical. `;
-  if (bySeverity.warning > 0) summaryText += `🟡 ${bySeverity.warning} warning. `;
-  if (bySeverity.info > 0) summaryText += `⚪ ${bySeverity.info} info.`;
+  if (bySeverity.critical > 0) {summaryText += `🔴 ${bySeverity.critical} critical. `;}
+  if (bySeverity.warning > 0) {summaryText += `🟡 ${bySeverity.warning} warning. `;}
+  if (bySeverity.info > 0) {summaryText += `⚪ ${bySeverity.info} info.`;}
 
   const hints = {
     nextActions: bySeverity.critical > 0
@@ -312,7 +314,7 @@ async function handleHotspots(
   
   try {
     const data = JSON.parse(await fs.readFile(graphPath, 'utf-8'));
-    modules = Object.entries(data.modules) as [string, { metrics: CouplingMetrics }][];
+    modules = Object.entries(data.modules);
   } catch {
     // Try to build on-demand
     try {

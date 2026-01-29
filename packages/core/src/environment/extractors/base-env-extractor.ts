@@ -4,6 +4,8 @@
  * Abstract base class for language-specific environment variable extractors.
  */
 
+import { classifyEnvSensitivity } from '../types.js';
+
 import type {
   EnvLanguage,
   EnvAccessMethod,
@@ -11,7 +13,6 @@ import type {
   EnvExtractionResult,
   EnvSensitivity,
 } from '../types.js';
-import { classifyEnvSensitivity } from '../types.js';
 
 /**
  * Base class for environment variable extractors
@@ -92,7 +93,7 @@ export abstract class BaseEnvExtractor {
   protected extractStringValue(text: string): string | null {
     // Match single, double, or backtick quotes
     const match = text.match(/^['"`](.*)['"`]$/);
-    if (match && match[1] !== undefined) {
+    if (match?.[1] !== undefined) {
       return match[1];
     }
     return null;

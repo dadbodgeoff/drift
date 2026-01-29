@@ -11,18 +11,6 @@
  * @requirements Java/Spring Boot Language Support
  */
 
-import type { Position, ASTNode, AST } from '../types.js';
-import type { TreeSitterNode, TreeSitterParser } from './types.js';
-import type {
-  JavaParseResult,
-  PackageInfo,
-  JavaImportInfo,
-} from './java/types.js';
-import {
-  isJavaTreeSitterAvailable,
-  createJavaParser,
-  getJavaLoadingError,
-} from './java-loader.js';
 import {
   extractClasses,
   extractInterfaces,
@@ -30,6 +18,19 @@ import {
   extractRecords,
   extractAnnotationDefinitions,
 } from './java/class-extractor.js';
+import {
+  isJavaTreeSitterAvailable,
+  createJavaParser,
+  getJavaLoadingError,
+} from './java-loader.js';
+
+import type { Position, ASTNode, AST } from '../types.js';
+import type {
+  JavaParseResult,
+  PackageInfo,
+  JavaImportInfo,
+} from './java/types.js';
+import type { TreeSitterNode, TreeSitterParser } from './types.js';
 
 // ============================================
 // Parser Class

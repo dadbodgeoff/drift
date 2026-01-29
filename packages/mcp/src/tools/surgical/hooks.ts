@@ -9,6 +9,7 @@
  */
 
 import { createWrapperScanner, type WrapperFunction } from 'driftdetect-core/wrappers';
+
 import { createResponseBuilder, metrics } from '../../infrastructure/index.js';
 
 // ============================================================================
@@ -193,7 +194,7 @@ function isHook(wrapper: WrapperFunction): boolean {
   if (wrapper.name.startsWith('use') && wrapper.name.length > 3) {
     const charAfterUse = wrapper.name[3];
     // Must be followed by uppercase letter (useEffect, useState, etc.)
-    if (charAfterUse && charAfterUse === charAfterUse.toUpperCase()) {
+    if (charAfterUse === charAfterUse?.toUpperCase()) {
       return true;
     }
   }

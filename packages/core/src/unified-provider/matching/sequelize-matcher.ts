@@ -9,9 +9,10 @@
  * - User.destroy({ where: { id: 1 } })
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Sequelize pattern matcher
@@ -37,22 +38,22 @@ export class SequelizeMatcher extends BaseMatcher {
 
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Model must be PascalCase
-    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) return null;
+    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) {return null;}
 
     // Skip common JS classes
     const commonClasses = [
       'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise',
       'Map', 'Set', 'Date', 'Error', 'RegExp', 'JSON', 'Math',
     ];
-    if (commonClasses.includes(chain.receiver)) return null;
+    if (commonClasses.includes(chain.receiver)) {return null;}
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const methodSegment = chain.segments[0];
-    if (!methodSegment?.isCall) return null;
+    if (!methodSegment?.isCall) {return null;}
 
     const operation = this.getOperation(methodSegment.name);
-    if (!operation) return null;
+    if (!operation) {return null;}
 
     const table = this.inferTableName(chain.receiver);
     const fields = this.extractFields(methodSegment.args, methodSegment.name);
@@ -67,14 +68,14 @@ export class SequelizeMatcher extends BaseMatcher {
   }
 
   private getOperation(methodName: string): DataOperation | null {
-    if (this.readMethods.includes(methodName)) return 'read';
-    if (this.writeMethods.includes(methodName)) return 'write';
-    if (this.deleteMethods.includes(methodName)) return 'delete';
+    if (this.readMethods.includes(methodName)) {return 'read';}
+    if (this.writeMethods.includes(methodName)) {return 'write';}
+    if (this.deleteMethods.includes(methodName)) {return 'delete';}
     return null;
   }
 
   private extractFields(args: NormalizedArg[], methodName: string): string[] {
-    if (args.length === 0) return [];
+    if (args.length === 0) {return [];}
 
     const fields: string[] = [];
 
@@ -95,7 +96,7 @@ export class SequelizeMatcher extends BaseMatcher {
     }
 
     const firstArg = args[0];
-    if (!firstArg) return [];
+    if (!firstArg) {return [];}
 
     // For create, the arg is the data object
     if (methodName === 'create' || methodName === 'bulkCreate') {
@@ -123,7 +124,7 @@ export class SequelizeMatcher extends BaseMatcher {
     const attrsArg = firstArg.properties['attributes'];
     if (attrsArg?.type === 'array' && attrsArg.elements) {
       for (const elem of attrsArg.elements) {
-        if (elem.stringValue) fields.push(elem.stringValue);
+        if (elem.stringValue) {fields.push(elem.stringValue);}
       }
     }
 

@@ -6,6 +6,7 @@
  */
 
 import type { FrameworkPattern } from '../types.js';
+
 import { registerFrameworks } from '../framework-registry.js';
 
 // Export individual framework patterns
@@ -16,11 +17,11 @@ export { LARAVEL_PATTERNS } from './laravel.js';
 export { ASPNET_PATTERNS } from './aspnet.js';
 
 // Import for aggregation
-import { SPRING_PATTERNS } from './spring.js';
-import { FASTAPI_PATTERNS } from './fastapi.js';
-import { NESTJS_PATTERNS } from './nestjs.js';
-import { LARAVEL_PATTERNS } from './laravel.js';
 import { ASPNET_PATTERNS } from './aspnet.js';
+import { FASTAPI_PATTERNS } from './fastapi.js';
+import { LARAVEL_PATTERNS } from './laravel.js';
+import { NESTJS_PATTERNS } from './nestjs.js';
+import { SPRING_PATTERNS } from './spring.js';
 
 /**
  * All built-in framework patterns

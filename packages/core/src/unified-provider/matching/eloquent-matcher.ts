@@ -10,9 +10,10 @@
  * - $user->delete()
  */
 
+import { BaseMatcher } from './base-matcher.js';
+
 import type { DataOperation } from '../../boundaries/types.js';
 import type { UnifiedCallChain, PatternMatchResult, UnifiedLanguage, NormalizedArg } from '../types.js';
-import { BaseMatcher } from './base-matcher.js';
 
 /**
  * Laravel Eloquent pattern matcher
@@ -53,18 +54,18 @@ export class EloquentMatcher extends BaseMatcher {
   match(chain: UnifiedCallChain): PatternMatchResult | null {
     // Pattern 1: Model::method() - static calls
     const staticMatch = this.matchStaticPattern(chain);
-    if (staticMatch) return staticMatch;
+    if (staticMatch) {return staticMatch;}
 
     // Pattern 2: $model->method() - instance calls
     const instanceMatch = this.matchInstancePattern(chain);
-    if (instanceMatch) return instanceMatch;
+    if (instanceMatch) {return instanceMatch;}
 
     return null;
   }
 
   private matchStaticPattern(chain: UnifiedCallChain): PatternMatchResult | null {
     // Model must be PascalCase
-    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) return null;
+    if (!/^[A-Z][a-zA-Z0-9]*$/.test(chain.receiver)) {return null;}
 
     // Skip common PHP classes
     const commonClasses = [
@@ -72,9 +73,9 @@ export class EloquentMatcher extends BaseMatcher {
       'Mail', 'Queue', 'Request', 'Response', 'Route', 'Session',
       'Storage', 'URL', 'Validator', 'View',
     ];
-    if (commonClasses.includes(chain.receiver)) return null;
+    if (commonClasses.includes(chain.receiver)) {return null;}
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     // Check if any segment is an Eloquent method
     const hasEloquentMethod = chain.segments.some(s =>
@@ -84,7 +85,7 @@ export class EloquentMatcher extends BaseMatcher {
       this.queryMethods.includes(s.name)
     );
 
-    if (!hasEloquentMethod) return null;
+    if (!hasEloquentMethod) {return null;}
 
     const table = this.inferTableName(chain.receiver);
     let operation: DataOperation = 'read';
@@ -119,12 +120,12 @@ export class EloquentMatcher extends BaseMatcher {
   private matchInstancePattern(chain: UnifiedCallChain): PatternMatchResult | null {
     // Instance pattern: $user->save(), $post->delete()
     // Receiver would be a variable name (lowercase)
-    if (/^[A-Z]/.test(chain.receiver)) return null;
+    if (/^[A-Z]/.test(chain.receiver)) {return null;}
 
-    if (chain.segments.length < 1) return null;
+    if (chain.segments.length < 1) {return null;}
 
     const firstSegment = chain.segments[0];
-    if (!firstSegment?.isCall) return null;
+    if (!firstSegment?.isCall) {return null;}
 
     // Check for instance methods
     if (!this.writeMethods.includes(firstSegment.name) &&

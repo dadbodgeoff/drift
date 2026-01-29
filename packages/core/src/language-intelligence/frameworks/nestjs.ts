@@ -13,7 +13,7 @@ import type { FrameworkPattern, DecoratorArguments, HttpMethod } from '../types.
  */
 function extractHttpMethod(raw: string): HttpMethod | undefined {
   const match = raw.match(/^@?(Get|Post|Put|Delete|Patch|Head|Options|All)\s*\(/i);
-  if (match && match[1]) {
+  if (match?.[1]) {
     const method = match[1].toUpperCase();
     // 'ALL', 'HEAD', 'OPTIONS' are not in our HttpMethod type - return undefined
     if (method === 'ALL' || method === 'HEAD' || method === 'OPTIONS') {
@@ -90,9 +90,9 @@ export const NESTJS_PATTERNS: FrameworkPattern = {
       extractArgs: (raw): DecoratorArguments => {
         const scopeMatch = raw.match(/scope:\s*Scope\.(\w+)/);
         const scope = scopeMatch?.[1]?.toLowerCase();
-        if (scope === 'default' || scope === 'singleton') return { scope: 'singleton' };
-        if (scope === 'request') return { scope: 'scoped' };
-        if (scope === 'transient') return { scope: 'transient' };
+        if (scope === 'default' || scope === 'singleton') {return { scope: 'singleton' };}
+        if (scope === 'request') {return { scope: 'scoped' };}
+        if (scope === 'transient') {return { scope: 'transient' };}
         return { scope: 'singleton' };
       },
     },

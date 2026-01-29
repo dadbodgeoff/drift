@@ -8,8 +8,9 @@
  * - Access patterns by file
  */
 
-import type { EnvStore } from 'driftdetect-core';
 import { createResponseBuilder } from '../../infrastructure/index.js';
+
+import type { EnvStore } from 'driftdetect-core';
 
 export interface EnvData {
   overview: {
@@ -307,7 +308,7 @@ async function handleSecrets(
     totalCredentials: credentials.length,
   };
   
-  let summary = `${secrets.length} secrets, ${credentials.length} credentials detected.`;
+  const summary = `${secrets.length} secrets, ${credentials.length} credentials detected.`;
   
   const warnings: string[] = [];
   const secretsWithDefaults = secrets.filter(s => s.hasDefault);

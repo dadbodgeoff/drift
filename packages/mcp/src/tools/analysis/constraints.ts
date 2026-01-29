@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createConstraintStore,
   createInvariantDetector,
@@ -18,6 +19,7 @@ import {
   type ExtractionResult,
   type VerificationResult,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================

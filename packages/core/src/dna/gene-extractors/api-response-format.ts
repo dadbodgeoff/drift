@@ -10,6 +10,7 @@
  */
 
 import { BaseGeneExtractor, type AlleleDefinition, type FileExtractionResult, type DetectedAllele } from './base-extractor.js';
+
 import type { GeneId } from '../types.js';
 
 export class ApiResponseFormatExtractor extends BaseGeneExtractor {
@@ -127,7 +128,7 @@ export class ApiResponseFormatExtractor extends BaseGeneExtractor {
   isBackendFile(filePath: string, content: string): boolean {
     // Check file extension
     const backendExts = ['.py', '.ts', '.js', '.java', '.php', '.go', '.rs', '.cs'];
-    if (!backendExts.some(ext => filePath.endsWith(ext))) return false;
+    if (!backendExts.some(ext => filePath.endsWith(ext))) {return false;}
 
     // Check for API-related patterns
     const apiPatterns = [

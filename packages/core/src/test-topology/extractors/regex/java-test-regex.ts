@@ -55,13 +55,13 @@ export class JavaTestRegexExtractor {
    */
   detectFramework(content: string): TestFramework {
     // Check imports
-    if (/import\s+org\.junit\.jupiter/.test(content)) return 'junit5';
-    if (/import\s+org\.junit\./.test(content)) return 'junit4';
-    if (/import\s+org\.testng\./.test(content)) return 'testng';
+    if (/import\s+org\.junit\.jupiter/.test(content)) {return 'junit5';}
+    if (/import\s+org\.junit\./.test(content)) {return 'junit4';}
+    if (/import\s+org\.testng\./.test(content)) {return 'testng';}
     
     // Check annotations
     if (/@Test/.test(content)) {
-      if (/org\.junit\.jupiter/.test(content)) return 'junit5';
+      if (/org\.junit\.jupiter/.test(content)) {return 'junit5';}
       return 'junit4';
     }
 
@@ -183,7 +183,7 @@ export class JavaTestRegexExtractor {
 
     while ((match = callPattern.exec(body)) !== null) {
       const name = match[1]!;
-      if (this.isTestFrameworkCall(name)) continue;
+      if (this.isTestFrameworkCall(name)) {continue;}
       if (!seen.has(name)) {
         seen.add(name);
         calls.push(name);
@@ -400,13 +400,13 @@ export class JavaTestRegexExtractor {
     const mockRatio = totalCalls > 0 ? mocks.length / totalCalls : 0;
     
     let score = 50;
-    if (assertionCount >= 1) score += 10;
-    if (assertionCount >= 3) score += 10;
-    if (hasErrorCases) score += 15;
-    if (hasEdgeCases) score += 10;
-    if (mockRatio > 0.7) score -= 15;
-    else if (mockRatio > 0.5) score -= 5;
-    if (assertionCount === 0) score -= 20;
+    if (assertionCount >= 1) {score += 10;}
+    if (assertionCount >= 3) {score += 10;}
+    if (hasErrorCases) {score += 15;}
+    if (hasEdgeCases) {score += 10;}
+    if (mockRatio > 0.7) {score -= 15;}
+    else if (mockRatio > 0.5) {score -= 5;}
+    if (assertionCount === 0) {score -= 20;}
     
     return {
       assertionCount,

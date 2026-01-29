@@ -17,22 +17,21 @@
  * - Incremental updates per pattern
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
-
-import type {
-  PatternExamples,
-  CodeExample,
-  DataLakeConfig,
-} from './types.js';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 import {
   LAKE_DIRS,
   DEFAULT_DATA_LAKE_CONFIG,
 } from './types.js';
 
+import type {
+  PatternExamples,
+  CodeExample,
+  DataLakeConfig,
+} from './types.js';
 import type { PatternCategory } from '../store/types.js';
 
 // ============================================================================
@@ -189,7 +188,7 @@ export class ExamplesStore extends EventEmitter {
 
     for (const patternId of patternIds) {
       const examples = await this.getPatternExamples(patternId);
-      if (!examples) continue;
+      if (!examples) {continue;}
 
       const bestQuality = examples.examples.length > 0
         ? Math.max(...examples.examples.map(e => e.quality))
@@ -299,7 +298,7 @@ export class ExamplesStore extends EventEmitter {
    */
   async getExamplesByCategory(category: PatternCategory): Promise<PatternExamples[]> {
     const index = await this.getIndex();
-    if (!index) return [];
+    if (!index) {return [];}
 
     const patternIds = index.patterns
       .filter(p => p.category === category)
@@ -366,7 +365,7 @@ export class ExamplesStore extends EventEmitter {
 
     // Extract from regular locations
     for (const loc of locations) {
-      if (examples.length >= maxExamples) break;
+      if (examples.length >= maxExamples) {break;}
 
       const example = await this.extractSingleExample(
         loc.file,
@@ -384,7 +383,7 @@ export class ExamplesStore extends EventEmitter {
     // Extract from outliers if requested
     if (includeOutliers && examples.length < maxExamples) {
       for (const out of outliers) {
-        if (examples.length >= maxExamples) break;
+        if (examples.length >= maxExamples) {break;}
 
         const example = await this.extractSingleExample(
           out.file,

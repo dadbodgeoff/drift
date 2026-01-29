@@ -8,6 +8,7 @@
  */
 
 import { BaseParser } from './base-parser.js';
+
 import type { AST, ASTNode, Language, ParseResult, Position } from './types.js';
 
 /**
@@ -293,7 +294,7 @@ export class PythonParser extends BaseParser {
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed || trimmed === '\\') continue;
+      if (!trimmed || trimmed === '\\') {continue;}
 
       // Check for 'as' alias
       const asMatch = trimmed.match(/^(\S+)\s+as\s+(\S+)$/);
@@ -453,7 +454,7 @@ export class PythonParser extends BaseParser {
       const lineIndent = line.length - line.trimStart().length;
 
       // Skip if not at method level
-      if (lineIndent < methodIndent && trimmed !== '') continue;
+      if (lineIndent < methodIndent && trimmed !== '') {continue;}
 
       // Check for method definition
       const methodMatch = trimmed.match(/^(?:async\s+)?def\s+(\w+)\s*\(/);
@@ -497,7 +498,7 @@ export class PythonParser extends BaseParser {
 
       // Only extract module-level functions (indent 0)
       // Class methods are extracted separately
-      if (indent !== 0) continue;
+      if (indent !== 0) {continue;}
 
       const isAsync = !!match[2];
       const paramsStr = match[4] ?? '';
@@ -539,7 +540,7 @@ export class PythonParser extends BaseParser {
 
     for (const part of parts) {
       const trimmed = part.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
 
       // Extract parameter name (before : or =)
       const nameMatch = trimmed.match(/^(\*{0,2}\w+)/);
@@ -779,10 +780,10 @@ export class PythonParser extends BaseParser {
   private findMatchingParen(source: string, openIndex: number): number {
     let depth = 1;
     for (let i = openIndex + 1; i < source.length; i++) {
-      if (source[i] === '(') depth++;
+      if (source[i] === '(') {depth++;}
       else if (source[i] === ')') {
         depth--;
-        if (depth === 0) return i;
+        if (depth === 0) {return i;}
       }
     }
     return -1;

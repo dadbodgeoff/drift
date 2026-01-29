@@ -6,16 +6,17 @@
  * @module simulation/language-strategies
  */
 
+import { csharpStrategyProvider } from './csharp-strategies.js';
+import { javaStrategyProvider } from './java-strategies.js';
+import { phpStrategyProvider } from './php-strategies.js';
+import { pythonStrategyProvider } from './python-strategies.js';
+import { CATEGORY_KEYWORDS } from './types.js';
+import { typescriptStrategyProvider } from './typescript-strategies.js';
+
 import type { CallGraphLanguage } from '../../call-graph/types.js';
 import type { TaskCategory } from '../types.js';
 import type { LanguageStrategyProvider, StrategyTemplate } from './types.js';
-import { CATEGORY_KEYWORDS } from './types.js';
 
-import { typescriptStrategyProvider } from './typescript-strategies.js';
-import { pythonStrategyProvider } from './python-strategies.js';
-import { javaStrategyProvider } from './java-strategies.js';
-import { csharpStrategyProvider } from './csharp-strategies.js';
-import { phpStrategyProvider } from './php-strategies.js';
 
 // Re-export types
 export * from './types.js';
@@ -52,7 +53,7 @@ export function getStrategiesForTask(
   framework?: string
 ): StrategyTemplate[] {
   const provider = PROVIDERS.get(language);
-  if (!provider) return [];
+  if (!provider) {return [];}
   return provider.getStrategies(category, framework);
 }
 
@@ -93,7 +94,7 @@ export function detectFramework(
   language: CallGraphLanguage
 ): string | null {
   const provider = PROVIDERS.get(language);
-  if (!provider) return null;
+  if (!provider) {return null;}
   return provider.detectFramework(content, filePath);
 }
 
@@ -109,6 +110,6 @@ export function getSupportedLanguages(): CallGraphLanguage[] {
  */
 export function getFrameworksForLanguage(language: CallGraphLanguage): string[] {
   const provider = PROVIDERS.get(language);
-  if (!provider) return [];
+  if (!provider) {return [];}
   return provider.frameworks.map(f => f.name);
 }

@@ -14,6 +14,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { DEFAULT_CONFIG } from './defaults.js';
+
 import type {
   DriftConfig,
   AIConfig,
@@ -21,7 +23,6 @@ import type {
   LearningConfig,
   PerformanceConfig,
 } from './types.js';
-import { DEFAULT_CONFIG } from './defaults.js';
 
 // ============================================================================
 // Constants
@@ -121,7 +122,7 @@ function deepMerge<T extends object>(
   target: T,
   source: Partial<T>
 ): T {
-  const result = { ...target } as T;
+  const result = { ...target };
 
   for (const key of Object.keys(source) as Array<keyof T>) {
     const sourceValue = source[key];
@@ -158,10 +159,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Parse a boolean from an environment variable string
  */
 function parseEnvBoolean(value: string | undefined): boolean | undefined {
-  if (value === undefined) return undefined;
+  if (value === undefined) {return undefined;}
   const lower = value.toLowerCase();
-  if (lower === 'true' || lower === '1' || lower === 'yes') return true;
-  if (lower === 'false' || lower === '0' || lower === 'no') return false;
+  if (lower === 'true' || lower === '1' || lower === 'yes') {return true;}
+  if (lower === 'false' || lower === '0' || lower === 'no') {return false;}
   return undefined;
 }
 
@@ -169,7 +170,7 @@ function parseEnvBoolean(value: string | undefined): boolean | undefined {
  * Parse a number from an environment variable string
  */
 function parseEnvNumber(value: string | undefined): number | undefined {
-  if (value === undefined) return undefined;
+  if (value === undefined) {return undefined;}
   const num = parseFloat(value);
   return isNaN(num) ? undefined : num;
 }
@@ -178,7 +179,7 @@ function parseEnvNumber(value: string | undefined): number | undefined {
  * Parse an integer from an environment variable string
  */
 function parseEnvInteger(value: string | undefined): number | undefined {
-  if (value === undefined) return undefined;
+  if (value === undefined) {return undefined;}
   const num = parseInt(value, 10);
   return isNaN(num) ? undefined : num;
 }

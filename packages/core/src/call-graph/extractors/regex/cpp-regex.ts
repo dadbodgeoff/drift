@@ -9,6 +9,7 @@
  */
 
 import { BaseRegexExtractor } from './base-regex-extractor.js';
+
 import type {
   CallGraphLanguage,
   FunctionExtraction,
@@ -94,7 +95,7 @@ export class CppRegexExtractor extends BaseRegexExtractor {
       const startLine = this.getLineNumber(originalSource, match.index);
       const key = `${fullName}:${startLine}`;
 
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {continue;}
       seen.add(key);
 
       // Parse class::method
@@ -221,7 +222,7 @@ export class CppRegexExtractor extends BaseRegexExtractor {
     for (let i = startLine; i < endLine && i < lines.length; i++) {
       const line = lines[i]!;
       const match = line.match(methodPattern);
-      if (match && match[1] && !['if', 'while', 'for', 'switch'].includes(match[1])) {
+      if (match?.[1] && !['if', 'while', 'for', 'switch'].includes(match[1])) {
         methods.push(match[1]);
       }
     }
@@ -288,7 +289,7 @@ export class CppRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
 
       // Skip control structures
-      if (['if', 'while', 'for', 'switch', 'catch'].includes(name)) continue;
+      if (['if', 'while', 'for', 'switch', 'catch'].includes(name)) {continue;}
 
       exports.push(
         this.createExport({
@@ -335,8 +336,8 @@ export class CppRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       const column = this.getColumnNumber(originalSource, match.index);
@@ -363,8 +364,8 @@ export class CppRegexExtractor extends BaseRegexExtractor {
       const line = this.getLineNumber(originalSource, match.index);
       const key = `${receiver}.${calleeName}:${line}`;
 
-      if (seen.has(key)) continue;
-      if (keywords.has(calleeName)) continue;
+      if (seen.has(key)) {continue;}
+      if (keywords.has(calleeName)) {continue;}
       seen.add(key);
 
       const column = this.getColumnNumber(originalSource, match.index);

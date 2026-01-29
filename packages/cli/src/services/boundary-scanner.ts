@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
 import {
   createBoundaryStore,
   type BoundaryStore,
@@ -108,7 +109,7 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (!line) continue;
+    if (!line) {continue;}
     
     // Skip comments
     const trimmed = line.trim();
@@ -127,15 +128,15 @@ function detectSensitiveFields(content: string, file: string): SensitiveField[] 
           // Look for class/model name in surrounding lines
           for (let j = Math.max(0, i - 10); j < i; j++) {
             const prevLine = lines[j];
-            if (!prevLine) continue;
+            if (!prevLine) {continue;}
             
             const classMatch = prevLine.match(/class\s+(\w+)/);
             const modelMatch = prevLine.match(/model\s+(\w+)/);
             const tableMatch = prevLine.match(/Table\s*\(\s*["'](\w+)["']/);
             
-            if (classMatch?.[1]) table = classMatch[1];
-            if (modelMatch?.[1]) table = modelMatch[1];
-            if (tableMatch?.[1]) table = tableMatch[1];
+            if (classMatch?.[1]) {table = classMatch[1];}
+            if (modelMatch?.[1]) {table = modelMatch[1];}
+            if (tableMatch?.[1]) {table = tableMatch[1];}
           }
 
           fields.push({
@@ -269,7 +270,7 @@ function detectQueryAccess(content: string, file: string): DataAccessPoint[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (!line) continue;
+    if (!line) {continue;}
     
     // Skip comments
     const trimmed = line.trim();
@@ -311,13 +312,13 @@ function detectQueryAccess(content: string, file: string): DataAccessPoint[] {
         const deleteMatch = line.match(/DELETE\s+FROM\s+["'`]?(\w+)["'`]?/i);
         const modelMatch = line.match(/(\w+)\.find|(\w+)\.create|(\w+)\.update|(\w+)\.delete/i);
         
-        if (fromMatch?.[1]) table = fromMatch[1];
-        else if (intoMatch?.[1]) table = intoMatch[1];
-        else if (updateMatch?.[1]) table = updateMatch[1];
-        else if (deleteMatch?.[1]) table = deleteMatch[1];
+        if (fromMatch?.[1]) {table = fromMatch[1];}
+        else if (intoMatch?.[1]) {table = intoMatch[1];}
+        else if (updateMatch?.[1]) {table = updateMatch[1];}
+        else if (deleteMatch?.[1]) {table = deleteMatch[1];}
         else if (modelMatch) {
           const matched = modelMatch[1] || modelMatch[2] || modelMatch[3] || modelMatch[4];
-          if (matched) table = matched;
+          if (matched) {table = matched;}
         }
 
         const id = `${file}:${i + 1}:0:${table}`;
@@ -373,7 +374,7 @@ export class BoundaryScanner {
       const filePath = path.join(this.config.rootDir, file);
       const language = getLanguage(file);
       
-      if (!language && !file.endsWith('.prisma')) continue;
+      if (!language && !file.endsWith('.prisma')) {continue;}
 
       try {
         const content = await fs.readFile(filePath, 'utf-8');

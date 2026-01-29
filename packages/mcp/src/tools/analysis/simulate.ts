@@ -17,6 +17,7 @@ import {
   type SimulationResult,
   type TaskCategory,
 } from 'driftdetect-core';
+
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 // ============================================================================
