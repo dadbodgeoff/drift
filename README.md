@@ -1,8 +1,8 @@
 # 🔍 Drift
 
-**The most comprehensive MCP server for codebase intelligence**
+**Make AI write code that actually fits your codebase.**
 
-Drift scans your codebase, learns YOUR patterns, and gives AI agents deep understanding of your conventions. 45+ CLI commands. 50 MCP tools. 9 languages. Native Rust core. Your AI finally writes code that fits.
+Drift scans your code, learns your patterns, and tells AI how you do things. No more fixing AI output.
 
 [![npm version](https://img.shields.io/npm/v/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
 [![npm downloads](https://img.shields.io/npm/dm/driftdetect.svg)](https://www.npmjs.com/package/driftdetect)
@@ -10,172 +10,152 @@ Drift scans your codebase, learns YOUR patterns, and gives AI agents deep unders
 
 ---
 
-## 🎉 What's New in v1.0.0 — The Rust Core Release 🦀
+## 📋 What You Need
 
-**Complete engine rewrite in Rust.** Drift now processes real-world codebases that previously crashed with OOM errors.
+- **Node.js 18 or newer** — [Download here](https://nodejs.org/)
+- **npm** — Comes with Node.js
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Call graph (5K files) | 4.86s | 1.11s | **4.4x faster** |
-| Call graph (10K files) | OOM crash | 2.34s | **∞ (now works)** |
-| Memory usage | Unbounded | O(1) queries | **SQLite-backed** |
-
-### What Changed
-
-- **12 Rust modules** — Scanner, parsers, call graph, boundaries, coupling, test topology, error handling, reachability, constants, environment, wrappers all run natively
-- **SQLite storage** — Call graphs stored in `.drift/lake/callgraph/callgraph.db` with WAL mode for concurrent access
-- **Native tree-sitter** — No WASM overhead, direct Rust bindings for all 9 languages
-- **Automatic fallback** — TypeScript fallback ensures backward compatibility if native modules unavailable
-
-### Key Fixes
-- ESM native module loading (root cause of OOM)
-- Prisma `this.prisma.user.findMany()` detection
-- Test topology line indexing
-- `it.skip()`/`test.skip()` detection
-
-See [CHANGELOG.md](./CHANGELOG.md) for full details.
-
----
-
-## The Problem
-
-AI writes code that works but doesn't fit. It ignores your conventions, misses your patterns, and creates inconsistency. You spend more time fixing AI output than you saved.
-
-**Drift fixes this.**
-
----
-
-## How It Works
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              YOUR CODEBASE                                   │
-│  src/api/users.ts    src/auth/login.ts    src/db/queries.ts                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           1. DRIFT SCAN                                      │
-│                                                                              │
-│   $ drift init && drift scan                                                │
-│                                                                              │
-│   Drift analyzes your code with native Rust + Tree-sitter parsing:          │
-│   • Discovers patterns (how YOU write controllers, services, etc.)          │
-│   • Builds call graph (who calls what, data flow)                           │
-│   • Maps security boundaries (what touches sensitive data)                  │
-│   • Tracks test coverage (which code is tested)                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          2. PATTERN LEARNING                                 │
-│                                                                              │
-│   Drift discovers YOUR conventions:                                          │
-│                                                                              │
-│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
-│   │ API Pattern     │  │ Error Pattern   │  │ Auth Pattern    │            │
-│   │ @Controller     │  │ try/catch with  │  │ @RequireAuth()  │            │
-│   │ /api/v1 prefix  │  │ AppError class  │  │ middleware      │            │
-│   │ 47 locations    │  │ 23 locations    │  │ 12 locations    │            │
-│   └─────────────────┘  └─────────────────┘  └─────────────────┘            │
-│                                                                              │
-│   You approve what matters: $ drift approve api-controller-pattern          │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         3. AI GETS CONTEXT                                   │
-│                                                                              │
-│   When AI asks "Add a user preferences endpoint":                           │
-│                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  drift_context({ intent: "add_feature", focus: "user preferences" })│   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                         │
-│                                    ▼                                         │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  Returns:                                                            │   │
-│   │  • Your API pattern: @Controller, /api/v1, response format          │   │
-│   │  • Similar endpoints: getUserProfile, updateUserSettings            │   │
-│   │  • Required middleware: @RequireAuth(), @ValidateBody()             │   │
-│   │  • Error handling: Use AppError, wrap in try/catch                  │   │
-│   │  • Files to modify: src/api/users.controller.ts                     │   │
-│   │  • Security note: User data requires audit logging                  │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        4. AI WRITES FITTING CODE                             │
-│                                                                              │
-│   // AI generates code that matches YOUR patterns:                          │
-│                                                                              │
-│   @Controller('/api/v1/users')           // ✓ Your prefix                   │
-│   @RequireAuth()                          // ✓ Your auth pattern            │
-│   export class UserPreferencesController {                                  │
-│     @Post('/preferences')                                                   │
-│     @ValidateBody(PreferencesSchema)      // ✓ Your validation              │
-│     async updatePreferences(req, res) {                                     │
-│       try {                                                                 │
-│         // ... implementation                                               │
-│       } catch (error) {                                                     │
-│         throw new AppError(error);        // ✓ Your error pattern          │
-│       }                                                                     │
-│     }                                                                       │
-│   }                                                                         │
-└─────────────────────────────────────────────────────────────────────────────┘
+Check if you have them:
+```bash
+node --version   # Should show v18.x.x or higher
+npm --version    # Should show 9.x.x or higher
 ```
 
 ---
 
-## Quick Start
+## 🚀 Three Ways to Use Drift
+
+| Path | Best For | Time to Setup |
+|------|----------|---------------|
+| [1. CLI Only](#1-use-drift-without-ai-cli-only) | Exploring your codebase manually | 2 minutes |
+| [2. AI + CLI](#2-let-ai-use-drift-ai--cli) | AI runs drift commands for you | 2 minutes |
+| [3. MCP Server](#3-set-up-mcp-full-ai-integration) | Full AI integration (recommended) | 5 minutes |
+
+---
+
+## 1. Use Drift Without AI (CLI Only)
+
+**Perfect for:** Exploring what Drift finds in your codebase before connecting AI.
+
+### Step 1: Install
 
 ```bash
-# Install the CLI
 npm install -g driftdetect
+```
 
-# In your project
+### Step 2: Scan Your Project
+
+```bash
 cd your-project
 drift init
 drift scan
+```
 
-# See what Drift learned
+### Step 3: See What Drift Found
+
+```bash
 drift status
 ```
 
-**That's it.** Drift now understands your codebase.
-
----
-
-## Two Packages, Two Purposes
-
-> ⚠️ **Common confusion:** Drift has a CLI and an MCP server. They're separate npm packages.
-
-| Package | Install Command | What It Does |
-|---------|-----------------|--------------|
-| **CLI** | `npm install -g driftdetect` | Terminal commands you run: `drift scan`, `drift status`, etc. |
-| **MCP Server** | `npm install -g driftdetect-mcp` | Tools AI agents call: `drift_status`, `drift_context`, etc. |
-
-**The CLI scans your project. The MCP server lets AI use that data.**
-
-- If you get `zsh: command not found: drift` → Install the CLI: `npm install -g driftdetect`
-- If `drift_status` does nothing in chat → Configure the MCP server (see below) and make sure you've run `drift scan` first
-
----
-
-## Connect to Your AI
-
-### Option 1: Global Install (Recommended)
-
-For production use, install globally with a pinned version:
-
-```bash
-npm install -g driftdetect-mcp@1.0.0
+You'll see something like:
+```
+Patterns: 47 discovered, 12 approved
+Health Score: 85/100
+Languages: TypeScript, Python
 ```
 
-Then configure your MCP client:
+### Useful Commands
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+| Command | What It Does |
+|---------|--------------|
+| `drift status` | Quick overview of your codebase |
+| `drift patterns list` | See all discovered patterns |
+| `drift callgraph reach src/api/users.ts:42` | What data can line 42 access? |
+| `drift coupling cycles` | Find circular dependencies |
+| `drift test-topology affected src/auth.ts` | Which tests cover this file? |
+
+### Upgrade to Latest Version
+
+```bash
+npm install -g driftdetect@latest
+```
+
+---
+
+## 2. Let AI Use Drift (AI + CLI)
+
+**Perfect for:** Using AI assistants that can run terminal commands (Cursor, Windsurf, Kiro, etc.)
+
+### Step 1: Install (same as above)
+
+```bash
+npm install -g driftdetect
+```
+
+### Step 2: Scan Your Project (same as above)
+
+```bash
+cd your-project
+drift init
+drift scan
+```
+
+### Step 3: Tell Your AI About Drift
+
+Copy this into your AI chat:
+
+```
+I have Drift installed. Before writing code, run these commands:
+
+1. `drift status` - See codebase overview
+2. `drift patterns list` - See my coding patterns
+3. `drift similar --intent api_endpoint --description "what you're building"` - Find similar code
+
+Use what you learn to match my patterns.
+```
+
+That's it! Your AI will run drift commands and use the output to write better code.
+
+---
+
+## 3. Set Up MCP (Full AI Integration)
+
+**Perfect for:** The best experience. AI automatically gets context without you asking.
+
+### What is MCP?
+
+MCP (Model Context Protocol) lets AI tools directly query Drift. Instead of you running commands and pasting output, the AI calls Drift tools automatically.
+
+### Step 1: Install Both Packages
+
+```bash
+# The CLI (for scanning)
+npm install -g driftdetect
+
+# The MCP server (for AI integration)
+npm install -g driftdetect-mcp
+```
+
+### Step 2: Scan Your Project
+
+```bash
+cd your-project
+drift init
+drift scan
+```
+
+### Step 3: Configure Your AI Tool
+
+Pick your AI tool and follow the instructions:
+
+<details>
+<summary><b>Claude Desktop</b></summary>
+
+1. Open this file (create it if it doesn't exist):
+   - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+2. Add this:
 ```json
 {
   "mcpServers": {
@@ -186,7 +166,16 @@ Then configure your MCP client:
 }
 ```
 
-**Cursor** (`.cursor/mcp.json`):
+3. Restart Claude Desktop
+
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+1. Create `.cursor/mcp.json` in your project folder
+
+2. Add this:
 ```json
 {
   "mcpServers": {
@@ -197,229 +186,150 @@ Then configure your MCP client:
 }
 ```
 
-### Option 2: npx (Quick Try)
+3. Restart Cursor
 
-For quick evaluation, use npx with a pinned version:
+</details>
 
+<details>
+<summary><b>Windsurf</b></summary>
+
+1. Open Settings → MCP Servers
+
+2. Add a new server with command: `driftdetect-mcp`
+
+3. Restart Windsurf
+
+</details>
+
+<details>
+<summary><b>Kiro</b></summary>
+
+1. Create `.kiro/settings/mcp.json` in your project folder
+
+2. Add this:
 ```json
 {
   "mcpServers": {
     "drift": {
-      "command": "npx",
-      "args": ["-y", "driftdetect-mcp@1.0.0"]
+      "command": "driftdetect-mcp"
     }
   }
 }
 ```
 
-**Windsurf, Kiro, VS Code** — same format in their respective config files.
+3. Restart Kiro
 
-### Docker Deployment
+</details>
 
-Run Drift as a containerized HTTP service:
+<details>
+<summary><b>VS Code + Copilot</b></summary>
 
-```bash
-# Clone and start
-git clone https://github.com/dadbodgeoff/drift.git
-cd drift
+1. Create `.vscode/mcp.json` in your project folder
 
-# Start with your project mounted
-PROJECT_PATH=/path/to/your/project docker compose up -d
-
-# Check health
-curl http://localhost:3000/health
+2. Add this:
+```json
+{
+  "mcpServers": {
+    "drift": {
+      "command": "driftdetect-mcp"
+    }
+  }
+}
 ```
 
-Configure your MCP client to connect via HTTP/SSE:
-- SSE endpoint: `http://localhost:3000/sse`
-- Message endpoint: `http://localhost:3000/message`
+3. Restart VS Code
 
-See [docker-compose.yml](./docker-compose.yml) for configuration options.
+</details>
+
+### Step 4: Test It Works
+
+Ask your AI: "What patterns does Drift see in my codebase?"
+
+If it responds with pattern information, you're all set! 🎉
 
 ---
 
-## What Questions Can Drift Answer?
+## ❓ Troubleshooting
 
-| Question | Drift Tool | What You Get |
-|----------|------------|--------------|
-| "How do I add a new endpoint?" | `drift_context` | Patterns, examples, files to modify |
-| "What data can this function access?" | `drift_reachability` | Full data flow path |
-| "What breaks if I change this?" | `drift_impact_analysis` | Blast radius, affected callers |
-| "Which tests should I run?" | `drift_test_topology` | Minimum test set |
-| "Who can access user passwords?" | `drift_reachability --inverse` | All code paths to sensitive data |
-| "Are there dependency cycles?" | `drift_coupling` | Cycles, hotspots, metrics |
-| "What errors aren't handled?" | `drift_error_handling` | Gaps, swallowed exceptions |
+### "command not found: drift"
 
----
-
-## Supported Languages
-
-| Language | Parsing | Call Graph | Data Access | Frameworks |
-|----------|---------|------------|-------------|------------|
-| **TypeScript/JS** | ✅ Tree-sitter | ✅ | ✅ | React, Next.js, Express, Prisma, TypeORM |
-| **Python** | ✅ Tree-sitter | ✅ | ✅ | Django, FastAPI, Flask, SQLAlchemy |
-| **Java** | ✅ Tree-sitter | ✅ | ✅ | Spring Boot, JPA/Hibernate |
-| **C#** | ✅ Tree-sitter | ✅ | ✅ | ASP.NET Core, EF Core, WPF |
-| **PHP** | ✅ Tree-sitter | ✅ | ✅ | Laravel, Eloquent |
-| **Go** | ✅ Tree-sitter | ✅ | ✅ | Gin, Echo, GORM |
-| **Rust** | ✅ Tree-sitter | ✅ | ✅ | Actix, Axum, Diesel |
-| **C++** | ✅ Tree-sitter | ✅ | ✅ | Qt, Boost, custom frameworks |
-
----
-
-## The MCP Architecture
-
-Drift's MCP server uses a **7-layer architecture** designed for efficient AI interaction:
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  ORCHESTRATION    drift_context                                │
-│  "Tell me what you want, I'll give you everything"             │
-│  Token budget: 1000-2000                                       │
-├────────────────────────────────────────────────────────────────┤
-│  DISCOVERY        drift_status, drift_capabilities             │
-│  "Quick health check"                                          │
-│  Token budget: 200-500                                         │
-├────────────────────────────────────────────────────────────────┤
-│  SURGICAL         drift_signature, drift_callers, drift_type   │
-│  "I need exactly this one thing"                               │
-│  Token budget: 200-500 (12 tools)                              │
-├────────────────────────────────────────────────────────────────┤
-│  EXPLORATION      drift_patterns_list, drift_security_summary  │
-│  "Let me browse and filter"                                    │
-│  Token budget: 500-1000                                        │
-├────────────────────────────────────────────────────────────────┤
-│  DETAIL           drift_pattern_get, drift_impact_analysis     │
-│  "Deep dive into this specific thing"                          │
-│  Token budget: 500-1500                                        │
-├────────────────────────────────────────────────────────────────┤
-│  ANALYSIS         drift_coupling, drift_test_topology          │
-│  "Run complex analysis"                                        │
-│  Token budget: 1000-2000                                       │
-├────────────────────────────────────────────────────────────────┤
-│  GENERATION       drift_validate_change, drift_suggest_changes │
-│  "Help me write code"                                          │
-│  Token budget: 500-1500                                        │
-└────────────────────────────────────────────────────────────────┘
-```
-
-**Why this matters:** Most MCP servers dump 50 flat tools. AI wastes tokens figuring out which to call. Drift's orchestration layer understands intent and returns curated context in one call.
-
----
-
-## Key Features
-
-### 🧠 Pattern Learning
+The CLI isn't installed. Run:
 ```bash
-drift scan                    # Discover patterns
-drift status                  # See what was found
-drift approve <pattern-id>    # Approve conventions
+npm install -g driftdetect
 ```
 
-### 📋 Pattern Audit & Auto-Approval
+### "drift_status does nothing" or "MCP not working"
+
+1. Make sure you installed the MCP server:
+   ```bash
+   npm install -g driftdetect-mcp
+   ```
+
+2. Make sure you ran `drift scan` in your project first
+
+3. Make sure you restarted your AI tool after configuring
+
+### "No patterns found"
+
+Run a full scan:
 ```bash
-drift audit                   # Run full audit on discovered patterns
-drift audit status            # Check audit health score
-drift approve --auto          # Auto-approve ≥90% confidence patterns
-drift audit trends            # View quality trends over time
-drift audit --ci --threshold 85  # CI mode with health threshold
+drift scan --full
 ```
 
-The audit system reduces manual review burden by:
-- Identifying high-confidence patterns eligible for auto-approval
-- Detecting duplicate patterns that may need merging
-- Cross-validating patterns against call graph and constraints
-- Tracking quality degradation over time
+### Check Your Versions
 
-### 📊 Call Graph Analysis
 ```bash
-drift callgraph reach src/api/users.ts:42    # What data can line 42 access?
-drift callgraph inverse users.password_hash  # Who can access passwords?
+drift --version        # CLI version
+driftdetect-mcp --version  # MCP server version
 ```
 
-### 🔒 Security Boundaries
-```bash
-drift boundaries              # See sensitive data access overview
-drift boundaries sensitive    # Find sensitive data access points
-drift boundaries check        # Check for boundary violations
-```
+### Upgrade Everything
 
-### 🧪 Test Topology
 ```bash
-drift test-topology build                     # Build test mappings
-drift test-topology affected src/auth/login.ts  # Minimum tests to run
-```
-
-### 🔗 Module Coupling
-```bash
-drift coupling build          # Build dependency graph
-drift coupling cycles         # Find dependency cycles
-drift coupling hotspots       # High-coupling modules
-```
-
-### ⚠️ Error Handling
-```bash
-drift error-handling build    # Analyze error handling
-drift error-handling gaps     # Find unhandled errors
+npm install -g driftdetect@latest driftdetect-mcp@latest
 ```
 
 ---
 
-## CI Integration
+## 📊 What Drift Supports
 
-```bash
-# Fail on violations
-drift check --ci --fail-on warning
+| Category | Count | Examples |
+|----------|-------|----------|
+| **Languages** | 10 | TypeScript, JavaScript, Python, Java, C#, PHP, Go, Rust, C, C++ |
+| **Web Frameworks** | 21 | Next.js, Express, NestJS, Spring Boot, ASP.NET, Laravel, FastAPI, Gin, Actix, Axum |
+| **ORMs** | 16 | Prisma, TypeORM, Sequelize, Django ORM, Entity Framework, Eloquent |
+| **Pattern Detectors** | 101+ | API, Auth, Security, Errors, Logging, Testing, and more |
 
-# GitHub Actions format
-drift check --format github
-
-# GitLab CI format
-drift check --format gitlab
-```
+See [SUPPORTED_LANGUAGES_FRAMEWORKS.md](./SUPPORTED_LANGUAGES_FRAMEWORKS.md) for the full list.
 
 ---
 
-## Documentation
-
-- **[Wiki](https://github.com/dadbodgeoff/drift/wiki)** — Complete documentation
-- **[MCP Tools Reference](https://github.com/dadbodgeoff/drift/wiki/MCP-Tools-Reference)** — All 45+ tools documented
-- **[MCP Architecture](https://github.com/dadbodgeoff/drift/wiki/MCP-Architecture)** — The gold standard design
-- **[Getting Started](https://github.com/dadbodgeoff/drift/wiki/Getting-Started)** — Detailed setup guide
-- **[FAQ](https://github.com/dadbodgeoff/drift/wiki/FAQ)** — 50+ questions answered
-
----
-
-## Security & Privacy
+## 🔒 Privacy
 
 Drift runs **100% locally**. Your code never leaves your machine.
 
-| Aspect | Details |
-|--------|---------|
-| **Reads** | Source files in your project directory |
-| **Writes** | `.drift/` directory only (patterns, cache, indexes) |
-| **Network** | No outbound calls for analysis |
-| **Telemetry** | Anonymous usage stats, opt-out with `drift telemetry disable` |
-
-**What telemetry collects (if enabled):**
-- Commands run (not arguments)
-- Languages detected
-- Error rates
-- Performance metrics
-
-**Never collected:** Source code, file contents, pattern details, personal information.
-
-For stricter environments, use the [Docker deployment](#docker-deployment) which provides additional isolation.
+- ✅ All analysis happens on your computer
+- ✅ No code sent to external servers
+- ✅ Data stored in `.drift/` folder only
+- ✅ Optional anonymous telemetry (disable with `drift telemetry disable`)
 
 ---
 
-## License
+## 📚 Learn More
 
-**Open Core** model:
-- **Core packages**: Apache 2.0 (fully open source)
-- **Enterprise features**: BSL 1.1 (converts to Apache 2.0 after 4 years)
+- **[Wiki](https://github.com/dadbodgeoff/drift/wiki)** — Full documentation
+- **[MCP Tools Reference](https://github.com/dadbodgeoff/drift/wiki/MCP-Tools-Reference)** — All 50 MCP tools
+- **[CLI Reference](https://github.com/dadbodgeoff/drift/wiki/CLI-Reference)** — All CLI commands
+- **[FAQ](https://github.com/dadbodgeoff/drift/wiki/FAQ)** — Common questions
 
-Individual developers and small teams use Drift completely free.
+---
+
+## 📜 License
+
+**Open Core** — Free for individuals and small teams.
+
+- Core packages: Apache 2.0 (open source)
+- Enterprise features: BSL 1.1 (converts to Apache 2.0 after 4 years)
 
 See [licenses/LICENSING.md](./licenses/LICENSING.md) for details.
 
