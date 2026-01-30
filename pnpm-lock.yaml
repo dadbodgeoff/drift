@@ -101,14 +101,14 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: workspace:*
+        version: link:../core
       driftdetect-dashboard:
-        specifier: ^0.9.28
+        specifier: workspace:*
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: workspace:*
+        version: link:../detectors
       ora:
         specifier: ^8.1.0
         version: 8.2.0
