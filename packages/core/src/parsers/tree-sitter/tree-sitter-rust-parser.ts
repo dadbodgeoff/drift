@@ -703,15 +703,21 @@ export class RustTreeSitterParser {
         const returnTypeNode = child.childForFieldName('return_type');
         const hasDefaultImpl = child.type === 'function_item';
         const isAsync = this.hasModifier(child, 'async');
+        const attributes = this.extractAttributes(child);
+        const docComment = this.extractDocComment(child);
 
         const method: RustTraitMethod = {
           name: nameNode.text,
           isAsync,
           hasDefaultImpl,
           parameters: parametersNode ? this.extractParameters(parametersNode) : [],
+          attributes,
         };
         if (returnTypeNode) {
           method.returnType = this.extractType(returnTypeNode);
+        }
+        if (docComment) {
+          method.docComment = docComment;
         }
         methods.push(method);
       }
@@ -779,6 +785,164 @@ export class RustTreeSitterParser {
     }
 
     return { path, items, isGlob, alias };
+  }
+
+  /**
+   * Extract attributes from a node by looking at preceding siblings
+   */
+  private extractAttributes(node: TreeSitterNode): RustAttribute[] {
+    const attributes: RustAttribute[] = [];
+    
+    // Look for attribute_item siblings before this node
+    let sibling = node.previousSibling;
+    while (sibling) {
+      if (sibling.type === 'attribute_item') {
+        const attrText = sibling.text;
+        // Parse #[name(args)] or #[name]
+        const match = attrText.match(/#\[(\w+)(?:\(([^)]*)\))?\]/);
+        if (match) {
+          const attr: RustAttribute = {
+            name: match[1] ?? '',
+            raw: attrText,
+          };
+          if (match[2] !== undefined) {
+            attr.arguments = match[2];
+          }
+          attributes.unshift(attr);
+        }
+      } else if (sibling.type !== 'line_comment') {
+        // Stop when we hit something that's not an attribute or comment
+        break;
+      }
+      sibling = sibling.previousSibling;
+    }
+    
+    return attributes;
+  }
+
+  /**
+   * Extract route attributes for web frameworks (Actix, Axum, Rocket)
+   */
+  private extractRouteAttributes(attributes: RustAttribute[]): RustRouteAttribute[] {
+    const routeAttrs: RustRouteAttribute[] = [];
+    const methods = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'] as const;
+    
+    for (const attr of attributes) {
+      const lowerName = attr.name.toLowerCase();
+      if (methods.includes(lowerName as typeof methods[number])) {
+        // Extract path from arguments like "/users" or "/users/<id>"
+        const path = attr.arguments?.replace(/^["']|["']$/g, '') ?? '/';
+        routeAttrs.push({
+          method: lowerName as RustRouteAttribute['method'],
+          path,
+          raw: attr.raw,
+        });
+      }
+    }
+    
+    return routeAttrs;
+  }
+
+  /**
+   * Extract doc comment from preceding line comments
+   */
+  private extractDocComment(node: TreeSitterNode): string | undefined {
+    const docLines: string[] = [];
+    
+    let sibling = node.previousSibling;
+    while (sibling) {
+      if (sibling.type === 'line_comment') {
+        const text = sibling.text;
+        // Check for doc comments (/// or //!)
+        if (text.startsWith('///') || text.startsWith('//!')) {
+          const content = text
+            .replace(/^\/\/\/\s?/, '')
+            .replace(/^\/\/!\s?/, '');
+          docLines.unshift(content);
+        }
+      } else if (sibling.type !== 'attribute_item') {
+        // Stop when we hit something that's not a comment or attribute
+        break;
+      }
+      sibling = sibling.previousSibling;
+    }
+    
+    return docLines.length > 0 ? docLines.join('\n') : undefined;
+  }
+
+  /**
+   * Extract derive attributes from attributes list
+   */
+  private extractDeriveAttributes(attributes: RustAttribute[]): RustDeriveAttribute[] {
+    const derives: RustDeriveAttribute[] = [];
+    
+    for (const attr of attributes) {
+      if (attr.name === 'derive' && attr.arguments) {
+        const traits = attr.arguments.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        derives.push({
+          traits,
+          raw: attr.raw,
+        });
+      }
+    }
+    
+    return derives;
+  }
+
+  /**
+   * Extract serde attributes from attributes list
+   */
+  private extractSerdeAttributes(attributes: RustAttribute[]): RustSerdeAttribute[] {
+    const serdeAttrs: RustSerdeAttribute[] = [];
+    
+    for (const attr of attributes) {
+      if (attr.name === 'serde' && attr.arguments) {
+        // Parse serde arguments like rename = "name", skip, default, etc.
+        const args = attr.arguments;
+        
+        if (args.includes('rename_all')) {
+          const match = args.match(/rename_all\s*=\s*["']([^"']+)["']/);
+          const serdeAttr: RustSerdeAttribute = { kind: 'rename_all', raw: attr.raw };
+          if (match?.[1]) {
+            serdeAttr.value = match[1];
+          }
+          serdeAttrs.push(serdeAttr);
+        } else if (args.includes('rename')) {
+          const match = args.match(/rename\s*=\s*["']([^"']+)["']/);
+          const serdeAttr: RustSerdeAttribute = { kind: 'rename', raw: attr.raw };
+          if (match?.[1]) {
+            serdeAttr.value = match[1];
+          }
+          serdeAttrs.push(serdeAttr);
+        } else if (args.includes('skip')) {
+          serdeAttrs.push({ kind: 'skip', raw: attr.raw });
+        } else if (args.includes('default')) {
+          serdeAttrs.push({ kind: 'default', raw: attr.raw });
+        } else if (args.includes('flatten')) {
+          serdeAttrs.push({ kind: 'flatten', raw: attr.raw });
+        } else if (args.includes('tag')) {
+          const match = args.match(/tag\s*=\s*["']([^"']+)["']/);
+          const serdeAttr: RustSerdeAttribute = { kind: 'tag', raw: attr.raw };
+          if (match?.[1]) {
+            serdeAttr.value = match[1];
+          }
+          serdeAttrs.push(serdeAttr);
+        } else if (args.includes('content')) {
+          const match = args.match(/content\s*=\s*["']([^"']+)["']/);
+          const serdeAttr: RustSerdeAttribute = { kind: 'content', raw: attr.raw };
+          if (match?.[1]) {
+            serdeAttr.value = match[1];
+          }
+          serdeAttrs.push(serdeAttr);
+        } else if (args.includes('untagged')) {
+          serdeAttrs.push({ kind: 'untagged', raw: attr.raw });
+        } else {
+          serdeAttrs.push({ kind: 'other', value: args, raw: attr.raw });
+        }
+      }
+    }
+    
+    return serdeAttrs;
   }
 }
 
