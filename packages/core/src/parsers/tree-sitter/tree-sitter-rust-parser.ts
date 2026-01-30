@@ -21,6 +21,30 @@ import type { TreeSitterNode, TreeSitterParser } from './types.js';
 // Types
 // ============================================================================
 
+export interface RustAttribute {
+  name: string;
+  arguments?: string;
+  raw: string;
+}
+
+export interface RustDeriveAttribute {
+  traits: string[];
+  raw: string;
+}
+
+export interface RustSerdeAttribute {
+  kind: 'rename' | 'rename_all' | 'skip' | 'default' | 'flatten' | 'tag' | 'content' | 'untagged' | 'other';
+  value?: string;
+  raw: string;
+}
+
+export interface RustRouteAttribute {
+  method: 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options' | 'trace';
+  path: string;
+  guards?: string[];
+  raw: string;
+}
+
 export interface RustFunction {
   name: string;
   qualifiedName: string;
@@ -32,6 +56,9 @@ export interface RustFunction {
   returnType?: string;
   generics: RustGeneric[];
   lifetimes: string[];
+  attributes: RustAttribute[];
+  routeAttributes: RustRouteAttribute[];
+  docComment?: string;
   startLine: number;
   endLine: number;
 }
@@ -56,6 +83,10 @@ export interface RustStruct {
   fields: RustField[];
   generics: RustGeneric[];
   derives: string[];
+  deriveAttributes: RustDeriveAttribute[];
+  serdeAttributes: RustSerdeAttribute[];
+  attributes: RustAttribute[];
+  docComment?: string;
   startLine: number;
   endLine: number;
 }
@@ -64,6 +95,9 @@ export interface RustField {
   name: string;
   type: string;
   isPublic: boolean;
+  serdeAttributes: RustSerdeAttribute[];
+  attributes: RustAttribute[];
+  docComment?: string;
 }
 
 export interface RustEnum {
@@ -72,6 +106,10 @@ export interface RustEnum {
   variants: RustEnumVariant[];
   generics: RustGeneric[];
   derives: string[];
+  deriveAttributes: RustDeriveAttribute[];
+  serdeAttributes: RustSerdeAttribute[];
+  attributes: RustAttribute[];
+  docComment?: string;
   startLine: number;
   endLine: number;
 }
@@ -80,6 +118,9 @@ export interface RustEnumVariant {
   name: string;
   kind: 'unit' | 'tuple' | 'struct';
   fields?: RustField[];
+  serdeAttributes: RustSerdeAttribute[];
+  attributes: RustAttribute[];
+  docComment?: string;
 }
 
 export interface RustTrait {
@@ -88,6 +129,8 @@ export interface RustTrait {
   methods: RustTraitMethod[];
   supertraits: string[];
   generics: RustGeneric[];
+  attributes: RustAttribute[];
+  docComment?: string;
   startLine: number;
   endLine: number;
 }
@@ -98,6 +141,8 @@ export interface RustTraitMethod {
   hasDefaultImpl: boolean;
   parameters: RustParameter[];
   returnType?: string;
+  attributes: RustAttribute[];
+  docComment?: string;
 }
 
 export interface RustImpl {
@@ -105,6 +150,8 @@ export interface RustImpl {
   traitName?: string;
   methods: string[];
   generics: RustGeneric[];
+  attributes: RustAttribute[];
+  docComment?: string;
   startLine: number;
   endLine: number;
 }
@@ -245,6 +292,10 @@ export class RustTreeSitterParser {
     const returnTypeNode = node.childForFieldName('return_type');
     const genericsNode = node.childForFieldName('type_parameters');
 
+    const attributes = this.extractAttributes(node);
+    const routeAttributes = this.extractRouteAttributes(attributes);
+    const docComment = this.extractDocComment(node);
+
     const fn: RustFunction = {
       name,
       qualifiedName: name,
@@ -255,11 +306,16 @@ export class RustTreeSitterParser {
       parameters: parametersNode ? this.extractParameters(parametersNode) : [],
       generics: genericsNode ? this.extractGenerics(genericsNode) : [],
       lifetimes: this.extractLifetimes(node),
+      attributes,
+      routeAttributes,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
     };
     if (returnTypeNode) {
       fn.returnType = this.extractType(returnTypeNode);
+    }
+    if (docComment) {
+      fn.docComment = docComment;
     }
     result.functions.push(fn);
   }
@@ -276,15 +332,27 @@ export class RustTreeSitterParser {
     const genericsNode = node.childForFieldName('type_parameters');
     const bodyNode = node.childForFieldName('body');
 
-    result.structs.push({
+    const attributes = this.extractAttributes(node);
+    const deriveAttributes = this.extractDeriveAttributes(attributes);
+    const serdeAttributes = this.extractSerdeAttributes(attributes);
+    const docComment = this.extractDocComment(node);
+
+    const struct: RustStruct = {
       name,
       isPublic,
       fields: bodyNode ? this.extractStructFields(bodyNode) : [],
       generics: genericsNode ? this.extractGenerics(genericsNode) : [],
       derives: this.extractDerives(node),
+      deriveAttributes,
+      serdeAttributes,
+      attributes,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
-    });
+    };
+    if (docComment) {
+      struct.docComment = docComment;
+    }
+    result.structs.push(struct);
   }
 
   /**
@@ -299,15 +367,27 @@ export class RustTreeSitterParser {
     const genericsNode = node.childForFieldName('type_parameters');
     const bodyNode = node.childForFieldName('body');
 
-    result.enums.push({
+    const attributes = this.extractAttributes(node);
+    const deriveAttributes = this.extractDeriveAttributes(attributes);
+    const serdeAttributes = this.extractSerdeAttributes(attributes);
+    const docComment = this.extractDocComment(node);
+
+    const enumDef: RustEnum = {
       name,
       isPublic,
       variants: bodyNode ? this.extractEnumVariants(bodyNode) : [],
       generics: genericsNode ? this.extractGenerics(genericsNode) : [],
       derives: this.extractDerives(node),
+      deriveAttributes,
+      serdeAttributes,
+      attributes,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
-    });
+    };
+    if (docComment) {
+      enumDef.docComment = docComment;
+    }
+    result.enums.push(enumDef);
   }
 
   /**
@@ -323,15 +403,23 @@ export class RustTreeSitterParser {
     const boundsNode = node.childForFieldName('bounds');
     const bodyNode = node.childForFieldName('body');
 
-    result.traits.push({
+    const attributes = this.extractAttributes(node);
+    const docComment = this.extractDocComment(node);
+
+    const trait: RustTrait = {
       name,
       isPublic,
       methods: bodyNode ? this.extractTraitMethods(bodyNode, source) : [],
       supertraits: boundsNode ? this.extractTraitBounds(boundsNode) : [],
       generics: genericsNode ? this.extractGenerics(genericsNode) : [],
+      attributes,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
-    });
+    };
+    if (docComment) {
+      trait.docComment = docComment;
+    }
+    result.traits.push(trait);
   }
 
   /**
@@ -357,15 +445,22 @@ export class RustTreeSitterParser {
       }
     }
 
+    const attributes = this.extractAttributes(node);
+    const docComment = this.extractDocComment(node);
+
     const impl: RustImpl = {
       targetType: typeNode.text,
       methods,
       generics: genericsNode ? this.extractGenerics(genericsNode) : [],
+      attributes,
       startLine: node.startPosition.row + 1,
       endLine: node.endPosition.row + 1,
     };
     if (traitNode) {
       impl.traitName = traitNode.text;
+    }
+    if (docComment) {
+      impl.docComment = docComment;
     }
     result.impls.push(impl);
   }
@@ -529,11 +624,21 @@ export class RustTreeSitterParser {
         const isPublic = this.hasVisibility(child, 'pub');
 
         if (nameNode && typeNode) {
-          fields.push({
+          const attributes = this.extractAttributes(child);
+          const serdeAttributes = this.extractSerdeAttributes(attributes);
+          const docComment = this.extractDocComment(child);
+
+          const field: RustField = {
             name: nameNode.text,
             type: typeNode.text,
             isPublic,
-          });
+            serdeAttributes,
+            attributes,
+          };
+          if (docComment) {
+            field.docComment = docComment;
+          }
+          fields.push(field);
         }
       }
     }
@@ -563,9 +668,21 @@ export class RustTreeSitterParser {
           }
         }
 
-        const variant: RustEnumVariant = { name, kind };
+        const attributes = this.extractAttributes(child);
+        const serdeAttributes = this.extractSerdeAttributes(attributes);
+        const docComment = this.extractDocComment(child);
+
+        const variant: RustEnumVariant = {
+          name,
+          kind,
+          serdeAttributes,
+          attributes,
+        };
         if (fields && fields.length > 0) {
           variant.fields = fields;
+        }
+        if (docComment) {
+          variant.docComment = docComment;
         }
         variants.push(variant);
       }
