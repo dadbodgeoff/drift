@@ -1822,3 +1822,63 @@ export type {
   WrappersStats,
   WrappersResult,
 } from './native/index.js';
+
+
+// ============================================================================
+// Workspace Management (Enterprise-grade workspace operations)
+// ============================================================================
+
+export {
+  // Backup Manager
+  BackupManager,
+  createBackupManager,
+  // Context Loader
+  ContextLoader,
+  createContextLoader,
+  // Project Switcher
+  ProjectSwitcher,
+  createProjectSwitcher,
+  // Schema Migrator
+  SchemaMigrator,
+  createSchemaMigrator,
+  // Workspace Manager (main orchestrator)
+  WorkspaceManager,
+  createWorkspaceManager,
+  getWorkspaceManager,
+  resetGlobalWorkspaceManager,
+  // Config
+  DEFAULT_WORKSPACE_CONFIG,
+} from './workspace/index.js';
+
+export type {
+  // Backup types
+  BackupMetadata,
+  BackupReason,
+  BackupResult,
+  RestoreResult,
+  SchemaMigration,
+  // Context types
+  WorkspaceContext,
+  ProjectContext,
+  LakeContext,
+  AnalysisContext,
+  PatternSummary as WorkspacePatternSummary,
+  CallGraphSummary as WorkspaceCallGraphSummary,
+  BoundarySummary,
+  // Project types
+  ActiveProjectIndicator,
+  ProjectSwitchRequest,
+  ProjectSwitchResult,
+  ProjectRegistryLike,
+  AgentProjectContext,
+  // Migration types
+  MigrationResult,
+  MigrationHistoryEntry,
+  MigrationHistory,
+  // Workspace Manager types
+  WorkspaceInitOptions,
+  WorkspaceStatus,
+  DestructiveOperationRequest,
+  // Config types
+  WorkspaceManagerConfig,
+} from './workspace/index.js';

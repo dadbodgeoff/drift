@@ -72,12 +72,32 @@ npm --version    # Should show 9.x.x or higher
 npm install -g driftdetect
 ```
 
-### Step 2: Scan Your Project
+### Step 2: Run the Setup Wizard (Recommended)
 
 ```bash
 cd your-project
+drift setup
+```
+
+The setup wizard walks you through:
+- ✅ Initializing Drift
+- ✅ Scanning for patterns
+- ✅ Auto-approving high-confidence patterns
+- ✅ Building call graph (optional)
+- ✅ Setting up test topology (optional)
+- ✅ Initializing Cortex memory (optional)
+
+**Quick setup (skip prompts):**
+```bash
+drift setup -y
+```
+
+### Alternative: Manual Setup
+
+```bash
 drift init
 drift scan
+drift approve --auto
 ```
 
 ### Step 3: See What Drift Found
@@ -121,12 +141,11 @@ npm install -g driftdetect@latest
 npm install -g driftdetect
 ```
 
-### Step 2: Scan Your Project (same as above)
+### Step 2: Run Setup
 
 ```bash
 cd your-project
-drift init
-drift scan
+drift setup
 ```
 
 ### Step 3: Tell Your AI About Drift
@@ -137,8 +156,7 @@ Copy this into your AI chat:
 I have Drift installed. Before writing code, run these commands:
 
 1. `drift status` - See codebase overview
-2. `drift patterns list` - See my coding patterns
-3. `drift similar --intent api_endpoint --description "what you're building"` - Find similar code
+2. `drift similar --intent api_endpoint --description "what you're building"` - Find similar code
 
 Use what you learn to match my patterns.
 ```
@@ -165,12 +183,11 @@ npm install -g driftdetect
 npm install -g driftdetect-mcp
 ```
 
-### Step 2: Scan Your Project
+### Step 2: Run Setup
 
 ```bash
 cd your-project
-drift init
-drift scan
+drift setup
 ```
 
 ### Step 3: Configure Your AI Tool

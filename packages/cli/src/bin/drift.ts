@@ -55,6 +55,8 @@ import {
   nextStepsCommand,
   troubleshootCommand,
   createMemoryCommand,
+  setupCommand,
+  backupCommand,
 } from '../commands/index.js';
 import { VERSION } from '../index.js';
 
@@ -155,11 +157,19 @@ function createProgram(): Command {
   // Cortex V2 Memory Management
   program.addCommand(createMemoryCommand());
 
+  // Unified Setup Wizard (guided onboarding)
+  program.addCommand(setupCommand);
+
+  // Backup & Restore (enterprise data safety)
+  program.addCommand(backupCommand);
+
   // Add help examples
   program.addHelpText(
     'after',
     `
 Examples:
+  $ drift setup                   Guided setup wizard (recommended for new users)
+  $ drift setup -y                Quick setup with recommended defaults
   $ drift init                    Initialize Drift in current directory
   $ drift init --from-scaffold    Initialize with Cheatcode2026 presets
   $ drift scan                    Scan codebase for patterns
@@ -269,6 +279,11 @@ Examples:
   $ drift memory export out.json Export memories
   $ drift memory import in.json Import memories
   $ drift memory health         Get health report
+  $ drift backup                List all backups
+  $ drift backup create         Create a backup
+  $ drift backup restore <id>   Restore from a backup
+  $ drift backup delete <id>    Delete a backup (requires typing DELETE)
+  $ drift backup info <id>      Show backup details
 
 Documentation:
   https://github.com/drift/drift

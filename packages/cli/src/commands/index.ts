@@ -87,3 +87,9 @@ export { troubleshootCommand } from './troubleshoot.js';
 
 // Cortex V2 Memory Management
 export { createMemoryCommand } from './memory.js';
+
+// Unified Setup Wizard
+export { setupCommand } from './setup.js';
+
+// Backup & Restore
+export { backupCommand } from './backup.js';

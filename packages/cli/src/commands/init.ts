@@ -360,14 +360,29 @@ async function initAction(options: InitOptions): Promise<void> {
     initOpts = await promptInitOptions();
   }
 
-  // Run initial scan if requested
+  // Guide user to next steps
+  console.log();
   if (initOpts.scanNow) {
-    console.log();
-    console.log(chalk.gray('To run an initial scan, use:'));
-    console.log(chalk.cyan('  drift scan'));
+    if (initOpts.autoApprove) {
+      console.log(chalk.gray('To scan and auto-approve high-confidence patterns:'));
+      console.log(chalk.cyan('  drift scan'));
+      console.log(chalk.cyan('  drift approve --auto'));
+      console.log();
+      console.log(chalk.gray('Or use the guided setup wizard:'));
+      console.log(chalk.cyan('  drift setup'));
+    } else {
+      console.log(chalk.gray('To run an initial scan, use:'));
+      console.log(chalk.cyan('  drift scan'));
+      console.log();
+      console.log(chalk.gray('Or use the guided setup wizard (recommended):'));
+      console.log(chalk.cyan('  drift setup'));
+    }
     console.log();
     console.log(chalk.gray('To check for violations:'));
     console.log(chalk.cyan('  drift check'));
+  } else {
+    console.log(chalk.gray('When ready, use the guided setup wizard:'));
+    console.log(chalk.cyan('  drift setup'));
   }
 
   // Summary

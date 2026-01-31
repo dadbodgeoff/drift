@@ -1015,26 +1015,20 @@ async function deleteAction(id: string, options: MemoryOptions): Promise<void> {
 /**
  * Learn subcommand - learn from a correction
  */
-async function learnAction(options: MemoryOptions & {
-  original: string;
-  feedback: string;
-  code?: string;
-  file?: string;
-}): Promise<void> {
+async function learnAction(
+  correction: string,
+  options: MemoryOptions & {
+    original?: string;
+    code?: string;
+    file?: string;
+  }
+): Promise<void> {
   const rootDir = process.cwd();
   const format = options.format ?? 'text';
 
-  if (!options.original || !options.feedback) {
-    if (format === 'json') {
-      console.log(JSON.stringify({ error: 'Both --original and --feedback are required' }));
-    } else {
-      console.log(chalk.red('Error: Both --original and --feedback are required'));
-      console.log();
-      console.log(chalk.gray('Example:'));
-      console.log(chalk.cyan('  drift memory learn --original "Used MD5 for hashing" --feedback "Use bcrypt instead"'));
-    }
-    return;
-  }
+  // The correction is the main argument, original is optional context
+  const feedback = correction;
+  const original = options.original ?? 'Previous approach';
 
   const spinner = format === 'text' ? createSpinner('Learning from correction...') : null;
   spinner?.start();
@@ -1046,8 +1040,8 @@ async function learnAction(options: MemoryOptions & {
     let result: any;
     if ('learn' in cortex) {
       result = await cortex.learn(
-        options.original,
-        options.feedback,
+        original,
+        feedback,
         options.code,
         { activeFile: options.file }
       );
@@ -1056,10 +1050,12 @@ async function learnAction(options: MemoryOptions & {
       const id = await cortex.add({
         type: 'tribal',
         topic: 'Learned correction',
-        knowledge: `Original: ${options.original}\nCorrection: ${options.feedback}`,
+        knowledge: original !== 'Previous approach' 
+          ? `Original: ${original}\nCorrection: ${feedback}`
+          : feedback,
         severity: 'warning',
         source: { type: 'manual' },
-        summary: `Learned: ${options.feedback.slice(0, 50)}...`,
+        summary: feedback.length > 50 ? `${feedback.slice(0, 47)}...` : feedback,
         confidence: 0.8,
         importance: 'normal',
       });
@@ -1067,7 +1063,7 @@ async function learnAction(options: MemoryOptions & {
       result = {
         success: true,
         createdMemories: [id],
-        principles: [{ statement: options.feedback }],
+        principles: [{ statement: feedback }],
         category: 'correction',
       };
     }
@@ -2059,13 +2055,12 @@ export function createMemoryCommand(): Command {
 
   // Learn
   cmd
-    .command('learn')
-    .description('Learn from a correction')
-    .requiredOption('-o, --original <text>', 'Original code or response')
-    .requiredOption('-f, --feedback <text>', 'Feedback or correction')
-    .option('-c, --code <code>', 'Corrected code')
+    .command('learn <correction>')
+    .description('Learn from a correction (e.g., "Always use bcrypt with cost factor 12")')
+    .option('-o, --original <text>', 'What was originally done (optional context)')
+    .option('-c, --code <code>', 'Corrected code example')
     .option('--file <file>', 'Related file')
-    .action((opts) => learnAction({ ...cmd.opts(), ...opts }));
+    .action((correction, opts) => learnAction(correction, { ...cmd.opts(), ...opts }));
 
   // Feedback
   cmd
