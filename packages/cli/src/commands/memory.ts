@@ -504,6 +504,25 @@ async function addAction(
     return;
   }
 
+  // Some types shouldn't be manually added
+  const manuallyAddableTypes = ['tribal', 'procedural', 'pattern_rationale', 'code_smell', 'decision_context', 'constraint_override'];
+  if (!manuallyAddableTypes.includes(type)) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: `Type '${type}' cannot be manually added. Use: ${manuallyAddableTypes.join(', ')}` }));
+    } else {
+      console.log(chalk.red(`Type '${type}' cannot be manually added.`));
+      console.log(chalk.gray(`Manually addable types: ${manuallyAddableTypes.join(', ')}`));
+      if (type === 'episodic') {
+        console.log(chalk.gray('Episodic memories are created automatically from interactions.'));
+      } else if (type === 'semantic') {
+        console.log(chalk.gray('Semantic memories are created through consolidation.'));
+      } else if (type === 'core') {
+        console.log(chalk.gray('Core memory is created during initialization.'));
+      }
+    }
+    return;
+  }
+
   // Validate content
   if (!content || content.trim().length === 0) {
     if (format === 'json') {
@@ -1989,7 +2008,7 @@ export function createMemoryCommand(): Command {
   // Add
   cmd
     .command('add <type> <content>')
-    .description('Add a new memory (types: tribal, procedural, semantic, pattern_rationale, code_smell, decision_context, constraint_override)')
+    .description('Add a new memory (types: tribal, procedural, pattern_rationale, code_smell, decision_context, constraint_override)')
     .option('-t, --topic <topic>', 'Topic or name for the memory')
     .option('-s, --severity <severity>', 'Severity level (info, warning, critical)', 'warning')
     .option('-i, --importance <importance>', 'Importance level (low, normal, high, critical)', 'normal')
