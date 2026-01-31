@@ -4,6 +4,7 @@
 packages:
   # Core packages
   - "packages/core"
+  - "packages/cortex"
   - "packages/detectors"
   - "packages/lsp"
   - "packages/cli"

@@ -84,3 +84,6 @@ export { auditCommand } from './audit.js';
 // User Guidance Commands
 export { nextStepsCommand } from './next-steps.js';
 export { troubleshootCommand } from './troubleshoot.js';
+
+// Cortex V2 Memory Management
+export { createMemoryCommand } from './memory.js';

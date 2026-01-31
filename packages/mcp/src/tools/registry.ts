@@ -14,6 +14,7 @@ import { EXPLORATION_TOOLS } from './exploration/index.js';
 import { GENERATION_TOOLS } from './generation/index.js';
 import { ORCHESTRATION_TOOLS } from './orchestration/index.js';
 import { SURGICAL_TOOLS } from './surgical/index.js';
+import { MEMORY_TOOLS } from './memory/index.js';
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
@@ -28,6 +29,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
  * 5. Detail (deep inspection)
  * 6. Analysis (deeper analysis)
  * 7. Generation (AI-powered code intelligence)
+ * 8. Memory (Cortex V2 memory system)
  */
 export const ALL_TOOLS: Tool[] = [
   ...ORCHESTRATION_TOOLS,  // Start here
@@ -37,6 +39,7 @@ export const ALL_TOOLS: Tool[] = [
   ...DETAIL_TOOLS,
   ...ANALYSIS_TOOLS,
   ...GENERATION_TOOLS,     // AI-powered tools
+  ...MEMORY_TOOLS,         // Cortex V2 memory tools
 ];
 
 /**
@@ -50,6 +53,7 @@ export const TOOL_CATEGORIES = {
   detail: DETAIL_TOOLS.map(t => t.name),
   analysis: ANALYSIS_TOOLS.map(t => t.name),
   generation: GENERATION_TOOLS.map(t => t.name),
+  memory: MEMORY_TOOLS.map(t => t.name),
 };
 
 /**
@@ -69,7 +73,7 @@ export function hasTool(name: string): boolean {
 /**
  * Get tools by category
  */
-export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'surgical' | 'exploration' | 'detail' | 'analysis' | 'generation'): Tool[] {
+export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'surgical' | 'exploration' | 'detail' | 'analysis' | 'generation' | 'memory'): Tool[] {
   switch (category) {
     case 'orchestration':
       return ORCHESTRATION_TOOLS;
@@ -85,5 +89,7 @@ export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'su
       return ANALYSIS_TOOLS;
     case 'generation':
       return GENERATION_TOOLS;
+    case 'memory':
+      return MEMORY_TOOLS;
   }
 }

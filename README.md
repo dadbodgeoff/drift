@@ -10,6 +10,35 @@ Drift scans your code, learns your patterns, and tells AI how you do things. No 
 
 ---
 
+## 🚫 Delete Your AGENTS.md
+
+You know that `AGENTS.md` or `CLAUDE.md` file you wrote once and forgot about? It's stale. Delete it.
+
+Drift's **Cortex Memory System** replaces static instruction files with living memory:
+
+```bash
+# Instead of maintaining a static file:
+drift memory add tribal "Always use bcrypt for passwords" --importance critical
+drift memory add tribal "Services should not call controllers" --topic Architecture
+
+# AI gets context dynamically:
+drift memory why "authentication"
+
+# And learns from corrections:
+drift memory learn --original "Used MD5" --feedback "Use bcrypt instead"
+```
+
+| Static AGENTS.md | Cortex Memory |
+|------------------|---------------|
+| Written once, forgotten | Learns from corrections |
+| Gets stale immediately | Confidence decays naturally |
+| Manual updates required | Self-correcting through feedback |
+| One-size-fits-all dump | Intent-aware retrieval |
+
+→ [Learn more about Cortex](https://github.com/dadbodgeoff/drift/wiki/Cortex-V2-Overview)
+
+---
+
 ## 📋 What You Need
 
 - **Node.js 18 or newer** — [Download here](https://nodejs.org/)

@@ -54,6 +54,7 @@ import {
   auditCommand,
   nextStepsCommand,
   troubleshootCommand,
+  createMemoryCommand,
 } from '../commands/index.js';
 import { VERSION } from '../index.js';
 
@@ -150,6 +151,9 @@ function createProgram(): Command {
   // User Guidance Commands
   program.addCommand(nextStepsCommand);
   program.addCommand(troubleshootCommand);
+
+  // Cortex V2 Memory Management
+  program.addCommand(createMemoryCommand());
 
   // Add help examples
   program.addHelpText(
@@ -248,6 +252,23 @@ Examples:
   $ drift next-steps -v         Show all recommendations with reasons
   $ drift troubleshoot          Diagnose common issues
   $ drift troubleshoot -v       Show all issues including info-level
+  $ drift memory init           Initialize the memory system
+  $ drift memory status         Show memory system status
+  $ drift memory add tribal "..." Add tribal knowledge
+  $ drift memory add procedural "..." Add a procedure
+  $ drift memory list           List all memories
+  $ drift memory list -t tribal List tribal memories only
+  $ drift memory show <id>      Show memory details
+  $ drift memory search "auth"  Search memories
+  $ drift memory learn -o "..." -f "..."  Learn from a correction
+  $ drift memory feedback <id> confirm  Confirm a memory is accurate
+  $ drift memory validate       Validate and heal memories
+  $ drift memory consolidate    Consolidate episodic memories
+  $ drift memory warnings       Show active warnings
+  $ drift memory why "auth"     Get context for a task
+  $ drift memory export out.json Export memories
+  $ drift memory import in.json Import memories
+  $ drift memory health         Get health report
 
 Documentation:
   https://github.com/drift/drift

@@ -104,6 +104,24 @@ import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 import { ALL_TOOLS, TOOL_CATEGORIES } from './tools/registry.js';
 
+// Memory tool handlers
+import {
+  memoryStatus,
+  memoryAdd,
+  memorySearch,
+  memoryGet,
+  memoryValidate,
+  memoryForContext,
+  memoryLearn,
+  driftWhy,
+  driftMemoryExplain,
+  driftMemoryFeedback,
+  driftMemoryHealth,
+  driftMemoryPredict,
+  driftMemoryConflicts,
+  driftMemoryGraph,
+} from './tools/memory/index.js';
+
 // Surgical handlers (ultra-focused tools)
 import { handleCallers } from './tools/surgical/callers.js';
 import { handleDependencies } from './tools/surgical/dependencies.js';
@@ -597,6 +615,53 @@ async function routeToolCall(
       );
   }
 
+  // ============================================================================
+  // Memory Tools (Cortex V2)
+  // ============================================================================
+  switch (name) {
+    case 'drift_memory_status':
+      return executeMemoryTool(memoryStatus, args);
+      
+    case 'drift_why':
+      return executeMemoryTool(driftWhy, args);
+      
+    case 'drift_memory_for_context':
+      return executeMemoryTool(memoryForContext, args);
+      
+    case 'drift_memory_search':
+      return executeMemoryTool(memorySearch, args);
+      
+    case 'drift_memory_get':
+      return executeMemoryTool(memoryGet, args);
+      
+    case 'drift_memory_add':
+      return executeMemoryTool(memoryAdd, args);
+      
+    case 'drift_memory_learn':
+      return executeMemoryTool(memoryLearn, args);
+      
+    case 'drift_memory_validate':
+      return executeMemoryTool(memoryValidate, args);
+      
+    case 'drift_memory_explain':
+      return executeMemoryTool(driftMemoryExplain, args);
+      
+    case 'drift_memory_feedback':
+      return executeMemoryTool(driftMemoryFeedback, args);
+      
+    case 'drift_memory_health':
+      return executeMemoryTool(driftMemoryHealth, args);
+      
+    case 'drift_memory_predict':
+      return executeMemoryTool(driftMemoryPredict, args);
+      
+    case 'drift_memory_conflicts':
+      return executeMemoryTool(driftMemoryConflicts, args);
+      
+    case 'drift_memory_graph':
+      return executeMemoryTool(driftMemoryGraph, args);
+  }
+
   // Unknown tool
   return {
     content: [{
@@ -609,6 +674,35 @@ async function routeToolCall(
     }],
     isError: true,
   };
+}
+
+/**
+ * Execute a memory tool and format the response
+ */
+async function executeMemoryTool(
+  tool: { execute: (args: any) => Promise<any> },
+  args: Record<string, unknown>
+): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  try {
+    const result = await tool.execute(args);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(result, null, 2),
+      }],
+    };
+  } catch (error) {
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          error: error instanceof Error ? error.message : 'Unknown error',
+          hint: 'Ensure Cortex is initialized. Run drift scan first.',
+        }),
+      }],
+      isError: true,
+    };
+  }
 }
 
 /**

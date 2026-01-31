@@ -54,6 +54,8 @@
     "paths": {
       "@drift/core": ["packages/core/src/index.ts"],
       "@drift/core/*": ["packages/core/src/*"],
+      "@drift/cortex": ["packages/cortex/src/index.ts"],
+      "@drift/cortex/*": ["packages/cortex/src/*"],
       "@drift/detectors": ["packages/detectors/src/index.ts"],
       "@drift/detectors/*": ["packages/detectors/src/*"],
       "@drift/lsp": ["packages/lsp/src/index.ts"],
