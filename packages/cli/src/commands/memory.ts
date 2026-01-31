@@ -504,6 +504,16 @@ async function addAction(
     return;
   }
 
+  // Validate content
+  if (!content || content.trim().length === 0) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: 'Content cannot be empty' }));
+    } else {
+      console.log(chalk.red('Content cannot be empty'));
+    }
+    return;
+  }
+
   try {
     const cortex = await getCortex(rootDir);
 
@@ -752,9 +762,12 @@ async function showAction(id: string, options: MemoryOptions): Promise<void> {
     console.log(chalk.bold('📉 Decay'));
     console.log(chalk.gray('─'.repeat(50)));
     console.log(`  Current Confidence: ${getConfidenceColor(memory.confidence)}`);
-    console.log(`  Effective Confidence: ${getConfidenceColor(decay.effectiveConfidence)}`);
-    console.log(`  Age Factor: ${(decay.ageFactor * 100).toFixed(1)}%`);
-    console.log(`  Usage Factor: ${(decay.usageFactor * 100).toFixed(1)}%`);
+    const effectiveConf = isNaN(decay.finalConfidence) ? memory.confidence : decay.finalConfidence;
+    const ageFactor = isNaN(decay.temporalDecay) ? 1 : decay.temporalDecay;
+    const usageFactor = isNaN(decay.usageBoost) ? 1 : decay.usageBoost;
+    console.log(`  Effective Confidence: ${getConfidenceColor(effectiveConf)}`);
+    console.log(`  Age Factor: ${(ageFactor * 100).toFixed(1)}%`);
+    console.log(`  Usage Factor: ${(usageFactor * 100).toFixed(1)}%`);
     console.log();
 
   } catch (error) {

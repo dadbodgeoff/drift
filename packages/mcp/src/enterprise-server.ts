@@ -122,6 +122,11 @@ import {
   driftMemoryGraph,
 } from './tools/memory/index.js';
 
+// Cortex initialization
+import { getCortex, resetCortex } from 'driftdetect-cortex';
+import * as path from 'path';
+import * as fs from 'fs';
+
 // Surgical handlers (ultra-focused tools)
 import { handleCallers } from './tools/surgical/callers.js';
 import { handleDependencies } from './tools/surgical/dependencies.js';
@@ -184,6 +189,26 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
   const cache = config.enableCache !== false 
     ? createCache(config.projectRoot)
     : null;
+
+  // Initialize Cortex memory system if memory directory exists
+  const memoryDbPath = path.join(config.projectRoot, '.drift', 'memory', 'cortex.db');
+  if (fs.existsSync(memoryDbPath)) {
+    // Reset any existing instance and initialize with correct path
+    resetCortex().then(() => {
+      return getCortex({
+        storage: { type: 'sqlite', sqlitePath: memoryDbPath },
+        autoInitialize: true,
+      });
+    }).then(() => {
+      if (config.verbose) {
+        console.error('[drift-mcp] Cortex memory system initialized');
+      }
+    }).catch((error) => {
+      if (config.verbose) {
+        console.error('[drift-mcp] Cortex initialization failed:', error);
+      }
+    });
+  }
 
   // Warm up stores on startup (async, non-blocking for server start)
   // This loads all .drift data into memory so tools work immediately
