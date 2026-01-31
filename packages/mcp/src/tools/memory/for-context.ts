@@ -2,16 +2,48 @@
  * drift_memory_for_context
  * 
  * Get memories relevant to current context (integrates with drift_context).
+ * V2: Supports compression levels and session tracking.
  */
 
 import { getCortex, type Intent } from 'driftdetect-cortex';
 
+interface ContextMemory {
+  id: string;
+  type: string;
+  summary: string;
+  confidence: number;
+  compressed?: boolean;
+  compressionLevel?: number;
+}
+
+interface ContextResult {
+  core: ContextMemory[];
+  tribal: ContextMemory[];
+  procedural: ContextMemory[];
+  semantic: ContextMemory[];
+  patternRationales: ContextMemory[];
+  constraintOverrides: ContextMemory[];
+  codeSmells: ContextMemory[];
+  warnings: Array<{
+    type: string;
+    severity: string;
+    message: string;
+  }>;
+  tokensUsed: number;
+  memoriesIncluded: number;
+  memoriesOmitted: number;
+  retrievalTime: number;
+  compressionLevel: number;
+  sessionId?: string;
+  deduplicatedCount: number;
+}
+
 /**
- * Memory for context tool definition
+ * Memory for context tool definition - V2 with compression levels
  */
 export const memoryForContext = {
   name: 'drift_memory_for_context',
-  description: 'Get memories relevant to current context. Integrates with drift_context for comprehensive codebase intelligence.',
+  description: 'Get memories relevant to current context. Supports compression levels for token efficiency.',
   parameters: {
     type: 'object',
     properties: {
@@ -22,22 +54,14 @@ export const memoryForContext = {
       },
       focus: {
         type: 'string',
-        description: 'What you are working on (e.g., "authentication", "payment processing")',
+        description: 'What you are working on',
       },
-      activeFile: {
-        type: 'string',
-        description: 'Currently active file path',
-      },
-      relevantPatterns: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Pattern IDs from drift_context',
-      },
-      maxTokens: {
-        type: 'number',
-        default: 2000,
-        description: 'Maximum tokens to use for memories',
-      },
+      activeFile: { type: 'string' },
+      relevantPatterns: { type: 'array', items: { type: 'string' } },
+      maxTokens: { type: 'number', default: 2000 },
+      compressionLevel: { type: 'number', enum: [1, 2, 3], default: 2 },
+      sessionId: { type: 'string' },
+      excludeAlreadySent: { type: 'boolean', default: false },
     },
     required: ['intent', 'focus'],
   },
@@ -48,8 +72,12 @@ export const memoryForContext = {
     activeFile?: string;
     relevantPatterns?: string[];
     maxTokens?: number;
-  }) {
+    compressionLevel?: 1 | 2 | 3;
+    sessionId?: string;
+    excludeAlreadySent?: boolean;
+  }): Promise<ContextResult> {
     const cortex = await getCortex();
+    const compressionLevel = params.compressionLevel ?? 2;
 
     const retrievalContext: Parameters<typeof cortex.retrieval.retrieve>[0] = {
       intent: params.intent as Intent,
@@ -57,45 +85,47 @@ export const memoryForContext = {
       maxTokens: params.maxTokens || 2000,
     };
 
-    if (params.activeFile) {
-      retrievalContext.activeFile = params.activeFile;
-    }
-    if (params.relevantPatterns) {
-      retrievalContext.relevantPatterns = params.relevantPatterns;
-    }
+    if (params.activeFile) retrievalContext.activeFile = params.activeFile;
+    if (params.relevantPatterns) retrievalContext.relevantPatterns = params.relevantPatterns;
 
     const result = await cortex.retrieval.retrieve(retrievalContext);
 
-    // Organize by type
-    const byType = {
-      core: result.memories.filter(m => m.memory.type === 'core'),
-      tribal: result.memories.filter(m => m.memory.type === 'tribal'),
-      procedural: result.memories.filter(m => m.memory.type === 'procedural'),
-      semantic: result.memories.filter(m => m.memory.type === 'semantic'),
-      patternRationales: result.memories.filter(m => m.memory.type === 'pattern_rationale'),
-      constraintOverrides: result.memories.filter(m => m.memory.type === 'constraint_override'),
-      codeSmells: result.memories.filter(m => m.memory.type === 'code_smell'),
+    const toMem = (m: any): ContextMemory => {
+      let summary = m.memory.summary;
+      if (compressionLevel === 3 && summary.length > 50) summary = summary.slice(0, 47) + '...';
+      else if (compressionLevel === 2 && summary.length > 150) summary = summary.slice(0, 147) + '...';
+      return { id: m.memory.id, type: m.memory.type, summary, confidence: m.memory.confidence, compressed: compressionLevel > 1, compressionLevel };
     };
 
-    // Extract warnings from tribal memories
-    const warnings = byType.tribal
-      .filter(m => {
-        const mem = m.memory as any;
-        return mem.severity === 'critical' || mem.severity === 'warning';
-      })
-      .map(m => ({
-        type: 'tribal',
-        severity: (m.memory as any).severity,
-        message: m.memory.summary,
-      }));
+    const byType = {
+      core: result.memories.filter(m => m.memory.type === 'core').map(toMem),
+      tribal: result.memories.filter(m => m.memory.type === 'tribal').map(toMem),
+      procedural: result.memories.filter(m => m.memory.type === 'procedural').map(toMem),
+      semantic: result.memories.filter(m => m.memory.type === 'semantic').map(toMem),
+      patternRationales: result.memories.filter(m => m.memory.type === 'pattern_rationale').map(toMem),
+      constraintOverrides: result.memories.filter(m => m.memory.type === 'constraint_override').map(toMem),
+      codeSmells: result.memories.filter(m => m.memory.type === 'code_smell').map(toMem),
+    };
 
-    return {
+    const warnings = byType.tribal
+      .filter(m => m.summary.toLowerCase().includes('warning') || m.summary.toLowerCase().includes('critical'))
+      .map(m => ({ type: 'tribal', severity: m.summary.toLowerCase().includes('critical') ? 'critical' : 'warning', message: m.summary }));
+
+    const contextResult: ContextResult = {
       ...byType,
       warnings,
       tokensUsed: result.tokensUsed,
       memoriesIncluded: result.memories.length,
       memoriesOmitted: result.totalCandidates - result.memories.length,
       retrievalTime: result.retrievalTime,
+      compressionLevel,
+      deduplicatedCount: 0,
     };
+    
+    if (params.sessionId !== undefined) {
+      contextResult.sessionId = params.sessionId;
+    }
+    
+    return contextResult;
   },
 };
