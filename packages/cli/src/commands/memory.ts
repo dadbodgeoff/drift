@@ -792,14 +792,18 @@ async function searchAction(query: string, options: MemoryOptions & {
   try {
     const cortex = await getCortex(rootDir);
 
-    // Try semantic search first
+    // Try semantic search first, fall back to text search
     let results: any[] = [];
     
     try {
       const embedding = await cortex.embeddings.embed(query);
       results = await cortex.storage.similaritySearch(embedding, limit);
     } catch {
-      // Fall back to text-based search
+      // Similarity search failed
+    }
+    
+    // If semantic search returned no results, fall back to text-based search
+    if (results.length === 0) {
       const allMemories = await cortex.storage.search({ limit: 1000 });
       const queryLower = query.toLowerCase();
       
