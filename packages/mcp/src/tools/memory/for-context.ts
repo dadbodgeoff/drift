@@ -17,13 +17,20 @@ interface ContextMemory {
 }
 
 interface ContextResult {
+  // Domain-agnostic
   core: ContextMemory[];
   tribal: ContextMemory[];
   procedural: ContextMemory[];
   semantic: ContextMemory[];
+  decisions: ContextMemory[];
+  insights: ContextMemory[];
+  references: ContextMemory[];
+  preferences: ContextMemory[];
+  // Code-specific
   patternRationales: ContextMemory[];
   constraintOverrides: ContextMemory[];
   codeSmells: ContextMemory[];
+  // Metadata
   warnings: Array<{
     type: string;
     severity: string;
@@ -49,7 +56,16 @@ export const memoryForContext = {
     properties: {
       intent: {
         type: 'string',
-        enum: ['add_feature', 'fix_bug', 'refactor', 'security_audit', 'understand_code', 'add_test'],
+        enum: [
+          // Domain-agnostic intents
+          'create',           // Creating something new (not code-specific)
+          'investigate',      // Understanding/researching
+          'decide',           // Making a decision
+          'recall',           // Finding past knowledge
+          'learn',            // Adding new knowledge
+          // Code-specific intents
+          'add_feature', 'fix_bug', 'refactor', 'security_audit', 'understand_code', 'add_test'
+        ],
         description: 'What you are trying to do',
       },
       focus: {
@@ -98,10 +114,16 @@ export const memoryForContext = {
     };
 
     const byType = {
+      // Domain-agnostic
       core: result.memories.filter(m => m.memory.type === 'core').map(toMem),
       tribal: result.memories.filter(m => m.memory.type === 'tribal').map(toMem),
       procedural: result.memories.filter(m => m.memory.type === 'procedural').map(toMem),
       semantic: result.memories.filter(m => m.memory.type === 'semantic').map(toMem),
+      decisions: result.memories.filter(m => m.memory.type === 'decision').map(toMem),
+      insights: result.memories.filter(m => m.memory.type === 'insight').map(toMem),
+      references: result.memories.filter(m => m.memory.type === 'reference').map(toMem),
+      preferences: result.memories.filter(m => m.memory.type === 'preference').map(toMem),
+      // Code-specific
       patternRationales: result.memories.filter(m => m.memory.type === 'pattern_rationale').map(toMem),
       constraintOverrides: result.memories.filter(m => m.memory.type === 'constraint_override').map(toMem),
       codeSmells: result.memories.filter(m => m.memory.type === 'code_smell').map(toMem),

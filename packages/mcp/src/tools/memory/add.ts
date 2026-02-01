@@ -27,33 +27,57 @@ interface AddResult {
  */
 export const memoryAdd = {
   name: 'drift_memory_add',
-  description: 'Add a new memory to the system. Supports tribal, procedural, semantic, pattern_rationale, constraint_override, decision_context, and code_smell types. Automatically infers causal relationships.',
+  description: 'Add a new memory to the system. Supports domain-agnostic types (decision, insight, reference, preference) and code-specific types (tribal, procedural, semantic, pattern_rationale, constraint_override, decision_context, code_smell). Automatically infers causal relationships.',
   parameters: {
     type: 'object',
     properties: {
       type: {
         type: 'string',
-        enum: ['tribal', 'procedural', 'semantic', 'pattern_rationale', 'constraint_override', 'decision_context', 'code_smell'],
+        enum: [
+          // Domain-agnostic (for business, research, personal use)
+          'decision',           // Standalone decisions
+          'insight',            // Learned observations
+          'reference',          // External references
+          'preference',         // User/team preferences
+          // General knowledge
+          'tribal',             // Institutional knowledge
+          'procedural',         // How-to procedures
+          'semantic',           // Consolidated knowledge
+          // Code-specific
+          'pattern_rationale',  // Why patterns exist
+          'constraint_override', // Approved exceptions
+          'decision_context',   // Code decision context
+          'code_smell',         // Anti-patterns
+        ],
         description: 'Type of memory to create',
       },
       content: {
         type: 'object',
-        description: 'Memory content (varies by type)',
+        description: 'Memory content (varies by type). For decision: {title, outcome, decisionSummary, context?, alternatives?, stakeholders?}. For insight: {insight, source, domain?}. For reference: {title, url?, keyPoints}. For preference: {preference, category, scope, strength}.',
       },
       linkedPatterns: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Pattern IDs to link to',
+        description: 'Pattern IDs to link to (code-specific)',
       },
       linkedFiles: {
         type: 'array',
         items: { type: 'string' },
-        description: 'File paths to link to',
+        description: 'File paths to link to (code-specific)',
       },
       importance: {
         type: 'string',
         enum: ['low', 'normal', 'high', 'critical'],
         default: 'normal',
+      },
+      domain: {
+        type: 'string',
+        description: 'Domain/category for the memory (e.g., "business", "hiring", "architecture")',
+      },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Tags for categorization',
       },
       // V2 parameters
       inferCausal: {
