@@ -22,6 +22,7 @@ import * as path from 'node:path';
 
 import chalk from 'chalk';
 import { Command } from 'commander';
+import type { Memory } from 'driftdetect-cortex';
 
 import { createSpinner } from '../ui/spinner.js';
 
@@ -121,6 +122,9 @@ function getTypeIcon(type: string): string {
 }
 
 function getConfidenceColor(confidence: number): string {
+  if (isNaN(confidence) || confidence === null || confidence === undefined) {
+    return chalk.gray('N/A');
+  }
   const percent = Math.round(confidence * 100);
   if (confidence >= 0.8) return chalk.green(`${percent}%`);
   if (confidence >= 0.5) return chalk.yellow(`${percent}%`);
@@ -1755,6 +1759,27 @@ async function importAction(
 
     for (const memory of memories) {
       try {
+        // Validate required fields
+        if (!memory.type || typeof memory.type !== 'string') {
+          errors++;
+          continue;
+        }
+        
+        // Ensure confidence is a valid number
+        if (memory.confidence === undefined || memory.confidence === null || isNaN(memory.confidence)) {
+          memory.confidence = 1; // Default to full confidence
+        }
+        
+        // Ensure importance is set
+        if (!memory.importance) {
+          memory.importance = 'normal';
+        }
+        
+        // Ensure summary is set
+        if (!memory.summary) {
+          memory.summary = memory.knowledge || memory.description || memory.content || `${memory.type} memory`;
+        }
+
         const existing = await cortex.get(memory.id);
 
         if (existing && !overwrite) {
@@ -1837,7 +1862,9 @@ async function healthAction(options: MemoryOptions): Promise<void> {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     for (const memory of memories) {
-      confidenceSum += memory.confidence;
+      if (typeof memory.confidence === 'number' && !isNaN(memory.confidence)) {
+        confidenceSum += memory.confidence;
+      }
       if (memory.confidence < 0.5) {
         lowConfidenceCount++;
       }
@@ -1846,7 +1873,8 @@ async function healthAction(options: MemoryOptions): Promise<void> {
       }
     }
 
-    const avgConfidence = memories.length > 0 ? confidenceSum / memories.length : 0;
+    const validConfidenceCount = memories.filter((m: Memory) => typeof m.confidence === 'number' && !isNaN(m.confidence)).length;
+    const avgConfidence = validConfidenceCount > 0 ? confidenceSum / validConfidenceCount : 0;
 
     // Identify issues
     const issues: any[] = [];
