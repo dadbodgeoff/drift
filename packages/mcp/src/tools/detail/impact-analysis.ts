@@ -85,7 +85,93 @@ export async function handleImpactAnalysis(
     );
   }
   
-  // Create impact analyzer
+  // Check if we're in SQLite mode - if so, use native callers query
+  // This is needed because the in-memory graph doesn't have calledBy populated from SQLite
+  const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+  
+  if (isSqliteMode) {
+    // Use native SQLite queries for accurate caller information
+    const { getCallGraphCallers, getCallGraphFileCallers, isCallGraphAvailable } = await import('driftdetect-core');
+    
+    if (isCallGraphAvailable(projectRoot)) {
+      // Determine if target is a file or function
+      const isFile = args.target.includes('/') || 
+                     args.target.endsWith('.py') || 
+                     args.target.endsWith('.ts') || 
+                     args.target.endsWith('.tsx') ||
+                     args.target.endsWith('.js') ||
+                     args.target.endsWith('.jsx');
+      
+      let callers: Array<{ callerId: string; callerName: string; callerFile: string; line: number }>;
+      
+      if (isFile) {
+        callers = getCallGraphFileCallers(projectRoot, args.target);
+      } else {
+        callers = getCallGraphCallers(projectRoot, args.target);
+      }
+      
+      // Build result from native callers
+      const directCallers: AffectedCaller[] = callers.slice(0, limit).map(c => ({
+        name: c.callerName,
+        file: c.callerFile,
+        line: c.line,
+        depth: 1,
+        isEntryPoint: graph.entryPoints.includes(c.callerId),
+        accessesSensitiveData: false, // Would need additional query
+      }));
+      
+      const entryPointCallers = directCallers.filter(c => c.isEntryPoint);
+      
+      // Calculate risk based on caller count
+      const riskScore = Math.min(100, callers.length * 5 + entryPointCallers.length * 10);
+      const risk = riskScore >= 75 ? 'critical' : 
+                   riskScore >= 50 ? 'high' : 
+                   riskScore >= 25 ? 'medium' : 'low';
+      
+      const data: ImpactData = {
+        target: {
+          type: isFile ? 'file' : 'function',
+          name: args.target,
+        },
+        risk: {
+          level: risk,
+          score: riskScore,
+        },
+        summary: {
+          directCallers: callers.length,
+          transitiveCallers: 0, // Would need recursive query
+          affectedEntryPoints: entryPointCallers.length,
+          sensitiveDataPaths: 0,
+          maxDepth: 1,
+        },
+        entryPoints: entryPointCallers,
+        sensitiveDataPaths: [],
+        directCallers,
+      };
+      
+      const riskEmoji = risk === 'critical' ? '🔴' :
+                        risk === 'high' ? '🟠' :
+                        risk === 'medium' ? '🟡' : '🟢';
+      
+      const summary = `${riskEmoji} ${risk.toUpperCase()} risk (${riskScore}/100). ${callers.length} direct callers, ${entryPointCallers.length} entry points affected.`;
+      
+      return builder
+        .withSummary(summary)
+        .withData(data)
+        .withHints({
+          nextActions: [
+            entryPointCallers.length > 0 
+              ? 'Review affected entry points before merging'
+              : 'Low impact - safe to proceed',
+            'Use drift_reachability to trace data access paths',
+          ],
+          relatedTools: ['drift_reachability', 'drift_callgraph'],
+        })
+        .buildContent();
+    }
+  }
+  
+  // Fall back to in-memory graph analysis (for non-SQLite or if native not available)
   const impactAnalyzer = createImpactAnalyzer(graph);
   
   // Determine if target is a file or function

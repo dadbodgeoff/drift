@@ -91,6 +91,96 @@ export async function handleCallers(
     );
   }
   
+  // Check if we're in SQLite mode - if so, use native callers query
+  const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+  const projectRoot = graph.projectRoot;
+  
+  if (isSqliteMode && projectRoot) {
+    try {
+      // Use native SQLite queries for accurate caller information
+      const { getCallGraphCallers, isCallGraphAvailable } = await import('driftdetect-core');
+      
+      if (isCallGraphAvailable(projectRoot)) {
+        // Query callers directly from SQLite
+        const nativeCallers = getCallGraphCallers(projectRoot, funcName);
+        
+        // Build direct callers from native results
+        const directCallers: CallerInfo[] = nativeCallers.map(c => ({
+          function: c.callerName,
+          file: c.callerFile,
+          line: c.line,
+          callSite: c.line,
+        }));
+        
+        // Sort by file then line
+        directCallers.sort((a, b) => {
+          const fileCompare = a.file.localeCompare(b.file);
+          if (fileCompare !== 0) {return fileCompare;}
+          return a.callSite - b.callSite;
+        });
+        
+        // Limit direct callers
+        const limitedDirectCallers = directCallers.slice(0, 10);
+        
+        // Check if this is a public API
+        const isPublicApi = nativeCallers.some(c => graph.entryPoints.includes(c.callerId));
+        
+        const data: CallersData = {
+          target: {
+            function: funcName,
+            file: args.file ?? nativeCallers[0]?.callerFile ?? 'unknown',
+            line: 0,
+          },
+          directCallers: limitedDirectCallers,
+          transitiveCallers: undefined, // Would need recursive native query
+          stats: {
+            directCount: directCallers.length,
+            isPublicApi,
+            isWidelyUsed: directCallers.length > 5,
+          },
+        };
+        
+        // Build summary
+        let summary = `"${funcName}" has ${directCallers.length} direct caller${directCallers.length !== 1 ? 's' : ''}`;
+        if (isPublicApi) {
+          summary += ' (public API)';
+        }
+        
+        // Build hints
+        const hints: { nextActions: string[]; relatedTools: string[]; warnings?: string[] } = {
+          nextActions: [
+            directCallers.length > 0
+              ? `Review callers before modifying "${funcName}"`
+              : `"${funcName}" appears unused - safe to modify`,
+            'Use drift_impact_analysis for full blast radius',
+          ],
+          relatedTools: ['drift_impact_analysis', 'drift_signature', 'drift_reachability'],
+        };
+        
+        if (data.stats.isWidelyUsed) {
+          hints.warnings = ['Widely used function - changes may have broad impact'];
+        }
+        
+        if (directCallers.length > 10) {
+          hints.warnings = hints.warnings ?? [];
+          hints.warnings.push(`${directCallers.length - 10} additional callers not shown`);
+        }
+        
+        // Record metrics
+        metrics.recordRequest('drift_callers', Date.now() - startTime, true, false);
+        
+        return builder
+          .withSummary(summary)
+          .withData(data)
+          .withHints(hints)
+          .buildContent();
+      }
+    } catch {
+      // Fall through to in-memory analysis
+    }
+  }
+  
+  // Fall back to in-memory graph analysis
   // Find the target function
   let targetFunc: FunctionNode | null = null;
   

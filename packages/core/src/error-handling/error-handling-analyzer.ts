@@ -24,6 +24,11 @@ import type {
   ErrorHandlingQuality,
 } from './types.js';
 import type { CallGraph, FunctionNode } from '../call-graph/types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../native/index.js';
 
 // ============================================================================
 // Analyzer
@@ -33,6 +38,8 @@ export class ErrorHandlingAnalyzer {
   private topology: ErrorHandlingTopology | null = null;
   private callGraph: CallGraph | null = null;
   private options: ErrorHandlingOptions;
+  private useNativeQueries: boolean = false;
+  private projectRoot: string | undefined;
 
   constructor(options: ErrorHandlingOptions) {
     this.options = {
@@ -48,6 +55,34 @@ export class ErrorHandlingAnalyzer {
    */
   setCallGraph(callGraph: CallGraph): void {
     this.callGraph = callGraph;
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = callGraph.projectRoot;
+    const isSqliteMode = (callGraph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getFunctionCallers(funcId: string, funcName: string): Array<{ callerId: string; line: number }> {
+    const func = this.callGraph?.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId, line: c.line }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -295,7 +330,8 @@ export class ErrorHandlingAnalyzer {
 
     // Find outgoing errors (to callers)
     const outgoingErrors: FunctionErrorAnalysis['outgoingErrors'] = [];
-    for (const caller of func.calledBy) {
+    const funcCallers = this.getFunctionCallers(funcId, func.name);
+    for (const caller of funcCallers) {
       const callerProfile = this.topology.functions.get(caller.callerId);
       outgoingErrors.push({
         to: caller.callerId,
@@ -677,7 +713,19 @@ export class ErrorHandlingAnalyzer {
 
     while (depth < maxDepth) {
       const func = this.callGraph.functions.get(current);
-      if (!func || func.calledBy.length === 0) {
+      if (!func) {
+        // No more callers - error escapes
+        return {
+          source: { functionId: throwerId, throwLine: functions.get(throwerId)?.line ?? 0 },
+          sink: null,
+          propagationPath: path,
+          transformations: [],
+          depth,
+        };
+      }
+      
+      const funcCallers = this.getFunctionCallers(current, func.name);
+      if (funcCallers.length === 0) {
         // No more callers - error escapes
         return {
           source: { functionId: throwerId, throwLine: functions.get(throwerId)?.line ?? 0 },
@@ -689,7 +737,7 @@ export class ErrorHandlingAnalyzer {
       }
 
       // Check if any caller catches
-      for (const caller of func.calledBy) {
+      for (const caller of funcCallers) {
         const callerProfile = functions.get(caller.callerId);
         if (callerProfile?.hasTryCatch) {
           // Found a boundary
@@ -707,7 +755,7 @@ export class ErrorHandlingAnalyzer {
       }
 
       // Move to first caller (simplified - real impl would explore all paths)
-      const nextCaller = func.calledBy[0]?.callerId;
+      const nextCaller = funcCallers[0]?.callerId;
       if (!nextCaller || path.includes(nextCaller)) {break;} // Avoid cycles
       
       path.push(nextCaller);

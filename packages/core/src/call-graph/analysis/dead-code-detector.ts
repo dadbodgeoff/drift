@@ -6,6 +6,11 @@
  */
 
 import type { CallGraph, FunctionNode } from '../types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../../native/index.js';
 
 // ============================================================================
 // Types
@@ -186,10 +191,38 @@ const USED_DECORATOR_PATTERNS: RegExp[] = [
 export class DeadCodeDetector {
   private graph: CallGraph;
   private entryPointSet: Set<string>;
+  private useNativeQueries: boolean;
+  private projectRoot: string | undefined;
 
   constructor(graph: CallGraph) {
     this.graph = graph;
     this.entryPointSet = new Set(graph.entryPoints);
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = graph.projectRoot;
+    const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Check if a function has callers (using native query if available)
+   */
+  private hasCallers(func: FunctionNode): boolean {
+    // If calledBy is populated, use it
+    if (func.calledBy.length > 0) {
+      return true;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, func.name);
+      return callers.length > 0;
+    }
+    
+    return false;
   }
 
   /**
@@ -227,7 +260,7 @@ export class DeadCodeDetector {
       }
 
       // Skip functions with callers
-      if (func.calledBy.length > 0) {
+      if (this.hasCallers(func)) {
         excludedWithCallers++;
         continue;
       }

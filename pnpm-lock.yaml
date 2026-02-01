@@ -61,6 +61,43 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.30)
 
+  packages/ci:
+    dependencies:
+      '@octokit/rest':
+        specifier: ^20.0.0
+        version: 20.1.2
+      '@octokit/webhooks':
+        specifier: ^12.0.0
+        version: 12.3.2
+      commander:
+        specifier: ^11.0.0
+        version: 11.1.0
+      driftdetect-core:
+        specifier: 0.9.46
+        version: link:../core
+      driftdetect-cortex:
+        specifier: 0.9.46
+        version: link:../cortex
+      driftdetect-detectors:
+        specifier: 0.9.46
+        version: link:../detectors
+      simple-git:
+        specifier: ^3.30.0
+        version: 3.30.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.30
+        version: 20.19.30
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.30)
+
   packages/cibench:
     dependencies:
       chalk:
@@ -101,16 +138,16 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: 0.9.39
+        specifier: workspace:*
         version: link:../core
       driftdetect-cortex:
-        specifier: 0.9.39
+        specifier: workspace:*
         version: link:../cortex
       driftdetect-dashboard:
-        specifier: 0.9.39
+        specifier: workspace:*
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: 0.9.39
+        specifier: workspace:*
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -193,8 +230,8 @@ importers:
         version: 5.9.3
     optionalDependencies:
       driftdetect-native:
-        specifier: 0.9.38
-        version: 0.9.38
+        specifier: 0.9.45
+        version: 0.9.45
     devDependencies:
       '@types/minimatch':
         specifier: ^5.1.2
@@ -246,11 +283,11 @@ importers:
   packages/dashboard:
     dependencies:
       driftdetect-core:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: 0.9.45
+        version: 0.9.45
       driftdetect-galaxy:
-        specifier: ^0.9.28
-        version: link:../galaxy
+        specifier: 0.9.45
+        version: 0.9.45(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)
       express:
         specifier: ^4.18.2
         version: 4.22.1
@@ -352,8 +389,8 @@ importers:
   packages/detectors:
     dependencies:
       driftdetect-core:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: 0.9.45
+        version: 0.9.45
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -414,11 +451,11 @@ importers:
   packages/lsp:
     dependencies:
       driftdetect-core:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: 0.9.45
+        version: 0.9.45
       driftdetect-detectors:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: 0.9.45
+        version: 0.9.45
       vscode-languageserver:
         specifier: ^9.0.1
         version: 9.0.1
@@ -448,14 +485,14 @@ importers:
         specifier: ^1.0.0
         version: 1.25.3(hono@4.11.7)(zod@4.3.6)
       driftdetect-core:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: workspace:*
+        version: link:../core
       driftdetect-cortex:
-        specifier: 0.9.39
+        specifier: workspace:*
         version: link:../cortex
       driftdetect-detectors:
-        specifier: 0.9.37
-        version: 0.9.37
+        specifier: workspace:*
+        version: link:../detectors
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -1909,6 +1946,128 @@ packages:
       fastq: 1.20.1
     dev: true
 
+  /@octokit/auth-token@4.0.0:
+    resolution: {integrity: sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==}
+    engines: {node: '>= 18'}
+    dev: false
+
+  /@octokit/core@5.2.2:
+    resolution: {integrity: sha512-/g2d4sW9nUDJOMz3mabVQvOGhVa4e/BN/Um7yca9Bb2XTzPPnfTWHWQg+IsEYO7M3Vx+EXvaM/I2pJWIMun1bg==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/auth-token': 4.0.0
+      '@octokit/graphql': 7.1.1
+      '@octokit/request': 8.4.1
+      '@octokit/request-error': 5.1.1
+      '@octokit/types': 13.10.0
+      before-after-hook: 2.2.3
+      universal-user-agent: 6.0.1
+    dev: false
+
+  /@octokit/endpoint@9.0.6:
+    resolution: {integrity: sha512-H1fNTMA57HbkFESSt3Y9+FBICv+0jFceJFPWDePYlR/iMGrwM5ph+Dd4XRQs+8X+PUFURLQgX9ChPfhJ/1uNQw==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/types': 13.10.0
+      universal-user-agent: 6.0.1
+    dev: false
+
+  /@octokit/graphql@7.1.1:
+    resolution: {integrity: sha512-3mkDltSfcDUoa176nlGoA32RGjeWjl3K7F/BwHwRMJUW/IteSa4bnSV8p2ThNkcIcZU2umkZWxwETSSCJf2Q7g==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/request': 8.4.1
+      '@octokit/types': 13.10.0
+      universal-user-agent: 6.0.1
+    dev: false
+
+  /@octokit/openapi-types@24.2.0:
+    resolution: {integrity: sha512-9sIH3nSUttelJSXUrmGzl7QUBFul0/mB8HRYl3fOlgHbIWG+WnYDXU3v/2zMtAvuzZ/ed00Ei6on975FhBfzrg==}
+    dev: false
+
+  /@octokit/plugin-paginate-rest@11.4.4-cjs.2(@octokit/core@5.2.2):
+    resolution: {integrity: sha512-2dK6z8fhs8lla5PaOTgqfCGBxgAv/le+EhPs27KklPhm1bKObpu6lXzwfUEQ16ajXzqNrKMujsFyo9K2eaoISw==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@octokit/core': '5'
+    dependencies:
+      '@octokit/core': 5.2.2
+      '@octokit/types': 13.10.0
+    dev: false
+
+  /@octokit/plugin-request-log@4.0.1(@octokit/core@5.2.2):
+    resolution: {integrity: sha512-GihNqNpGHorUrO7Qa9JbAl0dbLnqJVrV8OXe2Zm5/Y4wFkZQDfTreBzVmiRfJVfE4mClXdihHnbpyyO9FSX4HA==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@octokit/core': '5'
+    dependencies:
+      '@octokit/core': 5.2.2
+    dev: false
+
+  /@octokit/plugin-rest-endpoint-methods@13.3.2-cjs.1(@octokit/core@5.2.2):
+    resolution: {integrity: sha512-VUjIjOOvF2oELQmiFpWA1aOPdawpyaCUqcEBc/UOUnj3Xp6DJGrJ1+bjUIIDzdHjnFNO6q57ODMfdEZnoBkCwQ==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@octokit/core': ^5
+    dependencies:
+      '@octokit/core': 5.2.2
+      '@octokit/types': 13.10.0
+    dev: false
+
+  /@octokit/request-error@5.1.1:
+    resolution: {integrity: sha512-v9iyEQJH6ZntoENr9/yXxjuezh4My67CBSu9r6Ve/05Iu5gNgnisNWOsoJHTP6k0Rr0+HQIpnH+kyammu90q/g==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/types': 13.10.0
+      deprecation: 2.3.1
+      once: 1.4.0
+    dev: false
+
+  /@octokit/request@8.4.1:
+    resolution: {integrity: sha512-qnB2+SY3hkCmBxZsR/MPCybNmbJe4KAlfWErXq+rBKkQJlbjdJeS85VI9r8UqeLYLvnAenU8Q1okM/0MBsAGXw==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/endpoint': 9.0.6
+      '@octokit/request-error': 5.1.1
+      '@octokit/types': 13.10.0
+      universal-user-agent: 6.0.1
+    dev: false
+
+  /@octokit/rest@20.1.2:
+    resolution: {integrity: sha512-GmYiltypkHHtihFwPRxlaorG5R9VAHuk/vbszVoRTGXnAsY60wYLkh/E2XiFmdZmqrisw+9FaazS1i5SbdWYgA==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/core': 5.2.2
+      '@octokit/plugin-paginate-rest': 11.4.4-cjs.2(@octokit/core@5.2.2)
+      '@octokit/plugin-request-log': 4.0.1(@octokit/core@5.2.2)
+      '@octokit/plugin-rest-endpoint-methods': 13.3.2-cjs.1(@octokit/core@5.2.2)
+    dev: false
+
+  /@octokit/types@13.10.0:
+    resolution: {integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==}
+    dependencies:
+      '@octokit/openapi-types': 24.2.0
+    dev: false
+
+  /@octokit/webhooks-methods@4.1.0:
+    resolution: {integrity: sha512-zoQyKw8h9STNPqtm28UGOYFE7O6D4Il8VJwhAtMHFt2C4L0VQT1qGKLeefUOqHNs1mNRYSadVv7x0z8U2yyeWQ==}
+    engines: {node: '>= 18'}
+    dev: false
+
+  /@octokit/webhooks-types@7.6.1:
+    resolution: {integrity: sha512-S8u2cJzklBC0FgTwWVLaM8tMrDuDMVE4xiTK4EYXM9GntyvrdbSoxqDQa+Fh57CCNApyIpyeqPhhFEmHPfrXgw==}
+    dev: false
+
+  /@octokit/webhooks@12.3.2:
+    resolution: {integrity: sha512-exj1MzVXoP7xnAcAB3jZ97pTvVPkQF9y6GA/dvYC47HV7vLv+24XRS6b/v/XnyikpEuvMhugEXdGtAlU086WkQ==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@octokit/request-error': 5.1.1
+      '@octokit/webhooks-methods': 4.1.0
+      '@octokit/webhooks-types': 7.6.1
+      aggregate-error: 3.1.0
+    dev: false
+
   /@paralleldrive/cuid2@2.3.1:
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
     dependencies:
@@ -2982,6 +3141,14 @@ packages:
     engines: {node: '>= 14'}
     dev: true
 
+  /aggregate-error@3.1.0:
+    resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
+    engines: {node: '>=8'}
+    dependencies:
+      clean-stack: 2.2.0
+      indent-string: 4.0.0
+    dev: false
+
   /ajv-formats@3.0.1(ajv@8.17.1):
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
@@ -3274,6 +3441,10 @@ packages:
     hasBin: true
     dev: true
 
+  /before-after-hook@2.2.3:
+    resolution: {integrity: sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==}
+    dev: false
+
   /better-sqlite3@11.10.0:
     resolution: {integrity: sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==}
     requiresBuild: true
@@ -3552,6 +3723,11 @@ packages:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
     requiresBuild: true
 
+  /clean-stack@2.2.0:
+    resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
+    engines: {node: '>=6'}
+    dev: false
+
   /cli-cursor@5.0.0:
     resolution: {integrity: sha512-aCj4O5wKyszjMmDT4tZj93kxyydN/K5zPWSCe6/0AV/AA1pqe5ZBIw0a2ZfPQV7lL5/yb5HsUreJ6UFAF1tEQw==}
     engines: {node: '>=18'}
@@ -3639,6 +3815,11 @@ packages:
     dependencies:
       delayed-stream: 1.0.0
     dev: true
+
+  /commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
+    engines: {node: '>=16'}
+    dev: false
 
   /commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
@@ -3901,6 +4082,10 @@ packages:
     engines: {node: '>= 0.8'}
     dev: false
 
+  /deprecation@2.3.1:
+    resolution: {integrity: sha512-xmHIy4F3scKVwMsQ4WnVaS8bHOx0DmVwRywosKhaILI0ywMDWPtBSku2HNxRvF7jtwDRsoEwYQSfbxj8b7RlJQ==}
+    dev: false
+
   /destroy@1.2.0:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
@@ -3973,8 +4158,8 @@ packages:
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
 
-  /driftdetect-core@0.9.37:
-    resolution: {integrity: sha512-DIMeLSbNuXbN7kHS1YnEH91OPOItRPYMNng16SdSAQcyzhrDF9fUSgRqaLKJaU7u9WquNBRgX7h031Gk3mfNfQ==}
+  /driftdetect-core@0.9.45:
+    resolution: {integrity: sha512-N4ChEsiF/DOgdY4+BPPwvLm+PGqNRq6cqGqtWHq0G8rFqivxwOMC/RYKykwATXN5u3nH8ihpeet6zc+GfQJynA==}
     engines: {node: '>=18'}
     dependencies:
       ignore: 5.3.2
@@ -3993,24 +4178,51 @@ packages:
       tree-sitter-typescript: 0.21.2(tree-sitter@0.21.1)
       typescript: 5.9.3
     optionalDependencies:
-      driftdetect-native: 0.9.37
+      driftdetect-native: 0.9.45
     transitivePeerDependencies:
       - supports-color
       - tree_sitter
     dev: false
 
-  /driftdetect-detectors@0.9.37:
-    resolution: {integrity: sha512-iFbiuclqm2AISX9BaIaCPKeoFOl2uonRBTX4aE4LcvRVjyWIEvXU8gMMq3KnNTASZHnDvX0YwseMk7a6nqI2eQ==}
+  /driftdetect-detectors@0.9.45:
+    resolution: {integrity: sha512-rbJoRKuwa2QENAM1Q6eZWU5PQbLp2rYmMm6XemybzDKFnGjq6d5819ntsaXgCBHTatCK9ETtnHP3lR4U427b7Q==}
     engines: {node: '>=18'}
     dependencies:
-      driftdetect-core: 0.9.37
+      driftdetect-core: 0.9.45
     transitivePeerDependencies:
       - supports-color
       - tree_sitter
     dev: false
 
-  /driftdetect-native-darwin-arm64@0.9.33:
-    resolution: {integrity: sha512-6v9OXUVXPUdYPZZnlmiWT3zO3jke2Z/EYyIuZ7SmB06VMY4uy+mCj8BcA+X2z6NZocfjkK2GjwP5yqYGXxOkaw==}
+  /driftdetect-galaxy@0.9.45(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-lAi6Mbk5mHJa5i1WLx5lEt/V0dGCSJdHSHUg40ecRRVc5QbcPi2Z4yHvU9RV83gPqFIYodUGpS0S47fIP5wo7Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18.2.0
+      react-dom: ^18.2.0
+    dependencies:
+      '@react-three/drei': 9.122.0(@react-three/fiber@8.18.0)(@types/react@18.3.27)(@types/three@0.160.0)(react-dom@18.3.1)(react@18.3.1)(three@0.160.1)
+      '@react-three/fiber': 8.18.0(@types/react@18.3.27)(react-dom@18.3.1)(react@18.3.1)(three@0.160.1)
+      '@react-three/postprocessing': 2.19.1(@react-three/fiber@8.18.0)(@types/three@0.160.0)(react@18.3.1)(three@0.160.1)
+      jsfxr: 1.4.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      three: 0.160.1
+      zustand: 4.5.7(@types/react@18.3.27)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/three'
+      - expo
+      - expo-asset
+      - expo-file-system
+      - expo-gl
+      - immer
+      - react-native
+      - use-sync-external-store
+    dev: false
+
+  /driftdetect-native-darwin-arm64@0.9.45:
+    resolution: {integrity: sha512-s2RMAss+zpc7cDvgDJHZ+Rw6J/pcEus4t72Uj2blFmpa7hotvDqVgHxcmhlyGi5gWzFJ6vgox4mfNLib0brBmg==}
     engines: {node: '>= 18'}
     cpu: [arm64]
     os: [darwin]
@@ -4018,17 +4230,8 @@ packages:
     dev: false
     optional: true
 
-  /driftdetect-native-darwin-arm64@0.9.38:
-    resolution: {integrity: sha512-42Jf3vqF2XxbdpNFH/rMCbPO9cd+I0+WoXSYCHwBbE742EcXebMLYRrzbUhfCSE1BJLfa8ypc0V2J+cczp+rPg==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-darwin-x64@0.9.33:
-    resolution: {integrity: sha512-rNAGjBDQQNUikN6DoPyIEILP2Iflhj9luwO8AqmhI+Z/XXQaDItcOgpK5nucpqSE9uOE1uNTDTxa9KvqXU9S3g==}
+  /driftdetect-native-darwin-x64@0.9.45:
+    resolution: {integrity: sha512-lzTpRf+IgQWQhItDM+/mPQPGWrRWV7ouKzhcY2imY1edRC2nCaHFKyCEoqLaEe/edLHmJBpOKIxl8sGjjtB5+A==}
     engines: {node: '>= 18'}
     cpu: [x64]
     os: [darwin]
@@ -4036,17 +4239,8 @@ packages:
     dev: false
     optional: true
 
-  /driftdetect-native-darwin-x64@0.9.38:
-    resolution: {integrity: sha512-uj3QbQj2CfNK3QMCc0YRU9CZBl5NdBsajLnutKMUvVzjZVKFZnL9HXuuW6aDWoxDPEJbi7xn721+sPoS3+1/EA==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-linux-arm64-gnu@0.9.33:
-    resolution: {integrity: sha512-UaInKllFO0ymHaUjU1sYuRFmueMrLclJ+KTgNIpK721TvCyWbKfCaijiHNoF8Y+Ivq5r3VmiOcoXhuvoqZ/HFw==}
+  /driftdetect-native-linux-arm64-gnu@0.9.45:
+    resolution: {integrity: sha512-ANbPlrMaSkjALZIj8bHD5sfQs5azuE9TQCIiiG6IG8fkLafE7tfA3bM4tVhFsLyPtlntjvG6Mr/jWfMng4l2YA==}
     engines: {node: '>= 18'}
     cpu: [arm64]
     os: [linux]
@@ -4054,26 +4248,8 @@ packages:
     dev: false
     optional: true
 
-  /driftdetect-native-linux-arm64-gnu@0.9.38:
-    resolution: {integrity: sha512-bHEEmJYKrOOb7ZseD6gvMir1SoetdvfOWMQiHVvYhsemnI0/8OXxSWEKdu5mIErxggNTPoEfB+6RPfQRIBuwfw==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-linux-arm64-musl@0.9.33:
-    resolution: {integrity: sha512-gHxj3jBdJhrYNmxhBfTwwU5FmapvtzEOGDYk1z6nclCv1ApqXBZWEBOosTFCnamcplg9meaHOQ9G8a0X98XGsw==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-linux-x64-gnu@0.9.33:
-    resolution: {integrity: sha512-IayJJOFmTPEw42rjScfAnnl1TP2axf2RlF3fkpanet0y9dq05RWrIiuOjJ5PF7WkX7i8p8vMf0I74KjapgJSuA==}
+  /driftdetect-native-linux-x64-gnu@0.9.45:
+    resolution: {integrity: sha512-afXXLGyut4GpCw/2/gROnkvb0N+1bXjjQu7vmTl6HGoDof3kKXAvz3O4vexIxd2emDUyHRRSLK0xVefBoWc06Q==}
     engines: {node: '>= 18'}
     cpu: [x64]
     os: [linux]
@@ -4081,26 +4257,8 @@ packages:
     dev: false
     optional: true
 
-  /driftdetect-native-linux-x64-gnu@0.9.38:
-    resolution: {integrity: sha512-VrZ5EWgc+eh072sMqJCWcjSH4yfFkTMctchuR+HqqJM3zy636i08xoiebdQOI5UEvn70+JFxd5v8a2JvYdz11A==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-linux-x64-musl@0.9.33:
-    resolution: {integrity: sha512-1Mdl4HVwhtQgDfvL+CxvzClhMX7ZZoFw0rcN0LPSpZfBh6wr/SODjAuioUB2VzNTNNRsQ8QW6DSpl6IYG5Wjug==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native-win32-x64-msvc@0.9.33:
-    resolution: {integrity: sha512-VlEW/CtfGfF7iOUxj9OR7ptyoX4HbRU7xg8r/UVVKIv4QE2DzSZBJqoE1fYqlKBQ3i3IzjlJmLauwfgv/wekww==}
+  /driftdetect-native-win32-x64-msvc@0.9.45:
+    resolution: {integrity: sha512-3Np3l01rZGnBu1ricdhSOrz+5OlYhUFhBtNkzwXTC8OE84U6PmgMNiLjnlUm09e8AP6UA83O5Ve/bDH5MQUcbA==}
     engines: {node: '>= 18'}
     cpu: [x64]
     os: [win32]
@@ -4108,40 +4266,16 @@ packages:
     dev: false
     optional: true
 
-  /driftdetect-native-win32-x64-msvc@0.9.38:
-    resolution: {integrity: sha512-w2SjzLp5PaiKOoQ3SXk4v2SEgpVqtk3+kcOxTYLCvJ6geVCbRJlxAKfE5IXf8BAb9f3YgEU6aOo0qEhMww+P7A==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /driftdetect-native@0.9.37:
-    resolution: {integrity: sha512-r0+e86Jks5fhIgtqVbXO2uptNsGblJ4mU1ou0aQ/pxrt+he/LXWLa46w886sGbmW4BSiLSWkwfC/u0IO31FaWQ==}
+  /driftdetect-native@0.9.45:
+    resolution: {integrity: sha512-wMPO/T7vOPJH/vNEgE1QzI7MDXQPUoNZURIJlYbH+YuZM4r4R1aOM3kfif79YcSPLzHLKMIArwUTo95VQnccdw==}
     engines: {node: '>= 18'}
     requiresBuild: true
     optionalDependencies:
-      driftdetect-native-darwin-arm64: 0.9.33
-      driftdetect-native-darwin-x64: 0.9.33
-      driftdetect-native-linux-arm64-gnu: 0.9.33
-      driftdetect-native-linux-arm64-musl: 0.9.33
-      driftdetect-native-linux-x64-gnu: 0.9.33
-      driftdetect-native-linux-x64-musl: 0.9.33
-      driftdetect-native-win32-x64-msvc: 0.9.33
-    dev: false
-    optional: true
-
-  /driftdetect-native@0.9.38:
-    resolution: {integrity: sha512-Y4sdPteubb7L4Eqxxhi480IHmkMjZ76ZFYpjrtShuTwAQ5mtMvFMRUQ8OngEXFpAWs7VwvNs05PSB3O6LnDPiA==}
-    engines: {node: '>= 18'}
-    requiresBuild: true
-    optionalDependencies:
-      driftdetect-native-darwin-arm64: 0.9.38
-      driftdetect-native-darwin-x64: 0.9.38
-      driftdetect-native-linux-arm64-gnu: 0.9.38
-      driftdetect-native-linux-x64-gnu: 0.9.38
-      driftdetect-native-win32-x64-msvc: 0.9.38
+      driftdetect-native-darwin-arm64: 0.9.45
+      driftdetect-native-darwin-x64: 0.9.45
+      driftdetect-native-linux-arm64-gnu: 0.9.45
+      driftdetect-native-linux-x64-gnu: 0.9.45
+      driftdetect-native-win32-x64-msvc: 0.9.45
     dev: false
     optional: true
 
@@ -5241,6 +5375,11 @@ packages:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
     dev: true
+
+  /indent-string@4.0.0:
+    resolution: {integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==}
+    engines: {node: '>=8'}
+    dev: false
 
   /inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
@@ -8036,6 +8175,10 @@ packages:
     resolution: {integrity: sha512-4VQSpGEGsWzk0VYxyB/wVX/Q7qf9t5znLRgs0dzszr9w9Fej/8RVNQ+S20vdXSAyra/bJ7ZQfGv6ZMj7UEbzSg==}
     engines: {node: '>=20.18.1'}
     dev: true
+
+  /universal-user-agent@6.0.1:
+    resolution: {integrity: sha512-yCzhz6FN2wU1NiiQRogkTQszlQSlpWaw8SvVegAc+bDxbzHgh1vX8uIe8OYyMH6DwH+sdTJsgMl36+mSMdRJIQ==}
+    dev: false
 
   /unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}

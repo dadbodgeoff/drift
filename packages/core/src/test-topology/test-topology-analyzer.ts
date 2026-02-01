@@ -28,6 +28,11 @@ import type {
 } from './types.js';
 import type { CallGraph, FunctionNode } from '../call-graph/types.js';
 import type Parser from 'tree-sitter';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../native/index.js';
 
 // ============================================================================
 // Types
@@ -63,6 +68,8 @@ export class TestTopologyAnalyzer {
   private testExtractions: Map<string, TestExtraction> = new Map();
   private testToFunctions: Map<string, Set<string>> = new Map();
   private functionToTests: Map<string, Set<string>> = new Map();
+  private useNativeQueries: boolean = false;
+  private projectRoot: string | undefined;
 
   constructor(parsers: {
     typescript?: Parser;
@@ -86,6 +93,34 @@ export class TestTopologyAnalyzer {
    */
   setCallGraph(graph: CallGraph): void {
     this.callGraph = graph;
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = graph.projectRoot;
+    const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getFunctionCallers(funcId: string, funcName: string): Array<{ callerId: string }> {
+    const func = this.callGraph?.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -614,7 +649,8 @@ export class TestTopologyAnalyzer {
     }
 
     // Functions called by many others are higher risk
-    if (func.calledBy.length > 5) {
+    const callers = this.getFunctionCallers(func.id, func.name);
+    if (callers.length > 5) {
       score += 15;
     }
 
@@ -630,7 +666,8 @@ export class TestTopologyAnalyzer {
     const reasons: UncoveredFunction['possibleReasons'] = [];
 
     // Check if it's dead code (no callers)
-    if (func.calledBy.length === 0 && !this.callGraph?.entryPoints.includes(`${func.file}:${func.name}`)) {
+    const callers = this.getFunctionCallers(func.id, func.name);
+    if (callers.length === 0 && !this.callGraph?.entryPoints.includes(`${func.file}:${func.name}`)) {
       reasons.push('dead-code');
     }
 

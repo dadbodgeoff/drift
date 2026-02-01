@@ -48,6 +48,11 @@ import type {
   FindingCategory,
   DataRegulation,
 } from './types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../../native/index.js';
 
 // ============================================================================
 // Constants
@@ -94,6 +99,8 @@ export class EnrichmentEngine {
   private readonly remediator: RemediationGenerator;
   private readonly dataAccessByFile: Map<string, DataAccessPoint[]>;
   private readonly sensitiveFields: Map<string, SensitiveField>;
+  private readonly useNativeQueries: boolean;
+  private readonly projectRoot: string | undefined;
 
   constructor(
     graph: CallGraph,
@@ -105,6 +112,14 @@ export class EnrichmentEngine {
     this.classifier = createSensitivityClassifier();
     this.scorer = createImpactScorer();
     this.remediator = createRemediationGenerator();
+
+    // Check if we should use native SQLite queries
+    this.projectRoot = graph.projectRoot;
+    const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
 
     // Index data access points by file
     this.dataAccessByFile = new Map();
@@ -124,6 +139,26 @@ export class EnrichmentEngine {
         this.sensitiveFields.set(key.toLowerCase(), field);
       }
     }
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getFunctionCallers(funcId: string, funcName: string): Array<{ callerId: string }> {
+    const func = this.graph.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -560,7 +595,8 @@ export class EnrichmentEngine {
 
     // Find callers (functions that call the vulnerable function)
     const callerQueue: Array<{ id: string; distance: number }> = [];
-    for (const callSite of vulnFunction.calledBy) {
+    const vulnCallers = this.getFunctionCallers(vulnFunction.id, vulnFunction.name);
+    for (const callSite of vulnCallers) {
       if (!visited.has(callSite.callerId)) {
         callerQueue.push({ id: callSite.callerId, distance: 1 });
       }
@@ -585,7 +621,8 @@ export class EnrichmentEngine {
 
       // Add callers of this function (up to distance 3)
       if (distance < 3) {
-        for (const callSite of func.calledBy) {
+        const funcCallers = this.getFunctionCallers(id, func.name);
+        for (const callSite of funcCallers) {
           if (!visited.has(callSite.callerId)) {
             callerQueue.push({ id: callSite.callerId, distance: distance + 1 });
           }

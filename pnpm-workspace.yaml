@@ -13,6 +13,7 @@ packages:
   - "packages/dashboard"
   - "packages/mcp"
   - "packages/galaxy"
+  - "packages/ci"
   
   # Benchmark
   - "packages/cibench"

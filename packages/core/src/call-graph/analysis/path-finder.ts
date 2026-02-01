@@ -13,6 +13,11 @@ import type {
   CallPathNode,
   CodeLocation,
 } from '../types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../../native/index.js';
 
 // ============================================================================
 // Types
@@ -83,9 +88,39 @@ export interface CriticalPathResult {
  */
 export class PathFinder {
   private readonly graph: CallGraph;
+  private useNativeQueries: boolean;
+  private projectRoot: string | undefined;
 
   constructor(graph: CallGraph) {
     this.graph = graph;
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = graph.projectRoot;
+    const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getFunctionCallers(funcId: string, funcName: string): Array<{ callerId: string }> {
+    const func = this.graph.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -284,7 +319,9 @@ export class PathFinder {
       const func = this.graph.functions.get(id);
       if (!func) {continue;}
 
-      for (const callSite of func.calledBy) {
+      // Use native query if available
+      const funcCallers = this.getFunctionCallers(id, func.name);
+      for (const callSite of funcCallers) {
         if (!callers.has(callSite.callerId)) {
           queue.push({ id: callSite.callerId, depth: depth + 1 });
         }

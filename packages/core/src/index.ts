@@ -1731,6 +1731,13 @@ export {
   analyzeConstants,
   analyzeEnvironment,
   analyzeWrappers,
+  // Call graph query functions
+  isCallGraphAvailable,
+  getCallGraphStats,
+  getCallGraphEntryPoints,
+  getCallGraphDataAccessors,
+  getCallGraphCallers,
+  getCallGraphFileCallers,
   // Adapter functions with TypeScript fallback (recommended)
   parseWithFallback,
   analyzeCouplingWithFallback,
@@ -1750,6 +1757,11 @@ export type {
   ScanConfig,
   FileInfo,
   ScanResult,
+  // Call graph types (aliased to avoid conflict with call-graph module)
+  CallGraphStats as NativeCallGraphStats,
+  EntryPointInfo,
+  DataAccessorInfo,
+  CallerInfo,
   // Parse types (aliased to avoid conflict with parser types)
   ParseResult as NativeParseResult,
   FunctionInfo as NativeFunctionInfo,

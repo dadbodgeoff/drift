@@ -16,6 +16,12 @@ import type {
   FunctionNode,
   CallPathNode,
 } from '../types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+  type CallerInfo,
+} from '../../native/index.js';
 
 // ============================================================================
 // Types
@@ -171,6 +177,15 @@ export class ImpactAnalyzer {
    * Find function by name and analyze it
    */
   analyzeFunctionByName(name: string, options: ImpactAnalysisOptions = {}): ImpactAnalysisResult {
+    // Check if we can use native SQLite queries (more accurate for SQLite-backed graphs)
+    const projectRoot = this.graph.projectRoot;
+    const isSqliteMode = (this.graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    
+    if (isSqliteMode && projectRoot && isNativeAvailable() && isCallGraphAvailable(projectRoot)) {
+      return this.analyzeWithNativeQueries(name, options);
+    }
+    
+    // Fall back to in-memory graph analysis
     // Find function by name
     for (const [id, func] of this.graph.functions) {
       if (func.name === name || func.qualifiedName === name) {
@@ -179,6 +194,118 @@ export class ImpactAnalyzer {
     }
 
     return this.createEmptyResult({ type: 'function', file: '', functionName: name });
+  }
+
+  /**
+   * Analyze using native SQLite queries (more accurate for SQLite-backed graphs)
+   */
+  private analyzeWithNativeQueries(name: string, options: ImpactAnalysisOptions = {}): ImpactAnalysisResult {
+    const projectRoot = this.graph.projectRoot!;
+    const { maxDepth = 10 } = options;
+    
+    const affected = new Map<string, AffectedFunction>();
+    const visited = new Set<string>();
+    
+    // Get direct callers from SQLite
+    const directCallers = getCallGraphCallers(projectRoot, name);
+    
+    if (directCallers.length === 0) {
+      return this.createEmptyResult({ type: 'function', file: '', functionName: name });
+    }
+    
+    // BFS to find transitive callers
+    const queue: Array<{ caller: CallerInfo; depth: number; path: CallPathNode[] }> = [];
+    
+    // Initialize with direct callers
+    for (const caller of directCallers) {
+      const pathNode: CallPathNode = {
+        functionId: caller.callerId,
+        functionName: caller.callerName,
+        file: caller.callerFile,
+        line: caller.line,
+      };
+      
+      queue.push({
+        caller,
+        depth: 1,
+        path: [pathNode],
+      });
+    }
+    
+    // BFS traversal
+    while (queue.length > 0) {
+      const { caller, depth, path } = queue.shift()!;
+      
+      if (visited.has(caller.callerId) || depth > maxDepth) {
+        continue;
+      }
+      visited.add(caller.callerId);
+      
+      // Check if this is an entry point
+      const isEntryPoint = this.entryPointSet.has(caller.callerId);
+      
+      // Record this affected function
+      affected.set(caller.callerId, {
+        id: caller.callerId,
+        name: caller.callerName,
+        qualifiedName: caller.callerName,
+        file: caller.callerFile,
+        line: caller.line,
+        depth,
+        isEntryPoint,
+        accessesSensitiveData: false, // Would need additional query
+        pathToChange: path,
+      });
+      
+      // Get callers of this caller for transitive analysis
+      if (depth < maxDepth) {
+        const transitiveCallers = getCallGraphCallers(projectRoot, caller.callerName);
+        for (const tc of transitiveCallers) {
+          if (!visited.has(tc.callerId)) {
+            const tcPath: CallPathNode = {
+              functionId: tc.callerId,
+              functionName: tc.callerName,
+              file: tc.callerFile,
+              line: tc.line,
+            };
+            queue.push({
+              caller: tc,
+              depth: depth + 1,
+              path: [tcPath, ...path],
+            });
+          }
+        }
+      }
+    }
+    
+    // Extract entry points
+    const entryPoints = Array.from(affected.values())
+      .filter(a => a.isEntryPoint)
+      .sort((a, b) => a.depth - b.depth);
+    
+    // Sort affected by depth
+    const sortedAffected = Array.from(affected.values())
+      .sort((a, b) => a.depth - b.depth);
+    
+    // Calculate risk
+    const { risk, riskScore } = this.calculateRisk(affected, entryPoints, []);
+    
+    return {
+      target: { type: 'function', file: '', functionName: name },
+      risk,
+      riskScore,
+      summary: {
+        directCallers: sortedAffected.filter(a => a.depth === 1).length,
+        transitiveCallers: sortedAffected.filter(a => a.depth > 1).length,
+        affectedEntryPoints: entryPoints.length,
+        affectedDataPaths: 0,
+        maxDepth: Math.max(0, ...sortedAffected.map(a => a.depth)),
+      },
+      affected: sortedAffected,
+      entryPoints,
+      sensitiveDataPaths: [],
+      changedFunctions: [name],
+    };
   }
 
   /**

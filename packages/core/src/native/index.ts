@@ -627,6 +627,18 @@ interface NativeModule {
     line: number;
     tables: string[];
   }>;
+  getCallGraphCallers(rootDir: string, target: string): Array<{
+    callerId: string;
+    callerName: string;
+    callerFile: string;
+    line: number;
+  }>;
+  getCallGraphFileCallers(rootDir: string, filePath: string): Array<{
+    callerId: string;
+    callerName: string;
+    callerFile: string;
+    line: number;
+  }>;
   analyzeUnified(root: string, options: UnifiedOptions): UnifiedResult;
   analyzeConstants(files: string[]): ConstantsResult;
   analyzeEnvironment(files: string[]): EnvironmentResult;
@@ -642,14 +654,15 @@ const require = createRequire(import.meta.url);
 let nativeModule: NativeModule | null = null;
 let loadError: Error | null = null;
 
+// For local development, try to load from crates/drift-napi first
+const localNativePath = new URL('../../../../crates/drift-napi/index.js', import.meta.url).pathname;
 try {
-  // Try the published package name first
-  nativeModule = require('driftdetect-native');
-} catch (err) {
-  // Fall back to scoped name for local development
+  nativeModule = require(localNativePath);
+} catch {
+  // Fall back to published packages
   try {
-    nativeModule = require('@drift/native');
-  } catch {
+    nativeModule = require('driftdetect-native');
+  } catch (err) {
     loadError = err as Error;
   }
 }
@@ -1009,6 +1022,60 @@ export function getCallGraphDataAccessors(rootDir: string): DataAccessorInfo[] {
         file: da.file,
         line: Number(da.line),
         tables: da.tables,
+      }));
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * Caller info from call graph
+ */
+export interface CallerInfo {
+  callerId: string;
+  callerName: string;
+  callerFile: string;
+  line: number;
+}
+
+/**
+ * Get all callers of a function from SQLite call graph
+ * 
+ * The target can be either a function ID (file:name:line) or just a function name.
+ * Returns list of functions that call the target.
+ */
+export function getCallGraphCallers(rootDir: string, target: string): CallerInfo[] {
+  if (nativeModule && nativeModule.getCallGraphCallers) {
+    try {
+      return nativeModule.getCallGraphCallers(rootDir, target).map(c => ({
+        callerId: c.callerId,
+        callerName: c.callerName,
+        callerFile: c.callerFile,
+        line: Number(c.line),
+      }));
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * Get all callers for all functions in a file from SQLite call graph
+ * 
+ * This is more efficient than calling getCallGraphCallers for each function
+ * when analyzing impact of a file change.
+ */
+export function getCallGraphFileCallers(rootDir: string, filePath: string): CallerInfo[] {
+  if (nativeModule && nativeModule.getCallGraphFileCallers) {
+    try {
+      return nativeModule.getCallGraphFileCallers(rootDir, filePath).map(c => ({
+        callerId: c.callerId,
+        callerName: c.callerName,
+        callerFile: c.callerFile,
+        line: Number(c.line),
       }));
     } catch {
       return [];

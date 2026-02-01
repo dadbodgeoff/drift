@@ -14,6 +14,11 @@ import type {
   CallGraph,
   CallPathNode,
 } from '../types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../../native/index.js';
 
 // ============================================================================
 // Types
@@ -157,6 +162,8 @@ export class CoverageAnalyzer {
   private testFiles: Set<string>;
   private testedFunctions: Set<string>;
   private sensitivityPatterns: SensitivityPatternConfig[];
+  private useNativeQueries: boolean;
+  private projectRoot: string | undefined;
 
   constructor(graph: CallGraph) {
     this.graph = graph;
@@ -165,6 +172,34 @@ export class CoverageAnalyzer {
     this.testFiles = new Set();
     this.testedFunctions = new Set();
     this.sensitivityPatterns = this.getDefaultSensitivityPatterns();
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = graph.projectRoot;
+    const isSqliteMode = (graph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getCallers(funcId: string, funcName: string): Array<{ callerId: string }> {
+    const func = this.graph.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -562,8 +597,9 @@ export class CoverageAnalyzer {
       const func = this.graph.functions.get(funcId);
       if (!func) {continue;}
 
-      // Follow callers
-      for (const caller of func.calledBy) {
+      // Follow callers (use native query if available)
+      const callers = this.getCallers(funcId, func.name);
+      for (const caller of callers) {
         const existingPath = visited.get(caller.callerId);
         if (!existingPath || existingPath.length > path.length + 1) {
           const callerFunc = this.graph.functions.get(caller.callerId);
@@ -606,8 +642,9 @@ export class CoverageAnalyzer {
         for (const funcId of testedInPath) {
           const func = this.graph.functions.get(funcId);
           if (func) {
-            // Find test functions that call this function
-            for (const caller of func.calledBy) {
+            // Find test functions that call this function (use native query if available)
+            const callers = this.getCallers(funcId, func.name);
+            for (const caller of callers) {
               const callerFunc = this.graph.functions.get(caller.callerId);
               if (callerFunc && this.testFiles.has(callerFunc.file)) {
                 if (!path.testFiles.includes(callerFunc.file)) {

@@ -25,6 +25,11 @@ import type {
   BreakEffort,
 } from './types.js';
 import type { CallGraph, FunctionNode } from '../call-graph/types.js';
+import {
+  isNativeAvailable,
+  isCallGraphAvailable,
+  getCallGraphCallers,
+} from '../native/index.js';
 
 // ============================================================================
 // Analyzer
@@ -34,6 +39,8 @@ export class ModuleCouplingAnalyzer {
   private graph: ModuleCouplingGraph | null = null;
   private callGraph: CallGraph | null = null;
   private options: ModuleCouplingOptions;
+  private useNativeQueries: boolean = false;
+  private projectRoot: string | undefined;
 
   constructor(options: ModuleCouplingOptions) {
     this.options = {
@@ -49,6 +56,34 @@ export class ModuleCouplingAnalyzer {
    */
   setCallGraph(callGraph: CallGraph): void {
     this.callGraph = callGraph;
+    
+    // Check if we should use native SQLite queries
+    this.projectRoot = callGraph.projectRoot;
+    const isSqliteMode = (callGraph as { _sqliteAvailable?: boolean })._sqliteAvailable === true;
+    this.useNativeQueries = isSqliteMode && 
+                            !!this.projectRoot && 
+                            isNativeAvailable() && 
+                            isCallGraphAvailable(this.projectRoot);
+  }
+
+  /**
+   * Get callers for a function (using native query if available)
+   */
+  private getFunctionCallers(funcId: string, funcName: string): Array<{ callerId: string; line: number }> {
+    const func = this.callGraph?.functions.get(funcId);
+    
+    // If calledBy is populated, use it
+    if (func && func.calledBy.length > 0) {
+      return func.calledBy;
+    }
+    
+    // If using native queries, check SQLite
+    if (this.useNativeQueries && this.projectRoot) {
+      const callers = getCallGraphCallers(this.projectRoot, funcName);
+      return callers.map(c => ({ callerId: c.callerId, line: c.line }));
+    }
+    
+    return func?.calledBy ?? [];
   }
 
   /**
@@ -127,7 +162,8 @@ export class ModuleCouplingAnalyzer {
 
       // ALSO track imports using calledBy relationships (more reliable)
       // This captures cross-module calls even when resolvedCandidates is empty
-      for (const calledByInfo of func.calledBy) {
+      const funcCallers = this.getFunctionCallers(func.id, func.name);
+      for (const calledByInfo of funcCallers) {
         const callerFunc = this.callGraph.functions.get(calledByInfo.callerId);
         if (!callerFunc) {continue;}
 
