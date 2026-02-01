@@ -457,6 +457,48 @@ const LAYER_INFO: LayerInfo[] = [
       },
     ],
   },
+  {
+    name: 'Memory',
+    description: 'Cortex V2 memory system - institutional knowledge that persists across sessions.',
+    tools: [
+      {
+        name: 'drift_memory_status',
+        purpose: 'Get memory system status',
+        whenToUse: 'Check if memory system is initialized and healthy.',
+        tokenCost: 'low',
+      },
+      {
+        name: 'drift_why',
+        purpose: 'Get context for a task from memories',
+        whenToUse: 'Before starting work. Get relevant tribal knowledge, procedures, and patterns.',
+        tokenCost: 'medium',
+      },
+      {
+        name: 'drift_memory_search',
+        purpose: 'Search memories semantically',
+        whenToUse: 'Find specific knowledge about a topic.',
+        tokenCost: 'low',
+      },
+      {
+        name: 'drift_memory_add',
+        purpose: 'Add new memory',
+        whenToUse: 'Store tribal knowledge, procedures, or patterns for future use.',
+        tokenCost: 'low',
+      },
+      {
+        name: 'drift_memory_learn',
+        purpose: 'Learn from corrections',
+        whenToUse: 'When AI makes a mistake, teach it the correct approach.',
+        tokenCost: 'low',
+      },
+      {
+        name: 'drift_memory_for_context',
+        purpose: 'Get memories relevant to current context',
+        whenToUse: 'Get all relevant memories for a file or task.',
+        tokenCost: 'medium',
+      },
+    ],
+  },
 ];
 
 const QUICK_START: QuickStartGuide = {

@@ -325,8 +325,8 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
         ]);
       }
 
-      // Check cache
-      const cacheKey = cache?.generateKey(name, args);
+      // Check cache - include project root in cache key for project isolation
+      const cacheKey = cache?.generateKey(name, args, effectiveProjectRoot);
       if (cache && cacheKey) {
         const cached = await cache.get(cacheKey);
         if (cached) {
@@ -345,9 +345,27 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
         effectivePatternService
       );
 
-      // Cache result
+      // Invalidate cache on project switch to prevent stale data
+      // This is critical for correct behavior when switching between projects
+      if (name === 'drift_projects' && args['action'] === 'switch' && cache) {
+        // Check if switch was successful
+        try {
+          const resultData = JSON.parse(result.content[0]?.text || '{}');
+          if (resultData.success) {
+            await cache.invalidateAll();
+            metrics.increment('cache.invalidate_on_switch');
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+
+      // Cache result (but not project switch results as they change state)
       if (cache && cacheKey && result && !('isError' in result && result.isError)) {
-        await cache.set(cacheKey, result);
+        // Don't cache project management operations
+        if (name !== 'drift_projects') {
+          await cache.set(cacheKey, result);
+        }
       }
 
       // Record metrics

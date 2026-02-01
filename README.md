@@ -10,6 +10,25 @@ Drift scans your code, learns your patterns, and tells AI how you do things. No 
 
 ---
 
+## ⚡ Quick Start (30 seconds)
+
+```bash
+npm install -g driftdetect
+cd your-project
+drift setup
+```
+
+That's it. The setup wizard walks you through everything:
+- Pattern scanning
+- Auto-approval of high confidence patterns  
+- Call graph analysis
+- Test topology mapping
+- Cortex memory initialization
+
+**Want defaults without prompts?** Run `drift setup -y`
+
+---
+
 ## 🚫 Delete Your AGENTS.md
 
 You know that `AGENTS.md` or `CLAUDE.md` file you wrote once and forgot about? It's stale. Delete it.
@@ -66,41 +85,17 @@ npm --version    # Should show 9.x.x or higher
 
 **Perfect for:** Exploring what Drift finds in your codebase before connecting AI.
 
-### Step 1: Install
+### Install & Setup
 
 ```bash
 npm install -g driftdetect
-```
-
-### Step 2: Run the Setup Wizard (Recommended)
-
-```bash
 cd your-project
 drift setup
 ```
 
-The setup wizard walks you through:
-- ✅ Initializing Drift
-- ✅ Scanning for patterns
-- ✅ Auto-approving high-confidence patterns
-- ✅ Building call graph (optional)
-- ✅ Setting up test topology (optional)
-- ✅ Initializing Cortex memory (optional)
+The setup wizard handles everything. Just answer the prompts (or use `drift setup -y` for defaults).
 
-**Quick setup (skip prompts):**
-```bash
-drift setup -y
-```
-
-### Alternative: Manual Setup
-
-```bash
-drift init
-drift scan
-drift approve --auto
-```
-
-### Step 3: See What Drift Found
+### See What Drift Found
 
 ```bash
 drift status
@@ -135,20 +130,15 @@ npm install -g driftdetect@latest
 
 **Perfect for:** Using AI assistants that can run terminal commands (Cursor, Windsurf, Kiro, etc.)
 
-### Step 1: Install (same as above)
+### Install & Setup
 
 ```bash
 npm install -g driftdetect
-```
-
-### Step 2: Run Setup
-
-```bash
 cd your-project
 drift setup
 ```
 
-### Step 3: Tell Your AI About Drift
+### Tell Your AI About Drift
 
 Copy this into your AI chat:
 
@@ -173,24 +163,18 @@ That's it! Your AI will run drift commands and use the output to write better co
 
 MCP (Model Context Protocol) lets AI tools directly query Drift. Instead of you running commands and pasting output, the AI calls Drift tools automatically.
 
-### Step 1: Install Both Packages
+### Install & Setup
 
 ```bash
-# The CLI (for scanning)
-npm install -g driftdetect
+# Install both packages
+npm install -g driftdetect driftdetect-mcp
 
-# The MCP server (for AI integration)
-npm install -g driftdetect-mcp
-```
-
-### Step 2: Run Setup
-
-```bash
+# Run the setup wizard
 cd your-project
 drift setup
 ```
 
-### Step 3: Configure Your AI Tool
+### Configure Your AI Tool
 
 Pick your AI tool and follow the instructions:
 
@@ -287,7 +271,7 @@ Pick your AI tool and follow the instructions:
 
 </details>
 
-### Step 4: Test It Works
+### Test It Works
 
 Ask your AI: "What patterns does Drift see in my codebase?"
 

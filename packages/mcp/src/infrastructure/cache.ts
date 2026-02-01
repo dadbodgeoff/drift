@@ -229,9 +229,13 @@ export class ResponseCache {
   }
   
   /**
-   * Generate cache key from tool name and arguments
+   * Generate cache key from tool name, arguments, and project root
+   * 
+   * IMPORTANT: The projectRoot is included to ensure different projects
+   * have separate cache entries. This prevents stale data when switching
+   * between projects.
    */
-  generateKey(tool: string, args: Record<string, unknown>): string {
+  generateKey(tool: string, args: Record<string, unknown>, projectRoot?: string): string {
     // Remove undefined values and sort keys for consistency
     const normalized = Object.keys(args)
       .filter(k => args[k] !== undefined)
@@ -241,12 +245,26 @@ export class ResponseCache {
         return acc;
       }, {} as Record<string, unknown>);
     
+    // Include project root in the hash to ensure project isolation
+    const keyData = projectRoot 
+      ? `${projectRoot}:${tool}:${JSON.stringify(normalized)}`
+      : `${tool}:${JSON.stringify(normalized)}`;
+    
     const hash = createHash('sha256')
-      .update(`${tool}:${JSON.stringify(normalized)}`)
+      .update(keyData)
       .digest('hex')
       .slice(0, 16);
     
     return `drift:${tool}:${hash}`;
+  }
+  
+  /**
+   * Invalidate all caches (used when switching projects)
+   */
+  async invalidateAll(): Promise<number> {
+    const count = this.l1.size;
+    await this.clear();
+    return count;
   }
   
   /**
