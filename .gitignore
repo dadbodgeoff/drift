@@ -53,3 +53,8 @@ fix-*.js
 
 # Rust build artifacts
 crates/target/
+
+# Test artifacts
+test-export.json
+test-napi-bindings.js
+RELEASE_NOTES_DRAFT.md
