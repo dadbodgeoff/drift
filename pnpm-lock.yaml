@@ -73,13 +73,13 @@ importers:
         specifier: ^11.0.0
         version: 11.1.0
       driftdetect-core:
-        specifier: 0.9.46
+        specifier: 0.9.47
         version: link:../core
       driftdetect-cortex:
-        specifier: 0.9.46
+        specifier: 0.9.47
         version: link:../cortex
       driftdetect-detectors:
-        specifier: 0.9.46
+        specifier: 0.9.47
         version: link:../detectors
       simple-git:
         specifier: ^3.30.0
@@ -138,16 +138,16 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       driftdetect-core:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../core
       driftdetect-cortex:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../cortex
       driftdetect-dashboard:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../dashboard
       driftdetect-detectors:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../detectors
       ora:
         specifier: ^8.1.0
@@ -183,6 +183,9 @@ importers:
 
   packages/core:
     dependencies:
+      driftdetect-detectors:
+        specifier: workspace:0.9.47
+        version: link:../detectors
       ignore:
         specifier: ^5.3.1
         version: 5.3.2
@@ -485,14 +488,17 @@ importers:
         specifier: ^1.0.0
         version: 1.25.3(hono@4.11.7)(zod@4.3.6)
       driftdetect-core:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../core
       driftdetect-cortex:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../cortex
       driftdetect-detectors:
-        specifier: workspace:*
+        specifier: 0.9.47
         version: link:../detectors
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: ^20.10.0

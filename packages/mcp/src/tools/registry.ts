@@ -13,6 +13,7 @@ import { DISCOVERY_TOOLS } from './discovery/index.js';
 import { EXPLORATION_TOOLS } from './exploration/index.js';
 import { GENERATION_TOOLS } from './generation/index.js';
 import { ORCHESTRATION_TOOLS } from './orchestration/index.js';
+import { SETUP_TOOLS } from './setup/index.js';
 import { SURGICAL_TOOLS } from './surgical/index.js';
 import { MEMORY_TOOLS } from './memory/index.js';
 
@@ -24,16 +25,18 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
  * Order matters for AI discovery:
  * 1. Orchestration (recommended starting point)
  * 2. Discovery (quick health checks)
- * 3. Surgical (ultra-focused lookups for code generation)
- * 4. Exploration (browsing/listing)
- * 5. Detail (deep inspection)
- * 6. Analysis (deeper analysis)
- * 7. Generation (AI-powered code intelligence)
- * 8. Memory (Cortex V2 memory system)
+ * 3. Setup (project initialization - NEW)
+ * 4. Surgical (ultra-focused lookups for code generation)
+ * 5. Exploration (browsing/listing)
+ * 6. Detail (deep inspection)
+ * 7. Analysis (deeper analysis)
+ * 8. Generation (AI-powered code intelligence)
+ * 9. Memory (Cortex V2 memory system)
  */
 export const ALL_TOOLS: Tool[] = [
   ...ORCHESTRATION_TOOLS,  // Start here
   ...DISCOVERY_TOOLS,
+  ...SETUP_TOOLS,          // Project initialization
   ...SURGICAL_TOOLS,       // Quick lookups for AI
   ...EXPLORATION_TOOLS,
   ...DETAIL_TOOLS,
@@ -48,6 +51,7 @@ export const ALL_TOOLS: Tool[] = [
 export const TOOL_CATEGORIES = {
   orchestration: ORCHESTRATION_TOOLS.map(t => t.name),
   discovery: DISCOVERY_TOOLS.map(t => t.name),
+  setup: SETUP_TOOLS.map(t => t.name),
   surgical: SURGICAL_TOOLS.map(t => t.name),
   exploration: EXPLORATION_TOOLS.map(t => t.name),
   detail: DETAIL_TOOLS.map(t => t.name),
@@ -73,12 +77,14 @@ export function hasTool(name: string): boolean {
 /**
  * Get tools by category
  */
-export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'surgical' | 'exploration' | 'detail' | 'analysis' | 'generation' | 'memory'): Tool[] {
+export function getToolsByCategory(category: 'orchestration' | 'discovery' | 'setup' | 'surgical' | 'exploration' | 'detail' | 'analysis' | 'generation' | 'memory'): Tool[] {
   switch (category) {
     case 'orchestration':
       return ORCHESTRATION_TOOLS;
     case 'discovery':
       return DISCOVERY_TOOLS;
+    case 'setup':
+      return SETUP_TOOLS;
     case 'surgical':
       return SURGICAL_TOOLS;
     case 'exploration':

@@ -1894,3 +1894,31 @@ export type {
   // Config types
   WorkspaceManagerConfig,
 } from './workspace/index.js';
+
+
+// ============================================================================
+// Services (Shared between CLI and MCP)
+// ============================================================================
+
+export {
+  // Scanner Service - Pattern detection with worker threads
+  ScannerService,
+  createScannerService,
+} from './services/index.js';
+
+export type {
+  // Scanner Service types
+  ProjectContext as ScannerProjectContext,
+  ScannerServiceConfig,
+  AggregatedPattern,
+  AggregatedViolation,
+  FileScanResult,
+  ScanResults,
+  // Detector Worker types
+  WarmupTask,
+  WarmupResult,
+  DetectorWorkerTask,
+  WorkerPatternMatch,
+  WorkerViolation,
+  DetectorWorkerResult,
+} from './services/index.js';

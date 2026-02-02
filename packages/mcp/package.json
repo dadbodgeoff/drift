@@ -59,7 +59,8 @@
     "@modelcontextprotocol/sdk": "^1.0.0",
     "driftdetect-core": "0.9.47",
     "driftdetect-cortex": "0.9.47",
-    "driftdetect-detectors": "0.9.47"
+    "driftdetect-detectors": "0.9.47",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

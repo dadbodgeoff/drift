@@ -88,6 +88,9 @@ import { handleSuggestChanges } from './tools/generation/suggest-changes.js';
 import { handleValidateChange } from './tools/generation/validate-change.js';
 import { handleContext, handlePackageContext } from './tools/orchestration/index.js';
 
+// Setup handlers (project initialization)
+import { handleSetup } from './tools/setup/handler.js';
+
 // Generation handlers (new AI-powered tools)
 
 // Analysis handlers (L5-L7 layers)
@@ -440,6 +443,17 @@ async function routeToolCall(
       
     case 'drift_projects':
       return handleProjects(args as Parameters<typeof handleProjects>[0]);
+  }
+
+  // ============================================================================
+  // Setup Tools (Project Initialization)
+  // ============================================================================
+  switch (name) {
+    case 'drift_setup':
+      return handleSetup(args, {
+        projectRoot,
+        cache: null, // Cache is handled at the server level
+      });
   }
 
   // ============================================================================
