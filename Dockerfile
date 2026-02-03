@@ -27,7 +27,7 @@ COPY packages/cortex/package.json packages/cortex/tsconfig.json ./packages/corte
 RUN echo 'packages:\n  - "packages/core"\n  - "packages/detectors"\n  - "packages/mcp"\n  - "packages/cli"\n  - "packages/cortex"' > pnpm-workspace.yaml
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Copy source code
 COPY packages/core/src ./packages/core/src
