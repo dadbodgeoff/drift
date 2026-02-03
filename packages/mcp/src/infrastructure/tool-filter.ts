@@ -120,6 +120,7 @@ const CORE_TOOLS = [
   
   // Discovery
   'drift_status',
+  'drift_setup',
   'drift_capabilities',
   'drift_projects',
   

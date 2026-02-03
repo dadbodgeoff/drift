@@ -84,6 +84,7 @@ COPY --from=builder /app/packages/cortex/node_modules ./packages/cortex/node_mod
 
 # Create directory for mounting projects
 RUN mkdir -p /project && chown drift:drift /project
+RUN mkdir -p /workspace && chown drift:drift /workspace
 
 # Switch to non-root user
 USER drift
@@ -104,4 +105,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD node -e "fetch('http://localhost:${PORT}/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 # Run the HTTP server
-CMD ["node", "packages/mcp/dist/bin/http-server.js"]
+CMD ["node", "packages/mcp/dist/bin/http-server.js", "--verbose"]
