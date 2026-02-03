@@ -93,3 +93,6 @@ export { setupCommand } from './setup.js';
 
 // Backup & Restore
 export { backupCommand } from './backup.js';
+
+// Database Import (Phase 3)
+export { importCommand } from './import.js';

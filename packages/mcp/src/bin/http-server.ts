@@ -343,7 +343,7 @@ async function main() {
   }
 
   // Create MCP server instance
-  const mcpServer = createEnterpriseMCPServer({
+  const mcpServer = await createEnterpriseMCPServer({
     projectRoot,
     enableCache,
     enableRateLimiting: enableRateLimit,

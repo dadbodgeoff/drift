@@ -223,8 +223,30 @@ export type { PatternSnapshot, HistorySnapshot, PatternTrend, TrendSummary, Cate
 
 // Contract exports (BE↔FE mismatch detection)
 export * from './types/contracts.js';
+/** @deprecated Use HybridContractStore from storage module instead */
 export { ContractStore, ContractNotFoundError, InvalidContractTransitionError, ContractStoreError } from './store/contract-store.js';
 export type { ContractStoreConfig, ContractStoreEvent, ContractStoreEventType } from './store/contract-store.js';
+
+// Storage exports (SQLite-backed stores - Phase 4)
+export {
+  createPatternStore,
+  createContractStore,
+  detectStorageBackend,
+  hasSqliteDatabase,
+  hasJsonPatterns,
+  getStorageInfo,
+  HybridPatternStore,
+  HybridContractStore,
+} from './storage/index.js';
+export type {
+  StorageBackend,
+  CreatePatternStoreOptions,
+  CreateContractStoreOptions,
+  PatternStoreInterface,
+  ContractStoreInterface,
+  HybridPatternStoreConfig,
+  HybridContractStoreConfig,
+} from './storage/index.js';
 
 // Rules exports (selective to avoid conflicts)
 export type { Position as RulePosition, Violation, QuickFix, Range, Severity, ViolationInput, RuleEvaluationResult, RuleEvaluationSummary, RuleEvaluationError } from './rules/types.js';
@@ -1922,3 +1944,81 @@ export type {
   WorkerViolation,
   DetectorWorkerResult,
 } from './services/index.js';
+
+
+// ============================================================================
+// Unified Storage (SQLite-based cloud-ready storage)
+// ============================================================================
+
+export {
+  // Main store
+  UnifiedStore,
+  // Factory and migration
+  createUnifiedStore,
+  migrateFromJson,
+  // Repositories
+  PatternRepository,
+  ContractRepository,
+  ConstraintRepository,
+  BoundaryRepository,
+  EnvironmentRepository,
+  CallGraphRepository,
+  AuditRepository,
+  DNARepository,
+  TestTopologyRepository,
+} from './storage/index.js';
+
+export type {
+  // Configuration
+  UnifiedStoreConfig,
+  // Repository interfaces
+  IUnifiedStore,
+  IPatternRepository as IDbPatternRepository,
+  IContractRepository as IDbContractRepository,
+  IConstraintRepository as IDbConstraintRepository,
+  IBoundaryRepository as IDbBoundaryRepository,
+  IEnvironmentRepository as IDbEnvironmentRepository,
+  ICallGraphRepository as IDbCallGraphRepository,
+  IAuditRepository as IDbAuditRepository,
+  IDNARepository as IDbDNARepository,
+  ITestTopologyRepository as IDbTestTopologyRepository,
+  // Database entity types
+  DbPattern,
+  DbPatternLocation,
+  DbPatternExample,
+  DbPatternVariant,
+  DbContract,
+  DbContractFrontend,
+  DbConstraint,
+  DbConstraintCounts,
+  DbDataModel,
+  DbSensitiveField,
+  DbDataAccessPoint,
+  DbTableAccess,
+  DbSensitiveAccess,
+  DbEnvVariable,
+  DbEnvAccessPoint,
+  DbFunction,
+  DbFunctionCall,
+  DbFunctionDataAccess,
+  DbCallChainNode,
+  DbAuditSnapshot,
+  DbPatternHistoryEvent,
+  DbHealthTrend,
+  DbScanHistory,
+  DbDNAProfile,
+  DbDNAGene,
+  DbDNAMutation,
+  DbTestFile,
+  DbTestCoverage,
+  // Query types
+  PatternSearchQuery,
+  PaginationOptions,
+  PaginatedResult as DbPaginatedResult,
+  // Sync types
+  SyncLogEntry,
+  StoreStats,
+  // Migration types
+  MigrationOptions as StorageMigrationOptions,
+  MigrationResult as StorageMigrationResult,
+} from './storage/index.js';

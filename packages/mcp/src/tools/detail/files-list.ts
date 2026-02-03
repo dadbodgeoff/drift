@@ -5,9 +5,11 @@
  * Supports pagination for large codebases.
  * 
  * Uses IndexStore (by-file.json) for file-to-pattern mapping.
+ * Phase 3: Uses async factory for automatic SQLite support.
  */
 
-import { IndexStore, PatternStore } from 'driftdetect-core';
+import { IndexStore } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createResponseBuilder, createCursor, parseCursor } from '../../infrastructure/index.js';
 
@@ -65,9 +67,8 @@ export async function handleFilesList(
     matchGlob(filePath, pathPattern)
   );
   
-  // Load pattern store to get categories
-  const patternStore = new PatternStore({ rootDir: projectRoot });
-  await patternStore.initialize();
+  // Load pattern store to get categories (Phase 3: auto-detects SQLite)
+  const patternStore = await createPatternStore({ rootDir: projectRoot });
   
   // Build file entries with pattern info
   let fileEntries: FileEntry[] = filteredFiles.map(([filePath, patternIds]) => {

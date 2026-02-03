@@ -13,7 +13,8 @@ import * as path from 'node:path';
 
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { PatternStore, getProjectRegistry, generateInstallationId, type TelemetryConfig } from 'driftdetect-core';
+import { getProjectRegistry, generateInstallationId, type TelemetryConfig } from 'driftdetect-core';
+import { createPatternStore, type PatternStoreInterface } from 'driftdetect-core/storage';
 
 import { promptInitOptions, confirmPrompt } from '../ui/prompts.js';
 import { createSpinner, status } from '../ui/spinner.js';
@@ -203,7 +204,7 @@ async function detectCheatcode2026(rootDir: string): Promise<boolean> {
  * Load Cheatcode2026 presets
  */
 async function loadCheatcode2026Presets(
-  store: PatternStore,
+  store: PatternStoreInterface,
   verbose: boolean
 ): Promise<number> {
   // Cheatcode2026 enterprise patterns to auto-approve
@@ -320,9 +321,8 @@ async function initAction(options: InitOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Initialize pattern store
-  const store = new PatternStore({ rootDir });
-  await store.initialize();
+  // Initialize pattern store (Phase 3: SQLite is default for new projects)
+  const store = await createPatternStore({ rootDir });
 
   // Handle Cheatcode2026 scaffold
   let isCheatcode = false;

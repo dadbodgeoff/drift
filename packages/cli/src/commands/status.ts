@@ -4,6 +4,7 @@
  * Show current drift status including patterns and violations.
  *
  * MIGRATION: Now uses IPatternService for pattern operations.
+ * Supports both SQLite and JSON storage backends.
  *
  * @requirements 29.4
  */
@@ -14,7 +15,7 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { Command } from 'commander';
 
-import { createCLIPatternService } from '../services/pattern-service-factory.js';
+import { createCLIPatternStore, getCLIStorageInfo } from '../services/pattern-service-factory.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import {
   createPatternsTable,
@@ -73,62 +74,77 @@ async function statusAction(options: StatusOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Initialize pattern service
+  // Initialize pattern store (auto-detects SQLite vs JSON)
   const spinner = format === 'text' ? createSpinner('Loading patterns...') : null;
   spinner?.start();
 
-  const service = createCLIPatternService(rootDir);
-
-  // Get status (auto-initializes)
-  const patternStatus = await service.getStatus();
-  const categories = await service.getCategories();
+  const store = await createCLIPatternStore(rootDir);
+  const stats = store.getStats();
 
   spinner?.succeed('Patterns loaded');
 
   // JSON output
   if (format === 'json') {
+    const storageInfo = getCLIStorageInfo(rootDir);
     const output = {
       initialized: true,
-      patterns: {
-        total: patternStatus.totalPatterns,
-        approved: patternStatus.byStatus.approved,
-        discovered: patternStatus.byStatus.discovered,
-        ignored: patternStatus.byStatus.ignored,
+      storage: {
+        backend: storageInfo.backend,
+        hasSqlite: storageInfo.hasSqlite,
+        hasJson: storageInfo.hasJson,
       },
-      byCategory: patternStatus.byCategory,
-      byConfidenceLevel: patternStatus.byConfidence,
-      healthScore: patternStatus.healthScore,
-      lastUpdated: patternStatus.lastScanAt?.toISOString(),
+      patterns: {
+        total: stats.totalPatterns,
+        approved: stats.byStatus.approved,
+        discovered: stats.byStatus.discovered,
+        ignored: stats.byStatus.ignored,
+      },
+      byCategory: stats.byCategory,
+      byConfidenceLevel: stats.byConfidenceLevel,
+      healthScore: calculateHealthScore(stats),
     };
 
     if (detailed) {
-      const result = await service.listPatterns({ limit: 1000 });
-      (output as Record<string, unknown>)['patternDetails'] = result.items.map((p) => ({
+      const patterns = store.getAll();
+      (output as Record<string, unknown>)['patternDetails'] = patterns.slice(0, 1000).map((p) => ({
         id: p.id,
         name: p.name,
         category: p.category,
         status: p.status,
-        confidence: p.confidence,
-        confidenceLevel: p.confidenceLevel,
-        locations: p.locationCount,
-        outliers: p.outlierCount,
+        confidence: p.confidence.score,
+        confidenceLevel: p.confidence.level,
+        locations: p.locations.length,
+        outliers: p.outliers.length,
       }));
     }
 
     console.log(JSON.stringify(output, null, 2));
+    if (store.close) await store.close();
     return;
   }
 
   // Text output
   console.log();
 
+  // Storage backend info
+  const storageInfo = getCLIStorageInfo(rootDir);
+  console.log(chalk.bold('Storage'));
+  console.log(chalk.gray('─'.repeat(40)));
+  const backendLabel = storageInfo.backend === 'sqlite' ? chalk.green('SQLite') : 
+                       storageInfo.backend === 'json' ? chalk.yellow('JSON') : chalk.gray('None');
+  console.log(`  Backend: ${backendLabel}`);
+  if (storageInfo.hasSqlite && storageInfo.hasJson) {
+    console.log(chalk.gray('  (Both SQLite and JSON available)'));
+  }
+  console.log();
+
   // Summary table
   const summary: StatusSummary = {
-    totalPatterns: patternStatus.totalPatterns,
-    approvedPatterns: patternStatus.byStatus.approved,
-    discoveredPatterns: patternStatus.byStatus.discovered,
-    ignoredPatterns: patternStatus.byStatus.ignored,
-    totalViolations: 0, // Would need to query for this
+    totalPatterns: stats.totalPatterns,
+    approvedPatterns: stats.byStatus.approved,
+    discoveredPatterns: stats.byStatus.discovered,
+    ignoredPatterns: stats.byStatus.ignored,
+    totalViolations: 0,
     errors: 0,
     warnings: 0,
   };
@@ -138,21 +154,22 @@ async function statusAction(options: StatusOptions): Promise<void> {
   console.log();
 
   // Health score
+  const healthScore = calculateHealthScore(stats);
   console.log(chalk.bold('Health Score'));
   console.log(chalk.gray('─'.repeat(40)));
-  const healthColor = patternStatus.healthScore >= 80 ? chalk.green : 
-                      patternStatus.healthScore >= 50 ? chalk.yellow : chalk.red;
-  console.log(`  ${healthColor(patternStatus.healthScore + '/100')}`);
+  const healthColor = healthScore >= 80 ? chalk.green : 
+                      healthScore >= 50 ? chalk.yellow : chalk.red;
+  console.log(`  ${healthColor(healthScore + '/100')}`);
   console.log();
 
   // Category breakdown
-  const categoryBreakdowns: CategoryBreakdown[] = categories
-    .filter((c) => c.count > 0)
-    .map((c) => ({
-      category: c.category,
-      patterns: c.count,
-      violations: 0, // Would need to calculate
-      coverage: c.highConfidenceCount / Math.max(1, c.count),
+  const categoryBreakdowns: CategoryBreakdown[] = Object.entries(stats.byCategory)
+    .filter(([_, count]) => count > 0)
+    .map(([category, count]) => ({
+      category,
+      patterns: count,
+      violations: 0,
+      coverage: 0,
     }))
     .sort((a, b) => b.patterns - a.patterns);
 
@@ -165,79 +182,86 @@ async function statusAction(options: StatusOptions): Promise<void> {
   // Confidence breakdown
   console.log(chalk.bold('By Confidence Level'));
   console.log(chalk.gray('─'.repeat(40)));
-  console.log(`  ${chalk.green('High')}:      ${patternStatus.byConfidence.high}`);
-  console.log(`  ${chalk.yellow('Medium')}:    ${patternStatus.byConfidence.medium}`);
-  console.log(`  ${chalk.red('Low')}:       ${patternStatus.byConfidence.low}`);
-  console.log(`  ${chalk.gray('Uncertain')}: ${patternStatus.byConfidence.uncertain}`);
+  console.log(`  ${chalk.green('High')}:      ${stats.byConfidenceLevel.high}`);
+  console.log(`  ${chalk.yellow('Medium')}:    ${stats.byConfidenceLevel.medium}`);
+  console.log(`  ${chalk.red('Low')}:       ${stats.byConfidenceLevel.low}`);
+  console.log(`  ${chalk.gray('Uncertain')}: ${stats.byConfidenceLevel.uncertain}`);
   console.log();
 
   // Detailed pattern list
   if (detailed) {
-    // Show discovered patterns awaiting review
-    const discoveredResult = await service.listByStatus('discovered', { 
-      limit: 20,
-      sortBy: 'confidence',
-      sortDirection: 'desc',
-    });
+    const discoveredPatterns = store.getDiscovered().slice(0, 20);
     
-    if (discoveredResult.items.length > 0) {
+    if (discoveredPatterns.length > 0) {
       console.log(chalk.bold('Discovered Patterns (awaiting review)'));
       console.log();
 
-      const rows: PatternRow[] = discoveredResult.items.map((p) => ({
+      const rows: PatternRow[] = discoveredPatterns.map((p) => ({
         id: p.id.slice(0, 13),
         name: p.name.slice(0, 28),
         category: p.category,
-        confidence: p.confidence,
-        locations: p.locationCount,
-        outliers: p.outlierCount,
+        confidence: p.confidence.score,
+        locations: p.locations.length,
+        outliers: p.outliers.length,
       }));
 
       console.log(createPatternsTable(rows));
 
-      if (discoveredResult.total > 20) {
-        console.log(chalk.gray(`  ... and ${discoveredResult.total - 20} more`));
+      const totalDiscovered = stats.byStatus.discovered;
+      if (totalDiscovered > 20) {
+        console.log(chalk.gray(`  ... and ${totalDiscovered - 20} more`));
       }
       console.log();
     }
 
-    // Show approved patterns
-    const approvedResult = await service.listByStatus('approved', {
-      limit: 20,
-      sortBy: 'confidence',
-      sortDirection: 'desc',
-    });
+    const approvedPatterns = store.getApproved().slice(0, 20);
     
-    if (approvedResult.items.length > 0) {
+    if (approvedPatterns.length > 0) {
       console.log(chalk.bold('Approved Patterns'));
       console.log();
 
-      const rows: PatternRow[] = approvedResult.items.map((p) => ({
+      const rows: PatternRow[] = approvedPatterns.map((p) => ({
         id: p.id.slice(0, 13),
         name: p.name.slice(0, 28),
         category: p.category,
-        confidence: p.confidence,
-        locations: p.locationCount,
-        outliers: p.outlierCount,
+        confidence: p.confidence.score,
+        locations: p.locations.length,
+        outliers: p.outliers.length,
       }));
 
       console.log(createPatternsTable(rows));
 
-      if (approvedResult.total > 20) {
-        console.log(chalk.gray(`  ... and ${approvedResult.total - 20} more`));
+      const totalApproved = stats.byStatus.approved;
+      if (totalApproved > 20) {
+        console.log(chalk.gray(`  ... and ${totalApproved - 20} more`));
       }
       console.log();
     }
   }
 
   // Quick actions
-  if (patternStatus.byStatus.discovered > 0) {
+  if (stats.byStatus.discovered > 0) {
     console.log(chalk.gray('Quick actions:'));
     console.log(chalk.cyan('  drift approve <pattern-id>') + chalk.gray('  - Approve a pattern'));
     console.log(chalk.cyan('  drift ignore <pattern-id>') + chalk.gray('   - Ignore a pattern'));
     console.log(chalk.cyan('  drift check') + chalk.gray('                 - Check for violations'));
     console.log();
   }
+
+  if (store.close) await store.close();
+}
+
+/**
+ * Calculate health score from stats
+ */
+function calculateHealthScore(stats: { totalPatterns: number; byStatus: { approved: number }; byConfidenceLevel: { high: number } }): number {
+  if (stats.totalPatterns === 0) return 100;
+  
+  // Simple health score based on approval rate and confidence
+  const approvalRate = stats.byStatus.approved / stats.totalPatterns;
+  const highConfidenceRate = stats.byConfidenceLevel.high / stats.totalPatterns;
+  
+  return Math.round((approvalRate * 50 + highConfidenceRate * 50) * 100) / 100;
 }
 
 export const statusCommand = new Command('status')

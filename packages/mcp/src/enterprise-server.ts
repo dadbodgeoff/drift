@@ -37,6 +37,10 @@ import {
   type DataLake,
   type IPatternService,
 } from 'driftdetect-core';
+import {
+  createPatternStore,
+  getStorageInfo,
+} from 'driftdetect-core/storage';
 
 // Infrastructure
 import {
@@ -123,6 +127,8 @@ import {
   driftMemoryPredict,
   driftMemoryConflicts,
   driftMemoryGraph,
+  driftMemoryQuery,
+  driftMemoryContradictions,
 } from './tools/memory/index.js';
 
 // Cortex initialization
@@ -158,15 +164,28 @@ export interface EnterpriseMCPConfig {
   skipWarmup?: boolean;
 }
 
-export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
+export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Promise<Server> {
   const server = new Server(
     { name: 'drift-enterprise', version: '2.0.0' },
     { capabilities: { tools: {} } }
   );
 
+  // Check storage backend info
+  const storageInfo = getStorageInfo(config.projectRoot);
+  
+  if (config.verbose) {
+    const backendLabel = storageInfo.backend === 'sqlite' ? 'SQLite' : 
+                         storageInfo.backend === 'json' ? 'JSON' : 'None';
+    console.error(`[drift-mcp] Storage backend: ${backendLabel}`);
+  }
+
   // Initialize stores
+  // Phase 3: Pattern store uses async factory for automatic SQLite support
+  // Other stores remain synchronous for now
+  const patternStore = await createPatternStore({ rootDir: config.projectRoot });
+  
   const stores = {
-    pattern: new PatternStore({ rootDir: config.projectRoot }),
+    pattern: patternStore as PatternStore,
     manifest: new ManifestStore(config.projectRoot),
     history: new HistoryStore({ rootDir: config.projectRoot }),
     dna: new DNAStore({ rootDir: config.projectRoot }),
@@ -180,7 +199,7 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
   // Default to using the new service for better abstraction
   const usePatternService = config.usePatternService !== false;
   const patternService: IPatternService | null = usePatternService
-    ? createPatternServiceFromStore(stores.pattern, config.projectRoot, {
+    ? createPatternServiceFromStore(stores.pattern as PatternStore, config.projectRoot, {
         enableCache: config.enableCache !== false,
       })
     : null;
@@ -301,9 +320,14 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
       
       if (resolvedProjectRoot !== config.projectRoot) {
         effectiveProjectRoot = resolvedProjectRoot;
+        
+        // Phase 3: Use async factory for dynamic project resolution
+        // This automatically uses SQLite if available
+        const dynamicPatternStore = await createPatternStore({ rootDir: effectiveProjectRoot });
+        
         // Create temporary stores for this project
         effectiveStores = {
-          pattern: new PatternStore({ rootDir: effectiveProjectRoot }),
+          pattern: dynamicPatternStore as PatternStore, // Cast for compatibility
           manifest: new ManifestStore(effectiveProjectRoot),
           history: new HistoryStore({ rootDir: effectiveProjectRoot }),
           dna: new DNAStore({ rootDir: effectiveProjectRoot }),
@@ -319,9 +343,8 @@ export function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Server {
             })
           : null;
         
-        // Initialize the temporary stores
+        // Initialize the other stores (pattern store already initialized by factory)
         await Promise.all([
-          effectiveStores.pattern.initialize(),
           effectiveStores.boundary.initialize(),
           effectiveStores.contract.initialize(),
           effectiveStores.callGraph.initialize(),
@@ -717,6 +740,12 @@ async function routeToolCall(
       
     case 'drift_memory_graph':
       return executeMemoryTool(driftMemoryGraph, args);
+      
+    case 'drift_memory_query':
+      return executeMemoryTool(driftMemoryQuery, args);
+      
+    case 'drift_memory_contradictions':
+      return executeMemoryTool(driftMemoryContradictions, args);
   }
 
   // Unknown tool

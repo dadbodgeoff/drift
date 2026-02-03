@@ -5,9 +5,11 @@
  * Shows pattern details, locations within the file, and outliers.
  * 
  * Uses IndexStore (by-file.json) for file-to-pattern mapping.
+ * Phase 3: Uses async factory for automatic SQLite support.
  */
 
-import { IndexStore, PatternStore } from 'driftdetect-core';
+import { IndexStore } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
@@ -64,9 +66,8 @@ export async function handleFilePatterns(
     throw Errors.notFound('file', filePath);
   }
   
-  // Load pattern store to get full pattern details
-  const patternStore = new PatternStore({ rootDir: projectRoot });
-  await patternStore.initialize();
+  // Load pattern store to get full pattern details (Phase 3: auto-detects SQLite)
+  const patternStore = await createPatternStore({ rootDir: projectRoot });
   
   // Get patterns for this file
   const patterns: FilePattern[] = [];

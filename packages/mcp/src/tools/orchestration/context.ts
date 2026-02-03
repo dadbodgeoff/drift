@@ -10,6 +10,7 @@
  * Supports multi-project workflows via the optional `project` parameter.
  * 
  * Enhanced with Language Intelligence for cross-language semantic analysis.
+ * Phase 3: Uses async factory for automatic SQLite support.
  */
 
 import * as fs from 'fs/promises';
@@ -30,6 +31,7 @@ import {
   type Constraint,
   type ConstraintCategory,
 } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createResponseBuilder, resolveProject, formatProjectContext } from '../../infrastructure/index.js';
 
@@ -580,19 +582,25 @@ export async function handleContext(
   const effectiveRoot = resolution.projectRoot;
   
   // Create stores for the resolved project (may be different from default)
-  const effectiveStores = resolution.fromRegistry
-    ? {
-        pattern: new PatternStore({ rootDir: effectiveRoot }),
-        manifest: new ManifestStore(effectiveRoot),
-        boundary: new BoundaryStore({ rootDir: effectiveRoot }),
-        callGraph: new CallGraphStore({ rootDir: effectiveRoot }),
-        dna: new DNAStore({ rootDir: effectiveRoot }),
-      }
-    : stores;
-  
-  // Initialize stores
-  await effectiveStores.pattern.initialize();
-  await effectiveStores.manifest.load();
+  // Phase 3: Use async factory for automatic SQLite support
+  let effectiveStores: typeof stores;
+  if (resolution.fromRegistry) {
+    const dynamicPatternStore = await createPatternStore({ rootDir: effectiveRoot });
+    effectiveStores = {
+      pattern: dynamicPatternStore as PatternStore, // Cast for compatibility
+      manifest: new ManifestStore(effectiveRoot),
+      boundary: new BoundaryStore({ rootDir: effectiveRoot }),
+      callGraph: new CallGraphStore({ rootDir: effectiveRoot }),
+      dna: new DNAStore({ rootDir: effectiveRoot }),
+    };
+    // Pattern store already initialized by factory
+    await effectiveStores.manifest.load();
+  } else {
+    effectiveStores = stores;
+    // Initialize stores
+    await effectiveStores.pattern.initialize();
+    await effectiveStores.manifest.load();
+  }
   
   // Get all patterns
   const allPatterns = effectiveStores.pattern.getAll();

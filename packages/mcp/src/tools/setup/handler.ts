@@ -24,7 +24,6 @@ import { metrics } from '../../infrastructure/metrics.js';
 
 // Core imports
 import {
-  PatternStore,
   BoundaryStore,
   CallGraphStore,
   HistoryStore,
@@ -49,6 +48,7 @@ import {
   type BuildConfig,
   type DataAccessPoint,
 } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 // Input validation schema
 const SetupInputSchema = z.object({
@@ -482,9 +482,8 @@ async function handleScanAction(
     await scanner.destroy();
   }
   
-  // Save patterns to store
-  const patternStore = new PatternStore({ rootDir: projectPath });
-  await patternStore.initialize();
+  // Save patterns to store (Phase 3: auto-detects SQLite)
+  const patternStore = await createPatternStore({ rootDir: projectPath });
   
   // ========================================================================
   // BOUNDARY SCANNING (enabled by default, like CLI)

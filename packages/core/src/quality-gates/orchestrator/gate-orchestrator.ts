@@ -320,11 +320,15 @@ export class GateOrchestrator {
   private async loadPatterns(): Promise<Pattern[]> {
     try {
       // Dynamically import to avoid circular dependencies
-      const { PatternStore } = await import('../../store/pattern-store.js');
+      const { createPatternStore } = await import('../../storage/store-factory.js');
       const { createPatternServiceFromStore } = await import('../../patterns/adapters/service-factory.js');
+      const { PatternStore } = await import('../../store/pattern-store.js');
       
-      const store = new PatternStore({ rootDir: this.projectRoot });
-      const service = createPatternServiceFromStore(store, this.projectRoot);
+      const store = await createPatternStore({ rootDir: this.projectRoot });
+      
+      // Cast to PatternStore for service factory compatibility
+      // The factory returns either PatternStore or HybridPatternStore, both implement the interface
+      const service = createPatternServiceFromStore(store as InstanceType<typeof PatternStore>, this.projectRoot);
       
       // Get approved patterns (summaries first)
       const result = await service.listByStatus('approved', { limit: 1000 });
@@ -344,6 +348,11 @@ export class GateOrchestrator {
             outliers: full.outliers ?? [],
           });
         }
+      }
+      
+      // Close store if it has a close method
+      if (store.close) {
+        await store.close();
       }
       
       return patterns;

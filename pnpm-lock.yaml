@@ -183,6 +183,9 @@ importers:
 
   packages/core:
     dependencies:
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
       driftdetect-detectors:
         specifier: workspace:0.9.47
         version: link:../detectors
@@ -236,6 +239,9 @@ importers:
         specifier: 0.9.45
         version: 0.9.45
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
       '@types/minimatch':
         specifier: ^5.1.2
         version: 5.1.2
@@ -454,11 +460,11 @@ importers:
   packages/lsp:
     dependencies:
       driftdetect-core:
-        specifier: 0.9.45
-        version: 0.9.45
+        specifier: workspace:0.9.47
+        version: link:../core
       driftdetect-detectors:
-        specifier: 0.9.45
-        version: 0.9.45
+        specifier: workspace:0.9.47
+        version: link:../detectors
       vscode-languageserver:
         specifier: ^9.0.1
         version: 9.0.1
@@ -4185,16 +4191,6 @@ packages:
       typescript: 5.9.3
     optionalDependencies:
       driftdetect-native: 0.9.45
-    transitivePeerDependencies:
-      - supports-color
-      - tree_sitter
-    dev: false
-
-  /driftdetect-detectors@0.9.45:
-    resolution: {integrity: sha512-rbJoRKuwa2QENAM1Q6eZWU5PQbLp2rYmMm6XemybzDKFnGjq6d5819ntsaXgCBHTatCK9ETtnHP3lR4U427b7Q==}
-    engines: {node: '>=18'}
-    dependencies:
-      driftdetect-core: 0.9.45
     transitivePeerDependencies:
       - supports-color
       - tree_sitter

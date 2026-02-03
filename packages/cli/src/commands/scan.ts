@@ -14,7 +14,6 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import {
-  PatternStore,
   HistoryStore,
   FileWalker,
   createDataLake,
@@ -41,6 +40,10 @@ import {
   type TelemetryConfig,
   type BuildConfig,
 } from 'driftdetect-core';
+import {
+  createPatternStore,
+  getStorageInfo,
+} from 'driftdetect-core/storage';
 
 import { createBoundaryScanner, type BoundaryScanResult } from '../services/boundary-scanner.js';
 import { createContractScanner } from '../services/contract-scanner.js';
@@ -658,9 +661,15 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     process.exit(1);
   }
 
-  // Initialize pattern store
-  const store = new PatternStore({ rootDir });
-  await store.initialize();
+  // Initialize pattern store (auto-detects SQLite vs JSON backend)
+  // Phase 3: SQLite is now the default storage backend
+  const store = await createPatternStore({ rootDir });
+  const storageInfo = getStorageInfo(rootDir);
+  
+  if (verbose) {
+    const backendLabel = storageInfo.backend === 'sqlite' ? chalk.green('SQLite') : chalk.yellow('JSON');
+    status.info(`Storage backend: ${backendLabel}`);
+  }
 
   // Load ignore patterns
   const ignorePatterns = await loadIgnorePatterns(rootDir);
@@ -900,7 +909,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       if (store.has(pattern.id)) {
         // Update existing pattern with fresh locations and outliers
         try {
-          store.update(pattern.id, {
+          await store.update(pattern.id, {
             locations: pattern.locations,
             outliers: pattern.outliers,
             confidence: pattern.confidence,
@@ -919,7 +928,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
       }
       
       try {
-        store.add(pattern);
+        await store.add(pattern);
         addedCount++;
       } catch (e) {
         if (verbose) {
@@ -1759,6 +1768,11 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     console.log(chalk.cyan('│') + ' patterns that match codebase conventions. Flag any that    ' + chalk.cyan('│'));
     console.log(chalk.cyan('│') + ' look like false positives or duplicates.                   ' + chalk.cyan('│'));
     console.log(chalk.cyan('└─────────────────────────────────────────────────────────────┘'));
+  }
+
+  // Close the store (important for SQLite to flush WAL)
+  if (store.close) {
+    await store.close();
   }
 
   console.log();

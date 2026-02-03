@@ -16,7 +16,8 @@ import * as path from 'node:path';
 
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { PatternStore, getDefaultIgnoreDirectories } from 'driftdetect-core';
+import { getDefaultIgnoreDirectories } from 'driftdetect-core';
+import { createPatternStore, type PatternStoreInterface } from 'driftdetect-core/storage';
 import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
 
 import type { Pattern, PatternCategory } from 'driftdetect-core';
@@ -442,7 +443,7 @@ async function detectPatternsInFile(
 // ============================================================================
 
 function mergePatternIntoStore(
-  store: PatternStore,
+  store: PatternStoreInterface,
   detected: DetectedPattern,
   violations: DetectedViolation[],
   file: string
@@ -542,7 +543,7 @@ function mergePatternIntoStore(
   return stableId;
 }
 
-function removeFileFromStore(store: PatternStore, file: string): void {
+function removeFileFromStore(store: PatternStoreInterface, file: string): void {
   // Remove all locations and outliers for this file from all patterns
   const allPatterns = store.getAll();
   
@@ -659,14 +660,13 @@ async function watchCommand(options: WatchOptions): Promise<void> {
   console.log(chalk.gray('\n  Press Ctrl+C to stop\n'));
   console.log(chalk.gray('─'.repeat(50)));
   
-  // Initialize pattern store
-  let store: PatternStore | null = null;
+  // Initialize pattern store (Phase 3: SQLite is default)
+  let store: PatternStoreInterface | null = null;
   let fileMap: FileMap | null = null;
   
   if (persist) {
     try {
-      store = new PatternStore({ rootDir });
-      await store.initialize();
+      store = await createPatternStore({ rootDir });
       fileMap = await loadFileMap(rootDir);
       
       const stats = store.getStats();

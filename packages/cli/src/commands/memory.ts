@@ -47,15 +47,32 @@ interface MemoryType {
 }
 
 const MEMORY_TYPES: Record<string, MemoryType> = {
+  // Core types (domain-agnostic)
   core: { name: 'core', icon: '🏠', description: 'Project identity and preferences', halfLife: '∞' },
   tribal: { name: 'tribal', icon: '⚠️', description: 'Institutional knowledge, gotchas', halfLife: '365d' },
   procedural: { name: 'procedural', icon: '📋', description: 'How-to knowledge, procedures', halfLife: '180d' },
   semantic: { name: 'semantic', icon: '💡', description: 'Consolidated knowledge', halfLife: '90d' },
   episodic: { name: 'episodic', icon: '💭', description: 'Interaction records', halfLife: '7d' },
+  decision: { name: 'decision', icon: '⚖️', description: 'Decisions made', halfLife: '180d' },
+  insight: { name: 'insight', icon: '💎', description: 'Insights and learnings', halfLife: '90d' },
+  reference: { name: 'reference', icon: '📚', description: 'Reference materials', halfLife: '60d' },
+  preference: { name: 'preference', icon: '⭐', description: 'User preferences', halfLife: '120d' },
+  // Code-specific types
   pattern_rationale: { name: 'pattern_rationale', icon: '🎯', description: 'Why patterns exist', halfLife: '180d' },
   constraint_override: { name: 'constraint_override', icon: '✅', description: 'Approved exceptions', halfLife: '90d' },
   decision_context: { name: 'decision_context', icon: '📝', description: 'Decision context', halfLife: '180d' },
   code_smell: { name: 'code_smell', icon: '🚫', description: 'Patterns to avoid', halfLife: '90d' },
+  // Universal memory types (v2)
+  agent_spawn: { name: 'agent_spawn', icon: '🤖', description: 'Agent configurations', halfLife: '365d' },
+  entity: { name: 'entity', icon: '📦', description: 'Projects, products, teams', halfLife: '180d' },
+  goal: { name: 'goal', icon: '🎯', description: 'Objectives with progress', halfLife: '90d' },
+  feedback: { name: 'feedback', icon: '📝', description: 'Corrections and learning', halfLife: '120d' },
+  workflow: { name: 'workflow', icon: '📋', description: 'Step-by-step processes', halfLife: '180d' },
+  conversation: { name: 'conversation', icon: '💬', description: 'Past discussions', halfLife: '30d' },
+  incident: { name: 'incident', icon: '🚨', description: 'Postmortems and lessons', halfLife: '365d' },
+  meeting: { name: 'meeting', icon: '📅', description: 'Meeting notes', halfLife: '60d' },
+  skill: { name: 'skill', icon: '🧠', description: 'Knowledge domains', halfLife: '180d' },
+  environment: { name: 'environment', icon: '🌍', description: 'Environment configs', halfLife: '90d' },
 };
 
 // ============================================================================
@@ -2008,6 +2025,704 @@ async function healthAction(options: MemoryOptions): Promise<void> {
 
 
 // ============================================================================
+// Universal Memory Actions
+// ============================================================================
+
+/**
+ * Agent subcommand - manage agent spawn configurations
+ */
+async function agentAction(
+  action: string,
+  options: MemoryOptions & {
+    name?: string;
+    slug?: string;
+    description?: string;
+    systemPrompt?: string;
+    tools?: string;
+    triggers?: string;
+    query?: string;
+    id?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'create': {
+        if (!options.name || !options.slug || !options.systemPrompt || !options.tools || !options.triggers) {
+          if (format === 'json') {
+            console.log(JSON.stringify({ error: 'Missing required: --name, --slug, --system-prompt, --tools, --triggers' }));
+          } else {
+            console.log(chalk.red('Missing required options: --name, --slug, --system-prompt, --tools, --triggers'));
+          }
+          return;
+        }
+        const memory = {
+          type: 'agent_spawn',
+          name: options.name,
+          description: options.description || '',
+          slug: options.slug,
+          systemPrompt: options.systemPrompt,
+          tools: options.tools.split(',').map(t => t.trim()),
+          triggerPatterns: options.triggers.split(',').map(t => t.trim()),
+          autoSpawn: false,
+          version: '1.0.0',
+          stats: { invocationCount: 0, successRate: 1.0, avgDurationMs: 0 },
+          summary: `🤖 ${options.name}: ${options.tools.split(',').length} tools`,
+          confidence: 1.0,
+          importance: 'high',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id, slug: options.slug }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Created agent "${options.name}" (${options.slug})`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const agents = await cortex.search({ types: ['agent_spawn' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ agents, total: agents.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n🤖 Agent Configurations'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (agents.length === 0) {
+            console.log(chalk.yellow('No agents configured. Create one with: drift memory agent create'));
+          } else {
+            for (const a of agents) {
+              console.log(`  ${chalk.cyan(a.slug?.padEnd(20) || 'unknown')} ${a.name} (${a.tools?.length || 0} tools)`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      case 'get': {
+        if (!options.slug && !options.id) {
+          console.log(chalk.red('Missing --slug or --id'));
+          return;
+        }
+        let agent: any = null;
+        if (options.id) {
+          agent = await cortex.get(options.id);
+        } else {
+          const agents = await cortex.search({ types: ['agent_spawn' as any], limit: 100 });
+          agent = agents.find((a: any) => a.slug === options.slug);
+        }
+        await cortex.storage.close();
+        if (!agent) {
+          console.log(chalk.red('Agent not found'));
+          return;
+        }
+        if (format === 'json') {
+          console.log(JSON.stringify(agent, null, 2));
+        } else {
+          console.log(chalk.bold(`\n🤖 ${agent.name}`));
+          console.log(chalk.gray('─'.repeat(50)));
+          console.log(`  Slug:     ${chalk.cyan(agent.slug)}`);
+          console.log(`  Tools:    ${agent.tools?.join(', ')}`);
+          console.log(`  Triggers: ${agent.triggerPatterns?.join(', ')}`);
+          console.log(`  Stats:    ${agent.stats?.invocationCount || 0} invocations`);
+          console.log();
+        }
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: create, list, get`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+/**
+ * Goal subcommand - track goals with progress
+ */
+async function goalAction(
+  action: string,
+  options: MemoryOptions & {
+    title?: string;
+    description?: string;
+    parent?: string;
+    progress?: string;
+    status?: string;
+    id?: string;
+    blocker?: string;
+    severity?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'create': {
+        if (!options.title || !options.description) {
+          console.log(chalk.red('Missing required: --title, --description'));
+          return;
+        }
+        const memory = {
+          type: 'goal',
+          title: options.title,
+          description: options.description,
+          parentGoalId: options.parent,
+          status: 'active',
+          progress: 0,
+          successCriteria: [],
+          createdDate: new Date().toISOString(),
+          blockers: [],
+          summary: `🎯 ${options.title}: 0% (active)`,
+          confidence: 1.0,
+          importance: 'high',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Created goal "${options.title}"`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const goals = await cortex.search({ types: ['goal' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ goals, total: goals.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n🎯 Goals'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (goals.length === 0) {
+            console.log(chalk.yellow('No goals. Create one with: drift memory goal create'));
+          } else {
+            for (const g of goals) {
+              const statusColor = g.status === 'achieved' ? chalk.green : g.status === 'blocked' ? chalk.red : chalk.yellow;
+              console.log(`  ${statusColor(`[${g.status}]`.padEnd(12))} ${g.title} (${g.progress || 0}%)`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      case 'update': {
+        if (!options.id) {
+          console.log(chalk.red('Missing --id'));
+          return;
+        }
+        const goal = await cortex.get(options.id) as any;
+        if (!goal) {
+          console.log(chalk.red('Goal not found'));
+          return;
+        }
+        const updates: any = {};
+        if (options.progress) updates.progress = parseInt(options.progress, 10);
+        if (options.status) updates.status = options.status;
+        updates.summary = `🎯 ${goal.title}: ${options.progress || goal.progress}% (${options.status || goal.status})`;
+        await cortex.update(options.id, updates);
+        await cortex.storage.close();
+        console.log(chalk.green.bold(`\n✓ Updated goal "${goal.title}"\n`));
+        break;
+      }
+      case 'block': {
+        if (!options.id || !options.blocker) {
+          console.log(chalk.red('Missing --id and --blocker'));
+          return;
+        }
+        const goal = await cortex.get(options.id) as any;
+        if (!goal) {
+          console.log(chalk.red('Goal not found'));
+          return;
+        }
+        const blockers = goal.blockers || [];
+        blockers.push({
+          description: options.blocker,
+          severity: options.severity || 'medium',
+          createdAt: new Date().toISOString(),
+        });
+        await cortex.update(options.id, { blockers, status: 'blocked' } as any);
+        await cortex.storage.close();
+        console.log(chalk.yellow.bold(`\n⚠️ Added blocker to "${goal.title}"\n`));
+        break;
+      }
+      case 'complete': {
+        if (!options.id) {
+          console.log(chalk.red('Missing --id'));
+          return;
+        }
+        const goal = await cortex.get(options.id) as any;
+        if (!goal) {
+          console.log(chalk.red('Goal not found'));
+          return;
+        }
+        await cortex.update(options.id, {
+          status: 'achieved',
+          progress: 100,
+          achievedDate: new Date().toISOString(),
+          summary: `🎯 ${goal.title}: 100% (achieved)`,
+        } as any);
+        await cortex.storage.close();
+        console.log(chalk.green.bold(`\n🎉 Completed goal "${goal.title}"!\n`));
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: create, list, update, block, complete`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+/**
+ * Incident subcommand - record and retrieve postmortems
+ */
+async function incidentAction(
+  action: string,
+  options: MemoryOptions & {
+    title?: string;
+    severity?: string;
+    impact?: string;
+    rootCause?: string;
+    resolution?: string;
+    lessons?: string;
+    triggers?: string;
+    id?: string;
+    query?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'record': {
+        if (!options.title || !options.severity || !options.impact || !options.resolution || !options.lessons) {
+          console.log(chalk.red('Missing required: --title, --severity, --impact, --resolution, --lessons'));
+          return;
+        }
+        const memory = {
+          type: 'incident',
+          title: options.title,
+          severity: options.severity,
+          detectedAt: new Date().toISOString(),
+          impact: options.impact,
+          affectedSystems: [],
+          rootCause: options.rootCause,
+          resolution: options.resolution,
+          lessonsLearned: options.lessons.split(',').map(l => l.trim()),
+          warningTriggers: options.triggers?.split(',').map(t => t.trim()) || [],
+          summary: `🚨 ${options.severity}: ${options.title}`,
+          confidence: 1.0,
+          importance: options.severity === 'critical' ? 'critical' : 'high',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Recorded incident "${options.title}"`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const incidents = await cortex.search({ types: ['incident' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ incidents, total: incidents.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n🚨 Incidents'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (incidents.length === 0) {
+            console.log(chalk.green('No incidents recorded.'));
+          } else {
+            for (const i of incidents) {
+              const sevColor = i.severity === 'critical' ? chalk.red : i.severity === 'high' ? chalk.yellow : chalk.white;
+              console.log(`  ${sevColor(`[${i.severity}]`.padEnd(12))} ${i.title}`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      case 'warnings': {
+        if (!options.query) {
+          console.log(chalk.red('Missing --query'));
+          return;
+        }
+        const incidents = await cortex.search({ types: ['incident' as any], limit: 100 });
+        const q = options.query.toLowerCase();
+        const warnings: any[] = [];
+        for (const inc of incidents) {
+          const incAny = inc as any;
+          for (const trigger of incAny.warningTriggers || []) {
+            if (q.includes(trigger.toLowerCase())) {
+              warnings.push({ incident: inc, trigger });
+              break;
+            }
+          }
+        }
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ warnings, total: warnings.length }, null, 2));
+        } else {
+          if (warnings.length === 0) {
+            console.log(chalk.green('\n✓ No relevant incident warnings.\n'));
+          } else {
+            console.log(chalk.yellow.bold(`\n⚠️ Found ${warnings.length} relevant incidents:`));
+            for (const w of warnings) {
+              console.log(`  🚨 ${w.incident.title}`);
+              console.log(chalk.gray(`     Trigger: ${w.trigger}`));
+            }
+            console.log();
+          }
+        }
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: record, list, warnings`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+/**
+ * Workflow subcommand - manage step-by-step processes
+ */
+async function workflowAction(
+  action: string,
+  options: MemoryOptions & {
+    name?: string;
+    slug?: string;
+    description?: string;
+    steps?: string;
+    triggers?: string;
+    id?: string;
+    query?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'create': {
+        if (!options.name || !options.slug || !options.steps || !options.triggers) {
+          console.log(chalk.red('Missing required: --name, --slug, --steps, --triggers'));
+          return;
+        }
+        const stepsList = options.steps.split('|').map((s, i) => ({
+          order: i + 1,
+          name: `Step ${i + 1}`,
+          description: s.trim(),
+          required: true,
+        }));
+        const memory = {
+          type: 'workflow',
+          name: options.name,
+          description: options.description || '',
+          slug: options.slug,
+          steps: stepsList,
+          triggerPhrases: options.triggers.split(',').map(t => t.trim()),
+          stats: { executionCount: 0, successRate: 1.0 },
+          summary: `📋 ${options.name}: ${stepsList.length} steps`,
+          confidence: 1.0,
+          importance: 'normal',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id, slug: options.slug }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Created workflow "${options.name}" (${options.slug})`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const workflows = await cortex.search({ types: ['workflow' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ workflows, total: workflows.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n📋 Workflows'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (workflows.length === 0) {
+            console.log(chalk.yellow('No workflows. Create one with: drift memory workflow create'));
+          } else {
+            for (const w of workflows) {
+              console.log(`  ${chalk.cyan(w.slug?.padEnd(20) || 'unknown')} ${w.name} (${w.steps?.length || 0} steps)`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      case 'run': {
+        if (!options.slug && !options.id) {
+          console.log(chalk.red('Missing --slug or --id'));
+          return;
+        }
+        let workflow: any = null;
+        if (options.id) {
+          workflow = await cortex.get(options.id);
+        } else {
+          const workflows = await cortex.search({ types: ['workflow' as any], limit: 100 });
+          workflow = workflows.find((w: any) => w.slug === options.slug);
+        }
+        await cortex.storage.close();
+        if (!workflow) {
+          console.log(chalk.red('Workflow not found'));
+          return;
+        }
+        if (format === 'json') {
+          console.log(JSON.stringify(workflow, null, 2));
+        } else {
+          console.log(chalk.bold(`\n📋 ${workflow.name}`));
+          console.log(chalk.gray('═'.repeat(50)));
+          for (const step of workflow.steps || []) {
+            console.log(`  ${chalk.cyan(`${step.order}.`)} ${step.description}`);
+          }
+          console.log();
+        }
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: create, list, run`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+/**
+ * Entity subcommand - track projects, products, teams
+ */
+async function entityAction(
+  action: string,
+  options: MemoryOptions & {
+    type?: string;
+    name?: string;
+    facts?: string;
+    warnings?: string;
+    status?: string;
+    id?: string;
+    query?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'create': {
+        if (!options.type || !options.name || !options.facts) {
+          console.log(chalk.red('Missing required: --type, --name, --facts'));
+          return;
+        }
+        const memory = {
+          type: 'entity',
+          entityType: options.type,
+          name: options.name,
+          attributes: {},
+          status: options.status || 'active',
+          keyFacts: options.facts.split(',').map(f => f.trim()),
+          warnings: options.warnings?.split(',').map(w => w.trim()),
+          relationships: [],
+          summary: `📦 ${options.type}: ${options.name}`,
+          confidence: 1.0,
+          importance: 'normal',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Created ${options.type} "${options.name}"`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const entities = await cortex.search({ types: ['entity' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ entities, total: entities.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n📦 Entities'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (entities.length === 0) {
+            console.log(chalk.yellow('No entities. Create one with: drift memory entity create'));
+          } else {
+            for (const e of entities) {
+              console.log(`  ${chalk.gray(`[${e.entityType}]`.padEnd(12))} ${e.name}`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      case 'get': {
+        if (!options.name && !options.id) {
+          console.log(chalk.red('Missing --name or --id'));
+          return;
+        }
+        let entity: any = null;
+        if (options.id) {
+          entity = await cortex.get(options.id);
+        } else {
+          const entities = await cortex.search({ types: ['entity' as any], limit: 100 });
+          entity = entities.find((e: any) => e.name?.toLowerCase() === options.name?.toLowerCase());
+        }
+        await cortex.storage.close();
+        if (!entity) {
+          console.log(chalk.red('Entity not found'));
+          return;
+        }
+        if (format === 'json') {
+          console.log(JSON.stringify(entity, null, 2));
+        } else {
+          console.log(chalk.bold(`\n📦 ${entity.entityType}: ${entity.name}`));
+          console.log(chalk.gray('─'.repeat(50)));
+          console.log(`  Status: ${entity.status}`);
+          console.log(`  Facts:`);
+          for (const f of entity.keyFacts || []) {
+            console.log(`    • ${f}`);
+          }
+          if (entity.warnings?.length > 0) {
+            console.log(chalk.yellow(`  Warnings:`));
+            for (const w of entity.warnings) {
+              console.log(chalk.yellow(`    ⚠️ ${w}`));
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: create, list, get`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+/**
+ * Env subcommand - manage environment configurations
+ */
+async function envMemoryAction(
+  action: string,
+  options: MemoryOptions & {
+    name?: string;
+    type?: string;
+    warnings?: string;
+    endpoints?: string;
+    id?: string;
+  }
+): Promise<void> {
+  const rootDir = process.cwd();
+  const format = options.format ?? 'text';
+
+  try {
+    const cortex = await getCortex(rootDir);
+
+    switch (action) {
+      case 'create': {
+        if (!options.name || !options.type) {
+          console.log(chalk.red('Missing required: --name, --type'));
+          return;
+        }
+        const memory = {
+          type: 'environment',
+          name: options.name,
+          environmentType: options.type,
+          config: {},
+          warnings: options.warnings?.split(',').map(w => w.trim()) || [],
+          endpoints: options.endpoints ? JSON.parse(options.endpoints) : {},
+          status: 'unknown',
+          summary: `🌍 ${options.type}: ${options.name}`,
+          confidence: 1.0,
+          importance: options.type === 'production' ? 'high' : 'normal',
+        };
+        const id = await cortex.add(memory as any);
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ success: true, id }));
+        } else {
+          console.log(chalk.green.bold(`\n✓ Created environment "${options.name}"`));
+          console.log(`  ID: ${chalk.cyan(id)}\n`);
+        }
+        break;
+      }
+      case 'list': {
+        const envs = await cortex.search({ types: ['environment' as any], limit: 50 });
+        await cortex.storage.close();
+        if (format === 'json') {
+          console.log(JSON.stringify({ environments: envs, total: envs.length }, null, 2));
+        } else {
+          console.log(chalk.bold('\n🌍 Environments'));
+          console.log(chalk.gray('─'.repeat(50)));
+          if (envs.length === 0) {
+            console.log(chalk.yellow('No environments. Create one with: drift memory env create'));
+          } else {
+            for (const e of envs) {
+              const typeColor = e.environmentType === 'production' ? chalk.red : chalk.cyan;
+              console.log(`  ${typeColor(`[${e.environmentType}]`.padEnd(14))} ${e.name}`);
+            }
+          }
+          console.log();
+        }
+        break;
+      }
+      default:
+        console.log(chalk.red(`Unknown action: ${action}. Use: create, list`));
+    }
+  } catch (error) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ error: String(error) }));
+    } else {
+      console.log(chalk.red(`Error: ${error}`));
+    }
+  }
+}
+
+// ============================================================================
 // Command Registration
 // ============================================================================
 
@@ -2151,6 +2866,87 @@ export function createMemoryCommand(): Command {
     .command('health')
     .description('Get comprehensive health report')
     .action(() => healthAction(cmd.opts()));
+
+  // ============================================================================
+  // Universal Memory Subcommands
+  // ============================================================================
+
+  // Agent
+  cmd
+    .command('agent <action>')
+    .description('Manage agent spawn configurations (actions: create, list, get)')
+    .option('-n, --name <name>', 'Agent display name')
+    .option('-s, --slug <slug>', 'Unique slug for invocation')
+    .option('-d, --description <desc>', 'Agent description')
+    .option('--system-prompt <prompt>', 'Agent system prompt')
+    .option('--tools <tools>', 'Comma-separated list of tools')
+    .option('--triggers <triggers>', 'Comma-separated trigger phrases')
+    .option('--id <id>', 'Agent ID (for get)')
+    .action((action, opts) => agentAction(action, { ...cmd.opts(), ...opts }));
+
+  // Goal
+  cmd
+    .command('goal <action>')
+    .description('Track goals with progress (actions: create, list, update, block, complete)')
+    .option('-t, --title <title>', 'Goal title')
+    .option('-d, --description <desc>', 'Goal description')
+    .option('-p, --parent <id>', 'Parent goal ID')
+    .option('--progress <percent>', 'Progress percentage (0-100)')
+    .option('--status <status>', 'Status: active, achieved, abandoned, blocked, at_risk')
+    .option('--id <id>', 'Goal ID')
+    .option('--blocker <text>', 'Blocker description (for block action)')
+    .option('--severity <level>', 'Blocker severity: low, medium, high, critical')
+    .action((action, opts) => goalAction(action, { ...cmd.opts(), ...opts }));
+
+  // Incident
+  cmd
+    .command('incident <action>')
+    .description('Record and retrieve incident postmortems (actions: record, list, warnings)')
+    .option('-t, --title <title>', 'Incident title')
+    .option('-s, --severity <level>', 'Severity: low, medium, high, critical')
+    .option('--impact <text>', 'Impact description')
+    .option('--root-cause <text>', 'Root cause analysis')
+    .option('--resolution <text>', 'How it was resolved')
+    .option('--lessons <list>', 'Comma-separated lessons learned')
+    .option('--triggers <list>', 'Comma-separated warning triggers')
+    .option('--id <id>', 'Incident ID')
+    .option('-q, --query <text>', 'Query for warnings action')
+    .action((action, opts) => incidentAction(action, { ...cmd.opts(), ...opts }));
+
+  // Workflow
+  cmd
+    .command('workflow <action>')
+    .description('Manage step-by-step processes (actions: create, list, run)')
+    .option('-n, --name <name>', 'Workflow name')
+    .option('-s, --slug <slug>', 'Unique slug')
+    .option('-d, --description <desc>', 'Workflow description')
+    .option('--steps <steps>', 'Pipe-separated steps (e.g., "Step 1|Step 2|Step 3")')
+    .option('--triggers <triggers>', 'Comma-separated trigger phrases')
+    .option('--id <id>', 'Workflow ID')
+    .action((action, opts) => workflowAction(action, { ...cmd.opts(), ...opts }));
+
+  // Entity
+  cmd
+    .command('entity <action>')
+    .description('Track projects, products, teams (actions: create, list, get)')
+    .option('-t, --type <type>', 'Entity type: project, product, team, client, vendor, system, service')
+    .option('-n, --name <name>', 'Entity name')
+    .option('--facts <facts>', 'Comma-separated key facts')
+    .option('--warnings <warnings>', 'Comma-separated warnings')
+    .option('--status <status>', 'Status: active, deprecated, planned, archived')
+    .option('--id <id>', 'Entity ID')
+    .action((action, opts) => entityAction(action, { ...cmd.opts(), ...opts }));
+
+  // Environment (as 'env' subcommand under memory)
+  cmd
+    .command('env <action>')
+    .description('Manage environment configurations (actions: create, list)')
+    .option('-n, --name <name>', 'Environment name')
+    .option('-t, --type <type>', 'Type: production, staging, development, testing, sandbox')
+    .option('--warnings <warnings>', 'Comma-separated warnings')
+    .option('--endpoints <json>', 'JSON object of endpoints')
+    .option('--id <id>', 'Environment ID')
+    .action((action, opts) => envMemoryAction(action, { ...cmd.opts(), ...opts }));
 
   return cmd;
 }

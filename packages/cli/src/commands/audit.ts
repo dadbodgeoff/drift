@@ -15,10 +15,13 @@ import { Command } from 'commander';
 import {
   AuditEngine,
   AuditStore,
-  PatternStore,
   type AuditResult,
   type AuditOptions,
 } from 'driftdetect-core';
+import {
+  createPatternStore,
+  getStorageInfo,
+} from 'driftdetect-core/storage';
 
 import { createSpinner, status } from '../ui/spinner.js';
 
@@ -313,13 +316,18 @@ async function auditAction(options: AuditCommandOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Load patterns
+  // Load patterns (auto-detects SQLite vs JSON backend)
   const spinner = format === 'text' ? createSpinner('Loading patterns...') : null;
   spinner?.start();
 
-  const patternStore = new PatternStore({ rootDir });
-  await patternStore.initialize();
+  const patternStore = await createPatternStore({ rootDir });
   const patterns = patternStore.getAll();
+  
+  const storageInfo = getStorageInfo(rootDir);
+  if (verbose && format === 'text') {
+    const backendLabel = storageInfo.backend === 'sqlite' ? chalk.green('SQLite') : chalk.yellow('JSON');
+    console.log(chalk.gray(`  Storage backend: ${backendLabel}`));
+  }
 
   spinner?.succeed(`Loaded ${patterns.length} patterns`);
 

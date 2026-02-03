@@ -1,11 +1,17 @@
 /**
  * Pattern Store - Pattern persistence and querying
  *
- * @deprecated This class uses the legacy status-based storage format.
- * Use `UnifiedFilePatternRepository` from `@drift/core/patterns` instead,
- * which provides a unified category-based storage format with better performance.
+ * @deprecated This class uses the legacy JSON-based storage format.
+ * Use `HybridPatternStore` from `@drift/core/storage` instead,
+ * which provides SQLite-backed storage with better performance.
  *
- * Migration: Run `drift migrate-storage` to convert to the new format.
+ * For new code, use the factory function:
+ * ```typescript
+ * import { createPatternStore } from '@drift/core/storage';
+ * const store = await createPatternStore({ rootDir: '/path/to/project' });
+ * ```
+ *
+ * Migration: Run `drift migrate-storage` to convert to SQLite format.
  *
  * Loads and saves patterns to .drift/patterns/ directory.
  * Supports querying by category, confidence, and status.

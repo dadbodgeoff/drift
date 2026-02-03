@@ -2,14 +2,18 @@
  * Export Command - Export manifest in various formats
  *
  * Exports the pattern manifest for AI consumption or reporting.
+ * Also supports database export for backup and migration.
  *
  * MIGRATION: Now uses IPatternService for pattern operations.
+ * Phase 3: Added database export/import for SQLite migration.
  *
  * Usage:
  *   drift export                    # Export as JSON to stdout
  *   drift export --format ai-context # Export optimized for LLMs
  *   drift export --format summary   # Human-readable summary
  *   drift export -o report.md       # Write to file
+ *   drift export db --format json   # Export database as JSON
+ *   drift export db --format sqlite # Export database as SQLite file
  */
 
 import * as fs from 'node:fs/promises';
@@ -26,6 +30,10 @@ import {
   type ManifestPattern,
   type Manifest,
 } from 'driftdetect-core';
+import {
+  UnifiedStore,
+  hasSqliteDatabase,
+} from 'driftdetect-core/storage';
 
 import { createCLIPatternService } from '../services/pattern-service-factory.js';
 
@@ -246,3 +254,73 @@ function getLanguageFromFile(file: string): string {
   };
   return langMap[ext] || 'unknown';
 }
+
+/**
+ * Database export subcommand
+ * 
+ * Phase 3: Export the SQLite database for backup or migration
+ */
+const dbExportCommand = new Command('db')
+  .description('Export database for backup or migration')
+  .option('--db-format <format>', 'Export format: json, sqlite', 'json')
+  .argument('<output>', 'Output file path')
+  .action(async (output, options) => {
+    const cwd = process.cwd();
+    
+    // Check if SQLite database exists
+    if (!hasSqliteDatabase(cwd)) {
+      console.error(chalk.red('No SQLite database found.'));
+      console.error(chalk.gray('Run `drift migrate-storage sqlite` to create one.'));
+      process.exit(1);
+    }
+    
+    // Validate format
+    const format = options.dbFormat || 'json';
+    const validFormats = ['json', 'sqlite'];
+    if (!validFormats.includes(format)) {
+      console.error(chalk.red(`Invalid format: ${format}`));
+      console.error(`Valid formats: ${validFormats.join(', ')}`);
+      process.exit(1);
+    }
+    
+    console.log();
+    console.log(chalk.bold('📦 Drift Database Export'));
+    console.log();
+    
+    try {
+      const store = new UnifiedStore({ rootDir: cwd });
+      await store.initialize();
+      
+      const exportFormat = format as 'json' | 'sqlite';
+      const data = await store.export(exportFormat);
+      
+      const outputPath = path.resolve(cwd, output);
+      await fs.writeFile(outputPath, data);
+      
+      await store.close();
+      
+      const stats = await fs.stat(outputPath);
+      const sizeKB = Math.round(stats.size / 1024);
+      
+      console.log(chalk.green(`✔ Exported database to ${output}`));
+      console.log(chalk.gray(`  Format: ${exportFormat}`));
+      console.log(chalk.gray(`  Size: ${sizeKB} KB`));
+      console.log();
+      
+      if (exportFormat === 'json') {
+        console.log(chalk.gray('To import this backup:'));
+        console.log(chalk.cyan(`  drift import db ${output}`));
+      } else {
+        console.log(chalk.gray('To use this database:'));
+        console.log(chalk.cyan(`  cp ${output} .drift/drift.db`));
+      }
+      console.log();
+      
+    } catch (error) {
+      console.error(chalk.red(`Export failed: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+exportCommand.addCommand(dbExportCommand);
+

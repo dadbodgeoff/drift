@@ -27,7 +27,7 @@ interface AddResult {
  */
 export const memoryAdd = {
   name: 'drift_memory_add',
-  description: 'Add a new memory to the system. Supports domain-agnostic types (decision, insight, reference, preference) and code-specific types (tribal, procedural, semantic, pattern_rationale, constraint_override, decision_context, code_smell). Automatically infers causal relationships.',
+  description: 'Add a new memory to the system. Supports domain-agnostic types (decision, insight, reference, preference), code-specific types (tribal, procedural, semantic, pattern_rationale, constraint_override, decision_context, code_smell), and universal types (agent_spawn, entity, goal, feedback, workflow, conversation, incident, meeting, skill, environment). Automatically infers causal relationships.',
   parameters: {
     type: 'object',
     properties: {
@@ -48,12 +48,23 @@ export const memoryAdd = {
           'constraint_override', // Approved exceptions
           'decision_context',   // Code decision context
           'code_smell',         // Anti-patterns
+          // Universal memory types (v2)
+          'agent_spawn',        // Reusable agent configurations
+          'entity',             // Projects, products, teams, systems
+          'goal',               // Objectives with progress tracking
+          'feedback',           // Corrections and learning signals
+          'workflow',           // Step-by-step processes
+          'conversation',       // Summarized past discussions
+          'incident',           // Postmortems and lessons learned
+          'meeting',            // Meeting notes and action items
+          'skill',              // Knowledge domains and proficiency
+          'environment',        // System/environment configurations
         ],
         description: 'Type of memory to create',
       },
       content: {
         type: 'object',
-        description: 'Memory content (varies by type). For decision: {title, outcome, decisionSummary, context?, alternatives?, stakeholders?}. For insight: {insight, source, domain?}. For reference: {title, url?, keyPoints}. For preference: {preference, category, scope, strength}.',
+        description: 'Memory content (varies by type). For decision: {title, outcome, decisionSummary, context?, alternatives?, stakeholders?}. For insight: {insight, source, domain?}. For reference: {title, url?, keyPoints}. For preference: {preference, category, scope, strength}. For agent_spawn: {name, description, slug, systemPrompt, tools, triggerPatterns}. For entity: {entityType, name, keyFacts, status}. For goal: {title, description, status, progress, successCriteria}. For workflow: {name, description, slug, steps, triggerPhrases}. For incident: {title, severity, impact, resolution, lessonsLearned}.',
       },
       linkedPatterns: {
         type: 'array',

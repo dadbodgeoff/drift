@@ -26,7 +26,6 @@ import { Command } from 'commander';
 import { confirm, select } from '@inquirer/prompts';
 
 import {
-  PatternStore,
   getProjectRegistry,
   FileWalker,
   getDefaultIgnorePatterns,
@@ -38,6 +37,7 @@ import {
   type PatternLocation,
   type ScanOptions,
 } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createSpinner } from '../../ui/spinner.js';
 import { createCLIPatternService } from '../../services/pattern-service-factory.js';
@@ -285,8 +285,7 @@ async function phaseScan(
   spinner.start();
 
   try {
-    const store = new PatternStore({ rootDir });
-    await store.initialize();
+    const store = await createPatternStore({ rootDir });
 
     const ignorePatterns = await loadIgnorePatterns(rootDir);
     const walker = new FileWalker();

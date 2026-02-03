@@ -1,6 +1,18 @@
 /**
  * Contract Store - Contract persistence and querying
  *
+ * @deprecated This class uses the legacy JSON-based storage format.
+ * Use `HybridContractStore` from `@drift/core/storage` instead,
+ * which provides SQLite-backed storage with better performance.
+ *
+ * For new code, use the factory function:
+ * ```typescript
+ * import { createContractStore } from '@drift/core/storage';
+ * const store = await createContractStore({ rootDir: '/path/to/project' });
+ * ```
+ *
+ * Migration: Run `drift migrate-storage` to convert to SQLite format.
+ *
  * Loads and saves contracts to .drift/contracts/ directory.
  * Supports querying by status, method, endpoint, and mismatches.
  * Handles contract state transitions (discovered → verified/mismatch/ignored).

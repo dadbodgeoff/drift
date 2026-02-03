@@ -32,6 +32,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "import": "./dist/storage/index.js"
+    },
     "./wrappers": {
       "types": "./dist/wrappers/index.d.ts",
       "import": "./dist/wrappers/index.js"
@@ -41,7 +45,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/storage/schema.sql dist/storage/schema.sql",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
@@ -55,6 +59,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "better-sqlite3": "^11.0.0",
     "driftdetect-detectors": "workspace:0.9.47",
     "ignore": "^5.3.1",
     "minimatch": "^9.0.3",
@@ -76,6 +81,7 @@
     "driftdetect-native": "0.9.45"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "@types/minimatch": "^5.1.2",
     "@types/node": "^20.19.30",
     "@vitest/coverage-v8": "^1.0.0",

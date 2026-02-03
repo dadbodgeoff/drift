@@ -57,6 +57,7 @@ import {
   createMemoryCommand,
   setupCommand,
   backupCommand,
+  importCommand,
 } from '../commands/index.js';
 import { VERSION } from '../index.js';
 
@@ -162,6 +163,9 @@ function createProgram(): Command {
 
   // Backup & Restore (enterprise data safety)
   program.addCommand(backupCommand);
+
+  // Database Import (Phase 3)
+  program.addCommand(importCommand);
 
   // Add help examples
   program.addHelpText(

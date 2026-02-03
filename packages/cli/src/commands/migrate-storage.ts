@@ -4,6 +4,9 @@
  * Migrates pattern storage from legacy status-based format to unified
  * category-based format (Phase 3 of Pattern System Consolidation).
  *
+ * Also supports migration to SQLite unified database format for cloud-ready
+ * storage (Phase 4 - Unified Database Architecture).
+ *
  * Legacy format:
  * .drift/patterns/
  *   ├── discovered/
@@ -12,11 +15,14 @@
  *   ├── approved/
  *   └── ignored/
  *
- * Unified format:
+ * Unified JSON format:
  * .drift/patterns/
  *   ├── api.json        # Contains all statuses
  *   ├── security.json
  *   └── ...
+ *
+ * Unified SQLite format:
+ * .drift/drift.db       # Single database with all metadata
  */
 
 import * as fs from 'fs';
@@ -386,11 +392,216 @@ async function statusAction(): Promise<void> {
 }
 
 // ============================================================================
+// SQLite Migration Action
+// ============================================================================
+
+interface SqliteMigrateOptions {
+  force?: boolean;
+  keepJson?: boolean;
+  dryRun?: boolean;
+}
+
+async function sqliteMigrateAction(options: SqliteMigrateOptions): Promise<void> {
+  const rootDir = process.cwd();
+
+  console.log();
+  console.log(chalk.bold('🗄️  SQLite Database Migration'));
+  console.log();
+
+  // Check if drift is initialized
+  if (!fs.existsSync(path.join(rootDir, '.drift'))) {
+    status.error('Drift is not initialized in this directory.');
+    console.log(chalk.gray('Run `drift init` first.'));
+    process.exit(1);
+  }
+
+  // Check if SQLite database already exists
+  const dbPath = path.join(rootDir, '.drift', 'drift.db');
+  if (fs.existsSync(dbPath)) {
+    console.log(chalk.yellow('⚠️  SQLite database already exists.'));
+    
+    if (!options.force) {
+      const proceed = await confirmPrompt('Overwrite existing database?', false);
+      if (!proceed) {
+        status.info('Migration cancelled.');
+        return;
+      }
+    }
+    
+    // Backup existing database
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(rootDir, '.drift', 'backups', `drift-${timestamp}.db`);
+    fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+    fs.copyFileSync(dbPath, backupPath);
+    console.log(chalk.gray(`Backed up existing database to: ${path.relative(rootDir, backupPath)}`));
+  }
+
+  // Dry run mode
+  if (options.dryRun) {
+    console.log(chalk.cyan('🔍 Dry run mode - no changes will be made'));
+    console.log();
+
+    // Count items to migrate
+    const counts = {
+      patterns: 0,
+      contracts: 0,
+      constraints: 0,
+      boundaries: 0,
+      envVariables: 0,
+    };
+
+    // Count patterns
+    const patternsDir = path.join(rootDir, '.drift', 'patterns');
+    if (fs.existsSync(patternsDir)) {
+      for (const statusDir of ['discovered', 'approved', 'ignored']) {
+        const dir = path.join(patternsDir, statusDir);
+        if (!fs.existsSync(dir)) continue;
+        
+        const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+        for (const file of files) {
+          try {
+            const content = fs.readFileSync(path.join(dir, file), 'utf-8');
+            const data = JSON.parse(content);
+            counts.patterns += data.patterns?.length || 0;
+          } catch {
+            // Skip invalid files
+          }
+        }
+      }
+    }
+
+    // Count contracts
+    const contractsDir = path.join(rootDir, '.drift', 'contracts');
+    if (fs.existsSync(contractsDir)) {
+      for (const statusDir of ['discovered', 'verified', 'mismatch', 'ignored']) {
+        const dir = path.join(contractsDir, statusDir);
+        if (fs.existsSync(dir)) {
+          counts.contracts += fs.readdirSync(dir).filter(f => f.endsWith('.json')).length;
+        }
+      }
+    }
+
+    // Count constraints
+    const constraintsDir = path.join(rootDir, '.drift', 'constraints');
+    if (fs.existsSync(constraintsDir)) {
+      for (const statusDir of ['discovered', 'approved', 'ignored', 'custom']) {
+        const dir = path.join(constraintsDir, statusDir);
+        if (fs.existsSync(dir)) {
+          counts.constraints += fs.readdirSync(dir).filter(f => f.endsWith('.json')).length;
+        }
+      }
+    }
+
+    // Count boundaries
+    const boundariesPath = path.join(rootDir, '.drift', 'boundaries', 'access-map.json');
+    if (fs.existsSync(boundariesPath)) {
+      try {
+        const content = fs.readFileSync(boundariesPath, 'utf-8');
+        const data = JSON.parse(content);
+        counts.boundaries = Object.keys(data.tables || {}).length;
+      } catch {
+        // Skip
+      }
+    }
+
+    // Count env variables
+    const envPath = path.join(rootDir, '.drift', 'environment', 'variables.json');
+    if (fs.existsSync(envPath)) {
+      try {
+        const content = fs.readFileSync(envPath, 'utf-8');
+        const data = JSON.parse(content);
+        counts.envVariables = Object.keys(data.variables || {}).length;
+      } catch {
+        // Skip
+      }
+    }
+
+    console.log('  Items to migrate:');
+    console.log(`    Patterns: ${chalk.cyan(counts.patterns)}`);
+    console.log(`    Contracts: ${chalk.cyan(counts.contracts)}`);
+    console.log(`    Constraints: ${chalk.cyan(counts.constraints)}`);
+    console.log(`    Boundaries: ${chalk.cyan(counts.boundaries)}`);
+    console.log(`    Env Variables: ${chalk.cyan(counts.envVariables)}`);
+    console.log();
+    console.log(chalk.gray('Run without --dry-run to perform migration.'));
+    return;
+  }
+
+  // Perform migration
+  const migrateSpinner = createSpinner('Migrating to SQLite...');
+  migrateSpinner.start();
+
+  try {
+    // Dynamic import to avoid loading SQLite unless needed
+    const { migrateFromJson } = await import('driftdetect-core/storage');
+
+    const result = await migrateFromJson({
+      rootDir,
+      keepJsonFiles: options.keepJson ?? true,
+      dryRun: false,
+      onProgress: (message, current, total) => {
+        migrateSpinner.text(`${message} (${current}/${total})`);
+      },
+    });
+
+    if (!result.success) {
+      migrateSpinner.fail('Migration failed');
+      for (const error of result.errors) {
+        console.error(chalk.red(`  ${error}`));
+      }
+      process.exit(1);
+    }
+
+    migrateSpinner.succeed('Migration complete');
+
+    // Show summary
+    console.log();
+    console.log(chalk.bold('📊 Migration Summary'));
+    console.log();
+    console.log(`  Patterns: ${chalk.cyan(result.patternsImported)}`);
+    console.log(`  Contracts: ${chalk.cyan(result.contractsImported)}`);
+    console.log(`  Constraints: ${chalk.cyan(result.constraintsImported)}`);
+    console.log(`  Boundaries: ${chalk.cyan(result.boundariesImported)}`);
+    console.log(`  Env Variables: ${chalk.cyan(result.envVariablesImported)}`);
+
+    if (result.warnings.length > 0) {
+      console.log();
+      console.log(chalk.yellow('Warnings:'));
+      for (const warning of result.warnings) {
+        console.log(chalk.yellow(`  ⚠️  ${warning}`));
+      }
+    }
+
+    console.log();
+    console.log(chalk.green(`✓ Database created: ${chalk.gray('.drift/drift.db')}`));
+
+    if (options.keepJson) {
+      console.log();
+      console.log(chalk.gray('JSON files preserved. You can remove them after verifying the migration.'));
+    }
+
+  } catch (error) {
+    migrateSpinner.fail('Migration failed');
+    console.error(chalk.red((error as Error).message));
+    process.exit(1);
+  }
+
+  console.log();
+  status.success('SQLite migration complete!');
+  console.log();
+}
+
+// ============================================================================
 // Command Registration
 // ============================================================================
 
 export const migrateStorageCommand = new Command('migrate-storage')
-  .description('Migrate pattern storage to unified format')
+  .description('Migrate pattern storage to unified format');
+
+// Pattern migration (default behavior, now as explicit subcommand)
+migrateStorageCommand
+  .command('patterns')
+  .description('Migrate patterns from legacy status-based format to unified format')
   .option('-f, --force', 'Force migration without confirmation')
   .option('--no-backup', 'Skip creating backup')
   .option('--keep-legacy', 'Keep legacy format files after migration')
@@ -406,3 +617,12 @@ migrateStorageCommand
   .command('status')
   .description('Show current storage format status')
   .action(statusAction);
+
+migrateStorageCommand
+  .command('sqlite')
+  .description('Migrate all metadata to unified SQLite database (cloud-ready)')
+  .option('-f, --force', 'Force migration without confirmation')
+  .option('--keep-json', 'Keep JSON files after migration (default: true)')
+  .option('--no-keep-json', 'Remove JSON files after migration')
+  .option('--dry-run', 'Show what would be migrated without making changes')
+  .action(sqliteMigrateAction);

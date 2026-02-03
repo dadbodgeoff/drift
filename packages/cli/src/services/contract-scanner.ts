@@ -9,7 +9,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { ContractStore, type Contract } from 'driftdetect-core';
+import { createContractStore, type ContractStoreInterface, type Contract } from 'driftdetect-core';
 import {
   extractBackendEndpoints,
   extractFrontendApiCalls,
@@ -158,18 +158,21 @@ function isFrontendFile(filePath: string, content: string): boolean {
 
 export class ContractScanner {
   private config: ContractScannerConfig;
-  private store: ContractStore;
+  private store: ContractStoreInterface | null = null;
 
   constructor(config: ContractScannerConfig) {
     this.config = config;
-    this.store = new ContractStore({ rootDir: config.rootDir });
   }
 
   async initialize(): Promise<void> {
-    await this.store.initialize();
+    this.store = await createContractStore({ rootDir: this.config.rootDir });
   }
 
   async scanFiles(files: string[]): Promise<ContractScanResult> {
+    if (!this.store) {
+      throw new Error('ContractScanner not initialized. Call initialize() first.');
+    }
+    
     const startTime = Date.now();
     
     const backendEndpoints: ExtractedEndpoint[] = [];
@@ -242,11 +245,11 @@ export class ContractScanner {
 
     // Store contracts
     for (const contract of matchResult.contracts) {
-      if (!this.store.has(contract.id)) {
-        this.store.add(contract);
+      if (!this.store!.has(contract.id)) {
+        await this.store!.add(contract);
       } else {
         // Update existing contract
-        this.store.update(contract.id, {
+        await this.store!.update(contract.id, {
           backend: contract.backend,
           frontend: contract.frontend,
           mismatches: contract.mismatches,
@@ -259,7 +262,7 @@ export class ContractScanner {
       }
     }
 
-    await this.store.saveAll();
+    await this.store!.saveAll();
 
     // Calculate stats
     const mismatchCount = matchResult.contracts.reduce(
@@ -281,8 +284,17 @@ export class ContractScanner {
     };
   }
 
-  getStore(): ContractStore {
+  getStore(): ContractStoreInterface {
+    if (!this.store) {
+      throw new Error('ContractScanner not initialized. Call initialize() first.');
+    }
     return this.store;
+  }
+
+  async close(): Promise<void> {
+    if (this.store?.close) {
+      await this.store.close();
+    }
   }
 }
 

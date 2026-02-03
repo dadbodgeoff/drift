@@ -29,6 +29,19 @@ export { driftMemoryHealth } from './health.js';
 export { driftMemoryPredict } from './predict.js';
 export { driftMemoryConflicts } from './conflicts.js';
 export { driftMemoryGraph } from './graph.js';
+export { driftMemoryQuery } from './query.js';
+export { driftMemoryContradictions } from './contradictions.js';
+
+// Universal memory tools (v2)
+export { driftAgentSpawn } from './agent-spawn.js';
+export { driftGoal } from './goal.js';
+export { driftIncident } from './incident.js';
+export { driftWorkflow } from './workflow.js';
+export { driftEntity } from './entity.js';
+export { driftConversation } from './conversation.js';
+export { driftMeeting } from './meeting.js';
+export { driftSkill } from './skill.js';
+export { driftEnvironment } from './environment.js';
 
 // Import tool definitions for registry
 import { memoryStatus } from './status.js';
@@ -45,6 +58,17 @@ import { driftMemoryHealth } from './health.js';
 import { driftMemoryPredict } from './predict.js';
 import { driftMemoryConflicts } from './conflicts.js';
 import { driftMemoryGraph } from './graph.js';
+import { driftMemoryQuery } from './query.js';
+import { driftMemoryContradictions } from './contradictions.js';
+import { driftAgentSpawn } from './agent-spawn.js';
+import { driftGoal } from './goal.js';
+import { driftIncident } from './incident.js';
+import { driftWorkflow } from './workflow.js';
+import { driftEntity } from './entity.js';
+import { driftConversation } from './conversation.js';
+import { driftMeeting } from './meeting.js';
+import { driftSkill } from './skill.js';
+import { driftEnvironment } from './environment.js';
 
 /**
  * Memory tools for MCP registry
@@ -54,6 +78,7 @@ import { driftMemoryGraph } from './graph.js';
  * - Learning from corrections and feedback
  * - Causal narratives and explanations
  * - Health monitoring and validation
+ * - Universal memory types (agent spawns, goals, incidents, workflows, entities)
  */
 export const MEMORY_TOOLS: Tool[] = [
   // Core tools
@@ -127,5 +152,61 @@ export const MEMORY_TOOLS: Tool[] = [
     name: driftMemoryGraph.name,
     description: driftMemoryGraph.description,
     inputSchema: driftMemoryGraph.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftMemoryQuery.name,
+    description: driftMemoryQuery.description,
+    inputSchema: driftMemoryQuery.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftMemoryContradictions.name,
+    description: driftMemoryContradictions.description,
+    inputSchema: driftMemoryContradictions.parameters as Tool['inputSchema'],
+  },
+  // Universal memory tools (v2)
+  {
+    name: driftAgentSpawn.name,
+    description: driftAgentSpawn.description,
+    inputSchema: driftAgentSpawn.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftGoal.name,
+    description: driftGoal.description,
+    inputSchema: driftGoal.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftIncident.name,
+    description: driftIncident.description,
+    inputSchema: driftIncident.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftWorkflow.name,
+    description: driftWorkflow.description,
+    inputSchema: driftWorkflow.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftEntity.name,
+    description: driftEntity.description,
+    inputSchema: driftEntity.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftConversation.name,
+    description: driftConversation.description,
+    inputSchema: driftConversation.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftMeeting.name,
+    description: driftMeeting.description,
+    inputSchema: driftMeeting.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftSkill.name,
+    description: driftSkill.description,
+    inputSchema: driftSkill.parameters as Tool['inputSchema'],
+  },
+  {
+    name: driftEnvironment.name,
+    description: driftEnvironment.description,
+    inputSchema: driftEnvironment.parameters as Tool['inputSchema'],
   },
 ];

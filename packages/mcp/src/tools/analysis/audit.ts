@@ -4,15 +4,17 @@
  * Runs pattern audit to detect duplicates, validate cross-references,
  * and generate approval recommendations. Supports agent-assisted
  * pattern review workflows.
+ * 
+ * Phase 3: Uses async factory for automatic SQLite support.
  */
 
 import {
   AuditEngine,
   AuditStore,
-  PatternStore,
   type AuditResult,
   type AuditOptions,
 } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
@@ -126,9 +128,8 @@ export async function handleAudit(
       }
 
       case 'run': {
-        // Load patterns
-        const patternStore = new PatternStore({ rootDir: projectRoot });
-        await patternStore.initialize();
+        // Load patterns (Phase 3: auto-detects SQLite)
+        const patternStore = await createPatternStore({ rootDir: projectRoot });
         const patterns = patternStore.getAll();
 
         if (patterns.length === 0) {
@@ -235,14 +236,13 @@ export async function handleAudit(
             .buildContent();
         }
 
-        // Approve patterns
-        const patternStore = new PatternStore({ rootDir: projectRoot });
-        await patternStore.initialize();
+        // Approve patterns (Phase 3: auto-detects SQLite)
+        const patternStore = await createPatternStore({ rootDir: projectRoot });
 
         const approved: Array<{ id: string; name: string; confidence: number }> = [];
         for (const p of eligible) {
           try {
-            patternStore.approve(p.id);
+            await patternStore.approve(p.id);
             approved.push({ id: p.id, name: p.name, confidence: p.confidence });
           } catch {
             // Pattern may already be approved or not found
@@ -250,6 +250,9 @@ export async function handleAudit(
         }
 
         await patternStore.saveAll();
+        if (patternStore.close) {
+          await patternStore.close();
+        }
 
         return builder
           .withSummary(
