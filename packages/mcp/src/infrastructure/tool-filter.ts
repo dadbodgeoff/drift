@@ -114,6 +114,9 @@ const LANGUAGE_TOOLS: Record<Language, string[]> = {
  * Core tools that are always available regardless of language
  */
 const CORE_TOOLS = [
+  // Setup (must be available before project is initialized)
+  'drift_setup',
+  
   // Orchestration
   'drift_context',
   'drift_package_context',

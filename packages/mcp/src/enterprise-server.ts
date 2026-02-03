@@ -305,12 +305,63 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
       const requestedProject = (args)['project'] as string | undefined;
       
       // Resolve the effective project root:
-      // 1. If project parameter is provided, use that
-      // 2. Otherwise, check if there's an active project in the registry
-      // 3. Fall back to config.projectRoot
+      // 1. For drift_setup: project parameter is a PATH, not a project name
+      //    - Resolve it directly without registry lookup (project may not exist yet)
+      // 2. For drift_projects with action="register": skip registry lookup
+      //    - The project parameter is the name for the new project, not an existing one
+      // 3. For other tools: use registry lookup
+      // 4. Fall back to config.projectRoot
       const resolvedProjectRoot = await import('./infrastructure/project-resolver.js')
         .then(async (m) => {
           if (requestedProject) {
+            // Special handling for drift_setup: project parameter is a path, not a name
+            // The project may not be registered yet (e.g., for init action)
+            if (name === 'drift_setup') {
+              // Resolve path: if absolute, use as-is; if relative, resolve from projectRoot
+              const path = await import('node:path');
+              let resolvedPath: string;
+              if (path.isAbsolute(requestedProject)) {
+                resolvedPath = path.normalize(requestedProject);
+              } else {
+                resolvedPath = path.resolve(config.projectRoot, requestedProject);
+              }
+              
+              // Security check: ensure path is within projectRoot (prevent path traversal)
+              const normalizedRoot = path.normalize(config.projectRoot);
+              if (!resolvedPath.startsWith(normalizedRoot)) {
+                throw new Error(`Path traversal detected: ${requestedProject} is outside project root`);
+              }
+              
+              return resolvedPath;
+            }
+            
+            // Special handling for drift_projects with action="register"
+            // The project parameter is the NAME for the new project, not an existing one
+            // The actual path comes from args.path
+            if (name === 'drift_projects' && args['action'] === 'register') {
+              // Use the path parameter if provided, otherwise use projectRoot
+              const registerPath = args['path'] as string | undefined;
+              if (registerPath) {
+                const path = await import('node:path');
+                let resolvedPath: string;
+                if (path.isAbsolute(registerPath)) {
+                  resolvedPath = path.normalize(registerPath);
+                } else {
+                  resolvedPath = path.resolve(config.projectRoot, registerPath);
+                }
+                
+                // Security check: ensure path is within projectRoot (prevent path traversal)
+                const normalizedRoot = path.normalize(config.projectRoot);
+                if (!resolvedPath.startsWith(normalizedRoot)) {
+                  throw new Error(`Path traversal detected: ${registerPath} is outside project root`);
+                }
+                
+                return resolvedPath;
+              }
+              return config.projectRoot;
+            }
+            
+            // For other tools, use registry lookup
             const resolved = await m.resolveProject(requestedProject, config.projectRoot);
             return resolved.projectRoot;
           }
