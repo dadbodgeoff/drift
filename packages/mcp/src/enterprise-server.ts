@@ -94,8 +94,10 @@ import { handleContext, handlePackageContext } from './tools/orchestration/index
 
 // Setup handlers (project initialization)
 import { handleSetup } from './tools/setup/handler.js';
+import { handleTelemetry } from './tools/setup/telemetry-handler.js';
 
-// Generation handlers (new AI-powered tools)
+// Curation handlers (pattern approval with verification)
+import { handleCurate } from './tools/curation/index.js';
 
 // Analysis handlers (L5-L7 layers)
 import { handleDecisions } from './tools/analysis/decisions.js';
@@ -527,6 +529,20 @@ async function routeToolCall(
       return handleSetup(args, {
         projectRoot,
         cache: null, // Cache is handled at the server level
+      });
+    case 'drift_telemetry':
+      return handleTelemetry(args as { action: 'status' | 'enable' | 'disable' }, {
+        projectRoot,
+      });
+  }
+
+  // ============================================================================
+  // Curation Tools (Pattern Approval with Verification)
+  // ============================================================================
+  switch (name) {
+    case 'drift_curate':
+      return handleCurate(args as unknown as Parameters<typeof handleCurate>[0], {
+        projectRoot,
       });
   }
 

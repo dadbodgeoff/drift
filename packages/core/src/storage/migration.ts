@@ -316,7 +316,7 @@ function convertPatternToDb(
     confidence_consistency: stored.confidence?.consistency ?? null,
     confidence_age: stored.confidence?.age ?? null,
     confidence_spread: stored.confidence?.spread ?? null,
-    detector_type: stored.detector?.type ?? null,
+    detector_type: stored.detectionMethod ?? stored.detector?.type ?? null,
     detector_config: stored.detector?.config ? JSON.stringify(stored.detector.config) : null,
     severity: stored.severity ?? 'info',
     auto_fixable: stored.autoFixable ? 1 : 0,

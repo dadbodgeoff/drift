@@ -103,6 +103,39 @@ Note: Long-running operations (scan, callgraph) may take 30s-5min depending on c
       },
     },
   },
+  {
+    name: 'drift_telemetry',
+    description: `Manage telemetry settings for Drift. Telemetry helps improve pattern detection by sharing anonymized data.
+
+Actions:
+- status: Check current telemetry settings
+- enable: Enable telemetry (opt-in to help improve Drift)
+- disable: Disable telemetry
+
+Privacy Guarantees:
+- No source code is ever sent
+- Only pattern signatures (SHA-256 hashes), categories, and confidence scores
+- Aggregate statistics (pattern counts, languages detected)
+- Anonymous installation ID (UUID, not tied to identity)
+
+Why enable telemetry?
+- Helps improve pattern detection accuracy
+- Identifies which detectors need tuning
+- Enables ML-based confidence calibration
+- Supports the open-source project`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['status', 'enable', 'disable'],
+          description: 'Action to perform',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleSetup } from './handler.js';
+export { handleTelemetry, telemetryToolDefinition } from './telemetry-handler.js';

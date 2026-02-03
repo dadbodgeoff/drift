@@ -1025,6 +1025,10 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
         
         // Record pattern signatures for discovered patterns (limit to 50)
         for (const aggPattern of scanResults.patterns.slice(0, 50)) {
+          // Get actual detection method from pattern, default to 'ast' for modern detectors
+          const detectionMethod = (aggPattern as any).detectionMethod ?? 
+            (aggPattern as any).detector?.type ?? 'ast';
+          
           await telemetryClient.recordPatternSignature({
             patternName: aggPattern.name,
             detectorConfig: { detectorId: aggPattern.detectorId },
@@ -1032,7 +1036,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
             confidence: aggPattern.confidence,
             locationCount: aggPattern.locations.length,
             outlierCount: 0,
-            detectionMethod: 'regex',
+            detectionMethod: detectionMethod as 'ast' | 'regex' | 'hybrid' | 'semantic',
             language: getExtension(aggPattern.locations[0]?.file ?? 'ts'),
           });
         }

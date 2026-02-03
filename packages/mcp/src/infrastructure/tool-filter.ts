@@ -116,6 +116,10 @@ const LANGUAGE_TOOLS: Record<Language, string[]> = {
 const CORE_TOOLS = [
   // Setup (must be available before project is initialized)
   'drift_setup',
+  'drift_telemetry',
+  
+  // Curation (pattern approval with verification)
+  'drift_curate',
   
   // Orchestration
   'drift_context',

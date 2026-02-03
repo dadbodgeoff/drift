@@ -34,7 +34,24 @@ import type {
 // Constants
 // ============================================================================
 
-const DRIFT_VERSION = '0.0.1'; // TODO: Import from package.json
+// Dynamic version from package.json (falls back to 0.0.0 if not found)
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+let DRIFT_VERSION = '0.0.0';
+try {
+  // Try to load version from the CLI package (the published package)
+  const pkg = require('driftdetect/package.json');
+  DRIFT_VERSION = pkg.version;
+} catch {
+  try {
+    // Fallback: try core package
+    const corePkg = require('driftdetect-core/package.json');
+    DRIFT_VERSION = corePkg.version;
+  } catch {
+    // Keep default
+  }
+}
+
 const QUEUE_FILE = 'telemetry-queue.json';
 
 // ============================================================================

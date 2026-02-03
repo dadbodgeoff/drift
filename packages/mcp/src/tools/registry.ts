@@ -8,6 +8,7 @@
  */
 
 import { ANALYSIS_TOOLS } from './analysis/index.js';
+import { CURATION_TOOLS } from './curation/index.js';
 import { DETAIL_TOOLS } from './detail/index.js';
 import { DISCOVERY_TOOLS } from './discovery/index.js';
 import { EXPLORATION_TOOLS } from './exploration/index.js';
@@ -25,18 +26,20 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
  * Order matters for AI discovery:
  * 1. Orchestration (recommended starting point)
  * 2. Discovery (quick health checks)
- * 3. Setup (project initialization - NEW)
- * 4. Surgical (ultra-focused lookups for code generation)
- * 5. Exploration (browsing/listing)
- * 6. Detail (deep inspection)
- * 7. Analysis (deeper analysis)
- * 8. Generation (AI-powered code intelligence)
- * 9. Memory (Cortex V2 memory system)
+ * 3. Setup (project initialization)
+ * 4. Curation (pattern approval/ignore with verification)
+ * 5. Surgical (ultra-focused lookups for code generation)
+ * 6. Exploration (browsing/listing)
+ * 7. Detail (deep inspection)
+ * 8. Analysis (deeper analysis)
+ * 9. Generation (AI-powered code intelligence)
+ * 10. Memory (Cortex V2 memory system)
  */
 export const ALL_TOOLS: Tool[] = [
   ...ORCHESTRATION_TOOLS,  // Start here
   ...DISCOVERY_TOOLS,
   ...SETUP_TOOLS,          // Project initialization
+  ...CURATION_TOOLS,       // Pattern curation with verification
   ...SURGICAL_TOOLS,       // Quick lookups for AI
   ...EXPLORATION_TOOLS,
   ...DETAIL_TOOLS,
@@ -52,6 +55,7 @@ export const TOOL_CATEGORIES = {
   orchestration: ORCHESTRATION_TOOLS.map(t => t.name),
   discovery: DISCOVERY_TOOLS.map(t => t.name),
   setup: SETUP_TOOLS.map(t => t.name),
+  curation: CURATION_TOOLS.map(t => t.name),
   surgical: SURGICAL_TOOLS.map(t => t.name),
   exploration: EXPLORATION_TOOLS.map(t => t.name),
   detail: DETAIL_TOOLS.map(t => t.name),

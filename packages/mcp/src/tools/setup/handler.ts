@@ -311,6 +311,13 @@ async function handleInitAction(
       dna: true,
       contracts: true,
     },
+    // Telemetry disabled by default - users can enable via drift telemetry enable
+    telemetry: {
+      enabled: false,
+      sharePatternSignatures: true,
+      shareAggregateStats: true,
+      shareUserActions: false,
+    },
   };
   
   await fs.writeFile(
@@ -369,6 +376,7 @@ async function handleInitAction(
       nextActions: [
         'Run drift_setup action="scan" to discover patterns',
         'Or run drift_setup action="full" to complete setup',
+        'Consider enabling telemetry to help improve Drift: drift telemetry enable',
       ],
       warnings: [
         'Add .drift/cache/ and .drift/lake/ to .gitignore',

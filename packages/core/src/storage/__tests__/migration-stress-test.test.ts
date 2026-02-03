@@ -165,6 +165,57 @@ describe('Migration Stress Tests', () => {
       expect(result.patternsImported).toBe(0);
     });
 
+    it('should correctly read detectionMethod field (not detector.type)', async () => {
+      // This test verifies the fix for the telemetry bug where detector_type
+      // was incorrectly reading from detector.type instead of detectionMethod
+      const driftDir = createDriftDir(tempDir);
+      const discoveredDir = path.join(driftDir, 'patterns', 'discovered');
+      fs.mkdirSync(discoveredDir, { recursive: true });
+      
+      const patternFile: PatternFile = {
+        version: '1.0.0',
+        category: 'api',
+        patterns: [
+          {
+            id: 'detection-method-test',
+            name: 'Detection Method Test',
+            description: 'Tests detectionMethod field priority',
+            subcategory: 'test',
+            confidence: { score: 0.9, level: 'high', frequency: 0.9, consistency: 0.9, age: 0.5, spread: 3 },
+            // This is the key test: detector.type says 'regex' but detectionMethod says 'ast'
+            // The migration should use 'ast' (from detectionMethod), not 'regex' (from detector.type)
+            detector: { type: 'regex', config: {} },
+            detectionMethod: 'ast', // This should take priority
+            severity: 'info',
+            autoFixable: false,
+            locations: [{ file: 'src/test.ts', line: 10, column: 5 }],
+            outliers: [],
+            metadata: { firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString() },
+          } as any, // Cast to any because detectionMethod is not in the type but exists in real data
+        ],
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      fs.writeFileSync(
+        path.join(discoveredDir, 'api.json'),
+        JSON.stringify(patternFile, null, 2)
+      );
+
+      const result = await migrateFromJson({ rootDir: tempDir });
+
+      expect(result.success).toBe(true);
+      expect(result.patternsImported).toBe(1);
+
+      // Verify the detector_type is 'ast' (from detectionMethod), not 'regex' (from detector.type)
+      const store = await createUnifiedStore({ rootDir: tempDir });
+      const pattern = await store.patterns.read('detection-method-test');
+      
+      expect(pattern).not.toBeNull();
+      expect(pattern!.detector_type).toBe('ast'); // Should be 'ast', not 'regex'
+      
+      await store.close();
+    });
+
     it('should handle malformed JSON gracefully', async () => {
       const driftDir = createDriftDir(tempDir);
       const discoveredDir = path.join(driftDir, 'patterns', 'discovered');
