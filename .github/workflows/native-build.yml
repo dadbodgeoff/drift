@@ -90,7 +90,7 @@ jobs:
           ls -la crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bindings-${{ matrix.settings.target }}
           path: crates/drift-napi/npm/${{ matrix.settings.npm-dir }}/*.node
