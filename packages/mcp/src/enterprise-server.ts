@@ -40,6 +40,7 @@ import {
 import {
   createPatternStore,
   getStorageInfo,
+  UnifiedStore,
 } from 'driftdetect-core/storage';
 
 // Infrastructure
@@ -69,7 +70,7 @@ import { handleCapabilities } from './tools/discovery/capabilities.js';
 import { handleStatus, handleStatusWithService } from './tools/discovery/status.js';
 
 // Exploration handlers
-import { handleContractsList } from './tools/exploration/contracts-list.js';
+import { handleContractsList, handleContractsListWithSqlite } from './tools/exploration/contracts-list.js';
 import { handlePatternsList, handlePatternsListWithService } from './tools/exploration/patterns-list.js';
 import { handleSecuritySummary } from './tools/exploration/security-summary.js';
 import { handleTrends } from './tools/exploration/trends.js';
@@ -186,15 +187,23 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
   // Other stores remain synchronous for now
   const patternStore = await createPatternStore({ rootDir: config.projectRoot });
   
+  // Phase 4: Initialize UnifiedStore for SQLite-backed data access
+  // This provides direct SQLite access for tools that need it
+  const unifiedStore = new UnifiedStore({ rootDir: config.projectRoot });
+  await unifiedStore.initialize();
+  
   const stores = {
     pattern: patternStore as PatternStore,
     manifest: new ManifestStore(config.projectRoot),
     history: new HistoryStore({ rootDir: config.projectRoot }),
+    // Legacy JSON stores (kept for backward compatibility during migration)
     dna: new DNAStore({ rootDir: config.projectRoot }),
     boundary: new BoundaryStore({ rootDir: config.projectRoot }),
     contract: new ContractStore({ rootDir: config.projectRoot }),
     callGraph: new CallGraphStore({ rootDir: config.projectRoot }),
     env: new EnvStore({ rootDir: config.projectRoot }),
+    // SQLite-backed unified store (preferred for new code)
+    unified: unifiedStore,
   };
 
   // Initialize pattern service (wraps PatternStore with unified interface)
@@ -378,6 +387,10 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
         // This automatically uses SQLite if available
         const dynamicPatternStore = await createPatternStore({ rootDir: effectiveProjectRoot });
         
+        // Phase 4: Create UnifiedStore for SQLite-backed data access
+        const dynamicUnifiedStore = new UnifiedStore({ rootDir: effectiveProjectRoot });
+        await dynamicUnifiedStore.initialize();
+        
         // Create temporary stores for this project
         effectiveStores = {
           pattern: dynamicPatternStore as PatternStore, // Cast for compatibility
@@ -388,6 +401,7 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
           contract: new ContractStore({ rootDir: effectiveProjectRoot }),
           callGraph: new CallGraphStore({ rootDir: effectiveProjectRoot }),
           env: new EnvStore({ rootDir: effectiveProjectRoot }),
+          unified: dynamicUnifiedStore,
         };
         effectiveDataLake = createDataLake({ rootDir: effectiveProjectRoot });
         effectivePatternService = config.usePatternService !== false
@@ -474,6 +488,7 @@ async function routeToolCall(
     contract: ContractStore;
     callGraph: CallGraphStore;
     env: EnvStore;
+    unified: UnifiedStore;
   },
   projectRoot: string,
   dataLake: DataLake,
@@ -569,6 +584,10 @@ async function routeToolCall(
       return handleSecuritySummary(stores.boundary, args as Parameters<typeof handleSecuritySummary>[1]);
       
     case 'drift_contracts_list':
+      // Prefer SQLite if unified store is available
+      if (stores.unified) {
+        return handleContractsListWithSqlite(stores.unified, args as Parameters<typeof handleContractsListWithSqlite>[1]);
+      }
       return handleContractsList(stores.contract, args as Parameters<typeof handleContractsList>[1]);
       
     case 'drift_trends':
