@@ -8,6 +8,7 @@
 import { createResponseBuilder, Errors } from '../../infrastructure/index.js';
 
 import type { DNAStore, GeneId } from 'driftdetect-core';
+import type { UnifiedStore } from 'driftdetect-core/storage';
 
 export interface GeneProfile {
   id: string;
@@ -126,6 +127,126 @@ export async function handleDNAProfile(
   summary += `${genes.length} genes analyzed, ${highConfidenceGenes} high confidence.`;
   if (profile.summary.geneticDiversity > 0.5) {
     summary += ` High diversity (${Math.round(profile.summary.geneticDiversity * 100)}%) - consider consolidating approaches.`;
+  }
+  
+  const hints: { nextActions: string[]; warnings?: string[]; relatedTools: string[] } = {
+    nextActions: [
+      'Use drift_dna_check to validate new code against DNA',
+      'Use drift_mutations to find files that deviate from patterns',
+    ],
+    relatedTools: ['drift_dna_check', 'drift_mutations', 'drift_playbook'],
+  };
+  
+  if (lowConfidenceGenes > 0) {
+    hints.warnings = [
+      `${lowConfidenceGenes} gene(s) have low confidence - patterns may be inconsistent`,
+    ];
+  }
+  
+  return builder
+    .withSummary(summary)
+    .withData(data)
+    .withHints(hints)
+    .buildContent();
+}
+
+/**
+ * SQLite-backed handler for DNA profile
+ * Reads from UnifiedStore instead of JSON DNAStore
+ */
+export async function handleDNAProfileWithSqlite(
+  store: UnifiedStore,
+  args: {
+    gene?: string;
+  }
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const builder = createResponseBuilder<DNAProfileData>();
+  
+  // Get data from SQLite repositories
+  const profile = await store.dna.getProfile();
+  
+  if (!profile) {
+    throw Errors.custom(
+      'NO_DNA_PROFILE',
+      'No DNA profile found. Run drift dna scan first.',
+      ['drift dna scan']
+    );
+  }
+  
+  // Get all genes
+  let dbGenes = await store.dna.getGenes();
+  
+  // Filter by specific gene if requested
+  if (args.gene) {
+    dbGenes = dbGenes.filter(g => g.id === args.gene);
+    if (dbGenes.length === 0) {
+      throw Errors.notFound('gene', args.gene);
+    }
+  }
+  
+  // Map genes to profile format
+  const genes: GeneProfile[] = dbGenes.map(gene => {
+    // Parse variants JSON
+    let variants: Array<{ name: string; frequency: number; isDominant?: boolean }> = [];
+    try {
+      variants = JSON.parse(gene.variants || '[]');
+    } catch {
+      variants = [];
+    }
+    
+    // Parse evidence JSON for exemplar files
+    let evidence: { files?: string[] } = {};
+    try {
+      evidence = JSON.parse(gene.evidence || '{}');
+    } catch {
+      evidence = {};
+    }
+    
+    // Get alternatives (non-dominant variants)
+    const alternatives = variants
+      .filter(v => !v.isDominant)
+      .slice(0, 3)
+      .map(v => ({
+        approach: v.name,
+        frequency: Math.round(v.frequency * 100) / 100,
+      }));
+    
+    return {
+      id: gene.id,
+      name: GENE_NAMES[gene.id] ?? gene.name,
+      dominantApproach: gene.dominant_variant ?? 'unknown',
+      confidence: Math.round((gene.confidence ?? 0) * 100) / 100,
+      alternatives,
+      exemplarFiles: (evidence.files ?? []).slice(0, 3),
+    };
+  });
+  
+  // Calculate summary stats
+  const highConfidenceGenes = genes.filter(g => g.confidence >= 0.7).length;
+  const lowConfidenceGenes = genes.filter(g => g.confidence < 0.5).length;
+  
+  const healthScore = profile.health_score ?? 0;
+  const geneticDiversity = profile.genetic_diversity ?? 0;
+  
+  const data: DNAProfileData = {
+    healthScore: Math.round(healthScore * 100) / 100,
+    geneticDiversity: Math.round(geneticDiversity * 100) / 100,
+    genes,
+    summary: {
+      totalGenes: genes.length,
+      highConfidenceGenes,
+      lowConfidenceGenes,
+    },
+  };
+  
+  // Build summary
+  const healthEmoji = healthScore >= 0.8 ? '🟢' :
+                      healthScore >= 0.6 ? '🟡' : '🔴';
+  
+  let summary = `${healthEmoji} Health: ${Math.round(healthScore * 100)}%. `;
+  summary += `${genes.length} genes analyzed, ${highConfidenceGenes} high confidence.`;
+  if (geneticDiversity > 0.5) {
+    summary += ` High diversity (${Math.round(geneticDiversity * 100)}%) - consider consolidating approaches.`;
   }
   
   const hints: { nextActions: string[]; warnings?: string[]; relatedTools: string[] } = {

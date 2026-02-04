@@ -72,16 +72,16 @@ import { handleStatus, handleStatusWithService } from './tools/discovery/status.
 // Exploration handlers
 import { handleContractsList, handleContractsListWithSqlite } from './tools/exploration/contracts-list.js';
 import { handlePatternsList, handlePatternsListWithService } from './tools/exploration/patterns-list.js';
-import { handleSecuritySummary } from './tools/exploration/security-summary.js';
+import { handleSecuritySummary, handleSecuritySummaryWithSqlite } from './tools/exploration/security-summary.js';
 import { handleTrends } from './tools/exploration/trends.js';
-import { handleEnv } from './tools/exploration/env.js';
+import { handleEnv, handleEnvWithSqlite } from './tools/exploration/env.js';
 
 // Detail handlers
 import { handleFilesList } from './tools/detail/files-list.js';
 import { handleFilePatterns } from './tools/detail/file-patterns.js';
 import { handleImpactAnalysis } from './tools/detail/impact-analysis.js';
 import { handleReachability } from './tools/detail/reachability.js';
-import { handleDNAProfile } from './tools/detail/dna-profile.js';
+import { handleDNAProfile, handleDNAProfileWithSqlite } from './tools/detail/dna-profile.js';
 import { handleWrappers } from './tools/detail/wrappers.js';
 
 // Discovery handlers (additional)
@@ -581,6 +581,10 @@ async function routeToolCall(
       );
       
     case 'drift_security_summary':
+      // Prefer SQLite if unified store is available
+      if (stores.unified) {
+        return handleSecuritySummaryWithSqlite(stores.unified, args as Parameters<typeof handleSecuritySummaryWithSqlite>[1]);
+      }
       return handleSecuritySummary(stores.boundary, args as Parameters<typeof handleSecuritySummary>[1]);
       
     case 'drift_contracts_list':
@@ -594,6 +598,10 @@ async function routeToolCall(
       return handleTrends(stores.history, args as Parameters<typeof handleTrends>[1]);
       
     case 'drift_env':
+      // Prefer SQLite if unified store is available
+      if (stores.unified) {
+        return handleEnvWithSqlite(stores.unified, args as Parameters<typeof handleEnvWithSqlite>[1]);
+      }
       return handleEnv(stores.env, args as Parameters<typeof handleEnv>[1]);
   }
 
@@ -643,6 +651,10 @@ async function routeToolCall(
     
     // DNA tools
     case 'drift_dna_profile':
+      // Prefer SQLite if unified store is available
+      if (stores.unified) {
+        return handleDNAProfileWithSqlite(stores.unified, args as Parameters<typeof handleDNAProfileWithSqlite>[1]);
+      }
       return handleDNAProfile(stores.dna, args as Parameters<typeof handleDNAProfile>[1]);
       
     // Wrapper detection tools
