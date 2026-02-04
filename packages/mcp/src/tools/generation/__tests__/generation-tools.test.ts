@@ -35,6 +35,11 @@ const createMockPatternStore = (): PatternStore => ({
 const createMockBoundaryStore = (): BoundaryStore => ({
   initialize: vi.fn().mockResolvedValue(undefined),
   getAll: vi.fn().mockReturnValue([]),
+  getFileAccess: vi.fn().mockReturnValue([]),
+  getAccessMap: vi.fn().mockReturnValue({ accessPoints: {}, sensitiveFields: [] }),
+  getSensitiveAccess: vi.fn().mockReturnValue([]),
+  getRules: vi.fn().mockReturnValue(null),
+  checkAllViolations: vi.fn().mockReturnValue([]),
 } as unknown as BoundaryStore);
 
 const createMockManifestStore = (): ManifestStore => ({
