@@ -60,7 +60,7 @@ import {
 // Discovery handlers
 import { handleAudit, type AuditArgs } from './tools/analysis/audit.js';
 import { handleConstants } from './tools/analysis/constants.js';
-import { handleConstraints } from './tools/analysis/constraints.js';
+import { handleConstraints, handleConstraintsWithSqlite } from './tools/analysis/constraints.js';
 import { handleCoupling } from './tools/analysis/coupling.js';
 import { handleErrorHandling } from './tools/analysis/error-handling.js';
 import { handleTestTopology } from './tools/analysis/test-topology.js';
@@ -714,6 +714,10 @@ async function routeToolCall(
       return handleDecisions(projectRoot, args as unknown as Parameters<typeof handleDecisions>[1]);
       
     case 'drift_constraints':
+      // Prefer SQLite for read operations (list, show)
+      if (stores.unified) {
+        return handleConstraintsWithSqlite(stores.unified, projectRoot, args as unknown as Parameters<typeof handleConstraintsWithSqlite>[2]);
+      }
       return handleConstraints(projectRoot, args as unknown as Parameters<typeof handleConstraints>[1]);
       
     case 'drift_wpf':
