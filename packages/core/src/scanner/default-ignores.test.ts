@@ -32,7 +32,8 @@ describe('default-ignores', () => {
     it('should include .NET directories', () => {
       expect(DEFAULT_IGNORE_DIRECTORIES).toContain('bin');
       expect(DEFAULT_IGNORE_DIRECTORIES).toContain('obj');
-      expect(DEFAULT_IGNORE_DIRECTORIES).toContain('packages');
+      // Note: 'packages' removed from defaults - conflicts with monorepo packages/ directories
+      expect(DEFAULT_IGNORE_DIRECTORIES).toContain('.vs');
     });
 
     it('should include Java/Gradle directories', () => {

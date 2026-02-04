@@ -62,7 +62,9 @@ export const DEFAULT_IGNORE_DIRECTORIES: readonly string[] = [
   // === .NET / C# / F# / VB ===
   'bin',
   'obj',
-  'packages',
+  // Note: 'packages' removed - conflicts with monorepo packages/ directories
+  // NuGet packages are typically in packages/ at solution root, but this
+  // pattern was incorrectly ignoring monorepo source code directories
   '.vs',
   'TestResults',
   'BenchmarkDotNet.Artifacts',
@@ -195,7 +197,8 @@ export const DEFAULT_IGNORE_PATTERNS: readonly string[] = [
   // === .NET / C# / F# / VB / MAUI / Blazor / WPF ===
   'bin/**',
   'obj/**',
-  'packages/**',
+  // Note: 'packages/**' removed - conflicts with monorepo packages/ directories
+  // NuGet packages are handled by more specific patterns below
   '.vs/**',
   'TestResults/**',
   'BenchmarkDotNet.Artifacts/**',

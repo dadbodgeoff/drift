@@ -3,7 +3,7 @@
  * Drift MCP Server Entry Point
  * 
  * Usage:
- *   drift-mcp                       # Run server using active project from ~/.drift/projects.json
+ *   drift-mcp                       # Run server using detected project root
  *   drift-mcp /path/to/project      # Run for specific project
  *   drift-mcp --no-cache            # Disable response caching
  *   drift-mcp --no-rate-limit       # Disable rate limiting
@@ -17,8 +17,11 @@
  *   }
  * }
  * 
- * Note: No path argument needed! The server automatically uses the active project
- * from ~/.drift/projects.json. Use `drift projects switch <name>` to change projects.
+ * Project Detection Priority:
+ * 1. Explicit path argument
+ * 2. Active project from ~/.drift/projects.json
+ * 3. Auto-detect: walk up from cwd looking for .git, package.json, etc.
+ * 4. Fall back to cwd
  * 
  * Features:
  * - DataLake as central source of truth (pre-computed views, sharded storage)
@@ -38,10 +41,75 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createEnterpriseMCPServer } from '../enterprise-server.js';
 
 /**
- * Get the active project root from ~/.drift/projects.json
- * Falls back to cwd if no active project is found
+ * Project root markers - files/directories that indicate a project root
+ */
+const PROJECT_MARKERS = [
+  '.git',           // Git repository
+  'package.json',   // Node.js/JavaScript
+  'Cargo.toml',     // Rust
+  'pyproject.toml', // Python (modern)
+  'setup.py',       // Python (legacy)
+  'go.mod',         // Go
+  'pom.xml',        // Java Maven
+  'build.gradle',   // Java Gradle
+  'composer.json',  // PHP
+  '*.sln',          // .NET Solution
+  '*.csproj',       // C# Project
+  'Gemfile',        // Ruby
+  'mix.exs',        // Elixir
+];
+
+/**
+ * Detect project root by walking up from startDir looking for project markers
+ */
+function detectProjectRoot(startDir: string): string | null {
+  let currentDir = path.resolve(startDir);
+  const root = path.parse(currentDir).root;
+  
+  while (currentDir !== root) {
+    // Check for each marker
+    for (const marker of PROJECT_MARKERS) {
+      if (marker.includes('*')) {
+        // Glob pattern - check if any matching files exist
+        try {
+          const files = fs.readdirSync(currentDir);
+          const pattern = marker.replace('*', '');
+          if (files.some(f => f.endsWith(pattern))) {
+            return currentDir;
+          }
+        } catch {
+          // Directory not readable, continue
+        }
+      } else {
+        // Exact match
+        const markerPath = path.join(currentDir, marker);
+        if (fs.existsSync(markerPath)) {
+          return currentDir;
+        }
+      }
+    }
+    
+    // Move up one directory
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) break; // Reached root
+    currentDir = parentDir;
+  }
+  
+  return null;
+}
+
+/**
+ * Get the active project root with smart detection
+ * 
+ * Priority:
+ * 1. Active project from ~/.drift/projects.json (if exists and valid)
+ * 2. Auto-detect from cwd by walking up to find project markers
+ * 3. Fall back to cwd
  */
 function getActiveProjectRoot(): string {
+  const cwd = process.cwd();
+  
+  // First, try to get from projects.json
   const globalDriftDir = path.join(os.homedir(), '.drift');
   const projectsFile = path.join(globalDriftDir, 'projects.json');
   
@@ -72,10 +140,17 @@ function getActiveProjectRoot(): string {
       }
     }
   } catch {
-    // Ignore errors, fall back to cwd
+    // Ignore errors, continue to auto-detection
   }
   
-  return process.cwd();
+  // Auto-detect project root from cwd
+  const detectedRoot = detectProjectRoot(cwd);
+  if (detectedRoot) {
+    return detectedRoot;
+  }
+  
+  // Fall back to cwd
+  return cwd;
 }
 
 async function main() {

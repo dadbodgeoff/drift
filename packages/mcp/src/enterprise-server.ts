@@ -318,16 +318,17 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
       // Resolve the effective project root:
       // 1. For drift_setup: project parameter is a PATH, not a project name
       //    - Resolve it directly without registry lookup (project may not exist yet)
+      //    - If no project specified, use config.projectRoot directly (not registry)
       // 2. For drift_projects with action="register": skip registry lookup
       //    - The project parameter is the name for the new project, not an existing one
       // 3. For other tools: use registry lookup
       // 4. Fall back to config.projectRoot
       const resolvedProjectRoot = await import('./infrastructure/project-resolver.js')
         .then(async (m) => {
-          if (requestedProject) {
-            // Special handling for drift_setup: project parameter is a path, not a name
-            // The project may not be registered yet (e.g., for init action)
-            if (name === 'drift_setup') {
+          // Special handling for drift_setup: always use projectRoot or explicit path
+          // Never use registry lookup - setup should work on the current directory
+          if (name === 'drift_setup') {
+            if (requestedProject) {
               // Resolve path: if absolute, use as-is; if relative, resolve from projectRoot
               const path = await import('node:path');
               let resolvedPath: string;
@@ -345,7 +346,11 @@ export async function createEnterpriseMCPServer(config: EnterpriseMCPConfig): Pr
               
               return resolvedPath;
             }
-            
+            // No project specified - use projectRoot directly (the MCP server's working directory)
+            return config.projectRoot;
+          }
+          
+          if (requestedProject) {
             // Special handling for drift_projects with action="register"
             // The project parameter is the NAME for the new project, not an existing one
             // The actual path comes from args.path
