@@ -1,15 +1,15 @@
 /**
  * Setup Command - drift setup
  *
- * Enterprise-grade guided onboarding that creates a Source of Truth
- * for your codebase. Every feature runs REAL analysis.
+ * Runs AFTER `drift scan` to compute all advanced features:
+ * - Data boundaries, contracts, environment variables, constants
+ * - Call graph, test topology, coupling analysis
+ * - Error handling, styling DNA, constraints
+ * - Cortex memory system
  *
- * DESIGN DECISIONS:
- * - Core scan features: Optional with explicit yes/no for each
- * - Deep analysis: All run by default with -y, prompts in interactive
- * - Timing: Stream results in real-time (no estimates)
- * - SQLite sync: After each phase (safer, incremental)
- * - Memory: Opt-in but prominently displayed
+ * NEW FLOW:
+ * 1. User runs `drift scan` first (discovers patterns)
+ * 2. User runs `drift setup` to compute everything else
  *
  * @module commands/setup
  */
@@ -23,25 +23,15 @@ EventEmitter.defaultMaxListeners = 50;
 
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { confirm, select } from '@inquirer/prompts';
+import { confirm } from '@inquirer/prompts';
 
 import {
   getProjectRegistry,
-  FileWalker,
-  getDefaultIgnorePatterns,
-  mergeIgnorePatterns,
-  createWorkspaceManager,
-  type Pattern,
-  type PatternCategory,
-  type ConfidenceInfo,
-  type PatternLocation,
-  type ScanOptions,
 } from 'driftdetect-core';
 import { createPatternStore, StoreSyncService } from 'driftdetect-core/storage';
 
 import { createSpinner } from '../../ui/spinner.js';
 import { createCLIPatternServiceAsync } from '../../services/pattern-service-factory.js';
-import { createScannerService, type ProjectContext } from '../../services/scanner-service.js';
 import { VERSION } from '../../index.js';
 
 import {
@@ -56,20 +46,15 @@ import {
 
 import {
   isDriftInitialized,
-  createDriftDirectory,
-  createDefaultConfig,
-  createDriftignore,
-  loadSourceOfTruth,
   saveSourceOfTruth,
   loadSetupState,
   saveSetupState,
   clearSetupState,
   countSourceFiles,
   computeChecksum,
-  isScannableFile,
 } from './utils.js';
 
-import { printWelcome, printPhase, printSuccess, printSkip, printInfo } from './ui.js';
+import { printPhase, printSuccess, printSkip, printInfo } from './ui.js';
 
 import {
   CallGraphRunner, TestTopologyRunner, CouplingRunner, DNARunner, MemoryRunner,
@@ -82,36 +67,15 @@ import {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function loadIgnorePatterns(rootDir: string): Promise<string[]> {
-  try {
-    const content = await fs.readFile(path.join(rootDir, '.driftignore'), 'utf-8');
-    const userPatterns = content.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
-    return mergeIgnorePatterns(userPatterns);
-  } catch {
-    return getDefaultIgnorePatterns();
-  }
-}
-
-function mapToPatternCategory(category: string): PatternCategory {
-  const mapping: Record<string, PatternCategory> = {
-    'api': 'api', 'auth': 'auth', 'security': 'security', 'errors': 'errors',
-    'structural': 'structural', 'components': 'components', 'styling': 'styling',
-    'logging': 'logging', 'testing': 'testing', 'data-access': 'data-access',
-    'config': 'config', 'types': 'types', 'performance': 'performance',
-    'accessibility': 'accessibility', 'documentation': 'documentation',
-  };
-  return mapping[category] || 'structural';
-}
-
 function createDefaultState(): SetupState {
   return {
     phase: 0,
     completed: [],
     choices: {
-      runCoreScan: true, autoApprove: false, approveThreshold: 0.85,
-      scanBoundaries: false, scanContracts: false, scanEnvironment: false, scanConstants: false,
-      buildCallGraph: false, buildTestTopology: false, buildCoupling: false,
-      scanDna: false, analyzeErrorHandling: false, initMemory: false,
+      runCoreScan: false, autoApprove: true, approveThreshold: 0.85,
+      scanBoundaries: true, scanContracts: true, scanEnvironment: true, scanConstants: true,
+      buildCallGraph: true, buildTestTopology: true, buildCoupling: true,
+      scanDna: true, analyzeErrorHandling: true, initMemory: false,
     },
     startedAt: new Date().toISOString(),
   };
@@ -130,90 +94,76 @@ async function syncToSqlite(rootDir: string, verbose: boolean): Promise<void> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 0: DETECT EXISTING
+// PHASE 0: CHECK PREREQUISITES
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function phaseDetect(rootDir: string, autoYes: boolean): Promise<{ isNew: boolean; sot: SourceOfTruth | null; shouldContinue: boolean }> {
-  printPhase(0, 'Detection', 'Checking for existing installation');
+async function phaseCheckPrerequisites(rootDir: string): Promise<{ patternCount: number; categories: Record<string, number>; shouldContinue: boolean }> {
+  printPhase(0, 'Prerequisites', 'Checking for existing scan data');
 
   const initialized = await isDriftInitialized(rootDir);
-  const sot = initialized ? await loadSourceOfTruth(rootDir) : null;
-
+  
   if (!initialized) {
-    printInfo('No existing installation. Starting fresh.');
-    return { isNew: true, sot: null, shouldContinue: true };
-  }
-
-  if (sot) {
-    console.log(chalk.yellow('  ⚡ Existing Source of Truth detected'));
-    console.log(chalk.gray(`     Project: ${sot.project.name} | Patterns: ${sot.baseline.patternCount} (${sot.baseline.approvedCount} approved)`));
     console.log();
-
-    if (autoYes) {
-      printInfo('Rescanning with existing data (--yes flag)');
-      return { isNew: false, sot, shouldContinue: true };
-    }
-
-    const choice = await select({
-      message: 'What would you like to do?',
-      choices: [
-        { value: 'rescan', name: 'Rescan and update (keeps approved patterns)' },
-        { value: 'fresh', name: 'Start fresh (creates backup)' },
-        { value: 'cancel', name: 'Cancel' },
-      ],
-    });
-
-    if (choice === 'cancel') return { isNew: false, sot, shouldContinue: false };
-
-    if (choice === 'fresh') {
-      const spinner = createSpinner('Creating backup...');
-      spinner.start();
-      try {
-        const manager = createWorkspaceManager(rootDir);
-        await manager.initialize({ driftVersion: VERSION });
-        await manager.createBackup('pre_destructive_operation');
-        spinner.succeed('Backup created');
-      } catch (error) {
-        spinner.fail(`Backup failed: ${(error as Error).message}`);
-        const proceed = await confirm({ message: 'Continue without backup?', default: false });
-        if (!proceed) return { isNew: false, sot, shouldContinue: false };
-      }
-      return { isNew: true, sot: null, shouldContinue: true };
-    }
-
-    return { isNew: false, sot, shouldContinue: true };
+    console.log(chalk.red('  ✖ No drift data found'));
+    console.log();
+    console.log(chalk.yellow('  You need to run a scan first:'));
+    console.log(chalk.cyan('    drift scan'));
+    console.log();
+    console.log(chalk.gray('  This discovers patterns in your codebase.'));
+    console.log(chalk.gray('  Then run `drift setup` to compute advanced features.'));
+    console.log();
+    return { patternCount: 0, categories: {}, shouldContinue: false };
   }
 
-  printInfo('Legacy installation detected. Will create Source of Truth.');
-  return { isNew: false, sot: null, shouldContinue: true };
+  // Check for patterns
+  const spinner = createSpinner('Loading patterns...');
+  spinner.start();
+
+  try {
+    const store = await createPatternStore({ rootDir });
+    const patterns = store.getAll();
+    
+    if (patterns.length === 0) {
+      spinner.fail('No patterns found');
+      console.log();
+      console.log(chalk.yellow('  You need to run a scan first:'));
+      console.log(chalk.cyan('    drift scan'));
+      console.log();
+      return { patternCount: 0, categories: {}, shouldContinue: false };
+    }
+
+    // Count by category
+    const categories: Record<string, number> = {};
+    for (const pattern of patterns) {
+      categories[pattern.category] = (categories[pattern.category] ?? 0) + 1;
+    }
+
+    const approvedCount = patterns.filter(p => p.status === 'approved').length;
+    spinner.succeed(`Found ${chalk.cyan(patterns.length)} patterns (${chalk.green(approvedCount)} approved)`);
+
+    return { patternCount: patterns.length, categories, shouldContinue: true };
+  } catch (error) {
+    spinner.fail('Failed to load patterns');
+    console.error(chalk.red(`  ${(error as Error).message}`));
+    return { patternCount: 0, categories: {}, shouldContinue: false };
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 1: INITIALIZE
+// PHASE 1: INITIALIZE/REGISTER PROJECT
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function phaseInit(rootDir: string, isNew: boolean): Promise<string> {
-  printPhase(1, 'Initialize', 'Setting up project structure');
+async function phaseInit(rootDir: string): Promise<string> {
+  printPhase(1, 'Initialize', 'Registering project');
 
   const projectId = crypto.randomUUID();
-
-  if (isNew) {
-    const spinner = createSpinner('Creating .drift directory...');
-    spinner.start();
-    await createDriftDirectory(rootDir);
-    await createDefaultConfig(rootDir, projectId);
-    await createDriftignore(rootDir);
-    spinner.succeed('Project structure created');
-  } else {
-    printInfo('Using existing structure');
-  }
 
   try {
     const registry = await getProjectRegistry();
     const existing = registry.findByPath(rootDir);
     if (existing) {
       await registry.setActive(existing.id);
-      printSuccess(`Registered: ${chalk.cyan(existing.name)}`);
+      printSuccess(`Project: ${chalk.cyan(existing.name)}`);
       return existing.id;
     }
     const project = await registry.register(rootDir);
@@ -227,188 +177,49 @@ async function phaseInit(rootDir: string, isNew: boolean): Promise<string> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 2: PATTERN SCAN (Required)
+// PHASE 2: PATTERN APPROVAL
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function phasePatternScan(rootDir: string, verbose: boolean): Promise<{ patternCount: number; categories: Record<string, number> }> {
-  printPhase(2, 'Pattern Scan', 'Discovering coding patterns');
+async function phaseApproval(rootDir: string, autoYes: boolean, _patternCount: number, state: SetupState): Promise<number> {
+  printPhase(2, 'Approval', 'Establish coding standards');
 
-  const spinner = createSpinner('Scanning for patterns...');
-  spinner.start();
+  // Check how many are already approved
+  const service = await createCLIPatternServiceAsync(rootDir);
+  const discovered = await service.listByStatus('discovered', { limit: 5000 });
+  const alreadyApproved = await service.listByStatus('approved', { limit: 5000 });
 
-  try {
-    const store = await createPatternStore({ rootDir });
-    const ignorePatterns = await loadIgnorePatterns(rootDir);
-    const walker = new FileWalker();
-    const scanOptions: ScanOptions = {
-      rootDir, ignorePatterns, respectGitignore: true, respectDriftignore: true,
-      followSymlinks: false, maxDepth: 50, maxFileSize: 1048576,
-    };
-
-    const result = await walker.walk(scanOptions);
-    const files = result.files.map(f => f.relativePath).filter(isScannableFile);
-
-    const scannerService = createScannerService({
-      rootDir, verbose, criticalOnly: false, categories: [],
-      generateManifest: false, incremental: false,
-    });
-    await scannerService.initialize();
-
-    const projectContext: ProjectContext = { rootDir, files, config: {} };
-    const scanResults = await scannerService.scanFiles(files, projectContext);
-
-    const now = new Date().toISOString();
-    const categories: Record<string, number> = {};
-
-    for (const aggPattern of scanResults.patterns) {
-      categories[aggPattern.category] = (categories[aggPattern.category] ?? 0) + aggPattern.occurrences;
-
-      const id = crypto.createHash('sha256').update(`${aggPattern.patternId}-${rootDir}`).digest('hex').slice(0, 16);
-      const spread = new Set(aggPattern.locations.map((l: { file: string }) => l.file)).size;
-      const confidenceScore = Math.min(0.95, aggPattern.confidence);
-      const confidenceInfo: ConfidenceInfo = {
-        frequency: Math.min(1, aggPattern.occurrences / 100), consistency: 0.9, age: 0, spread,
-        score: confidenceScore,
-        level: confidenceScore >= 0.85 ? 'high' : confidenceScore >= 0.65 ? 'medium' : confidenceScore >= 0.45 ? 'low' : 'uncertain',
-      };
-
-      const locations: PatternLocation[] = aggPattern.locations.slice(0, 100).map((l: { file: string; line: number; column?: number; snippet?: string }) => ({
-        file: l.file, line: l.line, column: l.column ?? 0, snippet: l.snippet,
-      }));
-
-      const pattern: Pattern = {
-        id, category: mapToPatternCategory(aggPattern.category), subcategory: aggPattern.subcategory,
-        name: aggPattern.name, description: aggPattern.description,
-        detector: { type: 'regex', config: { detectorId: aggPattern.detectorId, patternId: aggPattern.patternId } },
-        confidence: confidenceInfo, locations, outliers: [],
-        metadata: { firstSeen: now, lastSeen: now },
-        severity: 'warning', autoFixable: false, status: 'discovered',
-      };
-
-      if (!store.has(pattern.id)) store.add(pattern);
-    }
-
-    await store.saveAll();
-    spinner.succeed(`Found ${chalk.cyan(scanResults.patterns.length)} patterns in ${chalk.cyan(Object.keys(categories).length)} categories`);
-
-    return { patternCount: scanResults.patterns.length, categories };
-  } catch (error) {
-    spinner.fail('Pattern scan failed');
-    if (verbose) console.error(chalk.red(`  ${(error as Error).message}`));
-    return { patternCount: 0, categories: {} };
+  if (discovered.items.length === 0) {
+    printSuccess(`All ${chalk.cyan(alreadyApproved.items.length)} patterns already approved`);
+    return alreadyApproved.items.length;
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PHASE 3: CORE FEATURES (Optional - User chooses each)
-// ═══════════════════════════════════════════════════════════════════════════
-
-async function phaseCoreFeatures(
-  rootDir: string, autoYes: boolean, verbose: boolean, state: SetupState
-): Promise<Record<string, FeatureResult>> {
-  printPhase(3, 'Core Features', 'Additional analysis (choose each)');
-
-  console.log(chalk.gray('  Each feature provides unique insights. Choose what you need:'));
-  console.log();
-
-  const ctx: RunnerContext = { rootDir, verbose };
-  const results: Record<string, FeatureResult> = {};
-
-  // Boundaries
-  const boundariesRunner = new BoundariesRunner(ctx);
-  console.log(`  ${boundariesRunner.icon} ${chalk.bold(boundariesRunner.name)}`);
-  console.log(chalk.gray(`     ${boundariesRunner.description}`));
-  state.choices.scanBoundaries = autoYes || await confirm({ message: 'Scan data boundaries?', default: true });
-  if (state.choices.scanBoundaries) {
-    results['boundaries'] = await boundariesRunner.run();
-    state.completed.push('boundaries');
-  } else {
-    printSkip('Skipped');
-  }
-
-  // Contracts
-  const contractsRunner = new ContractsRunner(ctx);
-  console.log(`  ${contractsRunner.icon} ${chalk.bold(contractsRunner.name)}`);
-  console.log(chalk.gray(`     ${contractsRunner.description}`));
-  state.choices.scanContracts = autoYes || await confirm({ message: 'Scan BE↔FE contracts?', default: true });
-  if (state.choices.scanContracts) {
-    results['contracts'] = await contractsRunner.run();
-    state.completed.push('contracts');
-  } else {
-    printSkip('Skipped');
-  }
-
-  // Environment
-  const envRunner = new EnvironmentRunner(ctx);
-  console.log(`  ${envRunner.icon} ${chalk.bold(envRunner.name)}`);
-  console.log(chalk.gray(`     ${envRunner.description}`));
-  state.choices.scanEnvironment = autoYes || await confirm({ message: 'Scan environment variables?', default: true });
-  if (state.choices.scanEnvironment) {
-    results['environment'] = await envRunner.run();
-    state.completed.push('environment');
-  } else {
-    printSkip('Skipped');
-  }
-
-  // Constants
-  const constantsRunner = new ConstantsRunner(ctx);
-  console.log(`  ${constantsRunner.icon} ${chalk.bold(constantsRunner.name)}`);
-  console.log(chalk.gray(`     ${constantsRunner.description}`));
-  state.choices.scanConstants = autoYes || await confirm({ message: 'Extract constants?', default: true });
-  if (state.choices.scanConstants) {
-    results['constants'] = await constantsRunner.run();
-    state.completed.push('constants');
-  } else {
-    printSkip('Skipped');
-  }
-
-  // Sync after core features
-  await syncToSqlite(rootDir, verbose);
-
-  return results;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PHASE 4: PATTERN APPROVAL
-// ═══════════════════════════════════════════════════════════════════════════
-
-async function phaseApproval(rootDir: string, autoYes: boolean, patternCount: number, state: SetupState): Promise<number> {
-  if (patternCount === 0) return 0;
-
-  printPhase(4, 'Approval', 'Establish coding standards');
 
   console.log(chalk.gray('  Approved patterns become your "golden standard":'));
   console.log(chalk.green('    → AI follows them when generating code'));
   console.log(chalk.green('    → Violations flagged in CI/CD'));
   console.log();
 
-  const choice = autoYes ? 'auto-85' : await select({
-    message: 'How to handle approval?',
-    choices: [
-      { value: 'auto-85', name: '✓ Auto-approve ≥85% confidence (recommended)' },
-      { value: 'auto-90', name: '✓ Auto-approve ≥90% confidence (conservative)' },
-      { value: 'all', name: '✓ Approve all patterns' },
-      { value: 'skip', name: '○ Skip (review later with drift approve)' },
-    ],
-  });
+  const threshold = 0.85;
+  const eligible = discovered.items.filter(p => p.confidence >= threshold);
 
-  if (choice === 'skip') {
-    printSkip('Review later: drift approve all');
-    return 0;
+  if (eligible.length === 0) {
+    printInfo(`No patterns with ≥85% confidence to auto-approve`);
+    return alreadyApproved.items.length;
   }
 
-  const threshold = choice === 'auto-90' ? 0.90 : choice === 'auto-85' ? 0.85 : 0;
-  state.choices.autoApprove = true;
-  state.choices.approveThreshold = threshold;
+  const shouldApprove = autoYes || await confirm({ 
+    message: `Auto-approve ${eligible.length} high-confidence patterns (≥85%)?`, 
+    default: true 
+  });
+
+  if (!shouldApprove) {
+    printSkip('Review later: drift approve --auto');
+    return alreadyApproved.items.length;
+  }
 
   const spinner = createSpinner('Approving patterns...');
   spinner.start();
 
   try {
-    const service = await createCLIPatternServiceAsync(rootDir);
-    const discovered = await service.listByStatus('discovered', { limit: 5000 });
-    const eligible = choice === 'all' ? discovered.items : discovered.items.filter(p => p.confidence >= threshold);
-
     let approved = 0;
     for (const pattern of eligible) {
       try { await service.approvePattern(pattern.id); approved++; } catch { /* skip */ }
@@ -416,27 +227,65 @@ async function phaseApproval(rootDir: string, autoYes: boolean, patternCount: nu
 
     spinner.succeed(`Approved ${chalk.cyan(approved)} patterns`);
     state.completed.push('approval');
+    state.choices.autoApprove = true;
+    state.choices.approveThreshold = threshold;
 
-    // Sync after approval
     await syncToSqlite(rootDir, false);
 
-    return approved;
+    return alreadyApproved.items.length + approved;
   } catch {
     spinner.fail('Approval failed');
-    return 0;
+    return alreadyApproved.items.length;
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 5: DEEP ANALYSIS (Optional - User chooses each)
+// PHASE 3: CORE FEATURES (All run automatically)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function phaseCoreFeatures(
+  rootDir: string, verbose: boolean, state: SetupState
+): Promise<Record<string, FeatureResult>> {
+  printPhase(3, 'Core Analysis', 'Scanning boundaries, contracts, environment, constants');
+
+  const ctx: RunnerContext = { rootDir, verbose };
+  const results: Record<string, FeatureResult> = {};
+
+  // Boundaries
+  const boundariesRunner = new BoundariesRunner(ctx);
+  results['boundaries'] = await boundariesRunner.run();
+  state.completed.push('boundaries');
+
+  // Contracts
+  const contractsRunner = new ContractsRunner(ctx);
+  results['contracts'] = await contractsRunner.run();
+  state.completed.push('contracts');
+
+  // Environment
+  const envRunner = new EnvironmentRunner(ctx);
+  results['environment'] = await envRunner.run();
+  state.completed.push('environment');
+
+  // Constants
+  const constantsRunner = new ConstantsRunner(ctx);
+  results['constants'] = await constantsRunner.run();
+  state.completed.push('constants');
+
+  await syncToSqlite(rootDir, verbose);
+
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 4: DEEP ANALYSIS (All run automatically)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function phaseDeepAnalysis(
-  rootDir: string, autoYes: boolean, verbose: boolean, state: SetupState
+  rootDir: string, verbose: boolean, state: SetupState
 ): Promise<Record<string, FeatureResult>> {
-  printPhase(5, 'Deep Analysis', 'Advanced features (choose each)');
+  printPhase(4, 'Deep Analysis', 'Call graph, test topology, coupling, error handling, DNA');
 
-  console.log(chalk.gray('  These provide deeper insights using native Rust analysis:'));
+  console.log(chalk.gray('  Building comprehensive codebase intelligence...'));
   console.log();
 
   const ctx: RunnerContext = { rootDir, verbose };
@@ -444,76 +293,40 @@ async function phaseDeepAnalysis(
 
   // Call Graph
   const cgRunner = new CallGraphRunner(ctx);
-  console.log(`  ${cgRunner.icon} ${chalk.bold(cgRunner.name)}`);
-  console.log(chalk.gray(`     ${cgRunner.benefit}`));
-  state.choices.buildCallGraph = autoYes || await confirm({ message: 'Build call graph?', default: true });
-  if (state.choices.buildCallGraph) {
-    results['callGraph'] = await cgRunner.run();
-    state.completed.push('callgraph');
-  } else {
-    printSkip('Skipped');
-  }
+  results['callGraph'] = await cgRunner.run();
+  state.completed.push('callgraph');
 
   // Test Topology
   const ttRunner = new TestTopologyRunner(ctx);
-  console.log(`  ${ttRunner.icon} ${chalk.bold(ttRunner.name)}`);
-  console.log(chalk.gray(`     ${ttRunner.benefit}`));
-  state.choices.buildTestTopology = autoYes || await confirm({ message: 'Build test topology?', default: true });
-  if (state.choices.buildTestTopology) {
-    results['testTopology'] = await ttRunner.run();
-    state.completed.push('test-topology');
-  } else {
-    printSkip('Skipped');
-  }
+  results['testTopology'] = await ttRunner.run();
+  state.completed.push('test-topology');
 
   // Coupling
   const couplingRunner = new CouplingRunner(ctx);
-  console.log(`  ${couplingRunner.icon} ${chalk.bold(couplingRunner.name)}`);
-  console.log(chalk.gray(`     ${couplingRunner.benefit}`));
-  state.choices.buildCoupling = autoYes || await confirm({ message: 'Analyze coupling?', default: true });
-  if (state.choices.buildCoupling) {
-    results['coupling'] = await couplingRunner.run();
-    state.completed.push('coupling');
-  } else {
-    printSkip('Skipped');
-  }
+  results['coupling'] = await couplingRunner.run();
+  state.completed.push('coupling');
 
   // Error Handling
   const ehRunner = new ErrorHandlingRunner(ctx);
-  console.log(`  ${ehRunner.icon} ${chalk.bold(ehRunner.name)}`);
-  console.log(chalk.gray(`     ${ehRunner.benefit}`));
-  state.choices.analyzeErrorHandling = autoYes || await confirm({ message: 'Analyze error handling?', default: true });
-  if (state.choices.analyzeErrorHandling) {
-    results['errorHandling'] = await ehRunner.run();
-    state.completed.push('error-handling');
-  } else {
-    printSkip('Skipped');
-  }
+  results['errorHandling'] = await ehRunner.run();
+  state.completed.push('error-handling');
 
   // DNA
   const dnaRunner = new DNARunner(ctx);
-  console.log(`  ${dnaRunner.icon} ${chalk.bold(dnaRunner.name)}`);
-  console.log(chalk.gray(`     ${dnaRunner.benefit}`));
-  state.choices.scanDna = autoYes || await confirm({ message: 'Scan styling DNA?', default: true });
-  if (state.choices.scanDna) {
-    results['dna'] = await dnaRunner.run();
-    state.completed.push('dna');
-  } else {
-    printSkip('Skipped');
-  }
+  results['dna'] = await dnaRunner.run();
+  state.completed.push('dna');
 
-  // Sync after deep analysis
   await syncToSqlite(rootDir, verbose);
 
   return results;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 6: DERIVED ANALYSIS (Auto - Constraints + Audit)
+// PHASE 5: DERIVED ANALYSIS (Constraints + Audit)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function phaseDerived(rootDir: string, verbose: boolean, approvedCount: number, state: SetupState): Promise<Record<string, FeatureResult>> {
-  printPhase(6, 'Derived Analysis', 'Extracting constraints and health snapshot');
+  printPhase(5, 'Derived Analysis', 'Extracting constraints and health snapshot');
 
   const ctx: RunnerContext = { rootDir, verbose };
   const results: Record<string, FeatureResult> = {};
@@ -532,18 +345,17 @@ async function phaseDerived(rootDir: string, verbose: boolean, approvedCount: nu
   results['audit'] = await auditRunner.run();
   state.completed.push('audit');
 
-  // Sync after derived
   await syncToSqlite(rootDir, verbose);
 
   return results;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 7: MEMORY (Opt-in - Prominently displayed)
+// PHASE 6: MEMORY (Opt-in)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function phaseMemory(rootDir: string, autoYes: boolean, verbose: boolean, state: SetupState): Promise<FeatureResult | undefined> {
-  printPhase(7, 'Cortex Memory', 'Living knowledge system');
+  printPhase(6, 'Cortex Memory', 'Living knowledge system');
 
   console.log();
   console.log(chalk.bold.cyan('  🧠 Cortex Memory - Your AI\'s Long-Term Memory'));
@@ -559,15 +371,17 @@ async function phaseMemory(rootDir: string, autoYes: boolean, verbose: boolean, 
   const ctx: RunnerContext = { rootDir, verbose };
   const memoryRunner = new MemoryRunner(ctx);
 
-  // Always prompt explicitly - this is important
-  state.choices.initMemory = await confirm({ 
-    message: 'Initialize Cortex memory? (recommended for AI-assisted development)', 
-    default: !autoYes // Default yes in interactive, no in auto mode to be explicit
+  // In auto mode, skip memory (user can enable later)
+  // In interactive mode, ask
+  const shouldInit = autoYes ? false : await confirm({ 
+    message: 'Initialize Cortex memory?', 
+    default: true 
   });
 
-  if (state.choices.initMemory) {
+  if (shouldInit) {
     const result = await memoryRunner.run();
     state.completed.push('memory');
+    state.choices.initMemory = true;
     console.log();
     printInfo('Add knowledge: drift memory add tribal "your insight"');
     return result;
@@ -578,14 +392,14 @@ async function phaseMemory(rootDir: string, autoYes: boolean, verbose: boolean, 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 8: FINALIZE
+// PHASE 7: FINALIZE
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function phaseFinalize(
   rootDir: string, projectId: string, patternCount: number, approvedCount: number,
   categories: Record<string, number>, allResults: Record<string, FeatureResult | undefined>, state: SetupState
 ): Promise<SourceOfTruth> {
-  printPhase(8, 'Finalize', 'Creating Source of Truth');
+  printPhase(7, 'Finalize', 'Creating Source of Truth');
 
   const spinner = createSpinner('Finalizing...');
   spinner.start();
@@ -704,7 +518,13 @@ async function setupAction(options: SetupOptions): Promise<void> {
   const verbose = options.verbose ?? false;
   const autoYes = options.yes ?? false;
 
-  printWelcome();
+  // New welcome message
+  console.log();
+  console.log(chalk.bold.cyan('╔════════════════════════════════════════════════════════════╗'));
+  console.log(chalk.bold.cyan('║           🔍 Drift Setup - Advanced Features              ║'));
+  console.log(chalk.bold.cyan('║   Compute call graphs, test topology, and more            ║'));
+  console.log(chalk.bold.cyan('╚════════════════════════════════════════════════════════════╝'));
+  console.log();
 
   let state = createDefaultState();
 
@@ -717,48 +537,40 @@ async function setupAction(options: SetupOptions): Promise<void> {
     }
   }
 
-  // Phase 0: Detect
-  const { isNew, shouldContinue } = await phaseDetect(rootDir, autoYes);
+  // Phase 0: Check prerequisites (patterns must exist)
+  const { patternCount, categories, shouldContinue } = await phaseCheckPrerequisites(rootDir);
   if (!shouldContinue) {
-    console.log(chalk.gray('  Setup cancelled.'));
     return;
   }
 
-  // Phase 1: Initialize
-  const projectId = await phaseInit(rootDir, isNew);
+  // Phase 1: Initialize/Register
+  const projectId = await phaseInit(rootDir);
   state.phase = 1;
   await saveSetupState(rootDir, state);
 
-  // Phase 2: Pattern Scan (always runs)
-  const { patternCount, categories } = await phasePatternScan(rootDir, verbose);
+  // Phase 2: Approval
+  const approvedCount = await phaseApproval(rootDir, autoYes, patternCount, state);
   state.phase = 2;
-  state.completed.push('patterns');
   await saveSetupState(rootDir, state);
-  await syncToSqlite(rootDir, verbose);
 
-  // Phase 3: Core Features (user chooses each)
-  const coreResults = await phaseCoreFeatures(rootDir, autoYes, verbose, state);
+  // Phase 3: Core Features (all run automatically)
+  const coreResults = await phaseCoreFeatures(rootDir, verbose, state);
   state.phase = 3;
   await saveSetupState(rootDir, state);
 
-  // Phase 4: Approval
-  const approvedCount = await phaseApproval(rootDir, autoYes, patternCount, state);
+  // Phase 4: Deep Analysis (all run automatically)
+  const deepResults = await phaseDeepAnalysis(rootDir, verbose, state);
   state.phase = 4;
   await saveSetupState(rootDir, state);
 
-  // Phase 5: Deep Analysis (user chooses each)
-  const deepResults = await phaseDeepAnalysis(rootDir, autoYes, verbose, state);
+  // Phase 5: Derived (auto)
+  const derivedResults = await phaseDerived(rootDir, verbose, approvedCount, state);
   state.phase = 5;
   await saveSetupState(rootDir, state);
 
-  // Phase 6: Derived (auto)
-  const derivedResults = await phaseDerived(rootDir, verbose, approvedCount, state);
-  state.phase = 6;
-  await saveSetupState(rootDir, state);
-
-  // Phase 7: Memory (opt-in, prominently displayed)
+  // Phase 6: Memory (opt-in)
   const memoryResult = await phaseMemory(rootDir, autoYes, verbose, state);
-  state.phase = 7;
+  state.phase = 6;
   await saveSetupState(rootDir, state);
 
   // Combine all results
@@ -769,7 +581,7 @@ async function setupAction(options: SetupOptions): Promise<void> {
     memory: memoryResult,
   };
 
-  // Phase 8: Finalize
+  // Phase 7: Finalize
   const sot = await phaseFinalize(rootDir, projectId, patternCount, approvedCount, categories, allResults, state);
 
   // Summary
@@ -777,7 +589,7 @@ async function setupAction(options: SetupOptions): Promise<void> {
 }
 
 export const setupCommand = new Command('setup')
-  .description('Enterprise-grade setup wizard - create your codebase Source of Truth')
+  .description('Compute advanced features (run after drift scan)')
   .option('-y, --yes', 'Accept defaults and run all features')
   .option('--verbose', 'Enable verbose output')
   .option('--resume', 'Resume interrupted setup')

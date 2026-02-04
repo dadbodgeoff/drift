@@ -13,12 +13,21 @@ import * as path from 'node:path';
 import { BaseRunner, type RunnerContext } from './base.js';
 import { createSpinner } from '../../../ui/spinner.js';
 import { DRIFT_DIR, type FeatureResult } from '../types.js';
-import { findSourceFiles } from '../utils.js';
 
 import {
-  createTestTopologyAnalyzer,
+  createHybridTestTopologyAnalyzer,
   createCallGraphAnalyzer,
 } from 'driftdetect-core';
+
+/**
+ * Directories to skip when searching for test files
+ */
+const SKIP_DIRS = new Set([
+  'node_modules', 'dist', 'build', 'out', '.git', '.svn', '.hg',
+  'coverage', '.next', '.nuxt', '.turbo', '__pycache__', 'venv',
+  '.venv', 'env', '.env', 'vendor', 'target', 'bin', 'obj',
+  '.idea', '.vscode', '.vs',
+]);
 
 /**
  * Test file patterns (regex) - matches common test file naming conventions
@@ -37,6 +46,35 @@ const TEST_FILE_PATTERNS = [
 
 function isTestFile(filename: string): boolean {
   return TEST_FILE_PATTERNS.some(pattern => pattern.test(filename));
+}
+
+/**
+ * Recursively find test files (same as CLI command)
+ */
+async function findTestFiles(rootDir: string, subDir = ''): Promise<string[]> {
+  const testFiles: string[] = [];
+  const currentDir = path.join(rootDir, subDir);
+  
+  try {
+    const entries = await fs.readdir(currentDir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      
+      const relativePath = path.join(subDir, entry.name);
+      
+      if (entry.isDirectory()) {
+        const subFiles = await findTestFiles(rootDir, relativePath);
+        testFiles.push(...subFiles);
+      } else if (entry.isFile() && isTestFile(entry.name)) {
+        testFiles.push(relativePath);
+      }
+    }
+  } catch {
+    // Directory not readable, skip
+  }
+  
+  return testFiles;
 }
 
 export class TestTopologyRunner extends BaseRunner {
@@ -69,9 +107,9 @@ export class TestTopologyRunner extends BaseRunner {
     spinner.start();
 
     try {
-      spinner.text('Finding source files...');
-      const allFiles = await findSourceFiles(this.rootDir);
-      const testFiles = allFiles.filter(f => isTestFile(f));
+      // Find test files (same as CLI command)
+      spinner.text('Finding test files...');
+      const testFiles = await findTestFiles(this.rootDir);
 
       if (testFiles.length === 0) {
         spinner.succeed('No test files found');
@@ -79,13 +117,13 @@ export class TestTopologyRunner extends BaseRunner {
           enabled: true,
           success: true,
           timestamp: new Date().toISOString(),
-          stats: { totalTests: 0, testFiles: 0, filesAnalyzed: allFiles.length },
+          stats: { totalTests: 0, testFiles: 0 },
         };
       }
 
-      // Initialize analyzer (same as drift test-topology build)
+      // Initialize analyzer (same as CLI command - use hybrid analyzer)
       spinner.text('Loading parsers...');
-      const analyzer = createTestTopologyAnalyzer({});
+      const analyzer = createHybridTestTopologyAnalyzer({});
 
       // Try to load call graph for transitive analysis
       spinner.text('Loading call graph...');
@@ -125,7 +163,6 @@ export class TestTopologyRunner extends BaseRunner {
       const mockAnalysis = analyzer.analyzeMocks();
 
       // Save results in the SAME FORMAT as `drift test-topology build`
-      // This ensures `drift test-topology status` works correctly
       const topologyDir = path.join(this.rootDir, DRIFT_DIR, 'test-topology');
       await fs.mkdir(topologyDir, { recursive: true });
       await fs.writeFile(
@@ -142,7 +179,6 @@ export class TestTopologyRunner extends BaseRunner {
         stats: {
           totalTests: summary.testCases,
           testFiles: summary.testFiles,
-          filesAnalyzed: allFiles.length,
           extractedFiles: extractedCount,
         },
       };

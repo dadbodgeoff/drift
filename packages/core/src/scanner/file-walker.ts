@@ -198,11 +198,17 @@ export class FileWalker {
   /**
    * Load .gitignore and .driftignore patterns from a directory
    *
+   * For the root directory, patterns are added globally.
+   * For nested directories, patterns are prefixed with the relative path
+   * so they only apply to files within that directory (proper gitignore semantics).
+   *
    * @param dir - Directory to load patterns from
    * @returns Promise resolving to array of patterns
    */
   async loadIgnorePatterns(dir: string): Promise<string[]> {
     const patterns: string[] = [];
+    const relativeDirPath = path.relative(this.rootDir, dir);
+    const isRootDir = relativeDirPath === '';
 
     // Load .gitignore if enabled
     if (this.options.respectGitignore) {
@@ -220,7 +226,26 @@ export class FileWalker {
 
     // Add patterns to ignore instance
     if (patterns.length > 0) {
-      this.ignoreInstance.add(patterns);
+      if (isRootDir) {
+        // Root patterns apply globally
+        this.ignoreInstance.add(patterns);
+      } else {
+        // Nested patterns must be scoped to their directory
+        // Prefix each pattern with the relative directory path
+        const scopedPatterns = patterns.map(pattern => {
+          // Handle negation patterns (starting with !)
+          if (pattern.startsWith('!')) {
+            return `!${relativeDirPath}/${pattern.slice(1)}`;
+          }
+          // Handle patterns that start with / (anchored to the gitignore's directory)
+          if (pattern.startsWith('/')) {
+            return `${relativeDirPath}${pattern}`;
+          }
+          // Regular patterns - scope to the directory
+          return `${relativeDirPath}/${pattern}`;
+        });
+        this.ignoreInstance.add(scopedPatterns);
+      }
     }
 
     return patterns;

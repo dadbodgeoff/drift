@@ -1772,6 +1772,13 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     console.log(chalk.cyan('│') + ' patterns that match codebase conventions. Flag any that    ' + chalk.cyan('│'));
     console.log(chalk.cyan('│') + ' look like false positives or duplicates.                   ' + chalk.cyan('│'));
     console.log(chalk.cyan('└─────────────────────────────────────────────────────────────┘'));
+    console.log();
+    
+    // Suggest running setup for advanced features
+    console.log(chalk.bold.yellow('💡 Next Step: Run advanced analysis'));
+    console.log(chalk.gray('  Compute call graphs, test topology, coupling, and more:'));
+    console.log(chalk.cyan('    drift setup -y'));
+    console.log();
   }
 
   // Close the store (important for SQLite to flush WAL)
