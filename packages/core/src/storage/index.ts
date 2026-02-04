@@ -39,6 +39,10 @@ export { TestTopologyRepository } from './repositories/test-topology-repository.
 // Utilities
 export { createUnifiedStore, migrateFromJson } from './migration.js';
 
+// Sync Service
+export { StoreSyncService, createSyncService } from './sync-service.js';
+export type { SyncResult, SyncOptions } from './sync-service.js';
+
 // Factory functions
 export {
   createPatternStore,

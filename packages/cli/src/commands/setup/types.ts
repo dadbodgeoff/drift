@@ -23,12 +23,27 @@ export interface FeatureResult {
 }
 
 export interface SetupChoices {
+  // Core scan
+  runCoreScan: boolean;
+  
+  // Core features (user chooses each)
+  scanBoundaries: boolean;
+  scanContracts: boolean;
+  scanEnvironment: boolean;
+  scanConstants: boolean;
+  
+  // Pattern approval
   autoApprove: boolean;
   approveThreshold: number;
+  
+  // Deep analysis (user chooses each)
   buildCallGraph: boolean;
   buildTestTopology: boolean;
   buildCoupling: boolean;
   scanDna: boolean;
+  analyzeErrorHandling: boolean;
+  
+  // Memory (opt-in)
   initMemory: boolean;
 }
 
@@ -37,25 +52,6 @@ export interface SetupState {
   completed: string[];
   choices: SetupChoices;
   startedAt: string;
-}
-
-export interface ScanResult {
-  success: boolean;
-  patternCount: number;
-  categories: Record<string, number>;
-}
-
-export interface ApprovalResult {
-  approved: number;
-  threshold: number;
-}
-
-export interface AnalysisResults {
-  callGraph?: FeatureResult;
-  testTopology?: FeatureResult;
-  coupling?: FeatureResult;
-  dna?: FeatureResult;
-  memory?: FeatureResult;
 }
 
 export interface SourceOfTruth {
@@ -78,11 +74,28 @@ export interface SourceOfTruth {
     checksum: string;
   };
   features: {
+    // Core features
+    boundaries: FeatureConfig;
+    contracts: FeatureConfig;
+    environment: FeatureConfig;
+    constants: FeatureConfig;
+    
+    // Deep analysis
     callGraph: FeatureConfig;
     testTopology: FeatureConfig;
     coupling: FeatureConfig;
     dna: FeatureConfig;
+    errorHandling: FeatureConfig;
+    
+    // Derived
+    constraints: FeatureConfig;
+    audit: FeatureConfig;
+    
+    // Memory
     memory: FeatureConfig;
+    
+    // Sync
+    sqliteSync: FeatureConfig;
   };
   settings: {
     autoApproveThreshold: number;

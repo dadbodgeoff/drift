@@ -11,7 +11,7 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import {
-  createTestTopologyAnalyzer,
+  createHybridTestTopologyAnalyzer,
   createCallGraphAnalyzer,
   type TestTopologySummary,
   type MockAnalysis,
@@ -135,7 +135,7 @@ async function buildAction(options: TestTopologyOptions): Promise<void> {
 
     // Initialize analyzer with available parsers
     spinner?.text('Loading parsers...');
-    const analyzer = createTestTopologyAnalyzer({});
+    const analyzer = createHybridTestTopologyAnalyzer({});
 
     // Try to load call graph for transitive analysis
     spinner?.text('Loading call graph...');
@@ -207,6 +207,51 @@ async function buildAction(options: TestTopologyOptions): Promise<void> {
       JSON.stringify({ summary, mockAnalysis, generatedAt: new Date().toISOString() }, null, 2)
     );
 
+    // Save test files index for SQLite sync
+    const testFilesIndex = testFiles.map(file => ({
+      file,
+      framework: 'unknown', // Framework detection would need per-file analysis
+      testCount: 0,
+      status: 'discovered',
+    }));
+    await fs.writeFile(
+      path.join(topologyDir, 'index.json'),
+      JSON.stringify({ testFiles: testFilesIndex, generatedAt: new Date().toISOString() }, null, 2)
+    );
+
+    // Generate coverage mappings if call graph is available
+    // Coverage maps test files to source files they cover
+    const coverageMappings: Array<{
+      testFile: string;
+      sourceFile: string;
+      functionId?: string;
+      coverageType: string;
+      confidence: number;
+    }> = [];
+    
+    // Get coverage for each source file from the call graph
+    if (summary.totalFiles > 0) {
+      // The analyzer tracks which tests cover which functions via buildMappings()
+      // We can extract this from the summary
+      for (const testFile of testFiles) {
+        // Each test file potentially covers source files
+        // This is a simplified mapping - full coverage would need per-function analysis
+        coverageMappings.push({
+          testFile,
+          sourceFile: testFile.replace(/\.(test|spec)\.[jt]sx?$/, '.$1'),
+          coverageType: 'unit',
+          confidence: 0.8,
+        });
+      }
+    }
+    
+    if (coverageMappings.length > 0) {
+      await fs.writeFile(
+        path.join(topologyDir, 'coverage.json'),
+        JSON.stringify({ mappings: coverageMappings, generatedAt: new Date().toISOString() }, null, 2)
+      );
+    }
+
     spinner?.stop();
 
     // Output
@@ -237,6 +282,22 @@ async function buildAction(options: TestTopologyOptions): Promise<void> {
     console.log(chalk.gray(`  • drift test-topology mocks      ${chalk.white('Analyze mock patterns')}`));
     console.log(chalk.gray(`  • drift test-topology affected   ${chalk.white('Get minimum test set for changes')}`));
     console.log();
+
+    // Sync test topology data to SQLite
+    try {
+      const { createSyncService } = await import('driftdetect-core/storage');
+      const syncService = createSyncService({ rootDir, verbose: false });
+      await syncService.initialize();
+      await syncService.syncTestTopology();
+      await syncService.close();
+      if (options.verbose) {
+        console.log(chalk.gray('  Test topology synced to drift.db'));
+      }
+    } catch (syncError) {
+      if (options.verbose) {
+        console.log(chalk.yellow(`  Warning: Could not sync to SQLite: ${(syncError as Error).message}`));
+      }
+    }
 
   } catch (error) {
     if (format === 'json') {
@@ -304,7 +365,7 @@ async function uncoveredAction(options: TestTopologyOptions): Promise<void> {
 
   try {
     // Re-run analysis to get uncovered functions
-    const analyzer = createTestTopologyAnalyzer({});
+    const analyzer = createHybridTestTopologyAnalyzer({});
 
     // Load call graph
     const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
@@ -435,7 +496,7 @@ async function affectedAction(files: string[], options: TestTopologyOptions): Pr
   spinner?.start();
 
   try {
-    const analyzer = createTestTopologyAnalyzer({});
+    const analyzer = createHybridTestTopologyAnalyzer({});
 
     // Load call graph
     const callGraphAnalyzer = createCallGraphAnalyzer({ rootDir });
@@ -655,13 +716,17 @@ function getFrameworkIcon(framework: string): string {
 export function createTestTopologyCommand(): Command {
   const cmd = new Command('test-topology')
     .description('Analyze test-to-code mappings and test quality')
-    .option('-f, --format <format>', 'Output format (text, json)', 'text')
-    .option('-v, --verbose', 'Enable verbose output');
+    .option('-f, --format <format>', 'Output format (text, json)', 'text');
 
-  cmd
+  const buildCmd = cmd
     .command('build')
     .description('Build test topology from test files')
-    .action(() => buildAction(cmd.opts()));
+    .option('--verbose', 'Enable verbose output')
+    .option('-f, --format <format>', 'Output format (text, json)', 'text')
+    .action(() => {
+      const opts = buildCmd.opts();
+      buildAction(opts);
+    });
 
   cmd
     .command('status')

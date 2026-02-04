@@ -14,7 +14,7 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { Command } from 'commander';
 
-import { createCLIPatternService } from '../services/pattern-service-factory.js';
+import { createCLIPatternServiceAsync } from '../services/pattern-service-factory.js';
 import { confirmPrompt, promptBatchPatternApproval, type PatternChoice } from '../ui/prompts.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
@@ -143,7 +143,8 @@ async function approveAction(
   const spinner = createSpinner('Loading patterns...');
   spinner.start();
 
-  const service = createCLIPatternService(rootDir);
+  // Use async service to read from SQLite (the source of truth)
+  const service = await createCLIPatternServiceAsync(rootDir);
 
   // Get discovered patterns (auto-initializes)
   const discoveredResult = await service.listByStatus('discovered', { limit: 1000 });

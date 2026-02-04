@@ -160,6 +160,22 @@ async function scanAction(options: EnvOptions): Promise<void> {
     console.log(chalk.gray("Run 'drift env secrets' to see details"));
     console.log();
   }
+
+  // Sync environment data to SQLite
+  try {
+    const { createSyncService } = await import('driftdetect-core/storage');
+    const syncService = createSyncService({ rootDir, verbose: false });
+    await syncService.initialize();
+    await syncService.syncEnvironment();
+    await syncService.close();
+    if (options.verbose) {
+      console.log(chalk.gray('  Environment data synced to drift.db'));
+    }
+  } catch (syncError) {
+    if (options.verbose) {
+      console.log(chalk.yellow(`  Warning: Could not sync to SQLite: ${(syncError as Error).message}`));
+    }
+  }
 }
 
 /**

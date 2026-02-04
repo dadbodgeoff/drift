@@ -2738,6 +2738,18 @@ export function createMemoryCommand(): Command {
     .description('Initialize the memory system')
     .action(() => initAction(cmd.opts()));
 
+  // Setup wizard (interactive)
+  cmd
+    .command('setup')
+    .description('Interactive wizard to set up Cortex memory with preferences, tribal knowledge, workflows, and more')
+    .option('-y, --yes', 'Accept defaults for required sections')
+    .option('--skip <sections>', 'Skip sections (comma-separated: core,tribal,workflows,agents,entities,skills,environments)')
+    .action(async (opts) => {
+      const { memorySetupCommand } = await import('./memory-setup.js');
+      const skipArray = opts.skip ? opts.skip.split(',').map((s: string) => s.trim()) : [];
+      await memorySetupCommand.parseAsync(['setup', ...(opts.yes ? ['-y'] : []), ...(skipArray.length > 0 ? ['--skip', skipArray.join(',')] : [])], { from: 'user' });
+    });
+
   // Status
   cmd
     .command('status')

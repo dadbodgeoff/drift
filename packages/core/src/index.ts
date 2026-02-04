@@ -533,6 +533,9 @@ export {
   // Main analyzer
   TestTopologyAnalyzer,
   createTestTopologyAnalyzer,
+  // Hybrid analyzer with regex fallback
+  HybridTestTopologyAnalyzer,
+  createHybridTestTopologyAnalyzer,
   // Extractors
   BaseTestExtractor,
   TypeScriptTestExtractor,

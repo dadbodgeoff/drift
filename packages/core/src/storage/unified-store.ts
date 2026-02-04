@@ -256,6 +256,26 @@ export class UnifiedStore implements IUnifiedStore {
   }
 
   // ==========================================================================
+  // Raw SQL Access (for sync service)
+  // ==========================================================================
+
+  /**
+   * Run a raw SQL statement (INSERT, UPDATE, DELETE)
+   */
+  runRaw(sql: string, params: unknown[] = []): void {
+    this.ensureInitialized();
+    this.db!.prepare(sql).run(...params);
+  }
+
+  /**
+   * Query raw SQL (SELECT)
+   */
+  queryRaw<T = unknown>(sql: string, params: unknown[] = []): T[] {
+    this.ensureInitialized();
+    return this.db!.prepare(sql).all(...params) as T[];
+  }
+
+  // ==========================================================================
   // Export/Import
   // ==========================================================================
 

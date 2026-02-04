@@ -19,6 +19,7 @@ import {
   type ConstraintCategory,
   type VerificationResult,
 } from 'driftdetect-core';
+import { createPatternStore } from 'driftdetect-core/storage';
 
 import { createSpinner } from '../ui/spinner.js';
 
@@ -84,9 +85,16 @@ async function extractAction(options: ConstraintsOptions): Promise<void> {
     const store = createConstraintStore({ rootDir });
     await store.initialize();
 
-    // Initialize detector
+    // Initialize pattern store (SQLite-backed for reading approved patterns)
+    spinner?.text('Loading pattern store...');
+    const patternStore = await createPatternStore({ rootDir });
+
+    // Initialize detector with pattern store
     spinner?.text('Initializing invariant detector...');
-    const detector = createInvariantDetector({ rootDir });
+    const detector = createInvariantDetector({ 
+      rootDir,
+      patternStore: patternStore as any, // Cast needed for interface compatibility
+    });
 
     // Initialize synthesizer
     const synthesizer = createConstraintSynthesizer({ store, detector });

@@ -1779,6 +1779,22 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
     await store.close();
   }
 
+  // Sync all data to SQLite (ensures drift.db is the source of truth)
+  try {
+    const { createSyncService } = await import('driftdetect-core/storage');
+    const syncService = createSyncService({ rootDir, verbose: false });
+    await syncService.initialize();
+    await syncService.syncAll();
+    await syncService.close();
+    if (verbose) {
+      console.log(chalk.gray('  All data synced to drift.db'));
+    }
+  } catch (syncError) {
+    if (verbose) {
+      console.log(chalk.yellow(`  Warning: Could not sync to SQLite: ${(syncError as Error).message}`));
+    }
+  }
+
   console.log();
 }
 

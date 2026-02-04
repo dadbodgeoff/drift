@@ -140,6 +140,22 @@ async function dnaScanAction(options: DNAScanOptions): Promise<void> {
     console.log(chalk.gray("Run 'drift dna playbook' to generate documentation."));
     console.log(chalk.gray("Run 'drift dna mutations' for detailed mutation info."));
 
+    // Sync DNA data to SQLite
+    try {
+      const { createSyncService } = await import('driftdetect-core/storage');
+      const syncService = createSyncService({ rootDir, verbose: false });
+      await syncService.initialize();
+      await syncService.syncDNA();
+      await syncService.close();
+      if (verbose) {
+        console.log(chalk.gray('  DNA data synced to drift.db'));
+      }
+    } catch (syncError) {
+      if (verbose) {
+        console.log(chalk.yellow(`  Warning: Could not sync to SQLite: ${(syncError as Error).message}`));
+      }
+    }
+
   } catch (error) {
     spinner.fail('DNA analysis failed');
     console.error(chalk.red((error as Error).message));

@@ -420,6 +420,22 @@ async function auditAction(options: AuditCommandOptions): Promise<void> {
     console.log(chalk.cyan(`  drift audit --review`) + chalk.gray(`  - Generate detailed review report`));
     console.log();
   }
+
+  // Sync audit data to SQLite
+  try {
+    const { createSyncService } = await import('driftdetect-core/storage');
+    const syncService = createSyncService({ rootDir, verbose: false });
+    await syncService.initialize();
+    await syncService.syncAudit();
+    await syncService.close();
+    if (verbose) {
+      console.log(chalk.gray('  Audit data synced to drift.db'));
+    }
+  } catch (syncError) {
+    if (verbose) {
+      console.log(chalk.yellow(`  Warning: Could not sync to SQLite: ${(syncError as Error).message}`));
+    }
+  }
 }
 
 /**

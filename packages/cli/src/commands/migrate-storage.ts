@@ -626,3 +626,101 @@ migrateStorageCommand
   .option('--no-keep-json', 'Remove JSON files after migration')
   .option('--dry-run', 'Show what would be migrated without making changes')
   .action(sqliteMigrateAction);
+
+// ============================================================================
+// Sync All Action - Syncs ALL data sources to SQLite
+// ============================================================================
+
+interface SyncAllOptions {
+  verbose?: boolean;
+  domains?: string;
+}
+
+async function syncAllAction(options: SyncAllOptions): Promise<void> {
+  const rootDir = process.cwd();
+
+  console.log();
+  console.log(chalk.bold('🔄 Sync All Data to SQLite'));
+  console.log();
+
+  // Check if drift is initialized
+  if (!fs.existsSync(path.join(rootDir, '.drift'))) {
+    status.error('Drift is not initialized in this directory.');
+    console.log(chalk.gray('Run `drift init` first.'));
+    process.exit(1);
+  }
+
+  const syncSpinner = createSpinner('Syncing data to SQLite...');
+  syncSpinner.start();
+
+  try {
+    // Dynamic import to avoid loading SQLite unless needed
+    const { createSyncService } = await import('driftdetect-core/storage');
+
+    const syncService = createSyncService({
+      rootDir,
+      verbose: options.verbose ?? false,
+    });
+
+    await syncService.initialize();
+    const result = await syncService.syncAll();
+    await syncService.close();
+
+    if (!result.success) {
+      syncSpinner.fail('Sync failed');
+      for (const error of result.errors) {
+        console.error(chalk.red(`  ${error}`));
+      }
+      process.exit(1);
+    }
+
+    syncSpinner.succeed('Sync complete');
+
+    // Show summary
+    console.log();
+    console.log(chalk.bold('📊 Sync Summary'));
+    console.log();
+    console.log(`  Boundaries: ${chalk.cyan(result.synced.boundaries)} items`);
+    console.log(`  Environment: ${chalk.cyan(result.synced.environment)} items`);
+    console.log(`  Call Graph:`);
+    console.log(`    Functions: ${chalk.cyan(result.synced.callGraph.functions)}`);
+    console.log(`    Calls: ${chalk.cyan(result.synced.callGraph.calls)}`);
+    console.log(`    Data Access: ${chalk.cyan(result.synced.callGraph.dataAccess)}`);
+    console.log(`  Audit:`);
+    console.log(`    Snapshots: ${chalk.cyan(result.synced.audit.snapshots)}`);
+    console.log(`    Trends: ${chalk.cyan(result.synced.audit.trends)}`);
+    console.log(`  DNA:`);
+    console.log(`    Genes: ${chalk.cyan(result.synced.dna.genes)}`);
+    console.log(`    Mutations: ${chalk.cyan(result.synced.dna.mutations)}`);
+    console.log(`  Test Topology:`);
+    console.log(`    Files: ${chalk.cyan(result.synced.testTopology.files)}`);
+    console.log(`    Coverage: ${chalk.cyan(result.synced.testTopology.coverage)}`);
+    console.log(`  Contracts:`);
+    console.log(`    Contracts: ${chalk.cyan(result.synced.contracts.contracts)}`);
+    console.log(`    Frontends: ${chalk.cyan(result.synced.contracts.frontends)}`);
+    console.log(`  Constraints: ${chalk.cyan(result.synced.constraints)} items`);
+    console.log(`  History: ${chalk.cyan(result.synced.history)} snapshots`);
+
+    console.log();
+    console.log(chalk.green(`✓ All data synced to: ${chalk.gray('.drift/drift.db')}`));
+
+  } catch (error) {
+    syncSpinner.fail('Sync failed');
+    console.error(chalk.red((error as Error).message));
+    if (options.verbose) {
+      console.error(error);
+    }
+    process.exit(1);
+  }
+
+  console.log();
+  status.success('Sync complete! drift.db is now the source of truth.');
+  console.log();
+}
+
+migrateStorageCommand
+  .command('sync')
+  .description('Sync ALL data (boundaries, callgraph, env, audit, dna, tests) to SQLite')
+  .option('-v, --verbose', 'Show detailed progress')
+  .action(syncAllAction);
+

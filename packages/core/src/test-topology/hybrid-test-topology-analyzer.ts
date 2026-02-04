@@ -162,26 +162,29 @@ export class HybridTestTopologyAnalyzer {
 
     // Try regex fallback
     const regexExtractor = getTestRegexExtractor(filePath);
-    if (regexExtractor) {
-      try {
-        const extraction = regexExtractor.extract(content, filePath);
-        
-        // Update file path in test cases
-        for (const test of extraction.testCases) {
-          test.file = filePath;
-          test.id = `${filePath}:${test.name}:${test.line}`;
-        }
-
-        this.testExtractions.set(filePath, extraction);
-        this.regexFallbackFiles++;
-        return extraction;
-      } catch (error) {
-        console.warn(`Regex extraction failed for ${filePath}: ${error}`);
-      }
+    if (!regexExtractor) {
+      // No extractor available for this file type
+      this.failedFiles++;
+      return null;
     }
+    
+    try {
+      const extraction = regexExtractor.extract(content, filePath);
+      
+      // Update file path in test cases
+      for (const test of extraction.testCases) {
+        test.file = filePath;
+        test.id = `${filePath}:${test.name}:${test.line}`;
+      }
 
-    this.failedFiles++;
-    return null;
+      this.testExtractions.set(filePath, extraction);
+      this.regexFallbackFiles++;
+      return extraction;
+    } catch (error) {
+      console.warn(`Regex extraction failed for ${filePath}: ${error}`);
+      this.failedFiles++;
+      return null;
+    }
   }
 
 
