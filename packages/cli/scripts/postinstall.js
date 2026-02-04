@@ -31,10 +31,11 @@ console.log(`     ${CYAN}drift setup${RESET}          ${DIM}Interactive guided s
 console.log(`     ${CYAN}drift setup -y${RESET}       ${DIM}Quick setup with defaults${RESET}`);
 console.log();
 console.log(`  ${BOLD}${MAGENTA}2. Cortex Memory Only${RESET}`);
-console.log(`     ${DIM}Just the AI memory system - store tribal knowledge, workflows,${RESET}`);
-console.log(`     ${DIM}and corrections. Perfect for existing projects.${RESET}`);
+console.log(`     ${DIM}Interactive wizard to set up AI memory - tribal knowledge,${RESET}`);
+console.log(`     ${DIM}workflows, agent spawns, and preferences. Perfect for existing projects.${RESET}`);
 console.log();
-console.log(`     ${CYAN}drift memory init${RESET}    ${DIM}Initialize memory system${RESET}`);
+console.log(`     ${CYAN}drift memory setup${RESET}   ${DIM}Interactive Cortex wizard${RESET}`);
+console.log(`     ${CYAN}drift memory init${RESET}    ${DIM}Quick init (no wizard)${RESET}`);
 console.log();
 console.log(`  ${BOLD}${YELLOW}3. Quick Scan${RESET}`);
 console.log(`     ${DIM}Just scan for patterns without full setup.${RESET}`);
