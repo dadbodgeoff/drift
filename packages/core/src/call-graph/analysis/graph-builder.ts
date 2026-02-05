@@ -825,6 +825,7 @@ export class GraphBuilder {
       go: 0,
       rust: 0,
       cpp: 0,
+      'structured-text': 0,
     };
 
     for (const [, func] of this.functions) {

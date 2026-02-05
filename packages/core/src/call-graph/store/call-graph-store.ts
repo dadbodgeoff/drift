@@ -268,6 +268,7 @@ export class CallGraphStore {
             go: 0,
             rust: 0,
             cpp: 0,
+            'structured-text': 0,
           },
         },
         _sqliteAvailable: true, // Internal flag to indicate SQLite mode
@@ -428,6 +429,7 @@ export class CallGraphStore {
             go: 0,
             rust: 0,
             cpp: 0,
+            'structured-text': 0,
           },
         },
       };

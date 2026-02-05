@@ -890,6 +890,357 @@ SELECT
    WHERE table_name IN (SELECT table_name FROM sensitive_fields)) as sensitive_access_count;
 
 -- ============================================================================
+-- IEC 61131-3 CODE FACTORY TABLES
+-- ============================================================================
+-- Enterprise-grade analysis for industrial automation code.
+-- Stores POUs, state machines, safety interlocks, tribal knowledge, and migration scores.
+-- ============================================================================
+
+-- ST Files (Structured Text source files)
+CREATE TABLE IF NOT EXISTS st_files (
+  id TEXT PRIMARY KEY,
+  path TEXT NOT NULL UNIQUE,
+  vendor TEXT,
+  language TEXT DEFAULT 'st',
+  line_count INTEGER,
+  hash TEXT NOT NULL,
+  parsed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Program Organization Units (POUs)
+CREATE TABLE IF NOT EXISTS st_pous (
+  id TEXT PRIMARY KEY,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK(type IN ('PROGRAM', 'FUNCTION_BLOCK', 'FUNCTION', 'CLASS', 'INTERFACE')),
+  name TEXT NOT NULL,
+  qualified_name TEXT NOT NULL,
+  start_line INTEGER NOT NULL,
+  end_line INTEGER NOT NULL,
+  extends TEXT,
+  implements JSON,
+  vendor_attributes JSON,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ST Variables
+CREATE TABLE IF NOT EXISTS st_variables (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT REFERENCES st_files(id) ON DELETE CASCADE,
+  section TEXT NOT NULL CHECK(section IN ('VAR_INPUT', 'VAR_OUTPUT', 'VAR_IN_OUT', 'VAR', 'VAR_GLOBAL', 'VAR_TEMP', 'VAR_CONSTANT', 'VAR_EXTERNAL')),
+  name TEXT NOT NULL,
+  data_type TEXT NOT NULL,
+  initial_value TEXT,
+  is_array INTEGER DEFAULT 0,
+  array_bounds JSON,
+  comment TEXT,
+  line_number INTEGER,
+  is_safety_critical INTEGER DEFAULT 0,
+  io_address TEXT
+);
+
+-- ST Docstrings (Documentation extracted from comments)
+CREATE TABLE IF NOT EXISTS st_docstrings (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  summary TEXT,
+  description TEXT,
+  raw_text TEXT,
+  author TEXT,
+  date TEXT,
+  start_line INTEGER NOT NULL,
+  end_line INTEGER NOT NULL,
+  associated_block TEXT,
+  associated_block_type TEXT,
+  quality_score REAL DEFAULT 0.0,
+  extracted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Docstring parameters
+CREATE TABLE IF NOT EXISTS st_doc_params (
+  id TEXT PRIMARY KEY,
+  docstring_id TEXT NOT NULL REFERENCES st_docstrings(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  param_type TEXT,
+  direction TEXT CHECK(direction IN ('in', 'out', 'inout'))
+);
+
+-- Docstring history entries
+CREATE TABLE IF NOT EXISTS st_doc_history (
+  id TEXT PRIMARY KEY,
+  docstring_id TEXT NOT NULL REFERENCES st_docstrings(id) ON DELETE CASCADE,
+  date TEXT,
+  author TEXT,
+  description TEXT NOT NULL
+);
+
+-- State machines
+CREATE TABLE IF NOT EXISTS st_state_machines (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT NOT NULL REFERENCES st_pous(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  state_variable TEXT NOT NULL,
+  state_variable_type TEXT,
+  state_count INTEGER NOT NULL,
+  has_deadlocks INTEGER DEFAULT 0,
+  has_gaps INTEGER DEFAULT 0,
+  unreachable_states JSON,
+  gap_values JSON,
+  mermaid_diagram TEXT,
+  ascii_diagram TEXT,
+  plantuml_diagram TEXT,
+  start_line INTEGER,
+  end_line INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- State machine states
+CREATE TABLE IF NOT EXISTS st_sm_states (
+  id TEXT PRIMARY KEY,
+  state_machine_id TEXT NOT NULL REFERENCES st_state_machines(id) ON DELETE CASCADE,
+  value TEXT NOT NULL,
+  name TEXT,
+  documentation TEXT,
+  is_initial INTEGER DEFAULT 0,
+  is_final INTEGER DEFAULT 0,
+  actions JSON,
+  line_number INTEGER
+);
+
+-- State machine transitions
+CREATE TABLE IF NOT EXISTS st_sm_transitions (
+  id TEXT PRIMARY KEY,
+  state_machine_id TEXT NOT NULL REFERENCES st_state_machines(id) ON DELETE CASCADE,
+  from_state_id TEXT NOT NULL REFERENCES st_sm_states(id) ON DELETE CASCADE,
+  to_state_id TEXT NOT NULL REFERENCES st_sm_states(id) ON DELETE CASCADE,
+  guard_condition TEXT,
+  actions JSON,
+  documentation TEXT,
+  line_number INTEGER
+);
+
+-- Safety interlocks
+CREATE TABLE IF NOT EXISTS st_safety_interlocks (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('interlock', 'estop', 'permissive', 'safety-relay', 'safety-device', 'bypass')),
+  line_number INTEGER,
+  is_bypassed INTEGER DEFAULT 0,
+  bypass_condition TEXT,
+  confidence REAL DEFAULT 0.0,
+  severity TEXT CHECK(severity IN ('critical', 'high', 'medium', 'low')),
+  related_interlocks JSON
+);
+
+-- Safety bypasses (CRITICAL - must track all bypasses)
+CREATE TABLE IF NOT EXISTS st_safety_bypasses (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  line_number INTEGER,
+  affected_interlocks JSON,
+  condition TEXT,
+  severity TEXT CHECK(severity IN ('critical', 'high', 'medium', 'low')),
+  detected_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Safety critical warnings
+CREATE TABLE IF NOT EXISTS st_safety_warnings (
+  id TEXT PRIMARY KEY,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK(type IN ('bypass-detected', 'unprotected-output', 'missing-estop', 'interlock-gap')),
+  message TEXT NOT NULL,
+  severity TEXT CHECK(severity IN ('critical', 'high', 'medium', 'low')),
+  line_number INTEGER,
+  remediation TEXT
+);
+
+-- Tribal knowledge
+CREATE TABLE IF NOT EXISTS st_tribal_knowledge (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK(type IN ('warning', 'caution', 'danger', 'note', 'todo', 'fixme', 'hack', 'workaround', 'do-not-change', 'magic-number', 'history', 'author', 'equipment', 'mystery')),
+  content TEXT NOT NULL,
+  context TEXT,
+  line_number INTEGER,
+  importance TEXT CHECK(importance IN ('critical', 'high', 'medium', 'low')),
+  extracted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- I/O mappings
+CREATE TABLE IF NOT EXISTS st_io_mappings (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT REFERENCES st_pous(id) ON DELETE CASCADE,
+  file_id TEXT NOT NULL REFERENCES st_files(id) ON DELETE CASCADE,
+  address TEXT NOT NULL,
+  address_type TEXT NOT NULL CHECK(address_type IN ('IX', 'QX', 'IW', 'QW', 'ID', 'QD', 'IB', 'QB', 'MW', 'MD', 'MB')),
+  variable_name TEXT,
+  description TEXT,
+  line_number INTEGER,
+  is_input INTEGER DEFAULT 1,
+  bit_size INTEGER DEFAULT 1
+);
+
+-- ST Call graph edges
+CREATE TABLE IF NOT EXISTS st_call_graph (
+  id TEXT PRIMARY KEY,
+  caller_pou_id TEXT NOT NULL REFERENCES st_pous(id) ON DELETE CASCADE,
+  callee_pou_id TEXT REFERENCES st_pous(id) ON DELETE SET NULL,
+  callee_name TEXT NOT NULL,
+  call_type TEXT NOT NULL CHECK(call_type IN ('instantiation', 'method_call', 'function_call')),
+  line_number INTEGER,
+  arguments JSON
+);
+
+-- Migration scores
+CREATE TABLE IF NOT EXISTS st_migration_scores (
+  id TEXT PRIMARY KEY,
+  pou_id TEXT NOT NULL REFERENCES st_pous(id) ON DELETE CASCADE,
+  overall_score REAL NOT NULL,
+  documentation_score REAL,
+  safety_score REAL,
+  complexity_score REAL,
+  dependencies_score REAL,
+  testability_score REAL,
+  grade TEXT CHECK(grade IN ('A', 'B', 'C', 'D', 'F')),
+  blockers JSON,
+  warnings JSON,
+  suggestions JSON,
+  calculated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- AI Context exports
+CREATE TABLE IF NOT EXISTS st_ai_contexts (
+  id TEXT PRIMARY KEY,
+  target_language TEXT NOT NULL,
+  context_json TEXT NOT NULL,
+  token_estimate INTEGER,
+  generated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Analysis runs for ST files
+CREATE TABLE IF NOT EXISTS st_analysis_runs (
+  id TEXT PRIMARY KEY,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  status TEXT NOT NULL CHECK(status IN ('running', 'completed', 'failed')),
+  files_analyzed INTEGER DEFAULT 0,
+  pous_found INTEGER DEFAULT 0,
+  state_machines_found INTEGER DEFAULT 0,
+  interlocks_found INTEGER DEFAULT 0,
+  bypasses_found INTEGER DEFAULT 0,
+  tribal_knowledge_found INTEGER DEFAULT 0,
+  errors JSON,
+  summary JSON
+);
+
+-- ============================================================================
+-- IEC 61131-3 INDEXES
+-- ============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_st_files_path ON st_files(path);
+CREATE INDEX IF NOT EXISTS idx_st_pous_file ON st_pous(file_id);
+CREATE INDEX IF NOT EXISTS idx_st_pous_type ON st_pous(type);
+CREATE INDEX IF NOT EXISTS idx_st_pous_name ON st_pous(name);
+CREATE INDEX IF NOT EXISTS idx_st_variables_pou ON st_variables(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_variables_safety ON st_variables(is_safety_critical);
+CREATE INDEX IF NOT EXISTS idx_st_variables_io ON st_variables(io_address);
+CREATE INDEX IF NOT EXISTS idx_st_docstrings_pou ON st_docstrings(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_docstrings_file ON st_docstrings(file_id);
+CREATE INDEX IF NOT EXISTS idx_st_state_machines_pou ON st_state_machines(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_sm_states_machine ON st_sm_states(state_machine_id);
+CREATE INDEX IF NOT EXISTS idx_st_sm_transitions_machine ON st_sm_transitions(state_machine_id);
+CREATE INDEX IF NOT EXISTS idx_st_safety_interlocks_type ON st_safety_interlocks(type);
+CREATE INDEX IF NOT EXISTS idx_st_safety_interlocks_bypassed ON st_safety_interlocks(is_bypassed);
+CREATE INDEX IF NOT EXISTS idx_st_safety_interlocks_pou ON st_safety_interlocks(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_safety_bypasses_pou ON st_safety_bypasses(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_tribal_knowledge_type ON st_tribal_knowledge(type);
+CREATE INDEX IF NOT EXISTS idx_st_tribal_knowledge_importance ON st_tribal_knowledge(importance);
+CREATE INDEX IF NOT EXISTS idx_st_tribal_knowledge_pou ON st_tribal_knowledge(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_io_mappings_address ON st_io_mappings(address);
+CREATE INDEX IF NOT EXISTS idx_st_io_mappings_pou ON st_io_mappings(pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_call_graph_caller ON st_call_graph(caller_pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_call_graph_callee ON st_call_graph(callee_pou_id);
+CREATE INDEX IF NOT EXISTS idx_st_migration_scores_grade ON st_migration_scores(grade);
+CREATE INDEX IF NOT EXISTS idx_st_migration_scores_pou ON st_migration_scores(pou_id);
+
+-- ============================================================================
+-- IEC 61131-3 VIEWS
+-- ============================================================================
+
+-- ST Project status view
+CREATE VIEW IF NOT EXISTS v_st_status AS
+SELECT 
+  (SELECT COUNT(*) FROM st_files) as total_files,
+  (SELECT COUNT(*) FROM st_pous) as total_pous,
+  (SELECT COUNT(*) FROM st_pous WHERE type = 'PROGRAM') as programs,
+  (SELECT COUNT(*) FROM st_pous WHERE type = 'FUNCTION_BLOCK') as function_blocks,
+  (SELECT COUNT(*) FROM st_pous WHERE type = 'FUNCTION') as functions,
+  (SELECT COUNT(*) FROM st_state_machines) as state_machines,
+  (SELECT COUNT(*) FROM st_safety_interlocks) as safety_interlocks,
+  (SELECT COUNT(*) FROM st_safety_bypasses) as safety_bypasses,
+  (SELECT COUNT(*) FROM st_tribal_knowledge) as tribal_knowledge,
+  (SELECT COUNT(*) FROM st_docstrings) as docstrings,
+  (SELECT AVG(overall_score) FROM st_migration_scores) as avg_migration_score;
+
+-- Safety summary view
+CREATE VIEW IF NOT EXISTS v_st_safety_summary AS
+SELECT 
+  (SELECT COUNT(*) FROM st_safety_interlocks WHERE type = 'interlock') as interlocks,
+  (SELECT COUNT(*) FROM st_safety_interlocks WHERE type = 'estop') as estops,
+  (SELECT COUNT(*) FROM st_safety_interlocks WHERE type = 'permissive') as permissives,
+  (SELECT COUNT(*) FROM st_safety_interlocks WHERE type = 'safety-relay') as safety_relays,
+  (SELECT COUNT(*) FROM st_safety_interlocks WHERE type = 'safety-device') as safety_devices,
+  (SELECT COUNT(*) FROM st_safety_bypasses) as bypasses,
+  (SELECT COUNT(*) FROM st_safety_warnings WHERE severity = 'critical') as critical_warnings;
+
+-- Migration readiness view
+CREATE VIEW IF NOT EXISTS v_st_migration_readiness AS
+SELECT 
+  p.id as pou_id,
+  p.name as pou_name,
+  p.type as pou_type,
+  m.overall_score,
+  m.grade,
+  m.documentation_score,
+  m.safety_score,
+  m.complexity_score,
+  m.dependencies_score,
+  m.testability_score
+FROM st_pous p
+LEFT JOIN st_migration_scores m ON p.id = m.pou_id
+ORDER BY m.overall_score DESC;
+
+-- ============================================================================
+-- IEC 61131-3 FULL-TEXT SEARCH
+-- ============================================================================
+
+CREATE VIRTUAL TABLE IF NOT EXISTS fts_st_docstrings USING fts5(
+  pou_id,
+  summary,
+  description,
+  raw_text,
+  content='st_docstrings',
+  content_rowid='rowid'
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS fts_st_tribal_knowledge USING fts5(
+  pou_id,
+  type,
+  content,
+  context,
+  content='st_tribal_knowledge',
+  content_rowid='rowid'
+);
+
+-- ============================================================================
 -- SCHEMA VERSION
 -- ============================================================================
 

@@ -32,7 +32,8 @@ export type Language =
   | 'rust' 
   | 'cpp' 
   | 'csharp'
-  | 'wpf';
+  | 'wpf'
+  | 'iec61131';
 
 /**
  * Language detection markers
@@ -92,6 +93,11 @@ const LANGUAGE_MARKERS: Record<Language, {
     extensions: ['.xaml'],
     configFiles: [],
   },
+  iec61131: {
+    files: [],
+    extensions: ['.st', '.stx', '.scl', '.pou', '.exp'],
+    configFiles: [],
+  },
 };
 
 /**
@@ -108,6 +114,7 @@ const LANGUAGE_TOOLS: Record<Language, string[]> = {
   cpp: ['drift_cpp'],
   csharp: [], // No specific tool yet
   wpf: ['drift_wpf'],
+  iec61131: ['drift_iec61131'],
 };
 
 /**
@@ -170,6 +177,10 @@ const CORE_TOOLS = [
   'drift_decisions',
   'drift_constraints',
   'drift_constants',
+  'drift_audit',
+  
+  // Industrial Automation (IEC 61131-3)
+  'drift_iec61131',
   
   // Generation
   'drift_suggest_changes',

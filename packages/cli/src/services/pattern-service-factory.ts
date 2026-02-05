@@ -14,13 +14,11 @@
 import {
   PatternStore,
   createPatternServiceFromStore,
-  type IPatternService,
-} from 'driftdetect-core';
-import {
   createPatternStore,
   getStorageInfo,
+  type IPatternService,
   type PatternStoreInterface,
-} from 'driftdetect-core/storage';
+} from 'driftdetect-core';
 
 /**
  * Create a PatternService for CLI commands.

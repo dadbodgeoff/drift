@@ -58,6 +58,7 @@ import {
   setupCommand,
   backupCommand,
   importCommand,
+  stCommand,
 } from '../commands/index.js';
 import { VERSION } from '../index.js';
 
@@ -166,6 +167,9 @@ function createProgram(): Command {
 
   // Database Import (Phase 3)
   program.addCommand(importCommand);
+
+  // IEC 61131-3 Structured Text Analysis (Industrial Automation)
+  program.addCommand(stCommand);
 
   // Add help examples
   program.addHelpText(
@@ -288,6 +292,16 @@ Examples:
   $ drift backup restore <id>   Restore from a backup
   $ drift backup delete <id>    Delete a backup (requires typing DELETE)
   $ drift backup info <id>      Show backup details
+  $ drift st status             IEC 61131-3 project overview
+  $ drift st docstrings         Extract PLC documentation
+  $ drift st state-machines     Find CASE-based state machines
+  $ drift st safety             Analyze safety interlocks
+  $ drift st tribal             Extract tribal knowledge
+  $ drift st blocks             List all POUs
+  $ drift st variables          Extract all variables
+  $ drift st io-map             I/O address mappings
+  $ drift st ai-context         Generate AI migration context
+  $ drift st export report.json Export full analysis
 
 Documentation:
   https://github.com/drift/drift

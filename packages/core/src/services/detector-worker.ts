@@ -13,13 +13,97 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import {
-  createAllDetectorsArray,
-  type BaseDetector,
-  type DetectionContext,
-} from 'driftdetect-detectors';
-
 import type { Language, PatternMatch } from '../index.js';
+
+// ============================================================================
+// Dynamic Detector Import (breaks cyclic dependency with detectors package)
+// ============================================================================
+
+/**
+ * Detector types - defined locally to avoid static import from detectors package
+ */
+interface BaseDetector {
+  id: string;
+  getInfo(): {
+    name: string;
+    description: string;
+    category: string;
+    subcategory: string;
+    supportedLanguages: Language[];
+  };
+  detect(context: DetectionContext): Promise<{
+    patterns: PatternMatch[];
+    violations: Array<{
+      id: string;
+      patternId: string;
+      severity: 'error' | 'warning' | 'info' | 'hint';
+      file: string;
+      range: { start: { line: number; character: number }; end: { line: number; character: number } };
+      message: string;
+      expected: string;
+      actual: string;
+      explanation?: string;
+      aiExplainAvailable: boolean;
+      aiFixAvailable: boolean;
+      firstSeen: Date;
+      occurrences: number;
+    }>;
+    metadata?: { custom?: Record<string, unknown> };
+  }>;
+}
+
+interface DetectionContext {
+  file: string;
+  content: string;
+  language: Language;
+  ast: unknown;
+  imports: string[];
+  exports: string[];
+  extension: string;
+  isTestFile: boolean;
+  isTypeDefinition: boolean;
+  projectContext: {
+    rootDir: string;
+    files: string[];
+    config: Record<string, unknown>;
+  };
+}
+
+interface DetectorsModule {
+  createAllDetectorsArray: () => Promise<BaseDetector[]>;
+}
+
+let detectorsModule: DetectorsModule | null = null;
+let detectorsLoadPromise: Promise<DetectorsModule> | null = null;
+
+/**
+ * Dynamically load the detectors module
+ * This breaks the cyclic dependency between core and detectors packages
+ */
+async function loadDetectorsModule(): Promise<DetectorsModule> {
+  if (detectorsModule) {
+    return detectorsModule;
+  }
+  
+  if (detectorsLoadPromise) {
+    return detectorsLoadPromise;
+  }
+  
+  detectorsLoadPromise = import('driftdetect-detectors').then((mod) => {
+    detectorsModule = mod as unknown as DetectorsModule;
+    return detectorsModule;
+  });
+  
+  return detectorsLoadPromise;
+}
+
+/**
+ * Create all detectors array (dynamic wrapper)
+ */
+async function createAllDetectorsArray(): Promise<BaseDetector[]> {
+  const mod = await loadDetectorsModule();
+  return mod.createAllDetectorsArray();
+}
 
 // ============================================================================
 // Types

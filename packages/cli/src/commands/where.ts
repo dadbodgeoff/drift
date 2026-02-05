@@ -63,11 +63,11 @@ export const whereCommand = new Command('where')
       console.log(chalk.yellow(`No patterns found matching "${pattern}"`));
       
       // Show available categories
-      const categories = new Set(allPatternsResult.items.map(p => p.category));
+      const categories = new Set(allPatternsResult.items.map((p: { category: string }) => p.category));
       if (categories.size > 0) {
         console.log(chalk.dim('\nAvailable categories:'));
         for (const cat of categories) {
-          const count = allPatternsResult.items.filter(p => p.category === cat).length;
+          const count = allPatternsResult.items.filter((p: { category: string }) => p.category === cat).length;
           console.log(chalk.dim(`  ${cat}: ${count} patterns`));
         }
       }
@@ -96,7 +96,7 @@ export const whereCommand = new Command('where')
       const fullPattern = await service.getPattern(summary.id);
       if (!fullPattern) {continue;}
 
-      const locations = fullPattern.locations.slice(0, limit).map(loc => ({
+      const locations = fullPattern.locations.slice(0, limit).map((loc) => ({
         file: loc.file,
         hash: '',
         range: { start: loc.line, end: loc.endLine ?? loc.line },

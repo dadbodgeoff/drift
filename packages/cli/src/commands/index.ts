@@ -96,3 +96,6 @@ export { backupCommand } from './backup.js';
 
 // Database Import (Phase 3)
 export { importCommand } from './import.js';
+
+// IEC 61131-3 Structured Text Analysis (Industrial Automation)
+export { stCommand } from './st.js';

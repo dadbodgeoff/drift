@@ -20,6 +20,7 @@ export { JavaCallGraphExtractor } from './java-extractor.js';
 export { PhpCallGraphExtractor } from './php-extractor.js';
 export { GoCallGraphExtractor, createGoExtractor } from './go-extractor.js';
 export { RustCallGraphExtractor, createRustExtractor } from './rust-extractor.js';
+export { STCallGraphExtractor } from './st-extractor.js';
 
 // Hybrid Extractors (tree-sitter + regex fallback)
 export { HybridExtractorBase, type HybridExtractionResult } from './hybrid-extractor-base.js';

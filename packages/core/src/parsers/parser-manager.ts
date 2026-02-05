@@ -140,6 +140,12 @@ const EXTENSION_TO_LANGUAGE: Record<string, Language> = {
   '.md': 'markdown',
   '.markdown': 'markdown',
   '.mdx': 'markdown',
+  // IEC 61131-3 Structured Text
+  '.st': 'structured-text',
+  '.stx': 'structured-text',
+  '.scl': 'structured-text',  // Siemens SCL
+  '.pou': 'structured-text',  // Program Organization Unit
+  '.exp': 'structured-text',  // PLCopen XML export
 };
 
 const DEFAULT_OPTIONS: ParserManagerOptions = {
