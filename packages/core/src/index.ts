@@ -121,6 +121,7 @@ export type {
   PatternMatch,
   PatternMatchResult,
   AggregatedMatchResult,
+  Location,
   Location as MatchLocation,
   SourceRange,
 
@@ -2025,3 +2026,84 @@ export type {
   MigrationOptions as StorageMigrationOptions,
   MigrationResult as StorageMigrationResult,
 } from './storage/index.js';
+
+
+// ============================================================================
+// IEC 61131-3 Code Factory (Industrial Automation Analysis)
+// ============================================================================
+
+export {
+  // Main analyzer
+  IEC61131Analyzer,
+  createAnalyzer,
+  // Parser
+  STParser,
+  parseSTSource,
+  STTokenizer,
+  tokenize,
+  // Extractors
+  extractDocstrings,
+  extractDocstringsFromFiles,
+  extractStateMachines,
+  extractStateMachinesFromFiles,
+  extractSafetyInterlocks,
+  extractSafetyFromFiles,
+  extractTribalKnowledge,
+  extractTribalKnowledgeFromFiles,
+  extractVariables,
+  extractVariablesFromFiles,
+  // Utilities
+  generateId,
+  generateContentId,
+} from './iec61131/index.js';
+
+export type {
+  // Analyzer options
+  AnalyzerOptions,
+  // Parser types
+  ParseResult as STParseResult,
+  ParseError as STParseError,
+  ParseWarning as STParseWarning,
+  ParsedComment,
+  ParseMetadata,
+  ParseOptions as STParseOptions,
+  Token,
+  TokenType,
+  // Extractor result types
+  DocstringExtractionResult,
+  ExtractedDocstring,
+  DocstringQuality,
+  DocstringSummary,
+  DocstringExtractionOptions,
+  StateMachineExtractionResult,
+  ExtractedStateMachine,
+  StateMachineSummary,
+  StateMachineExtractionOptions,
+  SafetyExtractionResult,
+  SafetyExtractionOptions,
+  TribalKnowledgeExtractionResult,
+  ExtractedTribalKnowledge,
+  TribalKnowledgeSummary,
+  TribalKnowledgeExtractionOptions,
+  VariableExtractionResult,
+  ExtractedVariable,
+  VariableSummary,
+  VariableExtractionOptions,
+  // Core types
+  STProjectStatus,
+  STPOU,
+  SafetyAnalysisResult,
+  AnalysisOptions as STAnalysisOptions,
+  StateMachineState,
+  StateMachineTransition,
+  StateMachine,
+  SafetyInterlock,
+  SafetyBypass,
+  SafetyCriticalWarning,
+  TribalKnowledgeItem,
+  STVariable,
+  IOMapping,
+  STDocstring,
+  STDocParam,
+  STHistoryEntry,
+} from './iec61131/index.js';

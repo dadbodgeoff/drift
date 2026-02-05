@@ -111,6 +111,7 @@ import { executeTypeScriptTool, type TypeScriptArgs } from './tools/analysis/typ
 import { executePythonTool, type PythonArgs } from './tools/analysis/python.js';
 import { executeJavaTool, type JavaArgs } from './tools/analysis/java.js';
 import { executePhpTool, type PhpArgs } from './tools/analysis/php.js';
+import { executeIEC61131Tool, type IEC61131Args } from './tools/analysis/iec61131.js';
 import { handleQualityGate } from './tools/analysis/quality-gate.js';
 import { ALL_TOOLS, TOOL_CATEGORIES } from './tools/registry.js';
 
@@ -760,6 +761,9 @@ async function routeToolCall(
 
     case 'drift_php':
       return executePhpTool(args as unknown as PhpArgs, { projectRoot });
+
+    case 'drift_iec61131':
+      return executeIEC61131Tool(args as unknown as IEC61131Args, { projectRoot });
 
     case 'drift_constants':
       return handleConstants(projectRoot, args as Parameters<typeof handleConstants>[1]);

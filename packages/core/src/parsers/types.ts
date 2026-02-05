@@ -18,7 +18,8 @@ export type Language =
   | 'scss'
   | 'json'
   | 'yaml'
-  | 'markdown';
+  | 'markdown'
+  | 'structured-text';
 
 export interface ParseResult {
   /** The parsed AST */

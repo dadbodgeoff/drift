@@ -47,7 +47,7 @@ import {
 
 import { createBoundaryScanner, type BoundaryScanResult } from '../services/boundary-scanner.js';
 import { createContractScanner } from '../services/contract-scanner.js';
-import { createScannerService, type ProjectContext, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
+import { createScannerService, type AggregatedPattern, type AggregatedViolation } from '../services/scanner-service.js';
 import { createSpinner, status } from '../ui/spinner.js';
 import { createPatternsTable, type PatternRow } from '../ui/table.js';
 
@@ -782,19 +782,20 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
   
   try {
     await scannerService.initialize();
-    const counts = scannerService.getDetectorCounts();
+    const counts = await scannerService.getDetectorCounts();
+    const totalAvailable = Object.values(counts).reduce((sum, n) => sum + n, 0);
     const workerInfo = scannerService.isUsingWorkerThreads() 
       ? chalk.green(` [${scannerService.getWorkerThreadCount()} worker threads]`)
       : chalk.yellow(' [single-threaded]');
-    initSpinner.succeed(`Loaded ${scannerService.getDetectorCount()} detectors (${counts.total} available)${workerInfo}`);
+    initSpinner.succeed(`Loaded ${scannerService.getDetectorCount()} detectors (${totalAvailable} available)${workerInfo}`);
   } catch (error) {
     initSpinner.fail('Failed to load detectors');
     console.error(chalk.red((error as Error).message));
     process.exit(1);
   }
 
-  // Create project context
-  const projectContext: ProjectContext = {
+  // Create project context for scanner service
+  const scannerProjectContext = {
     rootDir,
     files,
     config: {},
@@ -811,7 +812,7 @@ async function scanSingleProject(rootDir: string, options: ScanCommandOptions, q
   try {
     healthMonitor.start();
     const scanResults = await healthMonitor.withTimeout(
-      scannerService.scanFiles(files, projectContext)
+      scannerService.scanFiles(files, scannerProjectContext)
     );
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);

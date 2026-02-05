@@ -18,7 +18,8 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { getDefaultIgnoreDirectories } from 'driftdetect-core';
 import { createPatternStore, type PatternStoreInterface } from 'driftdetect-core/storage';
-import { createAllDetectorsArray, type BaseDetector } from 'driftdetect-detectors';
+import { createAllDetectorsArray } from 'driftdetect-detectors';
+import type { BaseDetector } from 'driftdetect-detectors';
 
 import type { Pattern, PatternCategory } from 'driftdetect-core';
 
@@ -474,11 +475,11 @@ function mergePatternIntoStore(
   if (existingPattern) {
     // Phase 2: Smart merge - update existing pattern
     // Remove old locations from this file, add new ones
-    const otherFileLocations = existingPattern.locations.filter(loc => loc.file !== file);
+    const otherFileLocations = existingPattern.locations.filter((loc: { file: string }) => loc.file !== file);
     const mergedLocations = [...otherFileLocations, ...detected.locations].slice(0, 100);
     
     // Same for outliers - filter to only include required fields
-    const otherFileOutliers = existingPattern.outliers.filter(o => o.file !== file);
+    const otherFileOutliers = existingPattern.outliers.filter((o: { file: string }) => o.file !== file);
     const mergedOutliers = [
       ...otherFileOutliers,
       ...newOutliers,
@@ -548,12 +549,12 @@ function removeFileFromStore(store: PatternStoreInterface, file: string): void {
   const allPatterns = store.getAll();
   
   for (const pattern of allPatterns) {
-    const hasLocationsInFile = pattern.locations.some(loc => loc.file === file);
-    const hasOutliersInFile = pattern.outliers.some(o => o.file === file);
+    const hasLocationsInFile = pattern.locations.some((loc: { file: string }) => loc.file === file);
+    const hasOutliersInFile = pattern.outliers.some((o: { file: string }) => o.file === file);
     
     if (hasLocationsInFile || hasOutliersInFile) {
-      const newLocations = pattern.locations.filter(loc => loc.file !== file);
-      const newOutliers = pattern.outliers.filter(o => o.file !== file);
+      const newLocations = pattern.locations.filter((loc: { file: string }) => loc.file !== file);
+      const newOutliers = pattern.outliers.filter((o: { file: string }) => o.file !== file);
       
       if (newLocations.length === 0 && newOutliers.length === 0) {
         // Pattern has no more locations - delete it

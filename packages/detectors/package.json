@@ -41,7 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "driftdetect-core": "0.9.45"
+    "driftdetect-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

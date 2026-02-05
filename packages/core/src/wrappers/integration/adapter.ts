@@ -49,6 +49,7 @@ export function mapLanguage(lang: CallGraphLanguage): SupportedLanguage | null {
     go: null, // Go wrapper detection not yet implemented
     rust: 'rust',
     cpp: 'cpp',
+    'structured-text': null, // ST wrapper detection not yet implemented
   };
   return mapping[lang];
 }

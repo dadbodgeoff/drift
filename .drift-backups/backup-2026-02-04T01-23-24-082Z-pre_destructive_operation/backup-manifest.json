@@ -1,0 +1,32 @@
+{
+  "id": "a032d236",
+  "driftVersion": "0.9.48",
+  "schemaVersion": "2.0.0",
+  "createdAt": "2026-02-04T01:23:24.161Z",
+  "reason": "pre_destructive_operation",
+  "sizeBytes": 39629544,
+  "checksum": "78f61599bbfa03839566c8c30b02a4830f7e5f1c9d5aef3e2211a6e82168af40",
+  "originalPath": "/Users/geoffreyfernald/drift/drift/.drift",
+  "projectName": "drift",
+  "compressed": true,
+  "files": [
+    "audit/degradation.json",
+    "audit/latest.json",
+    "audit/snapshots/2026-02-04.json",
+    "config.json",
+    "dna/styling.json",
+    "drift.db",
+    "drift.db-shm",
+    "drift.db-wal",
+    "error-handling/analysis.json",
+    "lake/callgraph/callgraph.db",
+    "lake/callgraph/callgraph.db-shm",
+    "lake/callgraph/callgraph.db-wal",
+    "manifest.json",
+    "memory/cortex.db",
+    "module-coupling/graph.json",
+    "source-of-truth.json",
+    "test-topology/summary.json",
+    "views/status.json"
+  ]
+}

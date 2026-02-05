@@ -39,13 +39,17 @@
     "./wrappers": {
       "types": "./dist/wrappers/index.d.ts",
       "import": "./dist/wrappers/index.js"
+    },
+    "./iec61131": {
+      "types": "./dist/iec61131/index.d.ts",
+      "import": "./dist/iec61131/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc && cp src/storage/schema.sql dist/storage/schema.sql",
+    "build": "tsc && mkdir -p dist/storage && cp src/storage/schema.sql dist/storage/schema.sql",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
@@ -60,7 +64,6 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",
-    "driftdetect-detectors": "workspace:0.9.47",
     "ignore": "^5.3.1",
     "minimatch": "^9.0.3",
     "piscina": "^5.1.4",
@@ -88,5 +91,13 @@
     "fast-check": "^3.15.0",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "driftdetect-detectors": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "driftdetect-detectors": {
+      "optional": true
+    }
   }
 }

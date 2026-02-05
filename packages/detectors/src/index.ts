@@ -1680,3 +1680,10 @@ export function createAllPerformanceSemanticDetectors() {
     createBundleSizeSemanticDetector(),
   ];
 }
+
+
+// ============================================================================
+// IEC 61131-3 Structured Text Detectors (Industrial Automation)
+// ============================================================================
+
+export * from './iec61131/index.js';

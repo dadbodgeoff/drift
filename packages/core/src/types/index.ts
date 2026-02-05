@@ -21,6 +21,9 @@ export type {
 // Analysis types
 export * from './analysis.js';
 
+// Contract types (BE↔FE mismatch detection)
+export * from './contracts.js';
+
 // Common types (selective re-export to avoid conflicts)
 export type { Severity, PatternCategory, PatternStatus } from './common.js';
 export type { Language } from '../parsers/types.js';

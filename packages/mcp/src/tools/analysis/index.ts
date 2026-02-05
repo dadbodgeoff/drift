@@ -22,6 +22,7 @@ const TYPESCRIPT_ACTIONS = ['status', 'routes', 'components', 'hooks', 'errors',
 const PYTHON_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'decorators', 'async'];
 const JAVA_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'annotations'];
 const PHP_ACTIONS = ['status', 'routes', 'errors', 'data-access', 'traits'];
+const IEC61131_ACTIONS = ['status', 'docstrings', 'state-machines', 'safety', 'tribal-knowledge', 'blocks', 'all'];
 
 const DECISION_CATEGORIES = [
   'technology-adoption', 'technology-removal', 'pattern-introduction',
@@ -622,6 +623,37 @@ export const ANALYSIS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 'drift_iec61131',
+    description: 'Analyze IEC 61131-3 industrial automation code (Structured Text). Extract docstrings, state machines, safety interlocks, and tribal knowledge from legacy PLC codebases. Actions: status (project overview), docstrings (extract documentation - PhD primary request), state-machines (CASE-based state machines), safety (interlocks and bypasses), tribal-knowledge (warnings, workarounds, institutional knowledge), blocks (PROGRAM/FUNCTION_BLOCK/FUNCTION), all (full analysis).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: IEC61131_ACTIONS,
+          description: 'Action to perform: status, docstrings, state-machines, safety, tribal-knowledge, blocks, all',
+        },
+        path: {
+          type: 'string',
+          description: 'File or directory path (defaults to project root)',
+        },
+        file: {
+          type: 'string',
+          description: 'Specific .st file to analyze',
+        },
+        limit: {
+          type: 'number',
+          description: 'Limit number of results (default: 50)',
+        },
+        includeRaw: {
+          type: 'boolean',
+          description: 'Include raw docstring text in output (default: false)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 export { handleTestTopology, type TestTopologyArgs, type TestTopologyAction } from './test-topology.js';
@@ -641,3 +673,4 @@ export { executePythonTool, type PythonArgs, type PythonAction } from './python.
 export { executeJavaTool, type JavaArgs, type JavaAction } from './java.js';
 export { executePhpTool, type PhpArgs, type PhpAction } from './php.js';
 export { handleAudit, auditTool, type AuditArgs } from './audit.js';
+export { executeIEC61131Tool, type IEC61131Args, type IEC61131Action } from './iec61131.js';

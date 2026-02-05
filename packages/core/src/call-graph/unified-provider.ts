@@ -294,6 +294,7 @@ export class UnifiedCallGraphProvider {
         go: 0,
         rust: 0,
         cpp: 0,
+        'structured-text': 0,
       };
       
       return {
