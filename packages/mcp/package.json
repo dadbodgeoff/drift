@@ -56,7 +56,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "driftdetect-core": "0.9.47",
     "driftdetect-cortex": "0.9.47",
     "driftdetect-detectors": "0.9.47",
