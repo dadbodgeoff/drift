@@ -19,12 +19,100 @@ import {
   isNativeAvailable,
   analyzeWrappersWithFallback,
 } from 'driftdetect-core';
-import {
-  createWrapperScanner,
-  type WrapperScanResult,
-  type WrapperCluster,
-  type WrapperFunction,
-} from 'driftdetect-core/wrappers';
+
+// =============================================================================
+// Local Type Definitions (to avoid subpath import issues)
+// =============================================================================
+
+type WrapperCategory = 
+  | 'state-management'
+  | 'data-fetching'
+  | 'side-effects'
+  | 'authentication'
+  | 'authorization'
+  | 'validation'
+  | 'dependency-injection'
+  | 'middleware'
+  | 'testing'
+  | 'logging'
+  | 'caching'
+  | 'error-handling'
+  | 'async-utilities'
+  | 'form-handling'
+  | 'routing'
+  | 'factory'
+  | 'decorator'
+  | 'utility'
+  | 'other';
+
+interface WrapperFunction {
+  name: string;
+  qualifiedName: string;
+  file: string;
+  line: number;
+  language: 'typescript' | 'python' | 'java' | 'csharp' | 'php' | 'rust' | 'cpp';
+  directPrimitives: string[];
+  transitivePrimitives: string[];
+  primitiveSignature: string[];
+  depth: number;
+  callsWrappers: string[];
+  calledBy: string[];
+  isFactory: boolean;
+  isHigherOrder: boolean;
+  isDecorator: boolean;
+  isAsync: boolean;
+}
+
+interface WrapperCluster {
+  id: string;
+  name: string;
+  category: WrapperCategory;
+  description: string;
+  confidence: number;
+  primitiveSignature: string[];
+  wrappers: WrapperFunction[];
+  avgDepth: number;
+  maxDepth: number;
+  totalUsages: number;
+  fileSpread: number;
+  suggestedNames: string[];
+}
+
+interface FrameworkInfo {
+  name: string;
+  primitiveCount: number;
+}
+
+interface WrapperScanResult {
+  analysis: {
+    clusters: WrapperCluster[];
+    wrappers: WrapperFunction[];
+    frameworks: FrameworkInfo[];
+    primitives: unknown[];
+    factories: unknown[];
+    decoratorWrappers: unknown[];
+    asyncWrappers: unknown[];
+    summary: {
+      totalWrappers: number;
+      totalClusters: number;
+      avgDepth: number;
+      maxDepth: number;
+      mostWrappedPrimitive: string;
+      mostUsedWrapper: string;
+      wrappersByLanguage: Record<string, number>;
+      wrappersByCategory: Record<WrapperCategory, number>;
+    };
+  };
+  stats: {
+    totalFiles: number;
+    totalFunctions: number;
+    totalCalls: number;
+    totalImports: number;
+    byLanguage: Record<string, number>;
+  };
+  duration: number;
+  errors: string[];
+}
 
 // =============================================================================
 // Command Definition
@@ -44,10 +132,10 @@ export const wrappersCommand = new Command('wrappers')
     const rootDir = path.resolve(options.dir);
     const verbose = options.verbose || false;
     const jsonOutput = options.json || false;
-    const includeTests = options.includeTests || false;
+    // Note: includeTests and maxDepth options are parsed but not yet used
+    // They are reserved for future implementation
     const minConfidence = parseFloat(options.minConfidence);
     const minClusterSize = parseInt(options.minClusterSize, 10);
-    const maxDepth = parseInt(options.maxDepth, 10);
     const categoryFilter = options.category;
 
     if (!jsonOutput) {
@@ -206,37 +294,13 @@ export const wrappersCommand = new Command('wrappers')
           return;
         } catch (nativeError) {
           if (verbose) {
-            console.log(chalk.gray(`Native analyzer failed, using TypeScript fallback: ${(nativeError as Error).message}\n`));
+            console.log(chalk.gray(`Native analyzer failed: ${(nativeError as Error).message}\n`));
           }
-          // Fall through to TypeScript implementation
+          throw nativeError;
         }
-      }
-
-      // TypeScript fallback
-      const scanner = createWrapperScanner({
-        rootDir,
-        includeTestFiles: includeTests,
-        verbose,
-      });
-
-      const result = await scanner.scan({
-        minConfidence,
-        minClusterSize,
-        maxDepth,
-        includeTestFiles: includeTests,
-      });
-
-      // Filter by category if specified
-      if (categoryFilter) {
-        result.analysis.clusters = result.analysis.clusters.filter(
-          (c: WrapperCluster) => c.category === categoryFilter
-        );
-      }
-
-      if (jsonOutput) {
-        console.log(JSON.stringify(result, null, 2));
       } else {
-        printResults(result, verbose);
+        // Native analyzer not available
+        throw new Error('Native wrapper analyzer not available. Please ensure the Rust native module is built.');
       }
     } catch (error) {
       if (jsonOutput) {
