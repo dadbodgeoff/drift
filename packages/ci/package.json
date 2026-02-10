@@ -29,9 +29,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@octokit/rest": "^20.0.0",
-    "@octokit/webhooks": "^12.0.0",
-    "commander": "^11.0.0",
+    "@octokit/rest": "^22.0.1",
+    "@octokit/webhooks": "^14.2.0",
+    "commander": "^14.0.3",
     "driftdetect-core": "0.9.47",
     "driftdetect-cortex": "0.9.47",
     "driftdetect-detectors": "0.9.47",
