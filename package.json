@@ -1,0 +1,37 @@
+{
+  "private": true,
+  "name": "driftv2",
+  "version": "0.1.0",
+  "description": "Drift V2 — AI-native code analysis and quality enforcement",
+  "workspaces": [
+    "crates/drift/drift-napi",
+    "crates/cortex/cortex-napi",
+    "packages/drift-napi-contracts",
+    "packages/drift",
+    "packages/drift-cli",
+    "packages/drift-mcp",
+    "packages/drift-ci",
+    "packages/cortex"
+  ],
+  "scripts": {
+    "build:napi": "cd crates/drift/drift-napi && npm run build",
+    "build:napi:debug": "cd crates/drift/drift-napi && npm run build:debug",
+    "build:cortex-napi": "cd crates/cortex/cortex-napi && npm run build",
+    "build:cortex-napi:debug": "cd crates/cortex/cortex-napi && npm run build:debug",
+    "build:contracts": "cd packages/drift-napi-contracts && npm run build",
+    "build:core": "cd packages/drift && npm run build",
+    "build:cli": "cd packages/drift-cli && npm run build",
+    "build:mcp": "cd packages/drift-mcp && npm run build",
+    "build:ci": "cd packages/drift-ci && npm run build",
+    "build:cortex": "cd packages/cortex && npm run build",
+    "build:ts": "npm run build:contracts && npm run build:core && npm run build:cortex && npm run build:cli && npm run build:mcp && npm run build:ci",
+    "build": "npm run build:napi && npm run build:ts",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
