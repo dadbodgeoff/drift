@@ -61,3 +61,4 @@ crates/drift/drift-napi/index.d.ts
 .env
 .env.local
 .env.*.local
+.env.cloud
