@@ -25,7 +25,7 @@
     "build:ci": "cd packages/drift-ci && npm run build",
     "build:cortex": "cd packages/cortex && npm run build",
     "build:ts": "npm run build:contracts && npm run build:core && npm run build:cortex && npm run build:cli && npm run build:mcp && npm run build:ci",
-    "build": "npm run build:napi && npm run build:ts",
+    "build": "npm run build:napi && npm run build:cortex-napi && npm run build:ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present"
