@@ -1,0 +1,22 @@
+{
+  "id": "1566d2c1",
+  "driftVersion": "0.9.48",
+  "schemaVersion": "2.0.0",
+  "createdAt": "2026-02-12T19:11:03.000Z",
+  "reason": "audit test",
+  "sizeBytes": 8838742,
+  "checksum": "bd0506f5140d4542dc14262b7d95c6a5084e848b3dad39f022a4d6941a28ac59",
+  "originalPath": "/Users/geoffreyfernald/drift2/.drift",
+  "projectName": "drift2",
+  "compressed": true,
+  "files": [
+    "config.json",
+    "drift.db",
+    "indexes/by-category.json",
+    "indexes/by-file.json",
+    "manifest.json",
+    "views/pattern-index.json",
+    "views/security-summary.json",
+    "views/status.json"
+  ]
+}
