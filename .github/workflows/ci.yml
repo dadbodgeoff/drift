@@ -1,0 +1,199 @@
+# ============================================================================
+# Drift V2 — CI Pipeline
+# ============================================================================
+# Triggers: push to main, PRs
+# Jobs:
+#   1. rust-check   — cargo check + clippy + test across all 3 Rust workspaces
+#   2. ts-check     — typecheck + vitest for all TS packages
+#   3. napi-build   — build native binaries for 4 platforms
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ── Rust: check + clippy + test ──────────────────────────────────────────
+  rust-check:
+    name: Rust (${{ matrix.workspace }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace:
+          - crates/drift
+          - crates/cortex
+          - crates/cortex-drift-bridge
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ${{ matrix.workspace }}/target/
+          key: ${{ runner.os }}-cargo-${{ matrix.workspace }}-${{ hashFiles(format('{0}/Cargo.lock', matrix.workspace)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.workspace }}-
+
+      - name: cargo check
+        working-directory: ${{ matrix.workspace }}
+        run: cargo check --workspace
+
+      - name: cargo clippy
+        working-directory: ${{ matrix.workspace }}
+        run: cargo clippy --workspace -- -D warnings
+
+      - name: cargo test
+        working-directory: ${{ matrix.workspace }}
+        run: cargo test --workspace
+
+  # ── TypeScript: typecheck + vitest ───────────────────────────────────────
+  ts-check:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install workspace dependencies
+        run: |
+          for pkg in packages/drift-napi-contracts packages/drift-cli packages/drift-mcp packages/drift-ci packages/cortex; do
+            if [ -f "$pkg/package-lock.json" ]; then
+              cd "$pkg" && npm ci --ignore-scripts && cd -
+            elif [ -f "$pkg/package.json" ]; then
+              cd "$pkg" && npm install --ignore-scripts && cd -
+            fi
+          done
+
+      - name: Typecheck all packages
+        run: |
+          cd packages/drift-napi-contracts && npx tsc --noEmit && cd -
+          cd packages/drift-cli && npx tsc --noEmit && cd -
+          cd packages/drift-mcp && npx tsc --noEmit && cd -
+          cd packages/drift-ci && npx tsc --noEmit && cd -
+          cd packages/cortex && npx tsc --noEmit && cd -
+
+      - name: Test drift-napi-contracts
+        working-directory: packages/drift-napi-contracts
+        run: npx vitest run
+
+      - name: Test drift-cli
+        working-directory: packages/drift-cli
+        run: npx vitest run
+
+      - name: Test drift-mcp
+        working-directory: packages/drift-mcp
+        run: npx vitest run
+
+      - name: Test drift-ci
+        working-directory: packages/drift-ci
+        run: npx vitest run
+
+  # ── NAPI: build native binaries per platform ─────────────────────────────
+  napi-build:
+    name: NAPI (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-14
+          - target: x86_64-apple-darwin
+            os: macos-13
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install cross-compilation tools (aarch64-linux)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            crates/drift/target/
+            crates/cortex/target/
+          key: ${{ runner.os }}-napi-${{ matrix.target }}-${{ hashFiles('crates/drift/Cargo.lock', 'crates/cortex/Cargo.lock') }}
+
+      # ── drift-napi ──
+      - name: Install drift-napi deps
+        working-directory: crates/drift/drift-napi
+        run: npm install
+
+      - name: Build drift-napi binary
+        working-directory: crates/drift/drift-napi
+        run: npx napi build --platform --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Upload drift-napi artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-napi-${{ matrix.target }}
+          path: crates/drift/drift-napi/*.node
+          if-no-files-found: error
+
+      # ── cortex-napi ──
+      - name: Install cortex-napi deps
+        working-directory: crates/cortex/cortex-napi
+        run: npm install
+
+      - name: Build cortex-napi binary
+        working-directory: crates/cortex/cortex-napi
+        run: npx napi build --platform --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Upload cortex-napi artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-napi-${{ matrix.target }}
+          path: crates/cortex/cortex-napi/*.node
+          if-no-files-found: error
