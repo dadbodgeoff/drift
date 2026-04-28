@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/dadbodgeoff-drift-badge.png)](https://mseep.ai/app/dadbodgeoff-drift)
+
 # Drift
 
 Codebase intelligence for AI. Detects patterns & conventions + remembers decisions across sessions. MCP server for any IDE. Offline CLI.
