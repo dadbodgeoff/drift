@@ -124,6 +124,11 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         repo_id,
         task,
         policy: authorizeContextExport(contract, "mcp"),
+        contract: {
+          id: contract.id,
+          schema_version: contract.contract_schema_version,
+          updated_at: contract.updated_at
+        },
         conventions: contract.conventions.map((convention) => ({
           id: convention.id,
           kind: convention.kind,
@@ -134,9 +139,20 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           matcher: convention.matcher,
           exceptions: convention.exceptions
         })),
+        baseline: baselineSummary(storage, repo_id),
         findings: storage.listFindings(repo_id).filter((finding) =>
           !["fixed", "false_positive", "suppressed"].includes(finding.status)
-        )
+        ),
+        required_checks: contract.required_checks,
+        safe_commands: contract.safe_commands,
+        redactions: {
+          denied_globs: contract.context_egress.denied_globs,
+          snippets_included: false
+        },
+        next_commands: [
+          `drift check --repo ${repo_id} --diff main...HEAD --scope changed-hunks --json`,
+          `drift findings list --repo ${repo_id} --json`
+        ]
       };
     }),
 
@@ -321,6 +337,33 @@ function requiredContract(contract: RepoContract | undefined, repoId: string): R
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
   return contract;
+}
+
+function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: string): {
+  active_count: number;
+  resolved_count: number;
+  by_convention: Array<{ convention_id: string; active_count: number; resolved_count: number }>;
+} {
+  const rows = storage.listBaselineViolations(repoId);
+  const byConvention = new Map<string, { active_count: number; resolved_count: number }>();
+  for (const row of rows) {
+    const counts = byConvention.get(row.convention_id) ?? { active_count: 0, resolved_count: 0 };
+    if (row.status === "active") {
+      counts.active_count += 1;
+    } else {
+      counts.resolved_count += 1;
+    }
+    byConvention.set(row.convention_id, counts);
+  }
+
+  return {
+    active_count: rows.filter((row) => row.status === "active").length,
+    resolved_count: rows.filter((row) => row.status === "resolved").length,
+    by_convention: [...byConvention.entries()].map(([convention_id, counts]) => ({
+      convention_id,
+      ...counts
+    }))
+  };
 }
 
 function authorizeContextExport(

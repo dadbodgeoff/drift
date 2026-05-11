@@ -73,8 +73,16 @@ async function seedMcpDatabase(): Promise<string> {
     rejected_inferences: [],
     waivers: [],
     risky_areas: [],
-    safe_commands: [],
-    required_checks: [],
+    safe_commands: [{
+      command: "pnpm test",
+      reason: "Run project tests after changing API routes.",
+      requires_explicit_run: true
+    }],
+    required_checks: [{
+      command: "drift check --diff main...HEAD",
+      applies_to: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+      reason: "Validate accepted API route conventions."
+    }],
     context_egress: {
       default_mode: "local_only",
       denied_globs: [".env*", "**/*.pem"],
@@ -96,6 +104,17 @@ async function seedMcpDatabase(): Promise<string> {
     diff_status: "new_in_diff",
     evidence_refs: [],
     created_at: "2026-05-10T00:00:05.000Z"
+  });
+  storage.upsertBaselineViolation({
+    id: "baseline_abc",
+    repo_id: "repo_abc",
+    convention_id: "convention_no_direct_db",
+    finding_fingerprint: "finding-fp",
+    file_path: "apps/web/app/api/users/route.ts",
+    first_seen_scan_id: "scan_abc",
+    first_seen_commit: "abc123",
+    status: "active",
+    created_at: "2026-05-10T00:00:06.000Z"
   });
   storage.close();
   return databasePath;
@@ -119,9 +138,24 @@ describe("read-only MCP handlers", () => {
       contract: { id: "contract_abc" }
     });
     expect(handlers.get_task_preflight({ repo_id: "repo_abc", task: "add users route" })).toMatchObject({
+      contract: {
+        id: "contract_abc",
+        schema_version: 1
+      },
       policy: { allowed: true, surface: "mcp" },
       conventions: [{ id: "convention_no_direct_db" }],
-      findings: [{ id: "finding_abc" }]
+      baseline: { active_count: 1 },
+      findings: [{ id: "finding_abc" }],
+      required_checks: [{ command: "drift check --diff main...HEAD" }],
+      safe_commands: [{ command: "pnpm test" }],
+      redactions: {
+        denied_globs: [".env*", "**/*.pem"],
+        snippets_included: false
+      },
+      next_commands: [
+        "drift check --repo repo_abc --diff main...HEAD --scope changed-hunks --json",
+        "drift findings list --repo repo_abc --json"
+      ]
     });
     expect(handlers.get_conventions({ repo_id: "repo_abc" })).toMatchObject({
       conventions: [{ id: "convention_no_direct_db" }]
@@ -201,6 +235,8 @@ describe("read-only MCP handlers", () => {
     expect(JSON.parse(text)).toMatchObject({
       repo_id: "repo_abc",
       policy: { allowed: true },
+      contract: { id: "contract_abc" },
+      baseline: { active_count: 1 },
       conventions: [{ id: "convention_no_direct_db" }]
     });
     expect(rejected?.error?.message).toContain("Unknown read-only Drift MCP tool");
