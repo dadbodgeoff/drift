@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
@@ -139,6 +140,64 @@ afterEach(async () => {
 });
 
 describe("read-only MCP handlers", () => {
+  it("reports source-file staleness in scan status", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-mcp-status-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const routePath = join(repoRoot, "apps/web/app/api/users/route.ts");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    const initialSource = "export async function GET() { return Response.json({ ok: true }); }\n";
+    await writeFile(routePath, initialSource);
+
+    const databasePath = join(dir, "drift.sqlite");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: repoRoot,
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "unknown",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: createHash("sha256").update(initialSource).digest("hex"),
+      byte_size: Buffer.byteLength(initialSource),
+      indexed: true
+    });
+    storage.close();
+
+    await writeFile(routePath, "export async function GET() { return Response.json({ changed: true }); }\n");
+
+    expect(createReadOnlyMcpHandlers({ databasePath }).get_scan_status({ repo_id: "repo_abc" })).toMatchObject({
+      stale: true,
+      invalidation_reasons: [],
+      changes: {
+        added: [],
+        modified: ["apps/web/app/api/users/route.ts"],
+        deleted: []
+      }
+    });
+  });
+
   it("returns scan, contract, preflight, findings, and policy context without mutating state", async () => {
     const databasePath = await seedMcpDatabase();
     const handlers = createReadOnlyMcpHandlers({ databasePath });

@@ -1,4 +1,4 @@
-import type { Finding, FindingStatus, PolicyDecision, RepoContract, ScanManifest, Severity } from "@drift/core";
+import type { FileSnapshot, Finding, FindingStatus, PolicyDecision, RepoContract, ScanManifest, Severity } from "@drift/core";
 import { authorizeContextExport } from "@drift/core";
 import {
   DRIFT_RULE_ENGINE_VERSION,
@@ -6,6 +6,9 @@ import {
   DRIFT_TYPESCRIPT_ADAPTER_VERSION
 } from "@drift/core";
 import { openDriftStorage } from "@drift/storage";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { createInterface } from "node:readline";
 
 export interface DriftMcpOptions {
@@ -139,14 +142,22 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       const latestScan = scans[0] ?? null;
       const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
       const policy = optionalAuthorizedMcpPolicy(storage, repo_id);
+      const changes = repo && latestScan
+        ? compareSnapshotsToCurrentFiles(repo.root_path, storage.listFileSnapshots(repo_id, latestScan.id))
+        : emptyChanges();
       return {
         repo_id,
         policy,
         repo_root: repo?.root_path ?? null,
         latest_scan: latestScan,
         scan_count: scans.length,
-        stale: !latestScan || invalidationReasons.length > 0,
-        invalidation_reasons: invalidationReasons
+        stale: !latestScan ||
+          invalidationReasons.length > 0 ||
+          changes.added.length > 0 ||
+          changes.modified.length > 0 ||
+          changes.deleted.length > 0,
+        invalidation_reasons: invalidationReasons,
+        changes
       };
     }),
 
@@ -433,6 +444,90 @@ function scanInvalidationReasons(scan: ScanManifest): string[] {
     reasons.push("rule_engine_version_changed");
   }
   return reasons;
+}
+
+function emptyChanges(): { added: string[]; modified: string[]; deleted: string[] } {
+  return { added: [], modified: [], deleted: [] };
+}
+
+function compareSnapshotsToCurrentFiles(
+  repoRoot: string,
+  snapshots: FileSnapshot[]
+): { added: string[]; modified: string[]; deleted: string[] } {
+  if (!existsSync(repoRoot)) {
+    return emptyChanges();
+  }
+
+  const previous = new Map(snapshots.map((snapshot) => [snapshot.file_path, snapshot]));
+  const currentFiles = walkIndexableFiles(repoRoot);
+  const current = new Set(currentFiles);
+  const added: string[] = [];
+  const modified: string[] = [];
+  const deleted: string[] = [];
+
+  for (const filePath of currentFiles) {
+    const snapshot = previous.get(filePath);
+    if (!snapshot) {
+      added.push(filePath);
+      continue;
+    }
+    if (fileContentHash(join(repoRoot, filePath)) !== snapshot.content_hash) {
+      modified.push(filePath);
+    }
+  }
+
+  for (const filePath of previous.keys()) {
+    if (!current.has(filePath)) {
+      deleted.push(filePath);
+    }
+  }
+
+  return {
+    added: added.sort(),
+    modified: modified.sort(),
+    deleted: deleted.sort()
+  };
+}
+
+function walkIndexableFiles(repoRoot: string): string[] {
+  const files: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (shouldSkipPath(entry.name)) {
+        continue;
+      }
+
+      const absolutePath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        visit(absolutePath);
+      } else if (entry.isFile() && isTypescriptPath(entry.name)) {
+        files.push(relative(repoRoot, absolutePath).replaceAll("\\", "/"));
+      }
+    }
+  };
+  visit(repoRoot);
+  return files.sort();
+}
+
+function shouldSkipPath(name: string): boolean {
+  return [
+    ".git",
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    "target",
+    "vendor"
+  ].includes(name);
+}
+
+function isTypescriptPath(filePath: string): boolean {
+  return /\.[cm]?[jt]sx?$/.test(filePath);
+}
+
+function fileContentHash(absolutePath: string): string {
+  return createHash("sha256").update(readFileSync(absolutePath)).digest("hex");
 }
 
 function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: string): {
