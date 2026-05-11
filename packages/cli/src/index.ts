@@ -80,6 +80,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return scanRepo(storage, parsed);
   }
 
+  if (group === "start") {
+    return startRepo(storage, parsed);
+  }
+
   if (group === "conventions" && command === "list") {
     const repoId = requiredFlag(parsed, "repo");
     const status = stringFlag(parsed, "status");
@@ -257,6 +261,42 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       candidates_count: candidates.length
     },
     database_path: requiredDatabasePath(parsed)
+  };
+}
+
+function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const result = scanRepo(storage, parsed);
+  const candidate = result.candidates[0];
+  const text = [
+    "Drift is ready for this repo.",
+    "",
+    `Scanned ${result.summary.files_indexed} files.`,
+    `Stored ${result.summary.facts_count} facts.`,
+    `Found ${result.summary.candidates_count} convention candidate${result.summary.candidates_count === 1 ? "" : "s"}.`,
+    "",
+    candidate
+      ? [
+          "Top candidate:",
+          `  ${candidate.id}`,
+          `  ${candidate.statement}`,
+          `  Evidence: ${candidate.scoring.supporting_examples_count} matching import${candidate.scoring.supporting_examples_count === 1 ? "" : "s"}.`
+        ].join("\n")
+      : "No enforceable convention candidates found yet.",
+    "",
+    "State:",
+    `  export DRIFT_DB=${result.database_path}`,
+    "",
+    "Next commands:",
+    `  drift conventions list --repo ${result.repo.id} --status candidate`,
+    candidate
+      ? `  drift conventions accept ${candidate.id} --severity error --mode block`
+      : "  drift scan",
+    `  drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`,
+    ""
+  ].join("\n");
+
+  return {
+    payload: parsed.flags.has("json") ? result : text
   };
 }
 
@@ -685,6 +725,9 @@ function auditEvent(input: {
 }
 
 function formatOutput(payload: unknown, parsed: ParsedArgs): string {
+  if (typeof payload === "string") {
+    return payload.endsWith("\n") ? payload : `${payload}\n`;
+  }
   if (parsed.flags.has("json")) {
     return `${JSON.stringify(payload, null, 2)}\n`;
   }
@@ -697,7 +740,7 @@ function resolveDatabasePath(parsed: ParsedArgs): string | undefined {
     return explicit;
   }
 
-  if (parsed.positional[0] === "init" || parsed.positional[0] === "scan") {
+  if (["init", "scan", "start"].includes(parsed.positional[0] ?? "")) {
     return defaultDatabasePath(resolveRepoRoot(parsed), parsed);
   }
 
@@ -960,6 +1003,20 @@ function helpText(parsed: ParsedArgs): string {
       "",
       "What scan does:",
       "  registers the repo, snapshots TS/JS files, stores facts, and proposes deterministic convention candidates.",
+      ""
+    ].join("\n");
+  }
+
+  if (parsed.positional[0] === "start") {
+    return [
+      "Start Drift onboarding",
+      "",
+      "Usage:",
+      "  drift start --repo-root .",
+      "  drift start --repo-root . --state-root ~/.drift/repos",
+      "",
+      "What start does:",
+      "  creates local state, scans the repo, stores facts, proposes candidates, and prints next commands.",
       ""
     ].join("\n");
   }

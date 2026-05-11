@@ -207,6 +207,36 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("starts onboarding in one command with a clear next-step summary", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-start-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:20.000Z"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Drift is ready for this repo.");
+    expect(result.stdout).toContain("drift conventions list");
+    expect(result.stdout).toContain("drift check --diff main...HEAD");
+  });
+
   it("prints clean help without requiring a database", async () => {
     const result = await runCli(["--help"]);
 
