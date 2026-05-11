@@ -639,6 +639,39 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("lists audit events as JSON", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.appendAuditEvent({
+      id: "audit_event_abc",
+      repo_id: "repo_abc",
+      actor: "geoff",
+      action: "finding_resolved",
+      target_type: "finding",
+      target_id: "finding_abc",
+      metadata: { evidence: "apps/web/app/api/users/route.ts:12" },
+      created_at: "2026-05-10T00:00:03.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).events[0]).toMatchObject({
+      action: "finding_resolved",
+      actor: "geoff",
+      target_type: "finding",
+      target_id: "finding_abc",
+      metadata: { evidence: "apps/web/app/api/users/route.ts:12" }
+    });
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);

@@ -163,6 +163,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return markFindingFixed(storage, parsed, findingId);
   }
 
+  if (group === "audit" && command === "list") {
+    return listAudit(storage, parsed);
+  }
+
   if (group === "check") {
     return runCheck(storage, parsed);
   }
@@ -609,6 +613,23 @@ function markFindingFixed(
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatFindingFixedText(payload)
+  };
+}
+
+function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const limit = optionalPositiveIntegerFlag(parsed, "limit");
+  const events = storage
+    .listAuditEvents(repoId)
+    .slice(-(limit ?? Number.POSITIVE_INFINITY));
+  const payload = {
+    repo_id: repoId,
+    count: events.length,
+    events
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatAuditListText(payload)
   };
 }
 
@@ -1132,6 +1153,24 @@ function formatFindingFixedText(payload: { finding: Finding; evidence: string })
     `Finding: ${payload.finding.id}`,
     `Status: ${payload.finding.status}`,
     `Evidence: ${payload.evidence}`,
+    ""
+  ].join("\n");
+}
+
+function formatAuditListText(payload: {
+  repo_id: string;
+  count: number;
+  events: AuditEvent[];
+}): string {
+  return [
+    "Drift audit log",
+    "",
+    `Repo: ${payload.repo_id}`,
+    `Events: ${payload.count}`,
+    "",
+    ...payload.events.map((event) =>
+      `${event.created_at} ${event.action} ${event.target_type}:${event.target_id} by ${event.actor}`
+    ),
     ""
   ].join("\n");
 }
@@ -1949,6 +1988,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "audit") {
+    return [
+      "Inspect audit log",
+      "",
+      "Usage:",
+      "  drift --db <path> audit list --repo <repo_id> --json",
+      "  drift --db <path> audit list --repo <repo_id> --limit 20 --json",
+      "",
+      "Notes:",
+      "  audit list is read-only and returns append-only governance events.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "baseline") {
     return [
       "Manage baselines",
@@ -1982,6 +2035,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",
     "  drift findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
+    "  drift audit list --repo <repo_id> --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",
@@ -2277,6 +2331,18 @@ function withFlags(parsed: ParsedArgs, flags: Record<string, string>): ParsedArg
 
 function requiredFlag(parsed: ParsedArgs, key: string): string {
   return requiredValue(stringFlag(parsed, key), `--${key}`);
+}
+
+function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | undefined {
+  const value = stringFlag(parsed, key);
+  if (!value) {
+    return undefined;
+  }
+  const parsedValue = Number(value);
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new Error(`--${key} must be a positive integer.`);
+  }
+  return parsedValue;
 }
 
 function stringFlag(parsed: ParsedArgs, key: string): string | undefined {
