@@ -504,6 +504,51 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("emits machine-readable onboarding state and next commands for start --json", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-start-json-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.onboarding).toMatchObject({
+      status: "ready",
+      accepted_default: true,
+      baselined_count: 1
+    });
+    expect(payload.state).toMatchObject({
+      repo_root: repoRoot
+    });
+    expect(payload.state.database_path).toContain("drift.sqlite");
+    expect(payload.next_commands).toEqual([
+      `drift contract show --repo ${payload.repo.id}`,
+      `drift baseline status --repo ${payload.repo.id}`,
+      `drift prepare "task" --repo ${payload.repo.id} --json`,
+      `drift check --diff main...HEAD --repo ${payload.repo.id} --scope changed-hunks`
+    ]);
+  });
+
   it("runs doctor before local state exists and prints a clean next command", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-doctor-"));
     tempDirs.push(dir);

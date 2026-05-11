@@ -513,6 +513,37 @@ function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
   const baselinedCount = accepted
     ? createBaselineForFindings(storage, parsed, result.repo.id, initialFindings).created_count
     : 0;
+  const nextCommands = accepted
+    ? [
+        `drift contract show --repo ${result.repo.id}`,
+        `drift baseline status --repo ${result.repo.id}`,
+        `drift prepare "task" --repo ${result.repo.id} --json`,
+        `drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`
+      ]
+    : [
+        `drift conventions list --repo ${result.repo.id} --status candidate`,
+        candidate
+          ? `drift conventions accept ${candidate.id} --severity error --mode block`
+          : "drift scan",
+        `drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`
+      ];
+  const onboardingPayload = {
+    ...result,
+    accepted,
+    baselined_count: baselinedCount,
+    onboarding: {
+      status: accepted ? "ready" : candidate ? "needs_convention_review" : "needs_more_signal",
+      accepted_default: Boolean(accepted),
+      baselined_count: baselinedCount,
+      candidate_count: result.candidates.length
+    },
+    state: {
+      repo_id: result.repo.id,
+      repo_root: result.repo.root_path,
+      database_path: result.database_path
+    },
+    next_commands: nextCommands
+  };
   const text = [
     "Drift is ready for this repo.",
     "",
@@ -539,20 +570,12 @@ function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
     `  export DRIFT_DB=${result.database_path}`,
     "",
     "Next commands:",
-    accepted
-      ? `  drift contract show --repo ${result.repo.id}`
-      : `  drift conventions list --repo ${result.repo.id} --status candidate`,
-    accepted
-      ? `  drift baseline status --repo ${result.repo.id}`
-      : candidate
-        ? `  drift conventions accept ${candidate.id} --severity error --mode block`
-        : "  drift scan",
-    `  drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`,
+    ...nextCommands.map((command) => `  ${command}`),
     ""
   ].join("\n");
 
   return {
-    payload: parsed.flags.has("json") ? { ...result, accepted, baselined_count: baselinedCount } : text
+    payload: parsed.flags.has("json") ? onboardingPayload : text
   };
 }
 
