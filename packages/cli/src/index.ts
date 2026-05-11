@@ -2217,6 +2217,7 @@ function baselineStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   by_convention: Array<{ convention_id: string; active_count: number; resolved_count: number }>;
 } {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const rows = storage.listBaselineViolations(repoId);
   const byConvention = new Map<string, { active_count: number; resolved_count: number }>();
 
@@ -2246,6 +2247,7 @@ function clearBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
 } {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const conventionId = requiredFlag(parsed, "convention");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";

@@ -1020,6 +1020,29 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(status.stdout).active_count).toBe(1);
   });
 
+  it("refuses baseline status and clear for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const status = await runCli([
+      "--db", databasePath,
+      "baseline", "status",
+      "--repo", "repo_missing",
+      "--json"
+    ]);
+    const cleared = await runCli([
+      "--db", databasePath,
+      "baseline", "clear",
+      "--repo", "repo_missing",
+      "--convention", "convention_no_direct_db",
+      "--json"
+    ]);
+
+    expect(status.exitCode).toBe(1);
+    expect(status.stderr).toContain("Unknown repo repo_missing");
+    expect(cleared.exitCode).toBe(1);
+    expect(cleared.stderr).toContain("Unknown repo repo_missing");
+  });
+
   it("prints focused baseline help without requiring a database", async () => {
     const result = await runCli(["baseline", "--help"]);
 
