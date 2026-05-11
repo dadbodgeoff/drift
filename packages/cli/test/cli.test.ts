@@ -423,7 +423,7 @@ describe("drift CLI convention review", () => {
     storage.upsertScanManifest({
       id: "scan_old",
       repo_id: "repo_abc",
-      branch: "main",
+      branch: "unknown",
       commit: "abc123",
       dirty: false,
       scanner_version: "0.0.1",
@@ -461,6 +461,66 @@ describe("drift CLI convention review", () => {
       "adapter_version_changed:typescript",
       "rule_engine_version_changed"
     ]);
+  });
+
+  it("marks scan status stale when the current branch differs from the scanned branch", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-branch-stale-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const databasePath = join(dir, "drift.sqlite");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      "export async function GET() { return Response.json({ ok: true }); }\n"
+    );
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: repoRoot,
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_branch",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_branch",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: "not-used-by-test",
+      byte_size: 64,
+      indexed: true
+    });
+    storage.close();
+
+    const status = await runCli([
+      "--db", databasePath,
+      "scan", "status",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(status.exitCode).toBe(0);
+    expect(JSON.parse(status.stdout)).toMatchObject({
+      stale: true,
+      current_branch: "unknown",
+      invalidation_reasons: ["branch_changed"]
+    });
   });
 
   it("starts onboarding in one command with a clear next-step summary", async () => {

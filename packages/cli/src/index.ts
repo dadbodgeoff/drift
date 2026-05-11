@@ -481,7 +481,8 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
   const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
   const changes = compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
-  const invalidationReasons = scanInvalidationReasons(latestScan);
+  const currentBranch = gitOutput(repo.root_path, ["branch", "--show-current"]) || "unknown";
+  const invalidationReasons = scanInvalidationReasons(latestScan, { currentBranch });
   const stale = changes.added.length > 0 ||
     changes.modified.length > 0 ||
     changes.deleted.length > 0 ||
@@ -489,6 +490,7 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
   const payload = {
     repo_id: repoId,
     repo_root: repo.root_path,
+    current_branch: currentBranch,
     latest_scan: latestScan,
     stale,
     invalidation_reasons: invalidationReasons,
@@ -2295,8 +2297,14 @@ function compareSnapshotsToCurrentFiles(
   };
 }
 
-function scanInvalidationReasons(scan: ScanManifest): string[] {
+function scanInvalidationReasons(
+  scan: ScanManifest,
+  input: { currentBranch?: string } = {}
+): string[] {
   const reasons: string[] = [];
+  if (input.currentBranch && scan.branch !== input.currentBranch) {
+    reasons.push("branch_changed");
+  }
   if (scan.scanner_version !== DRIFT_SCANNER_VERSION) {
     reasons.push("scanner_version_changed");
   }
