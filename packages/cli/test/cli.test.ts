@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
@@ -143,6 +143,70 @@ afterEach(async () => {
 });
 
 describe("drift CLI convention review", () => {
+  it("initializes a repo with a default local database path", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-init-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(repoRoot, { recursive: true });
+
+    const result = await runCli([
+      "init",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:00.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.repo.id).toMatch(/^repo_/);
+    expect(payload.database_path).toContain("drift.sqlite");
+    await expect(stat(payload.database_path)).resolves.toBeTruthy();
+  });
+
+  it("scans a repo, stores snapshots and facts, and infers the first convention candidate", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-scan-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "import { createUser } from \"@/services/users\";",
+        "",
+        "export async function POST() {",
+        "  return Response.json(await createUser(prisma));",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.summary.files_indexed).toBe(1);
+    expect(payload.summary.facts_count).toBeGreaterThan(0);
+    expect(payload.candidates[0].kind).toBe("api_route_no_direct_data_access");
+
+    const storage = openDriftStorage({ databasePath: payload.database_path });
+    storage.migrate();
+    expect(storage.getRepo(payload.repo.id)?.root_path).toBe(repoRoot);
+    expect(storage.getScanManifest(payload.scan.id)?.status).toBe("completed");
+    expect(storage.listFacts(payload.scan.id, { kind: "import_used" })).toHaveLength(2);
+    expect(storage.listConventionCandidates(payload.repo.id, { status: "candidate" })).toHaveLength(1);
+    storage.close();
+  });
+
   it("prints clean help without requiring a database", async () => {
     const result = await runCli(["--help"]);
 
@@ -302,6 +366,16 @@ describe("drift CLI convention review", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Manage baselines");
     expect(result.stdout).toContain("baseline create");
+  });
+
+  it("prints focused init and scan help without requiring a database", async () => {
+    const init = await runCli(["init", "--help"]);
+    const scan = await runCli(["scan", "--help"]);
+
+    expect(init.exitCode).toBe(0);
+    expect(init.stdout).toContain("Create local Drift state");
+    expect(scan.exitCode).toBe(0);
+    expect(scan.stdout).toContain("Scan a repo");
   });
 
   it("lists findings as JSON", async () => {

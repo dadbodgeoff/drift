@@ -3,9 +3,12 @@ import type {
   AuditEvent,
   ConventionCandidate,
   EnforcementMode,
+  FactRecord,
+  FileSnapshot,
   Finding,
   FindingDiffStatus,
   FindingStatus,
+  RepoRecord,
   RepoContract,
   ScanManifest,
   Severity
@@ -13,8 +16,9 @@ import type {
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, join, relative, resolve } from "node:path";
 
 export interface CliResult {
   exitCode: number;
@@ -39,7 +43,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       return { exitCode: 0, stdout: helpText(parsed), stderr: "" };
     }
 
-    const databasePath = stringFlag(parsed, "db") ?? process.env.DRIFT_DB;
+    const databasePath = resolveDatabasePath(parsed);
     if (!databasePath) {
       throw new Error("Missing --db <path> or DRIFT_DB. Run drift --help.");
     }
@@ -67,6 +71,14 @@ export async function runCli(argv: string[]): Promise<CliResult> {
 
 function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | CommandPayload {
   const [group, command, maybeId] = parsed.positional;
+
+  if (group === "init") {
+    return initRepo(storage, parsed);
+  }
+
+  if (group === "scan") {
+    return scanRepo(storage, parsed);
+  }
 
   if (group === "conventions" && command === "list") {
     const repoId = requiredFlag(parsed, "repo");
@@ -133,6 +145,119 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
+}
+
+function initRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  repo: RepoRecord;
+  database_path: string;
+} {
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const repoRoot = resolveRepoRoot(parsed);
+  const repo = repoRecordForRoot(repoRoot, now);
+  storage.upsertRepo(repo);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_repo_added_${repo.id}_${now}`,
+    repoId: repo.id,
+    actor: stringFlag(parsed, "actor") ?? "local-user",
+    action: "repo_added",
+    targetType: "repo",
+    targetId: repo.id,
+    metadata: { root_path: repoRoot },
+    createdAt: now
+  }));
+
+  return {
+    repo,
+    database_path: requiredDatabasePath(parsed)
+  };
+}
+
+function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  repo: RepoRecord;
+  scan: ScanManifest;
+  candidates: ConventionCandidate[];
+  summary: {
+    files_indexed: number;
+    facts_count: number;
+    candidates_count: number;
+  };
+  database_path: string;
+} {
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const repoRoot = resolveRepoRoot(parsed);
+  const repo = repoRecordForRoot(repoRoot, now);
+  storage.upsertRepo(repo);
+
+  const files = walkIndexableFiles(repoRoot);
+  const scanId = `scan_${hashStable(`${repo.id}:${now}`).slice(0, 16)}`;
+  const facts = files.flatMap((filePath) =>
+    extractFactsFromFile({
+      repoId: repo.id,
+      scanId,
+      repoRoot,
+      filePath
+    })
+  );
+  const snapshots = files.map((filePath) =>
+    fileSnapshotForFile({ repoId: repo.id, scanId, repoRoot, filePath })
+  );
+  const candidates = inferConventionCandidates({
+    repoId: repo.id,
+    scanId,
+    facts,
+    now
+  });
+  const scan: ScanManifest = {
+    id: scanId,
+    repo_id: repo.id,
+    branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
+    commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
+    dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
+    scanner_version: "0.1.0",
+    adapter_versions: { typescript: "0.1.0" },
+    rule_engine_version: "0.1.0",
+    status: "completed",
+    file_count: files.length,
+    fact_count: facts.length,
+    finding_count: 0,
+    started_at: now,
+    completed_at: now
+  };
+
+  storage.upsertScanManifest(scan);
+  for (const snapshot of snapshots) {
+    storage.upsertFileSnapshot(snapshot);
+  }
+  storage.upsertFacts(facts);
+  for (const candidate of candidates) {
+    storage.upsertConventionCandidate(candidate);
+  }
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_scan_completed_${repo.id}_${scanId}`,
+    repoId: repo.id,
+    actor: stringFlag(parsed, "actor") ?? "local-user",
+    action: "scan_completed",
+    targetType: "scan",
+    targetId: scanId,
+    metadata: {
+      files_indexed: files.length,
+      facts_count: facts.length,
+      candidates_count: candidates.length
+    },
+    createdAt: now
+  }));
+
+  return {
+    repo,
+    scan,
+    candidates,
+    summary: {
+      files_indexed: files.length,
+      facts_count: facts.length,
+      candidates_count: candidates.length
+    },
+    database_path: requiredDatabasePath(parsed)
+  };
 }
 
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
@@ -566,6 +691,234 @@ function formatOutput(payload: unknown, parsed: ParsedArgs): string {
   return `${JSON.stringify(payload)}\n`;
 }
 
+function resolveDatabasePath(parsed: ParsedArgs): string | undefined {
+  const explicit = stringFlag(parsed, "db") ?? process.env.DRIFT_DB;
+  if (explicit) {
+    return explicit;
+  }
+
+  if (parsed.positional[0] === "init" || parsed.positional[0] === "scan") {
+    return defaultDatabasePath(resolveRepoRoot(parsed), parsed);
+  }
+
+  return undefined;
+}
+
+function requiredDatabasePath(parsed: ParsedArgs): string {
+  return requiredValue(resolveDatabasePath(parsed), "database path");
+}
+
+function resolveRepoRoot(parsed: ParsedArgs): string {
+  return resolve(stringFlag(parsed, "repo-root") ?? process.cwd());
+}
+
+function defaultDatabasePath(repoRoot: string, parsed: ParsedArgs): string {
+  const stateRoot = resolve(
+    stringFlag(parsed, "state-root") ??
+      process.env.DRIFT_STATE_ROOT ??
+      join(homedir(), ".drift", "repos")
+  );
+  const repoId = repoIdForRoot(repoRoot);
+  const dir = join(stateRoot, repoId);
+  mkdirSync(dir, { recursive: true });
+  return join(dir, "drift.sqlite");
+}
+
+function repoRecordForRoot(repoRoot: string, now: string): RepoRecord {
+  return {
+    id: repoIdForRoot(repoRoot),
+    root_path: repoRoot,
+    fingerprint: hashStable(repoRoot),
+    created_at: now,
+    updated_at: now
+  };
+}
+
+function repoIdForRoot(repoRoot: string): string {
+  return `repo_${hashStable(resolve(repoRoot)).slice(0, 16)}`;
+}
+
+function hashStable(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function walkIndexableFiles(repoRoot: string): string[] {
+  const files: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (shouldSkipPath(entry.name)) {
+        continue;
+      }
+
+      const absolutePath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        visit(absolutePath);
+      } else if (entry.isFile() && isTypescriptPath(entry.name)) {
+        files.push(relative(repoRoot, absolutePath).replaceAll("\\", "/"));
+      }
+    }
+  };
+  visit(repoRoot);
+  return files.sort();
+}
+
+function shouldSkipPath(name: string): boolean {
+  return [
+    ".git",
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    "target",
+    "vendor"
+  ].includes(name);
+}
+
+function isTypescriptPath(filePath: string): boolean {
+  return /\.[cm]?[jt]sx?$/.test(filePath);
+}
+
+function extractFactsFromFile(input: {
+  repoId: string;
+  scanId: string;
+  repoRoot: string;
+  filePath: string;
+}): FactRecord[] {
+  const source = readFileSync(join(input.repoRoot, input.filePath), "utf8");
+  const facts: FactRecord[] = [
+    factRecord(input, "file_detected", basename(input.filePath), undefined, 1, 1)
+  ];
+
+  if (isApiRoutePath(input.filePath)) {
+    facts.push(factRecord(input, "file_role_detected", "api_route", undefined, 1, 1));
+  }
+
+  for (const importUsed of extractImports(source)) {
+    facts.push(
+      factRecord(
+        input,
+        "import_used",
+        importUsed.name,
+        importUsed.source,
+        importUsed.line,
+        importUsed.line
+      )
+    );
+  }
+
+  return facts;
+}
+
+function factRecord(
+  input: { repoId: string; scanId: string; filePath: string },
+  kind: FactRecord["kind"],
+  name: string,
+  value: string | undefined,
+  startLine: number,
+  endLine: number
+): FactRecord {
+  const id = `fact_${hashStable(`${input.scanId}:${input.filePath}:${kind}:${name}:${value ?? ""}:${startLine}`).slice(0, 16)}`;
+  return {
+    id,
+    repo_id: input.repoId,
+    scan_id: input.scanId,
+    kind,
+    file_path: input.filePath,
+    name,
+    value,
+    start_line: startLine,
+    end_line: endLine
+  };
+}
+
+function fileSnapshotForFile(input: {
+  repoId: string;
+  scanId: string;
+  repoRoot: string;
+  filePath: string;
+}): FileSnapshot {
+  const absolutePath = join(input.repoRoot, input.filePath);
+  const source = readFileSync(absolutePath);
+  return {
+    repo_id: input.repoId,
+    scan_id: input.scanId,
+    file_path: input.filePath,
+    content_hash: createHash("sha256").update(source).digest("hex"),
+    byte_size: statSync(absolutePath).size,
+    indexed: true
+  };
+}
+
+function inferConventionCandidates(input: {
+  repoId: string;
+  scanId: string;
+  facts: FactRecord[];
+  now: string;
+}): ConventionCandidate[] {
+  const apiRouteFiles = new Set(
+    input.facts
+      .filter((fact) => fact.kind === "file_role_detected" && fact.name === "api_route")
+      .map((fact) => fact.file_path)
+  );
+  const dataImports = input.facts.filter((fact) =>
+    fact.kind === "import_used" &&
+    apiRouteFiles.has(fact.file_path) &&
+    fact.value &&
+    looksLikeDataAccessImport(fact.value)
+  );
+
+  if (dataImports.length === 0) {
+    return [];
+  }
+
+  const forbiddenImports = [...new Set(dataImports.map((fact) => fact.value).filter(Boolean))] as string[];
+  return [{
+    id: `candidate_${hashStable(`${input.repoId}:api_route_no_direct_data_access:${forbiddenImports.join(",")}`).slice(0, 16)}`,
+    repo_id: input.repoId,
+    scan_id: input.scanId,
+    kind: "api_route_no_direct_data_access",
+    statement: "API routes should not import data-access clients directly.",
+    rationale: "Detected API route imports that look like database/data-access clients.",
+    scope: {
+      path_globs: ["**/app/api/**/route.ts", "**/app/api/**/route.tsx", "**/pages/api/**/*.ts"],
+      file_roles: ["api_route"]
+    },
+    matcher: {
+      kind: "api_route_no_direct_data_access",
+      forbidden_imports: forbiddenImports,
+      applies_to_file_roles: ["api_route"]
+    },
+    suggested_severity: "error",
+    suggested_enforcement_mode: "block",
+    enforcement_capability: "deterministic_check",
+    confidence_label: "high",
+    scoring: {
+      supporting_examples_count: dataImports.length,
+      counterexamples_count: 0,
+      scope_files_count: apiRouteFiles.size,
+      coverage_ratio: apiRouteFiles.size === 0 ? 0 : dataImports.length / apiRouteFiles.size,
+      heuristic_id: "direct-data-access-import-v1"
+    },
+    evidence_refs: [],
+    counterexample_refs: [],
+    status: "candidate",
+    created_at: input.now
+  }];
+}
+
+function looksLikeDataAccessImport(importSource: string): boolean {
+  return /(^|\/|@)(db|database|prisma|drizzle|typeorm|sequelize)(\/|$)/i.test(importSource);
+}
+
+function gitOutput(repoRoot: string, args: string[]): string {
+  try {
+    return execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return "";
+  }
+}
+
 function normalizeCommandResult(result: unknown | CommandPayload): CommandPayload {
   if (isCommandPayload(result)) {
     return result;
@@ -582,6 +935,35 @@ function isHelpRequest(parsed: ParsedArgs): boolean {
 }
 
 function helpText(parsed: ParsedArgs): string {
+  if (parsed.positional[0] === "init") {
+    return [
+      "Create local Drift state",
+      "",
+      "Usage:",
+      "  drift init --repo-root . --json",
+      "  drift init --repo-root . --state-root ~/.drift/repos --json",
+      "",
+      "Notes:",
+      "  init creates or opens the local SQLite database and registers the repo.",
+      "  without --db, Drift stores state under ~/.drift/repos/<repo_id>/drift.sqlite.",
+      ""
+    ].join("\n");
+  }
+
+  if (parsed.positional[0] === "scan") {
+    return [
+      "Scan a repo",
+      "",
+      "Usage:",
+      "  drift scan --repo-root . --json",
+      "  drift scan --repo-root . --state-root ~/.drift/repos --json",
+      "",
+      "What scan does:",
+      "  registers the repo, snapshots TS/JS files, stores facts, and proposes deterministic convention candidates.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "check") {
     return [
       "Run deterministic checks",
