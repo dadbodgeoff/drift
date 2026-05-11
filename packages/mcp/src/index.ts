@@ -219,10 +219,12 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
 
     get_findings: ({ repo_id, status, severity }) => withStorage(options, (storage) => {
       const { policy } = requiredAuthorizedMcpContract(storage, repo_id);
+      const requestedStatus = validateFindingStatus(status);
+      const requestedSeverity = validateSeverity(severity);
       const allFindings = storage.listFindings(repo_id);
       const findings = allFindings.filter((finding) =>
-        (!status || finding.status === status) &&
-        (!severity || finding.severity === severity)
+        (!requestedStatus || finding.status === requestedStatus) &&
+        (!requestedSeverity || finding.severity === requestedSeverity)
       );
       return {
         repo_id,
@@ -569,6 +571,34 @@ function findingsSummary(allFindings: Finding[], filteredFindings: Finding[]): {
     by_status: countBy(allFindings, (finding) => finding.status),
     by_severity: countBy(allFindings, (finding) => finding.severity)
   };
+}
+
+function validateFindingStatus(status: FindingStatus | undefined): FindingStatus | undefined {
+  if (!status) {
+    return undefined;
+  }
+  if (
+    status === "new" ||
+    status === "pre_existing" ||
+    status === "needs_review" ||
+    status === "fixed" ||
+    status === "false_positive" ||
+    status === "accepted_drift" ||
+    status === "suppressed"
+  ) {
+    return status;
+  }
+  throw new Error("status must be new, pre_existing, needs_review, fixed, false_positive, accepted_drift, or suppressed.");
+}
+
+function validateSeverity(severity: Severity | undefined): Severity | undefined {
+  if (!severity) {
+    return undefined;
+  }
+  if (severity === "info" || severity === "warning" || severity === "error") {
+    return severity;
+  }
+  throw new Error("severity must be info, warning, or error.");
 }
 
 function countBy<T, K extends string>(

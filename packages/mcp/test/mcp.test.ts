@@ -267,6 +267,14 @@ describe("read-only MCP handlers", () => {
       },
       findings: [{ id: "finding_abc" }]
     });
+    expect(() => handlers.get_findings({
+      repo_id: "repo_abc",
+      status: "open" as never
+    })).toThrow("status must be");
+    expect(() => handlers.get_findings({
+      repo_id: "repo_abc",
+      severity: "critical" as never
+    })).toThrow("severity must be");
     expect(handlers.get_allowed_context({ repo_id: "repo_abc", path: ".env.local" })).toMatchObject({
       decision: { allowed: false, mode: "denied" }
     });
