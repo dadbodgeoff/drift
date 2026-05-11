@@ -8,6 +8,7 @@ import type {
   Finding,
   FindingDiffStatus,
   FindingStatus,
+  PolicyDecision,
   RepoRecord,
   RepoContract,
   ScanManifest,
@@ -91,6 +92,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "start") {
     return startRepo(storage, parsed);
+  }
+
+  if (group === "prepare") {
+    return prepareTask(storage, parsed);
   }
 
   if (group === "conventions" && command === "list") {
@@ -417,6 +422,95 @@ function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
   };
 }
 
+interface PreparedConvention {
+  id: string;
+  kind: AcceptedConvention["kind"];
+  statement: string;
+  severity: Severity;
+  enforcement_mode: EnforcementMode;
+  enforcement_capability: AcceptedConvention["enforcement_capability"];
+  scope: AcceptedConvention["scope"];
+  matcher: AcceptedConvention["matcher"];
+  exceptions: AcceptedConvention["exceptions"];
+  agent_instruction: string;
+}
+
+interface RelevantFile {
+  path: string;
+  roles: string[];
+  reasons: string[];
+}
+
+function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const task = requiredValue(parsed.positional.slice(1).join(" ").trim(), "task");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
+  const contract = storage.getRepoContract(repoId);
+  if (!contract) {
+    throw new Error(`No repo contract exists for ${repoId}.`);
+  }
+
+  const policy = authorizeContextExport(contract, "cli-preflight");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied prepare output: ${policy.reason}`);
+  }
+
+  const conventions = contract.conventions.map(preparedConvention);
+  const findings = storage
+    .listFindings(repoId)
+    .filter((finding) => !["fixed", "false_positive", "suppressed"].includes(finding.status))
+    .map((finding) => ({
+      id: finding.id,
+      convention_id: finding.convention_id,
+      title: finding.title,
+      severity: finding.severity,
+      status: finding.status,
+      diff_status: finding.diff_status,
+      enforcement_result: finding.enforcement_result
+    }));
+  const baseline = baselineSummary(storage, repoId);
+  const relevantFiles = relevantFilesForTask({
+    repoRoot: repo.root_path,
+    task,
+    contract
+  });
+  const redactions = {
+    denied_globs: contract.context_egress.denied_globs,
+    excluded_file_count: countDeniedFiles(repo.root_path, contract.context_egress.denied_globs),
+    snippets_included: false
+  };
+  const payload = {
+    repo_id: repoId,
+    task,
+    generated_at: now,
+    policy,
+    contract: {
+      id: contract.id,
+      schema_version: contract.contract_schema_version,
+      updated_at: contract.updated_at
+    },
+    conventions,
+    baseline,
+    findings,
+    relevant_files: relevantFiles,
+    required_checks: contract.required_checks,
+    safe_commands: contract.safe_commands,
+    redactions,
+    next_commands: [
+      `drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`,
+      `drift findings list --repo ${repoId} --json`
+    ]
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPrepareText(payload)
+  };
+}
+
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = requiredFlag(parsed, "repo");
   const repo = storage.getRepo(repoId);
@@ -682,6 +776,180 @@ function createBaselineForFindings(
   }));
 
   return { created_count: createdCount };
+}
+
+function authorizeContextExport(
+  contract: RepoContract,
+  surface: PolicyDecision["surface"]
+): PolicyDecision {
+  const mode = contract.context_egress.default_mode;
+  if (mode === "approval_required") {
+    return {
+      allowed: false,
+      surface,
+      mode,
+      reason: "context export requires approval",
+      max_snippet_chars: contract.context_egress.max_snippet_chars
+    };
+  }
+
+  return {
+    allowed: true,
+    surface,
+    mode,
+    reason: "metadata-only local preflight packet",
+    max_snippet_chars: contract.context_egress.max_snippet_chars
+  };
+}
+
+function preparedConvention(convention: AcceptedConvention): PreparedConvention {
+  return {
+    id: convention.id,
+    kind: convention.kind,
+    statement: convention.statement,
+    severity: convention.severity,
+    enforcement_mode: convention.enforcement_mode,
+    enforcement_capability: convention.enforcement_capability,
+    scope: convention.scope,
+    matcher: convention.matcher,
+    exceptions: convention.exceptions,
+    agent_instruction: instructionForConvention(convention)
+  };
+}
+
+function instructionForConvention(convention: AcceptedConvention): string {
+  if (convention.kind === "api_route_no_direct_data_access") {
+    const forbidden = (convention.matcher.forbidden_imports ?? []).join(", ");
+    return [
+      "When editing API route files, do not import data-access clients directly.",
+      forbidden ? `Forbidden imports: ${forbidden}.` : "",
+      "Delegate through the repo's accepted service/data-access layer and run drift check before finishing."
+    ].filter(Boolean).join(" ");
+  }
+
+  return `${convention.statement} Follow its scope, matcher, and exceptions.`;
+}
+
+function baselineSummary(storage: SqliteDriftStorage, repoId: string): {
+  active_count: number;
+  resolved_count: number;
+  by_convention: Array<{ convention_id: string; active_count: number; resolved_count: number }>;
+} {
+  const rows = storage.listBaselineViolations(repoId);
+  const byConvention = new Map<string, { active_count: number; resolved_count: number }>();
+  for (const row of rows) {
+    const counts = byConvention.get(row.convention_id) ?? { active_count: 0, resolved_count: 0 };
+    if (row.status === "active") {
+      counts.active_count += 1;
+    } else {
+      counts.resolved_count += 1;
+    }
+    byConvention.set(row.convention_id, counts);
+  }
+
+  return {
+    active_count: rows.filter((row) => row.status === "active").length,
+    resolved_count: rows.filter((row) => row.status === "resolved").length,
+    by_convention: [...byConvention.entries()].map(([convention_id, counts]) => ({
+      convention_id,
+      ...counts
+    }))
+  };
+}
+
+function relevantFilesForTask(input: {
+  repoRoot: string;
+  task: string;
+  contract: RepoContract;
+}): RelevantFile[] {
+  const tokens = tokenizeTask(input.task);
+  const deniedGlobs = input.contract.context_egress.denied_globs;
+  const files = walkIndexableFiles(input.repoRoot)
+    .filter((filePath) => !deniedGlobs.some((glob) => matchesGlob(filePath, glob)))
+    .map((filePath) => relevantFileForPath(filePath, tokens, input.contract))
+    .filter((file): file is RelevantFile => Boolean(file));
+
+  return files.slice(0, 25);
+}
+
+function relevantFileForPath(
+  filePath: string,
+  tokens: Set<string>,
+  contract: RepoContract
+): RelevantFile | undefined {
+  const reasons = new Set<string>();
+  const roles = new Set<string>();
+  if (isApiRoutePath(filePath)) {
+    roles.add("api_route");
+  }
+
+  for (const token of tokens) {
+    if (filePath.toLowerCase().includes(token)) {
+      reasons.add(`task token: ${token}`);
+    }
+  }
+
+  for (const convention of contract.conventions) {
+    const inScope = convention.scope.path_globs.some((glob) => matchesGlob(filePath, glob));
+    if (inScope) {
+      reasons.add(`in scope for ${convention.id}`);
+      for (const role of convention.scope.file_roles ?? []) {
+        roles.add(role);
+      }
+    }
+  }
+
+  if (reasons.size === 0) {
+    return undefined;
+  }
+
+  return {
+    path: filePath,
+    roles: [...roles].sort(),
+    reasons: [...reasons].sort()
+  };
+}
+
+function tokenizeTask(task: string): Set<string> {
+  return new Set(
+    task
+      .toLowerCase()
+      .split(/[^a-z0-9_/-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3)
+  );
+}
+
+function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {
+  if (deniedGlobs.length === 0 || !existsSync(repoRoot)) {
+    return 0;
+  }
+  return walkIndexableFiles(repoRoot).filter((filePath) =>
+    deniedGlobs.some((glob) => matchesGlob(filePath, glob))
+  ).length;
+}
+
+function formatPrepareText(payload: {
+  task: string;
+  conventions: PreparedConvention[];
+  relevant_files: RelevantFile[];
+  next_commands: string[];
+}): string {
+  return [
+    "Drift prepare",
+    "",
+    `Task: ${payload.task}`,
+    "",
+    "Conventions:",
+    ...payload.conventions.map((convention) => `  ${convention.id}: ${convention.statement}`),
+    "",
+    "Relevant files:",
+    ...payload.relevant_files.map((file) => `  ${file.path}`),
+    "",
+    "Next commands:",
+    ...payload.next_commands.map((command) => `  ${command}`),
+    ""
+  ].join("\n");
 }
 
 function rejectCandidate(
@@ -1293,6 +1561,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "prepare") {
+    return [
+      "Prepare an agent preflight packet",
+      "",
+      "Usage:",
+      "  drift --db <path> prepare \"add user search endpoint\" --repo <repo_id> --json",
+      "",
+      "What prepare returns:",
+      "  accepted conventions, baseline summary, open findings, relevant files, policy metadata, and next commands.",
+      "  prepare is read-only and does not include source snippets.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "check") {
     return [
       "Run deterministic checks",
@@ -1355,6 +1637,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift start --repo-root . --accept-defaults",
     "",
     "Core commands:",
+    "  drift prepare \"task\" --repo <repo_id> --json",
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",

@@ -533,6 +533,84 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(result.stdout).findings[0].id).toBe("finding_abc");
   });
 
+  it("prepares a compact read-only agent packet from the accepted contract", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await mkdir(join(repoRoot, "apps/web/services"), { recursive: true });
+    await writeFile(join(repoRoot, "package.json"), "{\"name\":\"fixture\"}\n");
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+    await writeFile(
+      join(repoRoot, "apps/web/services/users.ts"),
+      "export async function listUsers() { return []; }\n"
+    );
+
+    const started = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z"
+    ]);
+    const databasePath = started.stdout
+      .split("\n")
+      .find((line) => line.trim().startsWith("export DRIFT_DB="))
+      ?.split("=", 2)[1];
+    const repoId = started.stdout.match(/--repo (repo_[a-f0-9]+)/)?.[1];
+
+    const result = await runCli([
+      "--db", databasePath!,
+      "prepare",
+      "add user search endpoint",
+      "--repo", repoId!,
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.task).toBe("add user search endpoint");
+    expect(payload.policy.surface).toBe("cli-preflight");
+    expect(payload.policy.allowed).toBe(true);
+    expect(payload.conventions[0]).toMatchObject({
+      kind: "api_route_no_direct_data_access",
+      enforcement_mode: "block",
+      enforcement_capability: "deterministic_check"
+    });
+    expect(payload.baseline.active_count).toBe(1);
+    expect(payload.relevant_files.map((file: { path: string }) => file.path)).toContain(
+      "apps/web/app/api/users/route.ts"
+    );
+    expect(payload.next_commands).toContain(`drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`);
+    expect(result.stdout).not.toContain("prisma.user.findMany");
+  });
+
+  it("refuses prepare until a repo contract exists", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "add billing route",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("No repo contract exists for repo_abc");
+  });
+
   it("lists and shows convention candidates as JSON", async () => {
     const databasePath = await seedDatabase();
 
