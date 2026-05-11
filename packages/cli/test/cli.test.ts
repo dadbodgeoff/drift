@@ -977,6 +977,49 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not count already-baselined findings as newly created", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "diff.patch");
+    await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    const first = await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:31.000Z",
+      "--json"
+    ]);
+    const second = await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:32.000Z",
+      "--json"
+    ]);
+    const status = await runCli([
+      "--db", databasePath,
+      "baseline", "status",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(first.stdout).created_count).toBe(1);
+    expect(JSON.parse(second.stdout).created_count).toBe(0);
+    expect(JSON.parse(status.stdout).active_count).toBe(1);
+  });
+
   it("prints focused baseline help without requiring a database", async () => {
     const result = await runCli(["baseline", "--help"]);
 

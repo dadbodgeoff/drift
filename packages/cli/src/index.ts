@@ -1451,6 +1451,10 @@ function runFullRepoCheck(
   return findings;
 }
 
+function baselineViolationKey(conventionId: string, findingFingerprint: string): string {
+  return `${conventionId}:${findingFingerprint}`;
+}
+
 function createBaselineForFindings(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
@@ -1472,7 +1476,15 @@ function createBaselineForFindings(
   }));
 
   let createdCount = 0;
+  const existingBaselines = new Set(storage
+    .listBaselineViolations(repoId)
+    .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
   for (const finding of findings) {
+    const baselineKey = baselineViolationKey(finding.convention_id, finding.fingerprint);
+    if (existingBaselines.has(baselineKey)) {
+      continue;
+    }
+
     storage.upsertBaselineViolation({
       id: `baseline_${finding.fingerprint.slice(0, 16)}`,
       repo_id: repoId,
@@ -1484,6 +1496,7 @@ function createBaselineForFindings(
       status: "active",
       created_at: now
     });
+    existingBaselines.add(baselineKey);
     createdCount += 1;
   }
 
@@ -2089,8 +2102,16 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   }));
 
   let createdCount = 0;
+  const existingBaselines = new Set(storage
+    .listBaselineViolations(repoId)
+    .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
   for (const finding of storage.listFindings(repoId)) {
     if (finding.status === "fixed" || finding.status === "false_positive") {
+      continue;
+    }
+
+    const baselineKey = baselineViolationKey(finding.convention_id, finding.fingerprint);
+    if (existingBaselines.has(baselineKey)) {
       continue;
     }
 
@@ -2105,6 +2126,7 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       status: "active",
       created_at: now
     });
+    existingBaselines.add(baselineKey);
     createdCount += 1;
   }
 
