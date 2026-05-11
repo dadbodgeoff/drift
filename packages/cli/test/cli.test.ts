@@ -802,6 +802,31 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(second.stdout).findings[0].status).toBe("pre_existing");
   });
 
+  it("checks the full repo scope without requiring a git diff", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--scope", "full",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.summary).toMatchObject({
+      scope: "full",
+      findings_count: 1,
+      blocking_count: 0
+    });
+    expect(payload.findings[0]).toMatchObject({
+      status: "new",
+      diff_status: "touched_existing"
+    });
+  });
+
   it("preserves human-governed finding statuses during repeated checks", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "diff.patch");

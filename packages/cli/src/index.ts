@@ -1186,8 +1186,9 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   }
 
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
-  const diff = loadDiff(repo.root_path, parsed);
-  const parsedDiff = parseUnifiedDiff(diff);
+  const parsedDiff = scope === "full"
+    ? fullRepoDiff(repo.root_path)
+    : parseUnifiedDiff(loadDiff(repo.root_path, parsed));
   const baseline = storage.listBaselineViolations(repoId);
   const existingFindings = new Map(
     storage.listFindings(repoId).map((finding) => [finding.fingerprint, finding])
@@ -3225,6 +3226,15 @@ function parseUnifiedDiff(input: string): ParsedDiff {
     files.push(current);
   }
   return { files };
+}
+
+function fullRepoDiff(repoRoot: string): ParsedDiff {
+  return {
+    files: walkIndexableFiles(repoRoot).map((path) => ({
+      path,
+      changedLines: new Set<number>()
+    }))
+  };
 }
 
 function filesForConvention(
