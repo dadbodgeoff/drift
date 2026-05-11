@@ -958,6 +958,10 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   }
 
   const checksum = fileContentHash(backupPath);
+  const expectedChecksum = stringFlag(parsed, "checksum");
+  if (expectedChecksum && expectedChecksum !== checksum) {
+    throw new Error(`Backup checksum mismatch: expected ${expectedChecksum}, got ${checksum}.`);
+  }
   const backupStorage = openDriftStorage({ databasePath: backupPath });
   let schemaVersion = 0;
   let repo: RepoRecord | undefined;

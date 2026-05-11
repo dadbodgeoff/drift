@@ -1590,6 +1590,33 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(forced.stdout).restore.dry_run).toBe(false);
   });
 
+  it("refuses restore when an expected checksum does not match", async () => {
+    const sourceDatabasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-checksum-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+
+    const restored = await runCli([
+      "--db", join(dir, "restored.sqlite"),
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--checksum", "0".repeat(64),
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(1);
+    expect(restored.stderr).toContain("Backup checksum mismatch");
+    await expect(stat(join(dir, "restored.sqlite"))).rejects.toThrow();
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);
