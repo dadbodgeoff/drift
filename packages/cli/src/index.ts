@@ -594,6 +594,7 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   findings: Finding[];
 } {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const status = optionalFindingStatusFlag(parsed, "status");
   const severity = optionalSeverityFlag(parsed, "severity");
   const allFindings = storage.listFindings(repoId);
@@ -2316,6 +2317,14 @@ function requiredRepoContract(storage: SqliteDriftStorage, repoId: string): Repo
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
   return contract;
+}
+
+function requiredRepo(storage: SqliteDriftStorage, repoId: string): RepoRecord {
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
+  return repo;
 }
 
 function requiredCandidate(storage: SqliteDriftStorage, id: string): ConventionCandidate {

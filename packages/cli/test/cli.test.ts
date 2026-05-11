@@ -1190,6 +1190,20 @@ describe("drift CLI convention review", () => {
     expect(invalidSeverity.stderr).toContain("--severity must be");
   });
 
+  it("refuses findings list for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_missing",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
+
   it("marks a finding fixed with evidence and audits the resolution", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });
