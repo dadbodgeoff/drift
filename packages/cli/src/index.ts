@@ -16,7 +16,7 @@ import type {
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, relative, resolve } from "node:path";
 
@@ -41,6 +41,15 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     const parsed = parseArgs(argv);
     if (isHelpRequest(parsed)) {
       return { exitCode: 0, stdout: helpText(parsed), stderr: "" };
+    }
+
+    if (parsed.positional[0] === "doctor") {
+      const result = normalizeCommandResult(doctorRepo(parsed));
+      return {
+        exitCode: result.exitCode ?? 0,
+        stdout: formatOutput(result.payload, parsed),
+        stderr: ""
+      };
     }
 
     const databasePath = resolveDatabasePath(parsed);
@@ -149,6 +158,95 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
+}
+
+interface DoctorCheck {
+  id: string;
+  label: string;
+  status: "ok" | "warn" | "fail";
+  detail: string;
+}
+
+function doctorRepo(parsed: ParsedArgs): CommandPayload {
+  const repoRoot = resolveRepoRoot(parsed);
+  const repoExists = existsSync(repoRoot);
+  const files = repoExists ? walkIndexableFiles(repoRoot) : [];
+  const apiRouteCount = files.filter(isApiRoutePath).length;
+  const gitInside = repoExists && gitOutput(repoRoot, ["rev-parse", "--is-inside-work-tree"]) === "true";
+  const branch = gitInside ? gitOutput(repoRoot, ["branch", "--show-current"]) || "detached" : "unknown";
+  const commit = gitInside ? gitOutput(repoRoot, ["rev-parse", "--short", "HEAD"]) || "unknown" : "unknown";
+  const databasePath = defaultDatabasePath(repoRoot, parsed, { createDir: false });
+  const stateExists = existsSync(databasePath);
+  const checks: DoctorCheck[] = [
+    {
+      id: "repo_root",
+      label: "Repo root",
+      status: repoExists ? "ok" : "fail",
+      detail: repoExists ? repoRoot : `${repoRoot} does not exist`
+    },
+    {
+      id: "git",
+      label: "Git repo",
+      status: gitInside ? "ok" : "warn",
+      detail: gitInside ? `${branch} @ ${commit}` : "not inside a Git worktree"
+    },
+    {
+      id: "package_manifest",
+      label: "Package manifest",
+      status: repoExists && existsSync(join(repoRoot, "package.json")) ? "ok" : "warn",
+      detail: repoExists && existsSync(join(repoRoot, "package.json"))
+        ? "package.json found"
+        : "package.json not found at repo root"
+    },
+    {
+      id: "typescript_files",
+      label: "TS/JS files",
+      status: files.length > 0 ? "ok" : "warn",
+      detail: `${files.length} indexable file${files.length === 1 ? "" : "s"}`
+    },
+    {
+      id: "api_routes",
+      label: "API routes",
+      status: apiRouteCount > 0 ? "ok" : "warn",
+      detail: `${apiRouteCount} API route file${apiRouteCount === 1 ? "" : "s"}`
+    },
+    {
+      id: "local_state",
+      label: "Local state",
+      status: stateExists ? "ok" : "warn",
+      detail: stateExists ? `existing database at ${databasePath}` : `will create ${databasePath}`
+    }
+  ];
+  const failed = checks.filter((check) => check.status === "fail").length;
+  const warnings = checks.filter((check) => check.status === "warn").length;
+  const status = failed > 0 ? "fail" : warnings > 0 ? "warn" : "ok";
+  const nextCommand = `drift start --repo-root ${repoRoot} --accept-defaults`;
+  const text = [
+    "Drift doctor",
+    "",
+    `Repo: ${repoRoot}`,
+    `State: ${databasePath}`,
+    "",
+    ...checks.map((check) => `${doctorSymbol(check.status)} ${check.label}: ${check.detail}`),
+    "",
+    status === "fail"
+      ? "Fix the failed check before running the first scan."
+      : "Next command:",
+    status === "fail" ? "" : `  ${nextCommand}`,
+    ""
+  ].join("\n");
+
+  return {
+    payload: parsed.flags.has("json")
+      ? {
+          status,
+          repo_root: repoRoot,
+          database_path: databasePath,
+          checks,
+          next_command: status === "fail" ? null : nextCommand
+        }
+      : text
+  };
 }
 
 function initRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
@@ -899,7 +997,11 @@ function resolveRepoRoot(parsed: ParsedArgs): string {
   return resolve(stringFlag(parsed, "repo-root") ?? process.cwd());
 }
 
-function defaultDatabasePath(repoRoot: string, parsed: ParsedArgs): string {
+function defaultDatabasePath(
+  repoRoot: string,
+  parsed: ParsedArgs,
+  options: { createDir?: boolean } = { createDir: true }
+): string {
   const stateRoot = resolve(
     stringFlag(parsed, "state-root") ??
       process.env.DRIFT_STATE_ROOT ??
@@ -907,7 +1009,9 @@ function defaultDatabasePath(repoRoot: string, parsed: ParsedArgs): string {
   );
   const repoId = repoIdForRoot(repoRoot);
   const dir = join(stateRoot, repoId);
-  mkdirSync(dir, { recursive: true });
+  if (options.createDir !== false) {
+    mkdirSync(dir, { recursive: true });
+  }
   return join(dir, "drift.sqlite");
 }
 
@@ -1098,6 +1202,16 @@ function looksLikeDataAccessImport(importSource: string): boolean {
   return /(^|\/|@)(db|database|prisma|drizzle|typeorm|sequelize)(\/|$)/i.test(importSource);
 }
 
+function doctorSymbol(status: DoctorCheck["status"]): string {
+  if (status === "ok") {
+    return "OK";
+  }
+  if (status === "warn") {
+    return "WARN";
+  }
+  return "FAIL";
+}
+
 function gitOutput(repoRoot: string, args: string[]): string {
   try {
     return execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -1122,6 +1236,20 @@ function isHelpRequest(parsed: ParsedArgs): boolean {
 }
 
 function helpText(parsed: ParsedArgs): string {
+  if (parsed.positional[0] === "doctor") {
+    return [
+      "Check whether a repo is ready for Drift",
+      "",
+      "Usage:",
+      "  drift doctor --repo-root .",
+      "  drift doctor --repo-root . --state-root ~/.drift/repos --json",
+      "",
+      "What doctor checks:",
+      "  repo path, Git state, package manifest, TS/JS files, API routes, and local state location.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "init") {
     return [
       "Create local Drift state",
@@ -1222,6 +1350,10 @@ function helpText(parsed: ParsedArgs): string {
     "Usage:",
     "  drift --db <path> <command> [options]",
     "",
+    "First run:",
+    "  drift doctor --repo-root .",
+    "  drift start --repo-root . --accept-defaults",
+    "",
     "Core commands:",
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
@@ -1240,6 +1372,7 @@ function helpText(parsed: ParsedArgs): string {
     "",
     "Global options:",
     "  --db <path>      SQLite database path. Can also use DRIFT_DB.",
+    "  --state-root     Local Drift state root for init, scan, start, and doctor.",
     "  --json           Emit machine-readable JSON.",
     "  --help           Show this help.",
     ""

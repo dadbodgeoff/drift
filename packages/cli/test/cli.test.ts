@@ -279,10 +279,59 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("runs doctor before local state exists and prints a clean next command", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-doctor-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(join(repoRoot, "package.json"), "{\"name\":\"fixture\"}\n");
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      "export async function GET() { return Response.json({ ok: true }); }\n"
+    );
+
+    const result = await runCli([
+      "doctor",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Drift doctor");
+    expect(result.stdout).toContain("TS/JS files: 1 indexable file");
+    expect(result.stdout).toContain("API routes: 1 API route file");
+    expect(result.stdout).toContain(`drift start --repo-root ${repoRoot} --accept-defaults`);
+    await expect(stat(stateRoot)).rejects.toThrow();
+  });
+
+  it("emits doctor results as JSON for setup automation", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-doctor-json-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(repoRoot, { recursive: true });
+
+    const result = await runCli([
+      "doctor",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.status).toBe("warn");
+    expect(payload.database_path).toContain("drift.sqlite");
+    expect(payload.checks.map((check: { id: string }) => check.id)).toContain("local_state");
+    expect(payload.next_command).toBe(`drift start --repo-root ${repoRoot} --accept-defaults`);
+  });
+
   it("prints clean help without requiring a database", async () => {
     const result = await runCli(["--help"]);
 
     expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("drift doctor --repo-root .");
     expect(result.stdout).toContain("drift check --repo <repo_id>");
     expect(result.stdout).toContain("drift conventions list");
   });
@@ -441,9 +490,12 @@ describe("drift CLI convention review", () => {
   });
 
   it("prints focused init and scan help without requiring a database", async () => {
+    const doctor = await runCli(["doctor", "--help"]);
     const init = await runCli(["init", "--help"]);
     const scan = await runCli(["scan", "--help"]);
 
+    expect(doctor.exitCode).toBe(0);
+    expect(doctor.stdout).toContain("Check whether a repo is ready for Drift");
     expect(init.exitCode).toBe(0);
     expect(init.stdout).toContain("Create local Drift state");
     expect(scan.exitCode).toBe(0);
