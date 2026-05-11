@@ -1,0 +1,232 @@
+export type ConventionKind =
+  | "api_route_no_direct_data_access"
+  | "api_route_requires_service_delegation"
+  | "api_route_requires_auth_helper"
+  | "test_expected_for_changed_module"
+  | "custom_briefing";
+
+export type FileRole =
+  | "api_route"
+  | "server_module"
+  | "service_module"
+  | "data_access_module"
+  | "component"
+  | "test"
+  | "config";
+
+export interface ConventionScope {
+  path_globs: string[];
+  package_names?: string[];
+  file_roles?: FileRole[];
+  include_symbols?: string[];
+  exclude_path_globs?: string[];
+}
+
+export interface ConventionMatcher {
+  kind: ConventionKind;
+  forbidden_imports?: string[];
+  required_calls?: string[];
+  allowed_delegate_imports?: string[];
+  applies_to_file_roles?: FileRole[];
+}
+
+export type EnforcementCapability =
+  | "briefing_only"
+  | "heuristic_check"
+  | "deterministic_check";
+
+export type Severity = "info" | "warning" | "error";
+
+export type EnforcementMode = "off" | "brief" | "warn" | "block";
+
+export interface ConventionScore {
+  supporting_examples_count: number;
+  counterexamples_count: number;
+  scope_files_count: number;
+  coverage_ratio: number;
+  heuristic_id: string;
+}
+
+export interface ConventionException {
+  id: string;
+  reason: string;
+  path_globs?: string[];
+  symbols?: string[];
+  imports?: string[];
+  expires_at?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface EvidenceRef {
+  id: string;
+  kind: "supporting" | "counterexample" | "violation" | "baseline";
+  file_path: string;
+  start_line?: number;
+  end_line?: number;
+  symbol?: string;
+  import_source?: string;
+  fact_ids: string[];
+  scan_id: string;
+  file_hash: string;
+  artifact_hash?: string;
+  redaction_state: "none" | "redacted" | "snippet_limited";
+}
+
+export type ConventionStatus =
+  | "candidate"
+  | "accepted"
+  | "rejected"
+  | "archived"
+  | "expired";
+
+export interface ConventionCandidate {
+  id: string;
+  repo_id: string;
+  scan_id: string;
+  kind: ConventionKind;
+  statement: string;
+  rationale?: string;
+  scope: ConventionScope;
+  matcher: ConventionMatcher;
+  suggested_severity: Severity;
+  suggested_enforcement_mode: EnforcementMode;
+  enforcement_capability: EnforcementCapability;
+  confidence_label: "low" | "medium" | "high";
+  scoring: ConventionScore;
+  evidence_refs: EvidenceRef[];
+  counterexample_refs: EvidenceRef[];
+  status: ConventionStatus;
+  created_at: string;
+}
+
+export interface AcceptedConvention {
+  id: string;
+  contract_id: string;
+  kind: ConventionKind;
+  statement: string;
+  rationale?: string;
+  scope: ConventionScope;
+  matcher: ConventionMatcher;
+  severity: Severity;
+  enforcement_mode: EnforcementMode;
+  enforcement_capability: EnforcementCapability;
+  exceptions: ConventionException[];
+  evidence_refs: EvidenceRef[];
+  counterexample_refs: EvidenceRef[];
+  accepted_by: string;
+  accepted_at: string;
+  updated_at: string;
+  expires_at?: string;
+}
+
+export interface RejectedInference {
+  candidate_id: string;
+  reason: string;
+  rejected_by: string;
+  rejected_at: string;
+}
+
+export interface BaselineViolation {
+  id: string;
+  repo_id: string;
+  convention_id: string;
+  finding_fingerprint: string;
+  file_path: string;
+  first_seen_scan_id: string;
+  first_seen_commit: string;
+  status: "active" | "resolved";
+  created_at: string;
+}
+
+export type FindingStatus =
+  | "new"
+  | "pre_existing"
+  | "needs_review"
+  | "fixed"
+  | "false_positive"
+  | "accepted_drift"
+  | "suppressed";
+
+export type FindingDiffStatus =
+  | "new_in_diff"
+  | "touched_existing"
+  | "outside_diff";
+
+export interface Finding {
+  id: string;
+  repo_id: string;
+  convention_id: string;
+  fingerprint: string;
+  title: string;
+  message: string;
+  severity: Severity;
+  enforcement_result: "none" | "warn" | "block";
+  status: FindingStatus;
+  diff_status: FindingDiffStatus;
+  evidence_refs: EvidenceRef[];
+  created_at: string;
+}
+
+export interface RiskArea {
+  id: string;
+  path_globs: string[];
+  risk_kind:
+    | "auth"
+    | "billing"
+    | "data_access"
+    | "migration"
+    | "secrets"
+    | "external_api"
+    | "generated_code";
+  reason: string;
+}
+
+export interface SafeCommand {
+  command: string;
+  reason: string;
+  requires_explicit_run: true;
+}
+
+export interface RequiredCheck {
+  command: string;
+  applies_to: ConventionScope;
+  reason: string;
+}
+
+export interface ContextEgressPolicy {
+  default_mode: "local_only" | "redacted" | "approval_required";
+  denied_globs: string[];
+  max_snippet_chars: number;
+  allow_full_file_content: boolean;
+}
+
+export interface AgentPermission {
+  agent: string;
+  permissions: Array<"read_context" | "request_preflight" | "propose_resolution">;
+}
+
+export interface RepoContract {
+  id: string;
+  repo_id: string;
+  contract_schema_version: number;
+  repo_fingerprint: string;
+  created_at: string;
+  updated_at: string;
+  conventions: AcceptedConvention[];
+  rejected_inferences: RejectedInference[];
+  waivers: ConventionException[];
+  risky_areas: RiskArea[];
+  safe_commands: SafeCommand[];
+  required_checks: RequiredCheck[];
+  context_egress: ContextEgressPolicy;
+  agent_permissions: AgentPermission[];
+}
+
+export interface PolicyDecision {
+  allowed: boolean;
+  surface: "cli-preflight" | "cli-check" | "mcp" | "contract-export" | "artifact" | "log" | "ui";
+  mode: "local_only" | "redacted" | "approval_required" | "denied";
+  reason: string;
+  max_snippet_chars: number;
+}

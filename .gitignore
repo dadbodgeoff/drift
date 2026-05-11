@@ -1,0 +1,9 @@
+node_modules/
+dist/
+target/
+.DS_Store
+.env*
+!.env.example
+avatar-*.js
+avatar-overlay-page-*.js
+main-*.js
