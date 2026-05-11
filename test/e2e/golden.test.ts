@@ -152,14 +152,16 @@ describe("golden fixture CLI lifecycle", () => {
     expect(goldenAudit(JSON.parse(audit.stdout))).toMatchInlineSnapshot(`
       {
         "actions": [
+          "scan_started",
+          "scan_completed",
+          "scan_started",
           "scan_completed",
           "election_accepted",
           "baseline_created",
-          "scan_completed",
           "backup_created",
           "restore_completed",
         ],
-        "count": 6,
+        "count": 8,
       }
     `);
   });
