@@ -812,6 +812,7 @@ function markFindingFixed(
   findingId: string
 ): CommandPayload {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const evidence = requiredFlag(parsed, "evidence");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -863,6 +864,7 @@ function resolveFindingWithReason(
   status: Extract<FindingStatus, "suppressed" | "accepted_drift" | "false_positive">
 ): CommandPayload {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const reason = requiredFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";

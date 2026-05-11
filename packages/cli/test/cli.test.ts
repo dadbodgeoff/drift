@@ -1393,6 +1393,28 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("refuses finding resolution commands for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+    const commands = [
+      ["findings", "mark-fixed", "finding_abc", "--evidence", "apps/web/app/api/users/route.ts:12"],
+      ["findings", "suppress", "finding_abc", "--reason", "generated fixture"],
+      ["findings", "accept-drift", "finding_abc", "--reason", "legacy exception"],
+      ["findings", "mark-false-positive", "finding_abc", "--reason", "test double"]
+    ];
+
+    for (const command of commands) {
+      const result = await runCli([
+        "--db", databasePath,
+        ...command,
+        "--repo", "repo_missing",
+        "--json"
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Unknown repo repo_missing");
+    }
+  });
+
   it("lists audit events as JSON", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });
