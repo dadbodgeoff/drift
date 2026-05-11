@@ -1,0 +1,3 @@
+export const DRIFT_SCANNER_VERSION = "0.1.0";
+export const DRIFT_TYPESCRIPT_ADAPTER_VERSION = "0.1.0";
+export const DRIFT_RULE_ENGINE_VERSION = "0.1.0";

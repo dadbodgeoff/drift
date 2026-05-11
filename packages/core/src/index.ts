@@ -4,3 +4,4 @@ export * from "./domain.js";
 export * from "./ids.js";
 export * from "./policy.js";
 export * from "./schemas.js";
+export * from "./versions.js";

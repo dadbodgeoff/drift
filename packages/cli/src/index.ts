@@ -14,7 +14,13 @@ import type {
   ScanManifest,
   Severity
 } from "@drift/core";
-import { RepoContractSchema, authorizeContextExport } from "@drift/core";
+import {
+  DRIFT_RULE_ENGINE_VERSION,
+  DRIFT_SCANNER_VERSION,
+  DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+  RepoContractSchema,
+  authorizeContextExport
+} from "@drift/core";
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -62,10 +68,6 @@ interface RustEngineScanOutput {
     end_line: number;
   }>;
 }
-
-const DRIFT_SCANNER_VERSION = "0.1.0";
-const DRIFT_TYPESCRIPT_ADAPTER_VERSION = "0.1.0";
-const DRIFT_RULE_ENGINE_VERSION = "0.1.0";
 
 export async function runCli(argv: string[]): Promise<CliResult> {
   try {

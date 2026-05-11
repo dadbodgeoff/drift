@@ -1,11 +1,12 @@
 import type { PolicyDecision, RepoContract, ScanManifest } from "@drift/core";
 import { authorizeContextExport } from "@drift/core";
+import {
+  DRIFT_RULE_ENGINE_VERSION,
+  DRIFT_SCANNER_VERSION,
+  DRIFT_TYPESCRIPT_ADAPTER_VERSION
+} from "@drift/core";
 import { openDriftStorage } from "@drift/storage";
 import { createInterface } from "node:readline";
-
-const DRIFT_SCANNER_VERSION = "0.1.0";
-const DRIFT_TYPESCRIPT_ADAPTER_VERSION = "0.1.0";
-const DRIFT_RULE_ENGINE_VERSION = "0.1.0";
 
 export interface DriftMcpOptions {
   databasePath: string;

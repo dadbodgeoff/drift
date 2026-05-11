@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   AcceptedConventionSchema,
+  DRIFT_RULE_ENGINE_VERSION,
+  DRIFT_SCANNER_VERSION,
+  DRIFT_TYPESCRIPT_ADAPTER_VERSION,
   FindingSchema,
   RepoContractSchema,
   authorizeContextExport,
@@ -10,6 +13,12 @@ import {
 describe("core domain", () => {
   it("creates stable prefixed ids", () => {
     expect(makeDriftId("convention", "abc123")).toBe("convention_abc123");
+  });
+
+  it("exports shared scanner and rule versions for all local surfaces", () => {
+    expect(DRIFT_SCANNER_VERSION).toBe("0.1.0");
+    expect(DRIFT_TYPESCRIPT_ADAPTER_VERSION).toBe("0.1.0");
+    expect(DRIFT_RULE_ENGINE_VERSION).toBe("0.1.0");
   });
 
   it("validates accepted deterministic conventions", () => {
