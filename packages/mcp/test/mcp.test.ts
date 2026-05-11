@@ -154,6 +154,7 @@ describe("read-only MCP handlers", () => {
       ]
     });
     expect(handlers.get_repo_contract({ repo_id: "repo_abc" })).toMatchObject({
+      policy: { allowed: true, surface: "mcp" },
       contract: { id: "contract_abc" }
     });
     expect(handlers.get_task_preflight({ repo_id: "repo_abc", task: "add users route" })).toMatchObject({
@@ -177,9 +178,11 @@ describe("read-only MCP handlers", () => {
       ]
     });
     expect(handlers.get_conventions({ repo_id: "repo_abc" })).toMatchObject({
+      policy: { allowed: true, surface: "mcp" },
       conventions: [{ id: "convention_no_direct_db" }]
     });
     expect(handlers.get_findings({ repo_id: "repo_abc" })).toMatchObject({
+      policy: { allowed: true, surface: "mcp" },
       summary: {
         total_count: 2,
         filtered_count: 2,
@@ -213,6 +216,32 @@ describe("read-only MCP handlers", () => {
     storage.migrate();
     expect(storage.listAuditEvents("repo_abc")).toHaveLength(0);
     storage.close();
+  });
+
+  it("denies MCP repo context when policy requires approval", async () => {
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc");
+    storage.upsertRepoContract({
+      ...contract!,
+      context_egress: {
+        ...contract!.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const handlers = createReadOnlyMcpHandlers({ databasePath });
+
+    expect(() => handlers.get_task_preflight({
+      repo_id: "repo_abc",
+      task: "add users route"
+    })).toThrow("Policy denied MCP output");
+    expect(() => handlers.get_repo_contract({ repo_id: "repo_abc" }))
+      .toThrow("Policy denied MCP output");
+    expect(() => handlers.get_findings({ repo_id: "repo_abc" }))
+      .toThrow("Policy denied MCP output");
   });
 
   it("exposes a read-only JSON-RPC tools/list and tools/call surface", async () => {

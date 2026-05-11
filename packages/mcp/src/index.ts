@@ -138,8 +138,10 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       const scans = storage.listScanManifests(repo_id);
       const latestScan = scans[0] ?? null;
       const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
+      const policy = optionalAuthorizedMcpPolicy(storage, repo_id);
       return {
         repo_id,
+        policy,
         repo_root: repo?.root_path ?? null,
         latest_scan: latestScan,
         scan_count: scans.length,
@@ -148,17 +150,21 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       };
     }),
 
-    get_repo_contract: ({ repo_id }) => withStorage(options, (storage) => ({
-      repo_id,
-      contract: requiredContract(storage.getRepoContract(repo_id), repo_id)
-    })),
+    get_repo_contract: ({ repo_id }) => withStorage(options, (storage) => {
+      const { contract, policy } = requiredAuthorizedMcpContract(storage, repo_id);
+      return {
+        repo_id,
+        policy,
+        contract
+      };
+    }),
 
     get_task_preflight: ({ repo_id, task }) => withStorage(options, (storage) => {
-      const contract = requiredContract(storage.getRepoContract(repo_id), repo_id);
+      const { contract, policy } = requiredAuthorizedMcpContract(storage, repo_id);
       return {
         repo_id,
         task,
-        policy: authorizeContextExport(contract, "mcp"),
+        policy,
         contract: {
           id: contract.id,
           schema_version: contract.contract_schema_version,
@@ -191,12 +197,17 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       };
     }),
 
-    get_conventions: ({ repo_id }) => withStorage(options, (storage) => ({
-      repo_id,
-      conventions: storage.listAcceptedConventions(repo_id)
-    })),
+    get_conventions: ({ repo_id }) => withStorage(options, (storage) => {
+      const { policy } = requiredAuthorizedMcpContract(storage, repo_id);
+      return {
+        repo_id,
+        policy,
+        conventions: storage.listAcceptedConventions(repo_id)
+      };
+    }),
 
     get_findings: ({ repo_id, status, severity }) => withStorage(options, (storage) => {
+      const { policy } = requiredAuthorizedMcpContract(storage, repo_id);
       const allFindings = storage.listFindings(repo_id);
       const findings = allFindings.filter((finding) =>
         (!status || finding.status === status) &&
@@ -204,6 +215,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       );
       return {
         repo_id,
+        policy,
         summary: findingsSummary(allFindings, findings),
         findings
       };
@@ -380,6 +392,33 @@ function requiredContract(contract: RepoContract | undefined, repoId: string): R
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
   return contract;
+}
+
+function requiredAuthorizedMcpContract(
+  storage: ReturnType<typeof openDriftStorage>,
+  repoId: string
+): { contract: RepoContract; policy: PolicyDecision } {
+  const contract = requiredContract(storage.getRepoContract(repoId), repoId);
+  const policy = authorizeContextExport(contract, "mcp");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied MCP output: ${policy.reason}`);
+  }
+  return { contract, policy };
+}
+
+function optionalAuthorizedMcpPolicy(
+  storage: ReturnType<typeof openDriftStorage>,
+  repoId: string
+): PolicyDecision | null {
+  const contract = storage.getRepoContract(repoId);
+  if (!contract) {
+    return null;
+  }
+  const policy = authorizeContextExport(contract, "mcp");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied MCP output: ${policy.reason}`);
+  }
+  return policy;
 }
 
 function scanInvalidationReasons(scan: ScanManifest): string[] {
