@@ -1029,6 +1029,9 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   const diff = loadDiff(repo.root_path, parsed);
   const parsedDiff = parseUnifiedDiff(diff);
   const baseline = storage.listBaselineViolations(repoId);
+  const existingFindings = new Map(
+    storage.listFindings(repoId).map((finding) => [finding.fingerprint, finding])
+  );
   const checkData = collectScanData({
     repoId,
     scanId: `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
@@ -1066,7 +1069,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
           entry.status === "active" &&
           entry.convention_id === convention.id &&
           entry.finding_fingerprint === fingerprint
-        ) ? "pre_existing" : "new";
+        ) ? "pre_existing" : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
           repo_id: repoId,
@@ -1106,6 +1109,20 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
       findings
     }
   };
+}
+
+function preservedGovernanceStatus(finding: Finding | undefined): FindingStatus | undefined {
+  if (!finding) {
+    return undefined;
+  }
+  if (
+    finding.status === "suppressed" ||
+    finding.status === "accepted_drift" ||
+    finding.status === "false_positive"
+  ) {
+    return finding.status;
+  }
+  return undefined;
 }
 
 function acceptCandidate(

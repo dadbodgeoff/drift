@@ -703,6 +703,46 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(second.stdout).findings[0].status).toBe("pre_existing");
   });
 
+  it("preserves human-governed finding statuses during repeated checks", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "diff.patch");
+    const first = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+    const finding = JSON.parse(first.stdout).findings[0];
+    await runCli([
+      "--db", databasePath,
+      "findings", "suppress",
+      finding.id,
+      "--repo", "repo_abc",
+      "--reason", "legacy fixture",
+      "--now", "2026-05-10T00:00:31.000Z",
+      "--json"
+    ]);
+
+    const second = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--now", "2026-05-10T00:00:40.000Z",
+      "--json"
+    ]);
+
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).findings[0]).toMatchObject({
+      id: finding.id,
+      status: "suppressed"
+    });
+  });
+
   it("creates, reports, and clears baselines from stored findings", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "diff.patch");
