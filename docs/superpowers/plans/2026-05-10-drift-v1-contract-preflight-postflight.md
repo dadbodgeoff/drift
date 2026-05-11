@@ -6,7 +6,7 @@
 
 **Architecture:** Use Rust for the bounded-memory scanner/checker engine and TypeScript for product surfaces. `crates/drift-engine` owns repo walking, ignore rules, hashing, TS/JS fact extraction, baseline matching, and deterministic checks; `packages/core`, `packages/cli`, and `packages/mcp` own schemas, command UX, and agent integration.
 
-**Tech Stack:** Rust, Cargo workspace, TypeScript, Node.js, pnpm workspaces, SQLite, Zod, tree-sitter or SWC/OXC for TS/JS parsing, Vitest, Git CLI integration, MCP TypeScript SDK.
+**Tech Stack:** Rust, Cargo workspace, TypeScript, Node.js, pnpm workspaces, SQLite, Zod, tree-sitter TypeScript/TSX parsing, Vitest, Git CLI integration, MCP TypeScript SDK.
 
 ---
 

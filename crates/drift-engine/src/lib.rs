@@ -1,5 +1,7 @@
 pub const DRIFT_ENGINE_VERSION: &str = "0.1.0";
 
+mod facts;
+
 use std::{
     fs::File,
     io::{self, Read},
@@ -7,6 +9,8 @@ use std::{
 };
 
 use sha2::{Digest, Sha256};
+
+pub use facts::{extract_typescript_facts, Fact, FactExtractError, FactKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileFingerprint {

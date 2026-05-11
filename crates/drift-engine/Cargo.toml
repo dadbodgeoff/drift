@@ -6,6 +6,8 @@ version.workspace = true
 
 [dependencies]
 sha2 = "0.10.9"
+tree-sitter = "0.25.10"
+tree-sitter-typescript = "0.23.2"
 
 [dev-dependencies]
 tempfile = "3.14.0"

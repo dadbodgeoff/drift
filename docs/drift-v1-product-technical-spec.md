@@ -8,7 +8,7 @@ The V1 wedge is **Drift Guard for AI-generated TypeScript API/server-side diffs*
 
 V1 uses a split runtime:
 
-- Rust owns the bounded-memory engine: repo walking, ignore rules, hashing, TypeScript/JavaScript parsing, fact extraction, baseline matching, and deterministic checks.
+- Rust owns the bounded-memory engine: repo walking, ignore rules, hashing, TypeScript/JavaScript parsing, fact extraction, baseline matching, and deterministic checks. V1 uses tree-sitter TypeScript/TSX parsing in `crates/drift-engine`.
 - TypeScript owns product surfaces: contract schemas, CLI wrappers, MCP, local UI later, onboarding, and agent-facing JSON.
 
 V1 must prove one loop:
