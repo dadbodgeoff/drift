@@ -34,6 +34,7 @@ describe("golden fixture CLI lifecycle", () => {
       {
         "candidate_kinds": [
           "api_route_no_direct_data_access",
+          "api_route_requires_service_delegation",
         ],
         "engine_source": "rust",
         "facts_count": 7,
