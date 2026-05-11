@@ -63,6 +63,10 @@ interface RustEngineScanOutput {
   }>;
 }
 
+const DRIFT_SCANNER_VERSION = "0.1.0";
+const DRIFT_TYPESCRIPT_ADAPTER_VERSION = "0.1.0";
+const DRIFT_RULE_ENGINE_VERSION = "0.1.0";
+
 export async function runCli(argv: string[]): Promise<CliResult> {
   try {
     const parsed = parseArgs(argv);
@@ -404,9 +408,9 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
     commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
     dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
-    scanner_version: "0.1.0",
-    adapter_versions: { typescript: "0.1.0" },
-    rule_engine_version: "0.1.0",
+    scanner_version: DRIFT_SCANNER_VERSION,
+    adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
+    rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
     status: "completed",
     file_count: scanData.files.length,
     fact_count: scanData.facts.length,
@@ -475,12 +479,17 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
   const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
   const changes = compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
-  const stale = changes.added.length > 0 || changes.modified.length > 0 || changes.deleted.length > 0;
+  const invalidationReasons = scanInvalidationReasons(latestScan);
+  const stale = changes.added.length > 0 ||
+    changes.modified.length > 0 ||
+    changes.deleted.length > 0 ||
+    invalidationReasons.length > 0;
   const payload = {
     repo_id: repoId,
     repo_root: repo.root_path,
     latest_scan: latestScan,
     stale,
+    invalidation_reasons: invalidationReasons,
     changes,
     next_command: stale
       ? `drift scan --repo-root ${repo.root_path} --json`
@@ -1552,6 +1561,7 @@ function formatScanStatusText(payload: {
   repo_root: string;
   latest_scan: ScanManifest | null;
   stale: boolean;
+  invalidation_reasons?: string[];
   changes: ScanStatusChangeSet;
   next_command: string;
 }): string {
@@ -1566,6 +1576,7 @@ function formatScanStatusText(payload: {
     `Added: ${payload.changes.added.length}`,
     `Modified: ${payload.changes.modified.length}`,
     `Deleted: ${payload.changes.deleted.length}`,
+    `Invalidations: ${payload.invalidation_reasons?.join(", ") || "none"}`,
     "",
     "Next command:",
     `  ${payload.next_command}`,
@@ -2266,6 +2277,20 @@ function compareSnapshotsToCurrentFiles(
     modified: modified.sort(),
     deleted: deleted.sort()
   };
+}
+
+function scanInvalidationReasons(scan: ScanManifest): string[] {
+  const reasons: string[] = [];
+  if (scan.scanner_version !== DRIFT_SCANNER_VERSION) {
+    reasons.push("scanner_version_changed");
+  }
+  if (scan.adapter_versions.typescript !== DRIFT_TYPESCRIPT_ADAPTER_VERSION) {
+    reasons.push("adapter_version_changed:typescript");
+  }
+  if (scan.rule_engine_version !== DRIFT_RULE_ENGINE_VERSION) {
+    reasons.push("rule_engine_version_changed");
+  }
+  return reasons;
 }
 
 function fileContentHash(absolutePath: string): string {

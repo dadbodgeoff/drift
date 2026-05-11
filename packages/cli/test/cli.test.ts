@@ -369,6 +369,69 @@ describe("drift CLI convention review", () => {
     expect(payload.next_command).toBe(`drift scan --repo-root ${repoRoot} --json`);
   });
 
+  it("reports scan invalidation when scanner, adapter, or rule versions change", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-scan-invalid-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const routePath = join(repoRoot, "apps/web/app/api/users/route.ts");
+    const databasePath = join(dir, "drift.sqlite");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      routePath,
+      "export async function GET() { return Response.json({ ok: true }); }\n"
+    );
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: repoRoot,
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_old",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.0.1",
+      adapter_versions: { typescript: "0.0.1" },
+      rule_engine_version: "0.0.1",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_old",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: "not-used-by-test",
+      byte_size: 58,
+      indexed: true
+    });
+    storage.close();
+
+    const status = await runCli([
+      "--db", databasePath,
+      "scan", "status",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(status.exitCode).toBe(0);
+    const payload = JSON.parse(status.stdout);
+    expect(payload.stale).toBe(true);
+    expect(payload.invalidation_reasons).toEqual([
+      "scanner_version_changed",
+      "adapter_version_changed:typescript",
+      "rule_engine_version_changed"
+    ]);
+  });
+
   it("starts onboarding in one command with a clear next-step summary", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-start-"));
     tempDirs.push(dir);
