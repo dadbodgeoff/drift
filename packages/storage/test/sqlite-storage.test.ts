@@ -241,6 +241,7 @@ describe("SQLite Drift storage", () => {
       agent_permissions: []
     });
 
+    expect(storage.getConventionCandidate("candidate_no_direct_db")?.status).toBe("candidate");
     expect(storage.listConventionCandidates("repo_abc", { status: "candidate" })).toHaveLength(1);
     expect(storage.listAcceptedConventions("repo_abc")[0]?.id).toBe("convention_no_direct_db");
     expect(storage.getRepoContract("repo_abc")?.conventions[0]?.id).toBe("convention_no_direct_db");

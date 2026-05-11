@@ -308,6 +308,13 @@ export class SqliteDriftStorage {
     return rows.map(conventionCandidateFromRow);
   }
 
+  getConventionCandidate(id: string): ConventionCandidate | undefined {
+    const row = this.db
+      .prepare("SELECT * FROM convention_candidates WHERE id = ?")
+      .get(id);
+    return row ? conventionCandidateFromRow(row) : undefined;
+  }
+
   upsertAcceptedConvention(repoId: string, convention: AcceptedConvention): void {
     const parsed = AcceptedConventionSchema.parse(convention);
     this.db

@@ -18,6 +18,22 @@ importers:
         specifier: ^3.1.0
         version: 3.2.4(@types/node@22.19.18)
 
+  packages/cli:
+    dependencies:
+      '@drift/core':
+        specifier: workspace:*
+        version: link:../core
+      '@drift/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.0
+        version: 3.2.4(@types/node@22.19.18)
+
   packages/core:
     dependencies:
       zod:

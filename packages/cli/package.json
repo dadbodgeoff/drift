@@ -1,7 +1,10 @@
 {
-  "name": "@drift/storage",
+  "name": "@drift/cli",
   "version": "0.1.0",
   "type": "module",
+  "bin": {
+    "drift": "./dist/main.js"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -17,10 +20,9 @@
   },
   "dependencies": {
     "@drift/core": "workspace:*",
-    "better-sqlite3": "^11.10.0"
+    "@drift/storage": "workspace:*"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
   }
