@@ -203,10 +203,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "contract" && command === "show") {
     const repoId = resolveRepoId(parsed);
-    const contract = storage.getRepoContract(repoId);
-    if (!contract) {
-      throw new Error(`No repo contract exists for ${repoId}.`);
-    }
+    const contract = requiredRepoContract(storage, repoId);
     return { contract };
   }
 
@@ -2318,6 +2315,7 @@ function materializeRepoContract(
 }
 
 function requiredRepoContract(storage: SqliteDriftStorage, repoId: string): RepoContract {
+  requiredRepo(storage, repoId);
   const contract = storage.getRepoContract(repoId);
   if (!contract) {
     throw new Error(`No repo contract exists for ${repoId}.`);

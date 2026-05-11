@@ -1952,6 +1952,29 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("refuses contract-backed read commands for an unknown repo id", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const commands = [
+      ["policy", "show", "--repo", "repo_missing"],
+      ["policy", "check-context", "--repo", "repo_missing", "--path", "apps/web/app/api/users/route.ts", "--surface", "cli-preflight"],
+      ["checks", "list", "--repo", "repo_missing"],
+      ["contract", "show", "--repo", "repo_missing"],
+      ["contract", "validate", "--repo", "repo_missing"],
+      ["contract", "export", "--repo", "repo_missing", "--format", "json"]
+    ];
+
+    for (const command of commands) {
+      const result = await runCli([
+        "--db", databasePath,
+        ...command,
+        "--json"
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Unknown repo repo_missing");
+    }
+  });
+
   it("refuses prepare until a repo contract exists", async () => {
     const databasePath = await seedDatabase();
 
