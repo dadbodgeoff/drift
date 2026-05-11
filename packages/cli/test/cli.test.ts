@@ -831,6 +831,33 @@ describe("drift CLI convention review", () => {
       evidence_refs: [],
       created_at: "2026-05-10T00:00:02.000Z"
     });
+    storage.upsertScanManifest({
+      id: "scan_baseline",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 1,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertBaselineViolation({
+      id: "baseline_existing",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      finding_fingerprint: "finding-fp",
+      file_path: "apps/web/app/api/users/route.ts",
+      first_seen_scan_id: "scan_baseline",
+      first_seen_commit: "abc123",
+      status: "active",
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
     storage.close();
 
     const result = await runCli([
@@ -862,6 +889,33 @@ describe("drift CLI convention review", () => {
       evidence_refs: [],
       created_at: "2026-05-10T00:00:02.000Z"
     });
+    storage.upsertScanManifest({
+      id: "scan_baseline",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 1,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertBaselineViolation({
+      id: "baseline_existing",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      finding_fingerprint: "finding-fp",
+      file_path: "apps/web/app/api/users/route.ts",
+      first_seen_scan_id: "scan_baseline",
+      first_seen_commit: "abc123",
+      status: "active",
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
     storage.close();
 
     const result = await runCli([
@@ -881,6 +935,7 @@ describe("drift CLI convention review", () => {
     const checked = openDriftStorage({ databasePath });
     checked.migrate();
     expect(checked.listFindings("repo_abc")[0]?.status).toBe("fixed");
+    expect(checked.listBaselineViolations("repo_abc")[0]?.status).toBe("resolved");
     expect(checked.listAuditEvents("repo_abc").at(-1)).toMatchObject({
       action: "finding_resolved",
       actor: "geoff",

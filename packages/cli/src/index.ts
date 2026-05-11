@@ -687,6 +687,17 @@ function markFindingFixed(
     status: "fixed"
   };
   storage.upsertFinding(updated);
+  let resolvedBaselineCount = 0;
+  for (const baseline of storage.listBaselineViolations(repoId)) {
+    if (
+      baseline.status === "active" &&
+      baseline.convention_id === finding.convention_id &&
+      baseline.finding_fingerprint === finding.fingerprint
+    ) {
+      storage.upsertBaselineViolation({ ...baseline, status: "resolved" });
+      resolvedBaselineCount += 1;
+    }
+  }
   storage.appendAuditEvent(auditEvent({
     id: `audit_event_finding_fixed_${repoId}_${findingId}_${now}`,
     repoId,
@@ -694,7 +705,7 @@ function markFindingFixed(
     action: "finding_resolved",
     targetType: "finding",
     targetId: findingId,
-    metadata: { evidence },
+    metadata: { evidence, resolved_baseline_count: resolvedBaselineCount },
     createdAt: now
   }));
 
