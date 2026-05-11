@@ -1403,6 +1403,20 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("refuses audit list for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_missing",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
+
   it("creates a single SQLite backup artifact and audits it", async () => {
     const databasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-"));

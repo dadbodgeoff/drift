@@ -900,6 +900,7 @@ function resolveFindingWithReason(
 
 function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const events = storage
     .listAuditEvents(repoId)
