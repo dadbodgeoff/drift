@@ -195,6 +195,7 @@ describe("drift CLI convention review", () => {
     expect(result.exitCode).toBe(0);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary.files_indexed).toBe(1);
+    expect(payload.summary.engine_source).toBe("rust");
     expect(payload.summary.facts_count).toBeGreaterThan(0);
     expect(payload.candidates[0].kind).toBe("api_route_no_direct_data_access");
 
@@ -425,6 +426,7 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     const payload = JSON.parse(result.stdout);
+    expect(payload.summary.engine_source).toBe("rust");
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0].diff_status).toBe("new_in_diff");
     expect(payload.findings[0].status).toBe("new");

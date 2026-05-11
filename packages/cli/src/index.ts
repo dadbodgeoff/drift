@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface CliResult {
   exitCode: number;
@@ -35,6 +36,30 @@ interface ParsedArgs {
 interface CommandPayload {
   payload: unknown;
   exitCode?: number;
+}
+
+interface ScanData {
+  files: string[];
+  facts: FactRecord[];
+  snapshots: FileSnapshot[];
+  engineSource: "rust" | "typescript";
+}
+
+interface RustEngineScanOutput {
+  engine_version: string;
+  files: Array<{
+    file_path: string;
+    content_hash: string;
+    byte_size: number;
+  }>;
+  facts: Array<{
+    kind: FactRecord["kind"];
+    file_path: string;
+    name: string;
+    value?: string;
+    start_line: number;
+    end_line: number;
+  }>;
 }
 
 export async function runCli(argv: string[]): Promise<CliResult> {
@@ -327,6 +352,7 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     files_indexed: number;
     facts_count: number;
     candidates_count: number;
+    engine_source: "rust" | "typescript";
   };
   database_path: string;
 } {
@@ -335,23 +361,12 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   const repo = repoRecordForRoot(repoRoot, now);
   storage.upsertRepo(repo);
 
-  const files = walkIndexableFiles(repoRoot);
   const scanId = `scan_${hashStable(`${repo.id}:${now}`).slice(0, 16)}`;
-  const facts = files.flatMap((filePath) =>
-    extractFactsFromFile({
-      repoId: repo.id,
-      scanId,
-      repoRoot,
-      filePath
-    })
-  );
-  const snapshots = files.map((filePath) =>
-    fileSnapshotForFile({ repoId: repo.id, scanId, repoRoot, filePath })
-  );
+  const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
   const candidates = inferConventionCandidates({
     repoId: repo.id,
     scanId,
-    facts,
+    facts: scanData.facts,
     now
   });
   const scan: ScanManifest = {
@@ -364,18 +379,18 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     adapter_versions: { typescript: "0.1.0" },
     rule_engine_version: "0.1.0",
     status: "completed",
-    file_count: files.length,
-    fact_count: facts.length,
+    file_count: scanData.files.length,
+    fact_count: scanData.facts.length,
     finding_count: 0,
     started_at: now,
     completed_at: now
   };
 
   storage.upsertScanManifest(scan);
-  for (const snapshot of snapshots) {
+  for (const snapshot of scanData.snapshots) {
     storage.upsertFileSnapshot(snapshot);
   }
-  storage.upsertFacts(facts);
+  storage.upsertFacts(scanData.facts);
   for (const candidate of candidates) {
     storage.upsertConventionCandidate(candidate);
   }
@@ -387,9 +402,10 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     targetType: "scan",
     targetId: scanId,
     metadata: {
-      files_indexed: files.length,
-      facts_count: facts.length,
-      candidates_count: candidates.length
+      files_indexed: scanData.files.length,
+      facts_count: scanData.facts.length,
+      candidates_count: candidates.length,
+      engine_source: scanData.engineSource
     },
     createdAt: now
   }));
@@ -399,9 +415,10 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     scan,
     candidates,
     summary: {
-      files_indexed: files.length,
-      facts_count: facts.length,
-      candidates_count: candidates.length
+      files_indexed: scanData.files.length,
+      facts_count: scanData.facts.length,
+      candidates_count: candidates.length,
+      engine_source: scanData.engineSource
     },
     database_path: requiredDatabasePath(parsed)
   };
@@ -814,6 +831,11 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   const diff = loadDiff(repo.root_path, parsed);
   const parsedDiff = parseUnifiedDiff(diff);
   const baseline = storage.listBaselineViolations(repoId);
+  const checkData = collectScanData({
+    repoId,
+    scanId: `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
+    repoRoot: repo.root_path
+  });
   const findings: Finding[] = [];
 
   for (const convention of contract.conventions) {
@@ -830,18 +852,17 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
         continue;
       }
 
-      const source = readFileSync(join(repo.root_path, filePath), "utf8");
-      for (const importUsed of extractImports(source)) {
-        if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
+      for (const importUsed of importFactsForFile(checkData.facts, filePath)) {
+        if (!isForbiddenImport(importUsed.value, convention.matcher.forbidden_imports ?? [])) {
           continue;
         }
 
-        const diffStatus = diffStatusFor(filePath, importUsed.line, parsedDiff, scope);
+        const diffStatus = diffStatusFor(filePath, importUsed.start_line, parsedDiff, scope);
         const fingerprint = findingFingerprint(
           convention.id,
           filePath,
           importUsed.name,
-          importUsed.source
+          importUsed.value
         );
         const status = baseline.some((entry) =>
           entry.status === "active" &&
@@ -854,7 +875,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
           convention_id: convention.id,
           fingerprint,
           title: "API route imports data access directly",
-          message: `${filePath} imports ${importUsed.name} from ${importUsed.source} directly; route modules should delegate through the accepted service/data-access layer.`,
+          message: `${filePath} imports ${importUsed.name} from ${importUsed.value} directly; route modules should delegate through the accepted service/data-access layer.`,
           severity: convention.severity,
           enforcement_result: enforcementResultFor(convention.enforcement_mode),
           status,
@@ -881,7 +902,8 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
         repo_id: repoId,
         scope,
         findings_count: findings.length,
-        blocking_count: blockingCount
+        blocking_count: blockingCount,
+        engine_source: checkData.engineSource
       },
       findings
     }
@@ -1773,6 +1795,106 @@ function hashStable(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function collectScanData(input: {
+  repoId: string;
+  scanId: string;
+  repoRoot: string;
+}): ScanData {
+  const rust = collectScanDataFromRust(input);
+  if (rust) {
+    return rust;
+  }
+
+  const files = walkIndexableFiles(input.repoRoot);
+  return {
+    files,
+    facts: files.flatMap((filePath) =>
+      extractFactsFromFile({
+        repoId: input.repoId,
+        scanId: input.scanId,
+        repoRoot: input.repoRoot,
+        filePath
+      })
+    ),
+    snapshots: files.map((filePath) =>
+      fileSnapshotForFile({
+        repoId: input.repoId,
+        scanId: input.scanId,
+        repoRoot: input.repoRoot,
+        filePath
+      })
+    ),
+    engineSource: "typescript"
+  };
+}
+
+function collectScanDataFromRust(input: {
+  repoId: string;
+  scanId: string;
+  repoRoot: string;
+}): ScanData | undefined {
+  const output = runRustEngine(["scan-repo", input.repoRoot]);
+  if (!output) {
+    return undefined;
+  }
+  const parsed = JSON.parse(output) as RustEngineScanOutput;
+  return {
+    files: parsed.files.map((file) => file.file_path).sort(),
+    facts: parsed.facts.map((fact) =>
+      factRecord(
+        { repoId: input.repoId, scanId: input.scanId, filePath: fact.file_path },
+        fact.kind,
+        fact.name,
+        fact.value ?? undefined,
+        fact.start_line,
+        fact.end_line
+      )
+    ),
+    snapshots: parsed.files.map((file) => ({
+      repo_id: input.repoId,
+      scan_id: input.scanId,
+      file_path: file.file_path,
+      content_hash: file.content_hash,
+      byte_size: file.byte_size,
+      indexed: true
+    })),
+    engineSource: "rust"
+  };
+}
+
+function runRustEngine(args: string[]): string | undefined {
+  const explicit = process.env.DRIFT_ENGINE_BIN;
+  if (explicit) {
+    return execFileSync(explicit, args, { encoding: "utf8" });
+  }
+
+  const workspaceRoot = findCargoWorkspaceRoot();
+  if (!workspaceRoot) {
+    return undefined;
+  }
+
+  try {
+    return execFileSync("cargo", ["run", "--quiet", "-p", "drift-engine", "--", ...args], {
+      cwd: workspaceRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+function findCargoWorkspaceRoot(): string | undefined {
+  let current = dirname(fileURLToPath(import.meta.url));
+  while (current !== dirname(current)) {
+    if (existsSync(join(current, "Cargo.toml")) && existsSync(join(current, "crates", "drift-engine"))) {
+      return current;
+    }
+    current = dirname(current);
+  }
+  return undefined;
+}
+
 function walkIndexableFiles(repoRoot: string): string[] {
   const files: string[] = [];
   const visit = (dir: string) => {
@@ -1861,6 +1983,20 @@ function factRecord(
     start_line: startLine,
     end_line: endLine
   };
+}
+
+function importFactsForFile(facts: FactRecord[], filePath: string): Array<{
+  name: string;
+  value: string;
+  start_line: number;
+}> {
+  return facts
+    .filter((fact) => fact.kind === "import_used" && fact.file_path === filePath && fact.value)
+    .map((fact) => ({
+      name: fact.name,
+      value: fact.value as string,
+      start_line: fact.start_line
+    }));
 }
 
 function fileSnapshotForFile(input: {
