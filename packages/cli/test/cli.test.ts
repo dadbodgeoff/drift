@@ -1309,6 +1309,38 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("verifies a backup artifact before restore", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-"));
+    tempDirs.push(dir);
+    const backupDir = join(dir, "backups");
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupDir,
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+
+    const verified = await runCli([
+      "backup", "verify",
+      manifest.backup_path,
+      "--repo", "repo_abc",
+      "--checksum", manifest.checksum_sha256,
+      "--json"
+    ]);
+
+    expect(verified.exitCode).toBe(0);
+    expect(JSON.parse(verified.stdout)).toMatchObject({
+      valid: true,
+      repo_id: "repo_abc",
+      checksum_matches: true,
+      schema_version: 4
+    });
+  });
+
   it("restores a SQLite backup into a target database and audits the restore", async () => {
     const sourceDatabasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-"));

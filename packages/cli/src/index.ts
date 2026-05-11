@@ -94,6 +94,15 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       };
     }
 
+    if (parsed.positional[0] === "backup" && parsed.positional[1] === "verify") {
+      const result = normalizeCommandResult(verifyBackup(parsed));
+      return {
+        exitCode: result.exitCode ?? 0,
+        stdout: formatOutput(result.payload, parsed),
+        stderr: ""
+      };
+    }
+
     const databasePath = resolveDatabasePath(parsed);
     if (!databasePath) {
       throw new Error("Missing --db <path> or DRIFT_DB. Run drift --help.");
@@ -885,6 +894,43 @@ function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
   };
 }
 
+function verifyBackup(parsed: ParsedArgs): CommandPayload {
+  const backupPath = requiredValue(parsed.positional[2], "backup path");
+  const repoId = requiredFlag(parsed, "repo");
+  const expectedChecksum = stringFlag(parsed, "checksum");
+  if (!existsSync(backupPath)) {
+    throw new Error(`Backup not found: ${backupPath}`);
+  }
+
+  const checksum = fileContentHash(backupPath);
+  const checksumMatches = expectedChecksum ? checksum === expectedChecksum : null;
+  const backupStorage = openDriftStorage({ databasePath: backupPath });
+  let schemaVersion = 0;
+  let repo: RepoRecord | undefined;
+  try {
+    schemaVersion = backupStorage.getAppliedMigrations().length;
+    repo = backupStorage.getRepo(repoId);
+  } finally {
+    backupStorage.close();
+  }
+
+  const payload = {
+    valid: schemaVersion > 0 && Boolean(repo) && checksumMatches !== false,
+    repo_id: repoId,
+    repo_fingerprint: repo?.fingerprint ?? null,
+    backup_path: backupPath,
+    schema_version: schemaVersion,
+    checksum_sha256: checksum,
+    checksum_matches: checksumMatches,
+    repo_found: Boolean(repo)
+  };
+
+  return {
+    exitCode: payload.valid ? 0 : 1,
+    payload: parsed.flags.has("json") ? payload : formatBackupVerifyText(payload)
+  };
+}
+
 function restoreBackup(parsed: ParsedArgs): CommandPayload {
   const backupPath = requiredValue(parsed.positional[1], "backup path");
   const targetDatabasePath = requiredDatabasePath(parsed);
@@ -1648,6 +1694,31 @@ function formatBackupListText(payload: {
     ...payload.backups.map((backup) =>
       `${backup.created_at} ${backup.id} ${backup.backup_path} ${backup.checksum_sha256}`
     ),
+    ""
+  ].join("\n");
+}
+
+function formatBackupVerifyText(payload: {
+  valid: boolean;
+  repo_id: string;
+  repo_fingerprint: string | null;
+  backup_path: string;
+  schema_version: number;
+  checksum_sha256: string;
+  checksum_matches: boolean | null;
+  repo_found: boolean;
+}): string {
+  return [
+    "Drift backup verify",
+    "",
+    `Valid: ${payload.valid}`,
+    `Repo: ${payload.repo_id}`,
+    `Repo found: ${payload.repo_found}`,
+    `Repo fingerprint: ${payload.repo_fingerprint ?? "unknown"}`,
+    `Backup: ${payload.backup_path}`,
+    `Schema version: ${payload.schema_version}`,
+    `Checksum: ${payload.checksum_sha256}`,
+    `Checksum matches: ${payload.checksum_matches ?? "not checked"}`,
     ""
   ].join("\n");
 }
@@ -2910,9 +2981,11 @@ function helpText(parsed: ParsedArgs): string {
       "  drift --db <path> backup create --repo <repo_id> --json",
       "  drift --db <path> backup create --repo <repo_id> --output ./backups --json",
       "  drift --db <path> backup list --repo <repo_id> --json",
+      "  drift backup verify <backup.sqlite> --repo <repo_id> --checksum <sha256> --json",
       "",
       "Notes:",
       "  backup create writes one SQLite backup artifact containing Drift state, not source code.",
+      "  backup verify validates schema, repo identity, and optional checksum without requiring --db.",
       "  it appends a backup_created audit event before copying the database.",
       ""
     ].join("\n");
@@ -2969,6 +3042,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift audit list --repo <repo_id> --json",
     "  drift backup create --repo <repo_id> --json",
     "  drift backup list --repo <repo_id> --json",
+    "  drift backup verify <backup.sqlite> --repo <repo_id> --checksum <sha256> --json",
     "  drift restore <backup.sqlite> --repo <repo_id> --json",
     "  drift contract validate --repo <repo_id> --json",
     "  drift contract export --repo <repo_id> --format json --json",
