@@ -278,6 +278,11 @@ describe("read-only MCP handlers", () => {
     expect(handlers.get_allowed_context({ repo_id: "repo_abc", path: ".env.local" })).toMatchObject({
       decision: { allowed: false, mode: "denied" }
     });
+    expect(() => handlers.get_allowed_context({
+      repo_id: "repo_abc",
+      path: "apps/web/app/api/users/route.ts",
+      surface: "email" as never
+    })).toThrow("surface must be");
 
     const storage = openDriftStorage({ databasePath });
     storage.migrate();

@@ -237,10 +237,11 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
     get_allowed_context: ({ repo_id, path, surface = "mcp" }) =>
       withStorage(options, (storage) => {
         const contract = requiredContract(storage.getRepoContract(repo_id), repo_id);
+        const requestedSurface = validatePolicySurface(surface);
         return {
           repo_id,
           path,
-          decision: authorizeContextExport(contract, surface, { path })
+          decision: authorizeContextExport(contract, requestedSurface, { path })
         };
       })
   };
@@ -599,6 +600,21 @@ function validateSeverity(severity: Severity | undefined): Severity | undefined 
     return severity;
   }
   throw new Error("severity must be info, warning, or error.");
+}
+
+function validatePolicySurface(surface: PolicyDecision["surface"]): PolicyDecision["surface"] {
+  if (
+    surface === "cli-preflight" ||
+    surface === "cli-check" ||
+    surface === "mcp" ||
+    surface === "contract-export" ||
+    surface === "artifact" ||
+    surface === "log" ||
+    surface === "ui"
+  ) {
+    return surface;
+  }
+  throw new Error("surface must be cli-preflight, cli-check, mcp, contract-export, artifact, log, or ui.");
 }
 
 function countBy<T, K extends string>(
