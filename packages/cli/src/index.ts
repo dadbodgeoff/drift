@@ -205,8 +205,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "findings" && command === "list") {
-    const repoId = resolveRepoId(parsed);
-    return { findings: storage.listFindings(repoId) };
+    return listFindings(storage, parsed);
   }
 
   if (group === "findings" && command === "mark-fixed") {
@@ -506,6 +505,37 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
   return {
     payload: parsed.flags.has("json") ? payload : formatScanStatusText(payload)
+  };
+}
+
+function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  repo_id: string;
+  summary: {
+    total_count: number;
+    filtered_count: number;
+    by_status: Partial<Record<FindingStatus, number>>;
+    by_severity: Partial<Record<Severity, number>>;
+  };
+  findings: Finding[];
+} {
+  const repoId = resolveRepoId(parsed);
+  const status = stringFlag(parsed, "status") as FindingStatus | undefined;
+  const severity = stringFlag(parsed, "severity") as Severity | undefined;
+  const allFindings = storage.listFindings(repoId);
+  const findings = allFindings.filter((finding) =>
+    (!status || finding.status === status) &&
+    (!severity || finding.severity === severity)
+  );
+
+  return {
+    repo_id: repoId,
+    summary: {
+      total_count: allFindings.length,
+      filtered_count: findings.length,
+      by_status: countBy(allFindings, (finding) => finding.status),
+      by_severity: countBy(allFindings, (finding) => finding.severity)
+    },
+    findings
   };
 }
 
@@ -2373,6 +2403,18 @@ function scanInvalidationReasons(
   return reasons;
 }
 
+function countBy<T, K extends string>(
+  entries: T[],
+  keyFor: (entry: T) => K
+): Partial<Record<K, number>> {
+  const counts: Partial<Record<K, number>> = {};
+  for (const entry of entries) {
+    const key = keyFor(entry);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
 function fileContentHash(absolutePath: string): string {
   return createHash("sha256").update(readFileSync(absolutePath)).digest("hex");
 }
@@ -2818,6 +2860,7 @@ function helpText(parsed: ParsedArgs): string {
       "",
       "Usage:",
       "  drift --db <path> findings list --repo <repo_id> --json",
+      "  drift --db <path> findings list --repo <repo_id> --status new --severity error --json",
       "  drift --db <path> findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
       "  drift --db <path> findings suppress <finding_id> --repo <repo_id> --reason \"...\" --json",
       "  drift --db <path> findings accept-drift <finding_id> --repo <repo_id> --reason \"...\" --json",

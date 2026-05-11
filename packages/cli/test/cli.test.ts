@@ -962,6 +962,73 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(result.stdout).findings[0].id).toBe("finding_abc");
   });
 
+  it("filters findings list and returns review summary counts", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    for (const finding of [
+      {
+        id: "finding_new_error",
+        fingerprint: "finding-new-error-fp",
+        status: "new" as const,
+        severity: "error" as const
+      },
+      {
+        id: "finding_new_warning",
+        fingerprint: "finding-new-warning-fp",
+        status: "new" as const,
+        severity: "warning" as const
+      },
+      {
+        id: "finding_suppressed",
+        fingerprint: "finding-suppressed-fp",
+        status: "suppressed" as const,
+        severity: "error" as const
+      }
+    ]) {
+      storage.upsertFinding({
+        id: finding.id,
+        repo_id: "repo_abc",
+        convention_id: "convention_no_direct_db",
+        fingerprint: finding.fingerprint,
+        title: "API route imports data access directly",
+        message: "Route imports prisma directly.",
+        severity: finding.severity,
+        enforcement_result: finding.severity === "error" ? "block" : "warn",
+        status: finding.status,
+        diff_status: "new_in_diff",
+        evidence_refs: [],
+        created_at: "2026-05-10T00:00:02.000Z"
+      });
+    }
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--status", "new",
+      "--severity", "error",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.findings.map((finding: { id: string }) => finding.id)).toEqual(["finding_new_error"]);
+    expect(payload.summary).toMatchObject({
+      total_count: 3,
+      filtered_count: 1,
+      by_status: {
+        new: 2,
+        suppressed: 1
+      },
+      by_severity: {
+        error: 2,
+        warning: 1
+      }
+    });
+  });
+
   it("marks a finding fixed with evidence and audits the resolution", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });
