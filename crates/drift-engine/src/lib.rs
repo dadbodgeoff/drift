@@ -1,5 +1,6 @@
 pub const DRIFT_ENGINE_VERSION: &str = "0.1.0";
 
+mod diff;
 mod facts;
 mod rules;
 
@@ -11,6 +12,10 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
+pub use diff::{
+    DiffClassifiedFinding, DiffFile, DiffScope, DiffStatus, ParsedDiff,
+    classify_findings_against_diff, parse_unified_diff,
+};
 pub use facts::{Fact, FactExtractError, FactKind, extract_typescript_facts};
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
