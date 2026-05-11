@@ -1,4 +1,4 @@
-use drift_engine::{extract_typescript_facts, FactKind};
+use drift_engine::{FactKind, extract_typescript_facts};
 
 #[test]
 fn extracts_api_route_imports_exports_calls_and_roles() {
@@ -16,18 +16,27 @@ export async function POST(request: Request) {
     let facts = extract_typescript_facts("apps/web/app/api/workspaces/route.ts", source)
         .expect("typescript facts");
 
-    assert!(facts.iter().any(|fact| fact.kind == FactKind::FileRoleDetected
-        && fact.name == "api_route"));
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::FileRoleDetected && fact.name == "api_route")
+    );
     assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
         && fact.name == "prisma"
         && fact.value.as_deref() == Some("@/lib/prisma")));
     assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
         && fact.name == "createWorkspaceInvite"
         && fact.value.as_deref() == Some("@repo/core/services/workspaces")));
-    assert!(facts.iter().any(|fact| fact.kind == FactKind::ExportedSymbol
-        && fact.name == "POST"));
-    assert!(facts.iter().any(|fact| fact.kind == FactKind::RouteDeclared
-        && fact.name == "POST"));
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::ExportedSymbol && fact.name == "POST")
+    );
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::RouteDeclared && fact.name == "POST")
+    );
     assert!(facts.iter().any(|fact| fact.kind == FactKind::SymbolCalled
         && fact.name == "createWorkspaceInvite"));
 }
@@ -43,8 +52,8 @@ export async function GET() {
 }
 "#;
 
-    let facts = extract_typescript_facts("app/api/workspaces/route.ts", source)
-        .expect("typescript facts");
+    let facts =
+        extract_typescript_facts("app/api/workspaces/route.ts", source).expect("typescript facts");
 
     let import_sources: Vec<&str> = facts
         .iter()

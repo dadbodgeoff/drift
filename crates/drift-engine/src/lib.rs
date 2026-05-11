@@ -11,11 +11,12 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
-pub use facts::{extract_typescript_facts, Fact, FactExtractError, FactKind};
+pub use facts::{Fact, FactExtractError, FactKind, extract_typescript_facts};
 pub use rules::{
-    detect_direct_data_access_imports, materialize_direct_data_access_findings,
-    DirectDataAccessRule, DirectDataAccessViolation, EnforcementMode, EnforcementResult,
-    RuleFinding, Severity,
+    BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
+    DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,
+    Severity, classify_findings_against_baseline, detect_direct_data_access_imports,
+    materialize_direct_data_access_findings,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

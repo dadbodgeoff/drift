@@ -32,7 +32,9 @@ pub enum FactExtractError {
 impl std::fmt::Display for FactExtractError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FactExtractError::ParserLanguage(error) => write!(formatter, "parser language error: {error}"),
+            FactExtractError::ParserLanguage(error) => {
+                write!(formatter, "parser language error: {error}")
+            }
             FactExtractError::ParseFailed => write!(formatter, "failed to parse TypeScript source"),
         }
     }
@@ -54,7 +56,9 @@ pub fn extract_typescript_facts(
     parser
         .set_language(&language.into())
         .map_err(FactExtractError::ParserLanguage)?;
-    let tree = parser.parse(source, None).ok_or(FactExtractError::ParseFailed)?;
+    let tree = parser
+        .parse(source, None)
+        .ok_or(FactExtractError::ParseFailed)?;
     let root = tree.root_node();
     let mut facts = Vec::new();
 
@@ -146,7 +150,9 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             end_line,
         });
 
-        if is_api_route_path(file_path) && matches!(name.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE") {
+        if is_api_route_path(file_path)
+            && matches!(name.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE")
+        {
             facts.push(Fact {
                 kind: FactKind::RouteDeclared,
                 file_path: file_path.to_string(),
@@ -193,7 +199,10 @@ fn first_named_declaration_identifier(node: Node<'_>, source: &[u8]) -> Option<S
             || child.kind() == "generator_function_declaration"
             || child.kind() == "class_declaration"
         {
-            if let Some(name) = child.child_by_field_name("name").and_then(|name| node_text(name, source)) {
+            if let Some(name) = child
+                .child_by_field_name("name")
+                .and_then(|name| node_text(name, source))
+            {
                 return Some(name);
             }
         }
@@ -209,10 +218,7 @@ fn node_text(node: Node<'_>, source: &[u8]) -> Option<String> {
 }
 
 fn unquote(value: String) -> String {
-    value
-        .trim_matches('"')
-        .trim_matches('\'')
-        .to_string()
+    value.trim_matches('"').trim_matches('\'').to_string()
 }
 
 fn is_api_route_path(file_path: &str) -> bool {

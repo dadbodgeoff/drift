@@ -1,8 +1,6 @@
 use std::fs;
 
-use drift_engine::{
-    DRIFT_ENGINE_VERSION, FileFingerprint, should_index_path, fingerprint_file,
-};
+use drift_engine::{DRIFT_ENGINE_VERSION, FileFingerprint, fingerprint_file, should_index_path};
 
 #[test]
 fn exposes_engine_version() {

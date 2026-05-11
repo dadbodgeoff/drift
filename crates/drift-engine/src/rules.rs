@@ -57,6 +57,31 @@ pub struct RuleFinding {
     pub line: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BaselineStatus {
+    Active,
+    Resolved,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BaselineViolation {
+    pub convention_id: String,
+    pub fingerprint: String,
+    pub status: BaselineStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FindingStatus {
+    New,
+    PreExisting,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClassifiedFinding {
+    pub finding: RuleFinding,
+    pub status: FindingStatus,
+}
+
 pub fn detect_direct_data_access_imports(
     facts: &[Fact],
     rule: &DirectDataAccessRule,
@@ -108,6 +133,37 @@ pub fn materialize_direct_data_access_findings(
             import_name: violation.import_name,
             import_source: violation.import_source,
             line: violation.line,
+        })
+        .collect()
+}
+
+pub fn classify_findings_against_baseline(
+    findings: Vec<RuleFinding>,
+    baseline: &[BaselineViolation],
+) -> Vec<ClassifiedFinding> {
+    let active_baseline: HashSet<(&str, &str)> = baseline
+        .iter()
+        .filter(|violation| violation.status == BaselineStatus::Active)
+        .map(|violation| {
+            (
+                violation.convention_id.as_str(),
+                violation.fingerprint.as_str(),
+            )
+        })
+        .collect();
+
+    findings
+        .into_iter()
+        .map(|finding| {
+            let status = if active_baseline
+                .contains(&(finding.convention_id.as_str(), finding.fingerprint.as_str()))
+            {
+                FindingStatus::PreExisting
+            } else {
+                FindingStatus::New
+            };
+
+            ClassifiedFinding { finding, status }
         })
         .collect()
 }
