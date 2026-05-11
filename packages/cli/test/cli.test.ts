@@ -1852,6 +1852,41 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("lists required checks and safe commands from the repo contract", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    const contract = storage.getRepoContract("repo_abc")!;
+    storage.upsertRepoContract({
+      ...contract,
+      required_checks: [{
+        command: "drift check --diff main...HEAD",
+        applies_to: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+        reason: "Validate accepted API route conventions."
+      }],
+      safe_commands: [{
+        command: "pnpm test",
+        reason: "Run project tests after changing API routes.",
+        requires_explicit_run: true
+      }]
+    });
+    storage.close();
+
+    const listed = await runCli([
+      "--db", databasePath,
+      "checks", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(listed.exitCode).toBe(0);
+    expect(JSON.parse(listed.stdout)).toMatchObject({
+      repo_id: "repo_abc",
+      policy: { allowed: true, surface: "cli-preflight" },
+      required_checks: [{ command: "drift check --diff main...HEAD" }],
+      safe_commands: [{ command: "pnpm test" }]
+    });
+  });
+
   it("refuses prepare until a repo contract exists", async () => {
     const databasePath = await seedDatabase();
 

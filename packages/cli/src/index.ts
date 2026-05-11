@@ -154,6 +154,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return prepareTask(storage, parsed);
   }
 
+  if (group === "checks" && command === "list") {
+    return listChecks(storage, parsed);
+  }
+
   if (group === "policy" && command === "show") {
     return showPolicy(storage, parsed);
   }
@@ -775,6 +779,31 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
 
   return {
     payload: parsed.flags.has("json") ? payload : formatPrepareText(payload)
+  };
+}
+
+function listChecks(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = resolveRepoId(parsed);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "cli-preflight");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied checks output: ${policy.reason}`);
+  }
+
+  const payload = {
+    repo_id: repoId,
+    policy,
+    contract: {
+      id: contract.id,
+      schema_version: contract.contract_schema_version,
+      updated_at: contract.updated_at
+    },
+    required_checks: contract.required_checks,
+    safe_commands: contract.safe_commands
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatChecksText(payload)
   };
 }
 
@@ -1748,6 +1777,29 @@ function formatPrepareText(payload: {
     "",
     "Next commands:",
     ...payload.next_commands.map((command) => `  ${command}`),
+    ""
+  ].join("\n");
+}
+
+function formatChecksText(payload: {
+  required_checks: Array<{ command: string; reason?: string }>;
+  safe_commands: Array<{ command: string; reason?: string }>;
+}): string {
+  const requiredChecks = payload.required_checks.length > 0
+    ? payload.required_checks.map((check) => `  ${check.command}${check.reason ? ` - ${check.reason}` : ""}`)
+    : ["  none"];
+  const safeCommands = payload.safe_commands.length > 0
+    ? payload.safe_commands.map((command) => `  ${command.command}${command.reason ? ` - ${command.reason}` : ""}`)
+    : ["  none"];
+
+  return [
+    "Drift checks",
+    "",
+    "Required checks:",
+    ...requiredChecks,
+    "",
+    "Safe commands:",
+    ...safeCommands,
     ""
   ].join("\n");
 }
@@ -3082,6 +3134,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "checks") {
+    return [
+      "List repo checks and safe commands",
+      "",
+      "Usage:",
+      "  drift --db <path> checks list --repo <repo_id> --json",
+      "",
+      "What checks list returns:",
+      "  human-approved required checks and safe commands from the repo contract.",
+      "  checks list is read-only and does not run commands.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "policy") {
     return [
       "Inspect context egress policy",
@@ -3240,6 +3306,7 @@ function helpText(parsed: ParsedArgs): string {
     "Core commands:",
     "  drift scan status --repo <repo_id> --json",
     "  drift prepare \"task\" --repo <repo_id> --json",
+    "  drift checks list --repo <repo_id> --json",
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",
