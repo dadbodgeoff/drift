@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
@@ -208,6 +208,40 @@ describe("drift CLI convention review", () => {
     expect(storage.listAuditEvents(payload.repo.id).map((event) => event.action)).toEqual([
       "scan_started",
       "scan_completed"
+    ]);
+    storage.close();
+  });
+
+  it("persists failed scan manifests and audit events", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-scan-failed-"));
+    tempDirs.push(dir);
+    const missingRepoRoot = join(dir, "missing-repo");
+    const stateRoot = join(dir, "state");
+
+    const result = await runCli([
+      "scan",
+      "--repo-root", missingRepoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    const [repoId] = await readdir(stateRoot);
+    const storage = openDriftStorage({ databasePath: join(stateRoot, repoId, "drift.sqlite") });
+    storage.migrate();
+    const scan = storage.listScanManifests(repoId)[0];
+    expect(scan).toMatchObject({
+      repo_id: repoId,
+      status: "failed",
+      file_count: 0,
+      fact_count: 0,
+      finding_count: 0
+    });
+    expect(scan?.error_message).toBeTruthy();
+    expect(storage.listAuditEvents(repoId).map((event) => event.action)).toEqual([
+      "scan_started",
+      "scan_failed"
     ]);
     storage.close();
   });

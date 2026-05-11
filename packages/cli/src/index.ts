@@ -431,68 +431,102 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     },
     createdAt: now
   }));
-  const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
-  const candidates = inferConventionCandidates({
-    repoId: repo.id,
-    scanId,
-    repoRoot,
-    facts: scanData.facts,
-    now
-  });
-  const scan: ScanManifest = {
-    id: scanId,
-    repo_id: repo.id,
-    branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
-    commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
-    dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
-    previous_scan_id: previousScan?.id,
-    scanner_version: DRIFT_SCANNER_VERSION,
-    adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
-    rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
-    status: "completed",
-    file_count: scanData.files.length,
-    fact_count: scanData.facts.length,
-    finding_count: 0,
-    started_at: now,
-    completed_at: now
-  };
+  try {
+    const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
+    const candidates = inferConventionCandidates({
+      repoId: repo.id,
+      scanId,
+      repoRoot,
+      facts: scanData.facts,
+      now
+    });
+    const scan: ScanManifest = {
+      id: scanId,
+      repo_id: repo.id,
+      branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
+      commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
+      dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
+      previous_scan_id: previousScan?.id,
+      scanner_version: DRIFT_SCANNER_VERSION,
+      adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
+      rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
+      status: "completed",
+      file_count: scanData.files.length,
+      fact_count: scanData.facts.length,
+      finding_count: 0,
+      started_at: now,
+      completed_at: now
+    };
 
-  storage.upsertScanManifest(scan);
-  for (const snapshot of scanData.snapshots) {
-    storage.upsertFileSnapshot(snapshot);
-  }
-  storage.upsertFacts(scanData.facts);
-  for (const candidate of candidates) {
-    storage.upsertConventionCandidate(candidate);
-  }
-  storage.appendAuditEvent(auditEvent({
-    id: `audit_event_scan_completed_${repo.id}_${scanId}`,
-    repoId: repo.id,
-    actor,
-    action: "scan_completed",
-    targetType: "scan",
-    targetId: scanId,
-    metadata: {
-      files_indexed: scanData.files.length,
-      facts_count: scanData.facts.length,
-      candidates_count: candidates.length,
-      engine_source: scanData.engineSource
-    },
-    createdAt: now
-  }));
+    storage.upsertScanManifest(scan);
+    for (const snapshot of scanData.snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFacts(scanData.facts);
+    for (const candidate of candidates) {
+      storage.upsertConventionCandidate(candidate);
+    }
+    storage.appendAuditEvent(auditEvent({
+      id: `audit_event_scan_completed_${repo.id}_${scanId}`,
+      repoId: repo.id,
+      actor,
+      action: "scan_completed",
+      targetType: "scan",
+      targetId: scanId,
+      metadata: {
+        files_indexed: scanData.files.length,
+        facts_count: scanData.facts.length,
+        candidates_count: candidates.length,
+        engine_source: scanData.engineSource
+      },
+      createdAt: now
+    }));
 
-  return {
-    repo,
-    scan,
-    candidates,
-    summary: {
-      files_indexed: scanData.files.length,
-      facts_count: scanData.facts.length,
-      candidates_count: candidates.length,
-      engine_source: scanData.engineSource
-    },
-    database_path: requiredDatabasePath(parsed)
-  };
+    return {
+      repo,
+      scan,
+      candidates,
+      summary: {
+        files_indexed: scanData.files.length,
+        facts_count: scanData.facts.length,
+        candidates_count: candidates.length,
+        engine_source: scanData.engineSource
+      },
+      database_path: requiredDatabasePath(parsed)
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown scan failure.";
+    const failedScan: ScanManifest = {
+      id: scanId,
+      repo_id: repo.id,
+      branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
+      commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
+      dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
+      previous_scan_id: previousScan?.id,
+      scanner_version: DRIFT_SCANNER_VERSION,
+      adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
+      rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
+      status: "failed",
+      file_count: 0,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: now,
+      completed_at: now,
+      error_message: errorMessage
+    };
+    storage.upsertScanManifest(failedScan);
+    storage.appendAuditEvent(auditEvent({
+      id: `audit_event_scan_failed_${repo.id}_${scanId}`,
+      repoId: repo.id,
+      actor,
+      action: "scan_failed",
+      targetType: "scan",
+      targetId: scanId,
+      metadata: { error_message: errorMessage },
+      createdAt: now
+    }));
+    throw error;
+  }
 }
 
 function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
