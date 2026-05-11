@@ -908,12 +908,18 @@ function resolveFindingWithReason(
 function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "log");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied audit output: ${policy.reason}`);
+  }
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const events = storage
     .listAuditEvents(repoId)
     .slice(-(limit ?? Number.POSITIVE_INFINITY));
   const payload = {
     repo_id: repoId,
+    policy,
     count: events.length,
     events
   };

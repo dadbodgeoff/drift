@@ -1445,7 +1445,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("lists audit events as JSON", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
     storage.migrate();
     storage.appendAuditEvent({
@@ -1468,6 +1468,10 @@ describe("drift CLI convention review", () => {
     ]);
 
     expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).policy).toMatchObject({
+      allowed: true,
+      surface: "log"
+    });
     expect(JSON.parse(result.stdout).events[0]).toMatchObject({
       action: "finding_resolved",
       actor: "geoff",
@@ -1475,6 +1479,31 @@ describe("drift CLI convention review", () => {
       target_id: "finding_abc",
       metadata: { evidence: "apps/web/app/api/users/route.ts:12" }
     });
+  });
+
+  it("denies audit list when repo policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc");
+    storage.upsertRepoContract({
+      ...contract!,
+      context_egress: {
+        ...contract!.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Policy denied audit output");
   });
 
   it("refuses audit list for an unknown repo id", async () => {
