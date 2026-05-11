@@ -392,6 +392,7 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   const repoRoot = resolveRepoRoot(parsed);
   const repo = repoRecordForRoot(repoRoot, now);
   storage.upsertRepo(repo);
+  const previousScan = storage.listScanManifests(repo.id).find((scan) => scan.status === "completed");
 
   const scanId = `scan_${hashStable(`${repo.id}:${now}`).slice(0, 16)}`;
   const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
@@ -408,6 +409,7 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     branch: gitOutput(repoRoot, ["branch", "--show-current"]) || "unknown",
     commit: gitOutput(repoRoot, ["rev-parse", "HEAD"]) || "unknown",
     dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
+    previous_scan_id: previousScan?.id,
     scanner_version: DRIFT_SCANNER_VERSION,
     adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
     rule_engine_version: DRIFT_RULE_ENGINE_VERSION,

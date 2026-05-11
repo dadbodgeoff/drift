@@ -369,6 +369,37 @@ describe("drift CLI convention review", () => {
     expect(payload.next_command).toBe(`drift scan --repo-root ${repoRoot} --json`);
   });
 
+  it("links repeated scans to the previous completed scan", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-scan-lineage-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      "export async function GET() { return Response.json({ ok: true }); }\n"
+    );
+
+    const first = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const firstPayload = JSON.parse(first.stdout);
+    const second = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:20.000Z",
+      "--json"
+    ]);
+
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).scan.previous_scan_id).toBe(firstPayload.scan.id);
+  });
+
   it("reports scan invalidation when scanner, adapter, or rule versions change", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-scan-invalid-"));
     tempDirs.push(dir);
