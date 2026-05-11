@@ -198,6 +198,14 @@ describe("read-only MCP handlers", () => {
     });
   });
 
+  it("refuses scan status for an unknown repo id", async () => {
+    const databasePath = await seedMcpDatabase();
+    const handlers = createReadOnlyMcpHandlers({ databasePath });
+
+    expect(() => handlers.get_scan_status({ repo_id: "repo_missing" }))
+      .toThrow("Unknown repo repo_missing");
+  });
+
   it("returns scan, contract, preflight, findings, and policy context without mutating state", async () => {
     const databasePath = await seedMcpDatabase();
     const handlers = createReadOnlyMcpHandlers({ databasePath });

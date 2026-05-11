@@ -425,18 +425,21 @@ function scanStatusPayload(
   repoId: string
 ) {
   const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
   const scans = storage.listScanManifests(repoId);
   const latestScan = scans[0] ?? null;
   const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
   const policy = optionalAuthorizedMcpPolicy(storage, repoId);
-  const changes = repo && latestScan
+  const changes = latestScan
     ? compareSnapshotsToCurrentFiles(repo.root_path, storage.listFileSnapshots(repoId, latestScan.id))
     : emptyChanges();
 
   return {
     repo_id: repoId,
     policy,
-    repo_root: repo?.root_path ?? null,
+    repo_root: repo.root_path,
     latest_scan: latestScan,
     scan_count: scans.length,
     stale: !latestScan ||
