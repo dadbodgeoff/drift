@@ -413,11 +413,7 @@ function optionalAuthorizedMcpPolicy(
   if (!contract) {
     return null;
   }
-  const policy = authorizeContextExport(contract, "mcp");
-  if (!policy.allowed) {
-    throw new Error(`Policy denied MCP output: ${policy.reason}`);
-  }
-  return policy;
+  return authorizeContextExport(contract, "mcp");
 }
 
 function scanStatusPayload(

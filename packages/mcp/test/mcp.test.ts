@@ -321,6 +321,14 @@ describe("read-only MCP handlers", () => {
 
     const handlers = createReadOnlyMcpHandlers({ databasePath });
 
+    expect(handlers.get_scan_status({ repo_id: "repo_abc" })).toMatchObject({
+      repo_id: "repo_abc",
+      policy: {
+        allowed: false,
+        surface: "mcp",
+        mode: "approval_required"
+      }
+    });
     expect(() => handlers.get_task_preflight({
       repo_id: "repo_abc",
       task: "add users route"
