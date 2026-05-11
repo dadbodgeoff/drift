@@ -237,6 +237,48 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).toContain("drift check --diff main...HEAD");
   });
 
+  it("starts onboarding with accept-defaults, materializes contract, and baselines existing violations", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-start-defaults-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Accepted default convention.");
+    expect(result.stdout).toContain("Baselined 1 existing violation.");
+    expect(result.stdout).toContain("Ready for AI-assisted work.");
+
+    const dbLine = result.stdout.split("\n").find((line) => line.trim().startsWith("export DRIFT_DB="));
+    const databasePath = dbLine?.split("=", 2)[1];
+    const repoId = result.stdout.match(/--repo (repo_[a-f0-9]+)/)?.[1];
+    expect(databasePath).toBeTruthy();
+    expect(repoId).toBeTruthy();
+    const storage = openDriftStorage({ databasePath: databasePath! });
+    storage.migrate();
+    expect(storage.getRepoContract(repoId!)?.conventions).toHaveLength(1);
+    expect(storage.listBaselineViolations(repoId!)[0]?.status).toBe("active");
+    storage.close();
+  });
+
   it("prints clean help without requiring a database", async () => {
     const result = await runCli(["--help"]);
 

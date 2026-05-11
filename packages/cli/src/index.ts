@@ -267,12 +267,27 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
 function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const result = scanRepo(storage, parsed);
   const candidate = result.candidates[0];
+  const accepted = parsed.flags.has("accept-defaults") && candidate
+    ? acceptDefaultCandidate(storage, parsed, candidate)
+    : undefined;
+  const initialFindings = accepted
+    ? runFullRepoCheck(storage, parsed, result.repo.id, result.scan.completed_at ?? result.scan.started_at)
+    : [];
+  const baselinedCount = accepted
+    ? createBaselineForFindings(storage, parsed, result.repo.id, initialFindings).created_count
+    : 0;
   const text = [
     "Drift is ready for this repo.",
     "",
     `Scanned ${result.summary.files_indexed} files.`,
     `Stored ${result.summary.facts_count} facts.`,
     `Found ${result.summary.candidates_count} convention candidate${result.summary.candidates_count === 1 ? "" : "s"}.`,
+    ...(accepted ? [
+      "",
+      "Accepted default convention.",
+      `Baselined ${baselinedCount} existing violation${baselinedCount === 1 ? "" : "s"}.`,
+      "Ready for AI-assisted work."
+    ] : []),
     "",
     candidate
       ? [
@@ -287,16 +302,20 @@ function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
     `  export DRIFT_DB=${result.database_path}`,
     "",
     "Next commands:",
-    `  drift conventions list --repo ${result.repo.id} --status candidate`,
-    candidate
-      ? `  drift conventions accept ${candidate.id} --severity error --mode block`
-      : "  drift scan",
+    accepted
+      ? `  drift contract show --repo ${result.repo.id}`
+      : `  drift conventions list --repo ${result.repo.id} --status candidate`,
+    accepted
+      ? `  drift baseline status --repo ${result.repo.id}`
+      : candidate
+        ? `  drift conventions accept ${candidate.id} --severity error --mode block`
+        : "  drift scan",
     `  drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`,
     ""
   ].join("\n");
 
   return {
-    payload: parsed.flags.has("json") ? result : text
+    payload: parsed.flags.has("json") ? { ...result, accepted, baselined_count: baselinedCount } : text
   };
 }
 
@@ -440,6 +459,131 @@ function acceptCandidate(
   }));
 
   return { accepted: convention, contract };
+}
+
+function acceptDefaultCandidate(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  candidate: ConventionCandidate
+): AcceptedConvention {
+  return acceptCandidate(
+    storage,
+    withFlags(parsed, {
+      severity: candidate.suggested_severity,
+      mode: candidate.suggested_enforcement_mode
+    }),
+    candidate.id
+  ).accepted;
+}
+
+function runFullRepoCheck(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  repoId: string,
+  now: string
+): Finding[] {
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    return [];
+  }
+
+  const files = walkIndexableFiles(repo.root_path).filter(isApiRoutePath);
+  const diff = {
+    files: files.map((path) => ({ path, changedLines: new Set<number>() }))
+  };
+  const contract = storage.getRepoContract(repoId);
+  if (!contract) {
+    return [];
+  }
+
+  const findings: Finding[] = [];
+  for (const convention of contract.conventions) {
+    if (convention.kind !== "api_route_no_direct_data_access") {
+      continue;
+    }
+
+    for (const filePath of filesForConvention(diff, convention, "full")) {
+      if (isExceptedPath(filePath, convention)) {
+        continue;
+      }
+      const source = readFileSync(join(repo.root_path, filePath), "utf8");
+      for (const importUsed of extractImports(source)) {
+        if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
+          continue;
+        }
+
+        const fingerprint = findingFingerprint(convention.id, filePath, importUsed.name, importUsed.source);
+        const finding: Finding = {
+          id: `finding_${fingerprint.slice(0, 16)}`,
+          repo_id: repoId,
+          convention_id: convention.id,
+          fingerprint,
+          title: "API route imports data access directly",
+          message: `${filePath} imports ${importUsed.name} from ${importUsed.source} directly; route modules should delegate through the accepted service/data-access layer.`,
+          severity: convention.severity,
+          enforcement_result: enforcementResultFor(convention.enforcement_mode),
+          status: "new",
+          diff_status: "touched_existing",
+          evidence_refs: [],
+          created_at: now
+        };
+        storage.upsertFinding(finding);
+        findings.push(finding);
+      }
+    }
+  }
+
+  return findings;
+}
+
+function createBaselineForFindings(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  repoId: string,
+  findings: Finding[]
+): { created_count: number } {
+  if (findings.length === 0) {
+    return { created_count: 0 };
+  }
+
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const scanId = `scan_baseline_${sanitizeAuditId(now)}`;
+  storage.upsertScanManifest(baselineScanManifest({
+    id: scanId,
+    repoId,
+    from: "initial-scan",
+    now,
+    findingCount: findings.length
+  }));
+
+  let createdCount = 0;
+  for (const finding of findings) {
+    storage.upsertBaselineViolation({
+      id: `baseline_${finding.fingerprint.slice(0, 16)}`,
+      repo_id: repoId,
+      convention_id: finding.convention_id,
+      finding_fingerprint: finding.fingerprint,
+      file_path: inferFilePathFromMessage(finding.message),
+      first_seen_scan_id: scanId,
+      first_seen_commit: "initial-scan",
+      status: "active",
+      created_at: now
+    });
+    createdCount += 1;
+  }
+
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_baseline_create_${repoId}_${now}`,
+    repoId,
+    actor: stringFlag(parsed, "actor") ?? "local-user",
+    action: "baseline_created",
+    targetType: "baseline",
+    targetId: scanId,
+    metadata: { from: "initial-scan", created_count: createdCount },
+    createdAt: now
+  }));
+
+  return { created_count: createdCount };
 }
 
 function rejectCandidate(
@@ -1359,6 +1503,17 @@ function parseArgs(argv: string[]): ParsedArgs {
   }
 
   return { positional, flags };
+}
+
+function withFlags(parsed: ParsedArgs, flags: Record<string, string>): ParsedArgs {
+  const next = new Map(parsed.flags);
+  for (const [key, value] of Object.entries(flags)) {
+    next.set(key, value);
+  }
+  return {
+    positional: parsed.positional,
+    flags: next
+  };
 }
 
 function requiredFlag(parsed: ParsedArgs, key: string): string {
