@@ -3,7 +3,11 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
 import { openDriftStorage } from "@drift/storage";
-import { createReadOnlyMcpHandlers } from "../src/index.js";
+import {
+  DRIFT_READ_ONLY_MCP_TOOLS,
+  createReadOnlyMcpHandlers,
+  handleMcpJsonRpcRequest
+} from "../src/index.js";
 
 const tempDirs: string[] = [];
 
@@ -133,5 +137,72 @@ describe("read-only MCP handlers", () => {
     storage.migrate();
     expect(storage.listAuditEvents("repo_abc")).toHaveLength(0);
     storage.close();
+  });
+
+  it("exposes a read-only JSON-RPC tools/list and tools/call surface", async () => {
+    const databasePath = await seedMcpDatabase();
+
+    const initialized = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {}
+    });
+    const listed = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/list",
+      params: {}
+    });
+    const called = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: {
+        name: "get_task_preflight",
+        arguments: {
+          repo_id: "repo_abc",
+          task: "add users route"
+        }
+      }
+    });
+    const rejected = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "accept_convention",
+        arguments: {
+          repo_id: "repo_abc"
+        }
+      }
+    });
+
+    expect(initialized?.result).toMatchObject({
+      capabilities: { tools: {} },
+      serverInfo: { name: "drift-local" }
+    });
+    expect(listed?.result).toMatchObject({
+      tools: DRIFT_READ_ONLY_MCP_TOOLS
+    });
+    expect(DRIFT_READ_ONLY_MCP_TOOLS.map((tool) => tool.name)).toEqual([
+      "get_scan_status",
+      "get_repo_contract",
+      "get_task_preflight",
+      "get_conventions",
+      "get_findings",
+      "get_allowed_context"
+    ]);
+    expect(called?.result).toMatchObject({
+      content: [{ type: "text" }],
+      isError: false
+    });
+    const text = (called?.result as { content: Array<{ text: string }> }).content[0]?.text;
+    expect(JSON.parse(text)).toMatchObject({
+      repo_id: "repo_abc",
+      policy: { allowed: true },
+      conventions: [{ id: "convention_no_direct_db" }]
+    });
+    expect(rejected?.error?.message).toContain("Unknown read-only Drift MCP tool");
   });
 });
