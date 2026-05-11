@@ -123,7 +123,7 @@ describe("golden fixture CLI lifecycle", () => {
       {
         "checksum_length": 64,
         "repo_matches": true,
-        "schema_version": 3,
+        "schema_version": 4,
       }
     `);
 
@@ -139,7 +139,7 @@ describe("golden fixture CLI lifecycle", () => {
       {
         "checksum_length": 64,
         "repo_matches": true,
-        "schema_version": 3,
+        "schema_version": 4,
       }
     `);
 
