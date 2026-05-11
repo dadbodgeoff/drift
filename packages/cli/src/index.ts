@@ -17,9 +17,9 @@ import type {
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 export interface CliResult {
   exitCode: number;
@@ -165,6 +165,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "audit" && command === "list") {
     return listAudit(storage, parsed);
+  }
+
+  if (group === "backup" && command === "create") {
+    return createBackup(storage, parsed);
   }
 
   if (group === "check") {
@@ -630,6 +634,48 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
 
   return {
     payload: parsed.flags.has("json") ? payload : formatAuditListText(payload)
+  };
+}
+
+function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const sourceDatabasePath = requiredDatabasePath(parsed);
+  const backupPath = resolveBackupPath(parsed, repoId, now);
+  const backupId = `backup_${hashStable(`${repoId}:${backupPath}:${now}`).slice(0, 16)}`;
+
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_backup_create_${repoId}_${now}`,
+    repoId,
+    actor,
+    action: "backup_created",
+    targetType: "backup",
+    targetId: backupId,
+    metadata: { backup_path: backupPath },
+    createdAt: now
+  }));
+  storage.checkpoint();
+  copyFileSync(sourceDatabasePath, backupPath);
+
+  const manifest = {
+    id: backupId,
+    repo_id: repoId,
+    repo_fingerprint: repo.fingerprint,
+    schema_version: storage.getAppliedMigrations().length,
+    source_database_path: sourceDatabasePath,
+    backup_path: backupPath,
+    checksum_sha256: fileContentHash(backupPath),
+    size_bytes: statSync(backupPath).size,
+    created_at: now
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? { manifest } : formatBackupCreatedText(manifest)
   };
 }
 
@@ -1175,6 +1221,27 @@ function formatAuditListText(payload: {
   ].join("\n");
 }
 
+function formatBackupCreatedText(manifest: {
+  id: string;
+  repo_id: string;
+  backup_path: string;
+  checksum_sha256: string;
+  size_bytes: number;
+  created_at: string;
+}): string {
+  return [
+    "Drift backup created",
+    "",
+    `Backup: ${manifest.id}`,
+    `Repo: ${manifest.repo_id}`,
+    `Path: ${manifest.backup_path}`,
+    `Checksum: ${manifest.checksum_sha256}`,
+    `Size: ${manifest.size_bytes} bytes`,
+    `Created: ${manifest.created_at}`,
+    ""
+  ].join("\n");
+}
+
 function formatScanStatusText(payload: {
   repo_id: string;
   repo_root: string;
@@ -1576,6 +1643,20 @@ function defaultDatabasePath(
     mkdirSync(dir, { recursive: true });
   }
   return join(dir, "drift.sqlite");
+}
+
+function resolveBackupPath(parsed: ParsedArgs, repoId: string, now: string): string {
+  const output = resolve(
+    stringFlag(parsed, "output") ??
+      join(homedir(), ".drift", "backups", repoId)
+  );
+  if (extname(output) === ".sqlite") {
+    mkdirSync(dirname(output), { recursive: true });
+    return output;
+  }
+
+  mkdirSync(output, { recursive: true });
+  return join(output, `${repoId}-${sanitizeAuditId(now)}.drift-backup.sqlite`);
 }
 
 function repoRecordForRoot(repoRoot: string, now: string): RepoRecord {
@@ -2002,6 +2083,21 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "backup") {
+    return [
+      "Back up Drift state",
+      "",
+      "Usage:",
+      "  drift --db <path> backup create --repo <repo_id> --json",
+      "  drift --db <path> backup create --repo <repo_id> --output ./backups --json",
+      "",
+      "Notes:",
+      "  backup create writes one SQLite backup artifact containing Drift state, not source code.",
+      "  it appends a backup_created audit event before copying the database.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "baseline") {
     return [
       "Manage baselines",
@@ -2036,6 +2132,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift findings list --repo <repo_id> --json",
     "  drift findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
     "  drift audit list --repo <repo_id> --json",
+    "  drift backup create --repo <repo_id> --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",

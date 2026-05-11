@@ -672,6 +672,44 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("creates a single SQLite backup artifact and audits it", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-"));
+    tempDirs.push(dir);
+    const backupDir = join(dir, "backups");
+
+    const result = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupDir,
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.manifest).toMatchObject({
+      repo_id: "repo_abc",
+      schema_version: 3,
+      created_at: "2026-05-10T00:00:04.000Z"
+    });
+    expect(payload.manifest.backup_path).toContain(backupDir);
+    expect(payload.manifest.checksum_sha256).toHaveLength(64);
+    await expect(stat(payload.manifest.backup_path)).resolves.toBeTruthy();
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    expect(storage.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "backup_created",
+      actor: "geoff",
+      target_type: "backup",
+      metadata: { backup_path: payload.manifest.backup_path }
+    });
+    storage.close();
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);

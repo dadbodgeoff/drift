@@ -451,6 +451,10 @@ export class SqliteDriftStorage {
       .map(auditEventFromRow);
   }
 
+  checkpoint(): void {
+    this.db.pragma("wal_checkpoint(TRUNCATE)");
+  }
+
   close(): void {
     this.db.close();
   }
