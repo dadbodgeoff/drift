@@ -710,6 +710,54 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("restores a SQLite backup into a target database and audits the restore", async () => {
+    const sourceDatabasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-"));
+    tempDirs.push(dir);
+    const backupDir = join(dir, "backups");
+    const targetDatabasePath = join(dir, "restored.sqlite");
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupDir,
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+
+    const restored = await runCli([
+      "--db", targetDatabasePath,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:05.000Z",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(0);
+    const payload = JSON.parse(restored.stdout);
+    expect(payload.restore).toMatchObject({
+      repo_id: "repo_abc",
+      backup_path: backupPath,
+      restored_database_path: targetDatabasePath,
+      schema_version: 3
+    });
+    expect(payload.restore.checksum_sha256).toHaveLength(64);
+
+    const restoredStorage = openDriftStorage({ databasePath: targetDatabasePath });
+    restoredStorage.migrate();
+    expect(restoredStorage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
+    expect(restoredStorage.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "restore_completed",
+      actor: "geoff",
+      target_type: "restore",
+      metadata: { backup_path: backupPath }
+    });
+    restoredStorage.close();
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);

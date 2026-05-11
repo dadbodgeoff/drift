@@ -53,6 +53,15 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       };
     }
 
+    if (parsed.positional[0] === "restore") {
+      const result = normalizeCommandResult(restoreBackup(parsed));
+      return {
+        exitCode: result.exitCode ?? 0,
+        stdout: formatOutput(result.payload, parsed),
+        stderr: ""
+      };
+    }
+
     const databasePath = resolveDatabasePath(parsed);
     if (!databasePath) {
       throw new Error("Missing --db <path> or DRIFT_DB. Run drift --help.");
@@ -679,6 +688,70 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
   };
 }
 
+function restoreBackup(parsed: ParsedArgs): CommandPayload {
+  const backupPath = requiredValue(parsed.positional[1], "backup path");
+  const targetDatabasePath = requiredDatabasePath(parsed);
+  const repoId = requiredFlag(parsed, "repo");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  if (!existsSync(backupPath)) {
+    throw new Error(`Backup not found: ${backupPath}`);
+  }
+
+  const checksum = fileContentHash(backupPath);
+  const backupStorage = openDriftStorage({ databasePath: backupPath });
+  let schemaVersion = 0;
+  let repo: RepoRecord | undefined;
+  try {
+    schemaVersion = backupStorage.getAppliedMigrations().length;
+    repo = backupStorage.getRepo(repoId);
+  } finally {
+    backupStorage.close();
+  }
+  if (schemaVersion === 0) {
+    throw new Error(`Backup has no Drift schema migrations: ${backupPath}`);
+  }
+  if (!repo) {
+    throw new Error(`Backup does not contain repo ${repoId}.`);
+  }
+
+  mkdirSync(dirname(targetDatabasePath), { recursive: true });
+  copyFileSync(backupPath, targetDatabasePath);
+
+  const restoredStorage = openDriftStorage({ databasePath: targetDatabasePath });
+  try {
+    restoredStorage.migrate();
+    const restoreId = `restore_${hashStable(`${repoId}:${backupPath}:${targetDatabasePath}:${now}`).slice(0, 16)}`;
+    restoredStorage.appendAuditEvent(auditEvent({
+      id: `audit_event_restore_${repoId}_${now}`,
+      repoId,
+      actor,
+      action: "restore_completed",
+      targetType: "restore",
+      targetId: restoreId,
+      metadata: { backup_path: backupPath },
+      createdAt: now
+    }));
+    restoredStorage.checkpoint();
+
+    const restore = {
+      id: restoreId,
+      repo_id: repoId,
+      repo_fingerprint: repo.fingerprint,
+      backup_path: backupPath,
+      restored_database_path: targetDatabasePath,
+      checksum_sha256: checksum,
+      schema_version: restoredStorage.getAppliedMigrations().length,
+      restored_at: now
+    };
+    return {
+      payload: parsed.flags.has("json") ? { restore } : formatRestoreText(restore)
+    };
+  } finally {
+    restoredStorage.close();
+  }
+}
+
 function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = requiredFlag(parsed, "repo");
   const contract = requiredRepoContract(storage, repoId);
@@ -1238,6 +1311,29 @@ function formatBackupCreatedText(manifest: {
     `Checksum: ${manifest.checksum_sha256}`,
     `Size: ${manifest.size_bytes} bytes`,
     `Created: ${manifest.created_at}`,
+    ""
+  ].join("\n");
+}
+
+function formatRestoreText(restore: {
+  id: string;
+  repo_id: string;
+  backup_path: string;
+  restored_database_path: string;
+  checksum_sha256: string;
+  schema_version: number;
+  restored_at: string;
+}): string {
+  return [
+    "Drift restore completed",
+    "",
+    `Restore: ${restore.id}`,
+    `Repo: ${restore.repo_id}`,
+    `Backup: ${restore.backup_path}`,
+    `Database: ${restore.restored_database_path}`,
+    `Schema version: ${restore.schema_version}`,
+    `Checksum: ${restore.checksum_sha256}`,
+    `Restored: ${restore.restored_at}`,
     ""
   ].join("\n");
 }
@@ -2098,6 +2194,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "restore") {
+    return [
+      "Restore Drift state",
+      "",
+      "Usage:",
+      "  drift --db <target.sqlite> restore <backup.sqlite> --repo <repo_id> --json",
+      "",
+      "Notes:",
+      "  restore validates the backup schema and repo id, copies the SQLite backup into the target database,",
+      "  runs current migrations, and appends a restore_completed audit event.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "baseline") {
     return [
       "Manage baselines",
@@ -2133,6 +2243,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
     "  drift audit list --repo <repo_id> --json",
     "  drift backup create --repo <repo_id> --json",
+    "  drift restore <backup.sqlite> --repo <repo_id> --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",
