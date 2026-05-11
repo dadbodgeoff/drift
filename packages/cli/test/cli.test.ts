@@ -1944,6 +1944,33 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("edits a candidate structured scope from a JSON file", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-scope-file-"));
+    tempDirs.push(dir);
+    const scopePath = join(dir, "scope.json");
+    await writeFile(scopePath, JSON.stringify({
+      path_globs: ["apps/api/**/route.ts"],
+      file_roles: ["api_route"],
+      exclude_path_globs: ["apps/api/health/**"]
+    }));
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "edit",
+      "candidate_no_direct_db",
+      "--scope-file", scopePath,
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).candidate.scope).toEqual({
+      path_globs: ["apps/api/**/route.ts"],
+      file_roles: ["api_route"],
+      exclude_path_globs: ["apps/api/health/**"]
+    });
+  });
+
   it("adds an exception to an accepted convention and rematerializes the contract", async () => {
     const databasePath = await seedDatabase();
     await runCli([

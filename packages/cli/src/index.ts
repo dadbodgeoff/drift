@@ -18,6 +18,7 @@ import {
   DRIFT_RULE_ENGINE_VERSION,
   DRIFT_SCANNER_VERSION,
   DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+  ConventionScopeSchema,
   RepoContractSchema,
   authorizeContextExport
 } from "@drift/core";
@@ -1919,9 +1920,13 @@ function editCandidate(
 ): { candidate: ConventionCandidate } {
   const candidate = requiredCandidate(storage, candidateId);
   const statement = stringFlag(parsed, "statement");
+  const scopeFile = stringFlag(parsed, "scope-file");
   const updated = {
     ...candidate,
-    statement: statement ?? candidate.statement
+    statement: statement ?? candidate.statement,
+    scope: scopeFile
+      ? ConventionScopeSchema.parse(JSON.parse(readFileSync(scopeFile, "utf8")))
+      : candidate.scope
   };
 
   storage.upsertConventionCandidate(updated);
