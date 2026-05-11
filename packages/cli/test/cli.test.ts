@@ -1064,6 +1064,30 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("rejects invalid findings list filter values", async () => {
+    const databasePath = await seedDatabase();
+
+    const invalidStatus = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--status", "open",
+      "--json"
+    ]);
+    const invalidSeverity = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--severity", "critical",
+      "--json"
+    ]);
+
+    expect(invalidStatus.exitCode).toBe(1);
+    expect(invalidStatus.stderr).toContain("--status must be");
+    expect(invalidSeverity.exitCode).toBe(1);
+    expect(invalidSeverity.stderr).toContain("--severity must be");
+  });
+
   it("marks a finding fixed with evidence and audits the resolution", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });

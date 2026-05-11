@@ -550,8 +550,8 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   findings: Finding[];
 } {
   const repoId = resolveRepoId(parsed);
-  const status = stringFlag(parsed, "status") as FindingStatus | undefined;
-  const severity = stringFlag(parsed, "severity") as Severity | undefined;
+  const status = optionalFindingStatusFlag(parsed, "status");
+  const severity = optionalSeverityFlag(parsed, "severity");
   const allFindings = storage.listFindings(repoId);
   const findings = allFindings.filter((finding) =>
     (!status || finding.status === status) &&
@@ -1473,6 +1473,36 @@ function policySurface(value: string): PolicyDecision["surface"] {
   }
 
   throw new Error("--surface must be cli-preflight, cli-check, mcp, contract-export, artifact, log, or ui.");
+}
+
+function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingStatus | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (
+    value === "new" ||
+    value === "pre_existing" ||
+    value === "needs_review" ||
+    value === "fixed" ||
+    value === "false_positive" ||
+    value === "accepted_drift" ||
+    value === "suppressed"
+  ) {
+    return value;
+  }
+  throw new Error("--status must be new, pre_existing, needs_review, fixed, false_positive, accepted_drift, or suppressed.");
+}
+
+function optionalSeverityFlag(parsed: ParsedArgs, name: string): Severity | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (value === "info" || value === "warning" || value === "error") {
+    return value;
+  }
+  throw new Error("--severity must be info, warning, or error.");
 }
 
 function preparedConvention(convention: AcceptedConvention): PreparedConvention {
