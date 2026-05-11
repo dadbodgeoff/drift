@@ -323,6 +323,22 @@ describe("read-only MCP handlers", () => {
       .toThrow("Policy denied MCP output");
   });
 
+  it("refuses contract-backed MCP tools for an unknown repo id", async () => {
+    const databasePath = await seedMcpDatabase();
+    const handlers = createReadOnlyMcpHandlers({ databasePath });
+
+    expect(() => handlers.get_repo_contract({ repo_id: "repo_missing" }))
+      .toThrow("Unknown repo repo_missing");
+    expect(() => handlers.get_task_preflight({ repo_id: "repo_missing", task: "add route" }))
+      .toThrow("Unknown repo repo_missing");
+    expect(() => handlers.get_conventions({ repo_id: "repo_missing" }))
+      .toThrow("Unknown repo repo_missing");
+    expect(() => handlers.get_findings({ repo_id: "repo_missing" }))
+      .toThrow("Unknown repo repo_missing");
+    expect(() => handlers.get_allowed_context({ repo_id: "repo_missing", path: "apps/web/app/api/users/route.ts" }))
+      .toThrow("Unknown repo repo_missing");
+  });
+
   it("exposes a read-only JSON-RPC tools/list and tools/call surface", async () => {
     const databasePath = await seedMcpDatabase();
 

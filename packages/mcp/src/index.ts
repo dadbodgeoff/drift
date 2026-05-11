@@ -214,7 +214,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
 
     get_allowed_context: ({ repo_id, path, surface = "mcp" }) =>
       withStorage(options, (storage) => {
-        const contract = requiredContract(storage.getRepoContract(repo_id), repo_id);
+        const { contract } = requiredAuthorizedMcpContract(storage, repo_id);
         const requestedSurface = validatePolicySurface(surface);
         return {
           repo_id,
@@ -390,12 +390,19 @@ function requiredAuthorizedMcpContract(
   storage: ReturnType<typeof openDriftStorage>,
   repoId: string
 ): { contract: RepoContract; policy: PolicyDecision } {
+  requiredMcpRepo(storage, repoId);
   const contract = requiredContract(storage.getRepoContract(repoId), repoId);
   const policy = authorizeContextExport(contract, "mcp");
   if (!policy.allowed) {
     throw new Error(`Policy denied MCP output: ${policy.reason}`);
   }
   return { contract, policy };
+}
+
+function requiredMcpRepo(storage: ReturnType<typeof openDriftStorage>, repoId: string): void {
+  if (!storage.getRepo(repoId)) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
 }
 
 function optionalAuthorizedMcpPolicy(
