@@ -158,6 +158,11 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return { findings: storage.listFindings(repoId) };
   }
 
+  if (group === "findings" && command === "mark-fixed") {
+    const findingId = requiredValue(maybeId, "finding id");
+    return markFindingFixed(storage, parsed, findingId);
+  }
+
   if (group === "check") {
     return runCheck(storage, parsed);
   }
@@ -565,6 +570,45 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
 
   return {
     payload: parsed.flags.has("json") ? payload : formatPrepareText(payload)
+  };
+}
+
+function markFindingFixed(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  findingId: string
+): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const evidence = requiredFlag(parsed, "evidence");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const finding = storage.listFindings(repoId).find((entry) => entry.id === findingId);
+  if (!finding) {
+    throw new Error(`Finding not found: ${findingId}`);
+  }
+
+  const updated: Finding = {
+    ...finding,
+    status: "fixed"
+  };
+  storage.upsertFinding(updated);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_finding_fixed_${repoId}_${findingId}_${now}`,
+    repoId,
+    actor,
+    action: "finding_resolved",
+    targetType: "finding",
+    targetId: findingId,
+    metadata: { evidence },
+    createdAt: now
+  }));
+
+  const payload = {
+    finding: updated,
+    evidence
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatFindingFixedText(payload)
   };
 }
 
@@ -1077,6 +1121,17 @@ function formatPrepareText(payload: {
     "",
     "Next commands:",
     ...payload.next_commands.map((command) => `  ${command}`),
+    ""
+  ].join("\n");
+}
+
+function formatFindingFixedText(payload: { finding: Finding; evidence: string }): string {
+  return [
+    "Drift finding fixed",
+    "",
+    `Finding: ${payload.finding.id}`,
+    `Status: ${payload.finding.status}`,
+    `Evidence: ${payload.evidence}`,
     ""
   ].join("\n");
 }
@@ -1880,6 +1935,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "findings") {
+    return [
+      "Review findings",
+      "",
+      "Usage:",
+      "  drift --db <path> findings list --repo <repo_id> --json",
+      "  drift --db <path> findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
+      "",
+      "Notes:",
+      "  mark-fixed requires evidence and writes an append-only finding_resolved audit event.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "baseline") {
     return [
       "Manage baselines",
@@ -1912,6 +1981,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",
+    "  drift findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",

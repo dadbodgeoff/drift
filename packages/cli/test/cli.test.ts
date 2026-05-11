@@ -594,6 +594,51 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(result.stdout).findings[0].id).toBe("finding_abc");
   });
 
+  it("marks a finding fixed with evidence and audits the resolution", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "mark-fixed",
+      "finding_abc",
+      "--repo", "repo_abc",
+      "--evidence", "apps/web/app/api/users/route.ts:12",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:03.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).finding.status).toBe("fixed");
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listFindings("repo_abc")[0]?.status).toBe("fixed");
+    expect(checked.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "finding_resolved",
+      actor: "geoff",
+      metadata: { evidence: "apps/web/app/api/users/route.ts:12" }
+    });
+    checked.close();
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);
