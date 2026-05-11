@@ -249,6 +249,65 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("resolves path aliases when inferring direct data-access imports", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-alias-candidate-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "src/app/api/users"), { recursive: true });
+    await mkdir(join(repoRoot, "src/lib"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          baseUrl: ".",
+          paths: {
+            "@/*": ["src/*"]
+          }
+        }
+      })
+    );
+    await writeFile(
+      join(repoRoot, "src/lib/client.ts"),
+      [
+        "import { PrismaClient } from \"@prisma/client\";",
+        "export const client = new PrismaClient();",
+        ""
+      ].join("\n")
+    );
+    await writeFile(
+      join(repoRoot, "src/app/api/users/route.ts"),
+      [
+        "import { client } from \"@/lib/client\";",
+        "",
+        "export async function GET() {",
+        "  return Response.json(await client.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:12.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    const directDataAccess = payload.candidates.find(
+      (candidate: { kind: string }) => candidate.kind === "api_route_no_direct_data_access"
+    );
+    expect(directDataAccess).toMatchObject({
+      matcher: {
+        forbidden_imports: ["@/lib/client"]
+      },
+      enforcement_capability: "deterministic_check"
+    });
+  });
+
   it("reports scan status and marks the graph stale after file changes", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-scan-status-"));
     tempDirs.push(dir);
