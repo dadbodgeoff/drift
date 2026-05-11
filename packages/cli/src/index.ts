@@ -146,7 +146,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "conventions" && command === "list") {
-    const repoId = requiredFlag(parsed, "repo");
+    const repoId = resolveRepoId(parsed);
     const status = stringFlag(parsed, "status");
     return {
       candidates: storage.listConventionCandidates(repoId, status ? { status: status as never } : {})
@@ -180,7 +180,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "contract" && command === "show") {
-    const repoId = requiredFlag(parsed, "repo");
+    const repoId = resolveRepoId(parsed);
     const contract = storage.getRepoContract(repoId);
     if (!contract) {
       throw new Error(`No repo contract exists for ${repoId}.`);
@@ -201,7 +201,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "findings" && command === "list") {
-    const repoId = requiredFlag(parsed, "repo");
+    const repoId = resolveRepoId(parsed);
     return { findings: storage.listFindings(repoId) };
   }
 
@@ -551,7 +551,7 @@ interface RelevantFile {
 }
 
 function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const task = requiredValue(parsed.positional.slice(1).join(" ").trim(), "task");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const repo = storage.getRepo(repoId);
@@ -625,7 +625,7 @@ function markFindingFixed(
   parsed: ParsedArgs,
   findingId: string
 ): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const evidence = requiredFlag(parsed, "evidence");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -660,7 +660,7 @@ function markFindingFixed(
 }
 
 function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const events = storage
     .listAuditEvents(repoId)
@@ -677,7 +677,7 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
 }
 
 function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const repo = storage.getRepo(repoId);
   if (!repo) {
     throw new Error(`Unknown repo ${repoId}.`);
@@ -783,7 +783,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
 }
 
 function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
   const payload = {
     repo_id: repoId,
@@ -808,7 +808,7 @@ function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 }
 
 function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const contextPath = requiredFlag(parsed, "path");
   const surface = policySurface(requiredFlag(parsed, "surface"));
   const contract = requiredRepoContract(storage, repoId);
@@ -825,7 +825,7 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
 }
 
 function validateContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
   RepoContractSchema.parse(contract);
   const payload = {
@@ -841,7 +841,7 @@ function validateContract(storage: SqliteDriftStorage, parsed: ParsedArgs): Comm
 }
 
 function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const format = stringFlag(parsed, "format") ?? "json";
   if (format !== "json") {
     throw new Error("--format must be json.");
@@ -879,7 +879,7 @@ function importContractDryRun(parsed: ParsedArgs, contractPath: string): Command
 }
 
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const repo = storage.getRepo(repoId);
   if (!repo) {
     throw new Error(`Unknown repo ${repoId}.`);
@@ -1557,7 +1557,7 @@ function addConventionException(
   parsed: ParsedArgs,
   conventionId: string
 ): { convention: AcceptedConvention; contract: RepoContract } {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const path = requiredFlag(parsed, "path");
   const reason = requiredFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
@@ -1605,7 +1605,7 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   created_count: number;
   baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
 } {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const from = requiredFlag(parsed, "from");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -1666,7 +1666,7 @@ function baselineStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   resolved_count: number;
   by_convention: Array<{ convention_id: string; active_count: number; resolved_count: number }>;
 } {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const rows = storage.listBaselineViolations(repoId);
   const byConvention = new Map<string, { active_count: number; resolved_count: number }>();
 
@@ -1695,7 +1695,7 @@ function clearBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   resolved_count: number;
   baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
 } {
-  const repoId = requiredFlag(parsed, "repo");
+  const repoId = resolveRepoId(parsed);
   const conventionId = requiredFlag(parsed, "convention");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -1816,7 +1816,11 @@ function resolveDatabasePath(parsed: ParsedArgs): string | undefined {
     return explicit;
   }
 
-  if (["init", "scan", "start"].includes(parsed.positional[0] ?? "")) {
+  if (
+    ["init", "scan", "start"].includes(parsed.positional[0] ?? "") ||
+    parsed.flags.has("repo-root") ||
+    parsed.flags.has("state-root")
+  ) {
     return defaultDatabasePath(resolveRepoRoot(parsed), parsed);
   }
 
@@ -1829,6 +1833,10 @@ function requiredDatabasePath(parsed: ParsedArgs): string {
 
 function resolveRepoRoot(parsed: ParsedArgs): string {
   return resolve(stringFlag(parsed, "repo-root") ?? process.cwd());
+}
+
+function resolveRepoId(parsed: ParsedArgs): string {
+  return stringFlag(parsed, "repo") ?? repoIdForRoot(resolveRepoRoot(parsed));
 }
 
 function defaultDatabasePath(

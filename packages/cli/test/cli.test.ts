@@ -823,6 +823,51 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).not.toContain("prisma.user.findMany");
   });
 
+  it("infers database path and repo id from repo-root for common commands", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-ergonomic-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const started = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z"
+    ]);
+    const repoId = started.stdout.match(/--repo (repo_[a-f0-9]+)/)?.[1];
+    const prepared = await runCli([
+      "prepare",
+      "add user endpoint",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--json"
+    ]);
+    const contract = await runCli([
+      "contract", "show",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout).repo_id).toBe(repoId);
+    expect(contract.exitCode).toBe(0);
+    expect(JSON.parse(contract.stdout).contract.repo_id).toBe(repoId);
+  });
+
   it("shows repo policy and checks whether context can be exported", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
