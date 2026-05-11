@@ -223,6 +223,13 @@ describe("read-only MCP handlers", () => {
       },
       policy: { allowed: true, surface: "mcp" },
       conventions: [{ id: "convention_no_direct_db" }],
+      scan_status: {
+        stale: true,
+        invalidation_reasons: [
+          "adapter_version_changed:typescript",
+          "rule_engine_version_changed"
+        ]
+      },
       baseline: { active_count: 1 },
       findings: [{ id: "finding_abc" }],
       required_checks: [{ command: "drift check --diff main...HEAD" }],

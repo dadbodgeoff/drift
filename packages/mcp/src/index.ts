@@ -136,30 +136,7 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
 
 export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHandlers {
   return {
-    get_scan_status: ({ repo_id }) => withStorage(options, (storage) => {
-      const repo = storage.getRepo(repo_id);
-      const scans = storage.listScanManifests(repo_id);
-      const latestScan = scans[0] ?? null;
-      const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
-      const policy = optionalAuthorizedMcpPolicy(storage, repo_id);
-      const changes = repo && latestScan
-        ? compareSnapshotsToCurrentFiles(repo.root_path, storage.listFileSnapshots(repo_id, latestScan.id))
-        : emptyChanges();
-      return {
-        repo_id,
-        policy,
-        repo_root: repo?.root_path ?? null,
-        latest_scan: latestScan,
-        scan_count: scans.length,
-        stale: !latestScan ||
-          invalidationReasons.length > 0 ||
-          changes.added.length > 0 ||
-          changes.modified.length > 0 ||
-          changes.deleted.length > 0,
-        invalidation_reasons: invalidationReasons,
-        changes
-      };
-    }),
+    get_scan_status: ({ repo_id }) => withStorage(options, (storage) => scanStatusPayload(storage, repo_id)),
 
     get_repo_contract: ({ repo_id }) => withStorage(options, (storage) => {
       const { contract, policy } = requiredAuthorizedMcpContract(storage, repo_id);
@@ -191,6 +168,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           matcher: convention.matcher,
           exceptions: convention.exceptions
         })),
+        scan_status: scanStatusPayload(storage, repo_id),
         baseline: baselineSummary(storage, repo_id),
         findings: storage.listFindings(repo_id).filter((finding) =>
           !["fixed", "false_positive", "suppressed"].includes(finding.status)
@@ -433,6 +411,35 @@ function optionalAuthorizedMcpPolicy(
     throw new Error(`Policy denied MCP output: ${policy.reason}`);
   }
   return policy;
+}
+
+function scanStatusPayload(
+  storage: ReturnType<typeof openDriftStorage>,
+  repoId: string
+) {
+  const repo = storage.getRepo(repoId);
+  const scans = storage.listScanManifests(repoId);
+  const latestScan = scans[0] ?? null;
+  const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
+  const policy = optionalAuthorizedMcpPolicy(storage, repoId);
+  const changes = repo && latestScan
+    ? compareSnapshotsToCurrentFiles(repo.root_path, storage.listFileSnapshots(repoId, latestScan.id))
+    : emptyChanges();
+
+  return {
+    repo_id: repoId,
+    policy,
+    repo_root: repo?.root_path ?? null,
+    latest_scan: latestScan,
+    scan_count: scans.length,
+    stale: !latestScan ||
+      invalidationReasons.length > 0 ||
+      changes.added.length > 0 ||
+      changes.modified.length > 0 ||
+      changes.deleted.length > 0,
+    invalidation_reasons: invalidationReasons,
+    changes
+  };
 }
 
 function scanInvalidationReasons(scan: ScanManifest): string[] {
