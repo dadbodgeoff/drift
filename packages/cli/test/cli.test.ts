@@ -1204,6 +1204,40 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("lists persisted backup manifests as JSON", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-list-"));
+    tempDirs.push(dir);
+    const backupDir = join(dir, "backups");
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupDir,
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+
+    const listed = await runCli([
+      "--db", databasePath,
+      "backup", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(listed.exitCode).toBe(0);
+    expect(JSON.parse(listed.stdout)).toMatchObject({
+      repo_id: "repo_abc",
+      count: 1,
+      backups: [{
+        id: manifest.id,
+        backup_path: manifest.backup_path,
+        checksum_sha256: manifest.checksum_sha256
+      }]
+    });
+  });
+
   it("restores a SQLite backup into a target database and audits the restore", async () => {
     const sourceDatabasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-"));

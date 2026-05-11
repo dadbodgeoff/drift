@@ -237,6 +237,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return createBackup(storage, parsed);
   }
 
+  if (group === "backup" && command === "list") {
+    return listBackups(storage, parsed);
+  }
+
   if (group === "check") {
     return runCheck(storage, parsed);
   }
@@ -819,6 +823,19 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
 
   return {
     payload: parsed.flags.has("json") ? { manifest } : formatBackupCreatedText(manifest)
+  };
+}
+
+function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = resolveRepoId(parsed);
+  const backups = storage.listBackupManifests(repoId);
+  const payload = {
+    repo_id: repoId,
+    count: backups.length,
+    backups
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatBackupListText(payload)
   };
 }
 
@@ -1546,6 +1563,24 @@ function formatBackupCreatedText(manifest: {
     `Checksum: ${manifest.checksum_sha256}`,
     `Size: ${manifest.size_bytes} bytes`,
     `Created: ${manifest.created_at}`,
+    ""
+  ].join("\n");
+}
+
+function formatBackupListText(payload: {
+  repo_id: string;
+  count: number;
+  backups: Array<{ id: string; backup_path: string; checksum_sha256: string; created_at: string }>;
+}): string {
+  return [
+    "Drift backups",
+    "",
+    `Repo: ${payload.repo_id}`,
+    `Backups: ${payload.count}`,
+    "",
+    ...payload.backups.map((backup) =>
+      `${backup.created_at} ${backup.id} ${backup.backup_path} ${backup.checksum_sha256}`
+    ),
     ""
   ].join("\n");
 }
@@ -2794,6 +2829,7 @@ function helpText(parsed: ParsedArgs): string {
       "Usage:",
       "  drift --db <path> backup create --repo <repo_id> --json",
       "  drift --db <path> backup create --repo <repo_id> --output ./backups --json",
+      "  drift --db <path> backup list --repo <repo_id> --json",
       "",
       "Notes:",
       "  backup create writes one SQLite backup artifact containing Drift state, not source code.",
@@ -2852,6 +2888,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift findings suppress <finding_id> --repo <repo_id> --reason \"...\" --json",
     "  drift audit list --repo <repo_id> --json",
     "  drift backup create --repo <repo_id> --json",
+    "  drift backup list --repo <repo_id> --json",
     "  drift restore <backup.sqlite> --repo <repo_id> --json",
     "  drift contract validate --repo <repo_id> --json",
     "  drift contract export --repo <repo_id> --format json --json",
