@@ -1298,8 +1298,8 @@ function acceptCandidate(
   const candidate = requiredCandidate(storage, candidateId);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
-  const severity = (stringFlag(parsed, "severity") ?? candidate.suggested_severity) as Severity;
-  const mode = (stringFlag(parsed, "mode") ?? candidate.suggested_enforcement_mode) as EnforcementMode;
+  const severity = optionalSeverityFlag(parsed, "severity") ?? candidate.suggested_severity;
+  const mode = optionalEnforcementModeFlag(parsed, "mode") ?? candidate.suggested_enforcement_mode;
   const contractId = storage.getRepoContract(candidate.repo_id)?.id ?? contractIdForRepo(candidate.repo_id);
   const convention: AcceptedConvention = {
     id: conventionIdForCandidate(candidate.id),
@@ -1524,6 +1524,17 @@ function optionalConventionStatusFlag(parsed: ParsedArgs, name: string): Convent
     return value;
   }
   throw new Error("--status must be candidate, accepted, rejected, archived, or expired.");
+}
+
+function optionalEnforcementModeFlag(parsed: ParsedArgs, name: string): EnforcementMode | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (value === "off" || value === "brief" || value === "warn" || value === "block") {
+    return value;
+  }
+  throw new Error("--mode must be off, brief, warn, or block.");
 }
 
 function preparedConvention(convention: AcceptedConvention): PreparedConvention {

@@ -1819,6 +1819,30 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("rejects invalid convention accept severity and mode", async () => {
+    const databasePath = await seedDatabase();
+
+    const invalidSeverity = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--severity", "critical",
+      "--json"
+    ]);
+    const invalidMode = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--mode", "enforce",
+      "--json"
+    ]);
+
+    expect(invalidSeverity.exitCode).toBe(1);
+    expect(invalidSeverity.stderr).toContain("--severity must be");
+    expect(invalidMode.exitCode).toBe(1);
+    expect(invalidMode.stderr).toContain("--mode must be");
+  });
+
   it("rejects a candidate and audits the reason", async () => {
     const databasePath = await seedDatabase();
 
