@@ -959,6 +959,10 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
 
 function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
   const backups = storage.listBackupManifests(repoId);
   const payload = {
     repo_id: repoId,

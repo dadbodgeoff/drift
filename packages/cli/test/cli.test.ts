@@ -1466,6 +1466,20 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("refuses backup list for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const listed = await runCli([
+      "--db", databasePath,
+      "backup", "list",
+      "--repo", "repo_missing",
+      "--json"
+    ]);
+
+    expect(listed.exitCode).toBe(1);
+    expect(listed.stderr).toContain("Unknown repo repo_missing");
+  });
+
   it("verifies a backup artifact before restore", async () => {
     const databasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-"));
