@@ -7,6 +7,7 @@ import type {
   FindingDiffStatus,
   FindingStatus,
   RepoContract,
+  ScanManifest,
   Severity
 } from "@drift/core";
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
@@ -117,6 +118,18 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "check") {
     return runCheck(storage, parsed);
+  }
+
+  if (group === "baseline" && command === "create") {
+    return createBaseline(storage, parsed);
+  }
+
+  if (group === "baseline" && command === "status") {
+    return baselineStatus(storage, parsed);
+  }
+
+  if (group === "baseline" && command === "clear") {
+    return clearBaseline(storage, parsed);
   }
 
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
@@ -355,6 +368,132 @@ function addConventionException(
   return { convention: updated, contract };
 }
 
+function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  created_count: number;
+  baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
+} {
+  const repoId = requiredFlag(parsed, "repo");
+  const from = requiredFlag(parsed, "from");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
+
+  const scanId = `scan_baseline_${sanitizeAuditId(now)}`;
+  storage.upsertScanManifest(baselineScanManifest({
+    id: scanId,
+    repoId,
+    from,
+    now,
+    findingCount: storage.listFindings(repoId).length
+  }));
+
+  let createdCount = 0;
+  for (const finding of storage.listFindings(repoId)) {
+    if (finding.status === "fixed" || finding.status === "false_positive") {
+      continue;
+    }
+
+    storage.upsertBaselineViolation({
+      id: `baseline_${finding.fingerprint.slice(0, 16)}`,
+      repo_id: repoId,
+      convention_id: finding.convention_id,
+      finding_fingerprint: finding.fingerprint,
+      file_path: finding.evidence_refs[0]?.file_path ?? inferFilePathFromMessage(finding.message),
+      first_seen_scan_id: scanId,
+      first_seen_commit: from,
+      status: "active",
+      created_at: now
+    });
+    createdCount += 1;
+  }
+
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_baseline_create_${repoId}_${now}`,
+    repoId,
+    actor,
+    action: "baseline_created",
+    targetType: "baseline",
+    targetId: scanId,
+    metadata: { from, created_count: createdCount },
+    createdAt: now
+  }));
+
+  return {
+    created_count: createdCount,
+    baseline: storage.listBaselineViolations(repoId)
+  };
+}
+
+function baselineStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  repo_id: string;
+  active_count: number;
+  resolved_count: number;
+  by_convention: Array<{ convention_id: string; active_count: number; resolved_count: number }>;
+} {
+  const repoId = requiredFlag(parsed, "repo");
+  const rows = storage.listBaselineViolations(repoId);
+  const byConvention = new Map<string, { active_count: number; resolved_count: number }>();
+
+  for (const row of rows) {
+    const counts = byConvention.get(row.convention_id) ?? { active_count: 0, resolved_count: 0 };
+    if (row.status === "active") {
+      counts.active_count += 1;
+    } else {
+      counts.resolved_count += 1;
+    }
+    byConvention.set(row.convention_id, counts);
+  }
+
+  return {
+    repo_id: repoId,
+    active_count: rows.filter((row) => row.status === "active").length,
+    resolved_count: rows.filter((row) => row.status === "resolved").length,
+    by_convention: [...byConvention.entries()].map(([convention_id, counts]) => ({
+      convention_id,
+      ...counts
+    }))
+  };
+}
+
+function clearBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
+  resolved_count: number;
+  baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
+} {
+  const repoId = requiredFlag(parsed, "repo");
+  const conventionId = requiredFlag(parsed, "convention");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  let resolvedCount = 0;
+
+  for (const row of storage.listBaselineViolations(repoId)) {
+    if (row.convention_id !== conventionId || row.status !== "active") {
+      continue;
+    }
+
+    storage.upsertBaselineViolation({ ...row, status: "resolved" });
+    resolvedCount += 1;
+  }
+
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_baseline_clear_${repoId}_${conventionId}_${now}`,
+    repoId,
+    actor,
+    action: "baseline_cleared",
+    targetType: "baseline",
+    targetId: conventionId,
+    metadata: { convention_id: conventionId, resolved_count: resolvedCount },
+    createdAt: now
+  }));
+
+  return {
+    resolved_count: resolvedCount,
+    baseline: storage.listBaselineViolations(repoId)
+  };
+}
+
 function materializeRepoContract(
   storage: SqliteDriftStorage,
   repoId: string,
@@ -478,6 +617,22 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "baseline") {
+    return [
+      "Manage baselines",
+      "",
+      "Usage:",
+      "  drift --db <path> baseline create --repo <repo_id> --from main --json",
+      "  drift --db <path> baseline status --repo <repo_id> --json",
+      "  drift --db <path> baseline clear --repo <repo_id> --convention <convention_id> --json",
+      "",
+      "Notes:",
+      "  create baselines currently stored findings so existing violations do not block future checks.",
+      "  clear marks matching baseline rows resolved; it does not delete history.",
+      ""
+    ].join("\n");
+  }
+
   return [
     "Drift local repo intelligence",
     "",
@@ -488,6 +643,8 @@ function helpText(parsed: ParsedArgs): string {
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",
+    "  drift baseline create --repo <repo_id> --from main --json",
+    "  drift baseline status --repo <repo_id> --json",
     "  drift contract show --repo <repo_id> --json",
     "",
     "Convention review:",
@@ -670,6 +827,35 @@ function enforcementResultFor(mode: EnforcementMode): Finding["enforcement_resul
     return "warn";
   }
   return "none";
+}
+
+function baselineScanManifest(input: {
+  id: string;
+  repoId: string;
+  from: string;
+  now: string;
+  findingCount: number;
+}): ScanManifest {
+  return {
+    id: input.id,
+    repo_id: input.repoId,
+    branch: input.from,
+    commit: input.from,
+    dirty: false,
+    scanner_version: "0.1.0",
+    adapter_versions: { baseline: "0.1.0" },
+    rule_engine_version: "0.1.0",
+    status: "completed",
+    file_count: 0,
+    fact_count: 0,
+    finding_count: input.findingCount,
+    started_at: input.now,
+    completed_at: input.now
+  };
+}
+
+function inferFilePathFromMessage(message: string): string {
+  return message.split(" imports ")[0] || "unknown";
 }
 
 function findingFingerprint(

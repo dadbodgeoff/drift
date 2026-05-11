@@ -247,6 +247,63 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(second.stdout).findings[0].status).toBe("pre_existing");
   });
 
+  it("creates, reports, and clears baselines from stored findings", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "diff.patch");
+    await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    const created = await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:31.000Z",
+      "--json"
+    ]);
+    const status = await runCli([
+      "--db", databasePath,
+      "baseline", "status",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+    const cleared = await runCli([
+      "--db", databasePath,
+      "baseline", "clear",
+      "--repo", "repo_abc",
+      "--convention", "convention_no_direct_db",
+      "--now", "2026-05-10T00:00:32.000Z",
+      "--json"
+    ]);
+
+    expect(created.exitCode).toBe(0);
+    expect(JSON.parse(created.stdout).created_count).toBe(1);
+    expect(JSON.parse(status.stdout).active_count).toBe(1);
+    expect(cleared.exitCode).toBe(0);
+    expect(JSON.parse(cleared.stdout).resolved_count).toBe(1);
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    expect(storage.listBaselineViolations("repo_abc")[0]?.status).toBe("resolved");
+    expect(storage.listAuditEvents("repo_abc").at(-1)?.action).toBe("baseline_cleared");
+    storage.close();
+  });
+
+  it("prints focused baseline help without requiring a database", async () => {
+    const result = await runCli(["baseline", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Manage baselines");
+    expect(result.stdout).toContain("baseline create");
+  });
+
   it("lists findings as JSON", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });

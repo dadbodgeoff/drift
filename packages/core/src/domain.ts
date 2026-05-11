@@ -149,7 +149,9 @@ export interface AuditEvent {
     | "restore_completed"
     | "contract_exported"
     | "adapter_upgraded"
-    | "scan_invalidated";
+    | "scan_invalidated"
+    | "baseline_created"
+    | "baseline_cleared";
   target_type: string;
   target_id: string;
   metadata: Record<string, unknown>;

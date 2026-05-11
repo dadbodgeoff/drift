@@ -155,7 +155,9 @@ export const AuditEventSchema = z.object({
     "restore_completed",
     "contract_exported",
     "adapter_upgraded",
-    "scan_invalidated"
+    "scan_invalidated",
+    "baseline_created",
+    "baseline_cleared"
   ]),
   target_type: z.string().min(1),
   target_id: z.string().min(1),
