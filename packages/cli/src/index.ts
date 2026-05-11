@@ -1162,6 +1162,7 @@ function importContractDryRun(
     compatibility
   };
   return {
+    exitCode: compatibility.compatible ? 0 : 1,
     payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
   };
 }

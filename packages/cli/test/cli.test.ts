@@ -1920,6 +1920,51 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("returns a nonzero dry-run import result for incompatible contracts", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-incompatible-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const exported = await runCli([
+      "--db", databasePath,
+      "contract", "export",
+      "--repo", "repo_abc",
+      "--format", "json",
+      "--json"
+    ]);
+    const contract = JSON.parse(exported.stdout).contract;
+    await writeFile(contractPath, JSON.stringify({
+      ...contract,
+      contract_schema_version: 999
+    }, null, 2));
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      valid: true,
+      dry_run: true,
+      compatibility: {
+        compatible: false,
+        schema_supported: false
+      }
+    });
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
