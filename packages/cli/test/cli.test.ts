@@ -1389,6 +1389,72 @@ describe("drift CLI convention review", () => {
     restoredStorage.close();
   });
 
+  it("reports restored graph staleness against current source files", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-stale-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    const routePath = join(repoRoot, "apps/web/app/api/users/route.ts");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      routePath,
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const scanned = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const scanPayload = JSON.parse(scanned.stdout);
+    const backup = await runCli([
+      "--db", scanPayload.database_path,
+      "backup", "create",
+      "--repo", scanPayload.repo.id,
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:11.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+
+    await writeFile(
+      routePath,
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json({ changed: await prisma.user.count() });",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const restored = await runCli([
+      "--db", join(dir, "restored.sqlite"),
+      "restore", backupPath,
+      "--repo", scanPayload.repo.id,
+      "--now", "2026-05-10T00:00:12.000Z",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(0);
+    expect(JSON.parse(restored.stdout).restore).toMatchObject({
+      graph_stale: true,
+      source_changes: {
+        added: [],
+        modified: ["apps/web/app/api/users/route.ts"],
+        deleted: []
+      }
+    });
+  });
+
   it("validates restore dry-runs and refuses accidental overwrites", async () => {
     const sourceDatabasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-safe-"));

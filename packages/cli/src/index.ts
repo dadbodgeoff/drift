@@ -276,6 +276,12 @@ interface ScanStatusChangeSet {
   deleted: string[];
 }
 
+interface RestoreStaleness {
+  graph_stale: boolean;
+  source_changes: ScanStatusChangeSet;
+  staleness_reason: "none" | "repo_root_missing" | "scan_missing";
+}
+
 interface DoctorCheck {
   id: string;
   label: string;
@@ -953,9 +959,11 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   const backupStorage = openDriftStorage({ databasePath: backupPath });
   let schemaVersion = 0;
   let repo: RepoRecord | undefined;
+  let restoreStaleness: RestoreStaleness;
   try {
     schemaVersion = backupStorage.getAppliedMigrations().length;
     repo = backupStorage.getRepo(repoId);
+    restoreStaleness = restoreStalenessForRepo(backupStorage, repoId);
   } finally {
     backupStorage.close();
   }
@@ -975,6 +983,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     restored_database_path: targetDatabasePath,
     checksum_sha256: checksum,
     schema_version: schemaVersion,
+    ...restoreStaleness!,
     dry_run: dryRun,
     restored_at: dryRun ? null : now
   };
@@ -1011,6 +1020,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       restored_database_path: targetDatabasePath,
       checksum_sha256: checksum,
       schema_version: restoredStorage.getAppliedMigrations().length,
+      ...restoreStaleness!,
       dry_run: false,
       restored_at: now
     };
@@ -1730,6 +1740,9 @@ function formatRestoreText(restore: {
   restored_database_path: string;
   checksum_sha256: string;
   schema_version: number;
+  graph_stale?: boolean;
+  source_changes?: ScanStatusChangeSet;
+  staleness_reason?: string;
   dry_run?: boolean;
   restored_at: string | null;
 }): string {
@@ -1742,9 +1755,14 @@ function formatRestoreText(restore: {
     `Database: ${restore.restored_database_path}`,
     `Schema version: ${restore.schema_version}`,
     `Checksum: ${restore.checksum_sha256}`,
+    `Graph stale: ${restore.graph_stale ?? "unknown"}`,
+    restore.source_changes
+      ? `Source changes: +${restore.source_changes.added.length} ~${restore.source_changes.modified.length} -${restore.source_changes.deleted.length}`
+      : "Source changes: unknown",
+    restore.staleness_reason ? `Staleness reason: ${restore.staleness_reason}` : "",
     restore.dry_run ? "Dry run: true" : `Restored: ${restore.restored_at}`,
     ""
-  ].join("\n");
+  ].filter((line) => line !== "").join("\n");
 }
 
 function formatScanStatusText(payload: {
@@ -2467,6 +2485,42 @@ function compareSnapshotsToCurrentFiles(
     added: added.sort(),
     modified: modified.sort(),
     deleted: deleted.sort()
+  };
+}
+
+function restoreStalenessForRepo(
+  storage: SqliteDriftStorage,
+  repoId: string
+): RestoreStaleness {
+  const emptyChanges = { added: [], modified: [], deleted: [] };
+  const repo = storage.getRepo(repoId);
+  if (!repo || !existsSync(repo.root_path)) {
+    return {
+      graph_stale: true,
+      source_changes: emptyChanges,
+      staleness_reason: "repo_root_missing"
+    };
+  }
+
+  const latestScan = storage.listScanManifests(repoId).find((scan) => scan.status === "completed");
+  if (!latestScan) {
+    return {
+      graph_stale: true,
+      source_changes: emptyChanges,
+      staleness_reason: "scan_missing"
+    };
+  }
+
+  const sourceChanges = compareSnapshotsToCurrentFiles(
+    repo.root_path,
+    storage.listFileSnapshots(repoId, latestScan.id)
+  );
+  return {
+    graph_stale: sourceChanges.added.length > 0 ||
+      sourceChanges.modified.length > 0 ||
+      sourceChanges.deleted.length > 0,
+    source_changes: sourceChanges,
+    staleness_reason: "none"
   };
 }
 
