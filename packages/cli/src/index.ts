@@ -210,6 +210,21 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return markFindingFixed(storage, parsed, findingId);
   }
 
+  if (group === "findings" && command === "suppress") {
+    const findingId = requiredValue(maybeId, "finding id");
+    return resolveFindingWithReason(storage, parsed, findingId, "suppressed");
+  }
+
+  if (group === "findings" && command === "accept-drift") {
+    const findingId = requiredValue(maybeId, "finding id");
+    return resolveFindingWithReason(storage, parsed, findingId, "accepted_drift");
+  }
+
+  if (group === "findings" && command === "mark-false-positive") {
+    const findingId = requiredValue(maybeId, "finding id");
+    return resolveFindingWithReason(storage, parsed, findingId, "false_positive");
+  }
+
   if (group === "audit" && command === "list") {
     return listAudit(storage, parsed);
   }
@@ -657,6 +672,46 @@ function markFindingFixed(
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatFindingFixedText(payload)
+  };
+}
+
+function resolveFindingWithReason(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  findingId: string,
+  status: Extract<FindingStatus, "suppressed" | "accepted_drift" | "false_positive">
+): CommandPayload {
+  const repoId = resolveRepoId(parsed);
+  const reason = requiredFlag(parsed, "reason");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const finding = storage.listFindings(repoId).find((entry) => entry.id === findingId);
+  if (!finding) {
+    throw new Error(`Finding not found: ${findingId}`);
+  }
+
+  const updated: Finding = {
+    ...finding,
+    status
+  };
+  storage.upsertFinding(updated);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_finding_${status}_${repoId}_${findingId}_${now}`,
+    repoId,
+    actor,
+    action: status === "suppressed" ? "finding_suppressed" : "finding_resolved",
+    targetType: "finding",
+    targetId: findingId,
+    metadata: { reason, status },
+    createdAt: now
+  }));
+
+  const payload = {
+    finding: updated,
+    reason
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatFindingResolutionText(payload)
   };
 }
 
@@ -1414,6 +1469,17 @@ function formatFindingFixedText(payload: { finding: Finding; evidence: string })
     `Finding: ${payload.finding.id}`,
     `Status: ${payload.finding.status}`,
     `Evidence: ${payload.evidence}`,
+    ""
+  ].join("\n");
+}
+
+function formatFindingResolutionText(payload: { finding: Finding; reason: string }): string {
+  return [
+    "Drift finding updated",
+    "",
+    `Finding: ${payload.finding.id}`,
+    `Status: ${payload.finding.status}`,
+    `Reason: ${payload.reason}`,
     ""
   ].join("\n");
 }
@@ -2648,9 +2714,12 @@ function helpText(parsed: ParsedArgs): string {
       "Usage:",
       "  drift --db <path> findings list --repo <repo_id> --json",
       "  drift --db <path> findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
+      "  drift --db <path> findings suppress <finding_id> --repo <repo_id> --reason \"...\" --json",
+      "  drift --db <path> findings accept-drift <finding_id> --repo <repo_id> --reason \"...\" --json",
+      "  drift --db <path> findings mark-false-positive <finding_id> --repo <repo_id> --reason \"...\" --json",
       "",
       "Notes:",
-      "  mark-fixed requires evidence and writes an append-only finding_resolved audit event.",
+      "  review actions require evidence or a reason and write append-only audit events.",
       ""
     ].join("\n");
   }
@@ -2731,6 +2800,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
     "  drift findings list --repo <repo_id> --json",
     "  drift findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
+    "  drift findings suppress <finding_id> --repo <repo_id> --reason \"...\" --json",
     "  drift audit list --repo <repo_id> --json",
     "  drift backup create --repo <repo_id> --json",
     "  drift restore <backup.sqlite> --repo <repo_id> --json",

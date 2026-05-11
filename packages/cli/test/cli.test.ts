@@ -741,6 +741,99 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("supports governance finding resolutions with reasons and audit events", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    for (const id of ["finding_suppress", "finding_drift", "finding_fp"]) {
+      storage.upsertFinding({
+        id,
+        repo_id: "repo_abc",
+        convention_id: "convention_no_direct_db",
+        fingerprint: `${id}-fp`,
+        title: "API route imports data access directly",
+        message: "Route imports prisma directly.",
+        severity: "error",
+        enforcement_result: "block",
+        status: "new",
+        diff_status: "new_in_diff",
+        evidence_refs: [],
+        created_at: "2026-05-10T00:00:02.000Z"
+      });
+    }
+    storage.close();
+
+    const suppressed = await runCli([
+      "--db", databasePath,
+      "findings", "suppress",
+      "finding_suppress",
+      "--repo", "repo_abc",
+      "--reason", "generated client fixture",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:03.000Z",
+      "--json"
+    ]);
+    const accepted = await runCli([
+      "--db", databasePath,
+      "findings", "accept-drift",
+      "finding_drift",
+      "--repo", "repo_abc",
+      "--reason", "legacy endpoint approved for now",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const falsePositive = await runCli([
+      "--db", databasePath,
+      "findings", "mark-false-positive",
+      "finding_fp",
+      "--repo", "repo_abc",
+      "--reason", "import name is test double",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:05.000Z",
+      "--json"
+    ]);
+
+    expect(suppressed.exitCode).toBe(0);
+    expect(JSON.parse(suppressed.stdout).finding.status).toBe("suppressed");
+    expect(accepted.exitCode).toBe(0);
+    expect(JSON.parse(accepted.stdout).finding.status).toBe("accepted_drift");
+    expect(falsePositive.exitCode).toBe(0);
+    expect(JSON.parse(falsePositive.stdout).finding.status).toBe("false_positive");
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(Object.fromEntries(
+      checked.listFindings("repo_abc").map((finding) => [finding.id, finding.status])
+    )).toEqual({
+      finding_suppress: "suppressed",
+      finding_drift: "accepted_drift",
+      finding_fp: "false_positive"
+    });
+    expect(checked.listAuditEvents("repo_abc").slice(-3).map((event) => ({
+      action: event.action,
+      target_id: event.target_id,
+      metadata: event.metadata
+    }))).toEqual([
+      {
+        action: "finding_suppressed",
+        target_id: "finding_suppress",
+        metadata: { reason: "generated client fixture", status: "suppressed" }
+      },
+      {
+        action: "finding_resolved",
+        target_id: "finding_drift",
+        metadata: { reason: "legacy endpoint approved for now", status: "accepted_drift" }
+      },
+      {
+        action: "finding_resolved",
+        target_id: "finding_fp",
+        metadata: { reason: "import name is test double", status: "false_positive" }
+      }
+    ]);
+    checked.close();
+  });
+
   it("lists audit events as JSON", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });
