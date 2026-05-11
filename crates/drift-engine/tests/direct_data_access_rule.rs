@@ -1,5 +1,7 @@
 use drift_engine::{
-    detect_direct_data_access_imports, extract_typescript_facts, DirectDataAccessRule,
+    detect_direct_data_access_imports, extract_typescript_facts,
+    materialize_direct_data_access_findings, DirectDataAccessRule, EnforcementMode,
+    EnforcementResult, Severity,
 };
 
 #[test]
@@ -17,6 +19,8 @@ export async function POST() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
     };
 
     let violations = detect_direct_data_access_imports(&facts, &rule);
@@ -43,6 +47,8 @@ export async function POST() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
     };
 
     assert!(detect_direct_data_access_imports(&facts, &rule).is_empty());
@@ -62,6 +68,8 @@ export async function loadWorkspace() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
     };
 
     assert!(detect_direct_data_access_imports(&facts, &rule).is_empty());
@@ -82,6 +90,8 @@ export async function GET() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["../../server/db".to_string(), "@repo/database".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
     };
 
     let violations = detect_direct_data_access_imports(&facts, &rule);
@@ -91,4 +101,80 @@ export async function GET() {
         && violation.import_source == "../../server/db"));
     assert!(violations.iter().any(|violation| violation.import_name == "client"
         && violation.import_source == "@repo/database"));
+}
+
+#[test]
+fn materializes_direct_data_access_findings_with_stable_line_independent_fingerprints() {
+    let first_source = r#"
+import { prisma } from "@/lib/prisma";
+
+export async function POST() {
+  return Response.json(await prisma.workspace.findMany());
+}
+"#;
+    let shifted_source = r#"
+
+
+import { prisma } from "@/lib/prisma";
+
+export async function POST() {
+  return Response.json(await prisma.workspace.findMany());
+}
+"#;
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    let first_facts = extract_typescript_facts("apps/web/app/api/workspaces/route.ts", first_source)
+        .expect("typescript facts");
+    let shifted_facts =
+        extract_typescript_facts("apps/web/app/api/workspaces/route.ts", shifted_source)
+            .expect("typescript facts");
+
+    let first_findings = materialize_direct_data_access_findings(&first_facts, &rule);
+    let shifted_findings = materialize_direct_data_access_findings(&shifted_facts, &rule);
+
+    assert_eq!(first_findings.len(), 1);
+    assert_eq!(shifted_findings.len(), 1);
+    assert_eq!(first_findings[0].fingerprint, shifted_findings[0].fingerprint);
+    assert_eq!(first_findings[0].severity, Severity::Error);
+    assert_eq!(first_findings[0].enforcement_result, EnforcementResult::Block);
+    assert_eq!(
+        first_findings[0].title,
+        "API route imports data access directly"
+    );
+}
+
+#[test]
+fn direct_data_access_fingerprint_changes_when_import_source_changes() {
+    let prisma_source = r#"
+import { prisma } from "@/lib/prisma";
+export async function POST() { return Response.json(await prisma.user.findMany()); }
+"#;
+    let database_source = r#"
+import { prisma } from "@repo/database";
+export async function POST() { return Response.json(await prisma.user.findMany()); }
+"#;
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        severity: Severity::Warning,
+        enforcement_mode: EnforcementMode::Warn,
+    };
+
+    let prisma_facts = extract_typescript_facts("apps/web/app/api/users/route.ts", prisma_source)
+        .expect("typescript facts");
+    let database_facts =
+        extract_typescript_facts("apps/web/app/api/users/route.ts", database_source)
+            .expect("typescript facts");
+
+    let prisma_findings = materialize_direct_data_access_findings(&prisma_facts, &rule);
+    let database_findings = materialize_direct_data_access_findings(&database_facts, &rule);
+
+    assert_ne!(prisma_findings[0].fingerprint, database_findings[0].fingerprint);
+    assert_eq!(prisma_findings[0].severity, Severity::Warning);
+    assert_eq!(prisma_findings[0].enforcement_result, EnforcementResult::Warn);
 }

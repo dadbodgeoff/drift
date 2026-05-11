@@ -13,7 +13,9 @@ use sha2::{Digest, Sha256};
 
 pub use facts::{extract_typescript_facts, Fact, FactExtractError, FactKind};
 pub use rules::{
-    detect_direct_data_access_imports, DirectDataAccessRule, DirectDataAccessViolation,
+    detect_direct_data_access_imports, materialize_direct_data_access_findings,
+    DirectDataAccessRule, DirectDataAccessViolation, EnforcementMode, EnforcementResult,
+    RuleFinding, Severity,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
