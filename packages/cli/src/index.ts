@@ -2,6 +2,7 @@ import type {
   AcceptedConvention,
   AuditEvent,
   ConventionCandidate,
+  ConventionStatus,
   EnforcementMode,
   FactRecord,
   FileSnapshot,
@@ -163,9 +164,9 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "conventions" && command === "list") {
     const repoId = resolveRepoId(parsed);
-    const status = stringFlag(parsed, "status");
+    const status = optionalConventionStatusFlag(parsed, "status");
     return {
-      candidates: storage.listConventionCandidates(repoId, status ? { status: status as never } : {})
+      candidates: storage.listConventionCandidates(repoId, status ? { status } : {})
     };
   }
 
@@ -1506,6 +1507,23 @@ function optionalSeverityFlag(parsed: ParsedArgs, name: string): Severity | unde
     return value;
   }
   throw new Error("--severity must be info, warning, or error.");
+}
+
+function optionalConventionStatusFlag(parsed: ParsedArgs, name: string): ConventionStatus | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (
+    value === "candidate" ||
+    value === "accepted" ||
+    value === "rejected" ||
+    value === "archived" ||
+    value === "expired"
+  ) {
+    return value;
+  }
+  throw new Error("--status must be candidate, accepted, rejected, archived, or expired.");
 }
 
 function preparedConvention(convention: AcceptedConvention): PreparedConvention {

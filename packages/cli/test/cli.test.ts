@@ -1778,6 +1778,21 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(show.stdout).candidate.matcher.forbidden_imports).toEqual(["@/lib/prisma"]);
   });
 
+  it("rejects invalid convention list statuses", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "list",
+      "--repo", "repo_abc",
+      "--status", "open",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--status must be");
+  });
+
   it("accepts a candidate, materializes a repo contract, and audits the action", async () => {
     const databasePath = await seedDatabase();
 
