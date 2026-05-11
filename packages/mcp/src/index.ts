@@ -1,4 +1,4 @@
-import type { PolicyDecision, RepoContract, ScanManifest } from "@drift/core";
+import type { Finding, FindingStatus, PolicyDecision, RepoContract, ScanManifest, Severity } from "@drift/core";
 import { authorizeContextExport } from "@drift/core";
 import {
   DRIFT_RULE_ENGINE_VERSION,
@@ -17,7 +17,7 @@ export interface DriftMcpHandlers {
   get_repo_contract(input: { repo_id: string }): unknown;
   get_task_preflight(input: { repo_id: string; task: string }): unknown;
   get_conventions(input: { repo_id: string }): unknown;
-  get_findings(input: { repo_id: string }): unknown;
+  get_findings(input: { repo_id: string; status?: FindingStatus; severity?: Severity }): unknown;
   get_allowed_context(input: {
     repo_id: string;
     path: string;
@@ -86,8 +86,31 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
   },
   {
     name: "get_findings",
-    description: "Return stored Drift findings for a repo.",
-    inputSchema: repoOnlySchema()
+    description: "Return stored Drift findings for a repo, with optional review filters.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        repo_id: { type: "string" },
+        status: {
+          type: "string",
+          enum: [
+            "new",
+            "pre_existing",
+            "needs_review",
+            "fixed",
+            "false_positive",
+            "accepted_drift",
+            "suppressed"
+          ]
+        },
+        severity: {
+          type: "string",
+          enum: ["info", "warning", "error"]
+        }
+      },
+      required: ["repo_id"],
+      additionalProperties: false
+    }
   },
   {
     name: "get_allowed_context",
@@ -173,10 +196,18 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       conventions: storage.listAcceptedConventions(repo_id)
     })),
 
-    get_findings: ({ repo_id }) => withStorage(options, (storage) => ({
-      repo_id,
-      findings: storage.listFindings(repo_id)
-    })),
+    get_findings: ({ repo_id, status, severity }) => withStorage(options, (storage) => {
+      const allFindings = storage.listFindings(repo_id);
+      const findings = allFindings.filter((finding) =>
+        (!status || finding.status === status) &&
+        (!severity || finding.severity === severity)
+      );
+      return {
+        repo_id,
+        summary: findingsSummary(allFindings, findings),
+        findings
+      };
+    }),
 
     get_allowed_context: ({ repo_id, path, surface = "mcp" }) =>
       withStorage(options, (storage) => {
@@ -390,4 +421,30 @@ function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: s
       ...counts
     }))
   };
+}
+
+function findingsSummary(allFindings: Finding[], filteredFindings: Finding[]): {
+  total_count: number;
+  filtered_count: number;
+  by_status: Partial<Record<FindingStatus, number>>;
+  by_severity: Partial<Record<Severity, number>>;
+} {
+  return {
+    total_count: allFindings.length,
+    filtered_count: filteredFindings.length,
+    by_status: countBy(allFindings, (finding) => finding.status),
+    by_severity: countBy(allFindings, (finding) => finding.severity)
+  };
+}
+
+function countBy<T, K extends string>(
+  entries: T[],
+  keyFor: (entry: T) => K
+): Partial<Record<K, number>> {
+  const counts: Partial<Record<K, number>> = {};
+  for (const entry of entries) {
+    const key = keyFor(entry);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
 }

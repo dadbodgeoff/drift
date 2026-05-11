@@ -105,6 +105,20 @@ async function seedMcpDatabase(): Promise<string> {
     evidence_refs: [],
     created_at: "2026-05-10T00:00:05.000Z"
   });
+  storage.upsertFinding({
+    id: "finding_suppressed",
+    repo_id: "repo_abc",
+    convention_id: "convention_no_direct_db",
+    fingerprint: "finding-suppressed-fp",
+    title: "Suppressed legacy violation",
+    message: "Legacy route imports prisma directly.",
+    severity: "warning",
+    enforcement_result: "warn",
+    status: "suppressed",
+    diff_status: "outside_diff",
+    evidence_refs: [],
+    created_at: "2026-05-10T00:00:05.500Z"
+  });
   storage.upsertBaselineViolation({
     id: "baseline_abc",
     repo_id: "repo_abc",
@@ -166,6 +180,29 @@ describe("read-only MCP handlers", () => {
       conventions: [{ id: "convention_no_direct_db" }]
     });
     expect(handlers.get_findings({ repo_id: "repo_abc" })).toMatchObject({
+      summary: {
+        total_count: 2,
+        filtered_count: 2,
+        by_status: {
+          new: 1,
+          suppressed: 1
+        },
+        by_severity: {
+          error: 1,
+          warning: 1
+        }
+      },
+      findings: [{ id: "finding_abc" }, { id: "finding_suppressed" }]
+    });
+    expect(handlers.get_findings({
+      repo_id: "repo_abc",
+      status: "new",
+      severity: "error"
+    })).toMatchObject({
+      summary: {
+        total_count: 2,
+        filtered_count: 1
+      },
       findings: [{ id: "finding_abc" }]
     });
     expect(handlers.get_allowed_context({ repo_id: "repo_abc", path: ".env.local" })).toMatchObject({
