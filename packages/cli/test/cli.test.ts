@@ -2419,4 +2419,21 @@ describe("drift CLI convention review", () => {
     expect(storage.listAuditEvents("repo_abc").at(-1)?.action).toBe("policy_changed");
     storage.close();
   });
+
+  it("refuses convention exceptions for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "exception", "add",
+      "convention_no_direct_db",
+      "--repo", "repo_missing",
+      "--path", "apps/web/app/api/health/**",
+      "--reason", "health route exception",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
 });

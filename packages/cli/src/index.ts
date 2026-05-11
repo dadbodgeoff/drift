@@ -2101,6 +2101,7 @@ function addConventionException(
   conventionId: string
 ): { convention: AcceptedConvention; contract: RepoContract } {
   const repoId = resolveRepoId(parsed);
+  requiredRepo(storage, repoId);
   const path = requiredFlag(parsed, "path");
   const reason = requiredFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
