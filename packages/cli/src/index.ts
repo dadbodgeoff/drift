@@ -14,6 +14,7 @@ import type {
   ScanManifest,
   Severity
 } from "@drift/core";
+import { RepoContractSchema } from "@drift/core";
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -185,6 +186,18 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
       throw new Error(`No repo contract exists for ${repoId}.`);
     }
     return { contract };
+  }
+
+  if (group === "contract" && command === "validate") {
+    return validateContract(storage, parsed);
+  }
+
+  if (group === "contract" && command === "export") {
+    return exportContract(storage, parsed);
+  }
+
+  if (group === "contract" && command === "import") {
+    return importContractDryRun(parsed, requiredValue(maybeId, "contract path"));
   }
 
   if (group === "findings" && command === "list") {
@@ -811,6 +824,60 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   };
 }
 
+function validateContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const contract = requiredRepoContract(storage, repoId);
+  RepoContractSchema.parse(contract);
+  const payload = {
+    valid: true,
+    repo_id: repoId,
+    contract_id: contract.id,
+    schema_version: contract.contract_schema_version,
+    convention_count: contract.conventions.length
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
+  };
+}
+
+function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const format = stringFlag(parsed, "format") ?? "json";
+  if (format !== "json") {
+    throw new Error("--format must be json.");
+  }
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "contract-export");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied contract export: ${policy.reason}`);
+  }
+  const payload = {
+    contract,
+    policy
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : JSON.stringify(payload, null, 2)
+  };
+}
+
+function importContractDryRun(parsed: ParsedArgs, contractPath: string): CommandPayload {
+  if (!parsed.flags.has("dry-run")) {
+    throw new Error("contract import currently requires --dry-run.");
+  }
+  const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
+  const payload = {
+    valid: true,
+    dry_run: true,
+    repo_id: contract.repo_id,
+    contract_id: contract.id,
+    schema_version: contract.contract_schema_version,
+    convention_count: contract.conventions.length
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
+  };
+}
+
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = requiredFlag(parsed, "repo");
   const repo = storage.getRepo(repoId);
@@ -1420,6 +1487,25 @@ function formatPolicyDecisionText(payload: {
     `Decision: ${payload.decision.allowed ? "allowed" : "denied"}`,
     `Mode: ${payload.decision.mode}`,
     `Reason: ${payload.decision.reason}`,
+    ""
+  ].join("\n");
+}
+
+function formatContractValidationText(payload: {
+  valid: boolean;
+  repo_id: string;
+  contract_id: string;
+  schema_version: number;
+  convention_count: number;
+}): string {
+  return [
+    "Drift contract",
+    "",
+    `Valid: ${payload.valid}`,
+    `Repo: ${payload.repo_id}`,
+    `Contract: ${payload.contract_id}`,
+    `Schema version: ${payload.schema_version}`,
+    `Conventions: ${payload.convention_count}`,
     ""
   ].join("\n");
 }
@@ -2252,6 +2338,22 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "contract") {
+    return [
+      "Inspect and move repo contracts",
+      "",
+      "Usage:",
+      "  drift --db <path> contract show --repo <repo_id> --json",
+      "  drift --db <path> contract validate --repo <repo_id> --json",
+      "  drift --db <path> contract export --repo <repo_id> --format json --json",
+      "  drift --db <path> contract import <path> --dry-run --json",
+      "",
+      "Notes:",
+      "  import is dry-run only in this sprint; it validates portable contract JSON without mutating state.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "check") {
     return [
       "Run deterministic checks",
@@ -2380,6 +2482,9 @@ function helpText(parsed: ParsedArgs): string {
     "  drift audit list --repo <repo_id> --json",
     "  drift backup create --repo <repo_id> --json",
     "  drift restore <backup.sqlite> --repo <repo_id> --json",
+    "  drift contract validate --repo <repo_id> --json",
+    "  drift contract export --repo <repo_id> --format json --json",
+    "  drift contract import <path> --dry-run --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",

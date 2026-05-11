@@ -973,6 +973,54 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(result.stdout).contract.conventions[0].id).toBe("convention_no_direct_db");
   });
 
+  it("validates, exports, and dry-run imports repo contracts", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+
+    const validate = await runCli([
+      "--db", databasePath,
+      "contract", "validate",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+    const exported = await runCli([
+      "--db", databasePath,
+      "contract", "export",
+      "--repo", "repo_abc",
+      "--format", "json",
+      "--json"
+    ]);
+    await writeFile(contractPath, JSON.stringify(JSON.parse(exported.stdout).contract, null, 2));
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(validate.exitCode).toBe(0);
+    expect(JSON.parse(validate.stdout)).toMatchObject({ valid: true, repo_id: "repo_abc" });
+    expect(exported.exitCode).toBe(0);
+    expect(JSON.parse(exported.stdout).policy.surface).toBe("contract-export");
+    expect(JSON.parse(exported.stdout).contract.conventions[0].id).toBe("convention_no_direct_db");
+    expect(imported.exitCode).toBe(0);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      valid: true,
+      dry_run: true,
+      convention_count: 1
+    });
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
