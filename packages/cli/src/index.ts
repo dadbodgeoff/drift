@@ -400,6 +400,20 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   const previousScan = storage.listScanManifests(repo.id).find((scan) => scan.status === "completed");
 
   const scanId = `scan_${hashStable(`${repo.id}:${now}`).slice(0, 16)}`;
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_scan_started_${repo.id}_${scanId}`,
+    repoId: repo.id,
+    actor,
+    action: "scan_started",
+    targetType: "scan",
+    targetId: scanId,
+    metadata: {
+      repo_root: repoRoot,
+      previous_scan_id: previousScan?.id ?? null
+    },
+    createdAt: now
+  }));
   const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
   const candidates = inferConventionCandidates({
     repoId: repo.id,
@@ -437,7 +451,7 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   storage.appendAuditEvent(auditEvent({
     id: `audit_event_scan_completed_${repo.id}_${scanId}`,
     repoId: repo.id,
-    actor: stringFlag(parsed, "actor") ?? "local-user",
+    actor,
     action: "scan_completed",
     targetType: "scan",
     targetId: scanId,

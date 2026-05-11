@@ -205,6 +205,10 @@ describe("drift CLI convention review", () => {
     expect(storage.getScanManifest(payload.scan.id)?.status).toBe("completed");
     expect(storage.listFacts(payload.scan.id, { kind: "import_used" })).toHaveLength(2);
     expect(storage.listConventionCandidates(payload.repo.id, { status: "candidate" })).toHaveLength(2);
+    expect(storage.listAuditEvents(payload.repo.id).map((event) => event.action)).toEqual([
+      "scan_started",
+      "scan_completed"
+    ]);
     storage.close();
   });
 

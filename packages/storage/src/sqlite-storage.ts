@@ -475,7 +475,7 @@ export class SqliteDriftStorage {
 
   listAuditEvents(repoId: string): AuditEvent[] {
     return this.db
-      .prepare("SELECT * FROM audit_events WHERE repo_id = ? ORDER BY created_at, id")
+      .prepare("SELECT * FROM audit_events WHERE repo_id = ? ORDER BY created_at, rowid")
       .all(repoId)
       .map(auditEventFromRow);
   }
