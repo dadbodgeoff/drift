@@ -1065,7 +1065,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("lists findings as JSON", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
     storage.migrate();
     storage.upsertFinding({
@@ -1119,11 +1119,15 @@ describe("drift CLI convention review", () => {
     ]);
 
     expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).policy).toMatchObject({
+      allowed: true,
+      surface: "cli-check"
+    });
     expect(JSON.parse(result.stdout).findings[0].id).toBe("finding_abc");
   });
 
   it("filters findings list and returns review summary counts", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
     storage.migrate();
     for (const finding of [
@@ -1189,8 +1193,33 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("denies findings list when repo policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc");
+    storage.upsertRepoContract({
+      ...contract!,
+      context_egress: {
+        ...contract!.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Policy denied findings output");
+  });
+
   it("rejects invalid findings list filter values", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
 
     const invalidStatus = await runCli([
       "--db", databasePath,

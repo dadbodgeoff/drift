@@ -583,6 +583,7 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
 function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   repo_id: string;
+  policy: ReturnType<typeof authorizeContextExport>;
   summary: {
     total_count: number;
     filtered_count: number;
@@ -593,6 +594,11 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
 } {
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "cli-check");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied findings output: ${policy.reason}`);
+  }
   const status = optionalFindingStatusFlag(parsed, "status");
   const severity = optionalSeverityFlag(parsed, "severity");
   const allFindings = storage.listFindings(repoId);
@@ -603,6 +609,7 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
 
   return {
     repo_id: repoId,
+    policy,
     summary: {
       total_count: allFindings.length,
       filtered_count: findings.length,
