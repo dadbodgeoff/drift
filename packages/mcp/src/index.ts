@@ -1,7 +1,11 @@
-import type { PolicyDecision, RepoContract } from "@drift/core";
+import type { PolicyDecision, RepoContract, ScanManifest } from "@drift/core";
 import { authorizeContextExport } from "@drift/core";
 import { openDriftStorage } from "@drift/storage";
 import { createInterface } from "node:readline";
+
+const DRIFT_SCANNER_VERSION = "0.1.0";
+const DRIFT_TYPESCRIPT_ADAPTER_VERSION = "0.1.0";
+const DRIFT_RULE_ENGINE_VERSION = "0.1.0";
 
 export interface DriftMcpOptions {
   databasePath: string;
@@ -106,11 +110,17 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
 export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHandlers {
   return {
     get_scan_status: ({ repo_id }) => withStorage(options, (storage) => {
+      const repo = storage.getRepo(repo_id);
       const scans = storage.listScanManifests(repo_id);
+      const latestScan = scans[0] ?? null;
+      const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
       return {
         repo_id,
-        latest_scan: scans[0] ?? null,
-        scan_count: scans.length
+        repo_root: repo?.root_path ?? null,
+        latest_scan: latestScan,
+        scan_count: scans.length,
+        stale: !latestScan || invalidationReasons.length > 0,
+        invalidation_reasons: invalidationReasons
       };
     }),
 
@@ -338,6 +348,20 @@ function requiredContract(contract: RepoContract | undefined, repoId: string): R
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
   return contract;
+}
+
+function scanInvalidationReasons(scan: ScanManifest): string[] {
+  const reasons: string[] = [];
+  if (scan.scanner_version !== DRIFT_SCANNER_VERSION) {
+    reasons.push("scanner_version_changed");
+  }
+  if (scan.adapter_versions.typescript !== DRIFT_TYPESCRIPT_ADAPTER_VERSION) {
+    reasons.push("adapter_version_changed:typescript");
+  }
+  if (scan.rule_engine_version !== DRIFT_RULE_ENGINE_VERSION) {
+    reasons.push("rule_engine_version_changed");
+  }
+  return reasons;
 }
 
 function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: string): {

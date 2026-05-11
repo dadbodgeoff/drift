@@ -31,8 +31,8 @@ async function seedMcpDatabase(): Promise<string> {
     commit: "abc123",
     dirty: false,
     scanner_version: "0.1.0",
-    adapter_versions: { typescript: "0.1.0" },
-    rule_engine_version: "0.1.0",
+    adapter_versions: { typescript: "0.0.1" },
+    rule_engine_version: "0.0.1",
     status: "completed",
     file_count: 1,
     fact_count: 2,
@@ -132,7 +132,12 @@ describe("read-only MCP handlers", () => {
     expect(handlers.get_scan_status({ repo_id: "repo_abc" })).toMatchObject({
       repo_id: "repo_abc",
       scan_count: 1,
-      latest_scan: { id: "scan_abc" }
+      latest_scan: { id: "scan_abc" },
+      stale: true,
+      invalidation_reasons: [
+        "adapter_version_changed:typescript",
+        "rule_engine_version_changed"
+      ]
     });
     expect(handlers.get_repo_contract({ repo_id: "repo_abc" })).toMatchObject({
       contract: { id: "contract_abc" }
