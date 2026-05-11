@@ -725,8 +725,16 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   const repoId = requiredFlag(parsed, "repo");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const dryRun = parsed.flags.has("dry-run");
+  const force = parsed.flags.has("force");
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
+  }
+  if (resolve(backupPath) === resolve(targetDatabasePath)) {
+    throw new Error("Restore target must be different from the backup path.");
+  }
+  if (existsSync(targetDatabasePath) && !force && !dryRun) {
+    throw new Error("Target database already exists. Pass --force to overwrite it.");
   }
 
   const checksum = fileContentHash(backupPath);
@@ -746,13 +754,31 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     throw new Error(`Backup does not contain repo ${repoId}.`);
   }
 
+  const restoreId = `restore_${hashStable(`${repoId}:${backupPath}:${targetDatabasePath}:${now}`).slice(0, 16)}`;
+  const restore = {
+    id: restoreId,
+    repo_id: repoId,
+    repo_fingerprint: repo.fingerprint,
+    backup_path: backupPath,
+    restored_database_path: targetDatabasePath,
+    checksum_sha256: checksum,
+    schema_version: schemaVersion,
+    dry_run: dryRun,
+    restored_at: dryRun ? null : now
+  };
+
+  if (dryRun) {
+    return {
+      payload: parsed.flags.has("json") ? { restore } : formatRestoreText(restore)
+    };
+  }
+
   mkdirSync(dirname(targetDatabasePath), { recursive: true });
   copyFileSync(backupPath, targetDatabasePath);
 
   const restoredStorage = openDriftStorage({ databasePath: targetDatabasePath });
   try {
     restoredStorage.migrate();
-    const restoreId = `restore_${hashStable(`${repoId}:${backupPath}:${targetDatabasePath}:${now}`).slice(0, 16)}`;
     restoredStorage.appendAuditEvent(auditEvent({
       id: `audit_event_restore_${repoId}_${now}`,
       repoId,
@@ -765,7 +791,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     }));
     restoredStorage.checkpoint();
 
-    const restore = {
+    const completedRestore = {
       id: restoreId,
       repo_id: repoId,
       repo_fingerprint: repo.fingerprint,
@@ -773,10 +799,11 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       restored_database_path: targetDatabasePath,
       checksum_sha256: checksum,
       schema_version: restoredStorage.getAppliedMigrations().length,
+      dry_run: false,
       restored_at: now
     };
     return {
-      payload: parsed.flags.has("json") ? { restore } : formatRestoreText(restore)
+      payload: parsed.flags.has("json") ? { restore: completedRestore } : formatRestoreText(completedRestore)
     };
   } finally {
     restoredStorage.close();
@@ -1421,10 +1448,11 @@ function formatRestoreText(restore: {
   restored_database_path: string;
   checksum_sha256: string;
   schema_version: number;
-  restored_at: string;
+  dry_run?: boolean;
+  restored_at: string | null;
 }): string {
   return [
-    "Drift restore completed",
+    restore.dry_run ? "Drift restore validated" : "Drift restore completed",
     "",
     `Restore: ${restore.id}`,
     `Repo: ${restore.repo_id}`,
@@ -1432,7 +1460,7 @@ function formatRestoreText(restore: {
     `Database: ${restore.restored_database_path}`,
     `Schema version: ${restore.schema_version}`,
     `Checksum: ${restore.checksum_sha256}`,
-    `Restored: ${restore.restored_at}`,
+    restore.dry_run ? "Dry run: true" : `Restored: ${restore.restored_at}`,
     ""
   ].join("\n");
 }

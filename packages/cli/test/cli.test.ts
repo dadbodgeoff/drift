@@ -860,6 +860,61 @@ describe("drift CLI convention review", () => {
     restoredStorage.close();
   });
 
+  it("validates restore dry-runs and refuses accidental overwrites", async () => {
+    const sourceDatabasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-safe-"));
+    tempDirs.push(dir);
+    const backupDir = join(dir, "backups");
+    const dryRunTarget = join(dir, "dry-run.sqlite");
+    const existingTarget = join(dir, "existing.sqlite");
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupDir,
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+    await writeFile(existingTarget, "already here");
+
+    const dryRun = await runCli([
+      "--db", dryRunTarget,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--now", "2026-05-10T00:00:05.000Z",
+      "--json"
+    ]);
+    const refused = await runCli([
+      "--db", existingTarget,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--now", "2026-05-10T00:00:06.000Z",
+      "--json"
+    ]);
+    const forced = await runCli([
+      "--db", existingTarget,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--force",
+      "--now", "2026-05-10T00:00:07.000Z",
+      "--json"
+    ]);
+
+    expect(dryRun.exitCode).toBe(0);
+    expect(JSON.parse(dryRun.stdout).restore).toMatchObject({
+      repo_id: "repo_abc",
+      dry_run: true,
+      restored_at: null
+    });
+    await expect(stat(dryRunTarget)).rejects.toThrow();
+    expect(refused.exitCode).toBe(1);
+    expect(refused.stderr).toContain("Target database already exists");
+    expect(forced.exitCode).toBe(0);
+    expect(JSON.parse(forced.stdout).restore.dry_run).toBe(false);
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);
