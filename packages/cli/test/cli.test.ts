@@ -1729,6 +1729,11 @@ describe("drift CLI convention review", () => {
       .find((line) => line.trim().startsWith("export DRIFT_DB="))
       ?.split("=", 2)[1];
     const repoId = started.stdout.match(/--repo (repo_[a-f0-9]+)/)?.[1];
+    await mkdir(join(repoRoot, "apps/web/app/api/search"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/search/route.ts"),
+      "export async function GET() { return Response.json([]); }\n"
+    );
 
     const result = await runCli([
       "--db", databasePath!,
@@ -1749,6 +1754,9 @@ describe("drift CLI convention review", () => {
       enforcement_mode: "block",
       enforcement_capability: "deterministic_check"
     });
+    expect(payload.scan_status.stale).toBe(true);
+    expect(payload.scan_status.changes.added).toContain("apps/web/app/api/search/route.ts");
+    expect(payload.scan_status.next_command).toBe(`drift scan --repo-root ${repoRoot} --json`);
     expect(payload.baseline.active_count).toBe(1);
     expect(payload.relevant_files.map((file: { path: string }) => file.path)).toContain(
       "apps/web/app/api/users/route.ts"

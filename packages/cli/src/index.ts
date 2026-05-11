@@ -529,8 +529,7 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   }
 }
 
-function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
-  const repoId = stringFlag(parsed, "repo") ?? repoIdForRoot(resolveRepoRoot(parsed));
+function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
   const repo = storage.getRepo(repoId);
   if (!repo) {
     throw new Error(`Unknown repo ${repoId}. Run drift scan --repo-root <path> first.`);
@@ -538,7 +537,7 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
   const latestScan = storage.listScanManifests(repoId)[0];
   if (!latestScan) {
-    const payload = {
+    return {
       repo_id: repoId,
       repo_root: repo.root_path,
       latest_scan: null,
@@ -546,7 +545,6 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
       changes: { added: [], modified: [], deleted: [] },
       next_command: `drift scan --repo-root ${repo.root_path} --json`
     };
-    return { payload: parsed.flags.has("json") ? payload : formatScanStatusText(payload) };
   }
 
   const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
@@ -569,6 +567,12 @@ function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
       ? `drift scan --repo-root ${repo.root_path} --json`
       : `drift prepare "task" --repo ${repoId} --json`
   };
+  return payload;
+}
+
+function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = stringFlag(parsed, "repo") ?? repoIdForRoot(resolveRepoRoot(parsed));
+  const payload = scanStatusPayload(storage, repoId);
 
   return {
     payload: parsed.flags.has("json") ? payload : formatScanStatusText(payload)
@@ -756,6 +760,7 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
       updated_at: contract.updated_at
     },
     conventions,
+    scan_status: scanStatusPayload(storage, repoId),
     baseline,
     findings,
     relevant_files: relevantFiles,
