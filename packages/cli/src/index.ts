@@ -1221,9 +1221,11 @@ function importContractDryRun(
   const repo = storage.getRepo(expectedRepoId);
   const expectedFingerprint = existingContract?.repo_fingerprint ?? repo?.fingerprint;
   const compatibility = {
-    compatible: expectedRepoId === contract.repo_id &&
+    compatible: Boolean(repo) &&
+      expectedRepoId === contract.repo_id &&
       contract.contract_schema_version <= 1 &&
       (!expectedFingerprint || expectedFingerprint === contract.repo_fingerprint),
+    target_repo_exists: Boolean(repo),
     repo_id_matches: expectedRepoId === contract.repo_id,
     repo_fingerprint_matches: expectedFingerprint
       ? expectedFingerprint === contract.repo_fingerprint

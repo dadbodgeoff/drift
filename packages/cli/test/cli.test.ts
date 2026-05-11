@@ -2230,6 +2230,52 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("returns a nonzero dry-run import result for unknown target repos", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-unknown-repo-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const exported = await runCli([
+      "--db", databasePath,
+      "contract", "export",
+      "--repo", "repo_abc",
+      "--format", "json",
+      "--json"
+    ]);
+    const contract = JSON.parse(exported.stdout).contract;
+    await writeFile(contractPath, JSON.stringify({
+      ...contract,
+      repo_id: "repo_missing",
+      repo_fingerprint: "missing-fingerprint"
+    }, null, 2));
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_missing",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      valid: true,
+      dry_run: true,
+      compatibility: {
+        compatible: false,
+        target_repo_exists: false
+      }
+    });
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
