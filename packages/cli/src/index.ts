@@ -1229,6 +1229,15 @@ function instructionForConvention(convention: AcceptedConvention): string {
     ].filter(Boolean).join(" ");
   }
 
+  if (convention.kind === "api_route_requires_service_delegation") {
+    const delegates = (convention.matcher.allowed_delegate_imports ?? []).join(", ");
+    return [
+      "When editing API route files, keep route modules thin and delegate business/data-access work to the service layer.",
+      delegates ? `Observed delegate imports: ${delegates}.` : "",
+      "Treat this as briefing guidance unless the repo later upgrades it to a deterministic check."
+    ].filter(Boolean).join(" ");
+  }
+
   return `${convention.statement} Follow its scope, matcher, and exceptions.`;
 }
 
@@ -2169,48 +2178,99 @@ function inferConventionCandidates(input: {
     fact.value &&
     looksLikeDataAccessImport(fact.value)
   );
+  const serviceImports = input.facts.filter((fact) =>
+    fact.kind === "import_used" &&
+    apiRouteFiles.has(fact.file_path) &&
+    fact.value &&
+    looksLikeServiceImport(fact.value)
+  );
 
-  if (dataImports.length === 0) {
-    return [];
+  const candidates: ConventionCandidate[] = [];
+  if (dataImports.length > 0) {
+    const forbiddenImports = [...new Set(dataImports.map((fact) => fact.value).filter(Boolean))] as string[];
+    candidates.push({
+      id: `candidate_${hashStable(`${input.repoId}:api_route_no_direct_data_access:${forbiddenImports.join(",")}`).slice(0, 16)}`,
+      repo_id: input.repoId,
+      scan_id: input.scanId,
+      kind: "api_route_no_direct_data_access",
+      statement: "API routes should not import data-access clients directly.",
+      rationale: "Detected API route imports that look like database/data-access clients.",
+      scope: {
+        path_globs: ["**/app/api/**/route.ts", "**/app/api/**/route.tsx", "**/pages/api/**/*.ts"],
+        file_roles: ["api_route"]
+      },
+      matcher: {
+        kind: "api_route_no_direct_data_access",
+        forbidden_imports: forbiddenImports,
+        applies_to_file_roles: ["api_route"]
+      },
+      suggested_severity: "error",
+      suggested_enforcement_mode: "block",
+      enforcement_capability: "deterministic_check",
+      confidence_label: "high",
+      scoring: {
+        supporting_examples_count: dataImports.length,
+        counterexamples_count: 0,
+        scope_files_count: apiRouteFiles.size,
+        coverage_ratio: apiRouteFiles.size === 0 ? 0 : dataImports.length / apiRouteFiles.size,
+        heuristic_id: "direct-data-access-import-v1"
+      },
+      evidence_refs: [],
+      counterexample_refs: [],
+      status: "candidate",
+      created_at: input.now
+    });
   }
 
-  const forbiddenImports = [...new Set(dataImports.map((fact) => fact.value).filter(Boolean))] as string[];
-  return [{
-    id: `candidate_${hashStable(`${input.repoId}:api_route_no_direct_data_access:${forbiddenImports.join(",")}`).slice(0, 16)}`,
-    repo_id: input.repoId,
-    scan_id: input.scanId,
-    kind: "api_route_no_direct_data_access",
-    statement: "API routes should not import data-access clients directly.",
-    rationale: "Detected API route imports that look like database/data-access clients.",
-    scope: {
-      path_globs: ["**/app/api/**/route.ts", "**/app/api/**/route.tsx", "**/pages/api/**/*.ts"],
-      file_roles: ["api_route"]
-    },
-    matcher: {
-      kind: "api_route_no_direct_data_access",
-      forbidden_imports: forbiddenImports,
-      applies_to_file_roles: ["api_route"]
-    },
-    suggested_severity: "error",
-    suggested_enforcement_mode: "block",
-    enforcement_capability: "deterministic_check",
-    confidence_label: "high",
-    scoring: {
-      supporting_examples_count: dataImports.length,
-      counterexamples_count: 0,
-      scope_files_count: apiRouteFiles.size,
-      coverage_ratio: apiRouteFiles.size === 0 ? 0 : dataImports.length / apiRouteFiles.size,
-      heuristic_id: "direct-data-access-import-v1"
-    },
-    evidence_refs: [],
-    counterexample_refs: [],
-    status: "candidate",
-    created_at: input.now
-  }];
+  if (serviceImports.length > 0 || dataImports.length > 0) {
+    const delegateImports = [...new Set(serviceImports.map((fact) => fact.value).filter(Boolean))] as string[];
+    candidates.push({
+      id: `candidate_${hashStable(`${input.repoId}:api_route_requires_service_delegation:${delegateImports.join(",") || "default"}`).slice(0, 16)}`,
+      repo_id: input.repoId,
+      scan_id: input.scanId,
+      kind: "api_route_requires_service_delegation",
+      statement: "API routes should delegate business and data-access work through service modules.",
+      rationale: serviceImports.length > 0
+        ? "Detected API route imports from service modules."
+        : "Detected direct data-access imports; service delegation should be reviewed before enforcement.",
+      scope: {
+        path_globs: ["**/app/api/**/route.ts", "**/app/api/**/route.tsx", "**/pages/api/**/*.ts"],
+        file_roles: ["api_route"]
+      },
+      matcher: {
+        kind: "api_route_requires_service_delegation",
+        allowed_delegate_imports: delegateImports.length > 0
+          ? delegateImports
+          : ["**/services/**", "**/server/**", "**/data-access/**"],
+        applies_to_file_roles: ["api_route"]
+      },
+      suggested_severity: "warning",
+      suggested_enforcement_mode: "warn",
+      enforcement_capability: "heuristic_check",
+      confidence_label: serviceImports.length > 0 ? "medium" : "low",
+      scoring: {
+        supporting_examples_count: serviceImports.length,
+        counterexamples_count: dataImports.length,
+        scope_files_count: apiRouteFiles.size,
+        coverage_ratio: apiRouteFiles.size === 0 ? 0 : serviceImports.length / apiRouteFiles.size,
+        heuristic_id: "api-route-service-delegation-v1"
+      },
+      evidence_refs: [],
+      counterexample_refs: [],
+      status: "candidate",
+      created_at: input.now
+    });
+  }
+
+  return candidates;
 }
 
 function looksLikeDataAccessImport(importSource: string): boolean {
   return /(^|\/|@)(db|database|prisma|drizzle|typeorm|sequelize)(\/|$)/i.test(importSource);
+}
+
+function looksLikeServiceImport(importSource: string): boolean {
+  return /(^|\/|@)(services?|service-layer|use-cases?|interactors?|application)(\/|$)/i.test(importSource);
 }
 
 function doctorSymbol(status: DoctorCheck["status"]): string {

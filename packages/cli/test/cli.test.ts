@@ -204,8 +204,49 @@ describe("drift CLI convention review", () => {
     expect(storage.getRepo(payload.repo.id)?.root_path).toBe(repoRoot);
     expect(storage.getScanManifest(payload.scan.id)?.status).toBe("completed");
     expect(storage.listFacts(payload.scan.id, { kind: "import_used" })).toHaveLength(2);
-    expect(storage.listConventionCandidates(payload.repo.id, { status: "candidate" })).toHaveLength(1);
+    expect(storage.listConventionCandidates(payload.repo.id, { status: "candidate" })).toHaveLength(2);
     storage.close();
+  });
+
+  it("infers service delegation as a heuristic warning convention", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-service-candidate-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { listUsers } from \"@/services/users\";",
+        "",
+        "export async function GET() {",
+        "  return Response.json(await listUsers());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:11.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.candidates).toHaveLength(1);
+    expect(payload.candidates[0]).toMatchObject({
+      kind: "api_route_requires_service_delegation",
+      suggested_severity: "warning",
+      suggested_enforcement_mode: "warn",
+      enforcement_capability: "heuristic_check",
+      confidence_label: "medium",
+      matcher: {
+        allowed_delegate_imports: ["@/services/users"]
+      }
+    });
   });
 
   it("reports scan status and marks the graph stale after file changes", async () => {
