@@ -73,6 +73,68 @@ export interface EvidenceRef {
   redaction_state: "none" | "redacted" | "snippet_limited";
 }
 
+export interface RepoRecord {
+  id: string;
+  root_path: string;
+  fingerprint: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScanManifest {
+  id: string;
+  repo_id: string;
+  branch: string;
+  commit: string;
+  dirty: boolean;
+  previous_scan_id?: string;
+  scanner_version: string;
+  adapter_versions: Record<string, string>;
+  rule_engine_version: string;
+  status: "started" | "completed" | "failed";
+  file_count: number;
+  fact_count: number;
+  finding_count: number;
+  started_at: string;
+  completed_at?: string;
+  error_message?: string;
+}
+
+export interface FileSnapshot {
+  repo_id: string;
+  scan_id: string;
+  file_path: string;
+  content_hash: string;
+  byte_size: number;
+  indexed: boolean;
+}
+
+export interface AuditEvent {
+  id: string;
+  repo_id: string;
+  actor: string;
+  action:
+    | "repo_added"
+    | "scan_started"
+    | "scan_completed"
+    | "scan_failed"
+    | "election_accepted"
+    | "election_rejected"
+    | "finding_resolved"
+    | "finding_suppressed"
+    | "policy_changed"
+    | "agent_permission_changed"
+    | "backup_created"
+    | "restore_completed"
+    | "contract_exported"
+    | "adapter_upgraded"
+    | "scan_invalidated";
+  target_type: string;
+  target_id: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export type ConventionStatus =
   | "candidate"
   | "accepted"

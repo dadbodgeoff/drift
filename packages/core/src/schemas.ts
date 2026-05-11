@@ -78,6 +78,69 @@ export const EvidenceRefSchema = z.object({
   redaction_state: z.enum(["none", "redacted", "snippet_limited"])
 });
 
+export const RepoRecordSchema = z.object({
+  id: z.string().min(1),
+  root_path: z.string().min(1),
+  fingerprint: z.string().min(1),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime()
+});
+
+export const ScanManifestSchema = z.object({
+  id: z.string().min(1),
+  repo_id: z.string().min(1),
+  branch: z.string().min(1),
+  commit: z.string().min(1),
+  dirty: z.boolean(),
+  previous_scan_id: z.string().min(1).optional(),
+  scanner_version: z.string().min(1),
+  adapter_versions: z.record(z.string().min(1)),
+  rule_engine_version: z.string().min(1),
+  status: z.enum(["started", "completed", "failed"]),
+  file_count: z.number().int().nonnegative(),
+  fact_count: z.number().int().nonnegative(),
+  finding_count: z.number().int().nonnegative(),
+  started_at: z.string().datetime(),
+  completed_at: z.string().datetime().optional(),
+  error_message: z.string().optional()
+});
+
+export const FileSnapshotSchema = z.object({
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  file_path: z.string().min(1),
+  content_hash: z.string().min(1),
+  byte_size: z.number().int().nonnegative(),
+  indexed: z.boolean()
+});
+
+export const AuditEventSchema = z.object({
+  id: z.string().min(1),
+  repo_id: z.string().min(1),
+  actor: z.string().min(1),
+  action: z.enum([
+    "repo_added",
+    "scan_started",
+    "scan_completed",
+    "scan_failed",
+    "election_accepted",
+    "election_rejected",
+    "finding_resolved",
+    "finding_suppressed",
+    "policy_changed",
+    "agent_permission_changed",
+    "backup_created",
+    "restore_completed",
+    "contract_exported",
+    "adapter_upgraded",
+    "scan_invalidated"
+  ]),
+  target_type: z.string().min(1),
+  target_id: z.string().min(1),
+  metadata: z.record(z.unknown()),
+  created_at: z.string().datetime()
+});
+
 export const ConventionStatusSchema = z.enum([
   "candidate",
   "accepted",
