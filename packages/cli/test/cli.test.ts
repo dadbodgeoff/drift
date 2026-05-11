@@ -657,6 +657,48 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).not.toContain("prisma.user.findMany");
   });
 
+  it("shows repo policy and checks whether context can be exported", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const shown = await runCli([
+      "--db", databasePath,
+      "policy", "show",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+    const allowed = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", "apps/web/app/api/users/route.ts",
+      "--surface", "cli-preflight",
+      "--json"
+    ]);
+    const denied = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", ".env.local",
+      "--surface", "cli-preflight",
+      "--json"
+    ]);
+
+    expect(shown.exitCode).toBe(0);
+    expect(JSON.parse(shown.stdout).policy.context_egress.default_mode).toBe("local_only");
+    expect(allowed.exitCode).toBe(0);
+    expect(JSON.parse(allowed.stdout).decision).toMatchObject({
+      allowed: true,
+      surface: "cli-preflight",
+      mode: "local_only"
+    });
+    expect(denied.exitCode).toBe(0);
+    expect(JSON.parse(denied.stdout).decision).toMatchObject({
+      allowed: false,
+      surface: "cli-preflight",
+      mode: "denied"
+    });
+  });
+
   it("refuses prepare until a repo contract exists", async () => {
     const databasePath = await seedDatabase();
 

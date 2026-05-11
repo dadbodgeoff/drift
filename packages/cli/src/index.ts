@@ -102,6 +102,14 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return prepareTask(storage, parsed);
   }
 
+  if (group === "policy" && command === "show") {
+    return showPolicy(storage, parsed);
+  }
+
+  if (group === "policy" && command === "check-context") {
+    return checkPolicyContext(storage, parsed);
+  }
+
   if (group === "conventions" && command === "list") {
     const repoId = requiredFlag(parsed, "repo");
     const status = stringFlag(parsed, "status");
@@ -560,6 +568,48 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
   };
 }
 
+function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const contract = requiredRepoContract(storage, repoId);
+  const payload = {
+    repo_id: repoId,
+    policy: {
+      context_egress: contract.context_egress,
+      agent_permissions: contract.agent_permissions
+    },
+    guarded_surfaces: [
+      "cli-preflight",
+      "cli-check",
+      "mcp",
+      "contract-export",
+      "artifact",
+      "log",
+      "ui"
+    ]
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPolicyShowText(payload)
+  };
+}
+
+function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const contextPath = requiredFlag(parsed, "path");
+  const surface = policySurface(requiredFlag(parsed, "surface"));
+  const contract = requiredRepoContract(storage, repoId);
+  const decision = authorizeContextExport(contract, surface, { path: contextPath });
+  const payload = {
+    repo_id: repoId,
+    path: contextPath,
+    decision
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPolicyDecisionText(payload)
+  };
+}
+
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = requiredFlag(parsed, "repo");
   const repo = storage.getRepo(repoId);
@@ -829,8 +879,22 @@ function createBaselineForFindings(
 
 function authorizeContextExport(
   contract: RepoContract,
-  surface: PolicyDecision["surface"]
+  surface: PolicyDecision["surface"],
+  input: { path?: string } = {}
 ): PolicyDecision {
+  if (
+    input.path &&
+    contract.context_egress.denied_globs.some((glob) => matchesGlob(input.path!, glob))
+  ) {
+    return {
+      allowed: false,
+      surface,
+      mode: "denied",
+      reason: `path matches denied context glob: ${input.path}`,
+      max_snippet_chars: 0
+    };
+  }
+
   const mode = contract.context_egress.default_mode;
   if (mode === "approval_required") {
     return {
@@ -846,9 +910,25 @@ function authorizeContextExport(
     allowed: true,
     surface,
     mode,
-    reason: "metadata-only local preflight packet",
+    reason: input.path ? "context path is allowed by repo policy" : "metadata-only local preflight packet",
     max_snippet_chars: contract.context_egress.max_snippet_chars
   };
+}
+
+function policySurface(value: string): PolicyDecision["surface"] {
+  if (
+    value === "cli-preflight" ||
+    value === "cli-check" ||
+    value === "mcp" ||
+    value === "contract-export" ||
+    value === "artifact" ||
+    value === "log" ||
+    value === "ui"
+  ) {
+    return value;
+  }
+
+  throw new Error("--surface must be cli-preflight, cli-check, mcp, contract-export, artifact, log, or ui.");
 }
 
 function preparedConvention(convention: AcceptedConvention): PreparedConvention {
@@ -1023,6 +1103,44 @@ function formatScanStatusText(payload: {
     "",
     "Next command:",
     `  ${payload.next_command}`,
+    ""
+  ].join("\n");
+}
+
+function formatPolicyShowText(payload: {
+  repo_id: string;
+  policy: Pick<RepoContract, "context_egress" | "agent_permissions">;
+  guarded_surfaces: string[];
+}): string {
+  return [
+    "Drift policy",
+    "",
+    `Repo: ${payload.repo_id}`,
+    `Mode: ${payload.policy.context_egress.default_mode}`,
+    `Denied globs: ${payload.policy.context_egress.denied_globs.join(", ") || "none"}`,
+    `Max snippet chars: ${payload.policy.context_egress.max_snippet_chars}`,
+    `Agent permissions: ${payload.policy.agent_permissions.length}`,
+    "",
+    "Guarded surfaces:",
+    ...payload.guarded_surfaces.map((surface) => `  ${surface}`),
+    ""
+  ].join("\n");
+}
+
+function formatPolicyDecisionText(payload: {
+  repo_id: string;
+  path: string;
+  decision: PolicyDecision;
+}): string {
+  return [
+    "Drift policy decision",
+    "",
+    `Repo: ${payload.repo_id}`,
+    `Path: ${payload.path}`,
+    `Surface: ${payload.decision.surface}`,
+    `Decision: ${payload.decision.allowed ? "allowed" : "denied"}`,
+    `Mode: ${payload.decision.mode}`,
+    `Reason: ${payload.decision.reason}`,
     ""
   ].join("\n");
 }
@@ -1277,6 +1395,14 @@ function materializeRepoContract(
     },
     agent_permissions: existing?.agent_permissions ?? []
   };
+}
+
+function requiredRepoContract(storage: SqliteDriftStorage, repoId: string): RepoContract {
+  const contract = storage.getRepoContract(repoId);
+  if (!contract) {
+    throw new Error(`No repo contract exists for ${repoId}.`);
+  }
+  return contract;
 }
 
 function requiredCandidate(storage: SqliteDriftStorage, id: string): ConventionCandidate {
@@ -1705,6 +1831,20 @@ function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "policy") {
+    return [
+      "Inspect context egress policy",
+      "",
+      "Usage:",
+      "  drift --db <path> policy show --repo <repo_id> --json",
+      "  drift --db <path> policy check-context --repo <repo_id> --path <file> --surface cli-preflight --json",
+      "",
+      "What policy does:",
+      "  shows repo context-egress settings and checks whether a path is allowed on a specific outward surface.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "check") {
     return [
       "Run deterministic checks",
@@ -1774,6 +1914,8 @@ function helpText(parsed: ParsedArgs): string {
     "  drift findings list --repo <repo_id> --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
+    "  drift policy show --repo <repo_id> --json",
+    "  drift policy check-context --repo <repo_id> --path <file> --surface cli-preflight --json",
     "  drift contract show --repo <repo_id> --json",
     "",
     "Convention review:",
