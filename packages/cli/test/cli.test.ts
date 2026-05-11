@@ -151,6 +151,18 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).toContain("drift conventions list");
   });
 
+  it("prints focused command group help without requiring a database", async () => {
+    const check = await runCli(["check", "--help"]);
+    const conventions = await runCli(["conventions", "--help"]);
+
+    expect(check.exitCode).toBe(0);
+    expect(check.stdout).toContain("Run deterministic checks");
+    expect(check.stdout).toContain("--scope changed-hunks");
+    expect(conventions.exitCode).toBe(0);
+    expect(conventions.stdout).toContain("Review inferred conventions");
+    expect(conventions.stdout).toContain("conventions exception add");
+  });
+
   it("checks accepted deterministic conventions against changed hunks and stores findings", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "diff.patch");

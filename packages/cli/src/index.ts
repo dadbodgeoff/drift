@@ -35,7 +35,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
   try {
     const parsed = parseArgs(argv);
     if (isHelpRequest(parsed)) {
-      return { exitCode: 0, stdout: helpText(), stderr: "" };
+      return { exitCode: 0, stdout: helpText(parsed), stderr: "" };
     }
 
     const databasePath = stringFlag(parsed, "db") ?? process.env.DRIFT_DB;
@@ -442,7 +442,42 @@ function isHelpRequest(parsed: ParsedArgs): boolean {
   return parsed.flags.has("help") || parsed.positional[0] === "help" || parsed.positional.length === 0;
 }
 
-function helpText(): string {
+function helpText(parsed: ParsedArgs): string {
+  if (parsed.positional[0] === "check") {
+    return [
+      "Run deterministic checks",
+      "",
+      "Usage:",
+      "  drift --db <path> check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
+      "  drift --db <path> check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
+      "",
+      "Options:",
+      "  --repo <repo_id>       Repo id in Drift storage.",
+      "  --diff <range>         Git diff range to evaluate, for example main...HEAD.",
+      "  --diff-file <patch>    Read a unified diff from a file.",
+      "  --scope changed-hunks  Check only findings on changed lines.",
+      "  --scope changed-files  Check findings anywhere in changed files.",
+      "  --scope full           Classify all evaluated findings as full-scope.",
+      "  --json                 Emit machine-readable JSON.",
+      ""
+    ].join("\n");
+  }
+
+  if (parsed.positional[0] === "conventions") {
+    return [
+      "Review inferred conventions",
+      "",
+      "Usage:",
+      "  drift --db <path> conventions list --repo <repo_id> --status candidate --json",
+      "  drift --db <path> conventions show <candidate_id> --json",
+      "  drift --db <path> conventions accept <candidate_id> --severity warning --mode warn --json",
+      "  drift --db <path> conventions reject <candidate_id> --reason \"false inference\" --json",
+      "  drift --db <path> conventions edit <candidate_id> --statement \"...\" --json",
+      "  drift --db <path> conventions exception add <convention_id> --repo <repo_id> --path <glob> --reason \"...\" --json",
+      ""
+    ].join("\n");
+  }
+
   return [
     "Drift local repo intelligence",
     "",
