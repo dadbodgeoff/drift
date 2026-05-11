@@ -1175,6 +1175,10 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   if (!contract) {
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
+  const policy = authorizeContextExport(contract, "cli-check");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied check output: ${policy.reason}`);
+  }
 
   const scope = stringFlag(parsed, "scope") ?? "changed-hunks";
   if (!["changed-hunks", "changed-files", "full"].includes(scope)) {
@@ -1255,6 +1259,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   return {
     exitCode: blockingCount > 0 ? 1 : 0,
     payload: {
+      policy,
       summary: {
         repo_id: repoId,
         scope,

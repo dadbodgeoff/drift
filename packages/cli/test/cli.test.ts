@@ -729,6 +729,10 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     const payload = JSON.parse(result.stdout);
+    expect(payload.policy).toMatchObject({
+      allowed: true,
+      surface: "cli-check"
+    });
     expect(payload.summary.engine_source).toBe("rust");
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0].diff_status).toBe("new_in_diff");
@@ -836,6 +840,33 @@ describe("drift CLI convention review", () => {
       id: finding.id,
       status: "suppressed"
     });
+  });
+
+  it("denies check output when repo policy requires approval", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc");
+    storage.upsertRepoContract({
+      ...contract!,
+      context_egress: {
+        ...contract!.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", join(repoRoot, "..", "diff.patch"),
+      "--scope", "changed-hunks",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Policy denied check output");
   });
 
   it("creates, reports, and clears baselines from stored findings", async () => {
