@@ -931,9 +931,11 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
 
 function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
-  const repo = storage.getRepo(repoId);
-  if (!repo) {
-    throw new Error(`Unknown repo ${repoId}.`);
+  const repo = requiredRepo(storage, repoId);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "artifact");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied backup output: ${policy.reason}`);
   }
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -968,19 +970,22 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
   storage.upsertBackupManifest(manifest);
 
   return {
-    payload: parsed.flags.has("json") ? { manifest } : formatBackupCreatedText(manifest)
+    payload: parsed.flags.has("json") ? { manifest, policy } : formatBackupCreatedText(manifest)
   };
 }
 
 function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
-  const repo = storage.getRepo(repoId);
-  if (!repo) {
-    throw new Error(`Unknown repo ${repoId}.`);
+  requiredRepo(storage, repoId);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "artifact");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied backup output: ${policy.reason}`);
   }
   const backups = storage.listBackupManifests(repoId);
   const payload = {
     repo_id: repoId,
+    policy,
     count: backups.length,
     backups
   };

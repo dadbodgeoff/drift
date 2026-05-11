@@ -1521,7 +1521,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("creates a single SQLite backup artifact and audits it", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-"));
     tempDirs.push(dir);
     const backupDir = join(dir, "backups");
@@ -1538,6 +1538,10 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(0);
     const payload = JSON.parse(result.stdout);
+    expect(payload.policy).toMatchObject({
+      allowed: true,
+      surface: "artifact"
+    });
     expect(payload.manifest).toMatchObject({
       repo_id: "repo_abc",
       schema_version: 4,
@@ -1564,7 +1568,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("lists persisted backup manifests as JSON", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-list-"));
     tempDirs.push(dir);
     const backupDir = join(dir, "backups");
@@ -1588,6 +1592,10 @@ describe("drift CLI convention review", () => {
     expect(listed.exitCode).toBe(0);
     expect(JSON.parse(listed.stdout)).toMatchObject({
       repo_id: "repo_abc",
+      policy: {
+        allowed: true,
+        surface: "artifact"
+      },
       count: 1,
       backups: [{
         id: manifest.id,
@@ -1595,6 +1603,42 @@ describe("drift CLI convention review", () => {
         checksum_sha256: manifest.checksum_sha256
       }]
     });
+  });
+
+  it("denies backup artifact commands when repo policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc");
+    storage.upsertRepoContract({
+      ...contract!,
+      context_egress: {
+        ...contract!.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-policy-"));
+    tempDirs.push(dir);
+
+    const created = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--json"
+    ]);
+    const listed = await runCli([
+      "--db", databasePath,
+      "backup", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(created.exitCode).toBe(1);
+    expect(created.stderr).toContain("Policy denied backup output");
+    expect(listed.exitCode).toBe(1);
+    expect(listed.stderr).toContain("Policy denied backup output");
   });
 
   it("refuses backup list for an unknown repo id", async () => {
@@ -1612,7 +1656,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("verifies a backup artifact before restore", async () => {
-    const databasePath = await seedDatabase();
+    const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-"));
     tempDirs.push(dir);
     const backupDir = join(dir, "backups");
@@ -1644,7 +1688,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("restores a SQLite backup into a target database and audits the restore", async () => {
-    const sourceDatabasePath = await seedDatabase();
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-"));
     tempDirs.push(dir);
     const backupDir = join(dir, "backups");
@@ -1710,13 +1754,21 @@ describe("drift CLI convention review", () => {
     );
 
     const scanned = await runCli([
-      "scan",
+      "start",
       "--repo-root", repoRoot,
       "--state-root", stateRoot,
+      "--accept-defaults",
       "--now", "2026-05-10T00:00:10.000Z",
       "--json"
     ]);
     const scanPayload = JSON.parse(scanned.stdout);
+    await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.500Z",
+      "--json"
+    ]);
     const backup = await runCli([
       "--db", scanPayload.database_path,
       "backup", "create",
@@ -1758,7 +1810,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("validates restore dry-runs and refuses accidental overwrites", async () => {
-    const sourceDatabasePath = await seedDatabase();
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-safe-"));
     tempDirs.push(dir);
     const backupDir = join(dir, "backups");
@@ -1813,7 +1865,7 @@ describe("drift CLI convention review", () => {
   });
 
   it("refuses restore when an expected checksum does not match", async () => {
-    const sourceDatabasePath = await seedDatabase();
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-checksum-"));
     tempDirs.push(dir);
     const backup = await runCli([
