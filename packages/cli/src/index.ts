@@ -1214,6 +1214,9 @@ function importContractDryRun(
   if (!parsed.flags.has("dry-run")) {
     throw new Error("contract import currently requires --dry-run.");
   }
+  if (!existsSync(contractPath)) {
+    throw new Error(`Contract file not found: ${contractPath}`);
+  }
   const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
   const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
   const existingContract = storage.getRepoContract(expectedRepoId);

@@ -2321,6 +2321,22 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("refuses contract import when the contract file is missing", async () => {
+    const databasePath = await seedDatabase();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      "/tmp/drift-missing-contract.json",
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Contract file not found: /tmp/drift-missing-contract.json");
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
