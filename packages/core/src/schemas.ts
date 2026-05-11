@@ -114,6 +114,28 @@ export const FileSnapshotSchema = z.object({
   indexed: z.boolean()
 });
 
+export const FactKindSchema = z.enum([
+  "file_detected",
+  "import_used",
+  "exported_symbol",
+  "symbol_called",
+  "route_declared",
+  "file_role_detected",
+  "test_declared"
+]);
+
+export const FactRecordSchema = z.object({
+  id: z.string().min(1),
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  kind: FactKindSchema,
+  file_path: z.string().min(1),
+  name: z.string().min(1),
+  value: z.string().optional(),
+  start_line: z.number().int().positive(),
+  end_line: z.number().int().positive()
+});
+
 export const AuditEventSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),

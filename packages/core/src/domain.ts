@@ -109,6 +109,27 @@ export interface FileSnapshot {
   indexed: boolean;
 }
 
+export type FactKind =
+  | "file_detected"
+  | "import_used"
+  | "exported_symbol"
+  | "symbol_called"
+  | "route_declared"
+  | "file_role_detected"
+  | "test_declared";
+
+export interface FactRecord {
+  id: string;
+  repo_id: string;
+  scan_id: string;
+  kind: FactKind;
+  file_path: string;
+  name: string;
+  value?: string;
+  start_line: number;
+  end_line: number;
+}
+
 export interface AuditEvent {
   id: string;
   repo_id: string;

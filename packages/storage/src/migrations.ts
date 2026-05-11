@@ -107,5 +107,32 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_audit_events_repo_id_created_at
         ON audit_events(repo_id, created_at);
     `
+  },
+  {
+    id: "002_scan_facts",
+    sql: `
+      CREATE TABLE IF NOT EXISTS facts (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        name TEXT NOT NULL,
+        value TEXT,
+        start_line INTEGER NOT NULL,
+        end_line INTEGER NOT NULL,
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_facts_scan_id
+        ON facts(scan_id);
+
+      CREATE INDEX IF NOT EXISTS idx_facts_scan_kind
+        ON facts(scan_id, kind);
+
+      CREATE INDEX IF NOT EXISTS idx_facts_scan_file
+        ON facts(scan_id, file_path);
+    `
   }
 ];

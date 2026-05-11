@@ -23,7 +23,8 @@ describe("SQLite Drift storage", () => {
     storage.migrate();
 
     expect(storage.getAppliedMigrations()).toEqual([
-      "001_initial_local_state"
+      "001_initial_local_state",
+      "002_scan_facts"
     ]);
     storage.close();
   });
@@ -80,9 +81,45 @@ describe("SQLite Drift storage", () => {
       status: "active",
       created_at: "2026-05-10T00:00:03.000Z"
     });
+    storage.upsertFacts([
+      {
+        id: "fact_import_prisma",
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        kind: "import_used",
+        file_path: "apps/web/app/api/users/route.ts",
+        name: "prisma",
+        value: "@/lib/prisma",
+        start_line: 1,
+        end_line: 1
+      },
+      {
+        id: "fact_api_role",
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        kind: "file_role_detected",
+        file_path: "apps/web/app/api/users/route.ts",
+        name: "api_route",
+        start_line: 1,
+        end_line: 1
+      }
+    ]);
 
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     expect(storage.getScanManifest("scan_abc")?.adapter_versions).toEqual({ typescript: "0.1.0" });
+    expect(storage.listFacts("scan_abc", { kind: "import_used" })).toEqual([
+      {
+        id: "fact_import_prisma",
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        kind: "import_used",
+        file_path: "apps/web/app/api/users/route.ts",
+        name: "prisma",
+        value: "@/lib/prisma",
+        start_line: 1,
+        end_line: 1
+      }
+    ]);
     expect(storage.listFindings("repo_abc")).toHaveLength(1);
     expect(storage.listBaselineViolations("repo_abc")).toHaveLength(1);
     storage.close();

@@ -2,6 +2,8 @@ import Database from "better-sqlite3";
 import type {
   AuditEvent,
   BaselineViolation,
+  FactKind,
+  FactRecord,
   FileSnapshot,
   Finding,
   RepoRecord,
@@ -10,6 +12,7 @@ import type {
 import {
   AuditEventSchema,
   BaselineViolationSchema,
+  FactRecordSchema,
   FileSnapshotSchema,
   FindingSchema,
   RepoRecordSchema,
@@ -145,6 +148,44 @@ export class SqliteDriftStorage {
       .run({ ...parsed, indexed: parsed.indexed ? 1 : 0 });
   }
 
+  upsertFacts(facts: FactRecord[]): void {
+    const parsedFacts = facts.map((fact) => FactRecordSchema.parse(fact));
+    const insert = this.db.prepare(`
+      INSERT INTO facts (
+        id, repo_id, scan_id, kind, file_path, name, value, start_line, end_line
+      )
+      VALUES (
+        @id, @repo_id, @scan_id, @kind, @file_path, @name, @value, @start_line, @end_line
+      )
+      ON CONFLICT(id) DO UPDATE SET
+        kind = excluded.kind,
+        file_path = excluded.file_path,
+        name = excluded.name,
+        value = excluded.value,
+        start_line = excluded.start_line,
+        end_line = excluded.end_line
+    `);
+
+    const transaction = this.db.transaction(() => {
+      for (const fact of parsedFacts) {
+        insert.run({ ...fact, value: fact.value ?? null });
+      }
+    });
+    transaction();
+  }
+
+  listFacts(scanId: string, filter: { kind?: FactKind } = {}): FactRecord[] {
+    const rows = filter.kind
+      ? this.db
+          .prepare("SELECT * FROM facts WHERE scan_id = ? AND kind = ? ORDER BY file_path, start_line, id")
+          .all(scanId, filter.kind)
+      : this.db
+          .prepare("SELECT * FROM facts WHERE scan_id = ? ORDER BY file_path, start_line, id")
+          .all(scanId);
+
+    return rows.map(factFromRow);
+  }
+
   upsertFinding(finding: Finding): void {
     const parsed = FindingSchema.parse(finding);
     this.db
@@ -271,6 +312,14 @@ function findingFromRow(row: unknown): Finding {
   return FindingSchema.parse({
     ...record,
     evidence_refs: parseJsonArray(record.evidence_refs_json)
+  });
+}
+
+function factFromRow(row: unknown): FactRecord {
+  const record = row as Record<string, unknown>;
+  return FactRecordSchema.parse({
+    ...record,
+    value: record.value ?? undefined
   });
 }
 
