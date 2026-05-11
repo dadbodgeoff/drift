@@ -94,6 +94,11 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown {
     return { contract };
   }
 
+  if (group === "findings" && command === "list") {
+    const repoId = requiredFlag(parsed, "repo");
+    return { findings: storage.listFindings(repoId) };
+  }
+
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}`);
 }
 

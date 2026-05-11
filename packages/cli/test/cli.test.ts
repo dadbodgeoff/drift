@@ -57,6 +57,37 @@ afterEach(async () => {
 });
 
 describe("drift CLI convention review", () => {
+  it("lists findings as JSON", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).findings[0].id).toBe("finding_abc");
+  });
+
   it("lists and shows convention candidates as JSON", async () => {
     const databasePath = await seedDatabase();
 
