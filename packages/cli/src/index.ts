@@ -870,6 +870,8 @@ function validateContract(storage: SqliteDriftStorage, parsed: ParsedArgs): Comm
 
 function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
   const format = stringFlag(parsed, "format") ?? "json";
   if (format !== "json") {
     throw new Error("--format must be json.");
@@ -879,6 +881,20 @@ function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
   if (!policy.allowed) {
     throw new Error(`Policy denied contract export: ${policy.reason}`);
   }
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_contract_export_${repoId}_${now}`,
+    repoId,
+    actor,
+    action: "contract_exported",
+    targetType: "contract",
+    targetId: contract.id,
+    metadata: {
+      format,
+      surface: policy.surface,
+      mode: policy.mode
+    },
+    createdAt: now
+  }));
   const payload = {
     contract,
     policy

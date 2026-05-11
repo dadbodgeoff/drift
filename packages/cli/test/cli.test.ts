@@ -1197,6 +1197,8 @@ describe("drift CLI convention review", () => {
       "contract", "export",
       "--repo", "repo_abc",
       "--format", "json",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:11.000Z",
       "--json"
     ]);
     await writeFile(contractPath, JSON.stringify(JSON.parse(exported.stdout).contract, null, 2));
@@ -1219,6 +1221,21 @@ describe("drift CLI convention review", () => {
       dry_run: true,
       convention_count: 1
     });
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    expect(storage.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "contract_exported",
+      actor: "geoff",
+      target_type: "contract",
+      target_id: "contract_abc",
+      metadata: {
+        format: "json",
+        surface: "contract-export",
+        mode: "local_only"
+      }
+    });
+    storage.close();
   });
 
   it("edits a candidate statement before acceptance", async () => {
