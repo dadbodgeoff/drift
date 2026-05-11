@@ -3,7 +3,11 @@ import type { PolicyDecision, RepoContract } from "./domain.js";
 export function authorizeContextExport(
   contract: RepoContract,
   surface: PolicyDecision["surface"],
-  input: { path?: string } = {}
+  input: {
+    path?: string;
+    requested_snippet_chars?: number;
+    request_full_file_content?: boolean;
+  } = {}
 ): PolicyDecision {
   if (
     input.path &&
@@ -14,7 +18,19 @@ export function authorizeContextExport(
       surface,
       mode: "denied",
       reason: `path matches denied context glob: ${input.path}`,
-      max_snippet_chars: 0
+      max_snippet_chars: 0,
+      approved_snippet_chars: 0
+    };
+  }
+
+  if (input.request_full_file_content && !contract.context_egress.allow_full_file_content) {
+    return {
+      allowed: false,
+      surface,
+      mode: "denied",
+      reason: "full file content is denied by repo policy",
+      max_snippet_chars: 0,
+      approved_snippet_chars: 0
     };
   }
 
@@ -25,16 +41,27 @@ export function authorizeContextExport(
       surface,
       mode,
       reason: "context export requires approval",
-      max_snippet_chars: contract.context_egress.max_snippet_chars
+      max_snippet_chars: contract.context_egress.max_snippet_chars,
+      approved_snippet_chars: 0
     };
   }
+
+  const requestedSnippetChars = input.requested_snippet_chars ?? contract.context_egress.max_snippet_chars;
+  const approvedSnippetChars = Math.min(
+    Math.max(0, requestedSnippetChars),
+    contract.context_egress.max_snippet_chars
+  );
+  const snippetLimited = requestedSnippetChars > contract.context_egress.max_snippet_chars;
 
   return {
     allowed: true,
     surface,
-    mode,
-    reason: input.path ? "context path is allowed by repo policy" : "metadata-only local preflight packet",
-    max_snippet_chars: contract.context_egress.max_snippet_chars
+    mode: snippetLimited ? "redacted" : mode,
+    reason: snippetLimited
+      ? "requested snippet length exceeds repo policy and was capped"
+      : input.path ? "context path is allowed by repo policy" : "metadata-only local preflight packet",
+    max_snippet_chars: contract.context_egress.max_snippet_chars,
+    approved_snippet_chars: approvedSnippetChars
   };
 }
 

@@ -326,4 +326,5 @@ export interface PolicyDecision {
   mode: "local_only" | "redacted" | "approval_required" | "denied";
   reason: string;
   max_snippet_chars: number;
+  approved_snippet_chars: number;
 }

@@ -340,5 +340,6 @@ export const PolicyDecisionSchema = z.object({
   surface: z.enum(["cli-preflight", "cli-check", "mcp", "contract-export", "artifact", "log", "ui"]),
   mode: z.enum(["local_only", "redacted", "approval_required", "denied"]),
   reason: z.string().min(1),
-  max_snippet_chars: z.number().int().nonnegative()
+  max_snippet_chars: z.number().int().nonnegative(),
+  approved_snippet_chars: z.number().int().nonnegative()
 });

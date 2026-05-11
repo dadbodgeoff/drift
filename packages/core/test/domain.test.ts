@@ -121,5 +121,23 @@ describe("core domain", () => {
       surface: "cli-preflight",
       max_snippet_chars: 1200
     });
+    expect(authorizeContextExport(contract, "mcp", {
+      path: "src/app/api/users/route.ts",
+      requested_snippet_chars: 2400
+    })).toMatchObject({
+      allowed: true,
+      mode: "redacted",
+      max_snippet_chars: 1200,
+      approved_snippet_chars: 1200
+    });
+    expect(authorizeContextExport(contract, "mcp", {
+      path: "src/app/api/users/route.ts",
+      request_full_file_content: true
+    })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      max_snippet_chars: 0,
+      approved_snippet_chars: 0
+    });
   });
 });
