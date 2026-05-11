@@ -159,6 +159,7 @@ export const AuditEventSchema = z.object({
     "scan_failed",
     "election_accepted",
     "election_rejected",
+    "election_edited",
     "finding_resolved",
     "finding_suppressed",
     "policy_changed",

@@ -1921,6 +1921,12 @@ function editCandidate(
   const candidate = requiredCandidate(storage, candidateId);
   const statement = stringFlag(parsed, "statement");
   const scopeFile = stringFlag(parsed, "scope-file");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const changedFields = [
+    statement ? "statement" : undefined,
+    scopeFile ? "scope" : undefined
+  ].filter((field): field is string => Boolean(field));
   const updated = {
     ...candidate,
     statement: statement ?? candidate.statement,
@@ -1930,6 +1936,16 @@ function editCandidate(
   };
 
   storage.upsertConventionCandidate(updated);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_edit_${candidate.id}_${now}`,
+    repoId: candidate.repo_id,
+    actor,
+    action: "election_edited",
+    targetType: "candidate",
+    targetId: candidate.id,
+    metadata: { changed_fields: changedFields },
+    createdAt: now
+  }));
   return { candidate: updated };
 }
 

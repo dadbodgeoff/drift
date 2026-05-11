@@ -1928,6 +1928,8 @@ describe("drift CLI convention review", () => {
       "conventions", "edit",
       "candidate_no_direct_db",
       "--statement", "API routes must delegate data access through services.",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:30.000Z",
       "--json"
     ]);
 
@@ -1941,6 +1943,15 @@ describe("drift CLI convention review", () => {
     expect(storage.getConventionCandidate("candidate_no_direct_db")?.statement).toBe(
       "API routes must delegate data access through services."
     );
+    expect(storage.listAuditEvents("repo_abc")[0]).toMatchObject({
+      action: "election_edited",
+      actor: "geoff",
+      target_type: "candidate",
+      target_id: "candidate_no_direct_db",
+      metadata: {
+        changed_fields: ["statement"]
+      }
+    });
     storage.close();
   });
 
