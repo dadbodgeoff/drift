@@ -811,6 +811,7 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
     size_bytes: statSync(backupPath).size,
     created_at: now
   };
+  storage.upsertBackupManifest(manifest);
 
   return {
     payload: parsed.flags.has("json") ? { manifest } : formatBackupCreatedText(manifest)

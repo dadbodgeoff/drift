@@ -1090,7 +1090,7 @@ describe("drift CLI convention review", () => {
     const payload = JSON.parse(result.stdout);
     expect(payload.manifest).toMatchObject({
       repo_id: "repo_abc",
-      schema_version: 3,
+      schema_version: 4,
       created_at: "2026-05-10T00:00:04.000Z"
     });
     expect(payload.manifest.backup_path).toContain(backupDir);
@@ -1104,6 +1104,11 @@ describe("drift CLI convention review", () => {
       actor: "geoff",
       target_type: "backup",
       metadata: { backup_path: payload.manifest.backup_path }
+    });
+    expect(storage.listBackupManifests("repo_abc")[0]).toMatchObject({
+      id: payload.manifest.id,
+      backup_path: payload.manifest.backup_path,
+      checksum_sha256: payload.manifest.checksum_sha256
     });
     storage.close();
   });
@@ -1140,7 +1145,7 @@ describe("drift CLI convention review", () => {
       repo_id: "repo_abc",
       backup_path: backupPath,
       restored_database_path: targetDatabasePath,
-      schema_version: 3
+      schema_version: 4
     });
     expect(payload.restore.checksum_sha256).toHaveLength(64);
 

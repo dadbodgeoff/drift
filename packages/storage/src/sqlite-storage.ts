@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import type {
   AuditEvent,
   AcceptedConvention,
+  BackupManifest,
   BaselineViolation,
   ConventionCandidate,
   ConventionStatus,
@@ -16,6 +17,7 @@ import type {
 import {
   AuditEventSchema,
   AcceptedConventionSchema,
+  BackupManifestSchema,
   BaselineViolationSchema,
   ConventionCandidateSchema,
   FactRecordSchema,
@@ -167,6 +169,33 @@ export class SqliteDriftStorage {
       .prepare("SELECT * FROM file_snapshots WHERE repo_id = ? AND scan_id = ? ORDER BY file_path")
       .all(repoId, scanId)
       .map(fileSnapshotFromRow);
+  }
+
+  upsertBackupManifest(manifest: BackupManifest): void {
+    const parsed = BackupManifestSchema.parse(manifest);
+    this.db
+      .prepare(`
+        INSERT INTO backup_manifests (
+          id, repo_id, repo_fingerprint, schema_version, source_database_path,
+          backup_path, checksum_sha256, size_bytes, created_at
+        )
+        VALUES (
+          @id, @repo_id, @repo_fingerprint, @schema_version, @source_database_path,
+          @backup_path, @checksum_sha256, @size_bytes, @created_at
+        )
+        ON CONFLICT(id) DO UPDATE SET
+          backup_path = excluded.backup_path,
+          checksum_sha256 = excluded.checksum_sha256,
+          size_bytes = excluded.size_bytes
+      `)
+      .run(parsed);
+  }
+
+  listBackupManifests(repoId: string): BackupManifest[] {
+    return this.db
+      .prepare("SELECT * FROM backup_manifests WHERE repo_id = ? ORDER BY created_at DESC, id DESC")
+      .all(repoId)
+      .map((row) => BackupManifestSchema.parse(row));
   }
 
   upsertFacts(facts: FactRecord[]): void {

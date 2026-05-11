@@ -25,8 +25,46 @@ describe("SQLite Drift storage", () => {
     expect(storage.getAppliedMigrations()).toEqual([
       "001_initial_local_state",
       "002_scan_facts",
-      "003_repo_contracts_and_conventions"
+      "003_repo_contracts_and_conventions",
+      "004_backup_manifests"
     ]);
+    storage.close();
+  });
+
+  it("persists backup manifests for local state traceability", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertBackupManifest({
+      id: "backup_abc",
+      repo_id: "repo_abc",
+      repo_fingerprint: "repo-fp",
+      schema_version: 4,
+      source_database_path: "/state/drift.sqlite",
+      backup_path: "/backups/repo_abc.drift-backup.sqlite",
+      checksum_sha256: "a".repeat(64),
+      size_bytes: 2048,
+      created_at: "2026-05-10T00:00:01.000Z"
+    });
+
+    expect(storage.listBackupManifests("repo_abc")).toEqual([{
+      id: "backup_abc",
+      repo_id: "repo_abc",
+      repo_fingerprint: "repo-fp",
+      schema_version: 4,
+      source_database_path: "/state/drift.sqlite",
+      backup_path: "/backups/repo_abc.drift-backup.sqlite",
+      checksum_sha256: "a".repeat(64),
+      size_bytes: 2048,
+      created_at: "2026-05-10T00:00:01.000Z"
+    }]);
     storage.close();
   });
 

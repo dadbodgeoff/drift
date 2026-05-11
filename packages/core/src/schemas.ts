@@ -114,6 +114,18 @@ export const FileSnapshotSchema = z.object({
   indexed: z.boolean()
 });
 
+export const BackupManifestSchema = z.object({
+  id: z.string().min(1),
+  repo_id: z.string().min(1),
+  repo_fingerprint: z.string().min(1),
+  schema_version: z.number().int().positive(),
+  source_database_path: z.string().min(1),
+  backup_path: z.string().min(1),
+  checksum_sha256: z.string().min(1),
+  size_bytes: z.number().int().nonnegative(),
+  created_at: z.string().datetime()
+});
+
 export const FactKindSchema = z.enum([
   "file_detected",
   "import_used",

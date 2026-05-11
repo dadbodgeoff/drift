@@ -109,6 +109,18 @@ export interface FileSnapshot {
   indexed: boolean;
 }
 
+export interface BackupManifest {
+  id: string;
+  repo_id: string;
+  repo_fingerprint: string;
+  schema_version: number;
+  source_database_path: string;
+  backup_path: string;
+  checksum_sha256: string;
+  size_bytes: number;
+  created_at: string;
+}
+
 export type FactKind =
   | "file_detected"
   | "import_used"

@@ -198,5 +198,25 @@ export const MIGRATIONS: Migration[] = [
         FOREIGN KEY (repo_id) REFERENCES repos(id)
       );
     `
+  },
+  {
+    id: "004_backup_manifests",
+    sql: `
+      CREATE TABLE IF NOT EXISTS backup_manifests (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        repo_fingerprint TEXT NOT NULL,
+        schema_version INTEGER NOT NULL,
+        source_database_path TEXT NOT NULL,
+        backup_path TEXT NOT NULL,
+        checksum_sha256 TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (repo_id) REFERENCES repos(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_backup_manifests_repo_created_at
+        ON backup_manifests(repo_id, created_at);
+    `
   }
 ];
