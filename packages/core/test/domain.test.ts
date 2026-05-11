@@ -3,6 +3,7 @@ import {
   AcceptedConventionSchema,
   FindingSchema,
   RepoContractSchema,
+  authorizeContextExport,
   makeDriftId
 } from "../src/index.js";
 
@@ -74,5 +75,42 @@ describe("core domain", () => {
       evidence_refs: [],
       created_at: "2026-05-10T00:00:00.000Z"
     }).diff_status).toBe("new_in_diff");
+  });
+
+  it("authorizes context export from repo policy in one shared place", () => {
+    const contract = RepoContractSchema.parse({
+      id: "contract_abc",
+      repo_id: "repo_abc",
+      contract_schema_version: 1,
+      repo_fingerprint: "repo-fingerprint",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z",
+      conventions: [],
+      rejected_inferences: [],
+      waivers: [],
+      risky_areas: [],
+      safe_commands: [],
+      required_checks: [],
+      context_egress: {
+        default_mode: "local_only",
+        denied_globs: [".env*", "**/*.pem"],
+        max_snippet_chars: 1200,
+        allow_full_file_content: false
+      },
+      agent_permissions: []
+    });
+
+    expect(authorizeContextExport(contract, "mcp", { path: ".env.local" })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      surface: "mcp",
+      max_snippet_chars: 0
+    });
+    expect(authorizeContextExport(contract, "cli-preflight", { path: "src/app/api/users/route.ts" })).toMatchObject({
+      allowed: true,
+      mode: "local_only",
+      surface: "cli-preflight",
+      max_snippet_chars: 1200
+    });
   });
 });
