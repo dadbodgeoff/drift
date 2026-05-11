@@ -3,10 +3,17 @@ import type {
   AuditEvent,
   ConventionCandidate,
   EnforcementMode,
+  Finding,
+  FindingDiffStatus,
+  FindingStatus,
   RepoContract,
   Severity
 } from "@drift/core";
 import { openDriftStorage, type SqliteDriftStorage } from "@drift/storage";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface CliResult {
   exitCode: number;
@@ -19,21 +26,30 @@ interface ParsedArgs {
   flags: Map<string, string | true>;
 }
 
+interface CommandPayload {
+  payload: unknown;
+  exitCode?: number;
+}
+
 export async function runCli(argv: string[]): Promise<CliResult> {
   try {
     const parsed = parseArgs(argv);
+    if (isHelpRequest(parsed)) {
+      return { exitCode: 0, stdout: helpText(), stderr: "" };
+    }
+
     const databasePath = stringFlag(parsed, "db") ?? process.env.DRIFT_DB;
     if (!databasePath) {
-      throw new Error("Missing --db <path> or DRIFT_DB.");
+      throw new Error("Missing --db <path> or DRIFT_DB. Run drift --help.");
     }
 
     const storage = openDriftStorage({ databasePath });
     storage.migrate();
     try {
-      const payload = runCommand(storage, parsed);
+      const result = normalizeCommandResult(runCommand(storage, parsed));
       return {
-        exitCode: 0,
-        stdout: formatOutput(payload, parsed),
+        exitCode: result.exitCode ?? 0,
+        stdout: formatOutput(result.payload, parsed),
         stderr: ""
       };
     } finally {
@@ -48,7 +64,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
   }
 }
 
-function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown {
+function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | CommandPayload {
   const [group, command, maybeId] = parsed.positional;
 
   if (group === "conventions" && command === "list") {
@@ -99,7 +115,105 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown {
     return { findings: storage.listFindings(repoId) };
   }
 
-  throw new Error(`Unknown command: ${parsed.positional.join(" ")}`);
+  if (group === "check") {
+    return runCheck(storage, parsed);
+  }
+
+  throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
+}
+
+function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = requiredFlag(parsed, "repo");
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}.`);
+  }
+  const contract = storage.getRepoContract(repoId);
+  if (!contract) {
+    throw new Error(`No repo contract exists for ${repoId}.`);
+  }
+
+  const scope = stringFlag(parsed, "scope") ?? "changed-hunks";
+  if (!["changed-hunks", "changed-files", "full"].includes(scope)) {
+    throw new Error("--scope must be changed-hunks, changed-files, or full.");
+  }
+
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const diff = loadDiff(repo.root_path, parsed);
+  const parsedDiff = parseUnifiedDiff(diff);
+  const baseline = storage.listBaselineViolations(repoId);
+  const findings: Finding[] = [];
+
+  for (const convention of contract.conventions) {
+    if (
+      convention.kind !== "api_route_no_direct_data_access" ||
+      convention.enforcement_capability !== "deterministic_check"
+    ) {
+      continue;
+    }
+
+    const files = filesForConvention(parsedDiff, convention, scope);
+    for (const filePath of files) {
+      if (!isApiRoutePath(filePath) || isExceptedPath(filePath, convention)) {
+        continue;
+      }
+
+      const source = readFileSync(join(repo.root_path, filePath), "utf8");
+      for (const importUsed of extractImports(source)) {
+        if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
+          continue;
+        }
+
+        const diffStatus = diffStatusFor(filePath, importUsed.line, parsedDiff, scope);
+        const fingerprint = findingFingerprint(
+          convention.id,
+          filePath,
+          importUsed.name,
+          importUsed.source
+        );
+        const status = baseline.some((entry) =>
+          entry.status === "active" &&
+          entry.convention_id === convention.id &&
+          entry.finding_fingerprint === fingerprint
+        ) ? "pre_existing" : "new";
+        const finding: Finding = {
+          id: `finding_${fingerprint.slice(0, 16)}`,
+          repo_id: repoId,
+          convention_id: convention.id,
+          fingerprint,
+          title: "API route imports data access directly",
+          message: `${filePath} imports ${importUsed.name} from ${importUsed.source} directly; route modules should delegate through the accepted service/data-access layer.`,
+          severity: convention.severity,
+          enforcement_result: enforcementResultFor(convention.enforcement_mode),
+          status,
+          diff_status: diffStatus,
+          evidence_refs: [],
+          created_at: now
+        };
+        storage.upsertFinding(finding);
+        findings.push(finding);
+      }
+    }
+  }
+
+  const blockingCount = findings.filter((finding) =>
+    finding.status === "new" &&
+    finding.diff_status === "new_in_diff" &&
+    finding.enforcement_result === "block"
+  ).length;
+
+  return {
+    exitCode: blockingCount > 0 ? 1 : 0,
+    payload: {
+      summary: {
+        repo_id: repoId,
+        scope,
+        findings_count: findings.length,
+        blocking_count: blockingCount
+      },
+      findings
+    }
+  };
 }
 
 function acceptCandidate(
@@ -311,6 +425,256 @@ function formatOutput(payload: unknown, parsed: ParsedArgs): string {
     return `${JSON.stringify(payload, null, 2)}\n`;
   }
   return `${JSON.stringify(payload)}\n`;
+}
+
+function normalizeCommandResult(result: unknown | CommandPayload): CommandPayload {
+  if (isCommandPayload(result)) {
+    return result;
+  }
+  return { payload: result };
+}
+
+function isCommandPayload(value: unknown): value is CommandPayload {
+  return Boolean(value && typeof value === "object" && "payload" in value);
+}
+
+function isHelpRequest(parsed: ParsedArgs): boolean {
+  return parsed.flags.has("help") || parsed.positional[0] === "help" || parsed.positional.length === 0;
+}
+
+function helpText(): string {
+  return [
+    "Drift local repo intelligence",
+    "",
+    "Usage:",
+    "  drift --db <path> <command> [options]",
+    "",
+    "Core commands:",
+    "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
+    "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
+    "  drift findings list --repo <repo_id> --json",
+    "  drift contract show --repo <repo_id> --json",
+    "",
+    "Convention review:",
+    "  drift conventions list --repo <repo_id> --status candidate --json",
+    "  drift conventions show <candidate_id> --json",
+    "  drift conventions accept <candidate_id> --severity warning --mode warn --json",
+    "  drift conventions reject <candidate_id> --reason \"false inference\" --json",
+    "  drift conventions edit <candidate_id> --statement \"...\" --json",
+    "  drift conventions exception add <convention_id> --repo <repo_id> --path <glob> --reason \"...\" --json",
+    "",
+    "Global options:",
+    "  --db <path>      SQLite database path. Can also use DRIFT_DB.",
+    "  --json           Emit machine-readable JSON.",
+    "  --help           Show this help.",
+    ""
+  ].join("\n");
+}
+
+interface ParsedDiff {
+  files: Array<{ path: string; changedLines: Set<number> }>;
+}
+
+interface ImportUsed {
+  name: string;
+  source: string;
+  line: number;
+}
+
+function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
+  const diffFile = stringFlag(parsed, "diff-file");
+  if (diffFile) {
+    return readFileSync(diffFile, "utf8");
+  }
+
+  const diffRange = stringFlag(parsed, "diff");
+  if (diffRange) {
+    return execFileSync("git", ["diff", "--unified=0", diffRange], {
+      cwd: repoRoot,
+      encoding: "utf8"
+    });
+  }
+
+  throw new Error("Missing --diff <range> or --diff-file <path>.");
+}
+
+function parseUnifiedDiff(input: string): ParsedDiff {
+  const files: ParsedDiff["files"] = [];
+  let current: ParsedDiff["files"][number] | undefined;
+  let newLine: number | undefined;
+
+  for (const line of input.split(/\r?\n/)) {
+    if (line.startsWith("+++ ")) {
+      if (current) {
+        files.push(current);
+      }
+      const path = normalizeDiffPath(line.slice(4));
+      current = path ? { path, changedLines: new Set<number>() } : undefined;
+      newLine = undefined;
+      continue;
+    }
+
+    if (line.startsWith("@@ ")) {
+      newLine = parseHunkStart(line);
+      continue;
+    }
+
+    if (!current || newLine === undefined || line.startsWith("---")) {
+      continue;
+    }
+
+    if (line.startsWith("+")) {
+      current.changedLines.add(newLine);
+      newLine += 1;
+    } else if (line.startsWith("-")) {
+      continue;
+    } else if (line.startsWith(" ")) {
+      newLine += 1;
+    }
+  }
+
+  if (current) {
+    files.push(current);
+  }
+  return { files };
+}
+
+function filesForConvention(
+  diff: ParsedDiff,
+  convention: AcceptedConvention,
+  scope: string
+): string[] {
+  const diffFiles = diff.files.map((file) => file.path);
+  const scoped = diffFiles.filter((filePath) =>
+    (convention.scope.path_globs.length === 0 ||
+      convention.scope.path_globs.some((glob) => matchesGlob(filePath, glob))) &&
+    !(convention.scope.exclude_path_globs ?? []).some((glob) => matchesGlob(filePath, glob))
+  );
+
+  if (scope === "full") {
+    return scoped;
+  }
+  return scoped;
+}
+
+function diffStatusFor(
+  filePath: string,
+  line: number,
+  diff: ParsedDiff,
+  scope: string
+): FindingDiffStatus {
+  if (scope === "full") {
+    return "touched_existing";
+  }
+
+  const file = diff.files.find((entry) => entry.path === filePath);
+  if (!file) {
+    return "outside_diff";
+  }
+
+  if (scope === "changed-files") {
+    return "touched_existing";
+  }
+
+  return file.changedLines.has(line) ? "new_in_diff" : "touched_existing";
+}
+
+function extractImports(source: string): ImportUsed[] {
+  return source
+    .split(/\r?\n/)
+    .flatMap((line, index) => {
+      const match = line.match(/^\s*import\s+(.+?)\s+from\s+["']([^"']+)["']/);
+      if (!match) {
+        return [];
+      }
+      return parseImportNames(match[1]).map((name) => ({
+        name,
+        source: match[2],
+        line: index + 1
+      }));
+    });
+}
+
+function parseImportNames(importClause: string): string[] {
+  const named = importClause.match(/\{([^}]+)\}/);
+  if (named) {
+    return named[1]
+      .split(",")
+      .map((part) => part.trim().split(/\s+as\s+/).at(-1)?.trim())
+      .filter((name): name is string => Boolean(name));
+  }
+
+  const defaultImport = importClause.split(",")[0]?.trim();
+  return defaultImport ? [defaultImport] : ["import"];
+}
+
+function isForbiddenImport(importSource: string, forbiddenImports: string[]): boolean {
+  return forbiddenImports.some((forbidden) =>
+    importSource === forbidden || importSource.includes(forbidden)
+  );
+}
+
+function isApiRoutePath(filePath: string): boolean {
+  return (
+    /(^|\/)app\/api\/.+\/route\.[jt]sx?$/.test(filePath) ||
+    /(^|\/)pages\/api\/.+\.[jt]sx?$/.test(filePath)
+  );
+}
+
+function isExceptedPath(filePath: string, convention: AcceptedConvention): boolean {
+  return convention.exceptions.some((exception) =>
+    (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob))
+  );
+}
+
+function enforcementResultFor(mode: EnforcementMode): Finding["enforcement_result"] {
+  if (mode === "block") {
+    return "block";
+  }
+  if (mode === "warn") {
+    return "warn";
+  }
+  return "none";
+}
+
+function findingFingerprint(
+  conventionId: string,
+  filePath: string,
+  importName: string,
+  importSource: string
+): string {
+  return createHash("sha256")
+    .update("direct-data-access-v1\0")
+    .update(conventionId)
+    .update("\0")
+    .update(filePath.replaceAll("\\", "/"))
+    .update("\0")
+    .update(importName)
+    .update("\0")
+    .update(importSource)
+    .digest("hex");
+}
+
+function normalizeDiffPath(path: string): string | undefined {
+  const trimmed = path.trim();
+  if (trimmed === "/dev/null") {
+    return undefined;
+  }
+  return trimmed.replace(/^[ab]\//, "");
+}
+
+function parseHunkStart(line: string): number | undefined {
+  const match = line.match(/\+(\d+)(?:,\d+)?/);
+  return match ? Number(match[1]) : undefined;
+}
+
+function matchesGlob(filePath: string, glob: string): boolean {
+  const escaped = glob
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*\*/g, "\u0000")
+    .replace(/\*/g, "[^/]*")
+    .replace(/\u0000/g, ".*");
+  return new RegExp(`^${escaped}$`).test(filePath);
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
