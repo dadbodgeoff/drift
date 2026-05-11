@@ -201,7 +201,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "contract" && command === "import") {
-    return importContractDryRun(parsed, requiredValue(maybeId, "contract path"));
+    return importContractDryRun(storage, parsed, requiredValue(maybeId, "contract path"));
   }
 
   if (group === "findings" && command === "list") {
@@ -1024,18 +1024,39 @@ function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
   };
 }
 
-function importContractDryRun(parsed: ParsedArgs, contractPath: string): CommandPayload {
+function importContractDryRun(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  contractPath: string
+): CommandPayload {
   if (!parsed.flags.has("dry-run")) {
     throw new Error("contract import currently requires --dry-run.");
   }
   const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
+  const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
+  const existingContract = storage.getRepoContract(expectedRepoId);
+  const repo = storage.getRepo(expectedRepoId);
+  const expectedFingerprint = existingContract?.repo_fingerprint ?? repo?.fingerprint;
+  const compatibility = {
+    compatible: expectedRepoId === contract.repo_id &&
+      contract.contract_schema_version <= 1 &&
+      (!expectedFingerprint || expectedFingerprint === contract.repo_fingerprint),
+    repo_id_matches: expectedRepoId === contract.repo_id,
+    repo_fingerprint_matches: expectedFingerprint
+      ? expectedFingerprint === contract.repo_fingerprint
+      : null,
+    schema_supported: contract.contract_schema_version <= 1,
+    expected_repo_id: expectedRepoId,
+    expected_repo_fingerprint: expectedFingerprint ?? null
+  };
   const payload = {
     valid: true,
     dry_run: true,
     repo_id: contract.repo_id,
     contract_id: contract.id,
     schema_version: contract.contract_schema_version,
-    convention_count: contract.conventions.length
+    convention_count: contract.conventions.length,
+    compatibility
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)

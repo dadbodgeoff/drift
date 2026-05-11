@@ -1632,6 +1632,7 @@ describe("drift CLI convention review", () => {
       "--db", databasePath,
       "contract", "import",
       contractPath,
+      "--repo", "repo_abc",
       "--dry-run",
       "--json"
     ]);
@@ -1645,7 +1646,13 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(imported.stdout)).toMatchObject({
       valid: true,
       dry_run: true,
-      convention_count: 1
+      convention_count: 1,
+      compatibility: {
+        compatible: true,
+        repo_id_matches: true,
+        repo_fingerprint_matches: true,
+        schema_supported: true
+      }
     });
 
     const storage = openDriftStorage({ databasePath });
