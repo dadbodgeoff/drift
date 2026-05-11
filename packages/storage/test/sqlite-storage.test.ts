@@ -24,7 +24,8 @@ describe("SQLite Drift storage", () => {
 
     expect(storage.getAppliedMigrations()).toEqual([
       "001_initial_local_state",
-      "002_scan_facts"
+      "002_scan_facts",
+      "003_repo_contracts_and_conventions"
     ]);
     storage.close();
   });
@@ -151,6 +152,98 @@ describe("SQLite Drift storage", () => {
       created_at: "2026-05-10T00:00:01.000Z"
     })).toThrow(/append-only/i);
     expect(storage.listAuditEvents("repo_abc")).toHaveLength(1);
+    storage.close();
+  });
+
+  it("persists convention candidates, accepted conventions, and repo contracts in SQLite", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+
+    storage.upsertConventionCandidate({
+      id: "candidate_no_direct_db",
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      kind: "api_route_no_direct_data_access",
+      statement: "API routes should not import data-access clients directly.",
+      scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+      matcher: {
+        kind: "api_route_no_direct_data_access",
+        forbidden_imports: ["@/lib/prisma"],
+        applies_to_file_roles: ["api_route"]
+      },
+      suggested_severity: "error",
+      suggested_enforcement_mode: "block",
+      enforcement_capability: "deterministic_check",
+      confidence_label: "high",
+      scoring: {
+        supporting_examples_count: 12,
+        counterexamples_count: 0,
+        scope_files_count: 12,
+        coverage_ratio: 1,
+        heuristic_id: "direct-data-access-import-v1"
+      },
+      evidence_refs: [],
+      counterexample_refs: [],
+      status: "candidate",
+      created_at: "2026-05-10T00:00:01.000Z"
+    });
+
+    const acceptedConvention = {
+      id: "convention_no_direct_db",
+      contract_id: "contract_abc",
+      kind: "api_route_no_direct_data_access" as const,
+      statement: "API routes must not import data-access clients directly.",
+      scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route" as const] },
+      matcher: {
+        kind: "api_route_no_direct_data_access" as const,
+        forbidden_imports: ["@/lib/prisma"],
+        applies_to_file_roles: ["api_route" as const]
+      },
+      severity: "error" as const,
+      enforcement_mode: "block" as const,
+      enforcement_capability: "deterministic_check" as const,
+      exceptions: [],
+      evidence_refs: [],
+      counterexample_refs: [],
+      accepted_by: "local-user",
+      accepted_at: "2026-05-10T00:00:02.000Z",
+      updated_at: "2026-05-10T00:00:02.000Z"
+    };
+    storage.upsertAcceptedConvention("repo_abc", acceptedConvention);
+
+    storage.upsertRepoContract({
+      id: "contract_abc",
+      repo_id: "repo_abc",
+      contract_schema_version: 1,
+      repo_fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:03.000Z",
+      updated_at: "2026-05-10T00:00:03.000Z",
+      conventions: [acceptedConvention],
+      rejected_inferences: [],
+      waivers: [],
+      risky_areas: [],
+      safe_commands: [],
+      required_checks: [],
+      context_egress: {
+        default_mode: "local_only",
+        denied_globs: [".env*", "**/*.pem"],
+        max_snippet_chars: 1200,
+        allow_full_file_content: false
+      },
+      agent_permissions: []
+    });
+
+    expect(storage.listConventionCandidates("repo_abc", { status: "candidate" })).toHaveLength(1);
+    expect(storage.listAcceptedConventions("repo_abc")[0]?.id).toBe("convention_no_direct_db");
+    expect(storage.getRepoContract("repo_abc")?.conventions[0]?.id).toBe("convention_no_direct_db");
     storage.close();
   });
 });

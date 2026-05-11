@@ -134,5 +134,69 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_facts_scan_file
         ON facts(scan_id, file_path);
     `
+  },
+  {
+    id: "003_repo_contracts_and_conventions",
+    sql: `
+      CREATE TABLE IF NOT EXISTS convention_candidates (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        statement TEXT NOT NULL,
+        rationale TEXT,
+        scope_json TEXT NOT NULL,
+        matcher_json TEXT NOT NULL,
+        suggested_severity TEXT NOT NULL,
+        suggested_enforcement_mode TEXT NOT NULL,
+        enforcement_capability TEXT NOT NULL,
+        confidence_label TEXT NOT NULL,
+        scoring_json TEXT NOT NULL,
+        evidence_refs_json TEXT NOT NULL,
+        counterexample_refs_json TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (repo_id) REFERENCES repos(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_convention_candidates_repo_status
+        ON convention_candidates(repo_id, status);
+
+      CREATE TABLE IF NOT EXISTS accepted_conventions (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        contract_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        statement TEXT NOT NULL,
+        rationale TEXT,
+        scope_json TEXT NOT NULL,
+        matcher_json TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        enforcement_mode TEXT NOT NULL,
+        enforcement_capability TEXT NOT NULL,
+        exceptions_json TEXT NOT NULL,
+        evidence_refs_json TEXT NOT NULL,
+        counterexample_refs_json TEXT NOT NULL,
+        accepted_by TEXT NOT NULL,
+        accepted_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        expires_at TEXT,
+        FOREIGN KEY (repo_id) REFERENCES repos(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_accepted_conventions_repo_id
+        ON accepted_conventions(repo_id);
+
+      CREATE TABLE IF NOT EXISTS repo_contracts (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL UNIQUE,
+        contract_schema_version INTEGER NOT NULL,
+        repo_fingerprint TEXT NOT NULL,
+        contract_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (repo_id) REFERENCES repos(id)
+      );
+    `
   }
 ];
