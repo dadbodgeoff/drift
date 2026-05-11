@@ -9,7 +9,7 @@
     "test:engine": "cargo test -p drift-engine",
     "test:e2e": "vitest run test/e2e",
     "typecheck": "pnpm -r typecheck",
-    "verify": "pnpm typecheck && pnpm test"
+    "verify": "pnpm typecheck && pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
