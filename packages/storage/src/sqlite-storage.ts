@@ -139,6 +139,13 @@ export class SqliteDriftStorage {
     return row ? scanManifestFromRow(row) : undefined;
   }
 
+  listScanManifests(repoId: string): ScanManifest[] {
+    return this.db
+      .prepare("SELECT * FROM scan_manifests WHERE repo_id = ? ORDER BY started_at DESC, id DESC")
+      .all(repoId)
+      .map(scanManifestFromRow);
+  }
+
   upsertFileSnapshot(snapshot: FileSnapshot): void {
     const parsed = FileSnapshotSchema.parse(snapshot);
     this.db
@@ -153,6 +160,13 @@ export class SqliteDriftStorage {
           indexed = excluded.indexed
       `)
       .run({ ...parsed, indexed: parsed.indexed ? 1 : 0 });
+  }
+
+  listFileSnapshots(repoId: string, scanId: string): FileSnapshot[] {
+    return this.db
+      .prepare("SELECT * FROM file_snapshots WHERE repo_id = ? AND scan_id = ? ORDER BY file_path")
+      .all(repoId, scanId)
+      .map(fileSnapshotFromRow);
   }
 
   upsertFacts(facts: FactRecord[]): void {
@@ -481,6 +495,14 @@ function factFromRow(row: unknown): FactRecord {
   return FactRecordSchema.parse({
     ...record,
     value: record.value ?? undefined
+  });
+}
+
+function fileSnapshotFromRow(row: unknown): FileSnapshot {
+  const record = row as Record<string, unknown>;
+  return FileSnapshotSchema.parse({
+    ...record,
+    indexed: record.indexed === 1
   });
 }
 

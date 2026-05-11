@@ -108,6 +108,7 @@ describe("SQLite Drift storage", () => {
 
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     expect(storage.getScanManifest("scan_abc")?.adapter_versions).toEqual({ typescript: "0.1.0" });
+    expect(storage.listScanManifests("repo_abc")[0]?.id).toBe("scan_abc");
     expect(storage.listFacts("scan_abc", { kind: "import_used" })).toEqual([
       {
         id: "fact_import_prisma",
@@ -123,6 +124,55 @@ describe("SQLite Drift storage", () => {
     ]);
     expect(storage.listFindings("repo_abc")).toHaveLength(1);
     expect(storage.listBaselineViolations("repo_abc")).toHaveLength(1);
+    storage.close();
+  });
+
+  it("lists file snapshots for a scan", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: "hash-abc",
+      byte_size: 100,
+      indexed: true
+    });
+
+    expect(storage.listFileSnapshots("repo_abc", "scan_abc")).toEqual([
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "apps/web/app/api/users/route.ts",
+        content_hash: "hash-abc",
+        byte_size: 100,
+        indexed: true
+      }
+    ]);
     storage.close();
   });
 

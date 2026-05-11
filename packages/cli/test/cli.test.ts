@@ -207,6 +207,67 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("reports scan status and marks the graph stale after file changes", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-scan-status-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    const routePath = join(repoRoot, "apps/web/app/api/users/route.ts");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      routePath,
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const scanned = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const scanPayload = JSON.parse(scanned.stdout);
+
+    const fresh = await runCli([
+      "--db", scanPayload.database_path,
+      "scan", "status",
+      "--repo", scanPayload.repo.id,
+      "--json"
+    ]);
+    expect(fresh.exitCode).toBe(0);
+    expect(JSON.parse(fresh.stdout).stale).toBe(false);
+
+    await writeFile(
+      routePath,
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        "export async function GET() {",
+        "  return Response.json({ changed: await prisma.user.count() });",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const stale = await runCli([
+      "--db", scanPayload.database_path,
+      "scan", "status",
+      "--repo", scanPayload.repo.id,
+      "--json"
+    ]);
+    const payload = JSON.parse(stale.stdout);
+    expect(stale.exitCode).toBe(0);
+    expect(payload.latest_scan.id).toBe(scanPayload.scan.id);
+    expect(payload.stale).toBe(true);
+    expect(payload.changes.modified).toEqual(["apps/web/app/api/users/route.ts"]);
+    expect(payload.next_command).toBe(`drift scan --repo-root ${repoRoot} --json`);
+  });
+
   it("starts onboarding in one command with a clear next-step summary", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-start-"));
     tempDirs.push(dir);

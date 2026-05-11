@@ -82,6 +82,10 @@ export async function runCli(argv: string[]): Promise<CliResult> {
 function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | CommandPayload {
   const [group, command, maybeId] = parsed.positional;
 
+  if (group === "scan" && command === "status") {
+    return scanStatus(storage, parsed);
+  }
+
   if (group === "init") {
     return initRepo(storage, parsed);
   }
@@ -163,6 +167,12 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
+}
+
+interface ScanStatusChangeSet {
+  added: string[];
+  modified: string[];
+  deleted: string[];
 }
 
 interface DoctorCheck {
@@ -364,6 +374,45 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       candidates_count: candidates.length
     },
     database_path: requiredDatabasePath(parsed)
+  };
+}
+
+function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = stringFlag(parsed, "repo") ?? repoIdForRoot(resolveRepoRoot(parsed));
+  const repo = storage.getRepo(repoId);
+  if (!repo) {
+    throw new Error(`Unknown repo ${repoId}. Run drift scan --repo-root <path> first.`);
+  }
+
+  const latestScan = storage.listScanManifests(repoId)[0];
+  if (!latestScan) {
+    const payload = {
+      repo_id: repoId,
+      repo_root: repo.root_path,
+      latest_scan: null,
+      stale: true,
+      changes: { added: [], modified: [], deleted: [] },
+      next_command: `drift scan --repo-root ${repo.root_path} --json`
+    };
+    return { payload: parsed.flags.has("json") ? payload : formatScanStatusText(payload) };
+  }
+
+  const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
+  const changes = compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
+  const stale = changes.added.length > 0 || changes.modified.length > 0 || changes.deleted.length > 0;
+  const payload = {
+    repo_id: repoId,
+    repo_root: repo.root_path,
+    latest_scan: latestScan,
+    stale,
+    changes,
+    next_command: stale
+      ? `drift scan --repo-root ${repo.root_path} --json`
+      : `drift prepare "task" --repo ${repoId} --json`
+  };
+
+  return {
+    payload: parsed.flags.has("json") ? payload : formatScanStatusText(payload)
   };
 }
 
@@ -952,6 +1001,32 @@ function formatPrepareText(payload: {
   ].join("\n");
 }
 
+function formatScanStatusText(payload: {
+  repo_id: string;
+  repo_root: string;
+  latest_scan: ScanManifest | null;
+  stale: boolean;
+  changes: ScanStatusChangeSet;
+  next_command: string;
+}): string {
+  return [
+    "Drift scan status",
+    "",
+    `Repo: ${payload.repo_id}`,
+    `Root: ${payload.repo_root}`,
+    `Latest scan: ${payload.latest_scan?.id ?? "none"}`,
+    `State: ${payload.stale ? "stale" : "fresh"}`,
+    "",
+    `Added: ${payload.changes.added.length}`,
+    `Modified: ${payload.changes.modified.length}`,
+    `Deleted: ${payload.changes.deleted.length}`,
+    "",
+    "Next command:",
+    `  ${payload.next_command}`,
+    ""
+  ].join("\n");
+}
+
 function rejectCandidate(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
@@ -1409,6 +1484,47 @@ function fileSnapshotForFile(input: {
   };
 }
 
+function compareSnapshotsToCurrentFiles(
+  repoRoot: string,
+  snapshots: FileSnapshot[]
+): ScanStatusChangeSet {
+  const previous = new Map(snapshots.map((snapshot) => [snapshot.file_path, snapshot]));
+  const currentFiles = walkIndexableFiles(repoRoot);
+  const current = new Set(currentFiles);
+  const added: string[] = [];
+  const modified: string[] = [];
+  const deleted: string[] = [];
+
+  for (const filePath of currentFiles) {
+    const snapshot = previous.get(filePath);
+    if (!snapshot) {
+      added.push(filePath);
+      continue;
+    }
+
+    const currentHash = fileContentHash(join(repoRoot, filePath));
+    if (currentHash !== snapshot.content_hash) {
+      modified.push(filePath);
+    }
+  }
+
+  for (const filePath of previous.keys()) {
+    if (!current.has(filePath)) {
+      deleted.push(filePath);
+    }
+  }
+
+  return {
+    added: added.sort(),
+    modified: modified.sort(),
+    deleted: deleted.sort()
+  };
+}
+
+function fileContentHash(absolutePath: string): string {
+  return createHash("sha256").update(readFileSync(absolutePath)).digest("hex");
+}
+
 function inferConventionCandidates(input: {
   repoId: string;
   scanId: string;
@@ -1534,6 +1650,20 @@ function helpText(parsed: ParsedArgs): string {
   }
 
   if (parsed.positional[0] === "scan") {
+    if (parsed.positional[1] === "status") {
+      return [
+        "Show scan status",
+        "",
+        "Usage:",
+        "  drift scan status --repo <repo_id> --json",
+        "  drift --db <path> scan status --repo <repo_id> --json",
+        "",
+        "What status does:",
+        "  shows the latest scan and compares stored file hashes to the current repo files.",
+        ""
+      ].join("\n");
+    }
+
     return [
       "Scan a repo",
       "",
@@ -1637,6 +1767,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift start --repo-root . --accept-defaults",
     "",
     "Core commands:",
+    "  drift scan status --repo <repo_id> --json",
     "  drift prepare \"task\" --repo <repo_id> --json",
     "  drift check --repo <repo_id> --diff main...HEAD --scope changed-hunks --json",
     "  drift check --repo <repo_id> --diff-file <patch> --scope changed-hunks --json",
