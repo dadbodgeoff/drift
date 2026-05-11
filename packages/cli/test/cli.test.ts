@@ -2005,6 +2005,20 @@ describe("drift CLI convention review", () => {
     expect(result.stderr).toContain("--status must be");
   });
 
+  it("refuses conventions list for an unknown repo id", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "list",
+      "--repo", "repo_missing",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
+
   it("accepts a candidate, materializes a repo contract, and audits the action", async () => {
     const databasePath = await seedDatabase();
 

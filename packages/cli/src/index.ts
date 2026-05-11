@@ -168,6 +168,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
 
   if (group === "conventions" && command === "list") {
     const repoId = resolveRepoId(parsed);
+    requiredRepo(storage, repoId);
     const status = optionalConventionStatusFlag(parsed, "status");
     return {
       candidates: storage.listConventionCandidates(repoId, status ? { status } : {})
