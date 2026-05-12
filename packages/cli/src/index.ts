@@ -561,9 +561,19 @@ function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
   }
 
   const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
-  const changes = compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
+  const repoRootMissing = !existsSync(repo.root_path);
+  const changes = repoRootMissing
+    ? {
+        added: [],
+        modified: [],
+        deleted: snapshots.map((snapshot) => snapshot.file_path).sort()
+      }
+    : compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
   const currentBranch = gitOutput(repo.root_path, ["branch", "--show-current"]) || "unknown";
-  const invalidationReasons = scanInvalidationReasons(latestScan, { currentBranch });
+  const invalidationReasons = [
+    ...(repoRootMissing ? ["repo_root_missing"] : []),
+    ...scanInvalidationReasons(latestScan, { currentBranch })
+  ];
   const stale = changes.added.length > 0 ||
     changes.modified.length > 0 ||
     changes.deleted.length > 0 ||

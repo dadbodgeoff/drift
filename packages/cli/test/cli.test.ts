@@ -561,6 +561,65 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("marks scan status stale when the repo root is missing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-missing-root-status-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "missing-repo");
+    const databasePath = join(dir, "drift.sqlite");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: repoRoot,
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_missing_root",
+      repo_id: "repo_abc",
+      branch: "unknown",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_missing_root",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: "not-used-by-test",
+      byte_size: 64,
+      indexed: true
+    });
+    storage.close();
+
+    const status = await runCli([
+      "--db", databasePath,
+      "scan", "status",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(status.exitCode).toBe(0);
+    expect(JSON.parse(status.stdout)).toMatchObject({
+      stale: true,
+      invalidation_reasons: ["repo_root_missing"],
+      changes: {
+        added: [],
+        modified: [],
+        deleted: ["apps/web/app/api/users/route.ts"]
+      }
+    });
+  });
+
   it("starts onboarding in one command with a clear next-step summary", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-start-"));
     tempDirs.push(dir);
