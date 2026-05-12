@@ -881,6 +881,11 @@ function listChecks(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
       schema_version: contract.contract_schema_version,
       updated_at: contract.updated_at
     },
+    summary: {
+      required_count: contract.required_checks.length,
+      safe_count: contract.safe_commands.length,
+      total_count: contract.required_checks.length + contract.safe_commands.length
+    },
     required_checks: contract.required_checks,
     safe_commands: contract.safe_commands
   };
@@ -2534,6 +2539,11 @@ function formatPrepareText(payload: {
 }
 
 function formatChecksText(payload: {
+  summary?: {
+    required_count: number;
+    safe_count: number;
+    total_count: number;
+  };
   required_checks: Array<{ command: string; reason?: string }>;
   safe_commands: Array<{ command: string; reason?: string }>;
 }): string {
@@ -2547,6 +2557,10 @@ function formatChecksText(payload: {
   return [
     "Drift checks",
     "",
+    payload.summary
+      ? `Summary: ${payload.summary.required_count} required, ${payload.summary.safe_count} safe, ${payload.summary.total_count} total`
+      : "",
+    payload.summary ? "" : "",
     "Required checks:",
     ...requiredChecks,
     "",

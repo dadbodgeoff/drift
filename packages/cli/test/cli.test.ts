@@ -3667,6 +3667,11 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(listed.stdout)).toMatchObject({
       repo_id: "repo_abc",
       policy: { allowed: true, surface: "cli-preflight" },
+      summary: {
+        required_count: 1,
+        safe_count: 1,
+        total_count: 2
+      },
       required_checks: [{ command: "drift check --diff main...HEAD" }],
       safe_commands: [{ command: "pnpm test" }]
     });
