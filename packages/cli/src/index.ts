@@ -1860,7 +1860,7 @@ function runFullRepoCheck(
             kind: "violation",
             file_path: filePath,
             start_line: importUsed.line,
-            end_line: importUsed.line,
+            end_line: importUsed.end_line,
             symbol: importUsed.name,
             import_source: importUsed.source,
             fact_ids: [],
@@ -3839,6 +3839,7 @@ interface ImportUsed {
   name: string;
   source: string;
   line: number;
+  end_line: number;
 }
 
 function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
@@ -3960,19 +3961,25 @@ function diffStatusFor(
 }
 
 function extractImports(source: string): ImportUsed[] {
-  return source
-    .split(/\r?\n/)
-    .flatMap((line, index) => {
-      const match = line.match(/^\s*import\s+(.+?)\s+from\s+["']([^"']+)["']/);
-      if (!match) {
-        return [];
-      }
-      return parseImportNames(match[1]).map((name) => ({
+  const imports: ImportUsed[] = [];
+  const importPattern = /^\s*import\s+([\s\S]+?)\s+from\s+["']([^"']+)["']/gm;
+  for (const match of source.matchAll(importPattern)) {
+    const startLine = lineNumberForOffset(source, match.index ?? 0);
+    const endLine = lineNumberForOffset(source, (match.index ?? 0) + match[0].length);
+    for (const name of parseImportNames(match[1])) {
+      imports.push({
         name,
         source: match[2],
-        line: index + 1
-      }));
-    });
+        line: startLine,
+        end_line: endLine
+      });
+    }
+  }
+  return imports;
+}
+
+function lineNumberForOffset(source: string, offset: number): number {
+  return source.slice(0, offset).split(/\r?\n/).length;
 }
 
 function parseImportNames(importClause: string): string[] {

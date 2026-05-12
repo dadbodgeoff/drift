@@ -722,6 +722,50 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("baselines multiline import violations during onboarding", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-start-multiline-defaults-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import {",
+        "  prisma",
+        "} from \"@/lib/prisma\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const result = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.onboarding.baselined_count).toBe(1);
+
+    const storage = openDriftStorage({ databasePath: payload.state.database_path });
+    storage.migrate();
+    expect(storage.listFindings(payload.repo.id)[0]?.evidence_refs[0]).toMatchObject({
+      file_path: "apps/web/app/api/users/route.ts",
+      start_line: 1,
+      end_line: 3,
+      symbol: "prisma",
+      import_source: "@/lib/prisma"
+    });
+    storage.close();
+  });
+
   it("emits machine-readable onboarding state and next commands for start --json", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-start-json-"));
     tempDirs.push(dir);
