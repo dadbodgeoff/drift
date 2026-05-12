@@ -435,6 +435,12 @@ function validateMcpToolArguments(name: keyof DriftMcpHandlers, args: Record<str
     if (propertySchema.type === "string" && typeof args[field] !== "string") {
       throw new Error(`Invalid arguments for ${name}: field ${field} must be a string.`);
     }
+    if (propertySchema.type === "number" && typeof args[field] !== "number") {
+      throw new Error(`Invalid arguments for ${name}: field ${field} must be a number.`);
+    }
+    if (propertySchema.type === "boolean" && typeof args[field] !== "boolean") {
+      throw new Error(`Invalid arguments for ${name}: field ${field} must be a boolean.`);
+    }
     if (propertySchema.enum && !propertySchema.enum.includes(args[field] as string)) {
       throw new Error(`Invalid arguments for ${name}: field ${field} must be one of ${propertySchema.enum.join(", ")}.`);
     }

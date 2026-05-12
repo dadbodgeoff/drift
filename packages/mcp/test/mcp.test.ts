@@ -451,6 +451,32 @@ describe("read-only MCP handlers", () => {
         }
       }
     });
+    const invalidNumber = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 7,
+      method: "tools/call",
+      params: {
+        name: "get_allowed_context",
+        arguments: {
+          repo_id: "repo_abc",
+          path: "apps/web/app/api/users/route.ts",
+          requested_snippet_chars: "5000"
+        }
+      }
+    });
+    const invalidBoolean = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 8,
+      method: "tools/call",
+      params: {
+        name: "get_allowed_context",
+        arguments: {
+          repo_id: "repo_abc",
+          path: "apps/web/app/api/users/route.ts",
+          request_full_file_content: "true"
+        }
+      }
+    });
 
     expect(initialized?.result).toMatchObject({
       capabilities: { tools: {} },
@@ -482,5 +508,7 @@ describe("read-only MCP handlers", () => {
     expect(rejected?.error?.message).toContain("Unknown read-only Drift MCP tool");
     expect(missingRequired?.error?.message).toContain("Invalid arguments for get_task_preflight: missing required field task.");
     expect(extraArgument?.error?.message).toContain("Invalid arguments for get_scan_status: unexpected field mutate.");
+    expect(invalidNumber?.error?.message).toContain("Invalid arguments for get_allowed_context: field requested_snippet_chars must be a number.");
+    expect(invalidBoolean?.error?.message).toContain("Invalid arguments for get_allowed_context: field request_full_file_content must be a boolean.");
   });
 });
