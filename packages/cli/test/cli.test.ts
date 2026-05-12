@@ -1682,9 +1682,49 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(verified.stdout)).toMatchObject({
       valid: true,
       repo_id: "repo_abc",
+      policy: {
+        allowed: true,
+        surface: "artifact"
+      },
       checksum_matches: true,
       schema_version: 4
     });
+  });
+
+  it("denies backup verify when backup policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-policy-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+    const backupStorage = openDriftStorage({ databasePath: manifest.backup_path });
+    backupStorage.migrate();
+    const contract = backupStorage.getRepoContract("repo_abc")!;
+    backupStorage.upsertRepoContract({
+      ...contract,
+      context_egress: {
+        ...contract.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    backupStorage.close();
+
+    const verified = await runCli([
+      "backup", "verify",
+      manifest.backup_path,
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(verified.exitCode).toBe(1);
+    expect(verified.stderr).toContain("Policy denied backup verify output");
   });
 
   it("restores a SQLite backup into a target database and audits the restore", async () => {

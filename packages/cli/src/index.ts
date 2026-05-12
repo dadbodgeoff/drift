@@ -1007,16 +1007,23 @@ function verifyBackup(parsed: ParsedArgs): CommandPayload {
   const backupStorage = openDriftStorage({ databasePath: backupPath });
   let schemaVersion = 0;
   let repo: RepoRecord | undefined;
+  let policy: ReturnType<typeof authorizeContextExport> | null = null;
   try {
     schemaVersion = backupStorage.getAppliedMigrations().length;
     repo = backupStorage.getRepo(repoId);
+    const contract = backupStorage.getRepoContract(repoId);
+    policy = contract ? authorizeContextExport(contract, "artifact") : null;
   } finally {
     backupStorage.close();
+  }
+  if (policy && !policy.allowed) {
+    throw new Error(`Policy denied backup verify output: ${policy.reason}`);
   }
 
   const payload = {
     valid: schemaVersion > 0 && Boolean(repo) && checksumMatches !== false,
     repo_id: repoId,
+    policy,
     repo_fingerprint: repo?.fingerprint ?? null,
     backup_path: backupPath,
     schema_version: schemaVersion,
