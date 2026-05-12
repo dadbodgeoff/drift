@@ -775,10 +775,24 @@ describe("drift CLI convention review", () => {
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0].diff_status).toBe("new_in_diff");
     expect(payload.findings[0].status).toBe("new");
+    expect(payload.findings[0].evidence_refs[0]).toMatchObject({
+      kind: "violation",
+      file_path: "apps/web/app/api/users/route.ts",
+      start_line: 1,
+      end_line: 1,
+      symbol: "prisma",
+      import_source: "@/lib/prisma",
+      scan_id: expect.stringMatching(/^scan_check_/),
+      redaction_state: "none"
+    });
+    expect(payload.findings[0].evidence_refs[0].file_hash).toHaveLength(64);
 
     const storage = openDriftStorage({ databasePath });
     storage.migrate();
     expect(storage.listFindings("repo_abc")[0]?.title).toBe("API route imports data access directly");
+    expect(storage.listFindings("repo_abc")[0]?.evidence_refs[0]?.file_path).toBe(
+      "apps/web/app/api/users/route.ts"
+    );
     storage.close();
   });
 

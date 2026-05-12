@@ -1564,6 +1564,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
     scanId: `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
     repoRoot: repo.root_path
   });
+  const snapshotsByPath = new Map(checkData.snapshots.map((snapshot) => [snapshot.file_path, snapshot]));
   const findings: Finding[] = [];
 
   for (const convention of contract.conventions) {
@@ -1597,6 +1598,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
           entry.convention_id === convention.id &&
           entry.finding_fingerprint === fingerprint
         ) ? "pre_existing" : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
+        const snapshot = snapshotsByPath.get(filePath);
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
           repo_id: repoId,
@@ -1608,7 +1610,19 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
           enforcement_result: enforcementResultFor(convention.enforcement_mode),
           status,
           diff_status: diffStatus,
-          evidence_refs: [],
+          evidence_refs: [{
+            id: `evidence_${fingerprint.slice(0, 16)}`,
+            kind: "violation",
+            file_path: filePath,
+            start_line: importUsed.start_line,
+            end_line: importUsed.start_line,
+            symbol: importUsed.name,
+            import_source: importUsed.value,
+            fact_ids: importUsed.fact_id ? [importUsed.fact_id] : [],
+            scan_id: checkData.snapshots[0]?.scan_id ?? `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
+            file_hash: snapshot?.content_hash ?? "",
+            redaction_state: "none"
+          }],
           created_at: now
         };
         storage.upsertFinding(finding);
@@ -2973,6 +2987,7 @@ function factRecord(
 }
 
 function importFactsForFile(facts: FactRecord[], filePath: string): Array<{
+  fact_id: string;
   name: string;
   value: string;
   start_line: number;
@@ -2980,6 +2995,7 @@ function importFactsForFile(facts: FactRecord[], filePath: string): Array<{
   return facts
     .filter((fact) => fact.kind === "import_used" && fact.file_path === filePath && fact.value)
     .map((fact) => ({
+      fact_id: fact.id,
       name: fact.name,
       value: fact.value as string,
       start_line: fact.start_line
