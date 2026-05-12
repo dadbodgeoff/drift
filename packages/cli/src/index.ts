@@ -315,19 +315,26 @@ interface DoctorCheck {
 function doctorRepo(parsed: ParsedArgs): CommandPayload {
   const repoRoot = resolveRepoRoot(parsed);
   const repoExists = existsSync(repoRoot);
-  const files = repoExists ? walkIndexableFiles(repoRoot) : [];
+  const repoIsDirectory = repoExists && statSync(repoRoot).isDirectory();
+  const files = repoIsDirectory ? walkIndexableFiles(repoRoot) : [];
   const apiRouteCount = files.filter(isApiRoutePath).length;
-  const gitInside = repoExists && gitOutput(repoRoot, ["rev-parse", "--is-inside-work-tree"]) === "true";
+  const gitInside = repoIsDirectory && gitOutput(repoRoot, ["rev-parse", "--is-inside-work-tree"]) === "true";
   const branch = gitInside ? gitOutput(repoRoot, ["branch", "--show-current"]) || "detached" : "unknown";
   const commit = gitInside ? gitOutput(repoRoot, ["rev-parse", "--short", "HEAD"]) || "unknown" : "unknown";
   const databasePath = defaultDatabasePath(repoRoot, parsed, { createDir: false });
   const stateExists = existsSync(databasePath);
+  const repoRootStatus = repoIsDirectory ? "ok" : "fail";
+  const repoRootDetail = repoIsDirectory
+    ? repoRoot
+    : repoExists
+      ? `${repoRoot} is not a directory`
+      : `${repoRoot} does not exist`;
   const checks: DoctorCheck[] = [
     {
       id: "repo_root",
       label: "Repo root",
-      status: repoExists ? "ok" : "fail",
-      detail: repoExists ? repoRoot : `${repoRoot} does not exist`
+      status: repoRootStatus,
+      detail: repoRootDetail
     },
     {
       id: "git",
@@ -400,6 +407,7 @@ function initRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
 } {
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const repoRoot = resolveRepoRoot(parsed);
+  assertRepoRootDirectory(repoRoot);
   const repo = repoRecordForRoot(repoRoot, now);
   storage.upsertRepo(repo);
   storage.appendAuditEvent(auditEvent({
@@ -1706,7 +1714,7 @@ function importContractDryRun(
   if (!statSync(contractPath).isFile()) {
     throw new Error(`Contract path must be a file: ${contractPath}`);
   }
-  const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
+  const contract = RepoContractSchema.parse(parseJsonFile(contractPath, "Contract file"));
   assertUniqueImportedConventionIds(contract);
   const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
   const existingContract = storage.getRepoContract(expectedRepoId);
@@ -2921,7 +2929,10 @@ function readConventionScopeFile(scopeFile: string): ConventionScope {
   if (!statSync(scopeFile).isFile()) {
     throw new Error(`--scope-file must be a file: ${scopeFile}`);
   }
-  const rawScope = JSON.parse(readFileSync(scopeFile, "utf8"));
+  const rawScope = parseJsonFile(scopeFile, "--scope-file") as {
+    path_globs?: unknown;
+    exclude_path_globs?: unknown;
+  };
   const pathGlobs = Array.isArray(rawScope.path_globs) ? rawScope.path_globs : [];
   const excludePathGlobs = Array.isArray(rawScope.exclude_path_globs) ? rawScope.exclude_path_globs : [];
   const unsafeGlob = [...pathGlobs, ...excludePathGlobs].some((glob) =>
@@ -3265,6 +3276,12 @@ function requiredDatabasePath(parsed: ParsedArgs): string {
 
 function resolveRepoRoot(parsed: ParsedArgs): string {
   return resolve(stringFlag(parsed, "repo-root") ?? process.cwd());
+}
+
+function assertRepoRootDirectory(repoRoot: string): void {
+  if (!existsSync(repoRoot) || !statSync(repoRoot).isDirectory()) {
+    throw new Error(`--repo-root must be a directory: ${repoRoot}`);
+  }
 }
 
 function resolveRepoId(parsed: ParsedArgs): string {
@@ -4287,13 +4304,31 @@ function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
 
   const diffRange = stringFlag(parsed, "diff");
   if (diffRange) {
-    return execFileSync("git", ["diff", "--unified=0", diffRange], {
-      cwd: repoRoot,
-      encoding: "utf8"
-    });
+    try {
+      return execFileSync("git", ["diff", "--unified=0", diffRange], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+    } catch {
+      throw new Error(
+        `Unable to read git diff for range ${diffRange}. Run from a Git worktree or pass --diff-file <path>.`
+      );
+    }
   }
 
   throw new Error("Missing --diff <range> or --diff-file <path>.");
+}
+
+function parseJsonFile(filePath: string, label: string): unknown {
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(`${label} must contain valid JSON: ${filePath}`);
+    }
+    throw error;
+  }
 }
 
 function parseUnifiedDiff(input: string): ParsedDiff {

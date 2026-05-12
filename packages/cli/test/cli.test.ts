@@ -179,6 +179,23 @@ describe("drift CLI convention review", () => {
     await expect(stat(payload.database_path)).resolves.toBeTruthy();
   });
 
+  it("rejects init repo roots that are files", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-init-file-root-"));
+    tempDirs.push(dir);
+    const fileRoot = join(dir, "not-a-repo.ts");
+    await writeFile(fileRoot, "export const x = 1;\n");
+
+    const result = await runCli([
+      "init",
+      "--repo-root", fileRoot,
+      "--state-root", join(dir, "state"),
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--repo-root must be a directory");
+  });
+
   it("scans a repo, stores snapshots and facts, and infers the first convention candidate", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-scan-"));
     tempDirs.push(dir);
@@ -890,6 +907,29 @@ describe("drift CLI convention review", () => {
     expect(payload.next_command).toBe(`drift start --repo-root ${repoRoot} --accept-defaults`);
   });
 
+  it("reports file repo roots as doctor failures instead of crashing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-doctor-file-root-"));
+    tempDirs.push(dir);
+    const fileRoot = join(dir, "not-a-repo.ts");
+    await writeFile(fileRoot, "export const x = 1;\n");
+
+    const result = await runCli([
+      "doctor",
+      "--repo-root", fileRoot,
+      "--state-root", join(dir, "state"),
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.status).toBe("fail");
+    expect(payload.checks.find((check: { id: string }) => check.id === "repo_root")).toMatchObject({
+      status: "fail",
+      detail: `${fileRoot} is not a directory`
+    });
+    expect(payload.next_command).toBeNull();
+  });
+
   it("prints clean help without requiring a database", async () => {
     const result = await runCli(["--help"]);
 
@@ -1301,6 +1341,22 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Policy denied check output");
+  });
+
+  it("reports invalid git diff ranges with a clean check error", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff", "main...HEAD",
+      "--scope", "changed-hunks",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unable to read git diff for range main...HEAD");
   });
 
   it("rejects diff-file paths that are directories", async () => {
@@ -4792,6 +4848,26 @@ describe("drift CLI convention review", () => {
     expect(imported.stderr).toContain("Contract path must be a file");
   });
 
+  it("refuses malformed contract import JSON with a clean error", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-json-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    await writeFile(contractPath, "{not json");
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Contract file must contain valid JSON");
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
@@ -4919,6 +4995,25 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("--scope-file must be a file");
+  });
+
+  it("rejects malformed convention scope files with a clean error", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-scope-file-json-"));
+    tempDirs.push(dir);
+    const scopePath = join(dir, "scope.json");
+    await writeFile(scopePath, "{not json");
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "edit",
+      "candidate_no_direct_db",
+      "--scope-file", scopePath,
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--scope-file must contain valid JSON");
   });
 
   it("adds an exception to an accepted convention and rematerializes the contract", async () => {
