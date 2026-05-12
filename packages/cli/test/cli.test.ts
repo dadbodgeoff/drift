@@ -2731,6 +2731,14 @@ describe("drift CLI convention review", () => {
       "--now", "2026-05-10T00:00:05.000Z",
       "--json"
     ]);
+    const existingTargetDryRun = await runCli([
+      "--db", existingTarget,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--now", "2026-05-10T00:00:05.500Z",
+      "--json"
+    ]);
     const refused = await runCli([
       "--db", existingTarget,
       "restore", backupPath,
@@ -2753,7 +2761,16 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(dryRun.stdout).restore).toMatchObject({
       repo_id: "repo_abc",
       dry_run: true,
-      restored_at: null
+      restored_at: null,
+      target_exists: false,
+      would_require_force: false
+    });
+    expect(JSON.parse(existingTargetDryRun.stdout).restore).toMatchObject({
+      repo_id: "repo_abc",
+      dry_run: true,
+      restored_at: null,
+      target_exists: true,
+      would_require_force: true
     });
     await expect(stat(dryRunTarget)).rejects.toThrow();
     expect(refused.exitCode).toBe(1);

@@ -1163,6 +1163,8 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   const dryRun = parsed.flags.has("dry-run");
   const force = parsed.flags.has("force");
   const confirmed = parsed.flags.has("confirm");
+  const targetExists = existsSync(targetDatabasePath);
+  const wouldRequireForce = targetExists && !force;
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
   }
@@ -1172,7 +1174,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   if (!dryRun && !confirmed) {
     throw new Error("Restore requires --confirm unless --dry-run is used.");
   }
-  if (existsSync(targetDatabasePath) && !force && !dryRun) {
+  if (targetExists && !force && !dryRun) {
     throw new Error("Target database already exists. Pass --force to overwrite it.");
   }
 
@@ -1217,6 +1219,8 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     ...restoreStaleness!,
     ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
     dry_run: dryRun,
+    target_exists: targetExists,
+    would_require_force: wouldRequireForce,
     restored_at: dryRun ? null : now
   };
 
@@ -1262,6 +1266,8 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       ...restoreStaleness!,
       ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
       dry_run: false,
+      target_exists: targetExists,
+      would_require_force: false,
       restored_at: now
     };
     return {
