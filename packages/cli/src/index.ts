@@ -1502,11 +1502,12 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
   const agent = requiredFlag(parsed, "agent");
-  const permission = agentPermissionFlag(parsed, "permission");
+  const revokeAll = parsed.flags.has("all");
+  const permission = revokeAll ? undefined : agentPermissionFlag(parsed, "permission");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const existing = contract.agent_permissions.find((entry) => entry.agent === agent);
-  if (!existing || !existing.permissions.includes(permission)) {
+  if (!existing || (!revokeAll && !existing.permissions.includes(permission!))) {
     const payload = {
       repo_id: repoId,
       contract_id: contract.id,
@@ -1525,7 +1526,9 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
     };
   }
 
-  const remainingPermissions = existing.permissions.filter((entry) => entry !== permission);
+  const remainingPermissions = revokeAll
+    ? []
+    : existing.permissions.filter((entry) => entry !== permission);
   const agentPermissions = remainingPermissions.length > 0
     ? contract.agent_permissions.map((entry) =>
         entry.agent === agent ? { ...entry, permissions: remainingPermissions } : entry
@@ -1539,7 +1542,7 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
 
   storage.upsertRepoContract(updatedContract);
   storage.appendAuditEvent(auditEvent({
-    id: `audit_event_agent_permission_revoke_${repoId}_${agent}_${permission}_${now}`,
+    id: `audit_event_agent_permission_revoke_${repoId}_${agent}_${revokeAll ? "all" : permission}_${now}`,
     repoId,
     actor,
     action: "agent_permission_changed",
@@ -1547,6 +1550,7 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
     targetId: agent,
     metadata: {
       permission,
+      revoked_all: revokeAll,
       revoked: true,
       permissions: remainingPermissions
     },

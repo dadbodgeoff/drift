@@ -3449,6 +3449,50 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("revokes all permissions for an agent with explicit confirmation", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    for (const permission of ["read_context", "request_preflight"] as const) {
+      await runCli([
+        "--db", databasePath,
+        "policy", "agent", "grant",
+        "--repo", "repo_abc",
+        "--agent", "codex",
+        "--permission", permission,
+        "--confirm",
+        "--now", `2026-05-10T00:04:0${permission === "read_context" ? "0" : "1"}.000Z`,
+        "--json"
+      ]);
+    }
+
+    const revoked = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "revoke",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--all",
+      "--confirm",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:05:00.000Z",
+      "--json"
+    ]);
+
+    expect(revoked.exitCode).toBe(0);
+    expect(JSON.parse(revoked.stdout).policy.agent_permissions).toEqual([]);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.agent_permissions).toEqual([]);
+    expect(checked.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "agent_permission_changed",
+      actor: "geoff",
+      metadata: {
+        revoked_all: true,
+        permissions: []
+      }
+    });
+    checked.close();
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
