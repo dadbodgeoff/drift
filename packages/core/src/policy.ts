@@ -58,8 +58,18 @@ export function authorizeContextExport(
   }
 
   const requestedSnippetChars = input.requested_snippet_chars ?? contract.context_egress.max_snippet_chars;
+  if (!Number.isInteger(requestedSnippetChars) || requestedSnippetChars <= 0) {
+    return {
+      allowed: false,
+      surface,
+      mode: "denied",
+      reason: "requested snippet length must be a positive integer",
+      max_snippet_chars: contract.context_egress.max_snippet_chars,
+      approved_snippet_chars: 0
+    };
+  }
   const approvedSnippetChars = Math.min(
-    Math.max(0, requestedSnippetChars),
+    requestedSnippetChars,
     contract.context_egress.max_snippet_chars
   );
   const snippetLimited = requestedSnippetChars > contract.context_egress.max_snippet_chars;

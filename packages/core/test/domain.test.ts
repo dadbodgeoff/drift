@@ -255,6 +255,24 @@ describe("core domain", () => {
     });
     expect(authorizeContextExport(contract, "mcp", {
       path: "src/app/api/users/route.ts",
+      requested_snippet_chars: -1
+    })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      reason: "requested snippet length must be a positive integer",
+      approved_snippet_chars: 0
+    });
+    expect(authorizeContextExport(contract, "mcp", {
+      path: "src/app/api/users/route.ts",
+      requested_snippet_chars: 12.5
+    })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      reason: "requested snippet length must be a positive integer",
+      approved_snippet_chars: 0
+    });
+    expect(authorizeContextExport(contract, "mcp", {
+      path: "src/app/api/users/route.ts",
       request_full_file_content: true
     })).toMatchObject({
       allowed: false,
