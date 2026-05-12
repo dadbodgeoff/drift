@@ -1185,6 +1185,12 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   if (schemaVersion === 0) {
     throw new Error(`Backup has no Drift schema migrations: ${backupPath}`);
   }
+  if (schemaVersion > SUPPORTED_SQLITE_SCHEMA_VERSION) {
+    throw new Error(
+      `Backup schema version ${schemaVersion} is not supported by this Drift build. ` +
+        `Maximum supported schema version is ${SUPPORTED_SQLITE_SCHEMA_VERSION}.`
+    );
+  }
   if (!repo) {
     throw new Error(`Backup does not contain repo ${repoId}.`);
   }

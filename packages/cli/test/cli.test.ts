@@ -2719,6 +2719,34 @@ describe("drift CLI convention review", () => {
     await expect(stat(join(dir, "restored.sqlite"))).rejects.toThrow();
   });
 
+  it("refuses restore from unsupported future schemas before writing the target", async () => {
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-future-schema-"));
+    tempDirs.push(dir);
+    const targetDatabasePath = join(dir, "restored.sqlite");
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+    markBackupWithFutureSchema(backupPath);
+
+    const restored = await runCli([
+      "--db", targetDatabasePath,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(1);
+    expect(restored.stderr).toContain("Backup schema version 5 is not supported");
+    await expect(stat(targetDatabasePath)).rejects.toThrow();
+  });
+
   it("rejects invalid restore checksum formats before writing the target", async () => {
     const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-restore-checksum-format-"));
