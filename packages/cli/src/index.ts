@@ -1259,7 +1259,8 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   };
 
   return {
-    payload: parsed.flags.has("json") ? payload : formatPolicyDecisionText(payload)
+    payload: parsed.flags.has("json") ? payload : formatPolicyDecisionText(payload),
+    exitCode: decision.allowed ? 0 : 1
   };
 }
 

@@ -2774,13 +2774,13 @@ describe("drift CLI convention review", () => {
       max_snippet_chars: 1200,
       approved_snippet_chars: 1200
     });
-    expect(denied.exitCode).toBe(0);
+    expect(denied.exitCode).toBe(1);
     expect(JSON.parse(denied.stdout).decision).toMatchObject({
       allowed: false,
       surface: "cli-preflight",
       mode: "denied"
     });
-    expect(fullFileDenied.exitCode).toBe(0);
+    expect(fullFileDenied.exitCode).toBe(1);
     expect(JSON.parse(fullFileDenied.stdout).decision).toMatchObject({
       allowed: false,
       mode: "denied",
