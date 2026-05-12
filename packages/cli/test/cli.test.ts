@@ -3720,6 +3720,42 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("does not audit no-op confirmed contract imports", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-no-op-import-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    const beforeUpdatedAt = contract.updated_at;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(0);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      imported: false,
+      would_update: false
+    });
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeUpdatedAt);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("rejects confirmed incompatible contract imports without mutating state", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-contract-confirm-incompatible-"));

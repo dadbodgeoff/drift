@@ -1579,6 +1579,11 @@ function importContractDryRun(
       payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
     };
   }
+  if (!wouldUpdate) {
+    return {
+      payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
+    };
+  }
 
   storage.deleteAcceptedConventionsExcept(
     expectedRepoId,
