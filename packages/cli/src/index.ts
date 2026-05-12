@@ -959,6 +959,9 @@ function resolveFindingWithReason(
   if (!finding) {
     throw new Error(`Finding not found: ${findingId}`);
   }
+  if (finding.status === "fixed") {
+    throw new Error("Finding is already fixed. Reopen it before applying another governance status.");
+  }
   if (finding.status === status) {
     const payload = {
       finding,
