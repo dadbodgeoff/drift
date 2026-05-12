@@ -3560,14 +3560,16 @@ function helpText(parsed: ParsedArgs): string {
 
   if (parsed.positional[0] === "policy") {
     return [
-      "Inspect context egress policy",
+      "Inspect and govern context egress policy",
       "",
       "Usage:",
       "  drift --db <path> policy show --repo <repo_id> --json",
       "  drift --db <path> policy check-context --repo <repo_id> --path <file> --surface cli-preflight [--snippet-chars <n>] [--full-file] --json",
+      "  drift --db <path> policy set-egress --repo <repo_id> --default-mode redacted --max-snippet-chars 1200 --deny-glob \"secrets/**\" --confirm --json",
+      "  drift --db <path> policy agent grant --repo <repo_id> --agent codex --permission request_preflight --confirm --json",
       "",
       "What policy does:",
-      "  shows repo context-egress settings and checks whether a path is allowed on a specific outward surface.",
+      "  shows repo context-egress settings, checks outward context surfaces, and changes governance only with --confirm.",
       ""
     ].join("\n");
   }
