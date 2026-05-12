@@ -2404,6 +2404,21 @@ describe("drift CLI convention review", () => {
     ]);
   });
 
+  it("rejects blank audit actor filters", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--actor", "   ",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--actor must not be empty");
+  });
+
   it("filters audit events by target type", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
@@ -2443,6 +2458,21 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(filtered.stdout).events.map((event: { target_type: string }) => event.target_type)).toEqual([
       "finding"
     ]);
+  });
+
+  it("rejects blank audit target-type filters", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--target-type", "   ",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--target-type must not be empty");
   });
 
   it("denies audit list when repo policy requires approval", async () => {
@@ -2558,6 +2588,23 @@ describe("drift CLI convention review", () => {
     expect(refused.stderr).toContain("Backup output already exists. Pass --force to overwrite it.");
     expect(forced.exitCode).toBe(0);
     expect(JSON.parse(forced.stdout).manifest.backup_path).toBe(backupPath);
+  });
+
+  it("rejects backup output file paths without a sqlite extension", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-output-ext-"));
+    tempDirs.push(dir);
+
+    const result = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backup.json"),
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Backup output file must end in .sqlite");
   });
 
   it("lists persisted backup manifests as JSON", async () => {
@@ -5063,6 +5110,30 @@ describe("drift CLI convention review", () => {
     expect(imported.stderr).toContain("Contract file must contain valid JSON");
   });
 
+  it("refuses invalid contract import schemas with a clean error", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-schema-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    await writeFile(contractPath, JSON.stringify({
+      id: "contract_bad",
+      repo_id: "repo_abc",
+      contract_schema_version: "1"
+    }));
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Contract file does not match the Drift contract schema");
+  });
+
   it("edits a candidate statement before acceptance", async () => {
     const databasePath = await seedDatabase();
 
@@ -5209,6 +5280,27 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("--scope-file must contain valid JSON");
+  });
+
+  it("rejects invalid convention scope schemas with a clean error", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-scope-file-schema-"));
+    tempDirs.push(dir);
+    const scopePath = join(dir, "scope.json");
+    await writeFile(scopePath, JSON.stringify({
+      path_globs: "apps/api/**/route.ts"
+    }));
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "edit",
+      "candidate_no_direct_db",
+      "--scope-file", scopePath,
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--scope-file does not match the Drift scope schema");
   });
 
   it("adds an exception to an accepted convention and rematerializes the contract", async () => {

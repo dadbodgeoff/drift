@@ -1038,8 +1038,8 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
   }
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const action = optionalAuditActionFlag(parsed, "action");
-  const actorFilter = stringFlag(parsed, "actor");
-  const targetType = stringFlag(parsed, "target-type");
+  const actorFilter = optionalNonEmptyFlag(parsed, "actor");
+  const targetType = optionalNonEmptyFlag(parsed, "target-type");
   const events = storage
     .listAuditEvents(repoId)
     .filter((event) => !action || event.action === action)
@@ -1715,7 +1715,7 @@ function importContractDryRun(
   if (!statSync(contractPath).isFile()) {
     throw new Error(`Contract path must be a file: ${contractPath}`);
   }
-  const contract = RepoContractSchema.parse(parseJsonFile(contractPath, "Contract file"));
+  const contract = parseContractFile(contractPath);
   assertUniqueImportedConventionIds(contract);
   const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
   const existingContract = storage.getRepoContract(expectedRepoId);
@@ -2942,7 +2942,11 @@ function readConventionScopeFile(scopeFile: string): ConventionScope {
   if (unsafeGlob) {
     throw new Error("--scope-file path_globs and exclude_path_globs must be repo-relative.");
   }
-  return ConventionScopeSchema.parse(rawScope);
+  const parsedScope = ConventionScopeSchema.safeParse(rawScope);
+  if (!parsedScope.success) {
+    throw new Error("--scope-file does not match the Drift scope schema.");
+  }
+  return parsedScope.data;
 }
 
 function addConventionException(
@@ -3308,13 +3312,18 @@ function defaultDatabasePath(
 }
 
 function resolveBackupPath(parsed: ParsedArgs, repoId: string, now: string): string {
-  const output = resolve(
-    stringFlag(parsed, "output") ??
-      join(homedir(), ".drift", "backups", repoId)
-  );
+  const outputFlag = stringFlag(parsed, "output");
+  const output = resolve(outputFlag ?? join(homedir(), ".drift", "backups", repoId));
+  if (outputFlag && existsSync(output) && statSync(output).isDirectory()) {
+    mkdirSync(output, { recursive: true });
+    return join(output, `${repoId}-${sanitizeAuditId(now)}.drift-backup.sqlite`);
+  }
   if (extname(output) === ".sqlite") {
     mkdirSync(dirname(output), { recursive: true });
     return output;
+  }
+  if (outputFlag && extname(output)) {
+    throw new Error("Backup output file must end in .sqlite or be a directory.");
   }
 
   mkdirSync(output, { recursive: true });
@@ -4332,6 +4341,14 @@ function parseJsonFile(filePath: string, label: string): unknown {
   }
 }
 
+function parseContractFile(contractPath: string): RepoContract {
+  const parsed = RepoContractSchema.safeParse(parseJsonFile(contractPath, "Contract file"));
+  if (!parsed.success) {
+    throw new Error("Contract file does not match the Drift contract schema.");
+  }
+  return parsed.data;
+}
+
 function parseUnifiedDiff(input: string): ParsedDiff {
   const files: ParsedDiff["files"] = [];
   const deletedFiles = new Set<string>();
@@ -4640,6 +4657,13 @@ function requiredNonEmptyFlag(parsed: ParsedArgs, key: string): string {
     throw new Error(`--${key} must not be empty.`);
   }
   return value;
+}
+
+function optionalNonEmptyFlag(parsed: ParsedArgs, key: string): string | undefined {
+  if (!parsed.flags.has(key)) {
+    return undefined;
+  }
+  return requiredNonEmptyFlag(parsed, key);
 }
 
 function requiredRepoRelativeFlag(parsed: ParsedArgs, key: string): string {
