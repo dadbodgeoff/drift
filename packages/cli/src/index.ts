@@ -872,9 +872,13 @@ function listChecks(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
   if (!policy.allowed) {
     throw new Error(`Policy denied checks output: ${policy.reason}`);
   }
+  const kind = optionalChecksKindFlag(parsed, "kind") ?? "all";
+  const requiredChecks = kind === "safe" ? [] : contract.required_checks;
+  const safeCommands = kind === "required" ? [] : contract.safe_commands;
 
   const payload = {
     repo_id: repoId,
+    kind,
     policy,
     contract: {
       id: contract.id,
@@ -882,12 +886,12 @@ function listChecks(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
       updated_at: contract.updated_at
     },
     summary: {
-      required_count: contract.required_checks.length,
-      safe_count: contract.safe_commands.length,
-      total_count: contract.required_checks.length + contract.safe_commands.length
+      required_count: requiredChecks.length,
+      safe_count: safeCommands.length,
+      total_count: requiredChecks.length + safeCommands.length
     },
-    required_checks: contract.required_checks,
-    safe_commands: contract.safe_commands
+    required_checks: requiredChecks,
+    safe_commands: safeCommands
   };
 
   return {
@@ -2311,6 +2315,17 @@ function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingSta
     return value;
   }
   throw new Error("--status must be new, pre_existing, needs_review, fixed, false_positive, accepted_drift, or suppressed.");
+}
+
+function optionalChecksKindFlag(parsed: ParsedArgs, name: string): "required" | "safe" | "all" | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (value === "required" || value === "safe" || value === "all") {
+    return value;
+  }
+  throw new Error("--kind must be required, safe, or all.");
 }
 
 function optionalFindingDiffStatusFlag(parsed: ParsedArgs, name: string): FindingDiffStatus | undefined {
@@ -4007,7 +4022,7 @@ function helpText(parsed: ParsedArgs): string {
       "List repo checks and safe commands",
       "",
       "Usage:",
-      "  drift --db <path> checks list --repo <repo_id> --json",
+      "  drift --db <path> checks list --repo <repo_id> [--kind required|safe|all] --json",
       "",
       "What checks list returns:",
       "  human-approved required checks and safe commands from the repo contract.",

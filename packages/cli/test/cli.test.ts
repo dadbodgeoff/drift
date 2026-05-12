@@ -3677,6 +3677,73 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("filters contract checks by kind", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    const contract = storage.getRepoContract("repo_abc")!;
+    storage.upsertRepoContract({
+      ...contract,
+      required_checks: [{
+        command: "drift check --diff main...HEAD",
+        applies_to: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+        reason: "Validate accepted API route conventions."
+      }],
+      safe_commands: [{
+        command: "pnpm test",
+        reason: "Run project tests after changing API routes.",
+        requires_explicit_run: true
+      }]
+    });
+    storage.close();
+
+    const requiredOnly = await runCli([
+      "--db", databasePath,
+      "checks", "list",
+      "--repo", "repo_abc",
+      "--kind", "required",
+      "--json"
+    ]);
+    const safeOnly = await runCli([
+      "--db", databasePath,
+      "checks", "list",
+      "--repo", "repo_abc",
+      "--kind", "safe",
+      "--json"
+    ]);
+    const invalid = await runCli([
+      "--db", databasePath,
+      "checks", "list",
+      "--repo", "repo_abc",
+      "--kind", "unsafe",
+      "--json"
+    ]);
+
+    expect(requiredOnly.exitCode).toBe(0);
+    expect(JSON.parse(requiredOnly.stdout)).toMatchObject({
+      kind: "required",
+      summary: {
+        required_count: 1,
+        safe_count: 0,
+        total_count: 1
+      },
+      required_checks: [{ command: "drift check --diff main...HEAD" }],
+      safe_commands: []
+    });
+    expect(safeOnly.exitCode).toBe(0);
+    expect(JSON.parse(safeOnly.stdout)).toMatchObject({
+      kind: "safe",
+      summary: {
+        required_count: 0,
+        safe_count: 1,
+        total_count: 1
+      },
+      required_checks: [],
+      safe_commands: [{ command: "pnpm test" }]
+    });
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.stderr).toContain("--kind must be required, safe, or all");
+  });
+
   it("refuses contract-backed read commands for an unknown repo id", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const commands = [
