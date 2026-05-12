@@ -1188,6 +1188,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   if (expectedChecksum && expectedChecksum !== checksum) {
     throw new Error(`Backup checksum mismatch: expected ${expectedChecksum}, got ${checksum}.`);
   }
+  const checksumMatches = expectedChecksum ? expectedChecksum === checksum : null;
   const backupStorage = openDriftStorage({ databasePath: backupPath });
   let schemaVersion = 0;
   let repo: RepoRecord | undefined;
@@ -1220,6 +1221,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     backup_path: backupPath,
     restored_database_path: targetDatabasePath,
     checksum_sha256: checksum,
+    checksum_matches: checksumMatches,
     schema_version: schemaVersion,
     ...restoreStaleness!,
     ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
@@ -1251,6 +1253,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       metadata: {
         backup_path: backupPath,
         checksum_sha256: checksum,
+        checksum_matches: checksumMatches,
         schema_version: schemaVersion,
         graph_stale: restore.graph_stale,
         requires_rescan: restore.requires_rescan,
@@ -1267,6 +1270,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       backup_path: backupPath,
       restored_database_path: targetDatabasePath,
       checksum_sha256: checksum,
+      checksum_matches: checksumMatches,
       schema_version: restoredStorage.getAppliedMigrations().length,
       ...restoreStaleness!,
       ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
@@ -2647,6 +2651,7 @@ function formatRestoreText(restore: {
   backup_path: string;
   restored_database_path: string;
   checksum_sha256: string;
+  checksum_matches?: boolean | null;
   schema_version: number;
   graph_stale?: boolean;
   source_changes?: ScanStatusChangeSet;
@@ -2665,6 +2670,7 @@ function formatRestoreText(restore: {
     `Database: ${restore.restored_database_path}`,
     `Schema version: ${restore.schema_version}`,
     `Checksum: ${restore.checksum_sha256}`,
+    `Checksum matches: ${restore.checksum_matches ?? "not checked"}`,
     `Graph stale: ${restore.graph_stale ?? "unknown"}`,
     restore.source_changes
       ? `Source changes: +${restore.source_changes.added.length} ~${restore.source_changes.modified.length} -${restore.source_changes.deleted.length}`

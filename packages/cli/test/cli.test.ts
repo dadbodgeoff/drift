@@ -2603,12 +2603,14 @@ describe("drift CLI convention review", () => {
       "--now", "2026-05-10T00:00:04.000Z",
       "--json"
     ]);
-    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+    const backupManifest = JSON.parse(backup.stdout).manifest;
+    const backupPath = backupManifest.backup_path;
 
     const restored = await runCli([
       "--db", targetDatabasePath,
       "restore", backupPath,
       "--repo", "repo_abc",
+      "--checksum", backupManifest.checksum_sha256,
       "--confirm",
       "--actor", "geoff",
       "--now", "2026-05-10T00:00:05.000Z",
@@ -2624,6 +2626,7 @@ describe("drift CLI convention review", () => {
       schema_version: 4
     });
     expect(payload.restore.checksum_sha256).toHaveLength(64);
+    expect(payload.restore.checksum_matches).toBe(true);
 
     const restoredStorage = openDriftStorage({ databasePath: targetDatabasePath });
     restoredStorage.migrate();
@@ -2635,6 +2638,7 @@ describe("drift CLI convention review", () => {
       metadata: {
         backup_path: backupPath,
         checksum_sha256: payload.restore.checksum_sha256,
+        checksum_matches: true,
         schema_version: 4,
         graph_stale: payload.restore.graph_stale,
         requires_rescan: payload.restore.requires_rescan,
