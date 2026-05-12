@@ -1006,7 +1006,7 @@ function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
 function verifyBackup(parsed: ParsedArgs): CommandPayload {
   const backupPath = requiredValue(parsed.positional[2], "backup path");
   const repoId = requiredFlag(parsed, "repo");
-  const expectedChecksum = stringFlag(parsed, "checksum");
+  const expectedChecksum = optionalChecksumFlag(parsed, "checksum");
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
   }
@@ -1070,7 +1070,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   }
 
   const checksum = fileContentHash(backupPath);
-  const expectedChecksum = stringFlag(parsed, "checksum");
+  const expectedChecksum = optionalChecksumFlag(parsed, "checksum");
   if (expectedChecksum && expectedChecksum !== checksum) {
     throw new Error(`Backup checksum mismatch: expected ${expectedChecksum}, got ${checksum}.`);
   }
@@ -3720,6 +3720,17 @@ function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | 
     throw new Error(`--${key} must be a positive integer.`);
   }
   return parsedValue;
+}
+
+function optionalChecksumFlag(parsed: ParsedArgs, key: string): string | undefined {
+  const value = stringFlag(parsed, key);
+  if (!value) {
+    return undefined;
+  }
+  if (!/^[a-f0-9]{64}$/i.test(value)) {
+    throw new Error(`--${key} must be a 64-character hex SHA-256 checksum.`);
+  }
+  return value.toLowerCase();
 }
 
 function stringFlag(parsed: ParsedArgs, key: string): string | undefined {

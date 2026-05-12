@@ -1720,6 +1720,32 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("rejects invalid backup verify checksum formats", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-checksum-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+
+    const verified = await runCli([
+      "backup", "verify",
+      manifest.backup_path,
+      "--repo", "repo_abc",
+      "--checksum", "not-a-checksum",
+      "--json"
+    ]);
+
+    expect(verified.exitCode).toBe(1);
+    expect(verified.stderr).toContain("--checksum must be a 64-character hex SHA-256 checksum.");
+  });
+
   it("denies backup verify when backup policy requires approval", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-policy-"));
@@ -1991,6 +2017,35 @@ describe("drift CLI convention review", () => {
     expect(restored.exitCode).toBe(1);
     expect(restored.stderr).toContain("Backup checksum mismatch");
     await expect(stat(join(dir, "restored.sqlite"))).rejects.toThrow();
+  });
+
+  it("rejects invalid restore checksum formats before writing the target", async () => {
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-checksum-format-"));
+    tempDirs.push(dir);
+    const targetDatabasePath = join(dir, "restored.sqlite");
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+
+    const restored = await runCli([
+      "--db", targetDatabasePath,
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--checksum", "not-a-checksum",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(1);
+    expect(restored.stderr).toContain("--checksum must be a 64-character hex SHA-256 checksum.");
+    await expect(stat(targetDatabasePath)).rejects.toThrow();
   });
 
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
