@@ -2280,6 +2280,57 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("grants agent permissions only with explicit confirmation and audits the change", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const unconfirmed = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--json"
+    ]);
+
+    expect(unconfirmed.exitCode).toBe(1);
+    expect(unconfirmed.stderr).toContain("Agent permission changes require --confirm");
+
+    const granted = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:02:00.000Z",
+      "--json"
+    ]);
+
+    expect(granted.exitCode).toBe(0);
+    expect(JSON.parse(granted.stdout).policy.agent_permissions).toEqual([{
+      agent: "codex",
+      permissions: ["request_preflight"]
+    }]);
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    expect(storage.getRepoContract("repo_abc")?.agent_permissions).toEqual([{
+      agent: "codex",
+      permissions: ["request_preflight"]
+    }]);
+    expect(storage.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "agent_permission_changed",
+      actor: "geoff",
+      target_type: "agent_permission",
+      target_id: "codex",
+      metadata: {
+        permission: "request_preflight"
+      }
+    });
+    storage.close();
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });

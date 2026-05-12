@@ -170,6 +170,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return setEgressPolicy(storage, parsed);
   }
 
+  if (group === "policy" && command === "agent" && maybeId === "grant") {
+    return grantAgentPermission(storage, parsed);
+  }
+
   if (group === "conventions" && command === "list") {
     const repoId = resolveRepoId(parsed);
     requiredRepo(storage, repoId);
@@ -1265,6 +1269,64 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
   };
 }
 
+function grantAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  if (!parsed.flags.has("confirm")) {
+    throw new Error("Agent permission changes require --confirm.");
+  }
+
+  const repoId = resolveRepoId(parsed);
+  const contract = requiredRepoContract(storage, repoId);
+  const agent = requiredFlag(parsed, "agent");
+  const permission = agentPermissionFlag(parsed, "permission");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const existing = contract.agent_permissions.find((entry) => entry.agent === agent);
+  const nextPermissions = existing
+    ? [...new Set([...existing.permissions, permission])]
+    : [permission];
+  const agentPermissions = existing
+    ? contract.agent_permissions.map((entry) =>
+        entry.agent === agent ? { ...entry, permissions: nextPermissions } : entry
+      )
+    : [...contract.agent_permissions, { agent, permissions: nextPermissions }];
+  const updatedContract: RepoContract = {
+    ...contract,
+    agent_permissions: agentPermissions,
+    updated_at: now
+  };
+
+  storage.upsertRepoContract(updatedContract);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_agent_permission_${repoId}_${agent}_${permission}_${now}`,
+    repoId,
+    actor,
+    action: "agent_permission_changed",
+    targetType: "agent_permission",
+    targetId: agent,
+    metadata: {
+      permission,
+      permissions: nextPermissions
+    },
+    createdAt: now
+  }));
+
+  const payload = {
+    repo_id: repoId,
+    contract_id: contract.id,
+    policy: {
+      context_egress: updatedContract.context_egress,
+      agent_permissions: updatedContract.agent_permissions
+    }
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+      repo_id: repoId,
+      policy: payload.policy,
+      guarded_surfaces: guardedSurfaces()
+    })
+  };
+}
+
 function showContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
@@ -1789,6 +1851,17 @@ function optionalContextDefaultModeFlag(
     return value;
   }
   throw new Error("--default-mode must be local_only, redacted, or approval_required.");
+}
+
+function agentPermissionFlag(
+  parsed: ParsedArgs,
+  name: string
+): RepoContract["agent_permissions"][number]["permissions"][number] {
+  const value = requiredFlag(parsed, name);
+  if (value === "read_context" || value === "request_preflight" || value === "propose_resolution") {
+    return value;
+  }
+  throw new Error("--permission must be read_context, request_preflight, or propose_resolution.");
 }
 
 function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingStatus | undefined {
