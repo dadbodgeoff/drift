@@ -3307,6 +3307,60 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("revokes agent permissions only with explicit confirmation and audits the change", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--now", "2026-05-10T00:03:00.000Z",
+      "--json"
+    ]);
+
+    const unconfirmed = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "revoke",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--json"
+    ]);
+    const revoked = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "revoke",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:04:00.000Z",
+      "--json"
+    ]);
+
+    expect(unconfirmed.exitCode).toBe(1);
+    expect(unconfirmed.stderr).toContain("Agent permission changes require --confirm");
+    expect(revoked.exitCode).toBe(0);
+    expect(JSON.parse(revoked.stdout).policy.agent_permissions).toEqual([]);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.agent_permissions).toEqual([]);
+    expect(checked.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "agent_permission_changed",
+      actor: "geoff",
+      target_type: "agent_permission",
+      target_id: "codex",
+      metadata: {
+        permission: "request_preflight",
+        revoked: true
+      }
+    });
+    checked.close();
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });

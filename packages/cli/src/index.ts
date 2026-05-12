@@ -178,6 +178,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return grantAgentPermission(storage, parsed);
   }
 
+  if (group === "policy" && command === "agent" && maybeId === "revoke") {
+    return revokeAgentPermission(storage, parsed);
+  }
+
   if (group === "conventions" && command === "list") {
     const repoId = resolveRepoId(parsed);
     requiredRepo(storage, repoId);
@@ -1468,6 +1472,83 @@ function grantAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): 
       agent_permissions: updatedContract.agent_permissions
     },
     changed_fields: changedFields
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+      repo_id: repoId,
+      policy: payload.policy,
+      guarded_surfaces: guardedSurfaces()
+    })
+  };
+}
+
+function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  if (!parsed.flags.has("confirm")) {
+    throw new Error("Agent permission changes require --confirm.");
+  }
+
+  const repoId = resolveRepoId(parsed);
+  const contract = requiredRepoContract(storage, repoId);
+  const agent = requiredFlag(parsed, "agent");
+  const permission = agentPermissionFlag(parsed, "permission");
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const existing = contract.agent_permissions.find((entry) => entry.agent === agent);
+  if (!existing || !existing.permissions.includes(permission)) {
+    const payload = {
+      repo_id: repoId,
+      contract_id: contract.id,
+      policy: {
+        context_egress: contract.context_egress,
+        agent_permissions: contract.agent_permissions
+      },
+      changed_fields: [] as string[]
+    };
+    return {
+      payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+        repo_id: repoId,
+        policy: payload.policy,
+        guarded_surfaces: guardedSurfaces()
+      })
+    };
+  }
+
+  const remainingPermissions = existing.permissions.filter((entry) => entry !== permission);
+  const agentPermissions = remainingPermissions.length > 0
+    ? contract.agent_permissions.map((entry) =>
+        entry.agent === agent ? { ...entry, permissions: remainingPermissions } : entry
+      )
+    : contract.agent_permissions.filter((entry) => entry.agent !== agent);
+  const updatedContract: RepoContract = {
+    ...contract,
+    agent_permissions: agentPermissions,
+    updated_at: now
+  };
+
+  storage.upsertRepoContract(updatedContract);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_agent_permission_revoke_${repoId}_${agent}_${permission}_${now}`,
+    repoId,
+    actor,
+    action: "agent_permission_changed",
+    targetType: "agent_permission",
+    targetId: agent,
+    metadata: {
+      permission,
+      revoked: true,
+      permissions: remainingPermissions
+    },
+    createdAt: now
+  }));
+
+  const payload = {
+    repo_id: repoId,
+    contract_id: contract.id,
+    policy: {
+      context_egress: updatedContract.context_egress,
+      agent_permissions: updatedContract.agent_permissions
+    },
+    changed_fields: ["agent_permissions"]
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
@@ -3858,6 +3939,7 @@ function helpText(parsed: ParsedArgs): string {
       "  drift --db <path> policy check-context --repo <repo_id> --path <file> --surface cli-preflight [--snippet-chars <n>] [--full-file] --json",
       "  drift --db <path> policy set-egress --repo <repo_id> --default-mode redacted --max-snippet-chars 1200 --deny-glob \"secrets/**\" --confirm --json",
       "  drift --db <path> policy agent grant --repo <repo_id> --agent codex --permission request_preflight --confirm --json",
+      "  drift --db <path> policy agent revoke --repo <repo_id> --agent codex --permission request_preflight --confirm --json",
       "",
       "What policy does:",
       "  shows repo context-egress settings, checks outward context surfaces, and changes governance only with --confirm.",
