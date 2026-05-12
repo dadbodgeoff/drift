@@ -2578,11 +2578,15 @@ function rejectCandidate(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
   candidateId: string
-): { candidate: ConventionCandidate } {
+): { candidate: ConventionCandidate; changed: boolean } {
   const candidate = requiredCandidate(storage, candidateId);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const reason = requiredFlag(parsed, "reason");
+  if (candidate.status === "rejected") {
+    return { candidate, changed: false };
+  }
+
   const rejected = { ...candidate, status: "rejected" as const };
 
   storage.upsertConventionCandidate(rejected);
@@ -2597,7 +2601,7 @@ function rejectCandidate(
     createdAt: now
   }));
 
-  return { candidate: rejected };
+  return { candidate: rejected, changed: true };
 }
 
 function editCandidate(

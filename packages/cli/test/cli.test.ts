@@ -3367,6 +3367,42 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit no-op candidate rejection", async () => {
+    const databasePath = await seedDatabase();
+
+    const first = await runCli([
+      "--db", databasePath,
+      "conventions", "reject",
+      "candidate_no_direct_db",
+      "--reason", "false inference",
+      "--now", "2026-05-10T00:00:20.000Z",
+      "--json"
+    ]);
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "conventions", "reject",
+      "candidate_no_direct_db",
+      "--reason", "same decision",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).changed).toBe(false);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getConventionCandidate("candidate_no_direct_db")?.status).toBe("rejected");
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("shows the materialized contract as JSON", async () => {
     const databasePath = await seedDatabase();
     await runCli([
