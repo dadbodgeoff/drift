@@ -1713,6 +1713,47 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("does not audit no-op mark-fixed requests", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_fixed",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fixed-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "fixed",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "mark-fixed",
+      "finding_fixed",
+      "--repo", "repo_abc",
+      "--evidence", "apps/web/app/api/users/route.ts:12",
+      "--now", "2026-05-10T00:00:03.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).changed).toBe(false);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listFindings("repo_abc")[0]?.status).toBe("fixed");
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("requires mark-fixed evidence to include a file and line", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });

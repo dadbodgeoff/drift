@@ -896,6 +896,16 @@ function markFindingFixed(
   if (!finding) {
     throw new Error(`Finding not found: ${findingId}`);
   }
+  if (finding.status === "fixed") {
+    const payload = {
+      finding,
+      evidence,
+      changed: false
+    };
+    return {
+      payload: parsed.flags.has("json") ? payload : formatFindingFixedText(payload)
+    };
+  }
 
   const updated: Finding = {
     ...finding,
@@ -926,7 +936,8 @@ function markFindingFixed(
 
   const payload = {
     finding: updated,
-    evidence
+    evidence,
+    changed: true
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatFindingFixedText(payload)
