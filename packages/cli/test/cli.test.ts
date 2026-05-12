@@ -1656,6 +1656,39 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("requires mark-fixed evidence to include a file and line", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "mark-fixed",
+      "finding_abc",
+      "--repo", "repo_abc",
+      "--evidence", "fixed in latest diff",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--evidence must be formatted as <file>:<line>");
+  });
+
   it("supports governance finding resolutions with reasons and audit events", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });

@@ -883,6 +883,9 @@ function markFindingFixed(
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
   const evidence = requiredFlag(parsed, "evidence");
+  if (!isFileLineEvidence(evidence)) {
+    throw new Error("--evidence must be formatted as <file>:<line>.");
+  }
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const finding = storage.listFindings(repoId).find((entry) => entry.id === findingId);
@@ -4180,6 +4183,10 @@ function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | 
     throw new Error(`--${key} must be a positive integer.`);
   }
   return parsedValue;
+}
+
+function isFileLineEvidence(value: string): boolean {
+  return /^[^:\n]+:\d+$/.test(value);
 }
 
 function optionalChecksumFlag(parsed: ParsedArgs, key: string): string | undefined {
