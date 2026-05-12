@@ -1016,13 +1016,16 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
   }
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const action = optionalAuditActionFlag(parsed, "action");
+  const actorFilter = stringFlag(parsed, "actor");
   const events = storage
     .listAuditEvents(repoId)
     .filter((event) => !action || event.action === action)
+    .filter((event) => !actorFilter || event.actor === actorFilter)
     .slice(-(limit ?? Number.POSITIVE_INFINITY));
   const payload = {
     repo_id: repoId,
     action: action ?? null,
+    actor: actorFilter ?? null,
     policy,
     count: events.length,
     events
@@ -4026,9 +4029,10 @@ function helpText(parsed: ParsedArgs): string {
       "  drift --db <path> audit list --repo <repo_id> --json",
       "  drift --db <path> audit list --repo <repo_id> --limit 20 --json",
       "  drift --db <path> audit list --repo <repo_id> --action policy_changed --json",
+      "  drift --db <path> audit list --repo <repo_id> --actor geoff --json",
       "",
       "Notes:",
-      "  audit list is read-only and can filter append-only governance events by action.",
+      "  audit list is read-only and can filter append-only governance events by action or actor.",
       ""
     ].join("\n");
   }
