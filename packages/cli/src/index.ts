@@ -72,6 +72,8 @@ interface RustEngineScanOutput {
   }>;
 }
 
+const MAX_POLICY_SNIPPET_CHARS = 50_000;
+
 export async function runCli(argv: string[]): Promise<CliResult> {
   try {
     const parsed = parseArgs(argv);
@@ -1304,6 +1306,9 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
   const current = contract.context_egress;
   const defaultMode = optionalContextDefaultModeFlag(parsed, "default-mode") ?? current.default_mode;
   const maxSnippetChars = optionalPositiveIntegerFlag(parsed, "max-snippet-chars") ?? current.max_snippet_chars;
+  if (maxSnippetChars > MAX_POLICY_SNIPPET_CHARS) {
+    throw new Error(`--max-snippet-chars must be less than or equal to ${MAX_POLICY_SNIPPET_CHARS}.`);
+  }
   const denyGlob = stringFlag(parsed, "deny-glob");
   if (denyGlob && !isRepoRelativePolicyPattern(denyGlob)) {
     throw new Error("--deny-glob must be repo-relative.");

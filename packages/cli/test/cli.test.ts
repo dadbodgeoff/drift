@@ -3128,6 +3128,22 @@ describe("drift CLI convention review", () => {
     expect(absoluteGlob.stderr).toContain("--deny-glob must be repo-relative");
   });
 
+  it("rejects oversized policy snippet caps", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--max-snippet-chars", "50001",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--max-snippet-chars must be less than or equal to 50000");
+  });
+
   it("grants agent permissions only with explicit confirmation and audits the change", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
