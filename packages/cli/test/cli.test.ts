@@ -2935,12 +2935,30 @@ describe("drift CLI convention review", () => {
     storage.migrate();
     const contract = storage.getRepoContract("repo_abc")!;
     const originalStatement = contract.conventions[0]?.statement;
+    const addedConvention = {
+      ...contract.conventions[0]!,
+      id: "convention_added_auth",
+      kind: "api_route_requires_auth_helper" as const,
+      statement: "API routes should use the approved auth helper.",
+      matcher: {
+        kind: "api_route_requires_auth_helper" as const,
+        required_calls: ["requireUser"],
+        applies_to_file_roles: ["api_route" as const]
+      },
+      enforcement_mode: "warn" as const,
+      enforcement_capability: "heuristic_check" as const,
+      accepted_at: "2026-05-10T00:00:40.000Z",
+      updated_at: "2026-05-10T00:00:40.000Z"
+    };
     await writeFile(contractPath, JSON.stringify({
       ...contract,
-      conventions: contract.conventions.map((convention) => ({
-        ...convention,
-        statement: "Dry run should not persist."
-      }))
+      conventions: [
+        ...contract.conventions.map((convention) => ({
+          ...convention,
+          statement: "Dry run should not persist."
+        })),
+        addedConvention
+      ]
     }, null, 2));
     storage.close();
 
@@ -2958,7 +2976,10 @@ describe("drift CLI convention review", () => {
       dry_run: true,
       imported: false,
       would_update: true,
-      changed_convention_count: 1
+      added_convention_count: 1,
+      changed_convention_count: 1,
+      removed_convention_count: 0,
+      unchanged_convention_count: 0
     });
 
     const checked = openDriftStorage({ databasePath });

@@ -1420,7 +1420,7 @@ function importContractDryRun(
   }
   const repo = storage.getRepo(expectedRepoId);
   const expectedFingerprint = existingContract?.repo_fingerprint ?? repo?.fingerprint;
-  const changedConventionCount = countChangedImportedConventions(existingContract, contract);
+  const conventionImportSummary = summarizeImportedConventions(existingContract, contract);
   const wouldUpdate = !existingContract ||
     hashStable(JSON.stringify(existingContract)) !== hashStable(JSON.stringify(contract));
   const compatibility = {
@@ -1447,7 +1447,10 @@ function importContractDryRun(
     policy,
     convention_count: contract.conventions.length,
     would_update: wouldUpdate,
-    changed_convention_count: changedConventionCount,
+    added_convention_count: conventionImportSummary.added_count,
+    changed_convention_count: conventionImportSummary.changed_count,
+    removed_convention_count: conventionImportSummary.removed_count,
+    unchanged_convention_count: conventionImportSummary.unchanged_count,
     compatibility
   };
   if (!compatibility.compatible || dryRun) {
@@ -1488,16 +1491,44 @@ function importContractDryRun(
   };
 }
 
-function countChangedImportedConventions(
+function summarizeImportedConventions(
   existingContract: RepoContract | undefined,
   importedContract: RepoContract
-): number {
+): {
+  added_count: number;
+  changed_count: number;
+  removed_count: number;
+  unchanged_count: number;
+} {
   const existingById = new Map(
     (existingContract?.conventions ?? []).map((convention) => [convention.id, convention])
   );
-  return importedContract.conventions.filter((convention) =>
-    JSON.stringify(existingById.get(convention.id)) !== JSON.stringify(convention)
-  ).length;
+  const importedIds = new Set(importedContract.conventions.map((convention) => convention.id));
+  let addedCount = 0;
+  let changedCount = 0;
+  let unchangedCount = 0;
+
+  for (const convention of importedContract.conventions) {
+    const existing = existingById.get(convention.id);
+    if (!existing) {
+      addedCount += 1;
+      continue;
+    }
+    if (JSON.stringify(existing) === JSON.stringify(convention)) {
+      unchangedCount += 1;
+    } else {
+      changedCount += 1;
+    }
+  }
+
+  const removedCount = (existingContract?.conventions ?? [])
+    .filter((convention) => !importedIds.has(convention.id)).length;
+  return {
+    added_count: addedCount,
+    changed_count: changedCount,
+    removed_count: removedCount,
+    unchanged_count: unchangedCount
+  };
 }
 
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
