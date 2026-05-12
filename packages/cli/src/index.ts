@@ -657,6 +657,7 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     filtered_count: number;
     by_status: Partial<Record<FindingStatus, number>>;
     by_severity: Partial<Record<Severity, number>>;
+    by_diff_status: Partial<Record<FindingDiffStatus, number>>;
   };
   findings: Finding[];
 } {
@@ -669,10 +670,12 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   }
   const status = optionalFindingStatusFlag(parsed, "status");
   const severity = optionalSeverityFlag(parsed, "severity");
+  const diffStatus = optionalFindingDiffStatusFlag(parsed, "diff-status");
   const allFindings = storage.listFindings(repoId);
   const findings = allFindings.filter((finding) =>
     (!status || finding.status === status) &&
-    (!severity || finding.severity === severity)
+    (!severity || finding.severity === severity) &&
+    (!diffStatus || finding.diff_status === diffStatus)
   );
 
   return {
@@ -682,7 +685,8 @@ function listFindings(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       total_count: allFindings.length,
       filtered_count: findings.length,
       by_status: countBy(allFindings, (finding) => finding.status),
-      by_severity: countBy(allFindings, (finding) => finding.severity)
+      by_severity: countBy(allFindings, (finding) => finding.severity),
+      by_diff_status: countBy(allFindings, (finding) => finding.diff_status)
     },
     findings
   };
@@ -2302,6 +2306,17 @@ function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingSta
     return value;
   }
   throw new Error("--status must be new, pre_existing, needs_review, fixed, false_positive, accepted_drift, or suppressed.");
+}
+
+function optionalFindingDiffStatusFlag(parsed: ParsedArgs, name: string): FindingDiffStatus | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (value === "new_in_diff" || value === "touched_existing" || value === "outside_diff") {
+    return value;
+  }
+  throw new Error("--diff-status must be new_in_diff, touched_existing, or outside_diff.");
 }
 
 function optionalSeverityFlag(parsed: ParsedArgs, name: string): Severity | undefined {
@@ -4047,7 +4062,7 @@ function helpText(parsed: ParsedArgs): string {
       "",
       "Usage:",
       "  drift --db <path> findings list --repo <repo_id> --json",
-      "  drift --db <path> findings list --repo <repo_id> --status new --severity error --json",
+      "  drift --db <path> findings list --repo <repo_id> --status new --severity error --diff-status new_in_diff --json",
       "  drift --db <path> findings mark-fixed <finding_id> --repo <repo_id> --evidence <file:line> --json",
       "  drift --db <path> findings suppress <finding_id> --repo <repo_id> --reason \"...\" --json",
       "  drift --db <path> findings accept-drift <finding_id> --repo <repo_id> --reason \"...\" --json",

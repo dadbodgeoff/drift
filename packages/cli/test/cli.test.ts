@@ -1579,19 +1579,29 @@ describe("drift CLI convention review", () => {
         id: "finding_new_error",
         fingerprint: "finding-new-error-fp",
         status: "new" as const,
-        severity: "error" as const
+        severity: "error" as const,
+        diff_status: "new_in_diff" as const
+      },
+      {
+        id: "finding_new_error_touched",
+        fingerprint: "finding-new-error-touched-fp",
+        status: "new" as const,
+        severity: "error" as const,
+        diff_status: "touched_existing" as const
       },
       {
         id: "finding_new_warning",
         fingerprint: "finding-new-warning-fp",
         status: "new" as const,
-        severity: "warning" as const
+        severity: "warning" as const,
+        diff_status: "new_in_diff" as const
       },
       {
         id: "finding_suppressed",
         fingerprint: "finding-suppressed-fp",
         status: "suppressed" as const,
-        severity: "error" as const
+        severity: "error" as const,
+        diff_status: "outside_diff" as const
       }
     ]) {
       storage.upsertFinding({
@@ -1604,7 +1614,7 @@ describe("drift CLI convention review", () => {
         severity: finding.severity,
         enforcement_result: finding.severity === "error" ? "block" : "warn",
         status: finding.status,
-        diff_status: "new_in_diff",
+        diff_status: finding.diff_status,
         evidence_refs: [],
         created_at: "2026-05-10T00:00:02.000Z"
       });
@@ -1617,6 +1627,7 @@ describe("drift CLI convention review", () => {
       "--repo", "repo_abc",
       "--status", "new",
       "--severity", "error",
+      "--diff-status", "new_in_diff",
       "--json"
     ]);
 
@@ -1624,15 +1635,20 @@ describe("drift CLI convention review", () => {
     const payload = JSON.parse(result.stdout);
     expect(payload.findings.map((finding: { id: string }) => finding.id)).toEqual(["finding_new_error"]);
     expect(payload.summary).toMatchObject({
-      total_count: 3,
+      total_count: 4,
       filtered_count: 1,
       by_status: {
-        new: 2,
+        new: 3,
         suppressed: 1
       },
       by_severity: {
-        error: 2,
+        error: 3,
         warning: 1
+      },
+      by_diff_status: {
+        new_in_diff: 2,
+        touched_existing: 1,
+        outside_diff: 1
       }
     });
   });
@@ -1679,11 +1695,20 @@ describe("drift CLI convention review", () => {
       "--severity", "critical",
       "--json"
     ]);
+    const invalidDiffStatus = await runCli([
+      "--db", databasePath,
+      "findings", "list",
+      "--repo", "repo_abc",
+      "--diff-status", "unknown",
+      "--json"
+    ]);
 
     expect(invalidStatus.exitCode).toBe(1);
     expect(invalidStatus.stderr).toContain("--status must be");
     expect(invalidSeverity.exitCode).toBe(1);
     expect(invalidSeverity.stderr).toContain("--severity must be");
+    expect(invalidDiffStatus.exitCode).toBe(1);
+    expect(invalidDiffStatus.stderr).toContain("--diff-status must be");
   });
 
   it("refuses findings list for an unknown repo id", async () => {
