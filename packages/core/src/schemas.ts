@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const RepoRelativePatternSchema = z.string().min(1).refine(
+  (value) => !value.startsWith("/") &&
+    !value.startsWith("\\") &&
+    !value.split(/[\\/]+/).includes(".."),
+  "pattern must be repo-relative"
+);
+
 export const ConventionKindSchema = z.enum([
   "api_route_no_direct_data_access",
   "api_route_requires_service_delegation",
@@ -306,7 +313,7 @@ export const RequiredCheckSchema = z.object({
 
 export const ContextEgressPolicySchema = z.object({
   default_mode: z.enum(["local_only", "redacted", "approval_required"]),
-  denied_globs: z.array(z.string().min(1)),
+  denied_globs: z.array(RepoRelativePatternSchema),
   max_snippet_chars: z.number().int().positive(),
   allow_full_file_content: z.boolean()
 });
