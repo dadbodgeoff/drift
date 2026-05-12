@@ -2283,6 +2283,66 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).not.toContain("prisma.user.findMany");
   });
 
+  it("prepares a stale packet when the repo root is missing", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertScanManifest({
+      id: "scan_missing_preflight_root",
+      repo_id: "repo_abc",
+      branch: "unknown",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:01.000Z",
+      completed_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFileSnapshot({
+      repo_id: "repo_abc",
+      scan_id: "scan_missing_preflight_root",
+      file_path: "apps/web/app/api/users/route.ts",
+      content_hash: "not-used-by-test",
+      byte_size: 64,
+      indexed: true
+    });
+    storage.close();
+    await rm(repoRoot, { recursive: true, force: true });
+
+    const prepared = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "add user endpoint",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout)).toMatchObject({
+      repo_id: "repo_abc",
+      scan_status: {
+        stale: true,
+        invalidation_reasons: ["repo_root_missing"],
+        changes: {
+          added: [],
+          modified: [],
+          deleted: ["apps/web/app/api/users/route.ts"]
+        }
+      },
+      relevant_files: [],
+      risky_areas: [],
+      redactions: {
+        excluded_file_count: 0,
+        snippets_included: false
+      }
+    });
+  });
+
   it("infers database path and repo id from repo-root for common commands", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-ergonomic-"));
     tempDirs.push(dir);

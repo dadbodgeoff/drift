@@ -394,6 +394,41 @@ describe("read-only MCP handlers", () => {
     storage.close();
   });
 
+  it("returns a stale MCP preflight when the repo root is missing", async () => {
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const repoRoot = storage.getRepo("repo_abc")!.root_path;
+    storage.close();
+    await rm(repoRoot, { recursive: true, force: true });
+
+    const preflight = createReadOnlyMcpHandlers({ databasePath })
+      .get_task_preflight({ repo_id: "repo_abc", task: "add users route" });
+
+    expect(preflight).toMatchObject({
+      repo_id: "repo_abc",
+      scan_status: {
+        stale: true,
+        invalidation_reasons: [
+          "repo_root_missing",
+          "adapter_version_changed:typescript",
+          "rule_engine_version_changed"
+        ],
+        changes: {
+          added: [],
+          modified: [],
+          deleted: []
+        }
+      },
+      relevant_files: [],
+      risky_areas: [],
+      redactions: {
+        excluded_file_count: 0,
+        snippets_included: false
+      }
+    });
+  });
+
   it("denies MCP repo context when policy requires approval", async () => {
     const databasePath = await seedMcpDatabase();
     const storage = openDriftStorage({ databasePath });

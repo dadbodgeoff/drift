@@ -2116,6 +2116,10 @@ function relevantFilesForTask(input: {
   task: string;
   contract: RepoContract;
 }): RelevantFile[] {
+  if (!existsSync(input.repoRoot)) {
+    return [];
+  }
+
   const tokens = tokenizeTask(input.task);
   const deniedGlobs = input.contract.context_egress.denied_globs;
   const files = walkIndexableFiles(input.repoRoot)
