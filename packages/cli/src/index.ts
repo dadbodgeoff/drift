@@ -433,6 +433,9 @@ function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): {
 } {
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const repoRoot = resolveRepoRoot(parsed);
+  if (existsSync(repoRoot) && !statSync(repoRoot).isDirectory()) {
+    throw new Error(`--repo-root must be a directory: ${repoRoot}`);
+  }
   const repo = repoRecordForRoot(repoRoot, now);
   storage.upsertRepo(repo);
   const previousScan = storage.listScanManifests(repo.id).find((scan) => scan.status === "completed");
@@ -1192,6 +1195,9 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   if (!statSync(backupPath).isFile()) {
     throw new Error(`Backup path must be a file: ${backupPath}`);
   }
+  if (targetExists && statSync(targetDatabasePath).isDirectory()) {
+    throw new Error(`Restore target must be a file path: ${targetDatabasePath}`);
+  }
   if (resolve(backupPath) === resolve(targetDatabasePath)) {
     throw new Error("Restore target must be different from the backup path.");
   }
@@ -1696,6 +1702,9 @@ function importContractDryRun(
   }
   if (!existsSync(contractPath)) {
     throw new Error(`Contract file not found: ${contractPath}`);
+  }
+  if (!statSync(contractPath).isFile()) {
+    throw new Error(`Contract path must be a file: ${contractPath}`);
   }
   const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
   assertUniqueImportedConventionIds(contract);
@@ -2906,6 +2915,12 @@ function editCandidate(
 }
 
 function readConventionScopeFile(scopeFile: string): ConventionScope {
+  if (!existsSync(scopeFile)) {
+    throw new Error(`--scope-file not found: ${scopeFile}`);
+  }
+  if (!statSync(scopeFile).isFile()) {
+    throw new Error(`--scope-file must be a file: ${scopeFile}`);
+  }
   const rawScope = JSON.parse(readFileSync(scopeFile, "utf8"));
   const pathGlobs = Array.isArray(rawScope.path_globs) ? rawScope.path_globs : [];
   const excludePathGlobs = Array.isArray(rawScope.exclude_path_globs) ? rawScope.exclude_path_globs : [];
@@ -4261,6 +4276,12 @@ interface ImportUsed {
 function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
   const diffFile = stringFlag(parsed, "diff-file");
   if (diffFile) {
+    if (!existsSync(diffFile)) {
+      throw new Error(`Diff file not found: ${diffFile}`);
+    }
+    if (!statSync(diffFile).isFile()) {
+      throw new Error(`--diff-file must be a file: ${diffFile}`);
+    }
     return readFileSync(diffFile, "utf8");
   }
 
