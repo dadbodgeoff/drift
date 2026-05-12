@@ -2186,7 +2186,14 @@ describe("drift CLI convention review", () => {
       action: "restore_completed",
       actor: "geoff",
       target_type: "restore",
-      metadata: { backup_path: backupPath }
+      metadata: {
+        backup_path: backupPath,
+        checksum_sha256: payload.restore.checksum_sha256,
+        schema_version: 4,
+        graph_stale: payload.restore.graph_stale,
+        requires_rescan: payload.restore.requires_rescan,
+        staleness_reason: payload.restore.staleness_reason
+      }
     });
     restoredStorage.close();
   });

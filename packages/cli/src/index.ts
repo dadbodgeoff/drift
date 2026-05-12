@@ -1186,7 +1186,14 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       action: "restore_completed",
       targetType: "restore",
       targetId: restoreId,
-      metadata: { backup_path: backupPath },
+      metadata: {
+        backup_path: backupPath,
+        checksum_sha256: checksum,
+        schema_version: schemaVersion,
+        graph_stale: restore.graph_stale,
+        requires_rescan: restore.requires_rescan,
+        staleness_reason: restore.staleness_reason
+      },
       createdAt: now
     }));
     restoredStorage.checkpoint();
