@@ -62,7 +62,7 @@ export const ConventionScoreSchema = z.object({
 export const ConventionExceptionSchema = z.object({
   id: z.string().min(1),
   reason: z.string().min(1),
-  path_globs: z.array(z.string().min(1)).optional(),
+  path_globs: z.array(RepoRelativePatternSchema).optional(),
   symbols: z.array(z.string().min(1)).optional(),
   imports: z.array(z.string().min(1)).optional(),
   expires_at: z.string().datetime().optional(),
