@@ -2422,7 +2422,36 @@ describe("drift CLI convention review", () => {
     ]);
 
     expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).policy).toMatchObject({
+      allowed: true,
+      surface: "contract-export"
+    });
     expect(JSON.parse(result.stdout).contract.conventions[0].id).toBe("convention_no_direct_db");
+  });
+
+  it("denies contract show when repo policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    storage.upsertRepoContract({
+      ...contract,
+      context_egress: {
+        ...contract.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "contract", "show",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Policy denied contract show");
   });
 
   it("validates, exports, and dry-run imports repo contracts", async () => {

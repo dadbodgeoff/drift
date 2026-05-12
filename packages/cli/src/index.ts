@@ -202,9 +202,7 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
   }
 
   if (group === "contract" && command === "show") {
-    const repoId = resolveRepoId(parsed);
-    const contract = requiredRepoContract(storage, repoId);
-    return { contract };
+    return showContract(storage, parsed);
   }
 
   if (group === "contract" && command === "validate") {
@@ -1191,6 +1189,21 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
 
   return {
     payload: parsed.flags.has("json") ? payload : formatPolicyDecisionText(payload)
+  };
+}
+
+function showContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  const repoId = resolveRepoId(parsed);
+  const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "contract-export");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied contract show: ${policy.reason}`);
+  }
+  return {
+    payload: {
+      contract,
+      policy
+    }
   };
 }
 
