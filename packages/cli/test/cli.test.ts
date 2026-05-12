@@ -865,6 +865,39 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("reports deleted diff files as skipped instead of active findings", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "deleted.patch");
+    await writeFile(diffFile, [
+      "diff --git a/apps/web/app/api/users/route.ts b/apps/web/app/api/users/route.ts",
+      "deleted file mode 100644",
+      "--- a/apps/web/app/api/users/route.ts",
+      "+++ /dev/null",
+      "@@ -1,5 +0,0 @@",
+      "-import { prisma } from \"@/lib/prisma\";",
+      "-",
+      "-export async function POST() {",
+      "-  return Response.json(await prisma.user.findMany());",
+      "-}",
+      ""
+    ].join("\n"));
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).summary).toMatchObject({
+      findings_count: 0,
+      skipped_deleted_files: ["apps/web/app/api/users/route.ts"]
+    });
+  });
+
   it("preserves human-governed finding statuses during repeated checks", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "diff.patch");

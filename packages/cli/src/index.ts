@@ -1601,6 +1601,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
         scope,
         findings_count: findings.length,
         blocking_count: blockingCount,
+        skipped_deleted_files: parsedDiff.deletedFiles,
         engine_source: checkData.engineSource
       },
       findings
@@ -1701,7 +1702,8 @@ function runFullRepoCheck(
 
   const files = walkIndexableFiles(repo.root_path).filter(isApiRoutePath);
   const diff = {
-    files: files.map((path) => ({ path, changedLines: new Set<number>() }))
+    files: files.map((path) => ({ path, changedLines: new Set<number>() })),
+    deletedFiles: []
   };
   const contract = storage.getRepoContract(repoId);
   if (!contract) {
@@ -3681,6 +3683,7 @@ function helpText(parsed: ParsedArgs): string {
 
 interface ParsedDiff {
   files: Array<{ path: string; changedLines: Set<number> }>;
+  deletedFiles: string[];
 }
 
 interface ImportUsed {
@@ -3708,15 +3711,25 @@ function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
 
 function parseUnifiedDiff(input: string): ParsedDiff {
   const files: ParsedDiff["files"] = [];
+  const deletedFiles = new Set<string>();
   let current: ParsedDiff["files"][number] | undefined;
+  let oldPath: string | undefined;
   let newLine: number | undefined;
 
   for (const line of input.split(/\r?\n/)) {
+    if (line.startsWith("--- ")) {
+      oldPath = normalizeDiffPath(line.slice(4));
+      continue;
+    }
+
     if (line.startsWith("+++ ")) {
       if (current) {
         files.push(current);
       }
       const path = normalizeDiffPath(line.slice(4));
+      if (!path && oldPath) {
+        deletedFiles.add(oldPath);
+      }
       current = path ? { path, changedLines: new Set<number>() } : undefined;
       newLine = undefined;
       continue;
@@ -3744,7 +3757,7 @@ function parseUnifiedDiff(input: string): ParsedDiff {
   if (current) {
     files.push(current);
   }
-  return { files };
+  return { files, deletedFiles: [...deletedFiles].sort() };
 }
 
 function fullRepoDiff(repoRoot: string): ParsedDiff {
@@ -3752,7 +3765,8 @@ function fullRepoDiff(repoRoot: string): ParsedDiff {
     files: walkIndexableFiles(repoRoot).map((path) => ({
       path,
       changedLines: new Set<number>()
-    }))
+    })),
+    deletedFiles: []
   };
 }
 
