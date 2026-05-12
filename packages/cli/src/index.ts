@@ -1275,7 +1275,11 @@ function importContractDryRun(
   parsed: ParsedArgs,
   contractPath: string
 ): CommandPayload {
-  if (!parsed.flags.has("dry-run")) {
+  const dryRun = parsed.flags.has("dry-run");
+  if (!dryRun && !parsed.flags.has("confirm")) {
+    throw new Error("Contract import requires --confirm unless --dry-run is used.");
+  }
+  if (!dryRun) {
     throw new Error("contract import currently requires --dry-run.");
   }
   if (!existsSync(contractPath)) {

@@ -2611,6 +2611,28 @@ describe("drift CLI convention review", () => {
     expect(imported.stderr).toContain("Policy denied contract import");
   });
 
+  it("requires explicit confirmation for mutating contract imports", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-confirm-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    await writeFile(contractPath, JSON.stringify(storage.getRepoContract("repo_abc"), null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Contract import requires --confirm unless --dry-run is used.");
+  });
+
   it("returns a nonzero dry-run import result for incompatible contracts", async () => {
     const databasePath = await seedDatabase();
     await runCli([
