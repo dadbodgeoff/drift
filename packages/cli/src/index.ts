@@ -4130,10 +4130,12 @@ function helpText(parsed: ParsedArgs): string {
       "Restore Drift state",
       "",
       "Usage:",
-      "  drift --db <target.sqlite> restore <backup.sqlite> --repo <repo_id> --json",
+      "  drift --db <target.sqlite> restore <backup.sqlite> --repo <repo_id> --confirm --json",
+      "  drift --db <target.sqlite> restore <backup.sqlite> --repo <repo_id> --dry-run --json",
       "",
       "Notes:",
       "  restore validates the backup schema and repo id, copies the SQLite backup into the target database,",
+      "  non-dry-run restores require --confirm; use --dry-run to validate without writing.",
       "  runs current migrations, and appends a restore_completed audit event.",
       ""
     ].join("\n");
@@ -4178,7 +4180,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift backup create --repo <repo_id> --json",
     "  drift backup list --repo <repo_id> --json",
     "  drift backup verify <backup.sqlite> --repo <repo_id> --checksum <sha256> --json",
-    "  drift restore <backup.sqlite> --repo <repo_id> --json",
+    "  drift restore <backup.sqlite> --repo <repo_id> --confirm --json",
     "  drift contract validate --repo <repo_id> --json",
     "  drift contract export --repo <repo_id> --format json --confirm --json",
     "  drift contract import <path> --dry-run --json",

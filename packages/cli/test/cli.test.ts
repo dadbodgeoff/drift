@@ -887,6 +887,7 @@ describe("drift CLI convention review", () => {
     const conventions = await runCli(["conventions", "--help"]);
     const contract = await runCli(["contract", "--help"]);
     const policy = await runCli(["policy", "--help"]);
+    const restore = await runCli(["restore", "--help"]);
 
     expect(check.exitCode).toBe(0);
     expect(check.stdout).toContain("Run deterministic checks");
@@ -901,6 +902,9 @@ describe("drift CLI convention review", () => {
     expect(policy.stdout).toContain("policy set-egress");
     expect(policy.stdout).toContain("policy agent grant");
     expect(policy.stdout).toContain("--confirm");
+    expect(restore.exitCode).toBe(0);
+    expect(restore.stdout).toContain("restore <backup.sqlite> --repo <repo_id> --confirm");
+    expect(restore.stdout).toContain("restore <backup.sqlite> --repo <repo_id> --dry-run");
   });
 
   it("checks accepted deterministic conventions against changed hunks and stores findings", async () => {
