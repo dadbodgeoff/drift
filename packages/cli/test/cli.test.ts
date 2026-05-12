@@ -2179,6 +2179,7 @@ describe("drift CLI convention review", () => {
       "--repo", "repo_abc",
       "--path", "apps/web/app/api/users/route.ts",
       "--surface", "cli-preflight",
+      "--snippet-chars", "5000",
       "--json"
     ]);
     const denied = await runCli([
@@ -2189,6 +2190,15 @@ describe("drift CLI convention review", () => {
       "--surface", "cli-preflight",
       "--json"
     ]);
+    const fullFileDenied = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", "apps/web/app/api/users/route.ts",
+      "--surface", "cli-preflight",
+      "--full-file",
+      "--json"
+    ]);
 
     expect(shown.exitCode).toBe(0);
     expect(JSON.parse(shown.stdout).policy.context_egress.default_mode).toBe("local_only");
@@ -2196,13 +2206,21 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(allowed.stdout).decision).toMatchObject({
       allowed: true,
       surface: "cli-preflight",
-      mode: "local_only"
+      mode: "redacted",
+      max_snippet_chars: 1200,
+      approved_snippet_chars: 1200
     });
     expect(denied.exitCode).toBe(0);
     expect(JSON.parse(denied.stdout).decision).toMatchObject({
       allowed: false,
       surface: "cli-preflight",
       mode: "denied"
+    });
+    expect(fullFileDenied.exitCode).toBe(0);
+    expect(JSON.parse(fullFileDenied.stdout).decision).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      reason: "full file content is denied by repo policy"
     });
   });
 

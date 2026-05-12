@@ -1179,8 +1179,14 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   const repoId = resolveRepoId(parsed);
   const contextPath = requiredFlag(parsed, "path");
   const surface = policySurface(requiredFlag(parsed, "surface"));
+  const requestedSnippetChars = optionalPositiveIntegerFlag(parsed, "snippet-chars");
+  const requestFullFileContent = parsed.flags.has("full-file");
   const contract = requiredRepoContract(storage, repoId);
-  const decision = authorizeContextExport(contract, surface, { path: contextPath });
+  const decision = authorizeContextExport(contract, surface, {
+    path: contextPath,
+    requested_snippet_chars: requestedSnippetChars,
+    request_full_file_content: requestFullFileContent
+  });
   const payload = {
     repo_id: repoId,
     path: contextPath,
@@ -3256,7 +3262,7 @@ function helpText(parsed: ParsedArgs): string {
       "",
       "Usage:",
       "  drift --db <path> policy show --repo <repo_id> --json",
-      "  drift --db <path> policy check-context --repo <repo_id> --path <file> --surface cli-preflight --json",
+      "  drift --db <path> policy check-context --repo <repo_id> --path <file> --surface cli-preflight [--snippet-chars <n>] [--full-file] --json",
       "",
       "What policy does:",
       "  shows repo context-egress settings and checks whether a path is allowed on a specific outward surface.",
