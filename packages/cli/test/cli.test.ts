@@ -3972,6 +3972,39 @@ describe("drift CLI convention review", () => {
     expect(imported.stderr).toContain("Contract import requires --confirm unless --dry-run is used.");
   });
 
+  it("rejects contract imports with duplicate convention ids", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-duplicate-conventions-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    await writeFile(contractPath, JSON.stringify({
+      ...contract,
+      conventions: [
+        contract.conventions[0],
+        {
+          ...contract.conventions[0],
+          statement: "Duplicate convention id should be rejected."
+        }
+      ]
+    }, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Contract import contains duplicate convention id");
+  });
+
   it("imports a compatible contract when explicitly confirmed", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-"));

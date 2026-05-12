@@ -1654,6 +1654,7 @@ function importContractDryRun(
     throw new Error(`Contract file not found: ${contractPath}`);
   }
   const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
+  assertUniqueImportedConventionIds(contract);
   const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
   const existingContract = storage.getRepoContract(expectedRepoId);
   const policy = existingContract ? authorizeContextExport(existingContract, "contract-export") : null;
@@ -1744,6 +1745,16 @@ function importContractDryRun(
   return {
     payload: parsed.flags.has("json") ? importedPayload : formatContractValidationText(importedPayload)
   };
+}
+
+function assertUniqueImportedConventionIds(contract: RepoContract): void {
+  const seen = new Set<string>();
+  for (const convention of contract.conventions) {
+    if (seen.has(convention.id)) {
+      throw new Error(`Contract import contains duplicate convention id: ${convention.id}`);
+    }
+    seen.add(convention.id);
+  }
 }
 
 function summarizeImportedConventions(
