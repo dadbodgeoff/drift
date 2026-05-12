@@ -3583,6 +3583,22 @@ describe("drift CLI convention review", () => {
     expect(absolutePath.stderr).toContain("--path must be repo-relative");
   });
 
+  it("rejects blank policy context paths before policy evaluation", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", "   ",
+      "--surface", "cli-preflight",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--path must be repo-relative");
+  });
+
   it("updates egress policy only with explicit confirmation and audits the change", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
@@ -3665,6 +3681,21 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("requires at least one policy option for confirmed egress updates", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Policy changes require at least one egress option");
+  });
+
   it("rejects unsafe policy deny globs", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
@@ -3689,6 +3720,22 @@ describe("drift CLI convention review", () => {
     expect(parentGlob.stderr).toContain("--deny-glob must be repo-relative");
     expect(absoluteGlob.exitCode).toBe(1);
     expect(absoluteGlob.stderr).toContain("--deny-glob must be repo-relative");
+  });
+
+  it("rejects blank policy deny globs", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--deny-glob", "   ",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--deny-glob must be repo-relative");
   });
 
   it("rejects oversized policy snippet caps", async () => {
@@ -3796,6 +3843,23 @@ describe("drift CLI convention review", () => {
     expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeUpdatedAt);
     expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
     checked.close();
+  });
+
+  it("rejects blank agent ids when granting permissions", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "   ",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--agent must not be empty");
   });
 
   it("revokes agent permissions only with explicit confirmation and audits the change", async () => {
@@ -3912,6 +3976,23 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Use either --all or --permission, not both");
+  });
+
+  it("rejects blank agent ids when revoking permissions", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "revoke",
+      "--repo", "repo_abc",
+      "--agent", "   ",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--agent must not be empty");
   });
 
   it("lists required checks and safe commands from the repo contract", async () => {

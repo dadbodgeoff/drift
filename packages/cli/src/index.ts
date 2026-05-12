@@ -1337,10 +1337,7 @@ function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 
 function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
-  const contextPath = requiredFlag(parsed, "path");
-  if (!isRepoRelativePolicyPattern(contextPath)) {
-    throw new Error("--path must be repo-relative.");
-  }
+  const contextPath = requiredRepoRelativeFlag(parsed, "path");
   const surface = policySurface(requiredFlag(parsed, "surface"));
   const requestedSnippetChars = optionalPositiveIntegerFlag(parsed, "snippet-chars");
   const requestFullFileContent = parsed.flags.has("full-file");
@@ -1366,6 +1363,15 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
   if (!parsed.flags.has("confirm")) {
     throw new Error("Policy changes require --confirm.");
   }
+  if (!hasAnyFlag(parsed, [
+    "default-mode",
+    "max-snippet-chars",
+    "deny-glob",
+    "allow-full-file-content",
+    "deny-full-file-content"
+  ])) {
+    throw new Error("Policy changes require at least one egress option.");
+  }
 
   const repoId = resolveRepoId(parsed);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
@@ -1377,10 +1383,7 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
   if (maxSnippetChars > MAX_POLICY_SNIPPET_CHARS) {
     throw new Error(`--max-snippet-chars must be less than or equal to ${MAX_POLICY_SNIPPET_CHARS}.`);
   }
-  const denyGlob = stringFlag(parsed, "deny-glob");
-  if (denyGlob && !isRepoRelativePolicyPattern(denyGlob)) {
-    throw new Error("--deny-glob must be repo-relative.");
-  }
+  const denyGlob = optionalRepoRelativeFlag(parsed, "deny-glob");
   const allowFullFileContent = parsed.flags.has("allow-full-file-content")
     ? true
     : parsed.flags.has("deny-full-file-content")
@@ -1464,7 +1467,7 @@ function grantAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): 
 
   const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
-  const agent = requiredFlag(parsed, "agent");
+  const agent = requiredNonEmptyFlag(parsed, "agent");
   const permission = agentPermissionFlag(parsed, "permission");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -1544,7 +1547,7 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
 
   const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
-  const agent = requiredFlag(parsed, "agent");
+  const agent = requiredNonEmptyFlag(parsed, "agent");
   const revokeAll = parsed.flags.has("all");
   if (revokeAll && parsed.flags.has("permission")) {
     throw new Error("Use either --all or --permission, not both.");
@@ -4637,6 +4640,25 @@ function requiredNonEmptyFlag(parsed: ParsedArgs, key: string): string {
     throw new Error(`--${key} must not be empty.`);
   }
   return value;
+}
+
+function requiredRepoRelativeFlag(parsed: ParsedArgs, key: string): string {
+  const value = requiredFlag(parsed, key).trim();
+  if (!isRepoRelativePolicyPattern(value)) {
+    throw new Error(`--${key} must be repo-relative.`);
+  }
+  return value;
+}
+
+function optionalRepoRelativeFlag(parsed: ParsedArgs, key: string): string | undefined {
+  if (!parsed.flags.has(key)) {
+    return undefined;
+  }
+  return requiredRepoRelativeFlag(parsed, key);
+}
+
+function hasAnyFlag(parsed: ParsedArgs, keys: string[]): boolean {
+  return keys.some((key) => parsed.flags.has(key));
 }
 
 function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | undefined {
