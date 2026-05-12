@@ -1265,6 +1265,9 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
   const defaultMode = optionalContextDefaultModeFlag(parsed, "default-mode") ?? current.default_mode;
   const maxSnippetChars = optionalPositiveIntegerFlag(parsed, "max-snippet-chars") ?? current.max_snippet_chars;
   const denyGlob = stringFlag(parsed, "deny-glob");
+  if (denyGlob && !isRepoRelativePolicyPattern(denyGlob)) {
+    throw new Error("--deny-glob must be repo-relative.");
+  }
   const allowFullFileContent = parsed.flags.has("allow-full-file-content")
     ? true
     : parsed.flags.has("deny-full-file-content")
@@ -4187,6 +4190,13 @@ function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | 
 
 function isFileLineEvidence(value: string): boolean {
   return /^[^:\n]+:\d+$/.test(value);
+}
+
+function isRepoRelativePolicyPattern(value: string): boolean {
+  return value.length > 0 &&
+    !value.startsWith("/") &&
+    !value.startsWith("\\") &&
+    !value.split(/[\\/]+/).includes("..");
 }
 
 function optionalChecksumFlag(parsed: ParsedArgs, key: string): string | undefined {

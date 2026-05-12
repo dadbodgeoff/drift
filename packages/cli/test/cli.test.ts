@@ -2715,6 +2715,32 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("rejects unsafe policy deny globs", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const parentGlob = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--deny-glob", "../secrets/**",
+      "--confirm",
+      "--json"
+    ]);
+    const absoluteGlob = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--deny-glob", "/tmp/secrets/**",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(parentGlob.exitCode).toBe(1);
+    expect(parentGlob.stderr).toContain("--deny-glob must be repo-relative");
+    expect(absoluteGlob.exitCode).toBe(1);
+    expect(absoluteGlob.stderr).toContain("--deny-glob must be repo-relative");
+  });
+
   it("grants agent permissions only with explicit confirmation and audits the change", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
