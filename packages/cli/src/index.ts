@@ -1284,6 +1284,10 @@ function importContractDryRun(
   const contract = RepoContractSchema.parse(JSON.parse(readFileSync(contractPath, "utf8")));
   const expectedRepoId = stringFlag(parsed, "repo") ?? contract.repo_id;
   const existingContract = storage.getRepoContract(expectedRepoId);
+  const policy = existingContract ? authorizeContextExport(existingContract, "contract-export") : null;
+  if (policy && !policy.allowed) {
+    throw new Error(`Policy denied contract import: ${policy.reason}`);
+  }
   const repo = storage.getRepo(expectedRepoId);
   const expectedFingerprint = existingContract?.repo_fingerprint ?? repo?.fingerprint;
   const compatibility = {
@@ -1306,6 +1310,7 @@ function importContractDryRun(
     repo_id: contract.repo_id,
     contract_id: contract.id,
     schema_version: contract.contract_schema_version,
+    policy,
     convention_count: contract.conventions.length,
     compatibility
   };

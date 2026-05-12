@@ -2526,6 +2526,10 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(imported.stdout)).toMatchObject({
       valid: true,
       dry_run: true,
+      policy: {
+        allowed: true,
+        surface: "contract-export"
+      },
       convention_count: 1,
       compatibility: {
         compatible: true,
@@ -2574,6 +2578,37 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Policy denied contract validate");
+  });
+
+  it("denies contract import dry-run when repo policy requires approval", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-policy-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    storage.upsertRepoContract({
+      ...contract,
+      context_egress: {
+        ...contract.context_egress,
+        default_mode: "approval_required"
+      }
+    });
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(imported.stderr).toContain("Policy denied contract import");
   });
 
   it("returns a nonzero dry-run import result for incompatible contracts", async () => {
