@@ -26,11 +26,11 @@ export const FileRoleSchema = z.enum([
 ]);
 
 export const ConventionScopeSchema = z.object({
-  path_globs: z.array(z.string().min(1)),
+  path_globs: z.array(RepoRelativePatternSchema),
   package_names: z.array(z.string().min(1)).optional(),
   file_roles: z.array(FileRoleSchema).optional(),
   include_symbols: z.array(z.string().min(1)).optional(),
-  exclude_path_globs: z.array(z.string().min(1)).optional()
+  exclude_path_globs: z.array(RepoRelativePatternSchema).optional()
 });
 
 export const ConventionMatcherSchema = z.object({

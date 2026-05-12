@@ -112,6 +112,34 @@ describe("core domain", () => {
     expect(() => RepoContractSchema.parse(contract)).toThrow();
   });
 
+  it("rejects unsafe convention scope path globs", () => {
+    expect(() => AcceptedConventionSchema.parse({
+      id: "convention_abc",
+      contract_id: "contract_abc",
+      kind: "api_route_no_direct_data_access",
+      statement: "API routes must not import direct data-access clients.",
+      scope: {
+        path_globs: ["../app/api/**/*.ts"],
+        exclude_path_globs: ["/tmp/generated/**"],
+        file_roles: ["api_route"]
+      },
+      matcher: {
+        kind: "api_route_no_direct_data_access",
+        forbidden_imports: ["@/db"],
+        applies_to_file_roles: ["api_route"]
+      },
+      severity: "error",
+      enforcement_mode: "block",
+      enforcement_capability: "deterministic_check",
+      exceptions: [],
+      evidence_refs: [],
+      counterexample_refs: [],
+      accepted_by: "local-user",
+      accepted_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    })).toThrow();
+  });
+
   it("authorizes context export from repo policy in one shared place", () => {
     const contract = RepoContractSchema.parse({
       id: "contract_abc",
