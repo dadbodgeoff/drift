@@ -948,6 +948,16 @@ function resolveFindingWithReason(
   if (!finding) {
     throw new Error(`Finding not found: ${findingId}`);
   }
+  if (finding.status === status) {
+    const payload = {
+      finding,
+      reason,
+      changed: false
+    };
+    return {
+      payload: parsed.flags.has("json") ? payload : formatFindingResolutionText(payload)
+    };
+  }
 
   const updated: Finding = {
     ...finding,
@@ -967,7 +977,8 @@ function resolveFindingWithReason(
 
   const payload = {
     finding: updated,
-    reason
+    reason,
+    changed: true
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatFindingResolutionText(payload)

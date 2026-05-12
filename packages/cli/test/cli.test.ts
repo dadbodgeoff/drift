@@ -1839,6 +1839,61 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("does not audit no-op finding resolutions", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_suppress",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-suppress-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const first = await runCli([
+      "--db", databasePath,
+      "findings", "suppress",
+      "finding_suppress",
+      "--repo", "repo_abc",
+      "--reason", "generated client fixture",
+      "--now", "2026-05-10T00:00:03.000Z",
+      "--json"
+    ]);
+    const before = openDriftStorage({ databasePath });
+    before.migrate();
+    const beforeAuditCount = before.listAuditEvents("repo_abc").length;
+    before.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "findings", "suppress",
+      "finding_suppress",
+      "--repo", "repo_abc",
+      "--reason", "same decision",
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).changed).toBe(false);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listFindings("repo_abc")[0]?.status).toBe("suppressed");
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("refuses finding resolution commands for an unknown repo id", async () => {
     const databasePath = await seedDatabase();
     const commands = [
