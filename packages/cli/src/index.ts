@@ -2641,7 +2641,7 @@ function addConventionException(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
   conventionId: string
-): { convention: AcceptedConvention; contract: RepoContract } {
+): { convention: AcceptedConvention; contract: RepoContract; changed: boolean } {
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
   const path = requiredFlag(parsed, "path");
@@ -2656,6 +2656,13 @@ function addConventionException(
     .find((accepted) => accepted.id === conventionId);
   if (!convention) {
     throw new Error(`Accepted convention not found: ${conventionId}`);
+  }
+  const duplicate = convention.exceptions.some((exception) =>
+    (exception.path_globs ?? []).includes(path)
+  );
+  if (duplicate) {
+    const contract = requiredRepoContract(storage, repoId);
+    return { convention, contract, changed: false };
   }
 
   const updated: AcceptedConvention = {
@@ -2687,7 +2694,7 @@ function addConventionException(
     createdAt: now
   }));
 
-  return { convention: updated, contract };
+  return { convention: updated, contract, changed: true };
 }
 
 function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {

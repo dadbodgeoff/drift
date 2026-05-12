@@ -4014,6 +4014,55 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit duplicate convention exceptions", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const first = await runCli([
+      "--db", databasePath,
+      "conventions", "exception", "add",
+      "convention_no_direct_db",
+      "--repo", "repo_abc",
+      "--path", "apps/web/app/api/health/**",
+      "--reason", "health endpoints are intentionally dependency-light",
+      "--now", "2026-05-10T00:00:20.000Z",
+      "--json"
+    ]);
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeUpdatedAt = storage.getRepoContract("repo_abc")?.updated_at;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "conventions", "exception", "add",
+      "convention_no_direct_db",
+      "--repo", "repo_abc",
+      "--path", "apps/web/app/api/health/**",
+      "--reason", "duplicate request",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).changed).toBe(false);
+    expect(JSON.parse(second.stdout).convention.exceptions).toHaveLength(1);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeUpdatedAt);
+    expect(checked.getRepoContract("repo_abc")?.conventions[0]?.exceptions).toHaveLength(1);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("rejects unsafe convention exception paths with a clear error", async () => {
     const databasePath = await seedDatabase();
     await runCli([
