@@ -132,6 +132,7 @@ describe("golden fixture CLI lifecycle", () => {
       "--db", restoredDb,
       "restore", backupPayload.manifest.backup_path,
       "--repo", repoId!,
+      "--confirm",
       "--now", "2026-05-10T00:00:05.000Z",
       "--json"
     ]);
