@@ -285,7 +285,10 @@ describe("read-only MCP handlers", () => {
       policy: { allowed: true, surface: "mcp" },
       contract: { id: "contract_abc" }
     });
-    expect(handlers.get_task_preflight({ repo_id: "repo_abc", task: "add users route" })).toMatchObject({
+    const preflight = handlers.get_task_preflight({ repo_id: "repo_abc", task: "add users route" }) as {
+      findings: Array<Record<string, unknown>>;
+    };
+    expect(preflight).toMatchObject({
       contract: {
         id: "contract_abc",
         schema_version: 1
@@ -317,6 +320,16 @@ describe("read-only MCP handlers", () => {
         "drift findings list --repo repo_abc --json"
       ]
     });
+    expect(preflight.findings[0]).toMatchObject({
+      id: "finding_abc",
+      convention_id: "convention_no_direct_db",
+      severity: "error",
+      status: "new",
+      diff_status: "new_in_diff",
+      enforcement_result: "block"
+    });
+    expect(preflight.findings[0]).not.toHaveProperty("message");
+    expect(preflight.findings[0]).not.toHaveProperty("evidence_refs");
     expect(handlers.get_conventions({ repo_id: "repo_abc" })).toMatchObject({
       policy: { allowed: true, surface: "mcp" },
       conventions: [{ id: "convention_no_direct_db" }]

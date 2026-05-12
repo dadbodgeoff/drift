@@ -185,9 +185,9 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         })),
         scan_status: scanStatusPayload(storage, repo_id),
         baseline: baselineSummary(storage, repo_id),
-        findings: storage.listFindings(repo_id).filter((finding) =>
-          !["fixed", "false_positive", "suppressed"].includes(finding.status)
-        ),
+        findings: storage.listFindings(repo_id)
+          .filter((finding) => !["fixed", "false_positive", "suppressed"].includes(finding.status))
+          .map(preflightFinding),
         relevant_files: relevantFiles,
         risky_areas: riskyAreasForFiles(contract, relevantFiles),
         required_checks: contract.required_checks,
@@ -720,6 +720,21 @@ function riskyAreasForFiles(
       area.path_globs.some((glob) => matchesPolicyGlob(filePath, glob))
     )
   );
+}
+
+function preflightFinding(finding: Finding): Pick<
+  Finding,
+  "id" | "convention_id" | "title" | "severity" | "status" | "diff_status" | "enforcement_result"
+> {
+  return {
+    id: finding.id,
+    convention_id: finding.convention_id,
+    title: finding.title,
+    severity: finding.severity,
+    status: finding.status,
+    diff_status: finding.diff_status,
+    enforcement_result: finding.enforcement_result
+  };
 }
 
 function tokenizeTask(task: string): Set<string> {
