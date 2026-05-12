@@ -305,6 +305,17 @@ describe("read-only MCP handlers", () => {
         approved_snippet_chars: 1200
       }
     });
+    expect(handlers.get_allowed_context({
+      repo_id: "repo_abc",
+      path: "apps/web/app/api/users/route.ts",
+      request_full_file_content: true
+    } as never)).toMatchObject({
+      decision: {
+        allowed: false,
+        mode: "denied",
+        reason: "full file content is denied by repo policy"
+      }
+    });
     expect(() => handlers.get_allowed_context({
       repo_id: "repo_abc",
       path: "apps/web/app/api/users/route.ts",
