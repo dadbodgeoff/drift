@@ -2991,6 +2991,10 @@ describe("drift CLI convention review", () => {
       metadata: {
         contract_path: contractPath,
         convention_count: 1,
+        added_convention_count: 0,
+        changed_convention_count: 1,
+        removed_convention_count: 0,
+        unchanged_convention_count: 0,
         surface: "contract-export"
       }
     });

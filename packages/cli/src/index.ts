@@ -1531,6 +1531,10 @@ function importContractDryRun(
     metadata: {
       contract_path: contractPath,
       convention_count: contract.conventions.length,
+      added_convention_count: conventionImportSummary.added_count,
+      changed_convention_count: conventionImportSummary.changed_count,
+      removed_convention_count: conventionImportSummary.removed_count,
+      unchanged_convention_count: conventionImportSummary.unchanged_count,
       surface: policy?.surface ?? "contract-export",
       mode: policy?.mode ?? null
     },
