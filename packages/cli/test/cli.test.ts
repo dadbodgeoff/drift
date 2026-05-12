@@ -2632,6 +2632,21 @@ describe("drift CLI convention review", () => {
     expect(verified.stderr).toContain("--checksum must be a 64-character hex SHA-256 checksum.");
   });
 
+  it("rejects backup verify paths that are directories", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-dir-"));
+    tempDirs.push(dir);
+
+    const verified = await runCli([
+      "backup", "verify",
+      dir,
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(verified.exitCode).toBe(1);
+    expect(verified.stderr).toContain("Backup path must be a file");
+  });
+
   it("denies backup verify when backup policy requires approval", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-policy-"));

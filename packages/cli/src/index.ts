@@ -1131,6 +1131,9 @@ function verifyBackup(parsed: ParsedArgs): CommandPayload {
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
   }
+  if (!statSync(backupPath).isFile()) {
+    throw new Error(`Backup path must be a file: ${backupPath}`);
+  }
 
   const checksum = fileContentHash(backupPath);
   const checksumMatches = expectedChecksum ? checksum === expectedChecksum : null;
