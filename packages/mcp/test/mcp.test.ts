@@ -337,6 +337,18 @@ describe("read-only MCP handlers", () => {
       .toThrow("Policy denied MCP output");
     expect(() => handlers.get_findings({ repo_id: "repo_abc" }))
       .toThrow("Policy denied MCP output");
+    expect(handlers.get_allowed_context({
+      repo_id: "repo_abc",
+      path: "apps/web/app/api/users/route.ts"
+    })).toMatchObject({
+      repo_id: "repo_abc",
+      path: "apps/web/app/api/users/route.ts",
+      decision: {
+        allowed: false,
+        surface: "mcp",
+        mode: "approval_required"
+      }
+    });
   });
 
   it("refuses contract-backed MCP tools for an unknown repo id", async () => {

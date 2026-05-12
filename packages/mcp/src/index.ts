@@ -226,7 +226,8 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
 
     get_allowed_context: ({ repo_id, path, surface = "mcp" }) =>
       withStorage(options, (storage) => {
-        const { contract } = requiredAuthorizedMcpContract(storage, repo_id);
+        requiredMcpRepo(storage, repo_id);
+        const contract = requiredContract(storage.getRepoContract(repo_id), repo_id);
         const requestedSurface = validatePolicySurface(surface);
         return {
           repo_id,
