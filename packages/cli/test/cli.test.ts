@@ -2633,6 +2633,55 @@ describe("drift CLI convention review", () => {
     expect(imported.stderr).toContain("Contract import requires --confirm unless --dry-run is used.");
   });
 
+  it("imports a compatible contract when explicitly confirmed", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    const updatedContract = {
+      ...contract,
+      updated_at: "2026-05-10T00:00:40.000Z",
+      conventions: contract.conventions.map((convention) => ({
+        ...convention,
+        statement: "Imported convention statement.",
+        updated_at: "2026-05-10T00:00:40.000Z"
+      }))
+    };
+    await writeFile(contractPath, JSON.stringify(updatedContract, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(0);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      dry_run: false,
+      imported: true,
+      compatibility: {
+        compatible: true
+      }
+    });
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.conventions[0]?.statement).toBe(
+      "Imported convention statement."
+    );
+    expect(checked.listAcceptedConventions("repo_abc")[0]?.statement).toBe(
+      "Imported convention statement."
+    );
+    checked.close();
+  });
+
   it("returns a nonzero dry-run import result for incompatible contracts", async () => {
     const databasePath = await seedDatabase();
     await runCli([

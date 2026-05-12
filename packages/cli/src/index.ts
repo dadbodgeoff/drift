@@ -1279,9 +1279,6 @@ function importContractDryRun(
   if (!dryRun && !parsed.flags.has("confirm")) {
     throw new Error("Contract import requires --confirm unless --dry-run is used.");
   }
-  if (!dryRun) {
-    throw new Error("contract import currently requires --dry-run.");
-  }
   if (!existsSync(contractPath)) {
     throw new Error(`Contract file not found: ${contractPath}`);
   }
@@ -1310,7 +1307,8 @@ function importContractDryRun(
   };
   const payload = {
     valid: true,
-    dry_run: true,
+    dry_run: dryRun,
+    imported: false,
     repo_id: contract.repo_id,
     contract_id: contract.id,
     schema_version: contract.contract_schema_version,
@@ -1318,9 +1316,24 @@ function importContractDryRun(
     convention_count: contract.conventions.length,
     compatibility
   };
+  if (!compatibility.compatible || dryRun) {
+    return {
+      exitCode: compatibility.compatible ? 0 : 1,
+      payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
+    };
+  }
+
+  for (const convention of contract.conventions) {
+    storage.upsertAcceptedConvention(expectedRepoId, convention);
+  }
+  storage.upsertRepoContract(contract);
+
+  const importedPayload = {
+    ...payload,
+    imported: true
+  };
   return {
-    exitCode: compatibility.compatible ? 0 : 1,
-    payload: parsed.flags.has("json") ? payload : formatContractValidationText(payload)
+    payload: parsed.flags.has("json") ? importedPayload : formatContractValidationText(importedPayload)
   };
 }
 
