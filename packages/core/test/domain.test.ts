@@ -115,6 +115,16 @@ describe("core domain", () => {
       surface: "mcp",
       max_snippet_chars: 0
     });
+    expect(authorizeContextExport(contract, "mcp", { path: "../secrets.env" })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      reason: "context path must be repo-relative"
+    });
+    expect(authorizeContextExport(contract, "mcp", { path: "/tmp/secrets.env" })).toMatchObject({
+      allowed: false,
+      mode: "denied",
+      reason: "context path must be repo-relative"
+    });
     expect(authorizeContextExport(contract, "cli-preflight", { path: "src/app/api/users/route.ts" })).toMatchObject({
       allowed: true,
       mode: "local_only",

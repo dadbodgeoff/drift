@@ -9,6 +9,17 @@ export function authorizeContextExport(
     request_full_file_content?: boolean;
   } = {}
 ): PolicyDecision {
+  if (input.path && !isRepoRelativeContextPath(input.path)) {
+    return {
+      allowed: false,
+      surface,
+      mode: "denied",
+      reason: "context path must be repo-relative",
+      max_snippet_chars: 0,
+      approved_snippet_chars: 0
+    };
+  }
+
   if (
     input.path &&
     contract.context_egress.denied_globs.some((glob) => matchesGlob(input.path!, glob))
@@ -67,6 +78,12 @@ export function authorizeContextExport(
 
 export function matchesPolicyGlob(filePath: string, glob: string): boolean {
   return matchesGlob(filePath, glob);
+}
+
+function isRepoRelativeContextPath(filePath: string): boolean {
+  return !filePath.startsWith("/") &&
+    !filePath.startsWith("\\") &&
+    !filePath.split(/[\\/]+/).includes("..");
 }
 
 function matchesGlob(filePath: string, glob: string): boolean {
