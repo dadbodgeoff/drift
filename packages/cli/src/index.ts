@@ -1645,6 +1645,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
   for (const convention of contract.conventions) {
     if (
       convention.kind !== "api_route_no_direct_data_access" ||
+      convention.enforcement_mode === "off" ||
       convention.enforcement_capability !== "deterministic_check" ||
       !isActiveConvention(convention, now)
     ) {

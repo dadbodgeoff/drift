@@ -1140,6 +1140,34 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(result.stdout).summary.findings_count).toBe(0);
   });
 
+  it("does not check conventions with enforcement mode off", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const convention = storage.listAcceptedConventions("repo_abc")[0]!;
+    const disabledConvention = {
+      ...convention,
+      enforcement_mode: "off" as const
+    };
+    storage.upsertAcceptedConvention("repo_abc", disabledConvention);
+    storage.upsertRepoContract({
+      ...storage.getRepoContract("repo_abc")!,
+      conventions: [disabledConvention]
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--scope", "full",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).summary.findings_count).toBe(0);
+  });
+
   it("reports deleted diff files as skipped instead of active findings", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "deleted.patch");
