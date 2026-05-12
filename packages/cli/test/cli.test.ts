@@ -3803,6 +3803,29 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("rejects unsafe convention exception paths with a clear error", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--json"
+    ]);
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "exception", "add",
+      "convention_no_direct_db",
+      "--repo", "repo_abc",
+      "--path", "../secrets/**",
+      "--reason", "bad exception",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--path must be repo-relative.");
+  });
+
   it("refuses convention exceptions for an unknown repo id", async () => {
     const databasePath = await seedDatabase();
 

@@ -2572,6 +2572,9 @@ function addConventionException(
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
   const path = requiredFlag(parsed, "path");
+  if (!isRepoRelativePolicyPattern(path)) {
+    throw new Error("--path must be repo-relative.");
+  }
   const reason = requiredFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
