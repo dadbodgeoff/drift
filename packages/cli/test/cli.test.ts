@@ -2744,6 +2744,53 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("rejects confirmed incompatible contract imports without mutating state", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-confirm-incompatible-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const originalContract = storage.getRepoContract("repo_abc")!;
+    const originalStatement = originalContract.conventions[0]?.statement;
+    await writeFile(contractPath, JSON.stringify({
+      ...originalContract,
+      contract_schema_version: 999,
+      conventions: originalContract.conventions.map((convention) => ({
+        ...convention,
+        statement: "Should not import."
+      }))
+    }, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(1);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      dry_run: false,
+      imported: false,
+      compatibility: {
+        compatible: false,
+        schema_supported: false
+      }
+    });
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.contract_schema_version).toBe(1);
+    expect(checked.getRepoContract("repo_abc")?.conventions[0]?.statement).toBe(originalStatement);
+    expect(checked.listAcceptedConventions("repo_abc")[0]?.statement).toBe(originalStatement);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(0);
+    checked.close();
+  });
+
   it("returns a nonzero dry-run import result for unknown target repos", async () => {
     const databasePath = await seedDatabase();
     await runCli([
