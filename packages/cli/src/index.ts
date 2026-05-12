@@ -1320,6 +1320,9 @@ function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
 function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
   const contextPath = requiredFlag(parsed, "path");
+  if (!isRepoRelativePolicyPattern(contextPath)) {
+    throw new Error("--path must be repo-relative.");
+  }
   const surface = policySurface(requiredFlag(parsed, "surface"));
   const requestedSnippetChars = optionalPositiveIntegerFlag(parsed, "snippet-chars");
   const requestFullFileContent = parsed.flags.has("full-file");

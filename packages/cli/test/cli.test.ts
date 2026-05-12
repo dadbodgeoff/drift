@@ -3306,6 +3306,32 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("rejects unsafe policy context paths before policy evaluation", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const parentPath = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", "../secrets.env",
+      "--surface", "cli-preflight",
+      "--json"
+    ]);
+    const absolutePath = await runCli([
+      "--db", databasePath,
+      "policy", "check-context",
+      "--repo", "repo_abc",
+      "--path", "/tmp/secrets.env",
+      "--surface", "cli-preflight",
+      "--json"
+    ]);
+
+    expect(parentPath.exitCode).toBe(1);
+    expect(parentPath.stderr).toContain("--path must be repo-relative");
+    expect(absolutePath.exitCode).toBe(1);
+    expect(absolutePath.stderr).toContain("--path must be repo-relative");
+  });
+
   it("updates egress policy only with explicit confirmation and audits the change", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
