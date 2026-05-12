@@ -1,4 +1,13 @@
-import type { FileSnapshot, Finding, FindingStatus, PolicyDecision, RepoContract, ScanManifest, Severity } from "@drift/core";
+import type {
+  FileSnapshot,
+  Finding,
+  FindingDiffStatus,
+  FindingStatus,
+  PolicyDecision,
+  RepoContract,
+  ScanManifest,
+  Severity
+} from "@drift/core";
 import { authorizeContextExport, matchesPolicyGlob } from "@drift/core";
 import {
   DRIFT_RULE_ENGINE_VERSION,
@@ -20,7 +29,12 @@ export interface DriftMcpHandlers {
   get_repo_contract(input: { repo_id: string }): unknown;
   get_task_preflight(input: { repo_id: string; task: string }): unknown;
   get_conventions(input: { repo_id: string }): unknown;
-  get_findings(input: { repo_id: string; status?: FindingStatus; severity?: Severity }): unknown;
+  get_findings(input: {
+    repo_id: string;
+    status?: FindingStatus;
+    severity?: Severity;
+    diff_status?: FindingDiffStatus;
+  }): unknown;
   get_allowed_context(input: {
     repo_id: string;
     path: string;
@@ -117,6 +131,10 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
         severity: {
           type: "string",
           enum: ["info", "warning", "error"]
+        },
+        diff_status: {
+          type: "string",
+          enum: ["new_in_diff", "touched_existing", "outside_diff"]
         }
       },
       required: ["repo_id"],
@@ -217,14 +235,16 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       };
     }),
 
-    get_findings: ({ repo_id, status, severity }) => withStorage(options, (storage) => {
+    get_findings: ({ repo_id, status, severity, diff_status }) => withStorage(options, (storage) => {
       const { policy } = requiredAuthorizedMcpContract(storage, repo_id);
       const requestedStatus = validateFindingStatus(status);
       const requestedSeverity = validateSeverity(severity);
+      const requestedDiffStatus = validateFindingDiffStatus(diff_status);
       const allFindings = storage.listFindings(repo_id);
       const findings = allFindings.filter((finding) =>
         (!requestedStatus || finding.status === requestedStatus) &&
-        (!requestedSeverity || finding.severity === requestedSeverity)
+        (!requestedSeverity || finding.severity === requestedSeverity) &&
+        (!requestedDiffStatus || finding.diff_status === requestedDiffStatus)
       );
       return {
         repo_id,
@@ -780,12 +800,14 @@ function findingsSummary(allFindings: Finding[], filteredFindings: Finding[]): {
   filtered_count: number;
   by_status: Partial<Record<FindingStatus, number>>;
   by_severity: Partial<Record<Severity, number>>;
+  by_diff_status: Partial<Record<FindingDiffStatus, number>>;
 } {
   return {
     total_count: allFindings.length,
     filtered_count: filteredFindings.length,
     by_status: countBy(allFindings, (finding) => finding.status),
-    by_severity: countBy(allFindings, (finding) => finding.severity)
+    by_severity: countBy(allFindings, (finding) => finding.severity),
+    by_diff_status: countBy(allFindings, (finding) => finding.diff_status)
   };
 }
 
@@ -815,6 +837,16 @@ function validateSeverity(severity: Severity | undefined): Severity | undefined 
     return severity;
   }
   throw new Error("severity must be info, warning, or error.");
+}
+
+function validateFindingDiffStatus(diffStatus: FindingDiffStatus | undefined): FindingDiffStatus | undefined {
+  if (!diffStatus) {
+    return undefined;
+  }
+  if (diffStatus === "new_in_diff" || diffStatus === "touched_existing" || diffStatus === "outside_diff") {
+    return diffStatus;
+  }
+  throw new Error("diff_status must be new_in_diff, touched_existing, or outside_diff.");
 }
 
 function validatePolicySurface(surface: PolicyDecision["surface"]): PolicyDecision["surface"] {

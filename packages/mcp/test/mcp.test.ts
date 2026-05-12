@@ -346,6 +346,10 @@ describe("read-only MCP handlers", () => {
         by_severity: {
           error: 1,
           warning: 1
+        },
+        by_diff_status: {
+          new_in_diff: 1,
+          outside_diff: 1
         }
       },
       findings: [{ id: "finding_abc" }, { id: "finding_suppressed" }]
@@ -361,6 +365,16 @@ describe("read-only MCP handlers", () => {
       },
       findings: [{ id: "finding_abc" }]
     });
+    expect(handlers.get_findings({
+      repo_id: "repo_abc",
+      diff_status: "outside_diff" as never
+    })).toMatchObject({
+      summary: {
+        total_count: 2,
+        filtered_count: 1
+      },
+      findings: [{ id: "finding_suppressed" }]
+    });
     expect(() => handlers.get_findings({
       repo_id: "repo_abc",
       status: "open" as never
@@ -369,6 +383,10 @@ describe("read-only MCP handlers", () => {
       repo_id: "repo_abc",
       severity: "critical" as never
     })).toThrow("severity must be");
+    expect(() => handlers.get_findings({
+      repo_id: "repo_abc",
+      diff_status: "unknown" as never
+    })).toThrow("diff_status must be");
     expect(handlers.get_allowed_context({ repo_id: "repo_abc", path: ".env.local" })).toMatchObject({
       decision: { allowed: false, mode: "denied" }
     });
