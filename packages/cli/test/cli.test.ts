@@ -52,6 +52,20 @@ async function seedDatabase(): Promise<string> {
   return databasePath;
 }
 
+function markBackupWithFutureSchema(databasePath: string): void {
+  const storage = openDriftStorage({ databasePath });
+  storage.migrate();
+  const raw = storage as unknown as {
+    db: {
+      prepare: (sql: string) => { run: (...args: unknown[]) => void };
+    };
+  };
+  raw.db
+    .prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)")
+    .run("999_future_schema", "2026-05-10T00:00:05.000Z");
+  storage.close();
+}
+
 async function seedAcceptedDatabase(): Promise<{ databasePath: string; repoRoot: string }> {
   const dir = await mkdtemp(join(tmpdir(), "drift-check-"));
   tempDirs.push(dir);
@@ -2366,6 +2380,36 @@ describe("drift CLI convention review", () => {
       },
       checksum_matches: true,
       schema_version: 4
+    });
+  });
+
+  it("fails backup verify for unsupported future schemas", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-future-schema-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+    markBackupWithFutureSchema(manifest.backup_path);
+
+    const verified = await runCli([
+      "backup", "verify",
+      manifest.backup_path,
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(verified.exitCode).toBe(1);
+    expect(JSON.parse(verified.stdout)).toMatchObject({
+      valid: false,
+      repo_id: "repo_abc",
+      schema_supported: false,
+      schema_version: 5
     });
   });
 
