@@ -1360,6 +1360,52 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(status.stdout).active_count).toBe(1);
   });
 
+  it("does not audit empty baseline creates", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "diff.patch");
+    await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--diff-file", diffFile,
+      "--scope", "changed-hunks",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+    await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:31.000Z",
+      "--json"
+    ]);
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    const beforeScanCount = storage.listScanManifests("repo_abc").length;
+    storage.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:32.000Z",
+      "--json"
+    ]);
+
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).created_count).toBe(0);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    expect(checked.listScanManifests("repo_abc")).toHaveLength(beforeScanCount);
+    checked.close();
+  });
+
   it("does not baseline governed or resolved findings", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });

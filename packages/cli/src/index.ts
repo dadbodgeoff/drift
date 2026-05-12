@@ -2743,19 +2743,13 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
   }
 
   const scanId = `scan_baseline_${sanitizeAuditId(now)}`;
-  storage.upsertScanManifest(baselineScanManifest({
-    id: scanId,
-    repoId,
-    from,
-    now,
-    findingCount: storage.listFindings(repoId).length
-  }));
 
-  let createdCount = 0;
+  const findings = storage.listFindings(repoId);
   const existingBaselines = new Set(storage
     .listBaselineViolations(repoId)
     .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
-  for (const finding of storage.listFindings(repoId)) {
+  const newBaselineFindings: Finding[] = [];
+  for (const finding of findings) {
     if (!isBaselineEligibleFinding(finding)) {
       continue;
     }
@@ -2765,6 +2759,26 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       continue;
     }
 
+    newBaselineFindings.push(finding);
+    existingBaselines.add(baselineKey);
+  }
+
+  if (newBaselineFindings.length === 0) {
+    return {
+      created_count: 0,
+      baseline: storage.listBaselineViolations(repoId)
+    };
+  }
+
+  storage.upsertScanManifest(baselineScanManifest({
+    id: scanId,
+    repoId,
+    from,
+    now,
+    findingCount: findings.length
+  }));
+
+  for (const finding of newBaselineFindings) {
     storage.upsertBaselineViolation({
       id: `baseline_${finding.fingerprint.slice(0, 16)}`,
       repo_id: repoId,
@@ -2776,10 +2790,7 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
       status: "active",
       created_at: now
     });
-    existingBaselines.add(baselineKey);
-    createdCount += 1;
   }
-
   storage.appendAuditEvent(auditEvent({
     id: `audit_event_baseline_create_${repoId}_${now}`,
     repoId,
@@ -2787,12 +2798,12 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     action: "baseline_created",
     targetType: "baseline",
     targetId: scanId,
-    metadata: { from, created_count: createdCount },
+    metadata: { from, created_count: newBaselineFindings.length },
     createdAt: now
   }));
 
   return {
-    created_count: createdCount,
+    created_count: newBaselineFindings.length,
     baseline: storage.listBaselineViolations(repoId)
   };
 }
