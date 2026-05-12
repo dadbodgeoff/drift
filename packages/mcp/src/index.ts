@@ -1,5 +1,5 @@
 import type { FileSnapshot, Finding, FindingStatus, PolicyDecision, RepoContract, ScanManifest, Severity } from "@drift/core";
-import { authorizeContextExport } from "@drift/core";
+import { authorizeContextExport, matchesPolicyGlob } from "@drift/core";
 import {
   DRIFT_RULE_ENGINE_VERSION,
   DRIFT_SCANNER_VERSION,
@@ -37,6 +37,12 @@ export interface DriftMcpTool {
     required: string[];
     additionalProperties: false;
   };
+}
+
+interface RelevantFile {
+  path: string;
+  roles: string[];
+  reasons: string[];
 }
 
 export interface JsonRpcRequest {
@@ -173,10 +179,16 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         findings: storage.listFindings(repo_id).filter((finding) =>
           !["fixed", "false_positive", "suppressed"].includes(finding.status)
         ),
+        relevant_files: relevantFilesForTask({
+          repoRoot: storage.getRepo(repo_id)!.root_path,
+          task,
+          contract
+        }),
         required_checks: contract.required_checks,
         safe_commands: contract.safe_commands,
         redactions: {
           denied_globs: contract.context_egress.denied_globs,
+          excluded_file_count: countDeniedFiles(storage.getRepo(repo_id)!.root_path, contract.context_egress.denied_globs),
           snippets_included: false
         },
         next_commands: [
@@ -606,6 +618,84 @@ function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: s
       ...counts
     }))
   };
+}
+
+function relevantFilesForTask(input: {
+  repoRoot: string;
+  task: string;
+  contract: RepoContract;
+}): RelevantFile[] {
+  const tokens = tokenizeTask(input.task);
+  const deniedGlobs = input.contract.context_egress.denied_globs;
+  if (!existsSync(input.repoRoot)) {
+    return [];
+  }
+  return walkIndexableFiles(input.repoRoot)
+    .filter((filePath) => !deniedGlobs.some((glob) => matchesPolicyGlob(filePath, glob)))
+    .map((filePath) => relevantFileForPath(filePath, tokens, input.contract))
+    .filter((file): file is RelevantFile => Boolean(file))
+    .slice(0, 25);
+}
+
+function relevantFileForPath(
+  filePath: string,
+  tokens: Set<string>,
+  contract: RepoContract
+): RelevantFile | undefined {
+  const reasons = new Set<string>();
+  const roles = new Set<string>();
+  if (isApiRoutePath(filePath)) {
+    roles.add("api_route");
+  }
+
+  for (const token of tokens) {
+    if (filePath.toLowerCase().includes(token)) {
+      reasons.add(`task token: ${token}`);
+    }
+  }
+
+  for (const convention of contract.conventions) {
+    const inScope = convention.scope.path_globs.some((glob) => matchesPolicyGlob(filePath, glob));
+    if (inScope) {
+      reasons.add(`in scope for ${convention.id}`);
+      for (const role of convention.scope.file_roles ?? []) {
+        roles.add(role);
+      }
+    }
+  }
+
+  if (reasons.size === 0) {
+    return undefined;
+  }
+  return {
+    path: filePath,
+    roles: [...roles].sort(),
+    reasons: [...reasons].sort()
+  };
+}
+
+function tokenizeTask(task: string): Set<string> {
+  return new Set(
+    task
+      .toLowerCase()
+      .split(/[^a-z0-9_/-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3)
+  );
+}
+
+function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {
+  if (deniedGlobs.length === 0 || !existsSync(repoRoot)) {
+    return 0;
+  }
+  return walkIndexableFiles(repoRoot).filter((filePath) =>
+    deniedGlobs.some((glob) => matchesPolicyGlob(filePath, glob))
+  ).length;
+}
+
+function isApiRoutePath(filePath: string): boolean {
+  return /(^|\/)(app|pages)\/api\/.+\.(ts|tsx|js|jsx)$/.test(filePath) ||
+    /(^|\/)route\.(ts|tsx|js|jsx)$/.test(filePath);
 }
 
 function findingsSummary(allFindings: Finding[], filteredFindings: Finding[]): {

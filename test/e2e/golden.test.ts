@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "../../packages/cli/src/index.js";
+import { createReadOnlyMcpHandlers } from "../../packages/mcp/src/index.js";
 
 const tempDirs: string[] = [];
 
@@ -76,6 +77,9 @@ describe("golden fixture CLI lifecycle", () => {
         ],
       }
     `);
+    const mcpPreflight = createReadOnlyMcpHandlers({ databasePath: databasePath! })
+      .get_task_preflight({ repo_id: repoId!, task: "add user search endpoint" });
+    expect(goldenPrepare(mcpPreflight)).toEqual(goldenPrepare(JSON.parse(prepare.stdout)));
 
     const diffPath = join(repoRoot, "..", "diff.patch");
     await writeFile(diffPath, [
