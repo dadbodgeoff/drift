@@ -2947,6 +2947,46 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit no-op agent permission grants", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const first = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--now", "2026-05-10T00:02:00.000Z",
+      "--json"
+    ]);
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeUpdatedAt = storage.getRepoContract("repo_abc")?.updated_at;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "grant",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--now", "2026-05-10T00:03:00.000Z",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).changed_fields).toEqual([]);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeUpdatedAt);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });

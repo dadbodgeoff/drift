@@ -1371,6 +1371,27 @@ function grantAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): 
   const nextPermissions = existing
     ? [...new Set([...existing.permissions, permission])]
     : [permission];
+  const changedFields = existing && existing.permissions.includes(permission)
+    ? []
+    : ["agent_permissions"];
+  if (changedFields.length === 0) {
+    const payload = {
+      repo_id: repoId,
+      contract_id: contract.id,
+      policy: {
+        context_egress: contract.context_egress,
+        agent_permissions: contract.agent_permissions
+      },
+      changed_fields: changedFields
+    };
+    return {
+      payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+        repo_id: repoId,
+        policy: payload.policy,
+        guarded_surfaces: guardedSurfaces()
+      })
+    };
+  }
   const agentPermissions = existing
     ? contract.agent_permissions.map((entry) =>
         entry.agent === agent ? { ...entry, permissions: nextPermissions } : entry
@@ -1403,7 +1424,8 @@ function grantAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs): 
     policy: {
       context_egress: updatedContract.context_egress,
       agent_permissions: updatedContract.agent_permissions
-    }
+    },
+    changed_fields: changedFields
   };
   return {
     payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
