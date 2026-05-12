@@ -444,6 +444,12 @@ function validateMcpToolArguments(name: keyof DriftMcpHandlers, args: Record<str
     if (propertySchema.type === "number" && typeof args[field] !== "number") {
       throw new Error(`Invalid arguments for ${name}: field ${field} must be a number.`);
     }
+    if (field === "requested_snippet_chars" && propertySchema.type === "number") {
+      const value = args[field];
+      if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+        throw new Error(`Invalid arguments for ${name}: field ${field} must be a positive integer.`);
+      }
+    }
     if (propertySchema.type === "boolean" && typeof args[field] !== "boolean") {
       throw new Error(`Invalid arguments for ${name}: field ${field} must be a boolean.`);
     }
