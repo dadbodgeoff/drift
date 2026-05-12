@@ -2228,6 +2228,58 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("updates egress policy only with explicit confirmation and audits the change", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const unconfirmed = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--default-mode", "redacted",
+      "--max-snippet-chars", "600",
+      "--deny-glob", "secrets/**",
+      "--json"
+    ]);
+
+    expect(unconfirmed.exitCode).toBe(1);
+    expect(unconfirmed.stderr).toContain("Policy changes require --confirm");
+
+    const updated = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--default-mode", "redacted",
+      "--max-snippet-chars", "600",
+      "--deny-glob", "secrets/**",
+      "--allow-full-file-content",
+      "--confirm",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(updated.exitCode).toBe(0);
+    expect(JSON.parse(updated.stdout).policy.context_egress).toMatchObject({
+      default_mode: "redacted",
+      max_snippet_chars: 600,
+      allow_full_file_content: true,
+      denied_globs: [".env*", "**/*.pem", "secrets/**"]
+    });
+
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    expect(storage.getRepoContract("repo_abc")?.context_egress.default_mode).toBe("redacted");
+    expect(storage.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "policy_changed",
+      actor: "geoff",
+      target_type: "policy",
+      metadata: {
+        changed_fields: ["default_mode", "max_snippet_chars", "allow_full_file_content", "denied_globs"]
+      }
+    });
+    storage.close();
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });

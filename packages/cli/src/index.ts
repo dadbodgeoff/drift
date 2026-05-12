@@ -166,6 +166,10 @@ function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | 
     return checkPolicyContext(storage, parsed);
   }
 
+  if (group === "policy" && command === "set-egress") {
+    return setEgressPolicy(storage, parsed);
+  }
+
   if (group === "conventions" && command === "list") {
     const repoId = resolveRepoId(parsed);
     requiredRepo(storage, repoId);
@@ -1159,15 +1163,7 @@ function showPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPay
       context_egress: contract.context_egress,
       agent_permissions: contract.agent_permissions
     },
-    guarded_surfaces: [
-      "cli-preflight",
-      "cli-check",
-      "mcp",
-      "contract-export",
-      "artifact",
-      "log",
-      "ui"
-    ]
+    guarded_surfaces: guardedSurfaces()
   };
 
   return {
@@ -1195,6 +1191,77 @@ function checkPolicyContext(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
 
   return {
     payload: parsed.flags.has("json") ? payload : formatPolicyDecisionText(payload)
+  };
+}
+
+function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+  if (!parsed.flags.has("confirm")) {
+    throw new Error("Policy changes require --confirm.");
+  }
+
+  const repoId = resolveRepoId(parsed);
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const contract = requiredRepoContract(storage, repoId);
+  const current = contract.context_egress;
+  const defaultMode = optionalContextDefaultModeFlag(parsed, "default-mode") ?? current.default_mode;
+  const maxSnippetChars = optionalPositiveIntegerFlag(parsed, "max-snippet-chars") ?? current.max_snippet_chars;
+  const denyGlob = stringFlag(parsed, "deny-glob");
+  const allowFullFileContent = parsed.flags.has("allow-full-file-content")
+    ? true
+    : parsed.flags.has("deny-full-file-content")
+      ? false
+      : current.allow_full_file_content;
+  const deniedGlobs = denyGlob
+    ? [...new Set([...current.denied_globs, denyGlob])]
+    : current.denied_globs;
+  const nextPolicy = {
+    default_mode: defaultMode,
+    denied_globs: deniedGlobs,
+    max_snippet_chars: maxSnippetChars,
+    allow_full_file_content: allowFullFileContent
+  };
+  const changedFields = [
+    current.default_mode !== nextPolicy.default_mode ? "default_mode" : undefined,
+    current.max_snippet_chars !== nextPolicy.max_snippet_chars ? "max_snippet_chars" : undefined,
+    current.allow_full_file_content !== nextPolicy.allow_full_file_content ? "allow_full_file_content" : undefined,
+    JSON.stringify(current.denied_globs) !== JSON.stringify(nextPolicy.denied_globs) ? "denied_globs" : undefined
+  ].filter((field): field is string => Boolean(field));
+  const updatedContract: RepoContract = {
+    ...contract,
+    context_egress: nextPolicy,
+    updated_at: now
+  };
+
+  storage.upsertRepoContract(updatedContract);
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_policy_egress_${repoId}_${now}`,
+    repoId,
+    actor,
+    action: "policy_changed",
+    targetType: "policy",
+    targetId: `${contract.id}:context_egress`,
+    metadata: {
+      changed_fields: changedFields
+    },
+    createdAt: now
+  }));
+
+  const payload = {
+    repo_id: repoId,
+    contract_id: contract.id,
+    policy: {
+      context_egress: nextPolicy,
+      agent_permissions: updatedContract.agent_permissions
+    },
+    changed_fields: changedFields
+  };
+  return {
+    payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+      repo_id: repoId,
+      policy: payload.policy,
+      guarded_surfaces: guardedSurfaces()
+    })
   };
 }
 
@@ -1696,6 +1763,32 @@ function policySurface(value: string): PolicyDecision["surface"] {
   }
 
   throw new Error("--surface must be cli-preflight, cli-check, mcp, contract-export, artifact, log, or ui.");
+}
+
+function guardedSurfaces(): PolicyDecision["surface"][] {
+  return [
+    "cli-preflight",
+    "cli-check",
+    "mcp",
+    "contract-export",
+    "artifact",
+    "log",
+    "ui"
+  ];
+}
+
+function optionalContextDefaultModeFlag(
+  parsed: ParsedArgs,
+  name: string
+): RepoContract["context_egress"]["default_mode"] | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (value === "local_only" || value === "redacted" || value === "approval_required") {
+    return value;
+  }
+  throw new Error("--default-mode must be local_only, redacted, or approval_required.");
 }
 
 function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingStatus | undefined {
