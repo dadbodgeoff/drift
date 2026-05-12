@@ -2521,6 +2521,32 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(verified.stdout).size_bytes).toBeGreaterThan(0);
   });
 
+  it("prints backup verify artifact size in human output", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-text-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+
+    const verified = await runCli([
+      "backup", "verify",
+      manifest.backup_path,
+      "--repo", "repo_abc",
+      "--checksum", manifest.checksum_sha256
+    ]);
+
+    expect(verified.exitCode).toBe(0);
+    expect(verified.stdout).toContain("Schema supported: true");
+    expect(verified.stdout).toContain(`Size: ${manifest.size_bytes} bytes`);
+  });
+
   it("fails backup verify for unsupported future schemas", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-verify-future-schema-"));

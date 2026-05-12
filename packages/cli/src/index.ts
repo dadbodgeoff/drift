@@ -2641,8 +2641,10 @@ function formatBackupVerifyText(payload: {
   repo_fingerprint: string | null;
   backup_path: string;
   schema_version: number;
+  schema_supported: boolean;
   checksum_sha256: string;
   checksum_matches: boolean | null;
+  size_bytes: number;
   repo_found: boolean;
 }): string {
   return [
@@ -2654,8 +2656,10 @@ function formatBackupVerifyText(payload: {
     `Repo fingerprint: ${payload.repo_fingerprint ?? "unknown"}`,
     `Backup: ${payload.backup_path}`,
     `Schema version: ${payload.schema_version}`,
+    `Schema supported: ${payload.schema_supported}`,
     `Checksum: ${payload.checksum_sha256}`,
     `Checksum matches: ${payload.checksum_matches ?? "not checked"}`,
+    `Size: ${payload.size_bytes} bytes`,
     ""
   ].join("\n");
 }
