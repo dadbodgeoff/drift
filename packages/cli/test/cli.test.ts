@@ -3766,6 +3766,29 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("rejects unsafe candidate scope files with a clear error", async () => {
+    const databasePath = await seedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-scope-file-unsafe-"));
+    tempDirs.push(dir);
+    const scopePath = join(dir, "scope.json");
+    await writeFile(scopePath, JSON.stringify({
+      path_globs: ["../api/**/route.ts"],
+      file_roles: ["api_route"],
+      exclude_path_globs: ["/tmp/generated/**"]
+    }));
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "edit",
+      "candidate_no_direct_db",
+      "--scope-file", scopePath,
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--scope-file path_globs and exclude_path_globs must be repo-relative.");
+  });
+
   it("adds an exception to an accepted convention and rematerializes the contract", async () => {
     const databasePath = await seedDatabase();
     await runCli([

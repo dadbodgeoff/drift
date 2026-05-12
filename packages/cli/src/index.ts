@@ -2,6 +2,7 @@ import type {
   AcceptedConvention,
   AuditEvent,
   ConventionCandidate,
+  ConventionScope,
   ConventionStatus,
   EnforcementMode,
   FactRecord,
@@ -2545,9 +2546,7 @@ function editCandidate(
   const updated = {
     ...candidate,
     statement: statement ?? candidate.statement,
-    scope: scopeFile
-      ? ConventionScopeSchema.parse(JSON.parse(readFileSync(scopeFile, "utf8")))
-      : candidate.scope
+    scope: scopeFile ? readConventionScopeFile(scopeFile) : candidate.scope
   };
 
   storage.upsertConventionCandidate(updated);
@@ -2562,6 +2561,19 @@ function editCandidate(
     createdAt: now
   }));
   return { candidate: updated };
+}
+
+function readConventionScopeFile(scopeFile: string): ConventionScope {
+  const rawScope = JSON.parse(readFileSync(scopeFile, "utf8"));
+  const pathGlobs = Array.isArray(rawScope.path_globs) ? rawScope.path_globs : [];
+  const excludePathGlobs = Array.isArray(rawScope.exclude_path_globs) ? rawScope.exclude_path_globs : [];
+  const unsafeGlob = [...pathGlobs, ...excludePathGlobs].some((glob) =>
+    typeof glob !== "string" || !isRepoRelativePolicyPattern(glob)
+  );
+  if (unsafeGlob) {
+    throw new Error("--scope-file path_globs and exclude_path_globs must be repo-relative.");
+  }
+  return ConventionScopeSchema.parse(rawScope);
 }
 
 function addConventionException(
