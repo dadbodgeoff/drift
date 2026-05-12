@@ -1748,6 +1748,7 @@ describe("drift CLI convention review", () => {
       "--db", targetDatabasePath,
       "restore", backupPath,
       "--repo", "repo_abc",
+      "--confirm",
       "--actor", "geoff",
       "--now", "2026-05-10T00:00:05.000Z",
       "--json"
@@ -1773,6 +1774,32 @@ describe("drift CLI convention review", () => {
       metadata: { backup_path: backupPath }
     });
     restoredStorage.close();
+  });
+
+  it("requires explicit confirmation for non-dry-run restores", async () => {
+    const { databasePath: sourceDatabasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-confirm-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", sourceDatabasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const backupPath = JSON.parse(backup.stdout).manifest.backup_path;
+
+    const restored = await runCli([
+      "--db", join(dir, "restored.sqlite"),
+      "restore", backupPath,
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(1);
+    expect(restored.stderr).toContain("Restore requires --confirm unless --dry-run is used.");
+    await expect(stat(join(dir, "restored.sqlite"))).rejects.toThrow();
   });
 
   it("reports restored graph staleness against current source files", async () => {
@@ -1834,6 +1861,7 @@ describe("drift CLI convention review", () => {
       "--db", join(dir, "restored.sqlite"),
       "restore", backupPath,
       "--repo", scanPayload.repo.id,
+      "--confirm",
       "--now", "2026-05-10T00:00:12.000Z",
       "--json"
     ]);
@@ -1879,6 +1907,7 @@ describe("drift CLI convention review", () => {
       "--db", existingTarget,
       "restore", backupPath,
       "--repo", "repo_abc",
+      "--confirm",
       "--now", "2026-05-10T00:00:06.000Z",
       "--json"
     ]);
@@ -1886,6 +1915,7 @@ describe("drift CLI convention review", () => {
       "--db", existingTarget,
       "restore", backupPath,
       "--repo", "repo_abc",
+      "--confirm",
       "--force",
       "--now", "2026-05-10T00:00:07.000Z",
       "--json"
@@ -1922,6 +1952,7 @@ describe("drift CLI convention review", () => {
       "--db", join(dir, "restored.sqlite"),
       "restore", backupPath,
       "--repo", "repo_abc",
+      "--confirm",
       "--checksum", "0".repeat(64),
       "--json"
     ]);

@@ -1046,11 +1046,15 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const dryRun = parsed.flags.has("dry-run");
   const force = parsed.flags.has("force");
+  const confirmed = parsed.flags.has("confirm");
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
   }
   if (resolve(backupPath) === resolve(targetDatabasePath)) {
     throw new Error("Restore target must be different from the backup path.");
+  }
+  if (!dryRun && !confirmed) {
+    throw new Error("Restore requires --confirm unless --dry-run is used.");
   }
   if (existsSync(targetDatabasePath) && !force && !dryRun) {
     throw new Error("Target database already exists. Pass --force to overwrite it.");
