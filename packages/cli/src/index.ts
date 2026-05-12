@@ -1291,6 +1291,9 @@ function importContractDryRun(
   }
   const repo = storage.getRepo(expectedRepoId);
   const expectedFingerprint = existingContract?.repo_fingerprint ?? repo?.fingerprint;
+  const changedConventionCount = countChangedImportedConventions(existingContract, contract);
+  const wouldUpdate = !existingContract ||
+    hashStable(JSON.stringify(existingContract)) !== hashStable(JSON.stringify(contract));
   const compatibility = {
     compatible: Boolean(repo) &&
       expectedRepoId === contract.repo_id &&
@@ -1314,6 +1317,8 @@ function importContractDryRun(
     schema_version: contract.contract_schema_version,
     policy,
     convention_count: contract.conventions.length,
+    would_update: wouldUpdate,
+    changed_convention_count: changedConventionCount,
     compatibility
   };
   if (!compatibility.compatible || dryRun) {
@@ -1352,6 +1357,18 @@ function importContractDryRun(
   return {
     payload: parsed.flags.has("json") ? importedPayload : formatContractValidationText(importedPayload)
   };
+}
+
+function countChangedImportedConventions(
+  existingContract: RepoContract | undefined,
+  importedContract: RepoContract
+): number {
+  const existingById = new Map(
+    (existingContract?.conventions ?? []).map((convention) => [convention.id, convention])
+  );
+  return importedContract.conventions.filter((convention) =>
+    JSON.stringify(existingById.get(convention.id)) !== JSON.stringify(convention)
+  ).length;
 }
 
 function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {

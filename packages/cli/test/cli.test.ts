@@ -2744,6 +2744,49 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("reports contract import dry-run changes without mutating or auditing", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-dry-run-changes-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    const originalStatement = contract.conventions[0]?.statement;
+    await writeFile(contractPath, JSON.stringify({
+      ...contract,
+      conventions: contract.conventions.map((convention) => ({
+        ...convention,
+        statement: "Dry run should not persist."
+      }))
+    }, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--dry-run",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(0);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      dry_run: true,
+      imported: false,
+      would_update: true,
+      changed_convention_count: 1
+    });
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.conventions[0]?.statement).toBe(originalStatement);
+    expect(checked.listAcceptedConventions("repo_abc")[0]?.statement).toBe(originalStatement);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(0);
+    checked.close();
+  });
+
   it("rejects confirmed incompatible contract imports without mutating state", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-contract-confirm-incompatible-"));
