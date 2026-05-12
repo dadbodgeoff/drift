@@ -405,6 +405,25 @@ describe("drift CLI convention review", () => {
     expect(payload.stale).toBe(true);
     expect(payload.changes.modified).toEqual(["apps/web/app/api/users/route.ts"]);
     expect(payload.next_command).toBe(`drift scan --repo-root ${repoRoot} --json`);
+
+    const repeated = await runCli([
+      "--db", scanPayload.database_path,
+      "scan", "status",
+      "--repo", scanPayload.repo.id,
+      "--json"
+    ]);
+    expect(repeated.exitCode).toBe(0);
+
+    const storage = openDriftStorage({ databasePath: scanPayload.database_path });
+    storage.migrate();
+    const invalidations = storage.listAuditEvents(scanPayload.repo.id)
+      .filter((event) => event.action === "scan_invalidated");
+    expect(invalidations).toHaveLength(1);
+    expect(invalidations[0]?.metadata).toMatchObject({
+      latest_scan_id: scanPayload.scan.id,
+      modified: ["apps/web/app/api/users/route.ts"]
+    });
+    storage.close();
   });
 
   it("links repeated scans to the previous completed scan", async () => {
