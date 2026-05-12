@@ -1567,6 +1567,35 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("refuses to overwrite an exact backup output without force", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-overwrite-"));
+    tempDirs.push(dir);
+    const backupPath = join(dir, "existing.drift-backup.sqlite");
+    await writeFile(backupPath, "existing backup");
+
+    const refused = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupPath,
+      "--json"
+    ]);
+    const forced = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", backupPath,
+      "--force",
+      "--json"
+    ]);
+
+    expect(refused.exitCode).toBe(1);
+    expect(refused.stderr).toContain("Backup output already exists. Pass --force to overwrite it.");
+    expect(forced.exitCode).toBe(0);
+    expect(JSON.parse(forced.stdout).manifest.backup_path).toBe(backupPath);
+  });
+
   it("lists persisted backup manifests as JSON", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-list-"));

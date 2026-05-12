@@ -946,6 +946,10 @@ function createBackup(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const sourceDatabasePath = requiredDatabasePath(parsed);
   const backupPath = resolveBackupPath(parsed, repoId, now);
+  const force = parsed.flags.has("force");
+  if (existsSync(backupPath) && !force) {
+    throw new Error("Backup output already exists. Pass --force to overwrite it.");
+  }
   const backupId = `backup_${hashStable(`${repoId}:${backupPath}:${now}`).slice(0, 16)}`;
 
   storage.appendAuditEvent(auditEvent({
