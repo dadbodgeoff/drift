@@ -2651,6 +2651,38 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(prepared.stdout).conventions).toEqual([]);
   });
 
+  it("omits accepted drift findings from prepare output", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_accepted_drift",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-accepted-drift-fp",
+      title: "Accepted legacy route",
+      message: "Accepted direct data-access import.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "accepted_drift",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:05.000Z"
+    });
+    storage.close();
+
+    const prepared = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "add user endpoint",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout).findings).toEqual([]);
+  });
+
   it("infers database path and repo id from repo-root for common commands", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-ergonomic-"));
     tempDirs.push(dir);

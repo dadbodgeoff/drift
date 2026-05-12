@@ -801,7 +801,7 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
   const conventions = activeConventions.map(preparedConvention);
   const findings = storage
     .listFindings(repoId)
-    .filter((finding) => !["fixed", "false_positive", "suppressed"].includes(finding.status))
+    .filter(isOpenPreflightFinding)
     .map((finding) => ({
       id: finding.id,
       convention_id: finding.convention_id,
@@ -1732,6 +1732,10 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
       findings
     }
   };
+}
+
+function isOpenPreflightFinding(finding: Finding): boolean {
+  return !["fixed", "false_positive", "suppressed", "accepted_drift"].includes(finding.status);
 }
 
 function preservedGovernanceStatus(finding: Finding | undefined): FindingStatus | undefined {

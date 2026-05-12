@@ -466,6 +466,34 @@ describe("read-only MCP handlers", () => {
     expect(preflight.conventions).toEqual([]);
   });
 
+  it("omits accepted drift findings from MCP preflight", async () => {
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_accepted_drift",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-accepted-drift-fp",
+      title: "Accepted legacy route",
+      message: "Accepted direct data-access import.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "accepted_drift",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:05.750Z"
+    });
+    storage.close();
+
+    const preflight = createReadOnlyMcpHandlers({ databasePath })
+      .get_task_preflight({ repo_id: "repo_abc", task: "add users route" }) as {
+        findings: Array<{ id: string }>;
+      };
+
+    expect(preflight.findings.map((finding) => finding.id)).toEqual(["finding_abc"]);
+  });
+
   it("denies MCP repo context when policy requires approval", async () => {
     const databasePath = await seedMcpDatabase();
     const storage = openDriftStorage({ databasePath });

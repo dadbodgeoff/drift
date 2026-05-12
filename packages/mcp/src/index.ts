@@ -190,7 +190,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         scan_status: scanStatusPayload(storage, repo_id),
         baseline: baselineSummary(storage, repo_id),
         findings: storage.listFindings(repo_id)
-          .filter((finding) => !["fixed", "false_positive", "suppressed"].includes(finding.status))
+          .filter(isOpenPreflightFinding)
           .map(preflightFinding),
         relevant_files: relevantFiles,
         risky_areas: riskyAreasForFiles(contract, relevantFiles),
@@ -724,6 +724,10 @@ function riskyAreasForFiles(
       area.path_globs.some((glob) => matchesPolicyGlob(filePath, glob))
     )
   );
+}
+
+function isOpenPreflightFinding(finding: Finding): boolean {
+  return !["fixed", "false_positive", "suppressed", "accepted_drift"].includes(finding.status);
 }
 
 function preflightFinding(finding: Finding): Pick<
