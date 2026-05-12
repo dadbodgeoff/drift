@@ -2620,7 +2620,14 @@ function formatBackupCreatedText(manifest: {
 function formatBackupListText(payload: {
   repo_id: string;
   count: number;
-  backups: Array<{ id: string; backup_path: string; checksum_sha256: string; created_at: string }>;
+  backups: Array<{
+    id: string;
+    backup_path: string;
+    checksum_sha256: string;
+    size_bytes: number;
+    artifact_exists?: boolean;
+    created_at: string;
+  }>;
 }): string {
   return [
     "Drift backups",
@@ -2628,9 +2635,14 @@ function formatBackupListText(payload: {
     `Repo: ${payload.repo_id}`,
     `Backups: ${payload.count}`,
     "",
-    ...payload.backups.map((backup) =>
-      `${backup.created_at} ${backup.id} ${backup.backup_path} ${backup.checksum_sha256}`
-    ),
+    ...payload.backups.flatMap((backup) => [
+      `${backup.created_at} ${backup.id}`,
+      `Path: ${backup.backup_path}`,
+      `Checksum: ${backup.checksum_sha256}`,
+      `Size: ${backup.size_bytes} bytes`,
+      `Artifact: ${backup.artifact_exists === false ? "missing" : "present"}`,
+      ""
+    ]),
     ""
   ].join("\n");
 }

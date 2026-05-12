@@ -2405,6 +2405,31 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("prints backup artifact presence and size in human output", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-list-text-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--now", "2026-05-10T00:00:04.000Z",
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+
+    const listed = await runCli([
+      "--db", databasePath,
+      "backup", "list",
+      "--repo", "repo_abc"
+    ]);
+
+    expect(listed.exitCode).toBe(0);
+    expect(listed.stdout).toContain("Artifact: present");
+    expect(listed.stdout).toContain(`Size: ${manifest.size_bytes} bytes`);
+  });
+
   it("reports missing backup artifacts in backup list", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-backup-missing-artifact-"));
