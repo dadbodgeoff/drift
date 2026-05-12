@@ -2134,6 +2134,19 @@ describe("drift CLI convention review", () => {
       .find((line) => line.trim().startsWith("export DRIFT_DB="))
       ?.split("=", 2)[1];
     const repoId = started.stdout.match(/--repo (repo_[a-f0-9]+)/)?.[1];
+    const storage = openDriftStorage({ databasePath: databasePath! });
+    storage.migrate();
+    const contract = storage.getRepoContract(repoId!)!;
+    storage.upsertRepoContract({
+      ...contract,
+      risky_areas: [{
+        id: "risk_user_api",
+        path_globs: ["apps/web/app/api/users/**"],
+        risk_kind: "data_access",
+        reason: "User API routes touch persisted user data."
+      }]
+    });
+    storage.close();
     await mkdir(join(repoRoot, "apps/web/app/api/search"), { recursive: true });
     await writeFile(
       join(repoRoot, "apps/web/app/api/search/route.ts"),
@@ -2166,6 +2179,12 @@ describe("drift CLI convention review", () => {
     expect(payload.relevant_files.map((file: { path: string }) => file.path)).toContain(
       "apps/web/app/api/users/route.ts"
     );
+    expect(payload.risky_areas).toEqual([{
+      id: "risk_user_api",
+      path_globs: ["apps/web/app/api/users/**"],
+      risk_kind: "data_access",
+      reason: "User API routes touch persisted user data."
+    }]);
     expect(payload.next_commands).toContain(`drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`);
     expect(result.stdout).not.toContain("prisma.user.findMany");
   });

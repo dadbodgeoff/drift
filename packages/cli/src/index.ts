@@ -765,6 +765,7 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
     task,
     contract
   });
+  const riskyAreas = riskyAreasForFiles(contract, relevantFiles);
   const redactions = {
     denied_globs: contract.context_egress.denied_globs,
     excluded_file_count: countDeniedFiles(repo.root_path, contract.context_egress.denied_globs),
@@ -785,6 +786,7 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
     baseline,
     findings,
     relevant_files: relevantFiles,
+    risky_areas: riskyAreas,
     required_checks: contract.required_checks,
     safe_commands: contract.safe_commands,
     redactions,
@@ -2084,6 +2086,18 @@ function relevantFileForPath(
     roles: [...roles].sort(),
     reasons: [...reasons].sort()
   };
+}
+
+function riskyAreasForFiles(
+  contract: RepoContract,
+  relevantFiles: RelevantFile[]
+): RepoContract["risky_areas"] {
+  const relevantPaths = relevantFiles.map((file) => file.path);
+  return contract.risky_areas.filter((area) =>
+    relevantPaths.some((filePath) =>
+      area.path_globs.some((glob) => matchesGlob(filePath, glob))
+    )
+  );
 }
 
 function tokenizeTask(task: string): Set<string> {
