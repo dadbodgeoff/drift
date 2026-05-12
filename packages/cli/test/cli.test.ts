@@ -2659,6 +2659,8 @@ describe("drift CLI convention review", () => {
       contractPath,
       "--repo", "repo_abc",
       "--confirm",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:41.000Z",
       "--json"
     ]);
 
@@ -2679,6 +2681,17 @@ describe("drift CLI convention review", () => {
     expect(checked.listAcceptedConventions("repo_abc")[0]?.statement).toBe(
       "Imported convention statement."
     );
+    expect(checked.listAuditEvents("repo_abc").at(-1)).toMatchObject({
+      action: "contract_imported",
+      actor: "geoff",
+      target_type: "contract",
+      target_id: "contract_abc",
+      metadata: {
+        contract_path: contractPath,
+        convention_count: 1,
+        surface: "contract-export"
+      }
+    });
     checked.close();
   });
 

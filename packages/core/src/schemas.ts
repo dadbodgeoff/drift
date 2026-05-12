@@ -167,6 +167,7 @@ export const AuditEventSchema = z.object({
     "backup_created",
     "restore_completed",
     "contract_exported",
+    "contract_imported",
     "adapter_upgraded",
     "scan_invalidated",
     "baseline_created",

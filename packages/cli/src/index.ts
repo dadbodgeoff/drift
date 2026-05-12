@@ -1327,6 +1327,23 @@ function importContractDryRun(
     storage.upsertAcceptedConvention(expectedRepoId, convention);
   }
   storage.upsertRepoContract(contract);
+  const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  const actor = stringFlag(parsed, "actor") ?? "local-user";
+  storage.appendAuditEvent(auditEvent({
+    id: `audit_event_contract_import_${expectedRepoId}_${now}`,
+    repoId: expectedRepoId,
+    actor,
+    action: "contract_imported",
+    targetType: "contract",
+    targetId: contract.id,
+    metadata: {
+      contract_path: contractPath,
+      convention_count: contract.conventions.length,
+      surface: policy?.surface ?? "contract-export",
+      mode: policy?.mode ?? null
+    },
+    createdAt: now
+  }));
 
   const importedPayload = {
     ...payload,
