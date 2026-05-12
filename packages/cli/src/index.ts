@@ -1121,6 +1121,7 @@ function verifyBackup(parsed: ParsedArgs): CommandPayload {
 
   const checksum = fileContentHash(backupPath);
   const checksumMatches = expectedChecksum ? checksum === expectedChecksum : null;
+  const sizeBytes = statSync(backupPath).size;
   const backupStorage = openDriftStorage({ databasePath: backupPath });
   let schemaVersion = 0;
   let repo: RepoRecord | undefined;
@@ -1148,6 +1149,7 @@ function verifyBackup(parsed: ParsedArgs): CommandPayload {
     schema_supported: schemaSupported,
     checksum_sha256: checksum,
     checksum_matches: checksumMatches,
+    size_bytes: sizeBytes,
     repo_found: Boolean(repo)
   };
 

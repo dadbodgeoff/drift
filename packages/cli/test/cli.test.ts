@@ -2493,6 +2493,7 @@ describe("drift CLI convention review", () => {
       checksum_matches: true,
       schema_version: 4
     });
+    expect(JSON.parse(verified.stdout).size_bytes).toBeGreaterThan(0);
   });
 
   it("fails backup verify for unsupported future schemas", async () => {
