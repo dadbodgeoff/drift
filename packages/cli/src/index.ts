@@ -2585,21 +2585,25 @@ function editCandidate(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
   candidateId: string
-): { candidate: ConventionCandidate } {
+): { candidate: ConventionCandidate; changed_fields: string[] } {
   const candidate = requiredCandidate(storage, candidateId);
   const statement = stringFlag(parsed, "statement");
   const scopeFile = stringFlag(parsed, "scope-file");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
+  const nextScope = scopeFile ? readConventionScopeFile(scopeFile) : candidate.scope;
   const changedFields = [
-    statement ? "statement" : undefined,
-    scopeFile ? "scope" : undefined
+    statement && statement !== candidate.statement ? "statement" : undefined,
+    scopeFile && hashStable(JSON.stringify(nextScope)) !== hashStable(JSON.stringify(candidate.scope)) ? "scope" : undefined
   ].filter((field): field is string => Boolean(field));
   const updated = {
     ...candidate,
     statement: statement ?? candidate.statement,
-    scope: scopeFile ? readConventionScopeFile(scopeFile) : candidate.scope
+    scope: nextScope
   };
+  if (changedFields.length === 0) {
+    return { candidate: updated, changed_fields: changedFields };
+  }
 
   storage.upsertConventionCandidate(updated);
   storage.appendAuditEvent(auditEvent({
@@ -2612,7 +2616,7 @@ function editCandidate(
     metadata: { changed_fields: changedFields },
     createdAt: now
   }));
-  return { candidate: updated };
+  return { candidate: updated, changed_fields: changedFields };
 }
 
 function readConventionScopeFile(scopeFile: string): ConventionScope {

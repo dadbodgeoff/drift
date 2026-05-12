@@ -3864,6 +3864,33 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit no-op candidate edits", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const statement = storage.getConventionCandidate("candidate_no_direct_db")!.statement;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "edit",
+      "candidate_no_direct_db",
+      "--statement", statement,
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).changed_fields).toEqual([]);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("edits a candidate structured scope from a JSON file", async () => {
     const databasePath = await seedDatabase();
     const dir = await mkdtemp(join(tmpdir(), "drift-scope-file-"));
