@@ -1828,7 +1828,7 @@ function acceptCandidate(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
   candidateId: string
-): { accepted: AcceptedConvention; contract: RepoContract } {
+): { accepted: AcceptedConvention; contract: RepoContract; changed: boolean } {
   const candidate = requiredCandidate(storage, candidateId);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
@@ -1838,6 +1838,20 @@ function acceptCandidate(
     throw new Error("Only deterministic conventions can use --mode block. Use --mode warn, brief, or off for heuristic/briefing conventions.");
   }
   const contractId = storage.getRepoContract(candidate.repo_id)?.id ?? contractIdForRepo(candidate.repo_id);
+  const existingAccepted = storage
+    .listAcceptedConventions(candidate.repo_id)
+    .find((accepted) => accepted.id === conventionIdForCandidate(candidate.id));
+  const existingContract = storage.getRepoContract(candidate.repo_id);
+  if (
+    candidate.status === "accepted" &&
+    existingAccepted &&
+    existingContract &&
+    existingAccepted.severity === severity &&
+    existingAccepted.enforcement_mode === mode
+  ) {
+    return { accepted: existingAccepted, contract: existingContract, changed: false };
+  }
+
   const convention: AcceptedConvention = {
     id: conventionIdForCandidate(candidate.id),
     contract_id: contractId,
@@ -1872,7 +1886,7 @@ function acceptCandidate(
     createdAt: now
   }));
 
-  return { accepted: convention, contract };
+  return { accepted: convention, contract, changed: true };
 }
 
 function acceptDefaultCandidate(

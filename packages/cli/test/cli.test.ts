@@ -3274,6 +3274,45 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit no-op candidate acceptance", async () => {
+    const databasePath = await seedDatabase();
+
+    const first = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--severity", "error",
+      "--mode", "block",
+      "--now", "2026-05-10T00:00:10.000Z",
+      "--json"
+    ]);
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeContractUpdatedAt = storage.getRepoContract("repo_abc")?.updated_at;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const second = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--severity", "error",
+      "--mode", "block",
+      "--now", "2026-05-10T00:00:20.000Z",
+      "--json"
+    ]);
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(JSON.parse(second.stdout).changed).toBe(false);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeContractUpdatedAt);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("rejects invalid convention accept severity and mode", async () => {
     const databasePath = await seedDatabase();
 
