@@ -2333,8 +2333,38 @@ describe("drift CLI convention review", () => {
       backups: [{
         id: manifest.id,
         backup_path: manifest.backup_path,
+        artifact_exists: true,
         checksum_sha256: manifest.checksum_sha256
       }]
+    });
+  });
+
+  it("reports missing backup artifacts in backup list", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-backup-missing-artifact-"));
+    tempDirs.push(dir);
+    const backup = await runCli([
+      "--db", databasePath,
+      "backup", "create",
+      "--repo", "repo_abc",
+      "--output", join(dir, "backups"),
+      "--json"
+    ]);
+    const manifest = JSON.parse(backup.stdout).manifest;
+    await rm(manifest.backup_path);
+
+    const listed = await runCli([
+      "--db", databasePath,
+      "backup", "list",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+
+    expect(listed.exitCode).toBe(0);
+    expect(JSON.parse(listed.stdout).backups[0]).toMatchObject({
+      id: manifest.id,
+      backup_path: manifest.backup_path,
+      artifact_exists: false
     });
   });
 

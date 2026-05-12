@@ -1093,7 +1093,10 @@ function listBackups(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
   if (!policy.allowed) {
     throw new Error(`Policy denied backup output: ${policy.reason}`);
   }
-  const backups = storage.listBackupManifests(repoId);
+  const backups = storage.listBackupManifests(repoId).map((backup) => ({
+    ...backup,
+    artifact_exists: existsSync(backup.backup_path)
+  }));
   const payload = {
     repo_id: repoId,
     policy,
