@@ -1506,6 +1506,10 @@ function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
     throw new Error("--format must be json.");
   }
   const contract = requiredRepoContract(storage, repoId);
+  if (!parsed.flags.has("confirm")) {
+    throw new Error("Contract export requires --confirm.");
+  }
+
   const policy = authorizeContextExport(contract, "contract-export");
   if (!policy.allowed) {
     throw new Error(`Policy denied contract export: ${policy.reason}`);
@@ -3814,13 +3818,13 @@ function helpText(parsed: ParsedArgs): string {
       "Usage:",
       "  drift --db <path> contract show --repo <repo_id> --json",
       "  drift --db <path> contract validate --repo <repo_id> --json",
-      "  drift --db <path> contract export --repo <repo_id> --format json --json",
+      "  drift --db <path> contract export --repo <repo_id> --format json --confirm --json",
       "  drift --db <path> contract import <path> --dry-run --json",
       "  drift --db <path> contract import <path> --confirm --json",
       "",
       "Notes:",
       "  dry-run validates portable contract JSON without mutating state.",
-      "  confirmed import updates accepted conventions and the repo contract, then writes an audit event.",
+      "  export and confirmed import write audit events for outward contract movement.",
       ""
     ].join("\n");
   }
@@ -3965,7 +3969,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift backup verify <backup.sqlite> --repo <repo_id> --checksum <sha256> --json",
     "  drift restore <backup.sqlite> --repo <repo_id> --json",
     "  drift contract validate --repo <repo_id> --json",
-    "  drift contract export --repo <repo_id> --format json --json",
+    "  drift contract export --repo <repo_id> --format json --confirm --json",
     "  drift contract import <path> --dry-run --json",
     "  drift contract import <path> --confirm --json",
     "  drift baseline create --repo <repo_id> --from main --json",

@@ -3557,11 +3557,19 @@ describe("drift CLI convention review", () => {
       "--repo", "repo_abc",
       "--json"
     ]);
+    const unconfirmedExport = await runCli([
+      "--db", databasePath,
+      "contract", "export",
+      "--repo", "repo_abc",
+      "--format", "json",
+      "--json"
+    ]);
     const exported = await runCli([
       "--db", databasePath,
       "contract", "export",
       "--repo", "repo_abc",
       "--format", "json",
+      "--confirm",
       "--actor", "geoff",
       "--now", "2026-05-10T00:00:11.000Z",
       "--json"
@@ -3585,6 +3593,8 @@ describe("drift CLI convention review", () => {
         surface: "contract-export"
       }
     });
+    expect(unconfirmedExport.exitCode).toBe(1);
+    expect(unconfirmedExport.stderr).toContain("Contract export requires --confirm");
     expect(exported.exitCode).toBe(0);
     expect(JSON.parse(exported.stdout).policy.surface).toBe("contract-export");
     expect(JSON.parse(exported.stdout).contract.conventions[0].id).toBe("convention_no_direct_db");
@@ -3830,6 +3840,7 @@ describe("drift CLI convention review", () => {
       "contract", "export",
       "--repo", "repo_abc",
       "--format", "json",
+      "--confirm",
       "--json"
     ]);
     const contract = JSON.parse(exported.stdout).contract;
@@ -4022,6 +4033,7 @@ describe("drift CLI convention review", () => {
       "contract", "export",
       "--repo", "repo_abc",
       "--format", "json",
+      "--confirm",
       "--json"
     ]);
     const contract = JSON.parse(exported.stdout).contract;
