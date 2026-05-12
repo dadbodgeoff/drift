@@ -496,10 +496,23 @@ function scanStatusPayload(
   }
   const scans = storage.listScanManifests(repoId);
   const latestScan = scans[0] ?? null;
-  const invalidationReasons = latestScan ? scanInvalidationReasons(latestScan) : [];
   const policy = optionalAuthorizedMcpPolicy(storage, repoId);
+  const snapshots = latestScan ? storage.listFileSnapshots(repoId, latestScan.id) : [];
+  const repoRootMissing = !existsSync(repo.root_path);
+  const invalidationReasons = latestScan
+    ? [
+        ...(repoRootMissing ? ["repo_root_missing"] : []),
+        ...scanInvalidationReasons(latestScan)
+      ]
+    : [];
   const changes = latestScan
-    ? compareSnapshotsToCurrentFiles(repo.root_path, storage.listFileSnapshots(repoId, latestScan.id))
+    ? repoRootMissing
+      ? {
+          added: [],
+          modified: [],
+          deleted: snapshots.map((snapshot) => snapshot.file_path).sort()
+        }
+      : compareSnapshotsToCurrentFiles(repo.root_path, snapshots)
     : emptyChanges();
 
   return {
