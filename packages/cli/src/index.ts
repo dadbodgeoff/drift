@@ -1644,6 +1644,9 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
         if (!isForbiddenImport(importUsed.value, convention.matcher.forbidden_imports ?? [])) {
           continue;
         }
+        if (isExceptedImport(filePath, importUsed.name, importUsed.value, convention)) {
+          continue;
+        }
 
         const diffStatus = diffStatusFor(filePath, importUsed.start_line, parsedDiff, scope);
         const fingerprint = findingFingerprint(
@@ -1833,6 +1836,9 @@ function runFullRepoCheck(
       const source = readFileSync(join(repo.root_path, filePath), "utf8");
       for (const importUsed of extractImports(source)) {
         if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
+          continue;
+        }
+        if (isExceptedImport(filePath, importUsed.name, importUsed.source, convention)) {
           continue;
         }
 
@@ -3998,6 +4004,19 @@ function isApiRoutePath(filePath: string): boolean {
 function isExceptedPath(filePath: string, convention: AcceptedConvention): boolean {
   return convention.exceptions.some((exception) =>
     (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob))
+  );
+}
+
+function isExceptedImport(
+  filePath: string,
+  symbol: string,
+  importSource: string,
+  convention: AcceptedConvention
+): boolean {
+  return convention.exceptions.some((exception) =>
+    (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob)) ||
+    (exception.symbols ?? []).includes(symbol) ||
+    (exception.imports ?? []).includes(importSource)
   );
 }
 

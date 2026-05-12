@@ -973,6 +973,64 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("honors import and symbol convention exceptions during checks", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    await mkdir(join(repoRoot, "apps/web/app/api/projects"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/projects/route.ts"),
+      [
+        "import { db } from \"@/lib/db\";",
+        "export async function GET() {",
+        "  return Response.json(await db.project.findMany());",
+        "}",
+        ""
+      ].join("\n")
+    );
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const convention = storage.listAcceptedConventions("repo_abc")[0]!;
+    const updatedConvention = {
+      ...convention,
+      matcher: {
+        ...convention.matcher,
+        forbidden_imports: ["@/lib/prisma", "@/lib/db"]
+      },
+      exceptions: [
+        {
+          id: "exception_prisma_import",
+          reason: "Legacy Prisma route is allowed temporarily.",
+          imports: ["@/lib/prisma"],
+          created_by: "geoff",
+          created_at: "2026-05-10T00:00:20.000Z"
+        },
+        {
+          id: "exception_db_symbol",
+          reason: "Legacy db symbol is allowed temporarily.",
+          symbols: ["db"],
+          created_by: "geoff",
+          created_at: "2026-05-10T00:00:20.000Z"
+        }
+      ]
+    };
+    storage.upsertAcceptedConvention("repo_abc", updatedConvention);
+    storage.upsertRepoContract({
+      ...storage.getRepoContract("repo_abc")!,
+      conventions: [updatedConvention]
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", "repo_abc",
+      "--scope", "full",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).summary.findings_count).toBe(0);
+  });
+
   it("reports deleted diff files as skipped instead of active findings", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "deleted.patch");
