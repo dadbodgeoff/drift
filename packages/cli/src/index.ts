@@ -1503,6 +1503,9 @@ function revokeAgentPermission(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const contract = requiredRepoContract(storage, repoId);
   const agent = requiredFlag(parsed, "agent");
   const revokeAll = parsed.flags.has("all");
+  if (revokeAll && parsed.flags.has("permission")) {
+    throw new Error("Use either --all or --permission, not both.");
+  }
   const permission = revokeAll ? undefined : agentPermissionFlag(parsed, "permission");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";

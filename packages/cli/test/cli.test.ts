@@ -3493,6 +3493,24 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("rejects ambiguous revoke all with a specific permission", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "agent", "revoke",
+      "--repo", "repo_abc",
+      "--agent", "codex",
+      "--all",
+      "--permission", "request_preflight",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Use either --all or --permission, not both");
+  });
+
   it("lists required checks and safe commands from the repo contract", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
