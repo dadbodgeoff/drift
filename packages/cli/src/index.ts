@@ -1813,6 +1813,12 @@ function runFullRepoCheck(
   if (!contract) {
     return [];
   }
+  const latestScan = storage.listScanManifests(repoId).find((scan) => scan.status === "completed");
+  const snapshotsByPath = new Map(
+    latestScan
+      ? storage.listFileSnapshots(repoId, latestScan.id).map((snapshot) => [snapshot.file_path, snapshot])
+      : []
+  );
 
   const findings: Finding[] = [];
   for (const convention of contract.conventions) {
@@ -1831,6 +1837,7 @@ function runFullRepoCheck(
         }
 
         const fingerprint = findingFingerprint(convention.id, filePath, importUsed.name, importUsed.source);
+        const snapshot = snapshotsByPath.get(filePath);
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
           repo_id: repoId,
@@ -1842,7 +1849,19 @@ function runFullRepoCheck(
           enforcement_result: enforcementResultFor(convention.enforcement_mode),
           status: "new",
           diff_status: "touched_existing",
-          evidence_refs: [],
+          evidence_refs: [{
+            id: `evidence_${fingerprint.slice(0, 16)}`,
+            kind: "violation",
+            file_path: filePath,
+            start_line: importUsed.line,
+            end_line: importUsed.line,
+            symbol: importUsed.name,
+            import_source: importUsed.source,
+            fact_ids: [],
+            scan_id: latestScan?.id ?? `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
+            file_hash: snapshot?.content_hash ?? fileContentHash(join(repo.root_path, filePath)),
+            redaction_state: "none"
+          }],
           created_at: now
         };
         storage.upsertFinding(finding);

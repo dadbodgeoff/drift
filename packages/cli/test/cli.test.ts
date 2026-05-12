@@ -708,6 +708,17 @@ describe("drift CLI convention review", () => {
     storage.migrate();
     expect(storage.getRepoContract(repoId!)?.conventions).toHaveLength(1);
     expect(storage.listBaselineViolations(repoId!)[0]?.status).toBe("active");
+    expect(storage.listFindings(repoId!)[0]?.evidence_refs[0]).toMatchObject({
+      kind: "violation",
+      file_path: "apps/web/app/api/users/route.ts",
+      start_line: 1,
+      end_line: 1,
+      symbol: "prisma",
+      import_source: "@/lib/prisma",
+      redaction_state: "none"
+    });
+    expect(storage.listFindings(repoId!)[0]?.evidence_refs[0]?.scan_id).toMatch(/^scan_/);
+    expect(storage.listFindings(repoId!)[0]?.evidence_refs[0]?.file_hash).toHaveLength(64);
     storage.close();
   });
 
