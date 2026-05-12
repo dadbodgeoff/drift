@@ -1210,10 +1210,15 @@ function showContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandP
 function validateContract(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
   const contract = requiredRepoContract(storage, repoId);
+  const policy = authorizeContextExport(contract, "contract-export");
+  if (!policy.allowed) {
+    throw new Error(`Policy denied contract validate: ${policy.reason}`);
+  }
   RepoContractSchema.parse(contract);
   const payload = {
     valid: true,
     repo_id: repoId,
+    policy,
     contract_id: contract.id,
     schema_version: contract.contract_schema_version,
     convention_count: contract.conventions.length
