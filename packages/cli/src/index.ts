@@ -1636,7 +1636,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
 
     const files = filesForConvention(parsedDiff, convention, scope);
     for (const filePath of files) {
-      if (!isApiRoutePath(filePath) || isExceptedPath(filePath, convention)) {
+      if (!isApiRoutePath(filePath) || isExceptedPath(filePath, convention, now)) {
         continue;
       }
 
@@ -1644,7 +1644,7 @@ function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPaylo
         if (!isForbiddenImport(importUsed.value, convention.matcher.forbidden_imports ?? [])) {
           continue;
         }
-        if (isExceptedImport(filePath, importUsed.name, importUsed.value, convention)) {
+        if (isExceptedImport(filePath, importUsed.name, importUsed.value, convention, now)) {
           continue;
         }
 
@@ -1830,7 +1830,7 @@ function runFullRepoCheck(
     }
 
     for (const filePath of filesForConvention(diff, convention, "full")) {
-      if (isExceptedPath(filePath, convention)) {
+      if (isExceptedPath(filePath, convention, now)) {
         continue;
       }
       const source = readFileSync(join(repo.root_path, filePath), "utf8");
@@ -1838,7 +1838,7 @@ function runFullRepoCheck(
         if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
           continue;
         }
-        if (isExceptedImport(filePath, importUsed.name, importUsed.source, convention)) {
+        if (isExceptedImport(filePath, importUsed.name, importUsed.source, convention, now)) {
           continue;
         }
 
@@ -4001,8 +4001,9 @@ function isApiRoutePath(filePath: string): boolean {
   );
 }
 
-function isExceptedPath(filePath: string, convention: AcceptedConvention): boolean {
+function isExceptedPath(filePath: string, convention: AcceptedConvention, now: string): boolean {
   return convention.exceptions.some((exception) =>
+    isActiveException(exception, now) &&
     (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob))
   );
 }
@@ -4011,13 +4012,24 @@ function isExceptedImport(
   filePath: string,
   symbol: string,
   importSource: string,
-  convention: AcceptedConvention
+  convention: AcceptedConvention,
+  now: string
 ): boolean {
   return convention.exceptions.some((exception) =>
-    (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob)) ||
-    (exception.symbols ?? []).includes(symbol) ||
-    (exception.imports ?? []).includes(importSource)
+    isActiveException(exception, now) &&
+    (
+      (exception.path_globs ?? []).some((glob) => matchesGlob(filePath, glob)) ||
+      (exception.symbols ?? []).includes(symbol) ||
+      (exception.imports ?? []).includes(importSource)
+    )
   );
+}
+
+function isActiveException(
+  exception: AcceptedConvention["exceptions"][number],
+  now: string
+): boolean {
+  return !exception.expires_at || exception.expires_at > now;
 }
 
 function enforcementResultFor(mode: EnforcementMode): Finding["enforcement_result"] {
