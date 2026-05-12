@@ -2403,6 +2403,52 @@ describe("drift CLI convention review", () => {
     expect(invalidMode.stderr).toContain("--mode must be");
   });
 
+  it("refuses to accept non-deterministic conventions as blocking rules", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertConventionCandidate({
+      id: "candidate_service_delegation",
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      kind: "api_route_requires_service_delegation",
+      statement: "API routes should delegate through service modules.",
+      scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+      matcher: {
+        kind: "api_route_requires_service_delegation",
+        allowed_delegate_imports: ["@/services/users"],
+        applies_to_file_roles: ["api_route"]
+      },
+      suggested_severity: "warning",
+      suggested_enforcement_mode: "warn",
+      enforcement_capability: "heuristic_check",
+      confidence_label: "medium",
+      scoring: {
+        supporting_examples_count: 4,
+        counterexamples_count: 1,
+        scope_files_count: 5,
+        coverage_ratio: 0.8,
+        heuristic_id: "api-route-service-delegation-v1"
+      },
+      evidence_refs: [],
+      counterexample_refs: [],
+      status: "candidate",
+      created_at: "2026-05-10T00:00:01.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_service_delegation",
+      "--mode", "block",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Only deterministic conventions can use --mode block");
+  });
+
   it("rejects a candidate and audits the reason", async () => {
     const databasePath = await seedDatabase();
 

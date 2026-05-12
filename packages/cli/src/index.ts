@@ -1503,6 +1503,9 @@ function acceptCandidate(
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const severity = optionalSeverityFlag(parsed, "severity") ?? candidate.suggested_severity;
   const mode = optionalEnforcementModeFlag(parsed, "mode") ?? candidate.suggested_enforcement_mode;
+  if (mode === "block" && candidate.enforcement_capability !== "deterministic_check") {
+    throw new Error("Only deterministic conventions can use --mode block. Use --mode warn, brief, or off for heuristic/briefing conventions.");
+  }
   const contractId = storage.getRepoContract(candidate.repo_id)?.id ?? contractIdForRepo(candidate.repo_id);
   const convention: AcceptedConvention = {
     id: conventionIdForCandidate(candidate.id),
