@@ -1008,11 +1008,14 @@ function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayl
     throw new Error(`Policy denied audit output: ${policy.reason}`);
   }
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
+  const action = optionalAuditActionFlag(parsed, "action");
   const events = storage
     .listAuditEvents(repoId)
+    .filter((event) => !action || event.action === action)
     .slice(-(limit ?? Number.POSITIVE_INFINITY));
   const payload = {
     repo_id: repoId,
+    action: action ?? null,
     policy,
     count: events.length,
     events
@@ -2109,6 +2112,43 @@ function agentPermissionFlag(
     return value;
   }
   throw new Error("--permission must be read_context, request_preflight, or propose_resolution.");
+}
+
+function optionalAuditActionFlag(parsed: ParsedArgs, name: string): AuditEvent["action"] | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) {
+    return undefined;
+  }
+  if (isAuditAction(value)) {
+    return value;
+  }
+  throw new Error(`--${name} must be ${AUDIT_ACTIONS.join(", ")}.`);
+}
+
+const AUDIT_ACTIONS = [
+  "repo_added",
+  "scan_started",
+  "scan_completed",
+  "scan_failed",
+  "election_accepted",
+  "election_rejected",
+  "election_edited",
+  "finding_resolved",
+  "finding_suppressed",
+  "policy_changed",
+  "agent_permission_changed",
+  "backup_created",
+  "restore_completed",
+  "contract_exported",
+  "contract_imported",
+  "adapter_upgraded",
+  "scan_invalidated",
+  "baseline_created",
+  "baseline_cleared"
+] as const satisfies readonly AuditEvent["action"][];
+
+function isAuditAction(value: string): value is AuditEvent["action"] {
+  return (AUDIT_ACTIONS as readonly string[]).includes(value);
 }
 
 function optionalFindingStatusFlag(parsed: ParsedArgs, name: string): FindingStatus | undefined {
@@ -3889,9 +3929,10 @@ function helpText(parsed: ParsedArgs): string {
       "Usage:",
       "  drift --db <path> audit list --repo <repo_id> --json",
       "  drift --db <path> audit list --repo <repo_id> --limit 20 --json",
+      "  drift --db <path> audit list --repo <repo_id> --action policy_changed --json",
       "",
       "Notes:",
-      "  audit list is read-only and returns append-only governance events.",
+      "  audit list is read-only and can filter append-only governance events by action.",
       ""
     ].join("\n");
   }

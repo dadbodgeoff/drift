@@ -2080,6 +2080,56 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("filters audit events by action", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.appendAuditEvent({
+      id: "audit_event_policy",
+      repo_id: "repo_abc",
+      actor: "geoff",
+      action: "policy_changed",
+      target_type: "policy",
+      target_id: "contract_abc:context_egress",
+      metadata: {},
+      created_at: "2026-05-10T00:00:03.000Z"
+    });
+    storage.appendAuditEvent({
+      id: "audit_event_finding",
+      repo_id: "repo_abc",
+      actor: "geoff",
+      action: "finding_resolved",
+      target_type: "finding",
+      target_id: "finding_abc",
+      metadata: {},
+      created_at: "2026-05-10T00:00:04.000Z"
+    });
+    storage.close();
+
+    const filtered = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--action", "policy_changed",
+      "--json"
+    ]);
+    const invalid = await runCli([
+      "--db", databasePath,
+      "audit", "list",
+      "--repo", "repo_abc",
+      "--action", "not_real",
+      "--json"
+    ]);
+
+    expect(filtered.exitCode).toBe(0);
+    expect(JSON.parse(filtered.stdout).action).toBe("policy_changed");
+    expect(JSON.parse(filtered.stdout).events.map((event: { action: string }) => event.action)).toEqual([
+      "policy_changed"
+    ]);
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.stderr).toContain("--action must be");
+  });
+
   it("denies audit list when repo policy requires approval", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
