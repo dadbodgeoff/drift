@@ -170,6 +170,35 @@ describe("core domain", () => {
     })).toThrow();
   });
 
+  it("rejects unsafe risky area path globs in repo contracts", () => {
+    expect(() => RepoContractSchema.parse({
+      id: "contract_abc",
+      repo_id: "repo_abc",
+      contract_schema_version: 1,
+      repo_fingerprint: "repo-fingerprint",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z",
+      conventions: [],
+      rejected_inferences: [],
+      waivers: [],
+      risky_areas: [{
+        id: "risk_escape",
+        path_globs: ["../billing/**"],
+        risk_kind: "billing",
+        reason: "Bad risky area."
+      }],
+      safe_commands: [],
+      required_checks: [],
+      context_egress: {
+        default_mode: "local_only",
+        denied_globs: [".env*"],
+        max_snippet_chars: 1200,
+        allow_full_file_content: false
+      },
+      agent_permissions: []
+    })).toThrow();
+  });
+
   it("authorizes context export from repo policy in one shared place", () => {
     const contract = RepoContractSchema.parse({
       id: "contract_abc",

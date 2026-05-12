@@ -286,7 +286,7 @@ export const FindingSchema = z.object({
 
 export const RiskAreaSchema = z.object({
   id: z.string().min(1),
-  path_globs: z.array(z.string().min(1)),
+  path_globs: z.array(RepoRelativePatternSchema),
   risk_kind: z.enum([
     "auth",
     "billing",
