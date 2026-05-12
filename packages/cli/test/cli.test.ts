@@ -1967,6 +1967,72 @@ describe("drift CLI convention review", () => {
     expect(result.stderr).toContain("--evidence must be formatted as <file>:<line>");
   });
 
+  it("requires mark-fixed evidence paths to be repo-relative", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "mark-fixed",
+      "finding_abc",
+      "--repo", "repo_abc",
+      "--evidence", "../secrets.env:12",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--evidence file must be repo-relative");
+  });
+
+  it("requires mark-fixed evidence lines to be positive", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "mark-fixed",
+      "finding_abc",
+      "--repo", "repo_abc",
+      "--evidence", "apps/web/app/api/users/route.ts:0",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--evidence line must be positive");
+  });
+
   it("supports governance finding resolutions with reasons and audit events", async () => {
     const databasePath = await seedDatabase();
     const storage = openDriftStorage({ databasePath });
@@ -2153,6 +2219,39 @@ describe("drift CLI convention review", () => {
     expect(checked.listFindings("repo_abc")[0]?.status).toBe("fixed");
     expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
     checked.close();
+  });
+
+  it("requires non-empty reasons for governance finding resolutions", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertFinding({
+      id: "finding_abc",
+      repo_id: "repo_abc",
+      convention_id: "convention_no_direct_db",
+      fingerprint: "finding-fp",
+      title: "API route imports data access directly",
+      message: "Route imports prisma directly.",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff",
+      evidence_refs: [],
+      created_at: "2026-05-10T00:00:02.000Z"
+    });
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "findings", "suppress",
+      "finding_abc",
+      "--repo", "repo_abc",
+      "--reason", "   ",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--reason must not be empty");
   });
 
   it("refuses finding resolution commands for an unknown repo id", async () => {
@@ -4170,6 +4269,21 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("requires non-empty reasons when rejecting convention candidates", async () => {
+    const databasePath = await seedDatabase();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "reject",
+      "candidate_no_direct_db",
+      "--reason", "   ",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--reason must not be empty");
+  });
+
   it("does not audit no-op candidate rejection", async () => {
     const databasePath = await seedDatabase();
 
@@ -5123,6 +5237,29 @@ describe("drift CLI convention review", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("--path must be repo-relative.");
+  });
+
+  it("requires non-empty reasons for convention exceptions", async () => {
+    const databasePath = await seedDatabase();
+    await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--json"
+    ]);
+
+    const result = await runCli([
+      "--db", databasePath,
+      "conventions", "exception", "add",
+      "convention_no_direct_db",
+      "--repo", "repo_abc",
+      "--path", "apps/web/app/api/health/**",
+      "--reason", "   ",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--reason must not be empty");
   });
 
   it("refuses convention exceptions for an unknown repo id", async () => {

@@ -918,9 +918,7 @@ function markFindingFixed(
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
   const evidence = requiredFlag(parsed, "evidence");
-  if (!isFileLineEvidence(evidence)) {
-    throw new Error("--evidence must be formatted as <file>:<line>.");
-  }
+  validateFileLineEvidence(evidence);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const finding = storage.listFindings(repoId).find((entry) => entry.id === findingId);
@@ -983,7 +981,7 @@ function resolveFindingWithReason(
 ): CommandPayload {
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
-  const reason = requiredFlag(parsed, "reason");
+  const reason = requiredNonEmptyFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const finding = storage.listFindings(repoId).find((entry) => entry.id === findingId);
@@ -2862,7 +2860,7 @@ function rejectCandidate(
   const candidate = requiredCandidate(storage, candidateId);
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
-  const reason = requiredFlag(parsed, "reason");
+  const reason = requiredNonEmptyFlag(parsed, "reason");
   if (candidate.status === "rejected") {
     return { candidate, changed: false };
   }
@@ -2955,7 +2953,7 @@ function addConventionException(
   if (!isRepoRelativePolicyPattern(path)) {
     throw new Error("--path must be repo-relative.");
   }
-  const reason = requiredFlag(parsed, "reason");
+  const reason = requiredNonEmptyFlag(parsed, "reason");
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = stringFlag(parsed, "actor") ?? "local-user";
   const convention = storage
@@ -4633,6 +4631,14 @@ function requiredFlag(parsed: ParsedArgs, key: string): string {
   return requiredValue(stringFlag(parsed, key), `--${key}`);
 }
 
+function requiredNonEmptyFlag(parsed: ParsedArgs, key: string): string {
+  const value = requiredFlag(parsed, key).trim();
+  if (!value) {
+    throw new Error(`--${key} must not be empty.`);
+  }
+  return value;
+}
+
 function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | undefined {
   const value = stringFlag(parsed, key);
   if (!value) {
@@ -4645,8 +4651,18 @@ function optionalPositiveIntegerFlag(parsed: ParsedArgs, key: string): number | 
   return parsedValue;
 }
 
-function isFileLineEvidence(value: string): boolean {
-  return /^[^:\n]+:\d+$/.test(value);
+function validateFileLineEvidence(value: string): void {
+  const match = /^([^:\n]+):(\d+)$/.exec(value);
+  if (!match) {
+    throw new Error("--evidence must be formatted as <file>:<line>.");
+  }
+  const [, filePath, rawLine] = match;
+  if (!isRepoRelativePolicyPattern(filePath)) {
+    throw new Error("--evidence file must be repo-relative.");
+  }
+  if (Number(rawLine) <= 0) {
+    throw new Error("--evidence line must be positive.");
+  }
 }
 
 function isRepoRelativePolicyPattern(value: string): boolean {
