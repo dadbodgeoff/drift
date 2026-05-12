@@ -1303,6 +1303,50 @@ describe("drift CLI convention review", () => {
     expect(JSON.parse(status.stdout).active_count).toBe(1);
   });
 
+  it("does not baseline governed or resolved findings", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    for (const finding of [
+      ["finding_new", "finding-new-fp", "new"],
+      ["finding_suppressed", "finding-suppressed-fp", "suppressed"],
+      ["finding_accepted", "finding-accepted-fp", "accepted_drift"],
+      ["finding_false_positive", "finding-false-positive-fp", "false_positive"],
+      ["finding_fixed", "finding-fixed-fp", "fixed"]
+    ] as const) {
+      storage.upsertFinding({
+        id: finding[0],
+        repo_id: "repo_abc",
+        convention_id: "convention_no_direct_db",
+        fingerprint: finding[1],
+        title: "API route imports data access directly",
+        message: "Route imports prisma directly.",
+        severity: "error",
+        enforcement_result: "block",
+        status: finding[2],
+        diff_status: "new_in_diff",
+        evidence_refs: [],
+        created_at: "2026-05-10T00:00:02.000Z"
+      });
+    }
+    storage.close();
+
+    const created = await runCli([
+      "--db", databasePath,
+      "baseline", "create",
+      "--repo", "repo_abc",
+      "--from", "main",
+      "--now", "2026-05-10T00:00:31.000Z",
+      "--json"
+    ]);
+
+    expect(created.exitCode).toBe(0);
+    expect(JSON.parse(created.stdout).created_count).toBe(1);
+    expect(JSON.parse(created.stdout).baseline.map((entry: { finding_fingerprint: string }) =>
+      entry.finding_fingerprint
+    )).toEqual(["finding-new-fp"]);
+  });
+
   it("refuses baseline status and clear for an unknown repo id", async () => {
     const databasePath = await seedDatabase();
 

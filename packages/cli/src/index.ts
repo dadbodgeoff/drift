@@ -1908,6 +1908,10 @@ function createBaselineForFindings(
     .listBaselineViolations(repoId)
     .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
   for (const finding of findings) {
+    if (!isBaselineEligibleFinding(finding)) {
+      continue;
+    }
+
     const baselineKey = baselineViolationKey(finding.convention_id, finding.fingerprint);
     if (existingBaselines.has(baselineKey)) {
       continue;
@@ -2615,7 +2619,7 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     .listBaselineViolations(repoId)
     .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
   for (const finding of storage.listFindings(repoId)) {
-    if (finding.status === "fixed" || finding.status === "false_positive") {
+    if (!isBaselineEligibleFinding(finding)) {
       continue;
     }
 
@@ -2654,6 +2658,15 @@ function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs): {
     created_count: createdCount,
     baseline: storage.listBaselineViolations(repoId)
   };
+}
+
+function isBaselineEligibleFinding(finding: Finding): boolean {
+  return ![
+    "fixed",
+    "false_positive",
+    "suppressed",
+    "accepted_drift"
+  ].includes(finding.status);
 }
 
 function baselineStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): {
