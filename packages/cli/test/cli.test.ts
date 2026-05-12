@@ -2914,6 +2914,54 @@ describe("drift CLI convention review", () => {
     checked.close();
   });
 
+  it("removes accepted conventions absent from a confirmed contract import", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const dir = await mkdtemp(join(tmpdir(), "drift-contract-import-removal-"));
+    tempDirs.push(dir);
+    const contractPath = join(dir, "contract.json");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    const extraConvention = {
+      ...contract.conventions[0]!,
+      id: "convention_extra",
+      statement: "Extra convention should be removed by import.",
+      accepted_at: "2026-05-10T00:00:39.000Z",
+      updated_at: "2026-05-10T00:00:39.000Z"
+    };
+    storage.upsertAcceptedConvention("repo_abc", extraConvention);
+    storage.upsertRepoContract({
+      ...contract,
+      conventions: [...contract.conventions, extraConvention],
+      updated_at: "2026-05-10T00:00:39.000Z"
+    });
+    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    storage.close();
+
+    const imported = await runCli([
+      "--db", databasePath,
+      "contract", "import",
+      contractPath,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--now", "2026-05-10T00:00:41.000Z",
+      "--json"
+    ]);
+
+    expect(imported.exitCode).toBe(0);
+    expect(JSON.parse(imported.stdout)).toMatchObject({
+      imported: true,
+      removed_convention_count: 1
+    });
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.listAcceptedConventions("repo_abc").map((convention) => convention.id)).toEqual([
+      "convention_no_direct_db"
+    ]);
+    checked.close();
+  });
+
   it("returns a nonzero dry-run import result for incompatible contracts", async () => {
     const databasePath = await seedDatabase();
     await runCli([

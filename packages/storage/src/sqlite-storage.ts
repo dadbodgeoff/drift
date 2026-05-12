@@ -409,6 +409,15 @@ export class SqliteDriftStorage {
       .map(acceptedConventionFromRow);
   }
 
+  deleteAcceptedConventionsExcept(repoId: string, conventionIds: string[]): number {
+    const placeholders = conventionIds.map(() => "?").join(", ");
+    const sql = conventionIds.length > 0
+      ? `DELETE FROM accepted_conventions WHERE repo_id = ? AND id NOT IN (${placeholders})`
+      : "DELETE FROM accepted_conventions WHERE repo_id = ?";
+    const result = this.db.prepare(sql).run(repoId, ...conventionIds);
+    return result.changes;
+  }
+
   upsertRepoContract(contract: RepoContract): void {
     const parsed = RepoContractSchema.parse(contract);
     this.db

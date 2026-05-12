@@ -1462,6 +1462,10 @@ function importContractDryRun(
     };
   }
 
+  storage.deleteAcceptedConventionsExcept(
+    expectedRepoId,
+    contract.conventions.map((convention) => convention.id)
+  );
   for (const convention of contract.conventions) {
     storage.upsertAcceptedConvention(expectedRepoId, convention);
   }
