@@ -15,12 +15,18 @@ const tempDirs: string[] = [];
 async function seedMcpDatabase(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "drift-mcp-"));
   tempDirs.push(dir);
+  const repoRoot = join(dir, "repo");
+  await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+  await writeFile(
+    join(repoRoot, "apps/web/app/api/users/route.ts"),
+    "export async function GET() { return Response.json({ ok: true }); }\n"
+  );
   const databasePath = join(dir, "drift.sqlite");
   const storage = openDriftStorage({ databasePath });
   storage.migrate();
   storage.upsertRepo({
     id: "repo_abc",
-    root_path: "/repo",
+    root_path: repoRoot,
     fingerprint: "repo-fp",
     created_at: "2026-05-10T00:00:00.000Z",
     updated_at: "2026-05-10T00:00:00.000Z"
@@ -73,7 +79,12 @@ async function seedMcpDatabase(): Promise<string> {
     conventions: [convention],
     rejected_inferences: [],
     waivers: [],
-    risky_areas: [],
+    risky_areas: [{
+      id: "risk_user_api",
+      path_globs: ["apps/web/app/api/users/**"],
+      risk_kind: "data_access",
+      reason: "User API routes touch persisted user data."
+    }],
     safe_commands: [{
       command: "pnpm test",
       reason: "Run project tests after changing API routes.",
@@ -240,6 +251,11 @@ describe("read-only MCP handlers", () => {
       },
       baseline: { active_count: 1 },
       findings: [{ id: "finding_abc" }],
+      risky_areas: [{
+        id: "risk_user_api",
+        risk_kind: "data_access",
+        reason: "User API routes touch persisted user data."
+      }],
       required_checks: [{ command: "drift check --diff main...HEAD" }],
       safe_commands: [{ command: "pnpm test" }],
       redactions: {

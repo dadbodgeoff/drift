@@ -159,6 +159,11 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
 
     get_task_preflight: ({ repo_id, task }) => withStorage(options, (storage) => {
       const { contract, policy } = requiredAuthorizedMcpContract(storage, repo_id);
+      const relevantFiles = relevantFilesForTask({
+        repoRoot: storage.getRepo(repo_id)!.root_path,
+        task,
+        contract
+      });
       return {
         repo_id,
         task,
@@ -183,11 +188,8 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         findings: storage.listFindings(repo_id).filter((finding) =>
           !["fixed", "false_positive", "suppressed"].includes(finding.status)
         ),
-        relevant_files: relevantFilesForTask({
-          repoRoot: storage.getRepo(repo_id)!.root_path,
-          task,
-          contract
-        }),
+        relevant_files: relevantFiles,
+        risky_areas: riskyAreasForFiles(contract, relevantFiles),
         required_checks: contract.required_checks,
         safe_commands: contract.safe_commands,
         redactions: {
@@ -693,6 +695,18 @@ function relevantFileForPath(
     roles: [...roles].sort(),
     reasons: [...reasons].sort()
   };
+}
+
+function riskyAreasForFiles(
+  contract: RepoContract,
+  relevantFiles: RelevantFile[]
+): RepoContract["risky_areas"] {
+  const relevantPaths = relevantFiles.map((file) => file.path);
+  return contract.risky_areas.filter((area) =>
+    relevantPaths.some((filePath) =>
+      area.path_globs.some((glob) => matchesPolicyGlob(filePath, glob))
+    )
+  );
 }
 
 function tokenizeTask(task: string): Set<string> {
