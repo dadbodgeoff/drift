@@ -442,6 +442,30 @@ describe("read-only MCP handlers", () => {
     });
   });
 
+  it("omits expired conventions from MCP preflight", async () => {
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const convention = storage.listAcceptedConventions("repo_abc")[0]!;
+    const expiredConvention = {
+      ...convention,
+      expires_at: "2026-05-10T00:00:20.000Z"
+    };
+    storage.upsertAcceptedConvention("repo_abc", expiredConvention);
+    storage.upsertRepoContract({
+      ...storage.getRepoContract("repo_abc")!,
+      conventions: [expiredConvention]
+    });
+    storage.close();
+
+    const preflight = createReadOnlyMcpHandlers({ databasePath })
+      .get_task_preflight({ repo_id: "repo_abc", task: "add users route" }) as {
+        conventions: unknown[];
+      };
+
+    expect(preflight.conventions).toEqual([]);
+  });
+
   it("denies MCP repo context when policy requires approval", async () => {
     const databasePath = await seedMcpDatabase();
     const storage = openDriftStorage({ databasePath });

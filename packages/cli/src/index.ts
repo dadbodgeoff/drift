@@ -795,7 +795,10 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
     throw new Error(`Policy denied prepare output: ${policy.reason}`);
   }
 
-  const conventions = contract.conventions.map(preparedConvention);
+  const activeConventions = contract.conventions.filter((convention) =>
+    isActiveConvention(convention, now)
+  );
+  const conventions = activeConventions.map(preparedConvention);
   const findings = storage
     .listFindings(repoId)
     .filter((finding) => !["fixed", "false_positive", "suppressed"].includes(finding.status))
@@ -812,7 +815,7 @@ function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPa
   const relevantFiles = relevantFilesForTask({
     repoRoot: repo.root_path,
     task,
-    contract
+    contract: { ...contract, conventions: activeConventions }
   });
   const riskyAreas = riskyAreasForFiles(contract, relevantFiles);
   const redactions = {

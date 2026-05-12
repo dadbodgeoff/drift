@@ -2594,6 +2594,35 @@ describe("drift CLI convention review", () => {
     });
   });
 
+  it("omits expired conventions from prepare output", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const convention = storage.listAcceptedConventions("repo_abc")[0]!;
+    const expiredConvention = {
+      ...convention,
+      expires_at: "2026-05-10T00:00:20.000Z"
+    };
+    storage.upsertAcceptedConvention("repo_abc", expiredConvention);
+    storage.upsertRepoContract({
+      ...storage.getRepoContract("repo_abc")!,
+      conventions: [expiredConvention]
+    });
+    storage.close();
+
+    const prepared = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "add user endpoint",
+      "--repo", "repo_abc",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout).conventions).toEqual([]);
+  });
+
   it("infers database path and repo id from repo-root for common commands", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-ergonomic-"));
     tempDirs.push(dir);

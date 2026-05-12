@@ -159,10 +159,14 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
 
     get_task_preflight: ({ repo_id, task }) => withStorage(options, (storage) => {
       const { contract, policy } = requiredAuthorizedMcpContract(storage, repo_id);
+      const now = new Date().toISOString();
+      const activeConventions = contract.conventions.filter((convention) =>
+        !convention.expires_at || convention.expires_at > now
+      );
       const relevantFiles = relevantFilesForTask({
         repoRoot: storage.getRepo(repo_id)!.root_path,
         task,
-        contract
+        contract: { ...contract, conventions: activeConventions }
       });
       return {
         repo_id,
@@ -173,7 +177,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           schema_version: contract.contract_schema_version,
           updated_at: contract.updated_at
         },
-        conventions: contract.conventions.map((convention) => ({
+        conventions: activeConventions.map((convention) => ({
           id: convention.id,
           kind: convention.kind,
           statement: convention.statement,
