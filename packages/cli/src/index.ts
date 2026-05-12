@@ -286,6 +286,11 @@ interface RestoreStaleness {
   staleness_reason: "none" | "repo_root_missing" | "scan_missing";
 }
 
+interface RestoreRescanGuidance {
+  requires_rescan: boolean;
+  next_command: string | null;
+}
+
 interface DoctorCheck {
   id: string;
   label: string;
@@ -1093,6 +1098,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
     checksum_sha256: checksum,
     schema_version: schemaVersion,
     ...restoreStaleness!,
+    ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
     dry_run: dryRun,
     restored_at: dryRun ? null : now
   };
@@ -1130,6 +1136,7 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
       checksum_sha256: checksum,
       schema_version: restoredStorage.getAppliedMigrations().length,
       ...restoreStaleness!,
+      ...restoreRescanGuidance(repo, targetDatabasePath, restoreStaleness!),
       dry_run: false,
       restored_at: now
     };
@@ -1958,6 +1965,8 @@ function formatRestoreText(restore: {
   graph_stale?: boolean;
   source_changes?: ScanStatusChangeSet;
   staleness_reason?: string;
+  requires_rescan?: boolean;
+  next_command?: string | null;
   dry_run?: boolean;
   restored_at: string | null;
 }): string {
@@ -1975,6 +1984,8 @@ function formatRestoreText(restore: {
       ? `Source changes: +${restore.source_changes.added.length} ~${restore.source_changes.modified.length} -${restore.source_changes.deleted.length}`
       : "Source changes: unknown",
     restore.staleness_reason ? `Staleness reason: ${restore.staleness_reason}` : "",
+    `Requires rescan: ${restore.requires_rescan ?? "unknown"}`,
+    restore.next_command ? `Next command: ${restore.next_command}` : "",
     restore.dry_run ? "Dry run: true" : `Restored: ${restore.restored_at}`,
     ""
   ].filter((line) => line !== "").join("\n");
@@ -2777,6 +2788,23 @@ function restoreStalenessForRepo(
       sourceChanges.deleted.length > 0,
     source_changes: sourceChanges,
     staleness_reason: "none"
+  };
+}
+
+function restoreRescanGuidance(
+  repo: RepoRecord,
+  targetDatabasePath: string,
+  staleness: RestoreStaleness
+): RestoreRescanGuidance {
+  if (!staleness.graph_stale) {
+    return {
+      requires_rescan: false,
+      next_command: null
+    };
+  }
+  return {
+    requires_rescan: true,
+    next_command: `drift --db ${targetDatabasePath} scan --repo-root ${repo.root_path} --json`
   };
 }
 

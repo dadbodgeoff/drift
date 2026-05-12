@@ -1869,6 +1869,8 @@ describe("drift CLI convention review", () => {
     expect(restored.exitCode).toBe(0);
     expect(JSON.parse(restored.stdout).restore).toMatchObject({
       graph_stale: true,
+      requires_rescan: true,
+      next_command: `drift --db ${join(dir, "restored.sqlite")} scan --repo-root ${repoRoot} --json`,
       source_changes: {
         added: [],
         modified: ["apps/web/app/api/users/route.ts"],
