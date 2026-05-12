@@ -1300,6 +1300,24 @@ function setEgressPolicy(storage: SqliteDriftStorage, parsed: ParsedArgs): Comma
     current.allow_full_file_content !== nextPolicy.allow_full_file_content ? "allow_full_file_content" : undefined,
     JSON.stringify(current.denied_globs) !== JSON.stringify(nextPolicy.denied_globs) ? "denied_globs" : undefined
   ].filter((field): field is string => Boolean(field));
+  if (changedFields.length === 0) {
+    const payload = {
+      repo_id: repoId,
+      contract_id: contract.id,
+      policy: {
+        context_egress: current,
+        agent_permissions: contract.agent_permissions
+      },
+      changed_fields: changedFields
+    };
+    return {
+      payload: parsed.flags.has("json") ? payload : formatPolicyShowText({
+        repo_id: repoId,
+        policy: payload.policy,
+        guarded_surfaces: guardedSurfaces()
+      })
+    };
+  }
   const updatedContract: RepoContract = {
     ...contract,
     context_egress: nextPolicy,

@@ -2840,6 +2840,36 @@ describe("drift CLI convention review", () => {
     storage.close();
   });
 
+  it("does not audit no-op egress policy updates", async () => {
+    const { databasePath } = await seedAcceptedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const beforeUpdatedAt = storage.getRepoContract("repo_abc")?.updated_at;
+    const beforeAuditCount = storage.listAuditEvents("repo_abc").length;
+    storage.close();
+
+    const result = await runCli([
+      "--db", databasePath,
+      "policy", "set-egress",
+      "--repo", "repo_abc",
+      "--default-mode", "local_only",
+      "--max-snippet-chars", "1200",
+      "--deny-full-file-content",
+      "--confirm",
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).changed_fields).toEqual([]);
+
+    const checked = openDriftStorage({ databasePath });
+    checked.migrate();
+    expect(checked.getRepoContract("repo_abc")?.updated_at).toBe(beforeUpdatedAt);
+    expect(checked.listAuditEvents("repo_abc")).toHaveLength(beforeAuditCount);
+    checked.close();
+  });
+
   it("rejects unsafe policy deny globs", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
