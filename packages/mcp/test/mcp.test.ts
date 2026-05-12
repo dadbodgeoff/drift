@@ -293,6 +293,18 @@ describe("read-only MCP handlers", () => {
     expect(handlers.get_allowed_context({ repo_id: "repo_abc", path: ".env.local" })).toMatchObject({
       decision: { allowed: false, mode: "denied" }
     });
+    expect(handlers.get_allowed_context({
+      repo_id: "repo_abc",
+      path: "apps/web/app/api/users/route.ts",
+      requested_snippet_chars: 5000
+    } as never)).toMatchObject({
+      decision: {
+        allowed: true,
+        mode: "redacted",
+        max_snippet_chars: 1200,
+        approved_snippet_chars: 1200
+      }
+    });
     expect(() => handlers.get_allowed_context({
       repo_id: "repo_abc",
       path: "apps/web/app/api/users/route.ts",

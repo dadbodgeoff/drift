@@ -25,6 +25,7 @@ export interface DriftMcpHandlers {
     repo_id: string;
     path: string;
     surface?: PolicyDecision["surface"];
+    requested_snippet_chars?: number;
   }): unknown;
 }
 
@@ -132,7 +133,8 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
         surface: {
           type: "string",
           enum: ["cli-preflight", "cli-check", "mcp", "contract-export", "artifact", "log", "ui"]
-        }
+        },
+        requested_snippet_chars: { type: "number" }
       },
       required: ["repo_id", "path"],
       additionalProperties: false
@@ -224,7 +226,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       };
     }),
 
-    get_allowed_context: ({ repo_id, path, surface = "mcp" }) =>
+    get_allowed_context: ({ repo_id, path, surface = "mcp", requested_snippet_chars }) =>
       withStorage(options, (storage) => {
         requiredMcpRepo(storage, repo_id);
         const contract = requiredContract(storage.getRepoContract(repo_id), repo_id);
@@ -232,7 +234,10 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         return {
           repo_id,
           path,
-          decision: authorizeContextExport(contract, requestedSurface, { path })
+          decision: authorizeContextExport(contract, requestedSurface, {
+            path,
+            requested_snippet_chars
+          })
         };
       })
   };
