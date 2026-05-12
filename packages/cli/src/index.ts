@@ -3318,9 +3318,11 @@ function helpText(parsed: ParsedArgs): string {
       "  drift --db <path> contract validate --repo <repo_id> --json",
       "  drift --db <path> contract export --repo <repo_id> --format json --json",
       "  drift --db <path> contract import <path> --dry-run --json",
+      "  drift --db <path> contract import <path> --confirm --json",
       "",
       "Notes:",
-      "  import is dry-run only in this sprint; it validates portable contract JSON without mutating state.",
+      "  dry-run validates portable contract JSON without mutating state.",
+      "  confirmed import updates accepted conventions and the repo contract, then writes an audit event.",
       ""
     ].join("\n");
   }
@@ -3467,6 +3469,7 @@ function helpText(parsed: ParsedArgs): string {
     "  drift contract validate --repo <repo_id> --json",
     "  drift contract export --repo <repo_id> --format json --json",
     "  drift contract import <path> --dry-run --json",
+    "  drift contract import <path> --confirm --json",
     "  drift baseline create --repo <repo_id> --from main --json",
     "  drift baseline status --repo <repo_id> --json",
     "  drift policy show --repo <repo_id> --json",

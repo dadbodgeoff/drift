@@ -738,6 +738,7 @@ describe("drift CLI convention review", () => {
   it("prints focused command group help without requiring a database", async () => {
     const check = await runCli(["check", "--help"]);
     const conventions = await runCli(["conventions", "--help"]);
+    const contract = await runCli(["contract", "--help"]);
 
     expect(check.exitCode).toBe(0);
     expect(check.stdout).toContain("Run deterministic checks");
@@ -745,6 +746,9 @@ describe("drift CLI convention review", () => {
     expect(conventions.exitCode).toBe(0);
     expect(conventions.stdout).toContain("Review inferred conventions");
     expect(conventions.stdout).toContain("conventions exception add");
+    expect(contract.exitCode).toBe(0);
+    expect(contract.stdout).toContain("contract import <path> --confirm");
+    expect(contract.stdout).not.toContain("dry-run only");
   });
 
   it("checks accepted deterministic conventions against changed hunks and stores findings", async () => {
