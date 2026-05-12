@@ -262,6 +262,7 @@ export function handleMcpJsonRpcRequest(
         throw new Error(`Unknown read-only Drift MCP tool: ${name}`);
       }
 
+      validateMcpToolArguments(name, args);
       const result = handlers[name](args as never);
       return response(request.id, {
         content: [
@@ -377,6 +378,40 @@ function stringParam(input: Record<string, unknown>, key: string): string {
 
 function isReadOnlyToolName(name: string): name is keyof DriftMcpHandlers {
   return DRIFT_READ_ONLY_MCP_TOOLS.some((tool) => tool.name === name);
+}
+
+function validateMcpToolArguments(name: keyof DriftMcpHandlers, args: Record<string, unknown>): void {
+  const tool = DRIFT_READ_ONLY_MCP_TOOLS.find((entry) => entry.name === name);
+  if (!tool) {
+    throw new Error(`Unknown read-only Drift MCP tool: ${name}`);
+  }
+
+  for (const requiredField of tool.inputSchema.required) {
+    if (!(requiredField in args)) {
+      throw new Error(`Invalid arguments for ${name}: missing required field ${requiredField}.`);
+    }
+  }
+
+  if (tool.inputSchema.additionalProperties === false) {
+    for (const field of Object.keys(args)) {
+      if (!(field in tool.inputSchema.properties)) {
+        throw new Error(`Invalid arguments for ${name}: unexpected field ${field}.`);
+      }
+    }
+  }
+
+  for (const [field, schema] of Object.entries(tool.inputSchema.properties)) {
+    if (!(field in args)) {
+      continue;
+    }
+    const propertySchema = schema as { type?: string; enum?: string[] };
+    if (propertySchema.type === "string" && typeof args[field] !== "string") {
+      throw new Error(`Invalid arguments for ${name}: field ${field} must be a string.`);
+    }
+    if (propertySchema.enum && !propertySchema.enum.includes(args[field] as string)) {
+      throw new Error(`Invalid arguments for ${name}: field ${field} must be one of ${propertySchema.enum.join(", ")}.`);
+    }
+  }
 }
 
 function requiredContract(contract: RepoContract | undefined, repoId: string): RepoContract {

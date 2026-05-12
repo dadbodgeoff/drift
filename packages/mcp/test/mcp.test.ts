@@ -393,6 +393,29 @@ describe("read-only MCP handlers", () => {
         }
       }
     });
+    const missingRequired = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 5,
+      method: "tools/call",
+      params: {
+        name: "get_task_preflight",
+        arguments: {
+          repo_id: "repo_abc"
+        }
+      }
+    });
+    const extraArgument = handleMcpJsonRpcRequest({ databasePath }, {
+      jsonrpc: "2.0",
+      id: 6,
+      method: "tools/call",
+      params: {
+        name: "get_scan_status",
+        arguments: {
+          repo_id: "repo_abc",
+          mutate: true
+        }
+      }
+    });
 
     expect(initialized?.result).toMatchObject({
       capabilities: { tools: {} },
@@ -422,5 +445,7 @@ describe("read-only MCP handlers", () => {
       conventions: [{ id: "convention_no_direct_db" }]
     });
     expect(rejected?.error?.message).toContain("Unknown read-only Drift MCP tool");
+    expect(missingRequired?.error?.message).toContain("Invalid arguments for get_task_preflight: missing required field task.");
+    expect(extraArgument?.error?.message).toContain("Invalid arguments for get_scan_status: unexpected field mutate.");
   });
 });
