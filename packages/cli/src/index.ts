@@ -1189,6 +1189,9 @@ function restoreBackup(parsed: ParsedArgs): CommandPayload {
   if (!existsSync(backupPath)) {
     throw new Error(`Backup not found: ${backupPath}`);
   }
+  if (!statSync(backupPath).isFile()) {
+    throw new Error(`Backup path must be a file: ${backupPath}`);
+  }
   if (resolve(backupPath) === resolve(targetDatabasePath)) {
     throw new Error("Restore target must be different from the backup path.");
   }

@@ -3005,6 +3005,24 @@ describe("drift CLI convention review", () => {
     await expect(stat(targetDatabasePath)).rejects.toThrow();
   });
 
+  it("rejects restore backup paths that are directories before writing the target", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-restore-backup-dir-"));
+    tempDirs.push(dir);
+    const targetDatabasePath = join(dir, "restored.sqlite");
+
+    const restored = await runCli([
+      "--db", targetDatabasePath,
+      "restore", dir,
+      "--repo", "repo_abc",
+      "--confirm",
+      "--json"
+    ]);
+
+    expect(restored.exitCode).toBe(1);
+    expect(restored.stderr).toContain("Backup path must be a file");
+    await expect(stat(targetDatabasePath)).rejects.toThrow();
+  });
+
   it("prepares a compact read-only agent packet from the accepted contract", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-prepare-"));
     tempDirs.push(dir);
