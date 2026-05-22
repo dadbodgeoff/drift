@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { dirname, join, normalize } from "node:path";
 import { z } from "zod";
 
-export const FACTGRAPH_SCHEMA_VERSION = "factgraph.v1";
+export const FACTGRAPH_SCHEMA_VERSION = "factgraph.v2";
+export const SUPPORTED_FACTGRAPH_SCHEMA_VERSIONS = ["factgraph.v1", "factgraph.v2"] as const;
 
 export const GraphNodeKindSchema = z.enum([
   "repo",
@@ -16,6 +17,8 @@ export const GraphNodeKindSchema = z.enum([
   "import_decl",
   "export_decl",
   "callsite",
+  "data_store",
+  "data_operation",
   "route",
   "file_role",
   "diagnostic",
@@ -36,6 +39,8 @@ export const GraphEdgeKindSchema = z.enum([
   "ROUTE_DECLARED_IN_FILE",
   "ROUTE_HANDLED_BY_SYMBOL",
   "CALLSITE_REFERENCES_SYMBOL",
+  "DATA_OPERATION_READS_DATA_STORE",
+  "DATA_OPERATION_WRITES_DATA_STORE",
   "FINDING_HAS_EVIDENCE"
 ]);
 
@@ -102,7 +107,7 @@ export const AdapterManifestSchema = z.object({
 });
 
 export const FactGraphSchema = z.object({
-  schema_version: z.literal(FACTGRAPH_SCHEMA_VERSION),
+  schema_version: z.enum(SUPPORTED_FACTGRAPH_SCHEMA_VERSIONS),
   repo: z.object({
     repo_id: z.string().min(1),
     scan_id: z.string().min(1),
@@ -135,7 +140,7 @@ export const FactGraphArtifactSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),
   scan_id: z.string().min(1),
-  schema_version: z.literal(FACTGRAPH_SCHEMA_VERSION),
+  schema_version: z.enum(SUPPORTED_FACTGRAPH_SCHEMA_VERSIONS),
   graph_hash: z.string().regex(/^[a-f0-9]{64}$/),
   graph: FactGraphSchema,
   node_count: z.number().int().nonnegative(),

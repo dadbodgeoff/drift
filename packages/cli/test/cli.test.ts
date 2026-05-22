@@ -8124,10 +8124,7 @@ describe("drift CLI convention review", () => {
     });
     expect(payload.graph_context.affected_files[0]).toMatchObject({
       path: "src/app/api/users/route.ts",
-      files: expect.arrayContaining([
-        "src/app/api/users/route.ts",
-        "src/services/users.ts"
-      ])
+      files: ["src/app/api/users/route.ts"]
     });
   });
 

@@ -66,6 +66,46 @@ export async function GET() {
 }
 
 #[test]
+fn detects_data_operation_shaped_member_calls() {
+    let source = r#"
+import { db } from "@/lib/db";
+
+export async function GET() {
+  const users = await db.user.findMany();
+  await logger.info("loaded users");
+  await logger.user.findMany();
+  return Response.json(users);
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/users/route.ts", source).expect("typescript facts");
+
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "findMany"
+                && fact.value.as_deref() == Some("db.user")
+                && fact.imported_name.as_deref() == Some("read:user"))
+    );
+    assert!(
+        !facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "info"
+                && fact.value.as_deref() == Some("logger"))
+    );
+    assert!(
+        !facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "findMany"
+                && fact.value.as_deref() == Some("logger.user"))
+    );
+}
+
+#[test]
 fn skips_type_only_imports_as_value_import_facts() {
     let source = r#"
 import type { PrismaClient } from "@/lib/prisma";

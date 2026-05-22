@@ -123,7 +123,7 @@ The first graph contract should be JSON-first with SQLite projections.
 
 ```ts
 type FactGraph = {
-  schema_version: "factgraph.v1";
+  schema_version: "factgraph.v2";
   repo: {
     repo_id: string;
     scan_id: string;
@@ -409,7 +409,7 @@ The first graph projection must support:
 
 ## Acceptance Criteria
 
-- A TypeScript/Next.js scan can emit a `factgraph.v1` artifact.
+- A TypeScript/Next.js scan can emit a `factgraph.v2` artifact while Drift can still read stored `factgraph.v1` artifacts.
 - Graph artifact has stable file, module, import, symbol, route, and evidence IDs.
 - SQLite stores the graph artifact and projected nodes/edges.
 - `repo map`, `prepare`, MCP repo map, and check evidence can read from the same graph projection.

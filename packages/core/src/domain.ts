@@ -127,6 +127,23 @@ export interface ScanFileChange {
   created_at: string;
 }
 
+export interface ResolverDependency {
+  repo_id: string;
+  scan_id: string;
+  id: string;
+  source_path: string;
+  dependency_path: string;
+  dependency_kind: string;
+}
+
+export interface ModuleDependent {
+  repo_id: string;
+  scan_id: string;
+  module_id: string;
+  dependent_module_id: string;
+  edge_id: string;
+}
+
 export interface BackupManifest {
   id: string;
   repo_id: string;
@@ -144,6 +161,7 @@ export type FactKind =
   | "import_used"
   | "exported_symbol"
   | "symbol_called"
+  | "data_operation_detected"
   | "route_declared"
   | "file_role_detected"
   | "test_declared";
@@ -162,7 +180,7 @@ export interface FactRecord {
 
 export interface GraphNodeRecord {
   id: string;
-  kind: "file" | "module" | "symbol" | "import" | "route" | "role";
+  kind: "file" | "module" | "symbol" | "import" | "route" | "role" | "data_store" | "data_operation";
   label: string;
 }
 
@@ -174,7 +192,9 @@ export interface GraphEdgeRecord {
     | "FILE_HAS_ROLE"
     | "ROUTE_DECLARED_IN_FILE"
     | "IMPORT_RESOLVES_TO_MODULE"
-    | "IMPORT_RESOLVES_TO_SYMBOL";
+    | "IMPORT_RESOLVES_TO_SYMBOL"
+    | "DATA_OPERATION_READS_DATA_STORE"
+    | "DATA_OPERATION_WRITES_DATA_STORE";
   from: string;
   to: string;
 }
@@ -183,7 +203,7 @@ export interface FactGraphArtifact {
   id: string;
   repo_id: string;
   scan_id: string;
-  schema_version: "factgraph.v1";
+  schema_version: "factgraph.v1" | "factgraph.v2";
   graph_hash: string;
   graph: Record<string, unknown>;
   node_count: number;

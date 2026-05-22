@@ -1,5 +1,18 @@
-import type { FactRecord, FileSnapshot, Finding, RepoContract } from "@drift/core";
-import type { GraphEdge, GraphEvidence, GraphNode } from "@drift/factgraph";
+import type {
+  FactRecord,
+  FileSnapshot,
+  Finding,
+  ModuleDependent,
+  RepoContract,
+  ResolverDependency
+} from "@drift/core";
+import type {
+  GraphCompleteness as GraphCompletenessRecord,
+  GraphDiagnostic,
+  GraphEdge,
+  GraphEvidence,
+  GraphNode
+} from "@drift/factgraph";
 import type { SqliteDriftStorage } from "@drift/storage";
 
 export interface GraphRepoMapFile {
@@ -33,6 +46,10 @@ export interface GraphQueryStorage {
   listGraphNodes(repoId: string, scanId: string): GraphNode[];
   listGraphEdges(repoId: string, scanId: string): GraphEdge[];
   listGraphEvidence(repoId: string, scanId: string): GraphEvidence[];
+  listGraphDiagnostics?(repoId: string, scanId: string): GraphDiagnostic[];
+  listGraphCompleteness?(repoId: string, scanId: string): GraphCompletenessRecord[];
+  listResolverDependencies?(repoId: string, scanId: string): ResolverDependency[];
+  listModuleDependents?(repoId: string, scanId: string): ModuleDependent[];
 }
 
 export type GraphQueryPolicySurface =
@@ -284,10 +301,26 @@ export class GraphQueryService {
   getAffectedFiles(input: GraphQueryContext & { path: string }): GraphAffectedFiles {
     const scanId = requireScanId(input);
     const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
-    const moduleId = moduleIdsByFile(nodes).get(input.path);
+    const moduleByFile = moduleIdsByFile(nodes);
+    const fileByModule = moduleFilesById(nodes);
+    const moduleId = moduleByFile.get(input.path);
     const affected = new Set<string>([input.path]);
-    if (moduleId) {
+    const queuedModules = new Set<string>();
+    const queueModule = (id: string | undefined): void => {
+      if (!id || queuedModules.has(id)) {
+        return;
+      }
+      queuedModules.add(id);
+    };
+
+    queueModule(moduleId);
+
+    const resolverDependencies = this.storage.listResolverDependencies?.(input.repo_id, scanId);
+    const dependents = this.storage.listModuleDependents?.(input.repo_id, scanId);
+    const projectionBacked = Boolean(resolverDependencies || dependents);
+
+    if (moduleId && !projectionBacked) {
+      const edges = this.storage.listGraphEdges(input.repo_id, scanId);
       const nodesById = new Map(nodes.map((node) => [node.id, node]));
       for (const edge of edges) {
         if (edge.from !== moduleId && edge.to !== moduleId) {
@@ -297,6 +330,37 @@ export class GraphQueryService {
         const filePath = stringMetadata(other, "file_path") ?? stringMetadata(other, "path");
         if (filePath) {
           affected.add(filePath);
+        }
+      }
+    }
+
+    for (const dependency of resolverDependencies ?? []) {
+      if (dependency.dependency_path !== input.path) {
+        continue;
+      }
+      affected.add(dependency.source_path);
+      queueModule(moduleByFile.get(dependency.source_path));
+    }
+
+    if ((dependents ?? []).length > 0) {
+      const dependentsByModule = new Map<string, ModuleDependent[]>();
+      for (const dependent of dependents ?? []) {
+        const existing = dependentsByModule.get(dependent.module_id) ?? [];
+        existing.push(dependent);
+        dependentsByModule.set(dependent.module_id, existing);
+      }
+      const pending = [...queuedModules].sort((left, right) => left.localeCompare(right));
+      for (let index = 0; index < pending.length; index += 1) {
+        const current = pending[index];
+        for (const dependent of dependentsByModule.get(current) ?? []) {
+          const dependentPath = fileByModule.get(dependent.dependent_module_id);
+          if (dependentPath) {
+            affected.add(dependentPath);
+          }
+          if (!queuedModules.has(dependent.dependent_module_id)) {
+            queuedModules.add(dependent.dependent_module_id);
+            pending.push(dependent.dependent_module_id);
+          }
         }
       }
     }
@@ -392,11 +456,39 @@ export class GraphQueryService {
   getCompleteness(input: GraphQueryContext): GraphCompleteness {
     const scanId = requireScanId(input);
     const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const reasons = nodes.length > 0 ? [] : ["graph_empty"];
+    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+    const reasons: string[] = [];
+    if (nodes.length === 0) {
+      reasons.push("graph_empty");
+    }
+    for (const completeness of this.storage.listGraphCompleteness?.(input.repo_id, scanId) ?? []) {
+      if (!completeness.complete) {
+        reasons.push(...completeness.reasons);
+        reasons.push(...completeness.missing_capabilities);
+      }
+    }
+    for (const diagnostic of this.storage.listGraphDiagnostics?.(input.repo_id, scanId) ?? []) {
+      if (diagnostic.code === "unresolved_import" || diagnostic.code === "unresolved_import_symbol") {
+        reasons.push("import_resolution_incomplete");
+      }
+    }
+    const importResolutionEdgeCount = new Set(
+      edges
+        .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE")
+        .map((edge) => `${edge.from}\0${edge.to}`)
+    ).size;
+    if (importResolutionEdgeCount > 0 && this.storage.listResolverDependencies) {
+      const resolverDependencyCount = this.storage
+        .listResolverDependencies(input.repo_id, scanId).length;
+      if (resolverDependencyCount < importResolutionEdgeCount) {
+        reasons.push("resolver_dependencies_missing");
+      }
+    }
+    const uniqueReasons = unique(reasons);
     return {
-      ...queryMetadata(input, scanId, reasons),
-      complete: reasons.length === 0,
-      reasons
+      ...queryMetadata(input, scanId, uniqueReasons),
+      complete: uniqueReasons.length === 0,
+      reasons: uniqueReasons
     };
   }
 }
@@ -551,6 +643,20 @@ function moduleIdsByFile(nodes: GraphNode[]): Map<string, string> {
     }
   }
   return modules;
+}
+
+function moduleFilesById(nodes: GraphNode[]): Map<string, string> {
+  const files = new Map<string, string>();
+  for (const node of nodes) {
+    if (node.kind !== "module") {
+      continue;
+    }
+    const filePath = stringMetadata(node, "file_path");
+    if (filePath) {
+      files.set(node.id, filePath);
+    }
+  }
+  return files;
 }
 
 function fileRolesByPath(

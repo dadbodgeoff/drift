@@ -217,8 +217,29 @@ describe("FactGraph V1", () => {
         stable: true,
         evidence_ids: [],
         metadata: { path: "app/api/users/route.ts" }
+      }, {
+        id: "data_store:db:user",
+        kind: "data_store",
+        label: "user",
+        stable: true,
+        evidence_ids: ["evidence:typescript:app/api/users/route.ts:cccccccccccc:1-1"],
+        metadata: { receiver_root: "db", store_name: "user" }
+      }, {
+        id: "data_operation:app/api/users/route.ts:cccccccccccc:db.user:findMany:1-1",
+        kind: "data_operation",
+        label: "findMany",
+        stable: false,
+        evidence_ids: ["evidence:typescript:app/api/users/route.ts:cccccccccccc:1-1"],
+        metadata: { receiver_name: "db.user", store_name: "user", operation_kind: "read" }
       }],
-      edges: [],
+      edges: [{
+        id: "edge:data_operation:app/api/users/route.ts:cccccccccccc:db.user:findMany:1-1:DATA_OPERATION_READS_DATA_STORE:data_store:db:user",
+        kind: "DATA_OPERATION_READS_DATA_STORE",
+        from: "data_operation:app/api/users/route.ts:cccccccccccc:db.user:findMany:1-1",
+        to: "data_store:db:user",
+        evidence_ids: ["evidence:typescript:app/api/users/route.ts:cccccccccccc:1-1"],
+        metadata: { operation_kind: "read" }
+      }],
       evidence: [{
         id: "evidence:typescript:app/api/users/route.ts:cccccccccccc:1-1",
         repo_id: "repo_stream",
@@ -237,7 +258,8 @@ describe("FactGraph V1", () => {
     });
 
     expect(artifact.schema_version).toBe(FACTGRAPH_SCHEMA_VERSION);
-    expect(artifact.node_count).toBe(1);
+    expect(artifact.node_count).toBe(3);
+    expect(artifact.edge_count).toBe(1);
     expect(artifact.evidence_count).toBe(1);
     expect(artifact.graph.completeness).toContainEqual(expect.objectContaining({
       scope: "repo",

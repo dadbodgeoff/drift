@@ -11,8 +11,10 @@ import type {
   FactRecord,
   FileSnapshot,
   Finding,
+  ModuleDependent,
   RepoContract,
   RepoRecord,
+  ResolverDependency,
   ScanFileChange,
   ScanManifest
 } from "@drift/core";
@@ -25,8 +27,10 @@ import {
   FactRecordSchema,
   FileSnapshotSchema,
   FindingSchema,
+  ModuleDependentSchema,
   RepoContractSchema,
   RepoRecordSchema,
+  ResolverDependencySchema,
   ScanFileChangeSchema,
   ScanManifestSchema,
   auditEventHash
@@ -384,6 +388,7 @@ export class SqliteDriftStorage {
     const deleteDiagnostics = this.db.prepare("DELETE FROM graph_diagnostics WHERE repo_id = ? AND scan_id = ?");
     const deleteCompleteness = this.db.prepare("DELETE FROM graph_completeness WHERE repo_id = ? AND scan_id = ?");
     const deleteModuleDependents = this.db.prepare("DELETE FROM module_dependents WHERE repo_id = ? AND scan_id = ?");
+    const deleteResolverDependencies = this.db.prepare("DELETE FROM resolver_dependencies WHERE repo_id = ? AND scan_id = ?");
     const insertNode = this.db.prepare(`
       INSERT INTO graph_nodes (
         repo_id, scan_id, id, kind, label, stable, evidence_ids_json, metadata_json
@@ -436,6 +441,15 @@ export class SqliteDriftStorage {
         @repo_id, @scan_id, @module_id, @dependent_module_id, @edge_id
       )
     `);
+    const insertResolverDependency = this.db.prepare(`
+      INSERT OR REPLACE INTO resolver_dependencies (
+        repo_id, scan_id, id, source_path, dependency_path, dependency_kind
+      )
+      VALUES (
+        @repo_id, @scan_id, @id, @source_path, @dependency_path, @dependency_kind
+      )
+    `);
+    const graphNodesById = new Map(graphNodes.map((node) => [node.id, node]));
 
     this.db.transaction(() => {
       upsertArtifact.run({
@@ -448,6 +462,7 @@ export class SqliteDriftStorage {
       deleteDiagnostics.run(parsed.repo_id, parsed.scan_id);
       deleteCompleteness.run(parsed.repo_id, parsed.scan_id);
       deleteModuleDependents.run(parsed.repo_id, parsed.scan_id);
+      deleteResolverDependencies.run(parsed.repo_id, parsed.scan_id);
       for (const node of graphNodes) {
         insertNode.run({
           repo_id: parsed.repo_id,
@@ -477,6 +492,15 @@ export class SqliteDriftStorage {
             dependent_module_id: edge.from,
             edge_id: edge.id
           });
+        }
+        const resolverDependency = resolverDependencyFromEdge(
+          parsed.repo_id,
+          parsed.scan_id,
+          edge,
+          graphNodesById
+        );
+        if (resolverDependency) {
+          insertResolverDependency.run(resolverDependency);
         }
       }
       for (const evidence of graphEvidence) {
@@ -554,6 +578,20 @@ export class SqliteDriftStorage {
       .prepare("SELECT * FROM graph_completeness WHERE repo_id = ? AND scan_id = ? ORDER BY scope, rule_id, id")
       .all(repoId, scanId)
       .map(graphCompletenessFromRow);
+  }
+
+  listResolverDependencies(repoId: string, scanId: string): ResolverDependency[] {
+    return this.db
+      .prepare("SELECT * FROM resolver_dependencies WHERE repo_id = ? AND scan_id = ? ORDER BY source_path, dependency_path, dependency_kind, id")
+      .all(repoId, scanId)
+      .map(resolverDependencyFromRow);
+  }
+
+  listModuleDependents(repoId: string, scanId: string): ModuleDependent[] {
+    return this.db
+      .prepare("SELECT * FROM module_dependents WHERE repo_id = ? AND scan_id = ? ORDER BY module_id, dependent_module_id, edge_id")
+      .all(repoId, scanId)
+      .map(moduleDependentFromRow);
   }
 
   upsertFinding(finding: Finding): void {
@@ -1021,6 +1059,14 @@ function graphCompletenessFromRow(row: unknown): GraphCompleteness {
   });
 }
 
+function resolverDependencyFromRow(row: unknown): ResolverDependency {
+  return ResolverDependencySchema.parse(row);
+}
+
+function moduleDependentFromRow(row: unknown): ModuleDependent {
+  return ModuleDependentSchema.parse(row);
+}
+
 function conventionCandidateFromRow(row: unknown): ConventionCandidate {
   const record = row as Record<string, unknown>;
   return ConventionCandidateSchema.parse({
@@ -1125,6 +1171,45 @@ function mergeGraphDiagnosticsById(records: GraphDiagnostic[]): GraphDiagnostic[
       : record);
   }
   return uniqueById([...merged.values()]);
+}
+
+function resolverDependencyFromEdge(
+  repoId: string,
+  scanId: string,
+  edge: GraphEdge,
+  nodesById: Map<string, GraphNode>
+): ResolverDependency | undefined {
+  if (edge.kind !== "IMPORT_RESOLVES_TO_MODULE") {
+    return undefined;
+  }
+  const importNode = nodesById.get(edge.from);
+  const targetNode = nodesById.get(edge.to);
+  const sourcePath = stringMetadata(importNode, "file_path") ??
+    stringMetadataValue(edge.metadata, "source_path");
+  const dependencyPath = stringMetadataValue(edge.metadata, "resolved_file_path") ??
+    stringMetadata(importNode, "resolved_file_path") ??
+    stringMetadata(targetNode, "file_path");
+  if (!sourcePath || !dependencyPath) {
+    return undefined;
+  }
+  const dependencyKind = stringMetadataValue(edge.metadata, "dependency_kind") ?? "resolved_module";
+  return ResolverDependencySchema.parse({
+    repo_id: repoId,
+    scan_id: scanId,
+    id: `resolver_dependency:${sourcePath}:${dependencyPath}:${dependencyKind}`,
+    source_path: sourcePath,
+    dependency_path: dependencyPath,
+    dependency_kind: dependencyKind
+  });
+}
+
+function stringMetadata(node: GraphNode | undefined, key: string): string | undefined {
+  return node ? stringMetadataValue(node.metadata, key) : undefined;
+}
+
+function stringMetadataValue(metadata: Record<string, unknown>, key: string): string | undefined {
+  const value = metadata[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function sortedUnique(values: string[]): string[] {

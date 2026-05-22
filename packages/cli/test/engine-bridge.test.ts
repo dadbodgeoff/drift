@@ -433,7 +433,7 @@ describe("engine scan data bridge", () => {
       }]
     });
 
-    expect(artifact.schema_version).toBe("factgraph.v1");
+    expect(artifact.schema_version).toBe("factgraph.v2");
     expect(artifact.graph_hash).toMatch(/^[a-f0-9]{64}$/);
     expect(artifact.node_count).toBeGreaterThan(0);
     expect(artifact.graph.nodes).toContainEqual(expect.objectContaining({

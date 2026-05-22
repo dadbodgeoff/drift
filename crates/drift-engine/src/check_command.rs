@@ -586,6 +586,7 @@ fn fact_kind_from_str(kind: &str) -> Option<FactKind> {
         "import_used" => Some(FactKind::ImportUsed),
         "exported_symbol" => Some(FactKind::ExportedSymbol),
         "symbol_called" => Some(FactKind::SymbolCalled),
+        "data_operation_detected" => Some(FactKind::DataOperationDetected),
         "route_declared" => Some(FactKind::RouteDeclared),
         "file_role_detected" => Some(FactKind::FileRoleDetected),
         "test_declared" => Some(FactKind::TestDeclared),

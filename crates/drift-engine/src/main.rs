@@ -490,6 +490,7 @@ fn fact_kind(kind: FactKind) -> &'static str {
         FactKind::ImportUsed => "import_used",
         FactKind::ExportedSymbol => "exported_symbol",
         FactKind::SymbolCalled => "symbol_called",
+        FactKind::DataOperationDetected => "data_operation_detected",
         FactKind::RouteDeclared => "route_declared",
         FactKind::FileRoleDetected => "file_role_detected",
         FactKind::TestDeclared => "test_declared",
@@ -565,6 +566,21 @@ fn graph_for_file(
             ))
         })
         .collect::<BTreeMap<_, _>>();
+    let data_access_import_roots = facts
+        .iter()
+        .filter(|fact| fact.kind == "import_used")
+        .filter_map(|fact| {
+            let source = fact.value.as_ref()?;
+            let resolved = resolve_import(&fact.file_path, source, resolver);
+            if is_data_access_reference(source)
+                || resolved.as_deref().is_some_and(is_data_access_reference)
+            {
+                Some(fact.name.as_str())
+            } else {
+                None
+            }
+        })
+        .collect::<std::collections::BTreeSet<_>>();
 
     insert_node(
         &mut nodes,
@@ -912,6 +928,72 @@ fn graph_for_file(
                     );
                 }
             }
+            "data_operation_detected" => {
+                let Some(receiver) = fact.value.as_deref() else {
+                    continue;
+                };
+                if !data_access_import_roots.contains(receiver_root(receiver)) {
+                    continue;
+                }
+                if let Some((store_name, operation_kind)) =
+                    data_operation_parts(receiver, fact.imported_name.as_deref())
+                {
+                    let data_store_node = data_store_id(receiver_root(receiver), store_name);
+                    let data_operation_node = data_operation_id(
+                        &fact.file_path,
+                        &file.content_hash,
+                        receiver,
+                        &fact.name,
+                        fact.start_line,
+                        fact.end_line,
+                    );
+                    insert_node(
+                        &mut nodes,
+                        data_store_node.clone(),
+                        "data_store",
+                        store_name,
+                        true,
+                        vec![evidence_id.clone()],
+                        BTreeMap::from([
+                            ("receiver_root".to_string(), json!(receiver_root(receiver))),
+                            ("store_name".to_string(), json!(store_name)),
+                            ("file_path".to_string(), json!(fact.file_path)),
+                        ]),
+                    );
+                    insert_node(
+                        &mut nodes,
+                        data_operation_node.clone(),
+                        "data_operation",
+                        &fact.name,
+                        false,
+                        vec![evidence_id.clone()],
+                        BTreeMap::from([
+                            ("file_path".to_string(), json!(fact.file_path)),
+                            ("receiver_name".to_string(), json!(receiver)),
+                            ("receiver_root".to_string(), json!(receiver_root(receiver))),
+                            ("store_name".to_string(), json!(store_name)),
+                            ("operation_name".to_string(), json!(fact.name)),
+                            ("operation_kind".to_string(), json!(operation_kind)),
+                        ]),
+                    );
+                    let edge_kind = if operation_kind == "read" {
+                        "DATA_OPERATION_READS_DATA_STORE"
+                    } else {
+                        "DATA_OPERATION_WRITES_DATA_STORE"
+                    };
+                    insert_edge(
+                        &mut edges,
+                        edge_kind,
+                        &data_operation_node,
+                        &data_store_node,
+                        vec![evidence_id],
+                        BTreeMap::from([
+                            ("operation_kind".to_string(), json!(operation_kind)),
+                            ("operation_name".to_string(), json!(fact.name)),
+                        ]),
+                    );
+                }
+            }
             _ => {}
         }
     }
@@ -983,6 +1065,38 @@ fn receiver_root(receiver: &str) -> &str {
     receiver.split('.').next().unwrap_or(receiver)
 }
 
+fn data_operation_parts<'a>(
+    receiver: &'a str,
+    metadata: Option<&str>,
+) -> Option<(&'a str, &'static str)> {
+    let mut parts = receiver.split('.');
+    let _root = parts.next()?;
+    let store_name = parts.next()?;
+    if store_name.is_empty() {
+        return None;
+    }
+    let operation_kind = metadata
+        .and_then(|value| value.split_once(':'))
+        .and_then(|(kind, metadata_store)| (metadata_store == store_name).then_some(kind))
+        .and_then(|kind| match kind {
+            "read" => Some("read"),
+            "write" => Some("write"),
+            _ => None,
+        })?;
+    Some((store_name, operation_kind))
+}
+
+fn is_data_access_reference(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    lower.contains("prisma")
+        || lower.contains("database")
+        || lower.contains("/db")
+        || lower.ends_with("db")
+        || lower.contains("data-access")
+        || lower.contains("/repositories/")
+        || lower.contains("/repository/")
+}
+
 fn file_id(file_path: &str) -> String {
     format!("file:{file_path}")
 }
@@ -1009,6 +1123,24 @@ fn import_decl_id(
 ) -> String {
     format!(
         "import_decl:{file_path}:{}:{source}:{local_name}:{start_line}-{end_line}",
+        hash_prefix(content_hash)
+    )
+}
+
+fn data_store_id(receiver_root: &str, store_name: &str) -> String {
+    format!("data_store:{receiver_root}:{store_name}")
+}
+
+fn data_operation_id(
+    file_path: &str,
+    content_hash: &str,
+    receiver: &str,
+    operation_name: &str,
+    start_line: usize,
+    end_line: usize,
+) -> String {
+    format!(
+        "data_operation:{file_path}:{}:{receiver}:{operation_name}:{start_line}-{end_line}",
         hash_prefix(content_hash)
     )
 }

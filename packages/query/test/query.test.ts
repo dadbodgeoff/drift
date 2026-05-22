@@ -348,6 +348,243 @@ describe("GraphQueryService", () => {
     ]);
   });
 
+  it("returns affected files from module dependents and resolver dependencies", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_affected",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 3,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: "2026-05-22T00:00:00.000Z",
+      completed_at: "2026-05-22T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_affected",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 120,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_affected",
+        file_path: "src/services/users.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 100,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_affected",
+        file_path: "src/lib/db.ts",
+        content_hash: "c".repeat(64),
+        byte_size: 80,
+        indexed: true
+      }
+    ];
+    for (const snapshot of snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_affected",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        graphNode("file:app/api/users/route.ts", "file", "app/api/users/route.ts", { path: "app/api/users/route.ts" }),
+        graphNode("file:src/services/users.ts", "file", "src/services/users.ts", { path: "src/services/users.ts" }),
+        graphNode("file:src/lib/db.ts", "file", "src/lib/db.ts", { path: "src/lib/db.ts" }),
+        graphNode("module:app/api/users/route.ts", "module", "app/api/users/route.ts", { file_path: "app/api/users/route.ts" }),
+        graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" }),
+        graphNode("module:src/lib/db.ts", "module", "src/lib/db.ts", { file_path: "src/lib/db.ts" }),
+        graphNode("import_decl:src/services/users.ts:db", "import_decl", "db from ../lib/db", {
+          file_path: "src/services/users.ts",
+          source: "../lib/db",
+          resolved_file_path: "src/lib/db.ts"
+        })
+      ],
+      edges: [
+        graphEdge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
+        graphEdge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts"),
+        graphEdge("IMPORT_RESOLVES_TO_MODULE", "import_decl:src/services/users.ts:db", "module:src/lib/db.ts")
+      ],
+      evidence: [],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const affected = createGraphQueryService(storage).getAffectedFiles({
+      repo_id: "repo_abc",
+      scan_id: "scan_affected",
+      path: "src/lib/db.ts",
+      policy_surface: "cli-preflight"
+    });
+    const routeAffected = createGraphQueryService(storage).getAffectedFiles({
+      repo_id: "repo_abc",
+      scan_id: "scan_affected",
+      path: "app/api/users/route.ts",
+      policy_surface: "cli-preflight"
+    });
+    storage.close();
+
+    expect(affected.policy).toMatchObject({ surface: "cli-preflight", local_only: true });
+    expect(affected.files).toEqual([
+      "app/api/users/route.ts",
+      "src/lib/db.ts",
+      "src/services/users.ts"
+    ]);
+    expect(routeAffected.files).toEqual(["app/api/users/route.ts"]);
+  });
+
+  it("reports graph completeness from resolver dependency projections", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    for (const scanId of ["scan_missing", "scan_complete", "scan_incomplete", "scan_diagnostic"]) {
+      storage.upsertScanManifest({
+        id: scanId,
+        repo_id: "repo_abc",
+        branch: "main",
+        commit: "abc123",
+        dirty: false,
+        scanner_version: "0.1.0",
+        adapter_versions: { typescript: "0.1.0" },
+        rule_engine_version: "0.1.0",
+        status: "completed",
+        file_count: 1,
+        fact_count: 0,
+        finding_count: 0,
+        started_at: "2026-05-22T00:00:00.000Z",
+        completed_at: "2026-05-22T00:00:01.000Z"
+      });
+    }
+    const snapshots = [{
+      repo_id: "repo_abc",
+      scan_id: "scan_complete",
+      file_path: "src/services/users.ts",
+      content_hash: "a".repeat(64),
+      byte_size: 120,
+      indexed: true
+    }];
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_complete",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" }),
+        graphNode("module:src/lib/db.ts", "module", "src/lib/db.ts", { file_path: "src/lib/db.ts" }),
+        graphNode("import_decl:src/services/users.ts:db", "import_decl", "db from ../lib/db", {
+          file_path: "src/services/users.ts",
+          resolved_file_path: "src/lib/db.ts"
+        })
+      ],
+      edges: [
+        graphEdge("IMPORT_RESOLVES_TO_MODULE", "import_decl:src/services/users.ts:db", "module:src/lib/db.ts")
+      ],
+      evidence: [],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_incomplete",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots: [{ ...snapshots[0], scan_id: "scan_incomplete" }],
+      nodes: [
+        graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" }),
+        graphNode("module:src/lib/db.ts", "module", "src/lib/db.ts", { file_path: "src/lib/db.ts" })
+      ],
+      edges: [
+        graphEdge("IMPORT_RESOLVES_TO_MODULE", "import_decl:src/services/users.ts:db", "module:src/lib/db.ts")
+      ],
+      evidence: [],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_diagnostic",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots: [{ ...snapshots[0], scan_id: "scan_diagnostic" }],
+      nodes: [
+        graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" })
+      ],
+      edges: [],
+      evidence: [],
+      diagnostics: [{
+        id: "diag_unresolved_import",
+        severity: "warning",
+        code: "unresolved_import",
+        message: "Could not resolve import ../lib/db from src/services/users.ts.",
+        file_path: "src/services/users.ts",
+        evidence_ids: []
+      }],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const service = createGraphQueryService(storage);
+    const missing = service.getCompleteness({ repo_id: "repo_abc", scan_id: "scan_missing" });
+    const complete = service.getCompleteness({ repo_id: "repo_abc", scan_id: "scan_complete" });
+    const incomplete = service.getCompleteness({ repo_id: "repo_abc", scan_id: "scan_incomplete" });
+    const diagnostic = service.getCompleteness({ repo_id: "repo_abc", scan_id: "scan_diagnostic" });
+    storage.close();
+
+    expect(missing.complete).toBe(false);
+    expect(missing.reasons).toContain("graph_empty");
+    expect(complete.complete).toBe(true);
+    expect(complete.reasons).toEqual([]);
+    expect(incomplete.complete).toBe(false);
+    expect(incomplete.reasons).toContain("resolver_dependencies_missing");
+    expect(diagnostic.complete).toBe(false);
+    expect(diagnostic.reasons).toContain("import_resolution_incomplete");
+  });
+
   it("returns semantic symbol neighborhoods from import and callsite graph links", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
     tempDirs.push(dir);

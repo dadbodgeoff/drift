@@ -38,7 +38,7 @@ describe("golden fixture CLI lifecycle", () => {
           "api_route_requires_service_delegation",
         ],
         "engine_source": "rust",
-        "facts_count": 7,
+        "facts_count": 8,
         "files_indexed": 1,
       }
     `);

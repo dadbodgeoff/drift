@@ -201,6 +201,36 @@ export async function GET() {
         }),
         "missing callsite-to-import alias edge: {edges:#?}"
     );
+    assert!(
+        nodes.iter().any(|node| {
+            node["kind"] == "data_store"
+                && node["label"] == "user"
+                && node["metadata"]["receiver_root"] == "db"
+        }),
+        "missing data store node for db.user: {nodes:#?}"
+    );
+    assert!(
+        nodes.iter().any(|node| {
+            node["kind"] == "data_operation"
+                && node["label"] == "findMany"
+                && node["metadata"]["receiver_name"] == "db.user"
+                && node["metadata"]["store_name"] == "user"
+                && node["metadata"]["operation_kind"] == "read"
+        }),
+        "missing data operation node for db.user.findMany: {nodes:#?}"
+    );
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "DATA_OPERATION_READS_DATA_STORE"
+                && edge["from"]
+                    .as_str()
+                    .is_some_and(|from| from.contains("findMany"))
+                && edge["to"]
+                    .as_str()
+                    .is_some_and(|to| to.contains("data_store:db:user"))
+        }),
+        "missing data operation read edge: {edges:#?}"
+    );
 }
 
 #[test]

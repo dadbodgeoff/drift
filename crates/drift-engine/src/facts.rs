@@ -8,6 +8,7 @@ pub enum FactKind {
     ImportUsed,
     ExportedSymbol,
     SymbolCalled,
+    DataOperationDetected,
     RouteDeclared,
     FileRoleDetected,
     TestDeclared,
@@ -143,9 +144,28 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
     facts.push(Fact {
         kind: FactKind::SymbolCalled,
         file_path: file_path.to_string(),
-        name,
-        value: receiver,
+        name: name.clone(),
+        value: receiver.clone(),
         imported_name: None,
+        start_line: node.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+    });
+
+    let Some(receiver) = receiver else {
+        return;
+    };
+    if !is_data_access_binding(receiver_root(&receiver), file_path, facts) {
+        return;
+    }
+    let Some((store_name, operation_kind)) = data_operation_shape(&receiver, &name) else {
+        return;
+    };
+    facts.push(Fact {
+        kind: FactKind::DataOperationDetected,
+        file_path: file_path.to_string(),
+        name,
+        value: Some(receiver),
+        imported_name: Some(format!("{operation_kind}:{store_name}")),
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
     });
@@ -362,6 +382,88 @@ fn callable_parts(node: Node<'_>, source: &[u8]) -> Option<(String, Option<Strin
             Some((name, receiver))
         }
         _ => None,
+    }
+}
+
+fn data_operation_shape<'a>(
+    receiver: &'a str,
+    operation_name: &str,
+) -> Option<(String, &'static str)> {
+    let mut parts = receiver.split('.');
+    let _root = parts.next()?;
+    let store_name = parts.next()?;
+    if store_name.is_empty() {
+        return None;
+    }
+    let operation_kind = data_operation_kind(operation_name)?;
+    Some((store_name.to_string(), operation_kind))
+}
+
+fn is_data_access_binding(receiver_root: &str, file_path: &str, facts: &[Fact]) -> bool {
+    is_data_access_local_name(receiver_root)
+        || facts.iter().any(|fact| {
+            fact.kind == FactKind::ImportUsed
+                && fact.file_path == file_path
+                && fact.name == receiver_root
+                && fact.value.as_deref().is_some_and(is_data_access_reference)
+        })
+}
+
+fn is_data_access_local_name(value: &str) -> bool {
+    matches!(value, "db" | "prisma" | "database")
+}
+
+fn is_data_access_reference(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    lower.contains("prisma")
+        || lower.contains("database")
+        || lower.contains("/db")
+        || lower.ends_with("db")
+        || lower.contains("data-access")
+        || lower.contains("/repositories/")
+        || lower.contains("/repository/")
+}
+
+fn receiver_root(receiver: &str) -> &str {
+    receiver.split('.').next().unwrap_or(receiver)
+}
+
+fn data_operation_kind(operation_name: &str) -> Option<&'static str> {
+    let lower = operation_name.to_ascii_lowercase();
+    if matches!(
+        lower.as_str(),
+        "find"
+            | "findfirst"
+            | "findfirstorthrow"
+            | "findmany"
+            | "findunique"
+            | "finduniqueorthrow"
+            | "get"
+            | "getmany"
+            | "select"
+            | "query"
+            | "count"
+            | "aggregate"
+            | "groupby"
+    ) {
+        Some("read")
+    } else if matches!(
+        lower.as_str(),
+        "create"
+            | "createmany"
+            | "update"
+            | "updatemany"
+            | "upsert"
+            | "delete"
+            | "deletemany"
+            | "insert"
+            | "insertmany"
+            | "save"
+            | "set"
+    ) {
+        Some("write")
+    } else {
+        None
     }
 }
 

@@ -76,6 +76,7 @@ export const EngineFactSchema = z.object({
     "import_used",
     "exported_symbol",
     "symbol_called",
+    "data_operation_detected",
     "route_declared",
     "file_role_detected",
     "test_declared"

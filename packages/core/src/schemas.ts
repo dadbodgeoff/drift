@@ -139,6 +139,23 @@ export const ScanFileChangeSchema = z.object({
   created_at: z.string().min(1)
 });
 
+export const ResolverDependencySchema = z.object({
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  id: z.string().min(1),
+  source_path: z.string().min(1),
+  dependency_path: z.string().min(1),
+  dependency_kind: z.string().min(1)
+});
+
+export const ModuleDependentSchema = z.object({
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  module_id: z.string().min(1),
+  dependent_module_id: z.string().min(1),
+  edge_id: z.string().min(1)
+});
+
 export const BackupManifestSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),
@@ -156,6 +173,7 @@ export const FactKindSchema = z.enum([
   "import_used",
   "exported_symbol",
   "symbol_called",
+  "data_operation_detected",
   "route_declared",
   "file_role_detected",
   "test_declared"
@@ -175,7 +193,7 @@ export const FactRecordSchema = z.object({
 
 export const GraphNodeRecordSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["file", "module", "symbol", "import", "route", "role"]),
+  kind: z.enum(["file", "module", "symbol", "import", "route", "role", "data_store", "data_operation"]),
   label: z.string().min(1)
 });
 
@@ -187,7 +205,9 @@ export const GraphEdgeRecordSchema = z.object({
     "FILE_HAS_ROLE",
     "ROUTE_DECLARED_IN_FILE",
     "IMPORT_RESOLVES_TO_MODULE",
-    "IMPORT_RESOLVES_TO_SYMBOL"
+    "IMPORT_RESOLVES_TO_SYMBOL",
+    "DATA_OPERATION_READS_DATA_STORE",
+    "DATA_OPERATION_WRITES_DATA_STORE"
   ]),
   from: z.string().min(1),
   to: z.string().min(1)
@@ -197,7 +217,7 @@ export const FactGraphArtifactSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),
   scan_id: z.string().min(1),
-  schema_version: z.literal("factgraph.v1"),
+  schema_version: z.enum(["factgraph.v1", "factgraph.v2"]),
   graph_hash: z.string().regex(/^[a-f0-9]{64}$/),
   graph: z.record(z.unknown()),
   node_count: z.number().int().nonnegative(),

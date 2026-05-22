@@ -420,7 +420,7 @@ describe("SQLite Drift storage", () => {
 
     expect(storage.getFactGraphArtifact("repo_abc", "scan_abc")).toMatchObject({
       id: "graph_scan_abc",
-      schema_version: "factgraph.v1",
+      schema_version: "factgraph.v2",
       node_count: graph.node_count,
       edge_count: graph.edge_count,
       evidence_count: graph.evidence_count
@@ -576,6 +576,184 @@ describe("SQLite Drift storage", () => {
     expect(roleEdges[0]?.metadata).toMatchObject({ first_seen: true, repeated_batch: true });
     expect(storage.listGraphEvidence("repo_abc", "scan_dup")
       .filter((evidence) => evidence.id === "evidence_a")[0]?.fact_ids).toEqual(["fact_a", "fact_b"]);
+    storage.close();
+  });
+
+  it("projects resolver dependencies and module dependents from graph edges", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_deps",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 2,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_deps",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 120,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_deps",
+        file_path: "packages/db/src/index.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 80,
+        indexed: true
+      }
+    ];
+
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_deps",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        {
+          id: "file:app/api/users/route.ts",
+          kind: "file",
+          label: "app/api/users/route.ts",
+          stable: true,
+          evidence_ids: [],
+          metadata: { path: "app/api/users/route.ts" }
+        },
+        {
+          id: "module:app/api/users/route.ts",
+          kind: "module",
+          label: "app/api/users/route.ts",
+          stable: true,
+          evidence_ids: [],
+          metadata: { file_path: "app/api/users/route.ts" }
+        },
+        {
+          id: "module:packages/db/src/index.ts",
+          kind: "module",
+          label: "packages/db/src/index.ts",
+          stable: true,
+          evidence_ids: [],
+          metadata: { file_path: "packages/db/src/index.ts" }
+        },
+        {
+          id: "import_decl:app/api/users/route.ts:db",
+          kind: "import_decl",
+          label: "db from @acme/db",
+          stable: false,
+          evidence_ids: ["evidence_import"],
+          metadata: {
+            file_path: "app/api/users/route.ts",
+            source: "@acme/db",
+            resolved_file_path: "packages/db/src/index.ts"
+          }
+        }
+      ],
+      edges: [
+        {
+          id: "edge:import_decl:app/api/users/route.ts:db:IMPORT_DECL_REFERENCES_MODULE:module:app/api/users/route.ts",
+          kind: "IMPORT_DECL_REFERENCES_MODULE",
+          from: "import_decl:app/api/users/route.ts:db",
+          to: "module:app/api/users/route.ts",
+          evidence_ids: ["evidence_import"],
+          metadata: {}
+        },
+        {
+          id: "edge:import_decl:app/api/users/route.ts:db:IMPORT_RESOLVES_TO_MODULE:module:packages/db/src/index.ts",
+          kind: "IMPORT_RESOLVES_TO_MODULE",
+          from: "import_decl:app/api/users/route.ts:db",
+          to: "module:packages/db/src/index.ts",
+          evidence_ids: ["evidence_import"],
+          metadata: {
+            resolved_file_path: "packages/db/src/index.ts",
+            resolution_status: "resolved"
+          }
+        },
+        {
+          id: "edge:module:app/api/users/route.ts:MODULE_IMPORTS_MODULE:module:packages/db/src/index.ts",
+          kind: "MODULE_IMPORTS_MODULE",
+          from: "module:app/api/users/route.ts",
+          to: "module:packages/db/src/index.ts",
+          evidence_ids: ["evidence_import"],
+          metadata: {}
+        }
+      ],
+      evidence: [
+        {
+          id: "evidence_import",
+          repo_id: "repo_abc",
+          scan_id: "scan_deps",
+          artifact_id: "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+          file_path: "app/api/users/route.ts",
+          file_hash: "a".repeat(64),
+          start_line: 1,
+          end_line: 1,
+          adapter_id: "typescript",
+          adapter_version: "0.1.0",
+          fact_ids: ["fact_import"],
+          redaction_state: "none"
+        }
+      ],
+      createdAt: "2026-05-10T00:00:02.000Z"
+    }));
+
+    expect(storage.listResolverDependencies("repo_abc", "scan_deps")).toEqual([{
+      repo_id: "repo_abc",
+      scan_id: "scan_deps",
+      id: "resolver_dependency:app/api/users/route.ts:packages/db/src/index.ts:resolved_module",
+      source_path: "app/api/users/route.ts",
+      dependency_path: "packages/db/src/index.ts",
+      dependency_kind: "resolved_module"
+    }]);
+    expect(storage.listModuleDependents("repo_abc", "scan_deps")).toEqual([{
+      repo_id: "repo_abc",
+      scan_id: "scan_deps",
+      module_id: "module:packages/db/src/index.ts",
+      dependent_module_id: "module:app/api/users/route.ts",
+      edge_id: "edge:module:app/api/users/route.ts:MODULE_IMPORTS_MODULE:module:packages/db/src/index.ts"
+    }]);
+
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_deps",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [],
+      edges: [],
+      evidence: [],
+      createdAt: "2026-05-10T00:00:03.000Z"
+    }));
+
+    expect(storage.listResolverDependencies("repo_abc", "scan_deps")).toEqual([]);
+    expect(storage.listModuleDependents("repo_abc", "scan_deps")).toEqual([]);
     storage.close();
   });
 
