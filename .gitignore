@@ -7,7 +7,7 @@ node_modules/
 output/
 outputs/
 target/
-packages/
+/packages/
 avatar-*.js
 avatar-overlay-page-*.js
 main-*.js
