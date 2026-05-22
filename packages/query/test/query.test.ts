@@ -219,7 +219,23 @@ describe("GraphQueryService", () => {
           file_path: "app/api/users/route.ts",
           symbol_kind: "function",
           exported: true
-        })
+        }),
+        graphNode("data_store:db:user", "data_store", "user", {
+          receiver_root: "db",
+          store_name: "user",
+          file_path: "src/services/users.ts"
+        }),
+        {
+          ...graphNode("data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3", "data_operation", "findMany", {
+            file_path: "src/services/users.ts",
+            receiver_name: "db.user",
+            receiver_root: "db",
+            store_name: "user",
+            operation_name: "findMany",
+            operation_kind: "read"
+          }),
+          evidence_ids: ["evidence_data_operation"]
+        }
       ],
       edges: [
         graphEdge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
@@ -227,13 +243,23 @@ describe("GraphQueryService", () => {
         graphEdge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
         graphEdge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
         graphEdge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts"),
-        graphEdge("ROUTE_HANDLED_BY_SYMBOL", "route:GET:app/api/users/route.ts", "symbol:app/api/users/route.ts:function:GET")
+        graphEdge("ROUTE_HANDLED_BY_SYMBOL", "route:GET:app/api/users/route.ts", "symbol:app/api/users/route.ts:function:GET"),
+        graphEdge("DATA_OPERATION_READS_DATA_STORE", "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3", "data_store:db:user")
       ],
-      evidence: [],
+      evidence: [
+        graphEvidence("evidence_data_operation", "fact_data_operation", "scan_flow", "src/services/users.ts", 3)
+      ],
       createdAt: "2026-05-22T00:00:00.000Z"
     }));
 
     const flow = createGraphQueryService(storage).getRouteFlow({
+      repo_id: "repo_abc",
+      scan_id: "scan_flow",
+      path: "app/api/users/route.ts",
+      method: "GET",
+      policy_surface: "mcp"
+    });
+    const reachable = createGraphQueryService(storage).getReachableDataAccess({
       repo_id: "repo_abc",
       scan_id: "scan_flow",
       path: "app/api/users/route.ts",
@@ -253,6 +279,16 @@ describe("GraphQueryService", () => {
       "module:src/services/users.ts",
       "module:src/lib/db.ts"
     ]);
+    expect(reachable.data_operations).toEqual([{
+      operation_node_id: "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3",
+      data_store_node_id: "data_store:db:user",
+      file_path: "src/services/users.ts",
+      start_line: 3,
+      operation_kind: "read",
+      operation_name: "findMany",
+      store_name: "user",
+      receiver_name: "db.user"
+    }]);
   });
 
   it("resolves finding evidence through graph links and explicit fact selectors", async () => {

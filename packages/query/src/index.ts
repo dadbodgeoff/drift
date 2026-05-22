@@ -102,7 +102,19 @@ export interface GraphReachableDataAccess extends GraphQueryMetadata {
   path?: string;
   method?: string;
   data_access_module_ids: string[];
+  data_operations: GraphReachableDataOperation[];
   module_path: string[];
+}
+
+export interface GraphReachableDataOperation {
+  operation_node_id: string;
+  data_store_node_id?: string;
+  file_path: string;
+  start_line?: number;
+  operation_kind: string;
+  operation_name: string;
+  store_name?: string;
+  receiver_name?: string;
 }
 
 export interface GraphAffectedFiles extends GraphQueryMetadata {
@@ -289,11 +301,15 @@ export class GraphQueryService {
     method?: string;
   }): GraphReachableDataAccess {
     const flow = this.getRouteFlow(input);
+    const nodes = this.storage.listGraphNodes(input.repo_id, flow.scan_id);
+    const edges = this.storage.listGraphEdges(input.repo_id, flow.scan_id);
+    const evidence = this.storage.listGraphEvidence(input.repo_id, flow.scan_id);
     return {
       ...queryMetadata(input, flow.scan_id, flow.diagnostics),
       path: flow.path,
       method: flow.method,
       data_access_module_ids: flow.data_access_module_ids,
+      data_operations: reachableDataOperations(flow.module_path, nodes, edges, evidence),
       module_path: flow.module_path
     };
   }
@@ -657,6 +673,57 @@ function moduleFilesById(nodes: GraphNode[]): Map<string, string> {
     }
   }
   return files;
+}
+
+function reachableDataOperations(
+  modulePath: string[],
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  evidence: GraphEvidence[]
+): GraphReachableDataOperation[] {
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const reachableFiles = new Set(
+    modulePath
+      .map((moduleId) => stringMetadata(nodesById.get(moduleId), "file_path"))
+      .filter((filePath): filePath is string => Boolean(filePath))
+  );
+  const dataStoreByOperation = new Map<string, string>();
+  for (const edge of edges) {
+    if (edge.kind !== "DATA_OPERATION_READS_DATA_STORE" && edge.kind !== "DATA_OPERATION_WRITES_DATA_STORE") {
+      continue;
+    }
+    dataStoreByOperation.set(edge.from, edge.to);
+  }
+
+  return nodes
+    .filter((node) => node.kind === "data_operation")
+    .filter((node) => {
+      const filePath = stringMetadata(node, "file_path");
+      return Boolean(filePath && reachableFiles.has(filePath));
+    })
+    .map((node) => {
+      const evidenceRef = node.evidence_ids
+        .map((id) => evidenceById.get(id))
+        .find((item): item is GraphEvidence => Boolean(item));
+      const dataStoreNodeId = dataStoreByOperation.get(node.id);
+      const dataStore = dataStoreNodeId ? nodesById.get(dataStoreNodeId) : undefined;
+      return {
+        operation_node_id: node.id,
+        data_store_node_id: dataStoreNodeId,
+        file_path: stringMetadata(node, "file_path") ?? "",
+        start_line: evidenceRef?.start_line,
+        operation_kind: stringMetadata(node, "operation_kind") ?? "unknown",
+        operation_name: stringMetadata(node, "operation_name") ?? node.label,
+        store_name: stringMetadata(node, "store_name") ?? stringMetadata(dataStore, "store_name"),
+        receiver_name: stringMetadata(node, "receiver_name")
+      };
+    })
+    .sort((left, right) =>
+      left.file_path.localeCompare(right.file_path) ||
+      (left.start_line ?? 0) - (right.start_line ?? 0) ||
+      left.operation_node_id.localeCompare(right.operation_node_id)
+    );
 }
 
 function fileRolesByPath(

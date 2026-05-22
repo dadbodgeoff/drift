@@ -8119,7 +8119,14 @@ describe("drift CLI convention review", () => {
       }],
       reachable_data_access: [{
         path: "src/app/api/users/route.ts",
-        data_access_module_ids: ["module:src/db.ts"]
+        data_access_module_ids: ["module:src/db.ts"],
+        data_operations: [expect.objectContaining({
+          file_path: "src/services/users.ts",
+          operation_kind: "read",
+          operation_name: "findMany",
+          store_name: "user",
+          receiver_name: "db.user"
+        })]
       }]
     });
     expect(payload.graph_context.affected_files[0]).toMatchObject({
