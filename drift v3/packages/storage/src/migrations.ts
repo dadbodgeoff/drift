@@ -239,5 +239,170 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_audit_events_repo_id_rowid
         ON audit_events(repo_id);
     `
+  },
+  {
+    id: "006_fact_graph_artifacts",
+    sql: `
+      CREATE TABLE IF NOT EXISTS fact_graph_artifacts (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        schema_version TEXT NOT NULL,
+        graph_hash TEXT NOT NULL,
+        graph_json TEXT NOT NULL,
+        node_count INTEGER NOT NULL,
+        edge_count INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(repo_id, scan_id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS graph_nodes (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        label TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS graph_edges (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        from_node TEXT NOT NULL,
+        to_node TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_graph_nodes_scan_kind
+        ON graph_nodes(repo_id, scan_id, kind);
+
+      CREATE INDEX IF NOT EXISTS idx_graph_edges_scan_kind
+        ON graph_edges(repo_id, scan_id, kind);
+    `
+  },
+  {
+    id: "007_fact_graph_v2_projections",
+    sql: `
+      ALTER TABLE fact_graph_artifacts ADD COLUMN evidence_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE fact_graph_artifacts ADD COLUMN diagnostic_count INTEGER NOT NULL DEFAULT 0;
+
+      ALTER TABLE graph_nodes ADD COLUMN stable INTEGER NOT NULL DEFAULT 1 CHECK (stable IN (0, 1));
+      ALTER TABLE graph_nodes ADD COLUMN evidence_ids_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE graph_nodes ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}';
+
+      ALTER TABLE graph_edges ADD COLUMN evidence_ids_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE graph_edges ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}';
+
+      CREATE TABLE IF NOT EXISTS graph_evidence (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        artifact_id TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_hash TEXT NOT NULL,
+        start_line INTEGER NOT NULL,
+        end_line INTEGER NOT NULL,
+        start_column INTEGER,
+        end_column INTEGER,
+        adapter_id TEXT NOT NULL,
+        adapter_version TEXT NOT NULL,
+        fact_ids_json TEXT NOT NULL,
+        redaction_state TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS graph_diagnostics (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        code TEXT NOT NULL,
+        message TEXT NOT NULL,
+        file_path TEXT,
+        evidence_ids_json TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS graph_completeness (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        scope TEXT NOT NULL,
+        rule_id TEXT,
+        complete INTEGER NOT NULL CHECK (complete IN (0, 1)),
+        required_capabilities_json TEXT NOT NULL,
+        missing_capabilities_json TEXT NOT NULL,
+        truncated INTEGER NOT NULL CHECK (truncated IN (0, 1)),
+        can_block INTEGER NOT NULL CHECK (can_block IN (0, 1)),
+        reasons_json TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS symbol_occurrences (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        symbol_id TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        start_line INTEGER NOT NULL,
+        end_line INTEGER NOT NULL,
+        evidence_id TEXT,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS resolver_dependencies (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        id TEXT NOT NULL,
+        source_path TEXT NOT NULL,
+        dependency_path TEXT NOT NULL,
+        dependency_kind TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS module_dependents (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        module_id TEXT NOT NULL,
+        dependent_module_id TEXT NOT NULL,
+        edge_id TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, module_id, dependent_module_id, edge_id),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_graph_evidence_scan_file
+        ON graph_evidence(repo_id, scan_id, file_path);
+
+      CREATE INDEX IF NOT EXISTS idx_graph_completeness_scan_scope
+        ON graph_completeness(repo_id, scan_id, scope);
+
+      CREATE INDEX IF NOT EXISTS idx_symbol_occurrences_scan_symbol
+        ON symbol_occurrences(repo_id, scan_id, symbol_id);
+
+      CREATE INDEX IF NOT EXISTS idx_resolver_dependencies_source
+        ON resolver_dependencies(repo_id, scan_id, source_path);
+
+      CREATE INDEX IF NOT EXISTS idx_module_dependents_module
+        ON module_dependents(repo_id, scan_id, module_id);
+    `
   }
 ];

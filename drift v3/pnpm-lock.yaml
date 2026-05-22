@@ -23,6 +23,15 @@ importers:
       '@drift/core':
         specifier: workspace:*
         version: link:../core
+      '@drift/engine-contract':
+        specifier: workspace:*
+        version: link:../engine-contract
+      '@drift/factgraph':
+        specifier: workspace:*
+        version: link:../factgraph
+      '@drift/query':
+        specifier: workspace:*
+        version: link:../query
       '@drift/storage':
         specifier: workspace:*
         version: link:../storage
@@ -33,9 +42,67 @@ importers:
       vitest:
         specifier: ^3.1.0
         version: 3.2.4(@types/node@22.19.18)
+    optionalDependencies:
+      '@drift/engine-darwin-arm64':
+        specifier: workspace:*
+        version: link:../engine-darwin-arm64
+      '@drift/engine-darwin-x64':
+        specifier: workspace:*
+        version: link:../engine-darwin-x64
+      '@drift/engine-linux-arm64-gnu':
+        specifier: workspace:*
+        version: link:../engine-linux-arm64-gnu
+      '@drift/engine-linux-x64-gnu':
+        specifier: workspace:*
+        version: link:../engine-linux-x64-gnu
+      '@drift/engine-win32-x64':
+        specifier: workspace:*
+        version: link:../engine-win32-x64
 
   packages/core:
     dependencies:
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.0
+        version: 3.2.4(@types/node@22.19.18)
+
+  packages/engine-contract:
+    dependencies:
+      '@drift/factgraph':
+        specifier: workspace:*
+        version: link:../factgraph
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.0
+        version: 3.2.4(@types/node@22.19.18)
+
+  packages/engine-darwin-arm64: {}
+
+  packages/engine-darwin-x64: {}
+
+  packages/engine-linux-arm64-gnu: {}
+
+  packages/engine-linux-x64-gnu: {}
+
+  packages/engine-win32-x64: {}
+
+  packages/factgraph:
+    dependencies:
+      '@drift/core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -52,6 +119,31 @@ importers:
       '@drift/core':
         specifier: workspace:*
         version: link:../core
+      '@drift/query':
+        specifier: workspace:*
+        version: link:../query
+      '@drift/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@drift/factgraph':
+        specifier: workspace:*
+        version: link:../factgraph
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.0
+        version: 3.2.4(@types/node@22.19.18)
+
+  packages/query:
+    dependencies:
+      '@drift/core':
+        specifier: workspace:*
+        version: link:../core
+      '@drift/factgraph':
+        specifier: workspace:*
+        version: link:../factgraph
       '@drift/storage':
         specifier: workspace:*
         version: link:../storage
@@ -68,6 +160,9 @@ importers:
       '@drift/core':
         specifier: workspace:*
         version: link:../core
+      '@drift/factgraph':
+        specifier: workspace:*
+        version: link:../factgraph
       better-sqlite3:
         specifier: ^11.10.0
         version: 11.10.0

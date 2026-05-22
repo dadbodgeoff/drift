@@ -52,7 +52,11 @@ async function installDriftPackages(): Promise<string> {
   ].join("\n"));
   const tarballs = await Promise.all([
     packPackage("packages/core"),
+    packPackage("packages/factgraph"),
+    packPackage("packages/engine-contract"),
     packPackage("packages/storage"),
+    packPackage("packages/query"),
+    packPackage(currentEnginePackageDir()),
     packPackage("packages/cli"),
     packPackage("packages/mcp")
   ]);
@@ -65,10 +69,19 @@ async function installDriftPackages(): Promise<string> {
 }
 
 async function runInstalledDrift(consumerDir: string, args: string[]) {
+  const { DRIFT_ALLOW_TYPESCRIPT_ENGINE_FALLBACK, DRIFT_ENGINE_BIN, ...env } = process.env;
   return execFileAsync(join(consumerDir, "node_modules/.bin/drift"), args, {
     cwd: consumerDir,
+    env,
     timeout: 120_000
   });
+}
+
+function currentEnginePackageDir(): string {
+  if (process.platform === "darwin" && process.arch === "arm64") {
+    return "packages/engine-darwin-arm64";
+  }
+  throw new Error(`No current-platform engine package fixture for ${process.platform}-${process.arch}.`);
 }
 
 async function callInstalledMcp(consumerDir: string, databasePath: string, request: unknown) {
@@ -127,7 +140,7 @@ describe("installed Drift package flow", () => {
     expect(doctorPayload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-      supported_sqlite_schema_version: 5,
+      supported_sqlite_schema_version: 7,
       storage_driver: "sqlite"
     });
     expect(doctorPayload.v1_scope).toMatchObject({
@@ -145,11 +158,13 @@ describe("installed Drift package flow", () => {
       "-e",
       [
         "import { DRIFT_CORE_VERSION } from '@drift/core';",
+        "import { ENGINE_STREAM_EVENT_SCHEMA_VERSION } from '@drift/engine-contract';",
         "import { openDriftStorage } from '@drift/storage';",
         "import { runCli } from '@drift/cli';",
         "import { DRIFT_MCP_VERSION } from '@drift/mcp';",
         "console.log(JSON.stringify({",
         "  core: DRIFT_CORE_VERSION,",
+        "  engineContract: ENGINE_STREAM_EVENT_SCHEMA_VERSION,",
         "  storage: typeof openDriftStorage,",
         "  cli: typeof runCli,",
         "  mcp: DRIFT_MCP_VERSION",
@@ -161,6 +176,7 @@ describe("installed Drift package flow", () => {
     });
     expect(JSON.parse(imports.stdout)).toEqual({
       core: "0.1.0",
+      engineContract: "engine.stream.event.v1",
       storage: "function",
       cli: "function",
       mcp: "0.1.0"
@@ -175,7 +191,7 @@ describe("installed Drift package flow", () => {
     expect(versionPayload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-      supported_sqlite_schema_version: 5,
+      supported_sqlite_schema_version: 7,
       storage_driver: "sqlite"
     });
 
@@ -1111,7 +1127,7 @@ describe("installed Drift package flow", () => {
     expect(runtimePayload.runtime).toMatchObject({
       mcp_version: "0.1.0",
       core_version: "0.1.0",
-      supported_sqlite_schema_version: 5,
+      supported_sqlite_schema_version: 7,
       storage_driver: "sqlite"
     });
     expect(runtimePayload.governance).toMatchObject({

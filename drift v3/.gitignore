@@ -6,6 +6,8 @@ coverage/
 *.sqlite
 *.drift-backup.sqlite
 *.tgz
+packages/engine-*/bin/
+packages/engine-*/engine-manifest.json
 .DS_Store
 .env*
 !.env.example

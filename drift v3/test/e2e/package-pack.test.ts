@@ -1,7 +1,9 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname,join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -17,8 +19,11 @@ interface PackedPackage {
     bin?: Record<string, string>;
     exports?: Record<string, { types?: string; import?: string }>;
     dependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
     engines?: Record<string, string>;
     scripts?: Record<string, string>;
+    os?: string[];
+    cpu?: string[];
   };
   files: string[];
   tarballPath: string;
@@ -79,12 +84,17 @@ function expectPackageMetadata(manifest: PackedPackage["manifest"]): void {
 
 function expectNoWorkspaceDependencies(manifest: PackedPackage["manifest"]): void {
   expect(Object.values(manifest.dependencies ?? {}).some((version) => version.startsWith("workspace:"))).toBe(false);
+  expect(Object.values(manifest.optionalDependencies ?? {}).some((version) => version.startsWith("workspace:"))).toBe(false);
 }
 
 async function packAllWorkspacePackages(): Promise<Record<string, PackedPackage>> {
   const packages = await Promise.all([
     packWorkspacePackage("packages/core"),
+    packWorkspacePackage("packages/factgraph"),
+    packWorkspacePackage("packages/engine-contract"),
     packWorkspacePackage("packages/storage"),
+    packWorkspacePackage("packages/query"),
+    packWorkspacePackage(currentEnginePackageDir()),
     packWorkspacePackage("packages/cli"),
     packWorkspacePackage("packages/mcp")
   ]);
@@ -94,6 +104,13 @@ async function packAllWorkspacePackages(): Promise<Record<string, PackedPackage>
 async function expectSourcePrepack(packageDir: string): Promise<void> {
   const manifest = JSON.parse(await readFile(join(packageDir, "package.json"), "utf8"));
   expect(manifest.scripts?.prepack).toBe("pnpm build");
+}
+
+function currentEnginePackageDir(): string {
+  if (process.platform === "darwin" && process.arch === "arm64") {
+    return "packages/engine-darwin-arm64";
+  }
+  throw new Error(`No current-platform engine package fixture for ${process.platform}-${process.arch}.`);
 }
 
 afterEach(async () => {
@@ -112,6 +129,7 @@ describe("packed Drift workspace packages", () => {
     expect(packed.files).toContain("dist/index.d.ts");
     expect(packed.files).toContain("README.md");
     expectDistOnly(packed.files);
+    expectNoWorkspaceDependencies(packed.manifest);
   }, 30000);
 
   it("packs @drift/storage as a dist-only runtime package without workspace dependency protocols", async () => {
@@ -128,6 +146,33 @@ describe("packed Drift workspace packages", () => {
     expectNoWorkspaceDependencies(packed.manifest);
   }, 30000);
 
+  it("packs @drift/factgraph as a dist-only runtime package", async () => {
+    const packed = await packWorkspacePackage("packages/factgraph");
+
+    await expectSourcePrepack("packages/factgraph");
+    expect(packed.manifest.name).toBe("@drift/factgraph");
+    expectPackageMetadata(packed.manifest);
+    expect(packed.manifest.exports?.["."]?.import).toBe("./dist/index.js");
+    expect(packed.files).toContain("dist/index.js");
+    expect(packed.files).toContain("dist/index.d.ts");
+    expect(packed.files).toContain("README.md");
+    expectDistOnly(packed.files);
+    expectNoWorkspaceDependencies(packed.manifest);
+  }, 30000);
+
+  it("packs @drift/engine-contract as a dist-only runtime package", async () => {
+    const packed = await packWorkspacePackage("packages/engine-contract");
+
+    await expectSourcePrepack("packages/engine-contract");
+    expect(packed.manifest.name).toBe("@drift/engine-contract");
+    expectPackageMetadata(packed.manifest);
+    expect(packed.manifest.exports?.["."]?.import).toBe("./dist/index.js");
+    expect(packed.files).toContain("dist/index.js");
+    expect(packed.files).toContain("dist/index.d.ts");
+    expect(packed.files).toContain("README.md");
+    expectDistOnly(packed.files);
+  }, 30000);
+
   it("packs @drift/cli with only dist files and a compiled drift bin", async () => {
     const packed = await packWorkspacePackage("packages/cli");
 
@@ -135,12 +180,56 @@ describe("packed Drift workspace packages", () => {
     expect(packed.manifest.name).toBe("@drift/cli");
     expectPackageMetadata(packed.manifest);
     expect(packed.manifest.bin?.drift).toBe("./dist/main.js");
+    expect(packed.manifest.optionalDependencies?.["@drift/engine-darwin-arm64"]).toBe("0.1.0");
     expect(packed.manifest.exports?.["."]?.import).toBe("./dist/index.js");
     expect(packed.files).toContain("dist/main.js");
     expect(packed.files).toContain("dist/index.d.ts");
     expect(packed.files).toContain("README.md");
     expectDistOnly(packed.files);
     expectNoWorkspaceDependencies(packed.manifest);
+  }, 30000);
+
+  it("packs @drift/query as a dist-only runtime package", async () => {
+    const packed = await packWorkspacePackage("packages/query");
+
+    await expectSourcePrepack("packages/query");
+    expect(packed.manifest.name).toBe("@drift/query");
+    expectPackageMetadata(packed.manifest);
+    expect(packed.manifest.exports?.["."]?.import).toBe("./dist/index.js");
+    expect(packed.files).toContain("dist/index.js");
+    expect(packed.files).toContain("dist/index.d.ts");
+    expect(packed.files).toContain("README.md");
+    expectDistOnly(packed.files);
+    expectNoWorkspaceDependencies(packed.manifest);
+  }, 30000);
+
+  it("packs the current platform Rust engine package with a verified manifest", async () => {
+    const packed = await packWorkspacePackage(currentEnginePackageDir());
+    const packageRoot = join(dirname(packed.tarballPath), "extract", "package");
+    const manifest = JSON.parse(await readFile(join(packageRoot, "engine-manifest.json"), "utf8"));
+    const binaryPath = join(packageRoot, manifest.binary_path);
+    const binary = await readFile(binaryPath);
+    const binaryStat = await stat(binaryPath);
+    const sha256 = createHash("sha256").update(binary).digest("hex");
+
+    expect(packed.manifest.name).toBe("@drift/engine-darwin-arm64");
+    expect(packed.manifest.version).toBe("0.1.0");
+    expect(packed.manifest.os).toEqual(["darwin"]);
+    expect(packed.manifest.cpu).toEqual(["arm64"]);
+    expect(packed.files).toContain("bin/drift-engine");
+    expect(packed.files).toContain("engine-manifest.json");
+    expect(manifest).toMatchObject({
+      schema_version: "drift.engine.package.v1",
+      package_name: "@drift/engine-darwin-arm64",
+      package_version: "0.1.0",
+      target_triple: "aarch64-apple-darwin",
+      platform: "darwin",
+      arch: "arm64",
+      binary_path: "bin/drift-engine",
+      engine_version: "0.1.0"
+    });
+    expect(manifest.sha256).toBe(sha256);
+    expect(binaryStat.mode & 0o111).toBeGreaterThan(0);
   }, 30000);
 
   it("packs @drift/mcp with only dist files and a compiled drift-mcp bin", async () => {
@@ -164,7 +253,11 @@ describe("packed Drift workspace packages", () => {
     expect(Object.keys(packed).sort()).toEqual([
       "@drift/cli",
       "@drift/core",
+      "@drift/engine-contract",
+      "@drift/engine-darwin-arm64",
+      "@drift/factgraph",
       "@drift/mcp",
+      "@drift/query",
       "@drift/storage"
     ]);
     expect(Object.values(packed).every((entry) => entry.tarballPath.endsWith(".tgz"))).toBe(true);

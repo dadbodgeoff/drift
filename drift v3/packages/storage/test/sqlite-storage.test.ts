@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
+import { buildFactGraphArtifact } from "@drift/factgraph";
 import { openDriftStorage } from "../src/index.js";
 
 const tempDirs: string[] = [];
@@ -28,7 +29,9 @@ describe("SQLite Drift storage", () => {
       "002_scan_facts",
       "003_repo_contracts_and_conventions",
       "004_backup_manifests",
-      "005_audit_integrity"
+      "005_audit_integrity",
+      "006_fact_graph_artifacts",
+      "007_fact_graph_v2_projections"
     ]);
     storage.close();
   });
@@ -63,7 +66,9 @@ describe("SQLite Drift storage", () => {
       "002_scan_facts",
       "003_repo_contracts_and_conventions",
       "004_backup_manifests",
-      "005_audit_integrity"
+      "005_audit_integrity",
+      "006_fact_graph_artifacts",
+      "007_fact_graph_v2_projections"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();
@@ -296,6 +301,90 @@ describe("SQLite Drift storage", () => {
         indexed: true
       }
     ]);
+    storage.close();
+  });
+
+  it("persists versioned fact graph artifacts and query projections", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    });
+    const graph = buildFactGraphArtifact({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        root_hash: "root-fp",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots: [{
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 100,
+        indexed: true
+      }],
+      facts: [{
+        id: "fact_route_role",
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        kind: "file_role_detected",
+        file_path: "app/api/users/route.ts",
+        name: "api_route",
+        start_line: 1,
+        end_line: 3
+      }],
+      createdAt: "2026-05-10T00:00:02.000Z"
+    });
+    storage.upsertFactGraphArtifact(graph);
+
+    expect(storage.getFactGraphArtifact("repo_abc", "scan_abc")).toMatchObject({
+      id: "graph_scan_abc",
+      schema_version: "factgraph.v1",
+      node_count: graph.node_count,
+      edge_count: graph.edge_count,
+      evidence_count: graph.evidence_count
+    });
+    expect(storage.listGraphNodes("repo_abc", "scan_abc")).toContainEqual(expect.objectContaining({
+      id: "file:app/api/users/route.ts",
+      kind: "file",
+      label: "app/api/users/route.ts",
+      stable: true
+    }));
+    expect(storage.listGraphEvidence("repo_abc", "scan_abc")).toContainEqual(expect.objectContaining({
+      id: "evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:1-3",
+      file_path: "app/api/users/route.ts",
+      fact_ids: ["fact_route_role"]
+    }));
+    expect(storage.listGraphCompleteness("repo_abc", "scan_abc")).toEqual([expect.objectContaining({
+      scope: "repo",
+      complete: true,
+      can_block: true
+    })]);
     storage.close();
   });
 

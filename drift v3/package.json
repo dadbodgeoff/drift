@@ -8,12 +8,13 @@
   },
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test && pnpm test:engine",
+    "test": "pnpm test:engine && pnpm -r test",
     "test:engine": "cargo test -p drift-engine",
     "test:e2e": "vitest run test/e2e --no-file-parallelism --maxWorkers=1",
     "typecheck": "pnpm -r typecheck",
-    "verify": "pnpm typecheck && pnpm build && pnpm test && pnpm test:e2e",
-    "verify:ci": "pnpm verify && git diff --check"
+    "verify": "pnpm build && pnpm typecheck && pnpm test && pnpm test:e2e",
+    "check:boundaries": "node packages/cli/scripts/check-boundaries.mjs",
+    "verify:ci": "pnpm verify && pnpm check:boundaries && git diff --check"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

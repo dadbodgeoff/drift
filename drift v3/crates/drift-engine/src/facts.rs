@@ -123,7 +123,7 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
     let Some(function) = node.child_by_field_name("function") else {
         return;
     };
-    let Some(name) = callable_name(function, source) else {
+    let Some((name, receiver)) = callable_parts(function, source) else {
         return;
     };
 
@@ -131,7 +131,7 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         kind: FactKind::SymbolCalled,
         file_path: file_path.to_string(),
         name,
-        value: None,
+        value: receiver,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
     });
@@ -182,12 +182,18 @@ fn collect_identifiers(node: Node<'_>, source: &[u8]) -> Vec<String> {
     identifiers
 }
 
-fn callable_name(node: Node<'_>, source: &[u8]) -> Option<String> {
+fn callable_parts(node: Node<'_>, source: &[u8]) -> Option<(String, Option<String>)> {
     match node.kind() {
-        "identifier" => node_text(node, source),
-        "member_expression" => node
-            .child_by_field_name("property")
-            .and_then(|property| node_text(property, source)),
+        "identifier" => node_text(node, source).map(|name| (name, None)),
+        "member_expression" => {
+            let name = node
+                .child_by_field_name("property")
+                .and_then(|property| node_text(property, source))?;
+            let receiver = node
+                .child_by_field_name("object")
+                .and_then(|object| node_text(object, source));
+            Some((name, receiver))
+        }
         _ => None,
     }
 }

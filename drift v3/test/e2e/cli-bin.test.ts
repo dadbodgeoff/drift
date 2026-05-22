@@ -52,7 +52,7 @@ describe("built drift CLI binary", () => {
     expect(payload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-      supported_sqlite_schema_version: 5,
+      supported_sqlite_schema_version: 7,
       storage_driver: "sqlite"
     });
     expect(payload.v1_scope).toMatchObject({

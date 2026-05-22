@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it } from "vitest";
+import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { openDriftStorage } from "@drift/storage";
 import {
   DRIFT_READ_ONLY_MCP_TOOLS,
@@ -985,6 +986,74 @@ describe("read-only MCP handlers", () => {
     storage.close();
   });
 
+  it("serves graph-backed repo map details through MCP with fact fallback", async () => {
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    const routePath = "apps/web/app/api/users/route.ts";
+    const routeHash = "b".repeat(64);
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        root_hash: "repo-fp",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots: storage.listFileSnapshots("repo_abc", "scan_abc"),
+      nodes: [{
+        id: `callsite:${routePath}:db.user.findMany:1`,
+        kind: "callsite",
+        label: "db.user.findMany",
+        stable: false,
+        evidence_ids: ["evidence_graph_call"],
+        metadata: {
+          file_path: routePath,
+          callee_name: "db.user.findMany"
+        }
+      }],
+      edges: [],
+      evidence: [{
+        id: "evidence_graph_call",
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        artifact_id: `file_version:${routePath}:${routeHash.slice(0, 12)}`,
+        file_path: routePath,
+        file_hash: routeHash,
+        start_line: 1,
+        end_line: 1,
+        adapter_id: "typescript",
+        adapter_version: "0.1.0",
+        fact_ids: [],
+        redaction_state: "none"
+      }],
+      createdAt: "2026-05-10T00:00:08.000Z"
+    }));
+    storage.close();
+
+    const mapped = createReadOnlyMcpHandlers({ databasePath }).get_repo_map({
+      repo_id: "repo_abc"
+    } as never) as {
+      summary: {
+        call_count: number;
+      };
+      files: Array<{
+        path: string;
+        roles: string[];
+        exported_symbols: string[];
+        calls: string[];
+      }>;
+    };
+
+    expect(mapped.summary.call_count).toBe(2);
+    expect(mapped.files).toEqual([expect.objectContaining({
+      path: routePath,
+      roles: ["api_route"],
+      exported_symbols: ["GET"],
+      calls: ["Response.json", "db.user.findMany"]
+    })]);
+  });
+
   it("returns a stale MCP preflight when the repo root is missing", async () => {
     const databasePath = await seedMcpDatabase();
     const storage = openDriftStorage({ databasePath });
@@ -1793,7 +1862,7 @@ describe("read-only MCP handlers", () => {
         mcp_version: "0.1.0",
         core_version: "0.1.0",
         scanner_version: "0.1.0",
-        supported_sqlite_schema_version: 5,
+        supported_sqlite_schema_version: 7,
         storage_driver: "sqlite"
       },
       v1_scope: {

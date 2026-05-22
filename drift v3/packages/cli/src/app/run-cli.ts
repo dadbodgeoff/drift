@@ -83,7 +83,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     storage.migrate();
     assertSupportedLocalDatabase(storage.getAppliedMigrations());
     try {
-      const result = normalizeCommandResult(runCommand(storage, parsed));
+      const result = normalizeCommandResult(await runCommand(storage, parsed));
       return {
         exitCode: result.exitCode ?? 0,
         stdout: formatOutput(result.payload, parsed),

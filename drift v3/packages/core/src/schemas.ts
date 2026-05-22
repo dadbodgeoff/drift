@@ -155,6 +155,37 @@ export const FactRecordSchema = z.object({
   end_line: z.number().int().positive()
 });
 
+export const GraphNodeRecordSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(["file", "module", "symbol", "import", "route", "role"]),
+  label: z.string().min(1)
+});
+
+export const GraphEdgeRecordSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum([
+    "FILE_CONTAINS_SYMBOL",
+    "MODULE_IMPORTS_MODULE",
+    "FILE_HAS_ROLE",
+    "ROUTE_DECLARED_IN_FILE",
+    "IMPORT_RESOLVES_TO_MODULE"
+  ]),
+  from: z.string().min(1),
+  to: z.string().min(1)
+});
+
+export const FactGraphArtifactSchema = z.object({
+  id: z.string().min(1),
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  schema_version: z.literal("factgraph.v1"),
+  graph_hash: z.string().regex(/^[a-f0-9]{64}$/),
+  graph: z.record(z.unknown()),
+  node_count: z.number().int().nonnegative(),
+  edge_count: z.number().int().nonnegative(),
+  created_at: z.string().datetime()
+});
+
 export const AuditEventSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),

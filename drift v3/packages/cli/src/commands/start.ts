@@ -8,9 +8,9 @@ import { createBaselineForFindings } from "../domain/baselines.js";
 import { acceptDefaultCandidate } from "../domain/convention-candidates.js";
 import { runScanRepo } from "../domain/scan-status.js";
 
-export function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
+export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
-  const result = runScanRepo(storage, {
+  const result = await runScanRepo(storage, {
     now,
     repoRoot: resolveRepoRoot(parsed),
     actor: actorFlag(parsed),

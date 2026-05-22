@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@drift/core": "workspace:*",
+    "@drift/factgraph": "workspace:*",
     "better-sqlite3": "^11.10.0"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import { authorizeContextExport,type FactRecord,type FileRole,type FileSnapshot,type Finding,type PolicyDecision,type RepoContract } from "@drift/core";
+import { createGraphQueryService,fallbackFactRepoMapFiles } from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { uniqueSorted } from "./contract-materialization.js";
 import { isOpenPreflightFinding } from "./findings.js";
@@ -71,7 +72,12 @@ export function repoMapPayload(
   const snapshots = latestScan ? storage.listFileSnapshots(repoId, latestScan.id) : [];
   const facts = latestScan ? storage.listFacts(latestScan.id) : [];
   const findings = storage.listFindings(repoId);
-  const allFiles = repoMapFiles(snapshots, facts, contract, findings);
+  const graphMap = latestScan ? createGraphQueryService(storage).repoMap({ repoId, scanId: latestScan.id }) : null;
+  const allFiles = decorateRepoMapFiles(
+    mergeGraphAndFactRepoMapFiles(graphMap?.files ?? [], fallbackFactRepoMapFiles(snapshots, facts)),
+    contract,
+    findings
+  );
   const files = allFiles.filter((file) =>
     (!options.role || file.roles.includes(options.role)) &&
     (!options.path || file.path === options.path || matchesGlob(file.path, options.path))
@@ -115,41 +121,50 @@ export function repoMapFiles(
   contract: RepoContract,
   findings: Finding[]
 ): RepoMapFile[] {
-  const factsByFile = new Map<string, FactRecord[]>();
-  for (const fact of facts) {
-    const existing = factsByFile.get(fact.file_path) ?? [];
-    existing.push(fact);
-    factsByFile.set(fact.file_path, existing);
-  }
+  return decorateRepoMapFiles(fallbackFactRepoMapFiles(snapshots, facts), contract, findings);
+}
 
-  return snapshots
-    .filter((snapshot) => snapshot.indexed)
-    .map((snapshot) => {
-      const fileFacts = factsByFile.get(snapshot.file_path) ?? [];
-      return {
-        path: snapshot.file_path,
-        content_hash: snapshot.content_hash,
-        byte_size: snapshot.byte_size,
-        indexed: snapshot.indexed,
-        roles: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "file_role_detected")
-          .map((fact) => fact.name)),
-        imports: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "import_used")
-          .map((fact) => fact.value ?? fact.name)),
-        exported_symbols: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "exported_symbol")
-          .map((fact) => fact.name)),
-        calls: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "symbol_called")
-          .map((fact) => fact.name)),
-        convention_ids: repoMapConventionIds(contract, snapshot.file_path),
-        risky_area_ids: repoMapRiskyAreaIds(contract, snapshot.file_path),
-        open_finding_ids: repoMapOpenFindingIds(findings, snapshot.file_path),
-        fact_count: fileFacts.length
-      };
-    })
-    .sort((left, right) => left.path.localeCompare(right.path));
+function mergeGraphAndFactRepoMapFiles(
+  graphFiles: Array<Omit<RepoMapFile, "convention_ids" | "risky_area_ids" | "open_finding_ids">>,
+  factFiles: Array<Omit<RepoMapFile, "convention_ids" | "risky_area_ids" | "open_finding_ids">>
+): Array<Omit<RepoMapFile, "convention_ids" | "risky_area_ids" | "open_finding_ids">> {
+  const factByPath = new Map(factFiles.map((file) => [file.path, file]));
+  const graphByPath = new Map(graphFiles.map((file) => [file.path, file]));
+  const paths = uniqueSorted([...graphByPath.keys(), ...factByPath.keys()]);
+  return paths.map((path) => {
+    const graphFile = graphByPath.get(path);
+    const factFile = factByPath.get(path);
+    if (!graphFile) {
+      return factFile!;
+    }
+    if (!factFile) {
+      return graphFile;
+    }
+    return {
+      path,
+      content_hash: graphFile.content_hash,
+      byte_size: graphFile.byte_size,
+      indexed: graphFile.indexed,
+      roles: uniqueSorted([...graphFile.roles, ...factFile.roles]),
+      imports: uniqueSorted([...graphFile.imports, ...factFile.imports]),
+      exported_symbols: uniqueSorted([...graphFile.exported_symbols, ...factFile.exported_symbols]),
+      calls: uniqueSorted([...graphFile.calls, ...factFile.calls]),
+      fact_count: Math.max(graphFile.fact_count, factFile.fact_count)
+    };
+  });
+}
+
+function decorateRepoMapFiles(
+  files: Array<Omit<RepoMapFile, "convention_ids" | "risky_area_ids" | "open_finding_ids">>,
+  contract: RepoContract,
+  findings: Finding[]
+): RepoMapFile[] {
+  return files.map((file) => ({
+    ...file,
+    convention_ids: repoMapConventionIds(contract, file.path),
+    risky_area_ids: repoMapRiskyAreaIds(contract, file.path),
+    open_finding_ids: repoMapOpenFindingIds(findings, file.path)
+  })).sort((left, right) => left.path.localeCompare(right.path));
 }
 
 export function paginateRepoMapFiles(files: RepoMapFile[], limit: number | undefined, offset: number): RepoMapFile[] {

@@ -7,7 +7,7 @@ import { hashStable,repoIdForRoot,sanitizeAuditId } from "../domain/identifiers.
 import { runScanRepo,scanStatusPayload } from "../domain/scan-status.js";
 import { formatScanStatusText } from "../formatters/scan-status.js";
 
-export function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs) {
+export async function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs) {
   return runScanRepo(storage, {
     now: stringFlag(parsed, "now") ?? new Date().toISOString(),
     repoRoot: resolveRepoRoot(parsed),

@@ -1,8 +1,11 @@
 import { type AuditChainVerification,type ConventionCandidate,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type RepoRecord,type ScanManifest } from "@drift/core";
+import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { collectScanData } from "../engine/collect-scan-data.js";
+import { buildFactGraphArtifact } from "../engine/fact-graph.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { fileContentHash } from "../io/file-hash.js";
 import { gitOutput } from "../io/git.js";
@@ -24,18 +27,20 @@ export interface ScanRepoInput {
   databasePath: string;
 }
 
-export function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): {
+export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): Promise<{
   repo: RepoRecord;
   scan: ScanManifest;
   candidates: ConventionCandidate[];
   summary: {
     files_indexed: number;
+    files_skipped: number;
     facts_count: number;
+    diagnostics_count: number;
     candidates_count: number;
     engine_source: "rust" | "typescript";
   };
   database_path: string;
-} {
+}> {
   const now = input.now;
   const repoRoot = input.repoRoot;
   if (existsSync(repoRoot) && !statSync(repoRoot).isDirectory()) {
@@ -61,7 +66,7 @@ export function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): 
     createdAt: now
   }));
   try {
-    const scanData = collectScanData({ repoId: repo.id, scanId, repoRoot });
+    const scanData = await collectScanData({ repoId: repo.id, scanId, repoRoot });
     const candidates = inferConventionCandidates({
       repoId: repo.id,
       scanId,
@@ -87,29 +92,74 @@ export function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): 
       completed_at: now
     };
 
-    storage.upsertScanManifest(scan);
-    for (const snapshot of scanData.snapshots) {
-      storage.upsertFileSnapshot(snapshot);
-    }
-    storage.upsertFacts(scanData.facts);
-    for (const candidate of candidates) {
-      storage.upsertConventionCandidate(candidate);
-    }
-    storage.appendAuditEvent(auditEvent({
-      id: `audit_event_scan_completed_${repo.id}_${scanId}`,
-      repoId: repo.id,
-      actor,
-      action: "scan_completed",
-      targetType: "scan",
-      targetId: scanId,
-      metadata: {
-        files_indexed: scanData.files.length,
-        facts_count: scanData.facts.length,
-        candidates_count: candidates.length,
-        engine_source: scanData.engineSource
-      },
-      createdAt: now
-    }));
+    const graphRepo = {
+      repo_id: repo.id,
+      scan_id: scanId,
+      root_hash: hashStable(JSON.stringify(scanData.snapshots.map((snapshot) => [
+        snapshot.file_path,
+        snapshot.content_hash
+      ]).sort())),
+      branch: scan.branch,
+      commit: scan.commit,
+      dirty: scan.dirty
+    };
+    const graphArtifact = scanData.graph_nodes.length > 0
+      ? buildFactGraphArtifactFromParts({
+        repo: graphRepo,
+        snapshots: scanData.snapshots,
+        nodes: scanData.graph_nodes,
+        edges: scanData.graph_edges,
+        evidence: scanData.graph_evidence,
+        adapters: [{
+          id: "typescript",
+          version: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+          deterministic: true,
+          capabilities: ["file_discovery", "syntax_facts", "graph_stream"]
+        }],
+        createdAt: now
+      })
+      : buildFactGraphArtifact({
+        repoId: repo.id,
+        scanId,
+        snapshots: scanData.snapshots,
+        facts: scanData.facts,
+        createdAt: now,
+        pathAliases: readTsconfigPathAliases(repoRoot),
+        repo: {
+          root_hash: graphRepo.root_hash,
+          branch: graphRepo.branch,
+          commit: graphRepo.commit,
+          dirty: graphRepo.dirty
+        }
+      });
+    storage.transaction(() => {
+      storage.upsertScanManifest(scan);
+      for (const snapshot of scanData.snapshots) {
+        storage.upsertFileSnapshot(snapshot);
+      }
+      storage.upsertFacts(scanData.facts);
+      storage.upsertFactGraphArtifact(graphArtifact);
+      for (const candidate of candidates) {
+        storage.upsertConventionCandidate(candidate);
+      }
+      storage.appendAuditEvent(auditEvent({
+        id: `audit_event_scan_completed_${repo.id}_${scanId}`,
+        repoId: repo.id,
+        actor,
+        action: "scan_completed",
+        targetType: "scan",
+        targetId: scanId,
+        metadata: {
+          files_indexed: scanData.files.length,
+          files_skipped: scanData.stats?.files_skipped ?? 0,
+          facts_count: scanData.facts.length,
+          diagnostics_count: scanData.diagnostics.length,
+          candidates_count: candidates.length,
+          engine_source: scanData.engineSource
+        },
+        createdAt: now
+      }));
+    });
 
     return {
       repo,
@@ -117,7 +167,9 @@ export function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): 
       candidates,
       summary: {
         files_indexed: scanData.files.length,
+        files_skipped: scanData.stats?.files_skipped ?? 0,
         facts_count: scanData.facts.length,
+        diagnostics_count: scanData.diagnostics.length,
         candidates_count: candidates.length,
         engine_source: scanData.engineSource
       },
@@ -143,18 +195,35 @@ export function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoInput): 
       completed_at: now,
       error_message: errorMessage
     };
-    storage.upsertScanManifest(failedScan);
-    storage.appendAuditEvent(auditEvent({
-      id: `audit_event_scan_failed_${repo.id}_${scanId}`,
-      repoId: repo.id,
-      actor,
-      action: "scan_failed",
-      targetType: "scan",
-      targetId: scanId,
-      metadata: { error_message: errorMessage },
-      createdAt: now
-    }));
+    storage.transaction(() => {
+      storage.upsertScanManifest(failedScan);
+      storage.appendAuditEvent(auditEvent({
+        id: `audit_event_scan_failed_${repo.id}_${scanId}`,
+        repoId: repo.id,
+        actor,
+        action: "scan_failed",
+        targetType: "scan",
+        targetId: scanId,
+        metadata: { error_message: errorMessage },
+        createdAt: now
+      }));
+    });
     throw error;
+  }
+}
+
+function readTsconfigPathAliases(repoRoot: string): Record<string, string[]> {
+  const tsconfigPath = join(repoRoot, "tsconfig.json");
+  if (!existsSync(tsconfigPath) || !statSync(tsconfigPath).isFile()) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(tsconfigPath, "utf8")) as {
+      compilerOptions?: { paths?: Record<string, string[]> };
+    };
+    return parsed.compilerOptions?.paths ?? {};
+  } catch {
+    return {};
   }
 }
 

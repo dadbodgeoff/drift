@@ -262,7 +262,8 @@ Strong:
 
 Weak:
 
-- `packages/cli/src/index.ts` is 9,368 lines and is now the maintainability bottleneck
+- CLI monolith risk has been reduced in the current worktree: `packages/cli/src/index.ts` is now a public shim and command logic lives under `packages/cli/src/{app,args,commands,domain,engine,check,formatters,io}`
+- MCP still has a monolith risk and should be split after shared query/agent contracts land
 - duplicated rule/diff authority exists between Rust and TypeScript
 - fixture diversity is low
 - bounded-memory claims are only partially true
@@ -271,7 +272,7 @@ Weak:
 - storage operations are not transactional at the product-workflow level
 - migration idempotence has a known risk around audit integrity columns
 
-Verdict: implementation is credible but must be modularized before the next complexity jump.
+Verdict: implementation is credible. The CLI modularization is now substantially handled, so the next bottleneck is the engine/graph/storage substrate.
 
 ## Production Readiness Snapshot
 
@@ -312,9 +313,10 @@ Coverage gaps:
 | --- | --- | --- | --- |
 | No true graph model | High | Core product promise is codebase intelligence, not just file facts | Define `FactGraph` schema and graph tables |
 | Duplicated Rust/TS rule authority | High | Rule behavior can drift | Route check/rule execution through one engine contract |
-| CLI file too large | High | Hard to maintain or review safely | Split by command family without changing behavior |
+| Boundary enforcement missing from CI | High | CLI split can regress as packages grow | Add boundary checker to `verify:ci` |
+| MCP monolith and duplicated query logic | High | MCP can drift from CLI behavior | Move shared query/agent builders to a common package |
 | Fixture diversity low | High | Current wedge can overfit | Add 3-5 realistic fixtures |
-| Bounded-memory incomplete | Medium | Large repos can still blow memory | Add max-file, max-fact, batching, `.gitignore`, symlink policy |
+| Bounded-memory incomplete | High | Large repos can still blow memory | Add streaming engine output, batch persistence, max-file/max-fact limits, `.gitignore`, symlink policy |
 | `start --accept-defaults` governance ambiguity | Addressed | Trust story can sound inconsistent | Documented as confirmation-equivalent in README and CLI help |
 | Package READMEs thin | Medium | External package users lack local context | Expand CLI/MCP/storage package docs |
 | No release lane | Medium | Hard to ship cleanly | Add changelog, version policy, publish dry-run |
@@ -329,19 +331,23 @@ Do not jump to broad Python, UI, duplicate-helper detection, or cloud sync yet. 
 
 Recommended next phase:
 
-1. Freeze current CLI/MCP behavior behind `pnpm verify:ci`.
-2. Split `packages/cli/src/index.ts` into command modules.
-3. Define Rust `FactGraph` output:
+1. Add package/import boundary enforcement to `pnpm verify:ci`.
+2. Define the engine API contract with generated validators.
+3. Replace blob engine output with streaming/framed batches.
+4. Move scan completion and graph writes into storage-owned transactions.
+5. Define Rust `FactGraph` output:
    - files
+   - file versions
    - packages
    - imports with local/imported/source/type
    - exports with symbol kind
    - calls with receiver/property/span
    - roles
    - evidence refs
-4. Add SQLite graph tables or a versioned graph artifact table.
-5. Route `drift check` through the engine contract instead of duplicated TypeScript logic.
-6. Add fixtures:
+6. Add SQLite graph tables and indexed projections.
+7. Add shared agent response/refusal envelopes for CLI and MCP.
+8. Route `drift check` through the engine contract instead of duplicated TypeScript logic.
+9. Add fixtures:
    - clean API route
    - service-delegated route
    - monorepo alias imports
@@ -350,66 +356,14 @@ Recommended next phase:
    - larger synthetic repo
 7. Add performance and scale gates.
 
-## Recommended Next 5 Sprints
+## Updated Roadmap Pointer
 
-### Sprint 1: Freeze And Modularize The CLI
+This inventory captured the first system audit. The more current frontier-grade sprint order now lives in:
 
-Goal: reduce implementation risk without changing behavior.
+- `docs/architecture/frontier-engineering-requirements.md`
+- `docs/architecture/next-sprints-engine-roadmap.md`
 
-Deliverables:
-
-- command modules for scan/start, check, findings, conventions, policy, contract, backup/restore, MCP shared helpers
-- no behavior changes
-- all existing tests unchanged except imports
-- `pnpm verify:ci` passes
-
-### Sprint 2: Multi-Fixture Regression Matrix
-
-Goal: stop overfitting the product to one fixture.
-
-Deliverables:
-
-- `next-api-clean`
-- `next-api-service-delegated`
-- `monorepo-alias-db`
-- `legacy-baselined-violations`
-- `no-ts-repo`
-- golden snapshots for scan, candidates, check, prepare, MCP
-
-### Sprint 3: Rust FactGraph V1 Contract
-
-Goal: shift from flat facts to graph-ready facts.
-
-Deliverables:
-
-- versioned `FactGraph` JSON schema
-- stable IDs for files/modules/symbols/imports/calls
-- evidence refs with file/line/hash
-- TS/TSX parser tests for import/export/call shapes
-
-### Sprint 4: Engine-Owned Rule And Diff Execution
-
-Goal: remove duplicated authority.
-
-Deliverables:
-
-- CLI calls engine for direct data-access checks
-- CLI persists engine findings
-- same JSON output as today
-- regression proof that old/new outputs match
-
-### Sprint 5: Scale And Safety Gate
-
-Goal: make local-first credible on real repos.
-
-Deliverables:
-
-- `.gitignore` handling
-- symlink policy
-- max file size
-- max fact count / graceful truncation
-- streaming or batch scan output
-- synthetic large-repo performance test
+The important update is that CLI modularization is no longer the main blocker in the current worktree. The next blockers are boundary enforcement, engine contract, streaming scan output, storage-owned durable workflows, agent response contracts, fixture determinism, and graph tables/query services.
 
 ## Bottom Line
 
@@ -417,4 +371,4 @@ Drift has successfully moved from concept into a product-shaped local agent guar
 
 The main remaining question is not “do we need more product wrapper?” It is now “can the engine understand projects deeply enough to justify the product promise?”
 
-The next serious investment should be parsers and graphs, but only after freezing and modularizing the current CLI loop so the product shell does not collapse under the next engine push.
+The next serious investment should be parsers and graphs, but only after enforcing package boundaries, replacing blob scan output with streaming batches, and making storage own durable workflow invariants.

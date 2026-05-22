@@ -28,288 +28,39 @@ import {
   DRIFT_SCANNER_VERSION,
   DRIFT_TYPESCRIPT_ADAPTER_VERSION
 } from "@drift/core";
+import { createGraphQueryService, fallbackFactRepoMapFiles, type GraphRepoMapFile } from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { createInterface } from "node:readline";
+import { DRIFT_READ_ONLY_MCP_TOOLS } from "./tools.js";
+import type {
+  DriftMcpHandlers,
+  DriftMcpOptions,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  McpCliResult,
+  PreparedRequiredCheck,
+  PreparedRiskArea,
+  PreparedWaiver,
+  RelevantFile,
+  RepoMapFile
+} from "./types.js";
 
-export interface DriftMcpOptions {
-  databasePath: string;
-}
-
-export interface DriftMcpHandlers {
-  get_runtime_info(input: Record<string, never>): unknown;
-  get_capabilities(input: Record<string, never>): unknown;
-  get_audit_status(input: { repo_id: string }): unknown;
-  get_scan_status(input: { repo_id: string }): unknown;
-  get_repo_contract(input: { repo_id: string }): unknown;
-  get_repo_map(input: {
-    repo_id: string;
-    role?: FileRole;
-    path?: string;
-    require_fresh?: boolean;
-    limit?: number;
-    offset?: number;
-  }): unknown;
-  get_task_preflight(input: { repo_id: string; task: string; path?: string; require_fresh?: boolean; now?: string }): unknown;
-  get_conventions(input: {
-    repo_id: string;
-    kind?: ConventionKind;
-    capability?: EnforcementCapability;
-    limit?: number;
-    offset?: number;
-  }): unknown;
-  get_findings(input: {
-    repo_id: string;
-    status?: FindingStatus;
-    severity?: Severity;
-    diff_status?: FindingDiffStatus;
-    convention_id?: string;
-    path?: string;
-    limit?: number;
-    offset?: number;
-    require_fresh?: boolean;
-  }): unknown;
-  get_allowed_context(input: {
-    repo_id: string;
-    path: string;
-    surface?: PolicyDecision["surface"];
-    requested_snippet_chars?: number;
-    request_full_file_content?: boolean;
-    require_fresh?: boolean;
-  }): unknown;
-}
-
-export interface DriftMcpTool {
-  name: keyof DriftMcpHandlers;
-  description: string;
-  inputSchema: {
-    type: "object";
-    properties: Record<string, unknown>;
-    required: string[];
-    additionalProperties: false;
-  };
-}
-
-interface RelevantFile {
-  path: string;
-  roles: string[];
-  reasons: string[];
-}
-
-interface RepoMapFile {
-  path: string;
-  content_hash: string;
-  byte_size: number;
-  indexed: boolean;
-  roles: string[];
-  imports: string[];
-  exported_symbols: string[];
-  calls: string[];
-  convention_ids: string[];
-  risky_area_ids: string[];
-  open_finding_ids: string[];
-  fact_count: number;
-}
-
-type PreparedRequiredCheck = RepoContract["required_checks"][number] & {
-  matched_files: string[];
-};
-
-type PreparedRiskArea = RepoContract["risky_areas"][number] & {
-  matched_files: string[];
-};
-
-type PreparedWaiver = RepoContract["waivers"][number] & {
-  status: "active";
-  matched_files: string[];
-};
-
-export interface JsonRpcRequest {
-  jsonrpc?: "2.0";
-  id?: string | number | null;
-  method: string;
-  params?: unknown;
-}
-
-export interface JsonRpcResponse {
-  jsonrpc: "2.0";
-  id: string | number | null;
-  result?: unknown;
-  error?: {
-    code: number;
-    message: string;
-  };
-}
-
-export interface McpCliResult {
-  exitCode: number;
-}
+export { DRIFT_READ_ONLY_MCP_TOOLS } from "./tools.js";
+export type {
+  DriftMcpHandlers,
+  DriftMcpOptions,
+  DriftMcpTool,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  McpCliResult
+} from "./types.js";
 
 export const DRIFT_MCP_PROTOCOL_VERSION = "2024-11-05";
 export const DRIFT_MCP_VERSION = "0.1.0";
-
-export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
-  {
-    name: "get_runtime_info",
-    description: "Return Drift runtime, schema, support-scope, and read-only governance metadata.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      required: [],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_capabilities",
-    description: "Return Drift V1 CLI and MCP capability metadata without reading repo source.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      required: [],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_audit_status",
-    description: "Return read-only audit hash-chain verification status for a repo.",
-    inputSchema: repoOnlySchema()
-  },
-  {
-    name: "get_scan_status",
-    description: "Return the latest Drift scan status for a repo.",
-    inputSchema: repoOnlySchema()
-  },
-  {
-    name: "get_repo_contract",
-    description: "Return the approved repo contract, policy, and conventions.",
-    inputSchema: repoOnlySchema()
-  },
-  {
-    name: "get_repo_map",
-    description: "Return the latest indexed file-role/import/export/call map without source snippets.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        repo_id: { type: "string" },
-        role: {
-          type: "string",
-          enum: ["api_route", "server_module", "service_module", "data_access_module", "component", "test", "config"]
-        },
-        path: { type: "string" },
-        limit: { type: "number" },
-        offset: { type: "number" },
-        require_fresh: { type: "boolean" }
-      },
-      required: ["repo_id"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_task_preflight",
-    description: "Return policy-filtered conventions and findings relevant to a task.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        repo_id: { type: "string" },
-        task: { type: "string" },
-        path: { type: "string" },
-        require_fresh: { type: "boolean" },
-        now: { type: "string" }
-      },
-      required: ["repo_id", "task"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_conventions",
-    description: "Return accepted conventions for a repo.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        repo_id: { type: "string" },
-        kind: {
-          type: "string",
-          enum: [
-            "api_route_no_direct_data_access",
-            "api_route_requires_service_delegation",
-            "api_route_requires_auth_helper",
-            "test_expected_for_changed_module",
-            "custom_briefing"
-          ]
-        },
-        capability: {
-          type: "string",
-          enum: ["briefing_only", "heuristic_check", "deterministic_check"]
-        },
-        limit: { type: "number" },
-        offset: { type: "number" }
-      },
-      required: ["repo_id"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_findings",
-    description: "Return stored Drift findings for a repo, with optional review filters.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        repo_id: { type: "string" },
-        status: {
-          type: "string",
-          enum: [
-            "new",
-            "pre_existing",
-            "needs_review",
-            "fixed",
-            "false_positive",
-            "accepted_drift",
-            "suppressed",
-            "expired"
-          ]
-        },
-        severity: {
-          type: "string",
-          enum: ["info", "warning", "error"]
-        },
-        diff_status: {
-          type: "string",
-          enum: ["new_in_diff", "touched_existing", "outside_diff"]
-        },
-        convention_id: { type: "string" },
-        path: { type: "string" },
-        limit: { type: "number" },
-        offset: { type: "number" },
-        require_fresh: { type: "boolean" }
-      },
-      required: ["repo_id"],
-      additionalProperties: false
-    }
-  },
-  {
-    name: "get_allowed_context",
-    description: "Check whether a path can be exposed through an agent-facing surface.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        repo_id: { type: "string" },
-        path: { type: "string" },
-        surface: {
-          type: "string",
-          enum: ["cli-preflight", "cli-check", "mcp", "contract-export", "artifact", "log", "ui"]
-        },
-        requested_snippet_chars: { type: "number" },
-        request_full_file_content: { type: "boolean" },
-        require_fresh: { type: "boolean" }
-      },
-      required: ["repo_id", "path"],
-      additionalProperties: false
-    }
-  }
-];
 
 export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHandlers {
   return {
@@ -756,17 +507,6 @@ function withStorage<T>(options: DriftMcpOptions, fn: (storage: ReturnType<typeo
   } finally {
     storage.close();
   }
-}
-
-function repoOnlySchema(): DriftMcpTool["inputSchema"] {
-  return {
-    type: "object",
-    properties: {
-      repo_id: { type: "string" }
-    },
-    required: ["repo_id"],
-    additionalProperties: false
-  };
 }
 
 function response(id: JsonRpcRequest["id"], result: unknown): JsonRpcResponse {
@@ -1282,7 +1022,8 @@ function policyFileContext(
   const snapshots = latestScan ? storage.listFileSnapshots(repoId, latestScan.id) : [];
   const facts = latestScan ? storage.listFacts(latestScan.id) : [];
   const findings = storage.listFindings(repoId);
-  const file = repoMapFiles(snapshots, facts, contract, findings)
+  const graphMap = latestScan ? createGraphQueryService(storage).repoMap({ repoId, scanId: latestScan.id }) : null;
+  const file = repoMapFiles(snapshots, facts, contract, findings, graphMap?.files ?? [])
     .find((entry) => entry.path === filePath);
   if (!file) {
     return {
@@ -1325,7 +1066,8 @@ function repoMapPayload(
   const snapshots = latestScan ? storage.listFileSnapshots(repoId, latestScan.id) : [];
   const facts = latestScan ? storage.listFacts(latestScan.id) : [];
   const findings = storage.listFindings(repoId);
-  const allFiles = repoMapFiles(snapshots, facts, contract, findings);
+  const graphMap = latestScan ? createGraphQueryService(storage).repoMap({ repoId, scanId: latestScan.id }) : null;
+  const allFiles = repoMapFiles(snapshots, facts, contract, findings, graphMap?.files ?? []);
   const files = allFiles.filter((file) =>
     (!options.role || file.roles.includes(options.role)) &&
     (!options.path || file.path === options.path || matchesPolicyGlob(file.path, options.path))
@@ -1366,43 +1108,64 @@ function repoMapFiles(
   snapshots: FileSnapshot[],
   facts: FactRecord[],
   contract: RepoContract,
+  findings: Finding[],
+  graphFiles: GraphRepoMapFile[] = []
+): RepoMapFile[] {
+  return decorateRepoMapFiles(
+    mergeGraphAndFactRepoMapFiles(graphFiles, fallbackFactRepoMapFiles(snapshots, facts)),
+    contract,
+    findings
+  );
+}
+
+function mergeGraphAndFactRepoMapFiles(graphFiles: GraphRepoMapFile[], factFiles: GraphRepoMapFile[]): GraphRepoMapFile[] {
+  const factByPath = new Map(factFiles.map((file) => [file.path, file]));
+  const graphByPath = new Map(graphFiles.map((file) => [file.path, file]));
+  const paths = uniqueSorted([...graphByPath.keys(), ...factByPath.keys()]);
+  return paths.map((path) => {
+    const graphFile = graphByPath.get(path);
+    const factFile = factByPath.get(path);
+    if (!graphFile) {
+      return factFile!;
+    }
+    if (!factFile) {
+      return graphFile;
+    }
+    return {
+      path,
+      content_hash: graphFile.content_hash,
+      byte_size: graphFile.byte_size,
+      indexed: graphFile.indexed,
+      roles: uniqueSorted([...graphFile.roles, ...factFile.roles]),
+      imports: uniqueSorted([...graphFile.imports, ...factFile.imports]),
+      exported_symbols: uniqueSorted([...graphFile.exported_symbols, ...factFile.exported_symbols]),
+      calls: uniqueSorted([...graphFile.calls, ...factFile.calls]),
+      graph_node_ids: uniqueSorted([...graphFile.graph_node_ids, ...factFile.graph_node_ids]),
+      evidence_ids: uniqueSorted([...graphFile.evidence_ids, ...factFile.evidence_ids]),
+      fact_count: Math.max(graphFile.fact_count, factFile.fact_count)
+    };
+  });
+}
+
+function decorateRepoMapFiles(
+  files: GraphRepoMapFile[],
+  contract: RepoContract,
   findings: Finding[]
 ): RepoMapFile[] {
-  const factsByFile = new Map<string, FactRecord[]>();
-  for (const fact of facts) {
-    const existing = factsByFile.get(fact.file_path) ?? [];
-    existing.push(fact);
-    factsByFile.set(fact.file_path, existing);
-  }
-
-  return snapshots
-    .filter((snapshot) => snapshot.indexed)
-    .map((snapshot) => {
-      const fileFacts = factsByFile.get(snapshot.file_path) ?? [];
-      return {
-        path: snapshot.file_path,
-        content_hash: snapshot.content_hash,
-        byte_size: snapshot.byte_size,
-        indexed: snapshot.indexed,
-        roles: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "file_role_detected")
-          .map((fact) => fact.name)),
-        imports: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "import_used")
-          .map((fact) => fact.value ?? fact.name)),
-        exported_symbols: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "exported_symbol")
-          .map((fact) => fact.name)),
-        calls: uniqueSorted(fileFacts
-          .filter((fact) => fact.kind === "symbol_called")
-          .map((fact) => fact.name)),
-        convention_ids: repoMapConventionIds(contract, snapshot.file_path),
-        risky_area_ids: repoMapRiskyAreaIds(contract, snapshot.file_path),
-        open_finding_ids: repoMapOpenFindingIds(findings, snapshot.file_path),
-        fact_count: fileFacts.length
-      };
-    })
-    .sort((left, right) => left.path.localeCompare(right.path));
+  return files.map((file) => ({
+    path: file.path,
+    content_hash: file.content_hash,
+    byte_size: file.byte_size,
+    indexed: file.indexed,
+    roles: file.roles,
+    imports: file.imports,
+    exported_symbols: file.exported_symbols,
+    calls: file.calls,
+    convention_ids: repoMapConventionIds(contract, file.path),
+    risky_area_ids: repoMapRiskyAreaIds(contract, file.path),
+    open_finding_ids: repoMapOpenFindingIds(findings, file.path),
+    fact_count: file.fact_count
+  })).sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function repoMapConventionIds(contract: RepoContract, filePath: string): string[] {

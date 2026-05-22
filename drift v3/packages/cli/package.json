@@ -29,7 +29,17 @@
   },
   "dependencies": {
     "@drift/core": "workspace:*",
+    "@drift/engine-contract": "workspace:*",
+    "@drift/factgraph": "workspace:*",
+    "@drift/query": "workspace:*",
     "@drift/storage": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@drift/engine-darwin-arm64": "workspace:*",
+    "@drift/engine-darwin-x64": "workspace:*",
+    "@drift/engine-linux-arm64-gnu": "workspace:*",
+    "@drift/engine-linux-x64-gnu": "workspace:*",
+    "@drift/engine-win32-x64": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

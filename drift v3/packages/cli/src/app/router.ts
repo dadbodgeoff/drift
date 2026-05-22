@@ -17,7 +17,7 @@ import { scanRepo,scanStatus } from "../commands/scan.js";
 import { startRepo } from "../commands/start.js";
 import { CommandPayload,ParsedArgs } from "./command-types.js";
 
-export function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): unknown | CommandPayload {
+export async function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<unknown | CommandPayload> {
   const [group, command, maybeId] = parsed.positional;
 
   if (group === "scan" && command === "status") {
