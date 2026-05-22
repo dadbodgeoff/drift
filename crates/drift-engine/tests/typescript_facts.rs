@@ -64,3 +64,28 @@ export async function GET() {
     assert!(import_sources.contains(&"../../server/db"));
     assert!(import_sources.contains(&"@repo/database"));
 }
+
+#[test]
+fn skips_type_only_imports_as_value_import_facts() {
+    let source = r#"
+import type { PrismaClient } from "@/lib/prisma";
+import { type DbConfig, db } from "@/lib/db";
+
+export async function GET() {
+  return Response.json(await db.user.findMany());
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/users/route.ts", source).expect("typescript facts");
+
+    assert!(!facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
+        && fact.name == "PrismaClient"
+        && fact.value.as_deref() == Some("@/lib/prisma")));
+    assert!(!facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
+        && fact.name == "DbConfig"
+        && fact.value.as_deref() == Some("@/lib/db")));
+    assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
+        && fact.name == "db"
+        && fact.value.as_deref() == Some("@/lib/db")));
+}

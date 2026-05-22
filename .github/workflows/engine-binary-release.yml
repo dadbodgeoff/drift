@@ -1,0 +1,434 @@
+name: Engine Binary Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version to release, without the leading v."
+        required: true
+        type: string
+      dry_run:
+        description: "Build, pack, and smoke the release without publishing."
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: engine-binary-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.28.0"
+
+jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          if [[ -z "${VERSION}" ]]; then
+            echo "Missing release version." >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify source release gate
+        run: pnpm verify:ci
+
+      - name: Assert release versions
+        run: node scripts/assert-release-versions.mjs "${{ steps.version.outputs.version }}"
+
+  build-engine:
+    name: Build ${{ matrix.target }}
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-darwin
+            npm_package: "@drift/engine-darwin-arm64"
+            package_dir: engine-darwin-arm64
+            platform: darwin
+            arch: arm64
+            binary_name: drift-engine
+            archive_ext: tar.gz
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            npm_package: "@drift/engine-darwin-x64"
+            package_dir: engine-darwin-x64
+            platform: darwin
+            arch: x64
+            binary_name: drift-engine
+            archive_ext: tar.gz
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            npm_package: "@drift/engine-linux-x64-gnu"
+            package_dir: engine-linux-x64-gnu
+            platform: linux
+            arch: x64
+            binary_name: drift-engine
+            archive_ext: tar.gz
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            npm_package: "@drift/engine-linux-arm64-gnu"
+            package_dir: engine-linux-arm64-gnu
+            platform: linux
+            arch: arm64
+            binary_name: drift-engine
+            archive_ext: tar.gz
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            npm_package: "@drift/engine-win32-x64"
+            package_dir: engine-win32-x64
+            platform: win32
+            arch: x64
+            binary_name: drift-engine.exe
+            archive_ext: zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build engine
+        run: cargo build --locked --release -p drift-engine --target ${{ matrix.target }}
+
+      - name: Stage binary package
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="target/${{ matrix.target }}/release/${{ matrix.binary_name }}"
+          node scripts/stage-engine-package.mjs \
+            --package-dir "packages/${{ matrix.package_dir }}" \
+            --binary "${BINARY}" \
+            --target "${{ matrix.target }}" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --binary-name "${{ matrix.binary_name }}"
+
+      - name: Native engine smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          "packages/${{ matrix.package_dir }}/bin/${{ matrix.binary_name }}" scan-repo test/fixtures/next-api-direct-db --format json --repo-id release_smoke --scan-id release_smoke > engine-smoke.json
+          node -e "const result = JSON.parse(require('node:fs').readFileSync('engine-smoke.json', 'utf8')); if (result.schema_version !== 'engine.scan.result.v1') process.exit(1);"
+
+      - name: Create release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.preflight.outputs.version }}"
+          ASSET="drift-engine-v${VERSION}-${{ matrix.target }}.${{ matrix.archive_ext }}"
+          if [[ "${{ matrix.archive_ext }}" == "zip" ]]; then
+            powershell -NoLogo -NoProfile -Command "Compress-Archive -Path 'packages/${{ matrix.package_dir }}/bin/${{ matrix.binary_name }}' -DestinationPath '${ASSET}' -Force"
+          else
+            tar -czf "${ASSET}" -C "packages/${{ matrix.package_dir }}/bin" "${{ matrix.binary_name }}"
+          fi
+          node -e "const fs=require('node:fs');const crypto=require('node:crypto');const asset=process.argv[1];const hash=crypto.createHash('sha256').update(fs.readFileSync(asset)).digest('hex');fs.writeFileSync(asset+'.sha256', hash+'  '+asset+'\n');" "${ASSET}"
+          mkdir -p ".release/${{ matrix.target }}"
+          cp "${ASSET}" "${ASSET}.sha256" ".release/${{ matrix.target }}/"
+          cp -R "packages/${{ matrix.package_dir }}" ".release/${{ matrix.target }}/package"
+
+      - name: Upload engine artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-engine-${{ matrix.target }}
+          path: .release/${{ matrix.target }}
+          if-no-files-found: error
+
+  assemble-checksums:
+    name: Assemble SHA256SUMS
+    needs:
+      - preflight
+      - build-engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Download engine artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .release/artifacts
+
+      - name: Assemble checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          find .release/artifacts -name '*.sha256' -print0 | sort -z | xargs -0 cat > SHA256SUMS
+          test "$(grep -c '^' SHA256SUMS)" -eq 5
+          while read -r hash file; do
+            asset="$(find .release/artifacts -name "${file}" -print -quit)"
+            test -n "${asset}"
+            actual="$(node -e "const fs=require('node:fs');const crypto=require('node:crypto');console.log(crypto.createHash('sha256').update(fs.readFileSync(process.argv[1])).digest('hex'));" "${asset}")"
+            test "${actual}" = "${hash}"
+          done < SHA256SUMS
+
+      - name: Upload checksum manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-engine-SHA256SUMS
+          path: SHA256SUMS
+          if-no-files-found: error
+
+  pack-npm-packages:
+    name: Pack npm packages
+    needs:
+      - preflight
+      - build-engine
+      - assemble-checksums
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download engine artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: drift-engine-*
+          merge-multiple: false
+          path: .release/artifacts
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install staged engine package directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in .release/artifacts/drift-engine-*/package; do
+            package_name="$(node -e "console.log(require('./${dir}/package.json').name)")"
+            package_dir="${package_name#@drift/}"
+            rm -rf "packages/${package_dir}/bin" "packages/${package_dir}/engine-manifest.json"
+            cp -R "${dir}/bin" "packages/${package_dir}/bin"
+            cp "${dir}/engine-manifest.json" "packages/${package_dir}/engine-manifest.json"
+          done
+
+      - name: Prepare exact publish manifests
+        run: |
+          node scripts/prepare-npm-publish-manifests.mjs "${{ needs.preflight.outputs.version }}"
+          node scripts/assert-release-versions.mjs "${{ needs.preflight.outputs.version }}"
+
+      - name: Build JavaScript packages
+        run: pnpm -r --filter './packages/*' build
+
+      - name: Pack npm tarballs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release/npm
+          for package_dir in \
+            packages/core \
+            packages/engine-contract \
+            packages/storage \
+            packages/engine-darwin-arm64 \
+            packages/engine-darwin-x64 \
+            packages/engine-linux-x64-gnu \
+            packages/engine-linux-arm64-gnu \
+            packages/engine-win32-x64 \
+            packages/cli \
+            packages/mcp
+          do
+            npm pack "${package_dir}" --ignore-scripts --json --pack-destination .release/npm
+          done
+
+      - name: Upload npm tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-npm-tarballs
+          path: .release/npm/*.tgz
+          if-no-files-found: error
+
+  registry-smoke:
+    name: Installed package smoke
+    needs:
+      - preflight
+      - pack-npm-packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Download npm tarballs
+        uses: actions/download-artifact@v4
+        with:
+          name: drift-npm-tarballs
+          path: .release/npm
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and smoke current Linux package
+        shell: bash
+        run: |
+          set -euo pipefail
+          TMP="$(mktemp -d)"
+          cd "${TMP}"
+          npm init -y >/dev/null
+          npm install "${GITHUB_WORKSPACE}"/.release/npm/drift-core-*.tgz \
+            "${GITHUB_WORKSPACE}"/.release/npm/drift-engine-contract-*.tgz \
+            "${GITHUB_WORKSPACE}"/.release/npm/drift-storage-*.tgz \
+            "${GITHUB_WORKSPACE}"/.release/npm/drift-engine-linux-x64-gnu-*.tgz \
+            "${GITHUB_WORKSPACE}"/.release/npm/drift-cli-*.tgz
+          unset DRIFT_ENGINE_BIN
+          ./node_modules/.bin/drift version --json
+          ./node_modules/.bin/drift scan --repo-root "${GITHUB_WORKSPACE}/test/fixtures/next-api-direct-db" --state-root "${TMP}/state" --json
+
+  publish:
+    name: Publish npm packages
+    needs:
+      - preflight
+      - pack-npm-packages
+      - registry-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    if: ${{ inputs.dry_run == false || startsWith(github.ref, 'refs/tags/v') }}
+
+    steps:
+      - name: Download npm tarballs
+        uses: actions/download-artifact@v4
+        with:
+          name: drift-npm-tarballs
+          path: .release/npm
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish package set with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in \
+            drift-core-*.tgz \
+            drift-engine-contract-*.tgz \
+            drift-storage-*.tgz \
+            drift-engine-darwin-arm64-*.tgz \
+            drift-engine-darwin-x64-*.tgz \
+            drift-engine-linux-x64-gnu-*.tgz \
+            drift-engine-linux-arm64-gnu-*.tgz \
+            drift-engine-win32-x64-*.tgz \
+            drift-cli-*.tgz \
+            drift-mcp-*.tgz
+          do
+            npm_config_provenance=true npm publish ".release/npm/${package}" --access public --tag next
+          done
+
+  github-release:
+    name: GitHub release
+    needs:
+      - preflight
+      - build-engine
+      - assemble-checksums
+      - publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
+    steps:
+      - name: Download engine assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: drift-engine-*
+          merge-multiple: true
+          path: .release/assets
+
+      - name: Download checksum manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: drift-engine-SHA256SUMS
+          path: .release/assets
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release/upload
+          find .release/assets -type f \( -name 'drift-engine-v*' -o -name 'SHA256SUMS' \) -print0 \
+            | xargs -0 -I {} cp {} .release/upload/
+          test "$(find .release/upload -type f | wc -l | tr -d ' ')" -eq 11
+          gh release create "${GITHUB_REF_NAME}" .release/upload/* \
+            --title "${GITHUB_REF_NAME}" \
+            --draft \
+            --notes "Drift engine binary release ${{ needs.preflight.outputs.version }}."

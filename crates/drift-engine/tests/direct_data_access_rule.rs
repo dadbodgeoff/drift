@@ -61,6 +61,27 @@ export async function POST() {
 }
 
 #[test]
+fn does_not_flag_type_only_data_access_imports_inside_api_routes() {
+    let source = r#"
+import type { PrismaClient } from "@/lib/prisma";
+
+export async function GET() {
+  return Response.json({ ok: true });
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/health/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    assert!(detect_direct_data_access_imports(&facts, &rule).is_empty());
+}
+
+#[test]
 fn does_not_flag_forbidden_imports_outside_api_routes() {
     let source = r#"
 import { prisma } from "@/lib/prisma";

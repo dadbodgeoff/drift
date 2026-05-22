@@ -1,0 +1,20 @@
+{
+  "name": "@drift/engine-win32-x64",
+  "version": "0.1.0",
+  "description": "Drift Rust engine binary for Windows x64.",
+  "license": "UNLICENSED",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "drift-engine": "./bin/drift-engine.exe"
+  },
+  "files": [
+    "bin",
+    "engine-manifest.json",
+    "README.md"
+  ]
+}

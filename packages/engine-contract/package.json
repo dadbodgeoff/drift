@@ -1,0 +1,35 @@
+{
+  "name": "@drift/engine-contract",
+  "version": "0.1.0",
+  "description": "Versioned Drift engine request, result, diagnostic, stats, and stream event schemas.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@drift/factgraph": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

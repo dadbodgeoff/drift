@@ -142,6 +142,36 @@ export interface FactRecord {
   end_line: number;
 }
 
+export interface GraphNodeRecord {
+  id: string;
+  kind: "file" | "module" | "symbol" | "import" | "route" | "role";
+  label: string;
+}
+
+export interface GraphEdgeRecord {
+  id: string;
+  kind:
+    | "FILE_CONTAINS_SYMBOL"
+    | "MODULE_IMPORTS_MODULE"
+    | "FILE_HAS_ROLE"
+    | "ROUTE_DECLARED_IN_FILE"
+    | "IMPORT_RESOLVES_TO_MODULE";
+  from: string;
+  to: string;
+}
+
+export interface FactGraphArtifact {
+  id: string;
+  repo_id: string;
+  scan_id: string;
+  schema_version: "factgraph.v1";
+  graph_hash: string;
+  graph: Record<string, unknown>;
+  node_count: number;
+  edge_count: number;
+  created_at: string;
+}
+
 export interface AuditEvent {
   id: string;
   repo_id: string;
@@ -156,6 +186,7 @@ export interface AuditEvent {
     | "election_edited"
     | "finding_resolved"
     | "finding_suppressed"
+    | "finding_flagged_for_review"
     | "policy_changed"
     | "agent_permission_changed"
     | "backup_created"
@@ -170,6 +201,8 @@ export interface AuditEvent {
   target_id: string;
   metadata: Record<string, unknown>;
   created_at: string;
+  previous_event_hash?: string | null;
+  event_hash?: string | null;
 }
 
 export type ConventionStatus =
@@ -245,7 +278,8 @@ export type FindingStatus =
   | "fixed"
   | "false_positive"
   | "accepted_drift"
-  | "suppressed";
+  | "suppressed"
+  | "expired";
 
 export type FindingDiffStatus =
   | "new_in_diff"

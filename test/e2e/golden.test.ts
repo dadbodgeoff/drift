@@ -81,6 +81,23 @@ describe("golden fixture CLI lifecycle", () => {
       .get_task_preflight({ repo_id: repoId!, task: "add user search endpoint" });
     expect(goldenPrepare(mcpPreflight)).toEqual(goldenPrepare(JSON.parse(prepare.stdout)));
 
+    const contract = await runCli([
+      "--db", databasePath!,
+      "contract", "show",
+      "--repo", repoId!,
+      "--json"
+    ]);
+    expect(goldenContract(JSON.parse(contract.stdout))).toMatchInlineSnapshot(`
+      {
+        "convention_count": 1,
+        "fingerprint_length": 64,
+        "schema_version": 1,
+      }
+    `);
+    const mcpContract = createReadOnlyMcpHandlers({ databasePath: databasePath! })
+      .get_repo_contract({ repo_id: repoId! });
+    expect(goldenContract(mcpContract)).toEqual(goldenContract(JSON.parse(contract.stdout)));
+
     const diffPath = join(repoRoot, "..", "diff.patch");
     await writeFile(diffPath, [
       "diff --git a/apps/web/app/api/users/route.ts b/apps/web/app/api/users/route.ts",
@@ -117,6 +134,7 @@ describe("golden fixture CLI lifecycle", () => {
     const backup = await runCli([
       "--db", databasePath!,
       "backup", "create",
+      "--confirm",
       "--repo", repoId!,
       "--output", backupDir,
       "--now", "2026-05-10T00:00:04.000Z",
@@ -126,8 +144,10 @@ describe("golden fixture CLI lifecycle", () => {
     expect(goldenBackup(backupPayload)).toMatchInlineSnapshot(`
       {
         "checksum_length": 64,
+        "governance_read_only": false,
+        "next_command_count": 3,
         "repo_matches": true,
-        "schema_version": 4,
+        "schema_version": 7,
       }
     `);
 
@@ -143,8 +163,11 @@ describe("golden fixture CLI lifecycle", () => {
     expect(goldenRestore(JSON.parse(restore.stdout))).toMatchInlineSnapshot(`
       {
         "checksum_length": 64,
+        "governance_read_only": false,
+        "next_command_count": 2,
         "repo_matches": true,
-        "schema_version": 4,
+        "schema_version": 7,
+        "write_intent": true,
       }
     `);
 
@@ -157,12 +180,12 @@ describe("golden fixture CLI lifecycle", () => {
     expect(goldenAudit(JSON.parse(audit.stdout))).toMatchInlineSnapshot(`
       {
         "actions": [
-          "scan_started",
           "scan_completed",
           "scan_started",
-          "scan_completed",
           "election_accepted",
           "baseline_created",
+          "scan_completed",
+          "scan_started",
           "backup_created",
           "restore_completed",
         ],
@@ -199,11 +222,21 @@ function goldenCheck(payload: any) {
   };
 }
 
+function goldenContract(payload: any) {
+  return {
+    schema_version: payload.contract.contract_schema_version,
+    convention_count: payload.summary.convention_count,
+    fingerprint_length: payload.contract_fingerprint.length
+  };
+}
+
 function goldenBackup(payload: any) {
   return {
     repo_matches: payload.manifest.repo_id.startsWith("repo_"),
     schema_version: payload.manifest.schema_version,
-    checksum_length: payload.manifest.checksum_sha256.length
+    checksum_length: payload.manifest.checksum_sha256.length,
+    governance_read_only: payload.governance.read_only,
+    next_command_count: payload.next_commands.length
   };
 }
 
@@ -211,7 +244,10 @@ function goldenRestore(payload: any) {
   return {
     repo_matches: payload.restore.repo_id.startsWith("repo_"),
     schema_version: payload.restore.schema_version,
-    checksum_length: payload.restore.checksum_sha256.length
+    checksum_length: payload.restore.checksum_sha256.length,
+    governance_read_only: payload.governance.read_only,
+    write_intent: payload.restore_intent.write_intent,
+    next_command_count: payload.next_commands.length
   };
 }
 

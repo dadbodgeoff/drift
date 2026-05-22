@@ -1,0 +1,400 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildFactGraphArtifact, buildFactGraphArtifactFromParts } from "@drift/factgraph";
+import { openDriftStorage } from "@drift/storage";
+import { afterEach, describe, expect, it } from "vitest";
+import { createGraphQueryService } from "../src/index.js";
+
+const tempDirs: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+});
+
+describe("GraphQueryService", () => {
+  it("maps repo files from persisted FactGraph projections without reading raw facts", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 2,
+      fact_count: 4,
+      finding_count: 0,
+      started_at: "2026-05-22T00:00:00.000Z",
+      completed_at: "2026-05-22T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 120,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "app/lib/db.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 80,
+        indexed: true
+      }
+    ];
+    for (const snapshot of snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFactGraphArtifact(buildFactGraphArtifact({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      facts: [
+        {
+          id: "fact_role",
+          repo_id: "repo_abc",
+          scan_id: "scan_abc",
+          kind: "file_role_detected",
+          file_path: "app/api/users/route.ts",
+          name: "api_route",
+          start_line: 1,
+          end_line: 4
+        },
+        {
+          id: "fact_import",
+          repo_id: "repo_abc",
+          scan_id: "scan_abc",
+          kind: "import_used",
+          file_path: "app/api/users/route.ts",
+          name: "db",
+          value: "../../lib/db",
+          start_line: 1,
+          end_line: 1
+        },
+        {
+          id: "fact_export",
+          repo_id: "repo_abc",
+          scan_id: "scan_abc",
+          kind: "exported_symbol",
+          file_path: "app/api/users/route.ts",
+          name: "GET",
+          start_line: 3,
+          end_line: 3
+        },
+        {
+          id: "fact_call",
+          repo_id: "repo_abc",
+          scan_id: "scan_abc",
+          kind: "symbol_called",
+          file_path: "app/api/users/route.ts",
+          name: "findMany",
+          start_line: 4,
+          end_line: 4
+        }
+      ],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const map = createGraphQueryService(storage).repoMap({ repoId: "repo_abc", scanId: "scan_abc" });
+    storage.close();
+
+    expect(map.graph_summary).toMatchObject({
+      graph_backed: true,
+      evidence_count: 4
+    });
+    expect(map.files[0]).toMatchObject({
+      path: "app/api/users/route.ts",
+      roles: ["api_route"],
+      imports: ["../../lib/db"],
+      exported_symbols: ["GET"],
+      calls: ["findMany"],
+      fact_count: 4
+    });
+    expect(map.files[0]?.graph_node_ids).toContain("file:app/api/users/route.ts");
+    expect(map.files[0]?.evidence_ids).toContain("evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:1-1");
+  });
+
+  it("returns route-to-service-to-data-access flow from graph projections", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_flow",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 3,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: "2026-05-22T00:00:00.000Z",
+      completed_at: "2026-05-22T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_flow",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 120,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_flow",
+        file_path: "src/services/users.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 100,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_flow",
+        file_path: "src/lib/db.ts",
+        content_hash: "c".repeat(64),
+        byte_size: 80,
+        indexed: true
+      }
+    ];
+    for (const snapshot of snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_flow",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        graphNode("file:app/api/users/route.ts", "file", "app/api/users/route.ts", { path: "app/api/users/route.ts" }),
+        graphNode("file:src/services/users.ts", "file", "src/services/users.ts", { path: "src/services/users.ts" }),
+        graphNode("file:src/lib/db.ts", "file", "src/lib/db.ts", { path: "src/lib/db.ts" }),
+        graphNode("module:app/api/users/route.ts", "module", "app/api/users/route.ts", { file_path: "app/api/users/route.ts" }),
+        graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" }),
+        graphNode("module:src/lib/db.ts", "module", "src/lib/db.ts", { file_path: "src/lib/db.ts" }),
+        graphNode("file_role:api_route", "file_role", "api_route", { role: "api_route" }),
+        graphNode("file_role:service_module", "file_role", "service_module", { role: "service_module" }),
+        graphNode("file_role:data_access_module", "file_role", "data_access_module", { role: "data_access_module" }),
+        graphNode("route:GET:app/api/users/route.ts", "route", "GET", { file_path: "app/api/users/route.ts", method: "GET" }),
+        graphNode("symbol:app/api/users/route.ts:function:GET", "symbol", "GET", {
+          file_path: "app/api/users/route.ts",
+          symbol_kind: "function",
+          exported: true
+        })
+      ],
+      edges: [
+        graphEdge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+        graphEdge("FILE_HAS_ROLE", "file:src/services/users.ts", "file_role:service_module"),
+        graphEdge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
+        graphEdge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
+        graphEdge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts"),
+        graphEdge("ROUTE_HANDLED_BY_SYMBOL", "route:GET:app/api/users/route.ts", "symbol:app/api/users/route.ts:function:GET")
+      ],
+      evidence: [],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const flow = createGraphQueryService(storage).getRouteFlow({
+      repo_id: "repo_abc",
+      scan_id: "scan_flow",
+      path: "app/api/users/route.ts",
+      method: "GET",
+      policy_surface: "mcp"
+    });
+    storage.close();
+
+    expect(flow.complete).toBe(true);
+    expect(flow.policy).toMatchObject({ surface: "mcp", local_only: true });
+    expect(flow.route_module_id).toBe("module:app/api/users/route.ts");
+    expect(flow.route_handler_symbol_ids).toEqual(["symbol:app/api/users/route.ts:function:GET"]);
+    expect(flow.service_module_ids).toEqual(["module:src/services/users.ts"]);
+    expect(flow.data_access_module_ids).toEqual(["module:src/lib/db.ts"]);
+    expect(flow.module_path).toEqual([
+      "module:app/api/users/route.ts",
+      "module:src/services/users.ts",
+      "module:src/lib/db.ts"
+    ]);
+  });
+
+  it("resolves finding evidence through graph links and explicit fact selectors", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_evidence",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 0,
+      finding_count: 1,
+      started_at: "2026-05-22T00:00:00.000Z",
+      completed_at: "2026-05-22T00:00:01.000Z"
+    });
+    const snapshots = [{
+      repo_id: "repo_abc",
+      scan_id: "scan_evidence",
+      file_path: "app/api/users/route.ts",
+      content_hash: "a".repeat(64),
+      byte_size: 120,
+      indexed: true
+    }];
+    for (const snapshot of snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_evidence",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        graphNode("finding:finding_abc", "finding", "API route imports data access directly", {}),
+        {
+          ...graphNode("import_decl:app/api/users/route.ts:db", "import_decl", "db", {
+            file_path: "app/api/users/route.ts",
+            source: "@/lib/db"
+          }),
+          evidence_ids: ["evidence_route"]
+        },
+        {
+          ...graphNode("callsite:app/api/users/route.ts:findMany", "callsite", "findMany", {
+            file_path: "app/api/users/route.ts"
+          }),
+          evidence_ids: ["evidence_fact"]
+        }
+      ],
+      edges: [
+        graphEdge("FINDING_HAS_EVIDENCE", "finding:finding_abc", "evidence_route")
+      ],
+      evidence: [
+        graphEvidence("evidence_route", "fact_import", "scan_evidence", "app/api/users/route.ts", 1),
+        graphEvidence("evidence_fact", "fact_call", "scan_evidence", "app/api/users/route.ts", 3)
+      ],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const result = createGraphQueryService(storage).getFindingEvidence({
+      repo_id: "repo_abc",
+      scan_id: "scan_evidence",
+      finding_id: "finding_abc",
+      fact_ids: ["fact_call"],
+      policy_surface: "mcp"
+    });
+    storage.close();
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.policy).toMatchObject({ surface: "mcp", local_only: true });
+    expect(result.evidence.map((evidence) => evidence.id).sort()).toEqual(["evidence_fact", "evidence_route"]);
+    expect(result.related_nodes.map((node) => node.id).sort()).toEqual([
+      "callsite:app/api/users/route.ts:findMany",
+      "import_decl:app/api/users/route.ts:db"
+    ]);
+  });
+});
+
+function graphNode(
+  id: string,
+  kind: string,
+  label: string,
+  metadata: Record<string, unknown>
+) {
+  return {
+    id,
+    kind,
+    label,
+    stable: true,
+    evidence_ids: [],
+    metadata
+  };
+}
+
+function graphEdge(kind: string, from: string, to: string) {
+  return {
+    id: `edge:${from}:${kind}:${to}`,
+    kind,
+    from,
+    to,
+    evidence_ids: [],
+    metadata: {}
+  };
+}
+
+function graphEvidence(
+  id: string,
+  factId: string,
+  scanId: string,
+  filePath: string,
+  line: number
+) {
+  return {
+    id,
+    repo_id: "repo_abc",
+    scan_id: scanId,
+    artifact_id: `file_version:${filePath}:aaaaaaaaaaaa`,
+    file_path: filePath,
+    file_hash: "a".repeat(64),
+    start_line: line,
+    end_line: line,
+    adapter_id: "typescript",
+    adapter_version: "0.1.0",
+    fact_ids: [factId],
+    redaction_state: "none"
+  };
+}

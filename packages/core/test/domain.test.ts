@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   AcceptedConventionSchema,
+  DRIFT_CONTRACT_SCHEMA_VERSION,
   DRIFT_RULE_ENGINE_VERSION,
   DRIFT_SCANNER_VERSION,
   DRIFT_TYPESCRIPT_ADAPTER_VERSION,
   FindingSchema,
   RepoContractSchema,
   authorizeContextExport,
+  canonicalRepoContractJson,
+  canonicalScanStateJson,
   makeDriftId
 } from "../src/index.js";
 
@@ -19,6 +22,7 @@ describe("core domain", () => {
     expect(DRIFT_SCANNER_VERSION).toBe("0.1.0");
     expect(DRIFT_TYPESCRIPT_ADAPTER_VERSION).toBe("0.1.0");
     expect(DRIFT_RULE_ENGINE_VERSION).toBe("0.1.0");
+    expect(DRIFT_CONTRACT_SCHEMA_VERSION).toBe(1);
   });
 
   it("validates accepted deterministic conventions", () => {
@@ -84,6 +88,104 @@ describe("core domain", () => {
       evidence_refs: [],
       created_at: "2026-05-10T00:00:00.000Z"
     }).diff_status).toBe("new_in_diff");
+  });
+
+  it("canonicalizes repo contracts independent of unordered list order", () => {
+    const baseContract = RepoContractSchema.parse({
+      id: "contract_abc",
+      repo_id: "repo_abc",
+      contract_schema_version: 1,
+      repo_fingerprint: "repo-fingerprint",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z",
+      conventions: [],
+      rejected_inferences: [
+        { candidate_id: "candidate_b", reason: "b", rejected_by: "local-user", rejected_at: "2026-05-10T00:00:00.000Z" },
+        { candidate_id: "candidate_a", reason: "a", rejected_by: "local-user", rejected_at: "2026-05-10T00:00:00.000Z" }
+      ],
+      waivers: [
+        { id: "waiver_b", reason: "b", path_globs: ["b/**"], created_by: "local-user", created_at: "2026-05-10T00:00:00.000Z" },
+        { id: "waiver_a", reason: "a", path_globs: ["a/**"], created_by: "local-user", created_at: "2026-05-10T00:00:00.000Z" }
+      ],
+      risky_areas: [
+        { id: "risk_b", path_globs: ["b/**"], risk_kind: "billing", reason: "b" },
+        { id: "risk_a", path_globs: ["a/**"], risk_kind: "auth", reason: "a" }
+      ],
+      safe_commands: [
+        { command: "pnpm test:b", reason: "b", requires_explicit_run: true },
+        { command: "pnpm test:a", reason: "a", requires_explicit_run: true }
+      ],
+      required_checks: [
+        { command: "drift check b", applies_to: { path_globs: ["b/**"] }, reason: "b" },
+        { command: "drift check a", applies_to: { path_globs: ["a/**"] }, reason: "a" }
+      ],
+      context_egress: {
+        default_mode: "local_only",
+        denied_globs: ["**/*.pem", ".env*"],
+        max_snippet_chars: 1200,
+        allow_full_file_content: false
+      },
+      agent_permissions: [
+        { agent: "agent_b", permissions: ["request_preflight"] },
+        { agent: "agent_a", permissions: ["read_context"] }
+      ]
+    });
+    const reorderedContract = RepoContractSchema.parse({
+      ...baseContract,
+      rejected_inferences: [...baseContract.rejected_inferences].reverse(),
+      waivers: [...baseContract.waivers].reverse(),
+      risky_areas: [...baseContract.risky_areas].reverse(),
+      safe_commands: [...baseContract.safe_commands].reverse(),
+      required_checks: [...baseContract.required_checks].reverse(),
+      context_egress: {
+        ...baseContract.context_egress,
+        denied_globs: [...baseContract.context_egress.denied_globs].reverse()
+      },
+      agent_permissions: [...baseContract.agent_permissions].reverse()
+    });
+
+    expect(canonicalRepoContractJson(baseContract)).toBe(canonicalRepoContractJson(reorderedContract));
+  });
+
+  it("canonicalizes scan state independent of file snapshot order", () => {
+    const manifest = {
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed" as const,
+      file_count: 2,
+      fact_count: 4,
+      finding_count: 1,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    };
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "b.ts",
+        content_hash: "hash-b",
+        byte_size: 2,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "a.ts",
+        content_hash: "hash-a",
+        byte_size: 1,
+        indexed: true
+      }
+    ];
+
+    expect(canonicalScanStateJson({ manifest, snapshots })).toBe(
+      canonicalScanStateJson({ manifest, snapshots: [...snapshots].reverse() })
+    );
   });
 
   it("rejects unsafe context denied globs in repo contracts", () => {
