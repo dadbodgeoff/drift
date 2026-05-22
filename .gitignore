@@ -2,3 +2,12 @@
 .DS_Store
 node_modules/
 .cortex/
+
+# Root-level local/generated artifacts. Real project source lives under drift v3/.
+output/
+outputs/
+target/
+packages/
+avatar-*.js
+avatar-overlay-page-*.js
+main-*.js
