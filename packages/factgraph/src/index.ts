@@ -19,6 +19,8 @@ export const GraphNodeKindSchema = z.enum([
   "callsite",
   "data_store",
   "data_operation",
+  "endpoint",
+  "re_export",
   "route",
   "file_role",
   "diagnostic",
@@ -38,9 +40,14 @@ export const GraphEdgeKindSchema = z.enum([
   "MODULE_EXPORTS_SYMBOL",
   "ROUTE_DECLARED_IN_FILE",
   "ROUTE_HANDLED_BY_SYMBOL",
+  "ROUTE_HAS_ENDPOINT",
+  "MODULE_REEXPORTS_MODULE",
+  "REEXPORT_RESOLVES_TO_SYMBOL",
   "CALLSITE_REFERENCES_SYMBOL",
   "DATA_OPERATION_READS_DATA_STORE",
   "DATA_OPERATION_WRITES_DATA_STORE",
+  "DATA_OPERATION_DELETES_DATA_STORE",
+  "DATA_OPERATION_TOUCHES_DATA_STORE",
   "FINDING_HAS_EVIDENCE"
 ]);
 

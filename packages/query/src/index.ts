@@ -4,7 +4,8 @@ import type {
   Finding,
   ModuleDependent,
   RepoContract,
-  ResolverDependency
+  ResolverDependency,
+  SymbolOccurrence
 } from "@drift/core";
 import type {
   GraphCompleteness as GraphCompletenessRecord,
@@ -50,6 +51,7 @@ export interface GraphQueryStorage {
   listGraphCompleteness?(repoId: string, scanId: string): GraphCompletenessRecord[];
   listResolverDependencies?(repoId: string, scanId: string): ResolverDependency[];
   listModuleDependents?(repoId: string, scanId: string): ModuleDependent[];
+  listSymbolOccurrences?(repoId: string, scanId: string): SymbolOccurrence[];
 }
 
 export type GraphQueryPolicySurface =
@@ -87,6 +89,9 @@ export interface GraphRouteFlow extends GraphQueryMetadata {
   route_id?: string;
   path?: string;
   method?: string;
+  route_pattern?: string;
+  framework_role?: string;
+  dynamic_params: string[];
   complete: boolean;
   route_module_id?: string;
   route_handler_symbol_ids: string[];
@@ -94,6 +99,7 @@ export interface GraphRouteFlow extends GraphQueryMetadata {
   data_access_module_ids: string[];
   module_path: string[];
   unresolved_imports: string[];
+  risk_reasons: GraphRouteRiskReason[];
   next_commands: string[];
   recommended_action: string;
 }
@@ -103,7 +109,17 @@ export interface GraphReachableDataAccess extends GraphQueryMetadata {
   method?: string;
   data_access_module_ids: string[];
   data_operations: GraphReachableDataOperation[];
+  risk_reasons: GraphRouteRiskReason[];
   module_path: string[];
+}
+
+export interface GraphRouteRiskReason {
+  risk_kind: "data_write" | "data_delete";
+  operation_kind: string;
+  operation_name: string;
+  store_name?: string;
+  file_path: string;
+  start_line?: number;
 }
 
 export interface GraphReachableDataOperation {
@@ -126,6 +142,9 @@ export interface GraphSymbolNeighborhood extends GraphQueryMetadata {
   symbol_id: string;
   nodes: GraphNode[];
   edges: GraphEdge[];
+  occurrence_count: number;
+  occurrence_files: string[];
+  occurrences: SymbolOccurrence[];
 }
 
 export interface GraphFindingEvidence extends GraphQueryMetadata {
@@ -251,12 +270,14 @@ export class GraphQueryService {
     const scanId = requireScanId(input);
     const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
     const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+    const evidence = this.storage.listGraphEvidence(input.repo_id, scanId);
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const moduleByFile = moduleIdsByFile(nodes);
     const rolesByFile = fileRolesByPath(edges, nodesById);
     const route = findRouteNode(nodes, input);
-    const path = input.path ?? stringMetadata(route, "file_path");
-    const routeModuleId = path ? moduleByFile.get(path) : undefined;
+    const routeFilePath = stringMetadata(route, "file_path");
+    const path = routeFilePath ?? input.path;
+    const routeModuleId = routeFilePath ? moduleByFile.get(routeFilePath) : (path ? moduleByFile.get(path) : undefined);
     const traversal = routeModuleId
       ? traverseModules(routeModuleId, edges, nodesById, rolesByFile, input.limit ?? 50)
       : {
@@ -276,12 +297,16 @@ export class GraphQueryService {
       ...(routeModuleId ? [] : ["route_module_not_found"]),
       ...traversal.unresolvedImports.map((source) => `unresolved_import:${source}`)
     ];
+    const dataOperations = reachableDataOperations(traversal.modulePath, nodes, edges, evidence);
 
     return {
       ...queryMetadata(input, scanId, diagnostics),
       route_id: route?.id ?? input.route_id,
       path,
       method: input.method ?? stringMetadata(route, "method"),
+      route_pattern: stringMetadata(route, "route_pattern"),
+      framework_role: stringMetadata(route, "framework_role"),
+      dynamic_params: stringArrayMetadata(route, "dynamic_params"),
       complete: diagnostics.length === 0,
       route_module_id: routeModuleId,
       route_handler_symbol_ids: routeHandlerSymbolIds,
@@ -289,6 +314,7 @@ export class GraphQueryService {
       data_access_module_ids: sorted(traversal.dataAccessModuleIds),
       module_path: traversal.modulePath,
       unresolved_imports: traversal.unresolvedImports,
+      risk_reasons: routeRiskReasons(dataOperations),
       next_commands: ["drift repo map --json", "drift findings list --json"],
       recommended_action: traversal.dataAccessModuleIds.size > 0
         ? "Review whether route data access is delegated through an accepted service layer."
@@ -304,12 +330,14 @@ export class GraphQueryService {
     const nodes = this.storage.listGraphNodes(input.repo_id, flow.scan_id);
     const edges = this.storage.listGraphEdges(input.repo_id, flow.scan_id);
     const evidence = this.storage.listGraphEvidence(input.repo_id, flow.scan_id);
+    const dataOperations = reachableDataOperations(flow.module_path, nodes, edges, evidence);
     return {
       ...queryMetadata(input, flow.scan_id, flow.diagnostics),
       path: flow.path,
       method: flow.method,
       data_access_module_ids: flow.data_access_module_ids,
-      data_operations: reachableDataOperations(flow.module_path, nodes, edges, evidence),
+      data_operations: dataOperations,
+      risk_reasons: routeRiskReasons(dataOperations),
       module_path: flow.module_path
     };
   }
@@ -400,9 +428,20 @@ export class GraphQueryService {
         ...queryMetadata(input, scanId, ["symbol_not_found"]),
         symbol_id: input.symbol_id,
         nodes: [],
-        edges: []
+        edges: [],
+        occurrence_count: 0,
+        occurrence_files: [],
+        occurrences: []
       };
     }
+    const occurrences = (this.storage.listSymbolOccurrences?.(input.repo_id, scanId) ?? [])
+      .filter((occurrence) => occurrence.symbol_id === input.symbol_id)
+      .sort((left, right) =>
+        left.file_path.localeCompare(right.file_path) ||
+        left.start_line - right.start_line ||
+        left.occurrence_kind.localeCompare(right.occurrence_kind) ||
+        left.id.localeCompare(right.id)
+      );
     const depth = input.depth ?? 1;
     const selectedIds = new Set<string>([input.symbol_id]);
     for (let index = 0; index < depth; index += 1) {
@@ -421,7 +460,10 @@ export class GraphQueryService {
         .sort((left, right) => left.id.localeCompare(right.id)),
       edges: edges
         .filter((edge) => selectedIds.has(edge.from) && selectedIds.has(edge.to))
-        .sort((left, right) => left.kind.localeCompare(right.kind) || left.id.localeCompare(right.id))
+        .sort((left, right) => left.kind.localeCompare(right.kind) || left.id.localeCompare(right.id)),
+      occurrence_count: occurrences.length,
+      occurrence_files: sorted(new Set(occurrences.map((occurrence) => occurrence.file_path))),
+      occurrences
     };
   }
 
@@ -637,7 +679,10 @@ function findRouteNode(
     if (input.route_id && node.id !== input.route_id) {
       return false;
     }
-    if (input.path && stringMetadata(node, "file_path") !== input.path) {
+    if (input.path &&
+      stringMetadata(node, "file_path") !== input.path &&
+      stringMetadata(node, "route_pattern") !== input.path
+    ) {
       return false;
     }
     if (input.method && stringMetadata(node, "method") !== input.method) {
@@ -645,6 +690,11 @@ function findRouteNode(
     }
     return true;
   });
+}
+
+function stringArrayMetadata(node: GraphNode | undefined, key: string): string[] {
+  const value = node?.metadata[key];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function moduleIdsByFile(nodes: GraphNode[]): Map<string, string> {
@@ -690,7 +740,7 @@ function reachableDataOperations(
   );
   const dataStoreByOperation = new Map<string, string>();
   for (const edge of edges) {
-    if (edge.kind !== "DATA_OPERATION_READS_DATA_STORE" && edge.kind !== "DATA_OPERATION_WRITES_DATA_STORE") {
+    if (!isDataOperationStoreEdge(edge.kind)) {
       continue;
     }
     dataStoreByOperation.set(edge.from, edge.to);
@@ -724,6 +774,35 @@ function reachableDataOperations(
       (left.start_line ?? 0) - (right.start_line ?? 0) ||
       left.operation_node_id.localeCompare(right.operation_node_id)
     );
+}
+
+function routeRiskReasons(operations: GraphReachableDataOperation[]): GraphRouteRiskReason[] {
+  return operations
+    .flatMap((operation): GraphRouteRiskReason[] => {
+      if (operation.operation_kind !== "write" && operation.operation_kind !== "delete") {
+        return [];
+      }
+      return [{
+        risk_kind: operation.operation_kind === "delete" ? "data_delete" : "data_write",
+        operation_kind: operation.operation_kind,
+        operation_name: operation.operation_name,
+        store_name: operation.store_name,
+        file_path: operation.file_path,
+        start_line: operation.start_line
+      }];
+    })
+    .sort((left, right) =>
+      left.file_path.localeCompare(right.file_path) ||
+      (left.start_line ?? 0) - (right.start_line ?? 0) ||
+      left.operation_name.localeCompare(right.operation_name)
+    );
+}
+
+function isDataOperationStoreEdge(kind: string): boolean {
+  return kind === "DATA_OPERATION_READS_DATA_STORE" ||
+    kind === "DATA_OPERATION_WRITES_DATA_STORE" ||
+    kind === "DATA_OPERATION_DELETES_DATA_STORE" ||
+    kind === "DATA_OPERATION_TOUCHES_DATA_STORE";
 }
 
 function fileRolesByPath(

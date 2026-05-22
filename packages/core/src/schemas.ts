@@ -156,6 +156,18 @@ export const ModuleDependentSchema = z.object({
   edge_id: z.string().min(1)
 });
 
+export const SymbolOccurrenceSchema = z.object({
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  id: z.string().min(1),
+  symbol_id: z.string().min(1),
+  occurrence_kind: z.enum(["declaration", "reference"]),
+  file_path: z.string().min(1),
+  start_line: z.number().int().positive(),
+  end_line: z.number().int().positive(),
+  evidence_id: z.string().min(1).optional()
+});
+
 export const BackupManifestSchema = z.object({
   id: z.string().min(1),
   repo_id: z.string().min(1),
@@ -171,6 +183,7 @@ export const BackupManifestSchema = z.object({
 export const FactKindSchema = z.enum([
   "file_detected",
   "import_used",
+  "re_export_used",
   "exported_symbol",
   "symbol_called",
   "data_operation_detected",
@@ -193,7 +206,7 @@ export const FactRecordSchema = z.object({
 
 export const GraphNodeRecordSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["file", "module", "symbol", "import", "route", "role", "data_store", "data_operation"]),
+  kind: z.enum(["file", "module", "symbol", "import", "route", "role", "data_store", "data_operation", "endpoint", "re_export"]),
   label: z.string().min(1)
 });
 
@@ -204,10 +217,15 @@ export const GraphEdgeRecordSchema = z.object({
     "MODULE_IMPORTS_MODULE",
     "FILE_HAS_ROLE",
     "ROUTE_DECLARED_IN_FILE",
+    "ROUTE_HAS_ENDPOINT",
+    "MODULE_REEXPORTS_MODULE",
+    "REEXPORT_RESOLVES_TO_SYMBOL",
     "IMPORT_RESOLVES_TO_MODULE",
     "IMPORT_RESOLVES_TO_SYMBOL",
     "DATA_OPERATION_READS_DATA_STORE",
-    "DATA_OPERATION_WRITES_DATA_STORE"
+    "DATA_OPERATION_WRITES_DATA_STORE",
+    "DATA_OPERATION_DELETES_DATA_STORE",
+    "DATA_OPERATION_TOUCHES_DATA_STORE"
   ]),
   from: z.string().min(1),
   to: z.string().min(1)

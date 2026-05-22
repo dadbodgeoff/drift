@@ -106,6 +106,55 @@ export async function GET() {
 }
 
 #[test]
+fn classifies_data_operation_risk_kinds_conservatively() {
+    let source = r#"
+import { prisma } from "@/lib/prisma";
+
+export async function POST() {
+  await prisma.user.create({});
+  await prisma.session.deleteMany({});
+  await prisma.audit.customVerb({});
+  await logger.user.deleteMany({});
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/users/route.ts", source).expect("typescript facts");
+
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "create"
+                && fact.value.as_deref() == Some("prisma.user")
+                && fact.imported_name.as_deref() == Some("write:user"))
+    );
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "deleteMany"
+                && fact.value.as_deref() == Some("prisma.session")
+                && fact.imported_name.as_deref() == Some("delete:session"))
+    );
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "customVerb"
+                && fact.value.as_deref() == Some("prisma.audit")
+                && fact.imported_name.as_deref() == Some("unknown:audit"))
+    );
+    assert!(
+        !facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::DataOperationDetected
+                && fact.name == "deleteMany"
+                && fact.value.as_deref() == Some("logger.user"))
+    );
+}
+
+#[test]
 fn skips_type_only_imports_as_value_import_facts() {
     let source = r#"
 import type { PrismaClient } from "@/lib/prisma";

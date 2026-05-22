@@ -16,6 +16,7 @@ export interface ScanData {
   graph_nodes: GraphNode[];
   graph_edges: GraphEdge[];
   graph_evidence: GraphEvidence[];
+  graph_diagnostics: EngineDiagnostic[];
 }
 
 interface ScanDataInput {
@@ -57,6 +58,7 @@ export async function collectScanData(input: ScanDataInput): Promise<ScanData> {
     graph_nodes: [],
     graph_edges: [],
     graph_evidence: [],
+    graph_diagnostics: [],
     stats: {
       files_seen: files.length,
       files_skipped: 0,
@@ -100,6 +102,7 @@ export function scanDataFromEngineScanResult(value: unknown, input: ScanDataInpu
     graph_nodes: [],
     graph_edges: [],
     graph_evidence: [],
+    graph_diagnostics: [],
     stats: parsed.stats
   };
 }
@@ -162,6 +165,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
     graph_nodes: graphNodes,
     graph_edges: graphEdges,
     graph_evidence: graphEvidence,
+    graph_diagnostics: diagnostics,
     stats
   };
 }

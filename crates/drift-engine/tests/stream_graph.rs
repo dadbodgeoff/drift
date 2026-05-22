@@ -234,6 +234,256 @@ export async function GET() {
 }
 
 #[test]
+fn scan_stream_emits_static_endpoint_shape_for_next_routes() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let app_route = dir.path().join("src/app/api/users/[id]");
+    fs::create_dir_all(&app_route).expect("create app route dir");
+    fs::write(
+        app_route.join("route.ts"),
+        r#"export async function DELETE() {
+  return Response.json({});
+}
+"#,
+    )
+    .expect("write app route");
+    let pages_route = dir.path().join("pages/api/projects/[projectId].ts");
+    fs::create_dir_all(pages_route.parent().expect("parent")).expect("create pages api dir");
+    fs::write(
+        &pages_route,
+        r#"export default function handler() {
+  return Response.json({});
+}
+"#,
+    )
+    .expect("write pages api route");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_endpoint",
+            "--scan-id",
+            "scan_endpoint",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let nodes = events
+        .iter()
+        .filter(|event| event["event"] == "graph_node_batch")
+        .flat_map(|event| event["graph_nodes"].as_array().expect("nodes").iter())
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        nodes.iter().any(|node| {
+            node["kind"] == "endpoint"
+                && node["metadata"]["method"] == "DELETE"
+                && node["metadata"]["route_pattern"] == "/api/users/:id"
+                && node["metadata"]["framework_role"] == "next_app_route"
+                && node["metadata"]["dynamic_params"] == serde_json::json!(["id"])
+        }),
+        "missing app route endpoint shape: {nodes:#?}"
+    );
+    assert!(
+        nodes.iter().any(|node| {
+            node["kind"] == "endpoint"
+                && node["metadata"]["method"] == "default"
+                && node["metadata"]["route_pattern"] == "/api/projects/:projectId"
+                && node["metadata"]["framework_role"] == "next_pages_api"
+                && node["metadata"]["dynamic_params"] == serde_json::json!(["projectId"])
+        }),
+        "missing pages api endpoint shape: {nodes:#?}"
+    );
+    assert!(
+        edges
+            .iter()
+            .any(|edge| edge["kind"] == "ROUTE_HAS_ENDPOINT"),
+        "missing route endpoint edge: {edges:#?}"
+    );
+}
+
+#[test]
+fn scan_stream_infers_service_boundary_from_route_import_targets() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    fs::write(
+        dir.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}"#,
+    )
+    .expect("write tsconfig");
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"import { listUsers } from "@/domain/users";
+
+export async function GET() {
+  return Response.json(await listUsers());
+}
+"#,
+    )
+    .expect("write route");
+    let domain = dir.path().join("src/domain");
+    fs::create_dir_all(&domain).expect("create domain dir");
+    fs::write(
+        domain.join("users.ts"),
+        r#"import { db } from "@/db";
+
+export async function listUsers() {
+  return db.user.findMany();
+}
+"#,
+    )
+    .expect("write domain users");
+    fs::write(
+        dir.path().join("src/db.ts"),
+        "export const db = { user: { findMany: async () => [] } };\n",
+    )
+    .expect("write db");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_service",
+            "--scan-id",
+            "scan_service",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "FILE_HAS_ROLE"
+                && edge["from"] == "file:src/domain/users.ts"
+                && edge["to"] == "file_role:service_module"
+                && edge["metadata"]["inferred_from"] == "route_import_target"
+        }),
+        "missing route-import inferred service role: {edges:#?}"
+    );
+}
+
+#[test]
+fn scan_stream_does_not_infer_service_boundary_for_unresolved_route_symbol() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    fs::write(
+        dir.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}"#,
+    )
+    .expect("write tsconfig");
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"import { missingUsers } from "@/domain/users";
+
+export async function GET() {
+  return Response.json(await missingUsers());
+}
+"#,
+    )
+    .expect("write route");
+    let domain = dir.path().join("src/domain");
+    fs::create_dir_all(&domain).expect("create domain dir");
+    fs::write(
+        domain.join("users.ts"),
+        r#"export async function listUsers() {
+  return [];
+}
+"#,
+    )
+    .expect("write domain users");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_ambiguous",
+            "--scan-id",
+            "scan_ambiguous",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+    let diagnostics = events
+        .iter()
+        .filter(|event| event["event"] == "diagnostic_batch")
+        .flat_map(|event| event["diagnostics"].as_array().expect("diagnostics").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        !edges.iter().any(|edge| {
+            edge["kind"] == "FILE_HAS_ROLE"
+                && edge["from"] == "file:src/domain/users.ts"
+                && edge["to"] == "file_role:service_module"
+                && edge["metadata"]["inferred_from"] == "route_import_target"
+        }),
+        "unexpected route-import inferred service role: {edges:#?}"
+    );
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic["code"] == "ambiguous_route_dependency_service_boundary"
+                && diagnostic["file_path"] == "app/api/users/route.ts"
+        }),
+        "missing ambiguous service boundary diagnostic: {diagnostics:#?}"
+    );
+}
+
+#[test]
 fn scan_stream_resolves_aliases_from_extended_tsconfig_with_child_overrides() {
     let dir = tempfile::tempdir().expect("tempdir");
     fs::write(
@@ -731,6 +981,21 @@ export async function GET() {
             "missing barrel flow edge {expected:?}: {edges:#?}"
         );
     }
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "MODULE_REEXPORTS_MODULE"
+                && edge["from"] == "module:src/services/index.ts"
+                && edge["to"] == "module:src/services/users.ts"
+        }),
+        "missing explicit re-export module edge: {edges:#?}"
+    );
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "REEXPORT_RESOLVES_TO_SYMBOL"
+                && edge["to"] == "symbol:src/services/users.ts:function:getUsers"
+        }),
+        "missing explicit re-export symbol edge: {edges:#?}"
+    );
 }
 
 #[test]
@@ -929,5 +1194,100 @@ export async function GET() {
                 && edge["metadata"]["resolution_status"] == "resolved"
         }),
         "missing import-to-exported-symbol edge: {edges:#?}"
+    );
+}
+
+#[test]
+fn scan_stream_resolves_default_exports_and_diagnoses_namespace_membership() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    fs::write(
+        dir.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}"#,
+    )
+    .expect("write tsconfig");
+
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"import loadUsers from "@/services/users";
+import * as dbClient from "@/lib/db";
+
+export async function GET() {
+  await dbClient.db.user.findMany();
+  return Response.json(await loadUsers());
+}
+"#,
+    )
+    .expect("write route");
+    fs::create_dir_all(dir.path().join("src/services")).expect("create services");
+    fs::write(
+        dir.path().join("src/services/users.ts"),
+        r#"export default async function getUsers() {
+  return [];
+}
+"#,
+    )
+    .expect("write service");
+    fs::create_dir_all(dir.path().join("src/lib")).expect("create lib");
+    fs::write(
+        dir.path().join("src/lib/db.ts"),
+        "export const db = { user: { findMany: async () => [] } };\n",
+    )
+    .expect("write db");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_default",
+            "--scan-id",
+            "scan_default",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+    let diagnostics = events
+        .iter()
+        .filter(|event| event["event"] == "diagnostic_batch")
+        .flat_map(|event| event["diagnostics"].as_array().expect("diagnostics").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "IMPORT_RESOLVES_TO_SYMBOL"
+                && edge["from"]
+                    .as_str()
+                    .is_some_and(|from| from.contains("@/services/users:loadUsers"))
+                && edge["to"] == "symbol:src/services/users.ts:function:default"
+                && edge["metadata"]["imported_name"] == "default"
+                && edge["metadata"]["local_name"] == "loadUsers"
+        }),
+        "missing default import symbol edge: {edges:#?}"
+    );
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic["code"] == "unsupported_namespace_import_symbol"
+                && diagnostic["file_path"] == "app/api/users/route.ts"
+        }),
+        "missing namespace import diagnostic: {diagnostics:#?}"
     );
 }

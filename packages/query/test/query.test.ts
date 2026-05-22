@@ -214,8 +214,14 @@ describe("GraphQueryService", () => {
         graphNode("file_role:api_route", "file_role", "api_route", { role: "api_route" }),
         graphNode("file_role:service_module", "file_role", "service_module", { role: "service_module" }),
         graphNode("file_role:data_access_module", "file_role", "data_access_module", { role: "data_access_module" }),
-        graphNode("route:GET:app/api/users/route.ts", "route", "GET", { file_path: "app/api/users/route.ts", method: "GET" }),
-        graphNode("symbol:app/api/users/route.ts:function:GET", "symbol", "GET", {
+        graphNode("route:POST:app/api/users/route.ts", "route", "POST", {
+          file_path: "app/api/users/route.ts",
+          method: "POST",
+          route_pattern: "/api/users",
+          framework_role: "next_app_route",
+          dynamic_params: []
+        }),
+        graphNode("symbol:app/api/users/route.ts:function:POST", "symbol", "POST", {
           file_path: "app/api/users/route.ts",
           symbol_kind: "function",
           exported: true
@@ -226,13 +232,13 @@ describe("GraphQueryService", () => {
           file_path: "src/services/users.ts"
         }),
         {
-          ...graphNode("data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3", "data_operation", "findMany", {
+          ...graphNode("data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:create:3-3", "data_operation", "create", {
             file_path: "src/services/users.ts",
             receiver_name: "db.user",
             receiver_root: "db",
             store_name: "user",
-            operation_name: "findMany",
-            operation_kind: "read"
+            operation_name: "create",
+            operation_kind: "write"
           }),
           evidence_ids: ["evidence_data_operation"]
         }
@@ -243,8 +249,8 @@ describe("GraphQueryService", () => {
         graphEdge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
         graphEdge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
         graphEdge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts"),
-        graphEdge("ROUTE_HANDLED_BY_SYMBOL", "route:GET:app/api/users/route.ts", "symbol:app/api/users/route.ts:function:GET"),
-        graphEdge("DATA_OPERATION_READS_DATA_STORE", "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3", "data_store:db:user")
+        graphEdge("ROUTE_HANDLED_BY_SYMBOL", "route:POST:app/api/users/route.ts", "symbol:app/api/users/route.ts:function:POST"),
+        graphEdge("DATA_OPERATION_WRITES_DATA_STORE", "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:create:3-3", "data_store:db:user")
       ],
       evidence: [
         graphEvidence("evidence_data_operation", "fact_data_operation", "scan_flow", "src/services/users.ts", 3)
@@ -256,39 +262,61 @@ describe("GraphQueryService", () => {
       repo_id: "repo_abc",
       scan_id: "scan_flow",
       path: "app/api/users/route.ts",
-      method: "GET",
+      method: "POST",
       policy_surface: "mcp"
     });
     const reachable = createGraphQueryService(storage).getReachableDataAccess({
       repo_id: "repo_abc",
       scan_id: "scan_flow",
       path: "app/api/users/route.ts",
-      method: "GET",
+      method: "POST",
+      policy_surface: "mcp"
+    });
+    const endpointFlow = createGraphQueryService(storage).getRouteFlow({
+      repo_id: "repo_abc",
+      scan_id: "scan_flow",
+      path: "/api/users",
+      method: "POST",
       policy_surface: "mcp"
     });
     storage.close();
 
     expect(flow.complete).toBe(true);
     expect(flow.policy).toMatchObject({ surface: "mcp", local_only: true });
+    expect(flow).toMatchObject({
+      route_pattern: "/api/users",
+      framework_role: "next_app_route",
+      dynamic_params: []
+    });
+    expect(endpointFlow.route_module_id).toBe("module:app/api/users/route.ts");
     expect(flow.route_module_id).toBe("module:app/api/users/route.ts");
-    expect(flow.route_handler_symbol_ids).toEqual(["symbol:app/api/users/route.ts:function:GET"]);
+    expect(flow.route_handler_symbol_ids).toEqual(["symbol:app/api/users/route.ts:function:POST"]);
     expect(flow.service_module_ids).toEqual(["module:src/services/users.ts"]);
     expect(flow.data_access_module_ids).toEqual(["module:src/lib/db.ts"]);
+    expect(flow.risk_reasons).toEqual([{
+      risk_kind: "data_write",
+      operation_kind: "write",
+      operation_name: "create",
+      store_name: "user",
+      file_path: "src/services/users.ts",
+      start_line: 3
+    }]);
     expect(flow.module_path).toEqual([
       "module:app/api/users/route.ts",
       "module:src/services/users.ts",
       "module:src/lib/db.ts"
     ]);
     expect(reachable.data_operations).toEqual([{
-      operation_node_id: "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:findMany:3-3",
+      operation_node_id: "data_operation:src/services/users.ts:bbbbbbbbbbbb:db.user:create:3-3",
       data_store_node_id: "data_store:db:user",
       file_path: "src/services/users.ts",
       start_line: 3,
-      operation_kind: "read",
-      operation_name: "findMany",
+      operation_kind: "write",
+      operation_name: "create",
       store_name: "user",
       receiver_name: "db.user"
     }]);
+    expect(reachable.risk_reasons).toEqual(flow.risk_reasons);
   });
 
   it("resolves finding evidence through graph links and explicit fact selectors", async () => {
@@ -681,27 +709,39 @@ describe("GraphQueryService", () => {
       },
       snapshots,
       nodes: [
-        graphNode("symbol:src/services/users.ts:function:getUsers", "symbol", "getUsers", {
-          file_path: "src/services/users.ts",
-          symbol_kind: "function",
-          exported: true
-        }),
-        graphNode("import_decl:app/api/users/route.ts:loadUsers", "import_decl", "loadUsers from @/services/users", {
-          file_path: "app/api/users/route.ts",
-          source: "@/services/users",
-          imported_name: "getUsers",
-          local_name: "loadUsers"
-        }),
+        {
+          ...graphNode("symbol:src/services/users.ts:function:getUsers", "symbol", "getUsers", {
+            file_path: "src/services/users.ts",
+            symbol_kind: "function",
+            exported: true
+          }),
+          evidence_ids: ["evidence_decl"]
+        },
+        {
+          ...graphNode("import_decl:app/api/users/route.ts:loadUsers", "import_decl", "loadUsers from @/services/users", {
+            file_path: "app/api/users/route.ts",
+            source: "@/services/users",
+            imported_name: "getUsers",
+            local_name: "loadUsers"
+          }),
+          evidence_ids: ["evidence_ref"]
+        },
         graphNode("callsite:app/api/users/route.ts:loadUsers", "callsite", "loadUsers", {
           file_path: "app/api/users/route.ts",
           callee_name: "loadUsers"
         })
       ],
       edges: [
-        graphEdge("IMPORT_RESOLVES_TO_SYMBOL", "import_decl:app/api/users/route.ts:loadUsers", "symbol:src/services/users.ts:function:getUsers"),
+        {
+          ...graphEdge("IMPORT_RESOLVES_TO_SYMBOL", "import_decl:app/api/users/route.ts:loadUsers", "symbol:src/services/users.ts:function:getUsers"),
+          evidence_ids: ["evidence_ref"]
+        },
         graphEdge("CALLSITE_REFERENCES_SYMBOL", "callsite:app/api/users/route.ts:loadUsers", "import_decl:app/api/users/route.ts:loadUsers")
       ],
-      evidence: [],
+      evidence: [
+        graphEvidence("evidence_decl", "fact_decl", "scan_symbols", "src/services/users.ts", 2),
+        graphEvidence("evidence_ref", "fact_import", "scan_symbols", "app/api/users/route.ts", 1)
+      ],
       createdAt: "2026-05-22T00:00:00.000Z"
     }));
 
@@ -731,9 +771,15 @@ describe("GraphQueryService", () => {
       "CALLSITE_REFERENCES_SYMBOL",
       "IMPORT_RESOLVES_TO_SYMBOL"
     ]);
+    expect(neighborhood.occurrence_count).toBe(2);
+    expect(neighborhood.occurrence_files).toEqual([
+      "app/api/users/route.ts",
+      "src/services/users.ts"
+    ]);
     expect(missing.diagnostics).toContain("symbol_not_found");
     expect(missing.nodes).toEqual([]);
     expect(missing.edges).toEqual([]);
+    expect(missing.occurrence_count).toBe(0);
   });
 });
 

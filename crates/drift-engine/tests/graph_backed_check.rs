@@ -4,6 +4,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 #[test]
 fn check_repo_uses_resolved_graph_edges_for_direct_data_access() {
@@ -279,6 +280,213 @@ fn check_repo_flags_route_to_data_access_without_service_delegation() {
 }
 
 #[test]
+fn check_repo_flags_direct_data_access_hidden_behind_barrel_reexport() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/db/index.ts", "file", "src/db/index.ts", json!({ "path": "src/db/index.ts" })),
+                graph_node("file:src/db/client.ts", "file", "src/db/client.ts", json!({ "path": "src/db/client.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/db/index.ts", "module", "src/db/index.ts", json!({ "file_path": "src/db/index.ts" })),
+                graph_node("module:src/db/client.ts", "module", "src/db/client.ts", json!({ "file_path": "src/db/client.ts" })),
+                graph_node("import_decl:app/api/users/route.ts:db", "import_decl", "db from @/db", json!({
+                    "file_path": "app/api/users/route.ts",
+                    "source": "@/db",
+                    "local_name": "db"
+                }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/db/index.ts", "module:src/db/index.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/db/client.ts", "module:src/db/client.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/users/route.ts:db", "module:app/api/users/route.ts", "evidence_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/users/route.ts:db", "module:src/db/index.ts", "evidence_import"),
+                graph_edge("MODULE_REEXPORTS_MODULE", "module:src/db/index.ts", "module:src/db/client.ts")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_graph_db",
+                "kind": "api_route_no_direct_data_access",
+                "matcher": { "forbidden_imports": ["src/db/client.ts"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(findings[0]["evidence"][0]["evidence_id"], "evidence_import");
+    assert!(
+        findings[0]["related_node_ids"]
+            .as_array()
+            .expect("related nodes")
+            .iter()
+            .any(|node| node == "module:src/db/client.ts")
+    );
+}
+
+#[test]
+fn check_repo_downgrades_blocking_when_route_import_symbols_are_unresolved() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" })),
+                graph_node("import_decl:app/api/users/route.ts:db", "import_decl", "db from @/lib/db", json!({
+                    "file_path": "app/api/users/route.ts",
+                    "source": "@/lib/db",
+                    "local_name": "db"
+                }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/users/route.ts:db", "module:app/api/users/route.ts", "evidence_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/users/route.ts:db", "module:src/lib/db.ts", "evidence_import")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import"],
+                "redaction_state": "none"
+            }],
+            "graph_diagnostics": [{
+                "severity": "warning",
+                "code": "unresolved_import_symbol",
+                "message": "Could not resolve imported symbol db from @/lib/db in src/lib/db.ts.",
+                "file_path": "app/api/users/route.ts"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_graph_db",
+                "kind": "api_route_no_direct_data_access",
+                "matcher": { "forbidden_imports": ["src/lib/db"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(findings[0]["enforcement_result"], "none");
+    assert_eq!(payload["completeness"][0]["complete"], false);
+    assert_eq!(payload["completeness"][0]["can_block"], false);
+    assert!(
+        payload["completeness"][0]["reasons"]
+            .as_array()
+            .expect("reasons")
+            .iter()
+            .any(|reason| reason == "unresolved_route_import_symbol:app/api/users/route.ts")
+    );
+}
+
+#[test]
+fn check_repo_uses_graph_target_fingerprint_for_alias_renames() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" })),
+                graph_node("import_decl:app/api/users/route.ts:database", "import_decl", "database from @/lib/db", json!({
+                    "file_path": "app/api/users/route.ts",
+                    "source": "@/lib/db",
+                    "local_name": "database"
+                }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/users/route.ts:database", "module:app/api/users/route.ts", "evidence_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/users/route.ts:database", "module:src/lib/db.ts", "evidence_import")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 12,
+                "end_line": 12,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_graph_db",
+                "kind": "api_route_no_direct_data_access",
+                "matcher": { "forbidden_imports": ["src/lib/db"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(
+        findings[0]["fingerprint"],
+        graph_direct_db_fingerprint("convention_graph_db", "app/api/users/route.ts", "src/lib/db.ts")
+    );
+}
+
+#[test]
 fn check_repo_disables_blocking_when_check_limits_are_exceeded() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
@@ -392,4 +600,11 @@ fn graph_edge_with_evidence(kind: &str, from: &str, to: &str, evidence_id: &str)
         "evidence_ids": evidence_ids,
         "metadata": {}
     })
+}
+
+fn graph_direct_db_fingerprint(convention_id: &str, route_file: &str, resolved_path: &str) -> String {
+    format!(
+        "{:x}",
+        Sha256::digest(format!("{convention_id}:{route_file}:graph_direct_data_access:{resolved_path}").as_bytes())
+    )
 }

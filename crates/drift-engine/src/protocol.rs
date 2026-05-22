@@ -59,7 +59,7 @@ pub struct EngineFact {
     pub end_line: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EngineDiagnostic {
     pub severity: String,
     pub code: String,
@@ -176,6 +176,8 @@ pub struct CheckGraphData {
     pub graph_edges: Vec<GraphEdge>,
     #[serde(default)]
     pub graph_evidence: Vec<GraphEvidence>,
+    #[serde(default)]
+    pub graph_diagnostics: Vec<EngineDiagnostic>,
 }
 
 #[derive(Debug, Deserialize)]

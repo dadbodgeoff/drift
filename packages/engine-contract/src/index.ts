@@ -74,6 +74,7 @@ export const EngineFactSchema = z.object({
   kind: z.enum([
     "file_detected",
     "import_used",
+    "re_export_used",
     "exported_symbol",
     "symbol_called",
     "data_operation_detected",
@@ -161,7 +162,8 @@ export const EngineCheckRequestSchema = z.object({
     require_fresh: z.boolean(),
     graph_nodes: z.array(GraphNodeSchema).default([]),
     graph_edges: z.array(GraphEdgeSchema).default([]),
-    graph_evidence: z.array(GraphEvidenceSchema).default([])
+    graph_evidence: z.array(GraphEvidenceSchema).default([]),
+    graph_diagnostics: z.array(EngineDiagnosticSchema).default([])
   }),
   scan: z.object({
     scan_id: z.string().min(1),

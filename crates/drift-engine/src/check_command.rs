@@ -18,8 +18,11 @@ use crate::protocol::{
 
 pub fn check_repo(request: CheckRequest) -> CheckResult {
     let started = Instant::now();
-    let limit_reasons = check_limit_reasons(&request);
-    let can_block = limit_reasons.is_empty();
+    let mut completeness_reasons = check_limit_reasons(&request);
+    completeness_reasons.extend(check_graph_completeness_reasons(&request));
+    completeness_reasons.sort();
+    completeness_reasons.dedup();
+    let can_block = completeness_reasons.is_empty();
     let graph_node_count = request.graph.graph_nodes.len();
     let graph_edge_count = request.graph.graph_edges.len();
     let facts = request
@@ -164,7 +167,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
     stats.graph_nodes = graph_node_count;
     stats.graph_edges = graph_edge_count;
     stats.truncated = !can_block;
-    let diagnostics = limit_reasons
+    let diagnostics = completeness_reasons
         .iter()
         .take(request.limits.max_diagnostics)
         .map(|reason| crate::protocol::EngineDiagnostic {
@@ -193,7 +196,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             missing_capabilities: Vec::new(),
             truncated: !can_block,
             can_block,
-            reasons: limit_reasons,
+            reasons: completeness_reasons,
         }],
     }
 }
@@ -230,6 +233,44 @@ fn check_limit_reasons(request: &CheckRequest) -> Vec<String> {
         reasons.push("follow_symlinks_not_supported".to_string());
     }
     reasons
+}
+
+fn check_graph_completeness_reasons(request: &CheckRequest) -> Vec<String> {
+    let nodes_by_id = request
+        .graph
+        .graph_nodes
+        .iter()
+        .map(|node| (node.id.as_str(), node))
+        .collect::<BTreeMap<_, _>>();
+    let api_route_files = api_route_files(&request.graph.graph_edges, &nodes_by_id);
+    request
+        .graph
+        .graph_diagnostics
+        .iter()
+        .filter(|diagnostic| {
+            matches!(
+                diagnostic.code.as_str(),
+                "unresolved_import" | "unresolved_import_symbol" | "unsupported_namespace_import_symbol"
+            )
+        })
+        .filter_map(|diagnostic| {
+            let file_path = diagnostic.file_path.as_deref()?;
+            if api_route_files.contains(file_path) {
+                Some(match diagnostic.code.as_str() {
+                    "unresolved_import" => format!("unresolved_route_import:{file_path}"),
+                    "unresolved_import_symbol" => {
+                        format!("unresolved_route_import_symbol:{file_path}")
+                    }
+                    "unsupported_namespace_import_symbol" => {
+                        format!("unsupported_route_namespace_import:{file_path}")
+                    }
+                    _ => unreachable!(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 #[derive(Clone)]
@@ -328,9 +369,18 @@ fn graph_direct_data_access_findings(
         if is_forbidden_import_source(import_source, &rule.forbidden_imports) {
             continue;
         }
-        if !is_forbidden_graph_import(import_node, resolved_path, &rule.forbidden_imports) {
+        let Some((forbidden_module_id, forbidden_path, reexport_chain)) =
+            forbidden_graph_import_target(
+                edge.to.as_str(),
+                import_node,
+                resolved_path,
+                &graph.graph_edges,
+                &module_files,
+                &rule.forbidden_imports,
+            )
+        else {
             continue;
-        }
+        };
         let file_path = string_metadata(import_node, "file_path")
             .unwrap_or_default()
             .to_string();
@@ -351,17 +401,33 @@ fn graph_direct_data_access_findings(
             .copied()
             .unwrap_or(1);
         let fingerprint = stable_hash(&format!(
-            "{}:{}:{}:{}",
-            rule.convention_id, file_path, import_source, resolved_path
+            "{}:{}:graph_direct_data_access:{}",
+            rule.convention_id, file_path, forbidden_path
         ));
+        let message = if reexport_chain.is_empty() {
+            format!(
+                "API route {file_path} imports {import_source}, which resolves to forbidden data-access module {forbidden_path}."
+            )
+        } else {
+            format!(
+                "API route {file_path} imports {import_source}, which reaches forbidden data-access module {forbidden_path} through a re-export chain."
+            )
+        };
+        let mut related_node_ids = vec![
+            edge.from.clone(),
+            edge.to.clone(),
+            (*owner_module).to_string(),
+            forbidden_module_id.to_string(),
+        ];
+        related_node_ids.extend(reexport_chain);
+        related_node_ids.sort();
+        related_node_ids.dedup();
         findings.push(PendingFinding {
             fingerprint,
             convention_id: rule.convention_id.clone(),
             rule_id: "api_route_no_direct_data_access".to_string(),
             title: "API route imports data access directly".to_string(),
-            message: format!(
-                "API route {file_path} imports {import_source}, which resolves to forbidden data-access module {resolved_path}."
-            ),
+            message,
             severity: rule.severity,
             enforcement_result: match rule.enforcement_mode {
                 EnforcementMode::Block => drift_engine::EnforcementResult::Block,
@@ -373,11 +439,7 @@ fn graph_direct_data_access_findings(
             import_source: import_source.to_string(),
             line,
             evidence_id,
-            related_node_ids: vec![
-                edge.from.clone(),
-                edge.to.clone(),
-                (*owner_module).to_string(),
-            ],
+            related_node_ids,
         });
     }
     findings
@@ -526,6 +588,44 @@ fn is_forbidden_graph_import(
     })
 }
 
+fn forbidden_graph_import_target<'a>(
+    resolved_module_id: &'a str,
+    import_node: &GraphNode,
+    resolved_path: &'a str,
+    edges: &'a [GraphEdge],
+    module_files: &BTreeMap<&'a str, &'a str>,
+    forbidden_imports: &[String],
+) -> Option<(&'a str, &'a str, Vec<String>)> {
+    if is_forbidden_graph_import(import_node, resolved_path, forbidden_imports) {
+        return Some((resolved_module_id, resolved_path, Vec::new()));
+    }
+    let mut visited = BTreeSet::new();
+    let mut queue = vec![(resolved_module_id, Vec::<String>::new())];
+    while let Some((module_id, chain)) = queue.pop() {
+        if !visited.insert(module_id) {
+            continue;
+        }
+        for edge in edges
+            .iter()
+            .filter(|edge| edge.kind == "MODULE_REEXPORTS_MODULE" && edge.from == module_id)
+        {
+            let Some(target_path) = module_files.get(edge.to.as_str()).copied() else {
+                continue;
+            };
+            let mut next_chain = chain.clone();
+            next_chain.push(edge.from.clone());
+            next_chain.push(edge.to.clone());
+            if forbidden_imports.iter().any(|forbidden| {
+                target_path == forbidden || target_path.contains(forbidden)
+            }) {
+                return Some((edge.to.as_str(), target_path, next_chain));
+            }
+            queue.push((edge.to.as_str(), next_chain));
+        }
+    }
+    None
+}
+
 fn is_forbidden_import_source(import_source: &str, forbidden_imports: &[String]) -> bool {
     forbidden_imports
         .iter()
@@ -584,6 +684,7 @@ fn fact_kind_from_str(kind: &str) -> Option<FactKind> {
     match kind {
         "file_detected" => Some(FactKind::FileDetected),
         "import_used" => Some(FactKind::ImportUsed),
+        "re_export_used" => Some(FactKind::ReExportUsed),
         "exported_symbol" => Some(FactKind::ExportedSymbol),
         "symbol_called" => Some(FactKind::SymbolCalled),
         "data_operation_detected" => Some(FactKind::DataOperationDetected),

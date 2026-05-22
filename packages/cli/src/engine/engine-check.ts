@@ -1,5 +1,5 @@
 import type { AcceptedConvention,BaselineViolation,FactRecord,FileSnapshot } from "@drift/core";
-import type { EngineCheckRequest,EngineCheckResult } from "@drift/engine-contract";
+import type { EngineCheckRequest,EngineCheckResult,EngineDiagnostic } from "@drift/engine-contract";
 import type { GraphEdge,GraphEvidence,GraphNode } from "@drift/factgraph";
 import { parseEngineCheckResult } from "@drift/engine-contract";
 import { gitOutput } from "../io/git.js";
@@ -15,6 +15,7 @@ export interface EngineCheckInput {
   graphNodes?: GraphNode[];
   graphEdges?: GraphEdge[];
   graphEvidence?: GraphEvidence[];
+  graphDiagnostics?: EngineDiagnostic[];
   conventions: AcceptedConvention[];
   baseline: BaselineViolation[];
   diff: ParsedDiff;
@@ -41,7 +42,8 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
       require_fresh: false,
       graph_nodes: input.graphNodes ?? [],
       graph_edges: input.graphEdges ?? [],
-      graph_evidence: input.graphEvidence ?? []
+      graph_evidence: input.graphEvidence ?? [],
+      graph_diagnostics: input.graphDiagnostics ?? []
     },
     scan: {
       scan_id: input.scanId,

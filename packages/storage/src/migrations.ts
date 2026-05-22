@@ -424,5 +424,13 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_scan_file_changes_scan_kind
         ON scan_file_changes(repo_id, scan_id, change_kind);
     `
+  },
+  {
+    id: "009_symbol_occurrence_kind",
+    sql: `
+      ALTER TABLE symbol_occurrences
+        ADD COLUMN occurrence_kind TEXT NOT NULL DEFAULT 'reference'
+        CHECK (occurrence_kind IN ('declaration', 'reference'));
+    `
   }
 ];

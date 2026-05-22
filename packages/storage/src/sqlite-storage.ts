@@ -16,7 +16,8 @@ import type {
   RepoRecord,
   ResolverDependency,
   ScanFileChange,
-  ScanManifest
+  ScanManifest,
+  SymbolOccurrence
 } from "@drift/core";
 import {
   AuditEventSchema,
@@ -33,6 +34,7 @@ import {
   ResolverDependencySchema,
   ScanFileChangeSchema,
   ScanManifestSchema,
+  SymbolOccurrenceSchema,
   auditEventHash
 } from "@drift/core";
 import type {
@@ -362,6 +364,13 @@ export class SqliteDriftStorage {
     const graphCompleteness = Array.isArray(parsed.graph.completeness)
       ? parsed.graph.completeness.map((completeness) => GraphCompletenessSchema.parse(completeness))
       : [];
+    const symbolOccurrences = symbolOccurrencesFromGraph(
+      parsed.repo_id,
+      parsed.scan_id,
+      graphNodes,
+      graphEdges,
+      graphEvidence
+    );
     const upsertArtifact = this.db.prepare(`
       INSERT INTO fact_graph_artifacts (
         id, repo_id, scan_id, schema_version, graph_hash, graph_json,
@@ -387,6 +396,7 @@ export class SqliteDriftStorage {
     const deleteEvidence = this.db.prepare("DELETE FROM graph_evidence WHERE repo_id = ? AND scan_id = ?");
     const deleteDiagnostics = this.db.prepare("DELETE FROM graph_diagnostics WHERE repo_id = ? AND scan_id = ?");
     const deleteCompleteness = this.db.prepare("DELETE FROM graph_completeness WHERE repo_id = ? AND scan_id = ?");
+    const deleteSymbolOccurrences = this.db.prepare("DELETE FROM symbol_occurrences WHERE repo_id = ? AND scan_id = ?");
     const deleteModuleDependents = this.db.prepare("DELETE FROM module_dependents WHERE repo_id = ? AND scan_id = ?");
     const deleteResolverDependencies = this.db.prepare("DELETE FROM resolver_dependencies WHERE repo_id = ? AND scan_id = ?");
     const insertNode = this.db.prepare(`
@@ -433,6 +443,14 @@ export class SqliteDriftStorage {
         @missing_capabilities_json, @truncated, @can_block, @reasons_json
       )
     `);
+    const insertSymbolOccurrence = this.db.prepare(`
+      INSERT INTO symbol_occurrences (
+        repo_id, scan_id, id, symbol_id, occurrence_kind, file_path, start_line, end_line, evidence_id
+      )
+      VALUES (
+        @repo_id, @scan_id, @id, @symbol_id, @occurrence_kind, @file_path, @start_line, @end_line, @evidence_id
+      )
+    `);
     const insertModuleDependent = this.db.prepare(`
       INSERT INTO module_dependents (
         repo_id, scan_id, module_id, dependent_module_id, edge_id
@@ -461,6 +479,7 @@ export class SqliteDriftStorage {
       deleteEvidence.run(parsed.repo_id, parsed.scan_id);
       deleteDiagnostics.run(parsed.repo_id, parsed.scan_id);
       deleteCompleteness.run(parsed.repo_id, parsed.scan_id);
+      deleteSymbolOccurrences.run(parsed.repo_id, parsed.scan_id);
       deleteModuleDependents.run(parsed.repo_id, parsed.scan_id);
       deleteResolverDependencies.run(parsed.repo_id, parsed.scan_id);
       for (const node of graphNodes) {
@@ -535,6 +554,12 @@ export class SqliteDriftStorage {
           reasons_json: stringifyJson(completeness.reasons)
         });
       }
+      for (const occurrence of symbolOccurrences) {
+        insertSymbolOccurrence.run({
+          ...occurrence,
+          evidence_id: occurrence.evidence_id ?? null
+        });
+      }
     })();
   }
 
@@ -592,6 +617,13 @@ export class SqliteDriftStorage {
       .prepare("SELECT * FROM module_dependents WHERE repo_id = ? AND scan_id = ? ORDER BY module_id, dependent_module_id, edge_id")
       .all(repoId, scanId)
       .map(moduleDependentFromRow);
+  }
+
+  listSymbolOccurrences(repoId: string, scanId: string): SymbolOccurrence[] {
+    return this.db
+      .prepare("SELECT * FROM symbol_occurrences WHERE repo_id = ? AND scan_id = ? ORDER BY file_path, start_line, symbol_id, occurrence_kind, id")
+      .all(repoId, scanId)
+      .map(symbolOccurrenceFromRow);
   }
 
   upsertFinding(finding: Finding): void {
@@ -1067,6 +1099,14 @@ function moduleDependentFromRow(row: unknown): ModuleDependent {
   return ModuleDependentSchema.parse(row);
 }
 
+function symbolOccurrenceFromRow(row: unknown): SymbolOccurrence {
+  const record = row as Record<string, unknown>;
+  return SymbolOccurrenceSchema.parse({
+    ...record,
+    evidence_id: record.evidence_id ?? undefined
+  });
+}
+
 function conventionCandidateFromRow(row: unknown): ConventionCandidate {
   const record = row as Record<string, unknown>;
   return ConventionCandidateSchema.parse({
@@ -1171,6 +1211,111 @@ function mergeGraphDiagnosticsById(records: GraphDiagnostic[]): GraphDiagnostic[
       : record);
   }
   return uniqueById([...merged.values()]);
+}
+
+function symbolOccurrencesFromGraph(
+  repoId: string,
+  scanId: string,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  evidence: GraphEvidence[]
+): SymbolOccurrence[] {
+  const occurrences = new Map<string, SymbolOccurrence>();
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const addOccurrence = (occurrence: SymbolOccurrence): void => {
+    occurrences.set(occurrence.id, SymbolOccurrenceSchema.parse(occurrence));
+  };
+
+  for (const node of nodes) {
+    if (node.kind !== "symbol") {
+      continue;
+    }
+    for (const evidenceId of node.evidence_ids) {
+      const evidenceItem = evidenceById.get(evidenceId);
+      if (!evidenceItem) {
+        continue;
+      }
+      addOccurrence({
+        repo_id: repoId,
+        scan_id: scanId,
+        id: `symbol_occurrence:${node.id}:declaration:${evidenceId}`,
+        symbol_id: node.id,
+        occurrence_kind: "declaration",
+        file_path: evidenceItem.file_path,
+        start_line: evidenceItem.start_line,
+        end_line: evidenceItem.end_line,
+        evidence_id: evidenceId
+      });
+    }
+  }
+
+  for (const edge of edges) {
+    if (edge.kind !== "IMPORT_RESOLVES_TO_SYMBOL") {
+      continue;
+    }
+    const symbol = nodeById.get(edge.to);
+    if (symbol?.kind !== "symbol") {
+      continue;
+    }
+    for (const evidenceId of edge.evidence_ids) {
+      const evidenceItem = evidenceById.get(evidenceId);
+      if (!evidenceItem) {
+        continue;
+      }
+      addOccurrence({
+        repo_id: repoId,
+        scan_id: scanId,
+        id: `symbol_occurrence:${edge.to}:reference:${edge.id}:${evidenceId}`,
+        symbol_id: edge.to,
+        occurrence_kind: "reference",
+        file_path: evidenceItem.file_path,
+        start_line: evidenceItem.start_line,
+        end_line: evidenceItem.end_line,
+        evidence_id: evidenceId
+      });
+    }
+  }
+
+  const symbolByImport = new Map(
+    edges
+      .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_SYMBOL")
+      .map((edge) => [edge.from, edge.to])
+  );
+  for (const edge of edges) {
+    if (edge.kind !== "CALLSITE_REFERENCES_SYMBOL") {
+      continue;
+    }
+    const symbolId = symbolByImport.get(edge.to) ?? (nodeById.get(edge.to)?.kind === "symbol" ? edge.to : undefined);
+    if (!symbolId) {
+      continue;
+    }
+    for (const evidenceId of edge.evidence_ids) {
+      const evidenceItem = evidenceById.get(evidenceId);
+      if (!evidenceItem) {
+        continue;
+      }
+      addOccurrence({
+        repo_id: repoId,
+        scan_id: scanId,
+        id: `symbol_occurrence:${symbolId}:reference:${edge.id}:${evidenceId}`,
+        symbol_id: symbolId,
+        occurrence_kind: "reference",
+        file_path: evidenceItem.file_path,
+        start_line: evidenceItem.start_line,
+        end_line: evidenceItem.end_line,
+        evidence_id: evidenceId
+      });
+    }
+  }
+
+  return [...occurrences.values()].sort((left, right) =>
+    left.file_path.localeCompare(right.file_path) ||
+    left.start_line - right.start_line ||
+    left.symbol_id.localeCompare(right.symbol_id) ||
+    left.occurrence_kind.localeCompare(right.occurrence_kind) ||
+    left.id.localeCompare(right.id)
+  );
 }
 
 function resolverDependencyFromEdge(

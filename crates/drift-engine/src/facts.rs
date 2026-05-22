@@ -6,6 +6,7 @@ use tree_sitter::{Node, Parser};
 pub enum FactKind {
     FileDetected,
     ImportUsed,
+    ReExportUsed,
     ExportedSymbol,
     SymbolCalled,
     DataOperationDetected,
@@ -172,15 +173,25 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
 }
 
 fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {
+    let statement = node_text(node, source);
     if let Some(source_value) = node
         .child_by_field_name("source")
         .and_then(|child| node_text(child, source))
         .map(unquote)
     {
-        if let Some(statement) = node_text(node, source) {
+        if let Some(statement) = statement.as_deref() {
             for identifier in reexport_value_identifiers(&statement) {
                 facts.push(Fact {
                     kind: FactKind::ImportUsed,
+                    file_path: file_path.to_string(),
+                    name: identifier.clone(),
+                    value: Some(source_value.clone()),
+                    imported_name: None,
+                    start_line: node.start_position().row + 1,
+                    end_line: node.end_position().row + 1,
+                });
+                facts.push(Fact {
+                    kind: FactKind::ReExportUsed,
                     file_path: file_path.to_string(),
                     name: identifier,
                     value: Some(source_value.clone()),
@@ -205,14 +216,38 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             end_line,
         });
 
-        if is_api_route_path(file_path)
+        if is_next_pages_api_path(file_path) {
+            facts.push(Fact {
+                kind: FactKind::RouteDeclared,
+                file_path: file_path.to_string(),
+                name: "default".to_string(),
+                value: Some(name.clone()),
+                imported_name: None,
+                start_line,
+                end_line,
+            });
+        } else if is_api_route_path(file_path)
             && matches!(name.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE")
         {
             facts.push(Fact {
                 kind: FactKind::RouteDeclared,
                 file_path: file_path.to_string(),
-                name,
+                name: name.clone(),
                 value: None,
+                imported_name: None,
+                start_line,
+                end_line,
+            });
+        }
+        if statement
+            .as_deref()
+            .is_some_and(|value| value.trim_start().starts_with("export default"))
+        {
+            facts.push(Fact {
+                kind: FactKind::ExportedSymbol,
+                file_path: file_path.to_string(),
+                name: "default".to_string(),
+                value: Some(name),
                 imported_name: None,
                 start_line,
                 end_line,
@@ -395,7 +430,7 @@ fn data_operation_shape<'a>(
     if store_name.is_empty() {
         return None;
     }
-    let operation_kind = data_operation_kind(operation_name)?;
+    let operation_kind = data_operation_kind(operation_name);
     Some((store_name.to_string(), operation_kind))
 }
 
@@ -428,7 +463,7 @@ fn receiver_root(receiver: &str) -> &str {
     receiver.split('.').next().unwrap_or(receiver)
 }
 
-fn data_operation_kind(operation_name: &str) -> Option<&'static str> {
+fn data_operation_kind(operation_name: &str) -> &'static str {
     let lower = operation_name.to_ascii_lowercase();
     if matches!(
         lower.as_str(),
@@ -446,7 +481,7 @@ fn data_operation_kind(operation_name: &str) -> Option<&'static str> {
             | "aggregate"
             | "groupby"
     ) {
-        Some("read")
+        "read"
     } else if matches!(
         lower.as_str(),
         "create"
@@ -454,16 +489,19 @@ fn data_operation_kind(operation_name: &str) -> Option<&'static str> {
             | "update"
             | "updatemany"
             | "upsert"
-            | "delete"
-            | "deletemany"
             | "insert"
             | "insertmany"
             | "save"
             | "set"
     ) {
-        Some("write")
+        "write"
+    } else if matches!(
+        lower.as_str(),
+        "delete" | "deletemany" | "remove" | "removemany" | "destroy" | "destroymany"
+    ) {
+        "delete"
     } else {
-        None
+        "unknown"
     }
 }
 
@@ -533,7 +571,11 @@ fn is_api_route_path(file_path: &str) -> bool {
         || file_path.ends_with("/route.tsx")
         || file_path.ends_with("/route.js")
         || file_path.ends_with("/route.jsx")
-        || file_path.contains("/pages/api/")
+        || is_next_pages_api_path(file_path)
+}
+
+fn is_next_pages_api_path(file_path: &str) -> bool {
+    file_path.contains("/pages/api/") || file_path.starts_with("pages/api/")
 }
 
 fn is_service_module_path(file_path: &str) -> bool {

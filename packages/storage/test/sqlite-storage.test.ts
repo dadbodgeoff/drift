@@ -32,7 +32,8 @@ describe("SQLite Drift storage", () => {
       "005_audit_integrity",
       "006_fact_graph_artifacts",
       "007_fact_graph_v2_projections",
-      "008_scan_file_changes"
+      "008_scan_file_changes",
+      "009_symbol_occurrence_kind"
     ]);
     storage.close();
   });
@@ -70,7 +71,8 @@ describe("SQLite Drift storage", () => {
       "005_audit_integrity",
       "006_fact_graph_artifacts",
       "007_fact_graph_v2_projections",
-      "008_scan_file_changes"
+      "008_scan_file_changes",
+      "009_symbol_occurrence_kind"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();
@@ -754,6 +756,174 @@ describe("SQLite Drift storage", () => {
 
     expect(storage.listResolverDependencies("repo_abc", "scan_deps")).toEqual([]);
     expect(storage.listModuleDependents("repo_abc", "scan_deps")).toEqual([]);
+    storage.close();
+  });
+
+  it("projects symbol occurrences from graph declarations and symbol-resolution edges", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_symbols",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 2,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        file_path: "src/services/users.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 100,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        file_path: "app/api/users/route.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 100,
+        indexed: true
+      }
+    ];
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        root_hash: "root-fp",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        {
+          id: "symbol:src/services/users.ts:function:listUsers",
+          kind: "symbol",
+          label: "listUsers",
+          stable: true,
+          evidence_ids: ["evidence_decl"],
+          metadata: { file_path: "src/services/users.ts", symbol_kind: "function", exported: true }
+        },
+        {
+          id: "import_decl:app/api/users/route.ts:bbbbbbbbbbbb:@/services/users:listUsers:1-1",
+          kind: "import_decl",
+          label: "listUsers from @/services/users",
+          stable: false,
+          evidence_ids: ["evidence_ref"],
+          metadata: { file_path: "app/api/users/route.ts", source: "@/services/users", local_name: "listUsers" }
+        },
+        {
+          id: "callsite:app/api/users/route.ts:bbbbbbbbbbbb:listUsers:3-3",
+          kind: "callsite",
+          label: "listUsers",
+          stable: false,
+          evidence_ids: ["evidence_call"],
+          metadata: { file_path: "app/api/users/route.ts", callee_name: "listUsers" }
+        }
+      ],
+      edges: [
+        {
+          id: "edge:import:listUsers",
+          kind: "IMPORT_RESOLVES_TO_SYMBOL",
+          from: "import_decl:app/api/users/route.ts:bbbbbbbbbbbb:@/services/users:listUsers:1-1",
+          to: "symbol:src/services/users.ts:function:listUsers",
+          evidence_ids: ["evidence_ref"],
+          metadata: {}
+        },
+        {
+          id: "edge:call:listUsers",
+          kind: "CALLSITE_REFERENCES_SYMBOL",
+          from: "callsite:app/api/users/route.ts:bbbbbbbbbbbb:listUsers:3-3",
+          to: "import_decl:app/api/users/route.ts:bbbbbbbbbbbb:@/services/users:listUsers:1-1",
+          evidence_ids: ["evidence_call"],
+          metadata: {}
+        }
+      ],
+      evidence: [
+        {
+          id: "evidence_decl",
+          repo_id: "repo_abc",
+          scan_id: "scan_symbols",
+          artifact_id: "file_version:src/services/users.ts:aaaaaaaaaaaa",
+          file_path: "src/services/users.ts",
+          file_hash: "a".repeat(64),
+          start_line: 2,
+          end_line: 2,
+          adapter_id: "typescript",
+          adapter_version: "0.1.0",
+          fact_ids: ["fact_decl"],
+          redaction_state: "none"
+        },
+        {
+          id: "evidence_ref",
+          repo_id: "repo_abc",
+          scan_id: "scan_symbols",
+          artifact_id: "file_version:app/api/users/route.ts:bbbbbbbbbbbb",
+          file_path: "app/api/users/route.ts",
+          file_hash: "b".repeat(64),
+          start_line: 1,
+          end_line: 1,
+          adapter_id: "typescript",
+          adapter_version: "0.1.0",
+          fact_ids: ["fact_import"],
+          redaction_state: "none"
+        },
+        {
+          id: "evidence_call",
+          repo_id: "repo_abc",
+          scan_id: "scan_symbols",
+          artifact_id: "file_version:app/api/users/route.ts:bbbbbbbbbbbb",
+          file_path: "app/api/users/route.ts",
+          file_hash: "b".repeat(64),
+          start_line: 3,
+          end_line: 3,
+          adapter_id: "typescript",
+          adapter_version: "0.1.0",
+          fact_ids: ["fact_call"],
+          redaction_state: "none"
+        }
+      ],
+      createdAt: "2026-05-10T00:00:02.000Z"
+    }));
+
+    expect(storage.listSymbolOccurrences("repo_abc", "scan_symbols")).toEqual([
+      expect.objectContaining({
+        symbol_id: "symbol:src/services/users.ts:function:listUsers",
+        occurrence_kind: "reference",
+        file_path: "app/api/users/route.ts",
+        start_line: 1
+      }),
+      expect.objectContaining({
+        symbol_id: "symbol:src/services/users.ts:function:listUsers",
+        occurrence_kind: "reference",
+        file_path: "app/api/users/route.ts",
+        start_line: 3
+      }),
+      expect.objectContaining({
+        symbol_id: "symbol:src/services/users.ts:function:listUsers",
+        occurrence_kind: "declaration",
+        file_path: "src/services/users.ts",
+        start_line: 2
+      })
+    ]);
     storage.close();
   });
 

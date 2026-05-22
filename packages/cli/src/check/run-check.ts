@@ -282,6 +282,7 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
       graphNodes: graph.nodes,
       graphEdges: graph.edges,
       graphEvidence: graph.evidence,
+      graphDiagnostics: graph.diagnostics,
       conventions: [convention],
       baseline: input.baseline,
       diff: input.parsedDiff,
@@ -335,6 +336,7 @@ function graphForEngineCheck(
   nodes: ScanData["graph_nodes"];
   edges: ScanData["graph_edges"];
   evidence: ScanData["graph_evidence"];
+  diagnostics: ScanData["graph_diagnostics"];
 } {
   const evidenceById = new Map(checkData.graph_evidence.map((evidence) => [evidence.id, evidence]));
   const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
@@ -414,7 +416,10 @@ function graphForEngineCheck(
   return {
     nodes: keptNodes,
     edges: keptEdges,
-    evidence: checkData.graph_evidence.filter((evidence) => keptEvidenceIds.has(evidence.id))
+    evidence: checkData.graph_evidence.filter((evidence) => keptEvidenceIds.has(evidence.id)),
+    diagnostics: checkData.graph_diagnostics.filter((diagnostic) =>
+      !diagnostic.file_path || fileSet.has(diagnostic.file_path)
+    )
   };
 }
 

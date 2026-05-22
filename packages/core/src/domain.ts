@@ -144,6 +144,18 @@ export interface ModuleDependent {
   edge_id: string;
 }
 
+export interface SymbolOccurrence {
+  repo_id: string;
+  scan_id: string;
+  id: string;
+  symbol_id: string;
+  occurrence_kind: "declaration" | "reference";
+  file_path: string;
+  start_line: number;
+  end_line: number;
+  evidence_id?: string;
+}
+
 export interface BackupManifest {
   id: string;
   repo_id: string;
@@ -159,6 +171,7 @@ export interface BackupManifest {
 export type FactKind =
   | "file_detected"
   | "import_used"
+  | "re_export_used"
   | "exported_symbol"
   | "symbol_called"
   | "data_operation_detected"
@@ -180,7 +193,7 @@ export interface FactRecord {
 
 export interface GraphNodeRecord {
   id: string;
-  kind: "file" | "module" | "symbol" | "import" | "route" | "role" | "data_store" | "data_operation";
+  kind: "file" | "module" | "symbol" | "import" | "route" | "role" | "data_store" | "data_operation" | "endpoint" | "re_export";
   label: string;
 }
 
@@ -191,10 +204,15 @@ export interface GraphEdgeRecord {
     | "MODULE_IMPORTS_MODULE"
     | "FILE_HAS_ROLE"
     | "ROUTE_DECLARED_IN_FILE"
+    | "ROUTE_HAS_ENDPOINT"
+    | "MODULE_REEXPORTS_MODULE"
+    | "REEXPORT_RESOLVES_TO_SYMBOL"
     | "IMPORT_RESOLVES_TO_MODULE"
     | "IMPORT_RESOLVES_TO_SYMBOL"
     | "DATA_OPERATION_READS_DATA_STORE"
-    | "DATA_OPERATION_WRITES_DATA_STORE";
+    | "DATA_OPERATION_WRITES_DATA_STORE"
+    | "DATA_OPERATION_DELETES_DATA_STORE"
+    | "DATA_OPERATION_TOUCHES_DATA_STORE";
   from: string;
   to: string;
 }

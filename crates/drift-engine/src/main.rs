@@ -488,6 +488,7 @@ fn fact_kind(kind: FactKind) -> &'static str {
     match kind {
         FactKind::FileDetected => "file_detected",
         FactKind::ImportUsed => "import_used",
+        FactKind::ReExportUsed => "re_export_used",
         FactKind::ExportedSymbol => "exported_symbol",
         FactKind::SymbolCalled => "symbol_called",
         FactKind::DataOperationDetected => "data_operation_detected",
@@ -548,6 +549,9 @@ fn graph_for_file(
     let file_node = file_id(&file.file_path);
     let file_version_node = file_version_id(&file.file_path, &file.content_hash);
     let module_node = module_id(&file.file_path);
+    let file_is_api_route = facts.iter().any(|fact| {
+        fact.kind == "file_role_detected" && fact.file_path == file.file_path && fact.name == "api_route"
+    });
     let import_nodes_by_local_name = facts
         .iter()
         .filter(|fact| fact.kind == "import_used")
@@ -775,15 +779,74 @@ fn graph_for_file(
                             ),
                             file_path: Some(fact.file_path.clone()),
                         });
+                    } else if imported_name == "*" {
+                        diagnostics.push(EngineDiagnostic {
+                            severity: "warning".to_string(),
+                            code: "unsupported_namespace_import_symbol".to_string(),
+                            message: format!(
+                                "Namespace import {source} in {} resolved to {resolved}, but member-level symbol resolution is conservative.",
+                                fact.file_path
+                            ),
+                            file_path: Some(fact.file_path.clone()),
+                        });
                     }
                     insert_edge(
                         &mut edges,
                         "MODULE_IMPORTS_MODULE",
                         &module_node,
                         &resolved_module,
-                        vec![evidence_id],
+                        vec![evidence_id.clone()],
                         BTreeMap::new(),
                     );
+                    if file_is_api_route
+                        && !is_data_access_reference(resolved)
+                        && resolved_import_symbol_name(imported_name, resolved, resolver).is_some()
+                    {
+                        let target_file_node = file_id(resolved);
+                        let service_role_node = "file_role:service_module".to_string();
+                        insert_node(
+                            &mut nodes,
+                            target_file_node.clone(),
+                            "file",
+                            resolved,
+                            true,
+                            Vec::new(),
+                            BTreeMap::from([("path".to_string(), json!(resolved))]),
+                        );
+                        insert_node(
+                            &mut nodes,
+                            service_role_node.clone(),
+                            "file_role",
+                            "service_module",
+                            true,
+                            vec![evidence_id.clone()],
+                            BTreeMap::from([("role".to_string(), json!("service_module"))]),
+                        );
+                        insert_edge(
+                            &mut edges,
+                            "FILE_HAS_ROLE",
+                            &target_file_node,
+                            &service_role_node,
+                            vec![evidence_id],
+                            BTreeMap::from([
+                                ("inferred_from".to_string(), json!("route_import_target")),
+                                ("route_file_path".to_string(), json!(fact.file_path)),
+                                ("resolved_module_id".to_string(), json!(resolved_module)),
+                            ]),
+                        );
+                    } else if file_is_api_route
+                        && !is_data_access_reference(resolved)
+                        && resolved_import_symbol_name(imported_name, resolved, resolver).is_none()
+                    {
+                        diagnostics.push(EngineDiagnostic {
+                            severity: "warning".to_string(),
+                            code: "ambiguous_route_dependency_service_boundary".to_string(),
+                            message: format!(
+                                "Could not infer service boundary for route import {source} because {resolved} has no supported exported symbols."
+                            ),
+                            file_path: Some(fact.file_path.clone()),
+                        });
+                    }
                 } else if should_report_unresolved {
                     diagnostics.push(EngineDiagnostic {
                         severity: "warning".to_string(),
@@ -794,6 +857,67 @@ fn graph_for_file(
                         ),
                         file_path: Some(fact.file_path.clone()),
                     });
+                }
+            }
+            "re_export_used" => {
+                let Some(source) = fact.value.as_deref() else {
+                    continue;
+                };
+                let reexport_node = reexport_id(
+                    &fact.file_path,
+                    &file.content_hash,
+                    source,
+                    &fact.name,
+                    fact.start_line,
+                    fact.end_line,
+                );
+                insert_node(
+                    &mut nodes,
+                    reexport_node.clone(),
+                    "re_export",
+                    &fact.name,
+                    false,
+                    vec![evidence_id.clone()],
+                    BTreeMap::from([
+                        ("file_path".to_string(), json!(fact.file_path)),
+                        ("source".to_string(), json!(source)),
+                        ("exported_name".to_string(), json!(fact.name)),
+                    ]),
+                );
+                if let Some(resolved) = resolve_import(&fact.file_path, source, resolver) {
+                    let resolved_module = module_id(&resolved);
+                    insert_edge(
+                        &mut edges,
+                        "MODULE_REEXPORTS_MODULE",
+                        &module_node,
+                        &resolved_module,
+                        vec![evidence_id.clone()],
+                        BTreeMap::from([
+                            ("source".to_string(), json!(source)),
+                            ("exported_name".to_string(), json!(fact.name)),
+                            ("resolved_file_path".to_string(), json!(resolved)),
+                            ("resolved_module_id".to_string(), json!(resolved_module)),
+                        ]),
+                    );
+                    if resolver
+                        .exported_symbols
+                        .get(&resolved)
+                        .is_some_and(|symbols| symbols.contains(&fact.name))
+                    {
+                        insert_edge(
+                            &mut edges,
+                            "REEXPORT_RESOLVES_TO_SYMBOL",
+                            &reexport_node,
+                            &symbol_id(&resolved, "function", &fact.name),
+                            vec![evidence_id],
+                            BTreeMap::from([
+                                ("source".to_string(), json!(source)),
+                                ("exported_name".to_string(), json!(fact.name)),
+                                ("resolved_file_path".to_string(), json!(resolved)),
+                                ("resolved_module_id".to_string(), json!(resolved_module)),
+                            ]),
+                        );
+                    }
                 }
             }
             "exported_symbol" => {
@@ -830,6 +954,7 @@ fn graph_for_file(
             }
             "route_declared" => {
                 let route_node = format!("route:{}:{}", fact.name, fact.file_path);
+                let endpoint = endpoint_shape(&fact.file_path, &fact.name);
                 insert_node(
                     &mut nodes,
                     route_node.clone(),
@@ -837,10 +962,11 @@ fn graph_for_file(
                     &fact.name,
                     true,
                     vec![evidence_id.clone()],
-                    BTreeMap::from([
+                    endpoint_metadata(
                         ("method".to_string(), json!(fact.name)),
                         ("file_path".to_string(), json!(fact.file_path)),
-                    ]),
+                        endpoint.as_ref(),
+                    ),
                 );
                 insert_edge(
                     &mut edges,
@@ -850,11 +976,41 @@ fn graph_for_file(
                     vec![evidence_id.clone()],
                     BTreeMap::new(),
                 );
+                if let Some(endpoint) = endpoint {
+                    let endpoint_node = endpoint_id(&fact.file_path, &fact.name, &endpoint.pattern);
+                    insert_node(
+                        &mut nodes,
+                        endpoint_node.clone(),
+                        "endpoint",
+                        &endpoint.pattern,
+                        true,
+                        vec![evidence_id.clone()],
+                        BTreeMap::from([
+                            ("method".to_string(), json!(fact.name)),
+                            ("file_path".to_string(), json!(fact.file_path)),
+                            ("route_pattern".to_string(), json!(endpoint.pattern)),
+                            ("framework_role".to_string(), json!(endpoint.framework_role)),
+                            ("dynamic_params".to_string(), json!(endpoint.dynamic_params)),
+                        ]),
+                    );
+                    insert_edge(
+                        &mut edges,
+                        "ROUTE_HAS_ENDPOINT",
+                        &route_node,
+                        &endpoint_node,
+                        vec![evidence_id.clone()],
+                        BTreeMap::new(),
+                    );
+                }
                 insert_edge(
                     &mut edges,
                     "ROUTE_HANDLED_BY_SYMBOL",
                     &route_node,
-                    &symbol_id(&fact.file_path, "function", &fact.name),
+                    &symbol_id(
+                        &fact.file_path,
+                        "function",
+                        fact.value.as_deref().unwrap_or(&fact.name),
+                    ),
                     vec![evidence_id],
                     BTreeMap::new(),
                 );
@@ -976,10 +1132,11 @@ fn graph_for_file(
                             ("operation_kind".to_string(), json!(operation_kind)),
                         ]),
                     );
-                    let edge_kind = if operation_kind == "read" {
-                        "DATA_OPERATION_READS_DATA_STORE"
-                    } else {
-                        "DATA_OPERATION_WRITES_DATA_STORE"
+                    let edge_kind = match operation_kind {
+                        "read" => "DATA_OPERATION_READS_DATA_STORE",
+                        "delete" => "DATA_OPERATION_DELETES_DATA_STORE",
+                        "unknown" => "DATA_OPERATION_TOUCHES_DATA_STORE",
+                        _ => "DATA_OPERATION_WRITES_DATA_STORE",
                     };
                     insert_edge(
                         &mut edges,
@@ -1061,8 +1218,111 @@ fn optional_receiver_metadata(
     metadata
 }
 
+struct EndpointShape {
+    pattern: String,
+    framework_role: &'static str,
+    dynamic_params: Vec<String>,
+}
+
+fn endpoint_metadata(
+    method: (String, serde_json::Value),
+    file_path: (String, serde_json::Value),
+    endpoint: Option<&EndpointShape>,
+) -> BTreeMap<String, serde_json::Value> {
+    let mut metadata = BTreeMap::from([method, file_path]);
+    if let Some(endpoint) = endpoint {
+        metadata.insert("route_pattern".to_string(), json!(endpoint.pattern));
+        metadata.insert("framework_role".to_string(), json!(endpoint.framework_role));
+        metadata.insert("dynamic_params".to_string(), json!(endpoint.dynamic_params));
+    }
+    metadata
+}
+
 fn receiver_root(receiver: &str) -> &str {
     receiver.split('.').next().unwrap_or(receiver)
+}
+
+fn endpoint_shape(file_path: &str, method: &str) -> Option<EndpointShape> {
+    let normalized = file_path.replace('\\', "/");
+    if is_next_app_route_path(&normalized) {
+        let route_path = strip_before_segment(&normalized, "app/api/")?
+            .strip_suffix("/route.ts")
+            .or_else(|| strip_before_segment(&normalized, "app/api/")?.strip_suffix("/route.tsx"))
+            .or_else(|| strip_before_segment(&normalized, "app/api/")?.strip_suffix("/route.js"))
+            .or_else(|| strip_before_segment(&normalized, "app/api/")?.strip_suffix("/route.jsx"))?;
+        let (pattern, dynamic_params) = route_pattern_from_segments(route_path);
+        return Some(EndpointShape {
+            pattern,
+            framework_role: "next_app_route",
+            dynamic_params,
+        });
+    }
+    if let Some(route_path) = strip_pages_api_route(&normalized) {
+        let (pattern, dynamic_params) = route_pattern_from_segments(route_path);
+        return Some(EndpointShape {
+            pattern,
+            framework_role: "next_pages_api",
+            dynamic_params,
+        });
+    }
+    if method.is_empty() {
+        return None;
+    }
+    None
+}
+
+fn is_next_app_route_path(file_path: &str) -> bool {
+    file_path.ends_with("/route.ts")
+        || file_path.ends_with("/route.tsx")
+        || file_path.ends_with("/route.js")
+        || file_path.ends_with("/route.jsx")
+}
+
+fn strip_before_segment<'a>(file_path: &'a str, segment: &str) -> Option<&'a str> {
+    let index = file_path.find(segment)?;
+    Some(&file_path[index + "app/".len()..])
+}
+
+fn strip_pages_api_route(file_path: &str) -> Option<&str> {
+    let index = file_path.find("pages/api/")?;
+    let route = &file_path[index + "pages/".len()..];
+    route
+        .strip_suffix(".ts")
+        .or_else(|| route.strip_suffix(".tsx"))
+        .or_else(|| route.strip_suffix(".js"))
+        .or_else(|| route.strip_suffix(".jsx"))
+}
+
+fn route_pattern_from_segments(route_path: &str) -> (String, Vec<String>) {
+    let mut dynamic_params = Vec::new();
+    let segments = route_path
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .map(|segment| {
+            if let Some(param) = segment
+                .strip_prefix("[[...")
+                .and_then(|value| value.strip_suffix("]]"))
+            {
+                dynamic_params.push(param.to_string());
+                format!(":{param}*")
+            } else if let Some(param) = segment
+                .strip_prefix("[...")
+                .and_then(|value| value.strip_suffix(']'))
+            {
+                dynamic_params.push(param.to_string());
+                format!(":{param}*")
+            } else if let Some(param) = segment
+                .strip_prefix('[')
+                .and_then(|value| value.strip_suffix(']'))
+            {
+                dynamic_params.push(param.to_string());
+                format!(":{param}")
+            } else {
+                segment.to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+    (format!("/{}", segments.join("/")), dynamic_params)
 }
 
 fn data_operation_parts<'a>(
@@ -1081,6 +1341,8 @@ fn data_operation_parts<'a>(
         .and_then(|kind| match kind {
             "read" => Some("read"),
             "write" => Some("write"),
+            "delete" => Some("delete"),
+            "unknown" => Some("unknown"),
             _ => None,
         })?;
     Some((store_name, operation_kind))
@@ -1127,8 +1389,26 @@ fn import_decl_id(
     )
 }
 
+fn reexport_id(
+    file_path: &str,
+    content_hash: &str,
+    source: &str,
+    exported_name: &str,
+    start_line: usize,
+    end_line: usize,
+) -> String {
+    format!(
+        "re_export:{file_path}:{}:{source}:{exported_name}:{start_line}-{end_line}",
+        hash_prefix(content_hash)
+    )
+}
+
 fn data_store_id(receiver_root: &str, store_name: &str) -> String {
     format!("data_store:{receiver_root}:{store_name}")
+}
+
+fn endpoint_id(file_path: &str, method: &str, route_pattern: &str) -> String {
+    format!("endpoint:{method}:{file_path}:{route_pattern}")
 }
 
 fn data_operation_id(
@@ -1200,7 +1480,7 @@ fn resolved_import_symbol_name(
     resolved_file_path: &str,
     resolver: &ResolverContext,
 ) -> Option<String> {
-    if !is_symbol_resolvable_import(imported_name) {
+    if imported_name == "*" {
         return None;
     }
     let exports = resolver.exported_symbols.get(resolved_file_path)?;
@@ -1210,7 +1490,7 @@ fn resolved_import_symbol_name(
 }
 
 fn is_symbol_resolvable_import(imported_name: &str) -> bool {
-    !matches!(imported_name, "*" | "default")
+    imported_name != "*"
 }
 
 fn resolve_import(from_file: &str, source: &str, resolver: &ResolverContext) -> Option<String> {
