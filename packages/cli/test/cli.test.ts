@@ -1350,6 +1350,50 @@ describe("drift CLI convention review", () => {
     ]);
   });
 
+  it("marks scan status stale when resolver input files change without source changes", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-resolver-inputs-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "@/*": ["src/*"] } } })
+    );
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      "export async function GET() { return Response.json({ ok: true }); }\n"
+    );
+
+    const scan = await runCli([
+      "scan",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:00.000Z",
+      "--json"
+    ]);
+
+    expect(scan.exitCode).toBe(0);
+    const scanPayload = JSON.parse(scan.stdout);
+    await writeFile(
+      join(repoRoot, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "@/*": ["app/*"] } } })
+    );
+
+    const status = await runCli([
+      "--db", scanPayload.database_path,
+      "scan", "status",
+      "--repo", scanPayload.repo.id,
+      "--json"
+    ]);
+
+    expect(status.exitCode).toBe(0);
+    const payload = JSON.parse(status.stdout);
+    expect(payload.source_change_count).toBe(0);
+    expect(payload.stale).toBe(true);
+    expect(payload.invalidation_reasons).toContain("resolver_inputs_changed");
+  });
+
   it("marks scan status stale when the current branch differs from the scanned branch", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-branch-stale-"));
     tempDirs.push(dir);

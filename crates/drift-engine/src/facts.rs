@@ -19,8 +19,14 @@ pub struct Fact {
     pub file_path: String,
     pub name: String,
     pub value: Option<String>,
+    pub imported_name: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
+}
+
+struct ImportBinding {
+    imported_name: String,
+    local_name: String,
 }
 
 #[derive(Debug)]
@@ -67,6 +73,7 @@ pub fn extract_typescript_facts(
         file_path: file_path.clone(),
         name: file_path.clone(),
         value: None,
+        imported_name: None,
         start_line: 1,
         end_line: source.lines().count().max(1),
     });
@@ -78,6 +85,7 @@ pub fn extract_typescript_facts(
             file_path: file_path.clone(),
             name: role.to_string(),
             value: None,
+            imported_name: None,
             start_line: 1,
             end_line: line_count,
         });
@@ -111,12 +119,13 @@ fn extract_imports(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut V
         .and_then(|child| node_text(child, source))
         .map(unquote);
 
-    for identifier in import_value_identifiers(&statement) {
+    for binding in import_value_bindings(&statement) {
         facts.push(Fact {
             kind: FactKind::ImportUsed,
             file_path: file_path.to_string(),
-            name: identifier,
+            name: binding.local_name,
             value: source_value.clone(),
+            imported_name: Some(binding.imported_name),
             start_line: node.start_position().row + 1,
             end_line: node.end_position().row + 1,
         });
@@ -136,6 +145,7 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         file_path: file_path.to_string(),
         name,
         value: receiver,
+        imported_name: None,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
     });
@@ -154,6 +164,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     file_path: file_path.to_string(),
                     name: identifier,
                     value: Some(source_value.clone()),
+                    imported_name: None,
                     start_line: node.start_position().row + 1,
                     end_line: node.end_position().row + 1,
                 });
@@ -169,6 +180,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             file_path: file_path.to_string(),
             name: name.clone(),
             value: None,
+            imported_name: None,
             start_line,
             end_line,
         });
@@ -181,6 +193,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 file_path: file_path.to_string(),
                 name,
                 value: None,
+                imported_name: None,
                 start_line,
                 end_line,
             });
@@ -188,13 +201,13 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
     }
 }
 
-fn import_value_identifiers(statement: &str) -> Vec<String> {
+fn import_value_bindings(statement: &str) -> Vec<ImportBinding> {
     let trimmed = statement.trim();
     if !trimmed.starts_with("import ") || trimmed.starts_with("import type ") {
         return Vec::new();
     }
 
-    let mut identifiers = Vec::new();
+    let mut bindings = Vec::new();
     let import_clause = trimmed
         .trim_start_matches("import")
         .trim()
@@ -215,7 +228,7 @@ fn import_value_identifiers(statement: &str) -> Vec<String> {
             .trim()
             .trim_end_matches(',')
             .trim();
-        push_import_identifier(&mut identifiers, default_import);
+        push_import_binding(&mut bindings, "default", default_import);
         if let Some(named_end) = import_clause[named_start + 1..].find('}') {
             let named_imports = &import_clause[named_start + 1..named_start + 1 + named_end];
             for specifier in named_imports.split(',') {
@@ -223,10 +236,10 @@ fn import_value_identifiers(statement: &str) -> Vec<String> {
                 if specifier.is_empty() || specifier.starts_with("type ") {
                     continue;
                 }
-                if let Some((_, local_name)) = specifier.split_once(" as ") {
-                    push_import_identifier(&mut identifiers, local_name);
+                if let Some((imported_name, local_name)) = specifier.split_once(" as ") {
+                    push_import_binding(&mut bindings, imported_name, local_name);
                 } else {
-                    push_import_identifier(&mut identifiers, specifier);
+                    push_import_binding(&mut bindings, specifier, specifier);
                 }
             }
         }
@@ -234,14 +247,24 @@ fn import_value_identifiers(statement: &str) -> Vec<String> {
         .strip_prefix("* as ")
         .and_then(|value| value.split_whitespace().next())
     {
-        push_import_identifier(&mut identifiers, namespace_name);
+        push_import_binding(&mut bindings, "*", namespace_name);
     } else {
-        push_import_identifier(&mut identifiers, import_clause.trim_end_matches(',').trim());
+        push_import_binding(
+            &mut bindings,
+            "default",
+            import_clause.trim_end_matches(',').trim(),
+        );
     }
 
-    identifiers.sort();
-    identifiers.dedup();
-    identifiers
+    bindings.sort_by(|left, right| {
+        left.local_name
+            .cmp(&right.local_name)
+            .then(left.imported_name.cmp(&right.imported_name))
+    });
+    bindings.dedup_by(|left, right| {
+        left.local_name == right.local_name && left.imported_name == right.imported_name
+    });
+    bindings
 }
 
 fn reexport_value_identifiers(statement: &str) -> Vec<String> {
@@ -294,6 +317,31 @@ fn push_import_identifier(identifiers: &mut Vec<String>, value: &str) {
         .trim();
     if !identifier.is_empty() && identifier.chars().all(is_identifier_char) {
         identifiers.push(identifier.to_string());
+    }
+}
+
+fn push_import_binding(bindings: &mut Vec<ImportBinding>, imported_name: &str, local_name: &str) {
+    let imported_name = imported_name
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .trim_matches(',')
+        .trim();
+    let local_name = local_name
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .trim_matches(',')
+        .trim();
+    if !imported_name.is_empty()
+        && !local_name.is_empty()
+        && (imported_name == "*" || imported_name.chars().all(is_identifier_char))
+        && local_name.chars().all(is_identifier_char)
+    {
+        bindings.push(ImportBinding {
+            imported_name: imported_name.to_string(),
+            local_name: local_name.to_string(),
+        });
     }
 }
 

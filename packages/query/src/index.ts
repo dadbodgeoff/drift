@@ -314,6 +314,15 @@ export class GraphQueryService {
     const scanId = requireScanId(input);
     const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
     const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+    const symbolExists = nodes.some((node) => node.id === input.symbol_id && node.kind === "symbol");
+    if (!symbolExists) {
+      return {
+        ...queryMetadata(input, scanId, ["symbol_not_found"]),
+        symbol_id: input.symbol_id,
+        nodes: [],
+        edges: []
+      };
+    }
     const depth = input.depth ?? 1;
     const selectedIds = new Set<string>([input.symbol_id]);
     for (let index = 0; index < depth; index += 1) {
@@ -327,8 +336,12 @@ export class GraphQueryService {
     return {
       ...queryMetadata(input, scanId, []),
       symbol_id: input.symbol_id,
-      nodes: nodes.filter((node) => selectedIds.has(node.id)),
-      edges: edges.filter((edge) => selectedIds.has(edge.from) && selectedIds.has(edge.to))
+      nodes: nodes
+        .filter((node) => selectedIds.has(node.id))
+        .sort((left, right) => left.id.localeCompare(right.id)),
+      edges: edges
+        .filter((edge) => selectedIds.has(edge.from) && selectedIds.has(edge.to))
+        .sort((left, right) => left.kind.localeCompare(right.kind) || left.id.localeCompare(right.id))
     };
   }
 

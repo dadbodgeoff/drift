@@ -96,7 +96,10 @@ fn detects_package_and_module_roles_from_paths() {
     let cases = [
         ("packages/cli/src/commands/scan.ts", "cli_command_module"),
         ("packages/storage/src/sqlite-storage.ts", "storage_module"),
-        ("packages/cli/src/engine/rust-engine.ts", "engine_bridge_module"),
+        (
+            "packages/cli/src/engine/rust-engine.ts",
+            "engine_bridge_module",
+        ),
         ("packages/mcp/src/tools.ts", "mcp_module"),
         ("packages/cli/test/cli.test.ts", "test"),
         ("vitest.config.ts", "config"),

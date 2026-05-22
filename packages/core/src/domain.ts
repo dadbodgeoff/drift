@@ -173,7 +173,8 @@ export interface GraphEdgeRecord {
     | "MODULE_IMPORTS_MODULE"
     | "FILE_HAS_ROLE"
     | "ROUTE_DECLARED_IN_FILE"
-    | "IMPORT_RESOLVES_TO_MODULE";
+    | "IMPORT_RESOLVES_TO_MODULE"
+    | "IMPORT_RESOLVES_TO_SYMBOL";
   from: string;
   to: string;
 }

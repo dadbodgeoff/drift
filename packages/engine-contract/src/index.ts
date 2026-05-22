@@ -83,6 +83,7 @@ export const EngineFactSchema = z.object({
   file_path: z.string().min(1),
   name: z.string().min(1),
   value: z.string().optional(),
+  imported_name: z.string().optional(),
   start_line: z.number().int().positive(),
   end_line: z.number().int().positive()
 });

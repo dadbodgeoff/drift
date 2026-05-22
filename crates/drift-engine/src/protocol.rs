@@ -53,6 +53,8 @@ pub struct EngineFact {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imported_name: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
 }
@@ -195,6 +197,8 @@ pub struct CheckFact {
     pub file_path: String,
     pub name: String,
     pub value: Option<String>,
+    #[serde(default)]
+    pub imported_name: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
 }
@@ -284,6 +288,7 @@ pub struct CheckConvention {
 #[derive(Debug, Deserialize)]
 pub struct CheckMatcher {
     pub forbidden_imports: Option<Vec<String>>,
+    pub allowed_delegate_imports: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -811,3 +811,93 @@ export async function getUsers() {
         "missing route callsite-to-service import edge: {edges:#?}"
     );
 }
+
+#[test]
+fn scan_stream_resolves_imports_to_exported_symbols() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    fs::write(
+        dir.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}"#,
+    )
+    .expect("write tsconfig");
+
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"import { getUsers as loadUsers } from "@/services/users";
+
+export async function GET() {
+  return Response.json(await loadUsers());
+}
+"#,
+    )
+    .expect("write route");
+    fs::create_dir_all(dir.path().join("src/services")).expect("create services");
+    fs::write(
+        dir.path().join("src/services/users.ts"),
+        r#"export async function getUsers() {
+  return [];
+}
+"#,
+    )
+    .expect("write service");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_abc",
+            "--scan-id",
+            "scan_abc",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+    let nodes = events
+        .iter()
+        .filter(|event| event["event"] == "graph_node_batch")
+        .flat_map(|event| event["graph_nodes"].as_array().expect("nodes").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        nodes.iter().any(|node| {
+            node["kind"] == "import_decl"
+                && node["metadata"]["source"] == "@/services/users"
+                && node["metadata"]["imported_name"] == "getUsers"
+                && node["metadata"]["local_name"] == "loadUsers"
+        }),
+        "missing imported/local symbol metadata: {nodes:#?}"
+    );
+    assert!(
+        edges.iter().any(|edge| {
+            edge["kind"] == "IMPORT_RESOLVES_TO_SYMBOL"
+                && edge["from"]
+                    .as_str()
+                    .is_some_and(|from| from.contains("@/services/users:loadUsers"))
+                && edge["to"] == "symbol:src/services/users.ts:function:getUsers"
+                && edge["metadata"]["imported_name"] == "getUsers"
+                && edge["metadata"]["local_name"] == "loadUsers"
+                && edge["metadata"]["resolution_status"] == "resolved"
+        }),
+        "missing import-to-exported-symbol edge: {edges:#?}"
+    );
+}

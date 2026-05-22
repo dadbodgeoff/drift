@@ -49,36 +49,55 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
 
     let mut findings = Vec::new();
     for convention in request.contract.conventions {
-        if convention.kind != "api_route_no_direct_data_access"
-            || convention.enforcement_capability != "deterministic_check"
+        if convention.enforcement_capability != "deterministic_check"
             || convention.enforcement_mode == "off"
         {
             continue;
         }
-        let rule = DirectDataAccessRule {
-            convention_id: convention.id.clone(),
-            forbidden_imports: convention.matcher.forbidden_imports.unwrap_or_default(),
-            severity: severity_from_str(&convention.severity),
-            enforcement_mode: enforcement_mode_from_str(&convention.enforcement_mode),
+        let severity = severity_from_str(&convention.severity);
+        let enforcement_mode = enforcement_mode_from_str(&convention.enforcement_mode);
+        let mut rule_findings = if convention.kind == "api_route_no_direct_data_access" {
+            let rule = DirectDataAccessRule {
+                convention_id: convention.id.clone(),
+                forbidden_imports: convention.matcher.forbidden_imports.unwrap_or_default(),
+                severity,
+                enforcement_mode,
+            };
+            let mut findings = materialize_direct_data_access_findings(&facts, &rule)
+                .into_iter()
+                .map(|finding| PendingFinding {
+                    fingerprint: finding.fingerprint.clone(),
+                    convention_id: finding.convention_id.clone(),
+                    rule_id: "api_route_no_direct_data_access".to_string(),
+                    title: finding.title,
+                    message: finding.message,
+                    severity: finding.severity,
+                    enforcement_result: finding.enforcement_result,
+                    file_path: finding.file_path,
+                    import_name: finding.import_name,
+                    import_source: finding.import_source,
+                    line: finding.line,
+                    evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
+                    related_node_ids: Vec::new(),
+                })
+                .collect::<Vec<_>>();
+            findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
+            findings
+        } else if convention.kind == "api_route_requires_service_delegation" {
+            let allowed_delegate_imports = convention
+                .matcher
+                .allowed_delegate_imports
+                .unwrap_or_default();
+            graph_service_delegation_findings(
+                &request.graph,
+                &convention.id,
+                severity,
+                enforcement_mode,
+                &allowed_delegate_imports,
+            )
+        } else {
+            continue;
         };
-        let mut rule_findings = materialize_direct_data_access_findings(&facts, &rule)
-            .into_iter()
-            .map(|finding| PendingFinding {
-                fingerprint: finding.fingerprint.clone(),
-                convention_id: finding.convention_id.clone(),
-                title: finding.title,
-                message: finding.message,
-                severity: finding.severity,
-                enforcement_result: finding.enforcement_result,
-                file_path: finding.file_path,
-                import_name: finding.import_name,
-                import_source: finding.import_source,
-                line: finding.line,
-                evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
-                related_node_ids: Vec::new(),
-            })
-            .collect::<Vec<_>>();
-        rule_findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
         dedupe_pending_findings(&mut rule_findings);
         let pending_by_fingerprint = rule_findings
             .iter()
@@ -110,7 +129,10 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 id: format!("finding_{}", &finding.fingerprint[..16]),
                 fingerprint: finding.fingerprint.clone(),
                 convention_id: finding.convention_id.clone(),
-                rule_id: "api_route_no_direct_data_access".to_string(),
+                rule_id: pending_by_fingerprint
+                    .get(&finding.fingerprint)
+                    .map(|pending| pending.rule_id.clone())
+                    .unwrap_or_else(|| "unknown".to_string()),
                 title: finding.title,
                 message: finding.message,
                 severity: severity_to_str(finding.severity).to_string(),
@@ -214,6 +236,7 @@ fn check_limit_reasons(request: &CheckRequest) -> Vec<String> {
 struct PendingFinding {
     fingerprint: String,
     convention_id: String,
+    rule_id: String,
     title: String,
     message: String,
     severity: Severity,
@@ -334,6 +357,7 @@ fn graph_direct_data_access_findings(
         findings.push(PendingFinding {
             fingerprint,
             convention_id: rule.convention_id.clone(),
+            rule_id: "api_route_no_direct_data_access".to_string(),
             title: "API route imports data access directly".to_string(),
             message: format!(
                 "API route {file_path} imports {import_source}, which resolves to forbidden data-access module {resolved_path}."
@@ -357,6 +381,117 @@ fn graph_direct_data_access_findings(
         });
     }
     findings
+}
+
+fn graph_service_delegation_findings(
+    graph: &CheckGraphData,
+    convention_id: &str,
+    severity: Severity,
+    enforcement_mode: EnforcementMode,
+    _allowed_delegate_imports: &[String],
+) -> Vec<PendingFinding> {
+    let nodes_by_id = graph
+        .graph_nodes
+        .iter()
+        .map(|node| (node.id.as_str(), node))
+        .collect::<BTreeMap<_, _>>();
+    let api_route_files = api_route_files(&graph.graph_edges, &nodes_by_id);
+    let module_files = graph
+        .graph_nodes
+        .iter()
+        .filter(|node| node.kind == "module")
+        .filter_map(|node| string_metadata(node, "file_path").map(|path| (node.id.as_str(), path)))
+        .collect::<BTreeMap<_, _>>();
+    let module_by_file = module_files
+        .iter()
+        .map(|(module_id, file_path)| (*file_path, *module_id))
+        .collect::<BTreeMap<_, _>>();
+    let route_modules = api_route_files
+        .iter()
+        .filter_map(|file_path| module_by_file.get(file_path.as_str()).copied())
+        .collect::<BTreeSet<_>>();
+    let data_access_modules = role_modules(
+        &graph.graph_edges,
+        &nodes_by_id,
+        &module_by_file,
+        "data_access_module",
+    );
+    let evidence_lines = graph
+        .graph_evidence
+        .iter()
+        .map(|evidence| (evidence.id.as_str(), evidence.start_line))
+        .collect::<BTreeMap<_, _>>();
+
+    let mut findings = Vec::new();
+    for edge in graph
+        .graph_edges
+        .iter()
+        .filter(|edge| edge.kind == "MODULE_IMPORTS_MODULE")
+    {
+        if !route_modules.contains(edge.from.as_str())
+            || !data_access_modules.contains(edge.to.as_str())
+        {
+            continue;
+        }
+        let Some(route_file) = module_files.get(edge.from.as_str()) else {
+            continue;
+        };
+        let Some(data_file) = module_files.get(edge.to.as_str()) else {
+            continue;
+        };
+        let evidence_id = edge.evidence_ids.first().cloned().unwrap_or_else(|| {
+            format!(
+                "evidence_graph_{}",
+                stable_hash(&format!("{route_file}:{data_file}"))[..16].to_string()
+            )
+        });
+        let line = evidence_lines
+            .get(evidence_id.as_str())
+            .copied()
+            .unwrap_or(1);
+        let fingerprint = stable_hash(&format!(
+            "{convention_id}:{route_file}:requires_service_delegation:{data_file}"
+        ));
+        findings.push(PendingFinding {
+            fingerprint,
+            convention_id: convention_id.to_string(),
+            rule_id: "api_route_requires_service_delegation".to_string(),
+            title: "API route reaches data access without service delegation".to_string(),
+            message: format!(
+                "API route {route_file} imports data-access module {data_file} directly instead of delegating through an approved service module."
+            ),
+            severity,
+            enforcement_result: enforcement_result_for_mode(enforcement_mode),
+            file_path: (*route_file).to_string(),
+            import_name: (*data_file).to_string(),
+            import_source: (*data_file).to_string(),
+            line,
+            evidence_id,
+            related_node_ids: vec![edge.from.clone(), edge.to.clone()],
+        });
+    }
+    findings
+}
+
+fn role_modules<'a>(
+    edges: &'a [GraphEdge],
+    nodes_by_id: &BTreeMap<&'a str, &'a GraphNode>,
+    module_by_file: &BTreeMap<&'a str, &'a str>,
+    role_name: &str,
+) -> BTreeSet<&'a str> {
+    edges
+        .iter()
+        .filter(|edge| edge.kind == "FILE_HAS_ROLE")
+        .filter_map(|edge| {
+            let role = nodes_by_id.get(edge.to.as_str())?;
+            if string_metadata(role, "role")? != role_name {
+                return None;
+            }
+            let file = nodes_by_id.get(edge.from.as_str())?;
+            let file_path = string_metadata(file, "path")?;
+            module_by_file.get(file_path).copied()
+        })
+        .collect()
 }
 
 fn api_route_files<'a>(
@@ -397,6 +532,14 @@ fn is_forbidden_import_source(import_source: &str, forbidden_imports: &[String])
         .any(|forbidden| import_source == forbidden || import_source.contains(forbidden))
 }
 
+fn enforcement_result_for_mode(mode: EnforcementMode) -> drift_engine::EnforcementResult {
+    match mode {
+        EnforcementMode::Block => drift_engine::EnforcementResult::Block,
+        EnforcementMode::Warn => drift_engine::EnforcementResult::Warn,
+        _ => drift_engine::EnforcementResult::None,
+    }
+}
+
 fn string_metadata<'a>(node: &'a GraphNode, key: &str) -> Option<&'a str> {
     node.metadata.get(key).and_then(|value| value.as_str())
 }
@@ -417,6 +560,7 @@ fn check_fact_to_engine_fact(fact: CheckFact) -> Option<Fact> {
         file_path: fact.file_path,
         name: fact.name,
         value: fact.value,
+        imported_name: fact.imported_name,
         start_line: fact.start_line,
         end_line: fact.end_line,
     })

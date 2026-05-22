@@ -158,6 +158,127 @@ fn check_repo_uses_resolved_graph_edges_for_direct_data_access() {
 }
 
 #[test]
+fn check_repo_allows_route_to_service_to_data_access_flow() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/services/users.ts", "file", "src/services/users.ts", json!({ "path": "src/services/users.ts" })),
+                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:service_module", "file_role", "service_module", json!({ "role": "service_module" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/services/users.ts", "module", "src/services/users.ts", json!({ "file_path": "src/services/users.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:src/services/users.ts", "file_role:service_module"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/services/users.ts", "module:src/services/users.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
+                graph_edge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
+                graph_edge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts")
+            ],
+            "graph_evidence": []
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_service_delegation",
+                "kind": "api_route_requires_service_delegation",
+                "matcher": { "allowed_delegate_imports": ["src/services"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+
+    assert_eq!(findings.len(), 0, "{payload:#?}");
+    assert_eq!(payload["completeness"][0]["can_block"], true);
+}
+
+#[test]
+fn check_repo_flags_route_to_data_access_without_service_delegation() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
+                graph_edge_with_evidence("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/lib/db.ts", "evidence_import")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_service_delegation",
+                "kind": "api_route_requires_service_delegation",
+                "matcher": { "allowed_delegate_imports": ["src/services"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(
+        findings[0]["convention_id"],
+        "convention_service_delegation"
+    );
+    assert_eq!(
+        findings[0]["rule_id"],
+        "api_route_requires_service_delegation"
+    );
+    assert_eq!(findings[0]["enforcement_result"], "block");
+    assert_eq!(findings[0]["evidence"][0]["evidence_id"], "evidence_import");
+    assert!(
+        findings[0]["related_node_ids"]
+            .as_array()
+            .expect("related nodes")
+            .iter()
+            .any(|node| node == "module:src/lib/db.ts")
+    );
+}
+
+#[test]
 fn check_repo_disables_blocking_when_check_limits_are_exceeded() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
@@ -240,4 +361,35 @@ fn run_check(request: Value) -> Value {
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("json output")
+}
+
+fn graph_node(id: &str, kind: &str, label: &str, metadata: Value) -> Value {
+    json!({
+        "id": id,
+        "kind": kind,
+        "label": label,
+        "stable": true,
+        "evidence_ids": [],
+        "metadata": metadata
+    })
+}
+
+fn graph_edge(kind: &str, from: &str, to: &str) -> Value {
+    graph_edge_with_evidence(kind, from, to, "")
+}
+
+fn graph_edge_with_evidence(kind: &str, from: &str, to: &str, evidence_id: &str) -> Value {
+    let evidence_ids = if evidence_id.is_empty() {
+        Vec::<String>::new()
+    } else {
+        vec![evidence_id.to_string()]
+    };
+    json!({
+        "id": format!("edge:{from}:{kind}:{to}"),
+        "kind": kind,
+        "from": from,
+        "to": to,
+        "evidence_ids": evidence_ids,
+        "metadata": {}
+    })
 }

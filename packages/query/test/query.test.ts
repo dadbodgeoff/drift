@@ -347,6 +347,121 @@ describe("GraphQueryService", () => {
       "import_decl:app/api/users/route.ts:db"
     ]);
   });
+
+  it("returns semantic symbol neighborhoods from import and callsite graph links", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-query-"));
+    tempDirs.push(dir);
+    const storage = openDriftStorage({ databasePath: join(dir, "drift.sqlite") });
+    storage.migrate();
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-22T00:00:00.000Z",
+      updated_at: "2026-05-22T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_symbols",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 2,
+      fact_count: 0,
+      finding_count: 0,
+      started_at: "2026-05-22T00:00:00.000Z",
+      completed_at: "2026-05-22T00:00:01.000Z"
+    });
+    const snapshots = [
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        file_path: "app/api/users/route.ts",
+        content_hash: "a".repeat(64),
+        byte_size: 120,
+        indexed: true
+      },
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        file_path: "src/services/users.ts",
+        content_hash: "b".repeat(64),
+        byte_size: 80,
+        indexed: true
+      }
+    ];
+    for (const snapshot of snapshots) {
+      storage.upsertFileSnapshot(snapshot);
+    }
+    storage.upsertFactGraphArtifact(buildFactGraphArtifactFromParts({
+      repo: {
+        repo_id: "repo_abc",
+        scan_id: "scan_symbols",
+        root_hash: "root_hash",
+        branch: "main",
+        commit: "abc123",
+        dirty: false
+      },
+      snapshots,
+      nodes: [
+        graphNode("symbol:src/services/users.ts:function:getUsers", "symbol", "getUsers", {
+          file_path: "src/services/users.ts",
+          symbol_kind: "function",
+          exported: true
+        }),
+        graphNode("import_decl:app/api/users/route.ts:loadUsers", "import_decl", "loadUsers from @/services/users", {
+          file_path: "app/api/users/route.ts",
+          source: "@/services/users",
+          imported_name: "getUsers",
+          local_name: "loadUsers"
+        }),
+        graphNode("callsite:app/api/users/route.ts:loadUsers", "callsite", "loadUsers", {
+          file_path: "app/api/users/route.ts",
+          callee_name: "loadUsers"
+        })
+      ],
+      edges: [
+        graphEdge("IMPORT_RESOLVES_TO_SYMBOL", "import_decl:app/api/users/route.ts:loadUsers", "symbol:src/services/users.ts:function:getUsers"),
+        graphEdge("CALLSITE_REFERENCES_SYMBOL", "callsite:app/api/users/route.ts:loadUsers", "import_decl:app/api/users/route.ts:loadUsers")
+      ],
+      evidence: [],
+      createdAt: "2026-05-22T00:00:00.000Z"
+    }));
+
+    const neighborhood = createGraphQueryService(storage).getSymbolNeighborhood({
+      repo_id: "repo_abc",
+      scan_id: "scan_symbols",
+      symbol_id: "symbol:src/services/users.ts:function:getUsers",
+      depth: 2,
+      policy_surface: "cli-preflight"
+    });
+    const missing = createGraphQueryService(storage).getSymbolNeighborhood({
+      repo_id: "repo_abc",
+      scan_id: "scan_symbols",
+      symbol_id: "symbol:missing",
+      policy_surface: "cli-preflight"
+    });
+    storage.close();
+
+    expect(neighborhood.diagnostics).toEqual([]);
+    expect(neighborhood.policy).toMatchObject({ surface: "cli-preflight", local_only: true });
+    expect(neighborhood.nodes.map((node) => node.id)).toEqual([
+      "callsite:app/api/users/route.ts:loadUsers",
+      "import_decl:app/api/users/route.ts:loadUsers",
+      "symbol:src/services/users.ts:function:getUsers"
+    ]);
+    expect(neighborhood.edges.map((edge) => edge.kind)).toEqual([
+      "CALLSITE_REFERENCES_SYMBOL",
+      "IMPORT_RESOLVES_TO_SYMBOL"
+    ]);
+    expect(missing.diagnostics).toContain("symbol_not_found");
+    expect(missing.nodes).toEqual([]);
+    expect(missing.edges).toEqual([]);
+  });
 });
 
 function graphNode(

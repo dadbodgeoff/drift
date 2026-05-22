@@ -109,17 +109,16 @@ fn scan_repo(
     let ignore = IgnoreMatcher::from_repo(repo_root);
     collect_indexable_files(repo_root, repo_root, &mut files, &ignore)?;
     files.sort();
-    let resolver = build_resolver_context(repo_root, &files);
+    let mut resolver = build_resolver_context(repo_root, &files);
 
     let mut scanned_files = Vec::new();
     let mut facts = Vec::new();
     let mut diagnostics = Vec::new();
     let mut graph_node_count = 0_usize;
     let mut graph_edge_count = 0_usize;
-    for file_path in &files {
-        let Some((file, file_facts)) = scan_file(repo_root, file_path, &mut diagnostics)? else {
-            continue;
-        };
+    let scanned = scan_files(repo_root, &files, &mut diagnostics)?;
+    resolver.exported_symbols = exported_symbols_by_file(&scanned);
+    for (file, file_facts) in scanned {
         let graph = graph_for_file(&repo_id, &scan_id, &file, &file_facts, &resolver);
         graph_node_count += graph.nodes.len();
         graph_edge_count += graph.edges.len();
@@ -173,7 +172,7 @@ fn stream_scan_repo(
     let ignore = IgnoreMatcher::from_repo(repo_root);
     collect_indexable_files(repo_root, repo_root, &mut files, &ignore)?;
     files.sort();
-    let resolver = build_resolver_context(repo_root, &files);
+    let mut resolver = build_resolver_context(repo_root, &files);
 
     let mut files_parsed = 0_usize;
     let mut files_skipped = 0_usize;
@@ -181,23 +180,21 @@ fn stream_scan_repo(
     let mut graph_nodes_emitted = 0_usize;
     let mut graph_edges_emitted = 0_usize;
     let mut diagnostics_emitted = 0_usize;
-    for file_path in &files {
-        let mut diagnostics = Vec::new();
-        let scanned = scan_file(repo_root, file_path, &mut diagnostics)?;
-        if !diagnostics.is_empty() {
-            diagnostics_emitted += diagnostics.len();
-            files_skipped += 1;
-            write_event(
-                &mut stdout,
-                &ScanStreamEvent::DiagnosticBatch {
-                    schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
-                    diagnostics,
-                },
-            )?;
-        }
-        let Some((file, facts)) = scanned else {
-            continue;
-        };
+    let mut scan_diagnostics = Vec::new();
+    let scanned = scan_files(repo_root, &files, &mut scan_diagnostics)?;
+    files_skipped += scan_diagnostics.len();
+    if !scan_diagnostics.is_empty() {
+        diagnostics_emitted += scan_diagnostics.len();
+        write_event(
+            &mut stdout,
+            &ScanStreamEvent::DiagnosticBatch {
+                schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
+                diagnostics: scan_diagnostics,
+            },
+        )?;
+    }
+    resolver.exported_symbols = exported_symbols_by_file(&scanned);
+    for (file, facts) in scanned {
         files_parsed += 1;
         facts_emitted += facts.len();
         let graph = graph_for_file(&repo_id, &scan_id, &file, &facts, &resolver);
@@ -323,6 +320,20 @@ fn scan_file(
         .map(engine_fact)
         .collect();
     Ok(Some((file, facts)))
+}
+
+fn scan_files(
+    repo_root: &Path,
+    files: &[PathBuf],
+    diagnostics: &mut Vec<EngineDiagnostic>,
+) -> Result<Vec<(ScannedFile, Vec<EngineFact>)>, Box<dyn std::error::Error>> {
+    let mut scanned = Vec::new();
+    for file_path in files {
+        if let Some(scan) = scan_file(repo_root, file_path, diagnostics)? {
+            scanned.push(scan);
+        }
+    }
+    Ok(scanned)
 }
 
 fn collect_indexable_files(
@@ -467,6 +478,7 @@ fn engine_fact(fact: Fact) -> EngineFact {
         file_path: fact.file_path,
         name: fact.name,
         value: fact.value,
+        imported_name: fact.imported_name,
         start_line: fact.start_line,
         end_line: fact.end_line,
     }
@@ -501,6 +513,7 @@ struct ResolverContext {
     package_imports: Vec<PathAlias>,
     base_urls: Vec<String>,
     packages: BTreeMap<String, WorkspacePackage>,
+    exported_symbols: BTreeMap<String, BTreeSet<String>>,
 }
 
 struct PathAlias {
@@ -671,9 +684,11 @@ fn graph_for_file(
                     "external"
                 };
                 let resolved_module = resolved.as_ref().map(|path| module_id(path));
+                let imported_name = fact.imported_name.as_deref().unwrap_or(&fact.name);
                 let mut import_metadata = BTreeMap::from([
                     ("source".to_string(), json!(source)),
                     ("local_name".to_string(), json!(fact.name)),
+                    ("imported_name".to_string(), json!(imported_name)),
                     ("file_path".to_string(), json!(fact.file_path)),
                     ("import_kind".to_string(), json!("value")),
                     ("resolution_status".to_string(), json!(resolution_status)),
@@ -715,6 +730,36 @@ fn graph_for_file(
                             ("resolved_module_id".to_string(), json!(resolved_module)),
                         ]),
                     );
+                    if let Some(symbol_name) =
+                        resolved_import_symbol_name(imported_name, resolved, resolver)
+                    {
+                        let resolved_symbol = symbol_id(resolved, "function", &symbol_name);
+                        insert_edge(
+                            &mut edges,
+                            "IMPORT_RESOLVES_TO_SYMBOL",
+                            &import_node,
+                            &resolved_symbol,
+                            vec![evidence_id.clone()],
+                            BTreeMap::from([
+                                ("resolution_status".to_string(), json!("resolved")),
+                                ("imported_name".to_string(), json!(symbol_name)),
+                                ("local_name".to_string(), json!(fact.name)),
+                                ("resolved_file_path".to_string(), json!(resolved)),
+                                ("resolved_module_id".to_string(), json!(resolved_module)),
+                            ]),
+                        );
+                    } else if is_symbol_resolvable_import(imported_name)
+                        && resolver.exported_symbols.contains_key(resolved)
+                    {
+                        diagnostics.push(EngineDiagnostic {
+                            severity: "warning".to_string(),
+                            code: "unresolved_import_symbol".to_string(),
+                            message: format!(
+                                "Could not resolve imported symbol {imported_name} from {source} in {resolved}."
+                            ),
+                            file_path: Some(fact.file_path.clone()),
+                        });
+                    }
                     insert_edge(
                         &mut edges,
                         "MODULE_IMPORTS_MODULE",
@@ -996,7 +1041,44 @@ fn build_resolver_context(repo_root: &Path, files: &[PathBuf]) -> ResolverContex
         package_imports: read_package_imports(repo_root),
         base_urls,
         packages: read_workspace_packages(repo_root),
+        exported_symbols: BTreeMap::new(),
     }
+}
+
+fn exported_symbols_by_file(
+    scanned: &[(ScannedFile, Vec<EngineFact>)],
+) -> BTreeMap<String, BTreeSet<String>> {
+    let mut exported = BTreeMap::<String, BTreeSet<String>>::new();
+    for (file, facts) in scanned {
+        for fact in facts {
+            if fact.kind != "exported_symbol" {
+                continue;
+            }
+            exported
+                .entry(file.file_path.clone())
+                .or_default()
+                .insert(fact.name.clone());
+        }
+    }
+    exported
+}
+
+fn resolved_import_symbol_name(
+    imported_name: &str,
+    resolved_file_path: &str,
+    resolver: &ResolverContext,
+) -> Option<String> {
+    if !is_symbol_resolvable_import(imported_name) {
+        return None;
+    }
+    let exports = resolver.exported_symbols.get(resolved_file_path)?;
+    exports
+        .contains(imported_name)
+        .then(|| imported_name.to_string())
+}
+
+fn is_symbol_resolvable_import(imported_name: &str) -> bool {
+    !matches!(imported_name, "*" | "default")
 }
 
 fn resolve_import(from_file: &str, source: &str, resolver: &ResolverContext) -> Option<String> {
@@ -1148,15 +1230,14 @@ fn read_js_ts_config_file(
     }
     let contents = fs::read_to_string(repo_root.join(config_path)).ok()?;
     let json = serde_json::from_str::<serde_json::Value>(&contents).ok()?;
-    let config_dir = config_path
-        .parent()
-        .map(normalize_path)
-        .unwrap_or_default();
+    let config_dir = config_path.parent().map(normalize_path).unwrap_or_default();
     let mut config = json
         .get("extends")
         .and_then(|value| value.as_str())
         .and_then(|extended| resolve_extended_config_path(&config_dir, extended))
-        .and_then(|extended_path| read_js_ts_config_file(repo_root, Path::new(&extended_path), seen))
+        .and_then(|extended_path| {
+            read_js_ts_config_file(repo_root, Path::new(&extended_path), seen)
+        })
         .unwrap_or_default();
 
     let explicit_base_url = json

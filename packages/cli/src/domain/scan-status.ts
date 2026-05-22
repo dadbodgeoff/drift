@@ -1,7 +1,7 @@
 import { type AuditChainVerification,type ConventionCandidate,DRIFT_RESOLVER_VERSION,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type RepoRecord,type ScanFileChange,type ScanManifest } from "@drift/core";
 import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import type { SqliteDriftStorage } from "@drift/storage";
-import { existsSync,statSync } from "node:fs";
+import { existsSync,readdirSync,statSync } from "node:fs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { collectScanData } from "../engine/collect-scan-data.js";
@@ -93,7 +93,8 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       scanner_version: DRIFT_SCANNER_VERSION,
       adapter_versions: {
         typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
-        resolver: DRIFT_RESOLVER_VERSION
+        resolver: DRIFT_RESOLVER_VERSION,
+        resolver_inputs: resolverInputFingerprint(repoRoot)
       },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "completed",
@@ -213,7 +214,8 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       scanner_version: DRIFT_SCANNER_VERSION,
       adapter_versions: {
         typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
-        resolver: DRIFT_RESOLVER_VERSION
+        resolver: DRIFT_RESOLVER_VERSION,
+        resolver_inputs: resolverInputFingerprint(repoRoot)
       },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "failed",
@@ -379,9 +381,12 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
       }
     : compareSnapshotsToCurrentFiles(repo.root_path, snapshots);
   const currentBranch = gitOutput(repo.root_path, ["branch", "--show-current"]) || "unknown";
+  const currentResolverInputFingerprint = repoRootMissing
+    ? undefined
+    : resolverInputFingerprint(repo.root_path);
   const invalidationReasons = [
     ...(repoRootMissing ? ["repo_root_missing"] : []),
-    ...scanInvalidationReasons(latestScan, { currentBranch })
+    ...scanInvalidationReasons(latestScan, { currentBranch, currentResolverInputFingerprint })
   ];
   const stale = changes.added.length > 0 ||
     changes.modified.length > 0 ||
@@ -540,7 +545,7 @@ export function compareSnapshotsToCurrentFiles(
 
 export function scanInvalidationReasons(
   scan: ScanManifest,
-  input: { currentBranch?: string } = {}
+  input: { currentBranch?: string; currentResolverInputFingerprint?: string } = {}
 ): string[] {
   const reasons: string[] = [];
   if (input.currentBranch && scan.branch !== input.currentBranch) {
@@ -555,8 +560,67 @@ export function scanInvalidationReasons(
   if (scan.adapter_versions.resolver && scan.adapter_versions.resolver !== DRIFT_RESOLVER_VERSION) {
     reasons.push("resolver_version_changed");
   }
+  if (
+    scan.adapter_versions.resolver_inputs &&
+    input.currentResolverInputFingerprint &&
+    scan.adapter_versions.resolver_inputs !== input.currentResolverInputFingerprint
+  ) {
+    reasons.push("resolver_inputs_changed");
+  }
   if (scan.rule_engine_version !== DRIFT_RULE_ENGINE_VERSION) {
     reasons.push("rule_engine_version_changed");
   }
   return reasons;
+}
+
+export function resolverInputFingerprint(repoRoot: string): string {
+  const inputs = resolverInputPaths(repoRoot)
+    .map((path) => [path, fileContentHash(join(repoRoot, path))])
+    .sort((left, right) => left[0].localeCompare(right[0]));
+  return hashStable(JSON.stringify(inputs));
+}
+
+function resolverInputPaths(repoRoot: string): string[] {
+  if (!existsSync(repoRoot) || !statSync(repoRoot).isDirectory()) {
+    return [];
+  }
+  const paths: string[] = [];
+  collectResolverInputPaths(repoRoot, "", paths, 0);
+  return paths.sort();
+}
+
+function collectResolverInputPaths(
+  repoRoot: string,
+  relativeDir: string,
+  paths: string[],
+  depth: number
+): void {
+  if (depth > 4) {
+    return;
+  }
+  const absoluteDir = join(repoRoot, relativeDir);
+  for (const entry of readdirSync(absoluteDir, { withFileTypes: true })) {
+    if (entry.name.startsWith(".") && entry.name !== ".npmrc") {
+      continue;
+    }
+    const relativePath = relativeDir ? `${relativeDir}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (["node_modules", "dist", "build", "coverage", ".next", "target", "vendor"].includes(entry.name)) {
+        continue;
+      }
+      collectResolverInputPaths(repoRoot, relativePath, paths, depth + 1);
+      continue;
+    }
+    if (!entry.isFile() || !isResolverInputPath(relativePath)) {
+      continue;
+    }
+    paths.push(relativePath);
+  }
+}
+
+function isResolverInputPath(filePath: string): boolean {
+  const fileName = filePath.split("/").at(-1) ?? filePath;
+  return fileName === "package.json" ||
+    fileName === "jsconfig.json" ||
+    /^tsconfig(?:\.[^.]+)?\.json$/.test(fileName);
 }

@@ -48,11 +48,8 @@ fn scan_respects_root_gitignore_before_emitting_facts_or_graph() {
     .expect("write dogfood output");
     let generated_output = dir.path().join("outputs/manual");
     fs::create_dir_all(&generated_output).expect("create generated output");
-    fs::write(
-        generated_output.join("deck.cjs"),
-        "module.exports = {};\n",
-    )
-    .expect("write generated output");
+    fs::write(generated_output.join("deck.cjs"), "module.exports = {};\n")
+        .expect("write generated output");
 
     let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
         .args([

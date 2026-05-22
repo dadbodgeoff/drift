@@ -186,7 +186,8 @@ export const GraphEdgeRecordSchema = z.object({
     "MODULE_IMPORTS_MODULE",
     "FILE_HAS_ROLE",
     "ROUTE_DECLARED_IN_FILE",
-    "IMPORT_RESOLVES_TO_MODULE"
+    "IMPORT_RESOLVES_TO_MODULE",
+    "IMPORT_RESOLVES_TO_SYMBOL"
   ]),
   from: z.string().min(1),
   to: z.string().min(1)
