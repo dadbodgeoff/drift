@@ -22,7 +22,13 @@ export const FileRoleSchema = z.enum([
   "data_access_module",
   "component",
   "test",
-  "config"
+  "config",
+  "cli_command_module",
+  "storage_module",
+  "engine_bridge_module",
+  "mcp_module",
+  "docs",
+  "package_manifest"
 ]);
 
 export const ConventionScopeSchema = z.object({
@@ -119,6 +125,18 @@ export const FileSnapshotSchema = z.object({
   content_hash: z.string().min(1),
   byte_size: z.number().int().nonnegative(),
   indexed: z.boolean()
+});
+
+export const ScanFileChangeKindSchema = z.enum(["added", "modified", "deleted", "unchanged"]);
+
+export const ScanFileChangeSchema = z.object({
+  repo_id: z.string().min(1),
+  scan_id: z.string().min(1),
+  file_path: z.string().min(1),
+  change_kind: ScanFileChangeKindSchema,
+  previous_hash: z.string().min(1).optional(),
+  current_hash: z.string().min(1).optional(),
+  created_at: z.string().min(1)
 });
 
 export const BackupManifestSchema = z.object({

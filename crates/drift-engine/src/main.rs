@@ -513,6 +513,13 @@ struct WorkspacePackage {
     exports: BTreeMap<String, String>,
 }
 
+#[derive(Default)]
+struct JsTsResolutionConfig {
+    aliases: BTreeMap<String, Vec<String>>,
+    base_url: Option<String>,
+    effective_base_url: String,
+}
+
 fn graph_for_file(
     repo_id: &str,
     scan_id: &str,
@@ -1102,46 +1109,113 @@ fn base_url_import_may_be_local(source: &str, resolver: &ResolverContext) -> boo
 }
 
 fn read_js_ts_config_resolution(repo_root: &Path) -> (Vec<PathAlias>, Vec<String>) {
-    let mut aliases = Vec::new();
+    let mut aliases_by_pattern = BTreeMap::<String, Vec<String>>::new();
     let mut base_urls = Vec::new();
     for config_name in ["tsconfig.json", "jsconfig.json"] {
-        let Ok(contents) = fs::read_to_string(repo_root.join(config_name)) else {
+        if !repo_root.join(config_name).is_file() {
             continue;
         };
-        let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) else {
+        let config = read_js_ts_config_file(
+            repo_root,
+            Path::new(config_name),
+            &mut BTreeSet::<String>::new(),
+        );
+        let Some(config) = config else {
             continue;
         };
-        let explicit_base_url = json
-            .pointer("/compilerOptions/baseUrl")
-            .and_then(|value| value.as_str());
-        let base_url = explicit_base_url.unwrap_or(".");
-        let normalized_base_url = normalize_repo_string(base_url);
-        if explicit_base_url.is_some() && !base_urls.contains(&normalized_base_url) {
-            base_urls.push(normalized_base_url.clone());
+        for (pattern, targets) in config.aliases {
+            aliases_by_pattern.insert(pattern, targets);
         }
-        let Some(paths) = json
-            .pointer("/compilerOptions/paths")
-            .and_then(|value| value.as_object())
-        else {
-            continue;
-        };
+        if let Some(base_url) = config.base_url {
+            push_unique(&mut base_urls, base_url);
+        }
+    }
+    let aliases = aliases_by_pattern
+        .into_iter()
+        .map(|(pattern, targets)| PathAlias { pattern, targets })
+        .collect();
+    (aliases, base_urls)
+}
+
+fn read_js_ts_config_file(
+    repo_root: &Path,
+    config_path: &Path,
+    seen: &mut BTreeSet<String>,
+) -> Option<JsTsResolutionConfig> {
+    let normalized_config_path = normalize_path(config_path);
+    if !seen.insert(normalized_config_path.clone()) {
+        return None;
+    }
+    let contents = fs::read_to_string(repo_root.join(config_path)).ok()?;
+    let json = serde_json::from_str::<serde_json::Value>(&contents).ok()?;
+    let config_dir = config_path
+        .parent()
+        .map(normalize_path)
+        .unwrap_or_default();
+    let mut config = json
+        .get("extends")
+        .and_then(|value| value.as_str())
+        .and_then(|extended| resolve_extended_config_path(&config_dir, extended))
+        .and_then(|extended_path| read_js_ts_config_file(repo_root, Path::new(&extended_path), seen))
+        .unwrap_or_default();
+
+    let explicit_base_url = json
+        .pointer("/compilerOptions/baseUrl")
+        .and_then(|value| value.as_str());
+    let effective_base_url = explicit_base_url
+        .map(|base_url| join_repo_path(&config_dir, base_url))
+        .or_else(|| {
+            if config.effective_base_url.is_empty() {
+                None
+            } else {
+                Some(config.effective_base_url.clone())
+            }
+        })
+        .unwrap_or_else(|| config_dir.clone());
+    if explicit_base_url.is_some() {
+        config.base_url = Some(effective_base_url.clone());
+    } else if config.base_url.is_some() {
+        config.base_url = Some(effective_base_url.clone());
+    }
+    config.effective_base_url = effective_base_url.clone();
+
+    if let Some(paths) = json
+        .pointer("/compilerOptions/paths")
+        .and_then(|value| value.as_object())
+    {
         for (pattern, value) in paths {
             let targets = value
                 .as_array()
                 .into_iter()
                 .flatten()
                 .filter_map(|target| target.as_str())
-                .map(|target| normalize_repo_string(&join_repo_path(&normalized_base_url, target)))
+                .map(|target| normalize_repo_string(&join_repo_path(&effective_base_url, target)))
                 .collect::<Vec<_>>();
             if !targets.is_empty() {
-                aliases.push(PathAlias {
-                    pattern: pattern.to_string(),
-                    targets,
-                });
+                config.aliases.insert(pattern.to_string(), targets);
             }
         }
     }
-    (aliases, base_urls)
+
+    Some(config)
+}
+
+fn resolve_extended_config_path(config_dir: &str, extended: &str) -> Option<String> {
+    if !extended.starts_with('.') {
+        return None;
+    }
+    let base = join_repo_path(config_dir, extended);
+    if base.ends_with(".json") {
+        Some(base)
+    } else {
+        Some(format!("{base}.json"))
+    }
+}
+
+fn push_unique(values: &mut Vec<String>, value: String) {
+    if !values.contains(&value) {
+        values.push(value);
+    }
 }
 
 fn read_package_imports(repo_root: &Path) -> Vec<PathAlias> {

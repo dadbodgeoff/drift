@@ -12,7 +12,13 @@ export type FileRole =
   | "data_access_module"
   | "component"
   | "test"
-  | "config";
+  | "config"
+  | "cli_command_module"
+  | "storage_module"
+  | "engine_bridge_module"
+  | "mcp_module"
+  | "docs"
+  | "package_manifest";
 
 export interface ConventionScope {
   path_globs: string[];
@@ -107,6 +113,18 @@ export interface FileSnapshot {
   content_hash: string;
   byte_size: number;
   indexed: boolean;
+}
+
+export type ScanFileChangeKind = "added" | "modified" | "deleted" | "unchanged";
+
+export interface ScanFileChange {
+  repo_id: string;
+  scan_id: string;
+  file_path: string;
+  change_kind: ScanFileChangeKind;
+  previous_hash?: string;
+  current_hash?: string;
+  created_at: string;
 }
 
 export interface BackupManifest {

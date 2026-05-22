@@ -404,5 +404,25 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_module_dependents_module
         ON module_dependents(repo_id, scan_id, module_id);
     `
+  },
+  {
+    id: "008_scan_file_changes",
+    sql: `
+      CREATE TABLE IF NOT EXISTS scan_file_changes (
+        repo_id TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        change_kind TEXT NOT NULL CHECK (change_kind IN ('added', 'modified', 'deleted', 'unchanged')),
+        previous_hash TEXT,
+        current_hash TEXT,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (repo_id, scan_id, file_path),
+        FOREIGN KEY (repo_id) REFERENCES repos(id),
+        FOREIGN KEY (scan_id) REFERENCES scan_manifests(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_scan_file_changes_scan_kind
+        ON scan_file_changes(repo_id, scan_id, change_kind);
+    `
   }
 ];

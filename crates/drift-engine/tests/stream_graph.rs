@@ -204,6 +204,89 @@ export async function GET() {
 }
 
 #[test]
+fn scan_stream_resolves_aliases_from_extended_tsconfig_with_child_overrides() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    fs::write(
+        dir.path().join("tsconfig.base.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"],"@shared/*":["shared/*"]}}}"#,
+    )
+    .expect("write base tsconfig");
+    fs::write(
+        dir.path().join("tsconfig.json"),
+        r#"{"extends":"./tsconfig.base.json","compilerOptions":{"paths":{"@/*":["app/*"]}}}"#,
+    )
+    .expect("write child tsconfig");
+
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"import { db } from "@/lib/db";
+import { shared } from "@shared/util";
+
+export async function GET() {
+  return Response.json({ db, shared });
+}
+"#,
+    )
+    .expect("write route");
+    fs::create_dir_all(dir.path().join("app/lib")).expect("create app lib");
+    fs::write(dir.path().join("app/lib/db.ts"), "export const db = {};\n").expect("write db");
+    fs::create_dir_all(dir.path().join("shared")).expect("create shared");
+    fs::write(
+        dir.path().join("shared/util.ts"),
+        "export const shared = true;\n",
+    )
+    .expect("write shared util");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_abc",
+            "--scan-id",
+            "scan_abc",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let edges = events
+        .iter()
+        .filter(|event| event["event"] == "graph_edge_batch")
+        .flat_map(|event| event["graph_edges"].as_array().expect("edges").iter())
+        .collect::<Vec<_>>();
+
+    for expected in [
+        ("@/lib/db:db", "module:app/lib/db.ts"),
+        ("@shared/util:shared", "module:shared/util.ts"),
+    ] {
+        assert!(
+            edges.iter().any(|edge| {
+                edge["kind"] == "IMPORT_RESOLVES_TO_MODULE"
+                    && edge["from"]
+                        .as_str()
+                        .is_some_and(|from| from.contains(expected.0))
+                    && edge["to"] == expected.1
+            }),
+            "missing extended tsconfig resolution {expected:?}: {edges:#?}"
+        );
+    }
+}
+
+#[test]
 fn scan_stream_resolves_jsconfig_baseurl_and_package_export_subpaths() {
     let dir = tempfile::tempdir().expect("tempdir");
     fs::write(

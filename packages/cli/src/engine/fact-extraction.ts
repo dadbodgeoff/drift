@@ -16,8 +16,8 @@ export function extractFactsFromFile(input: {
     factRecord(input, "file_detected", basename(input.filePath), undefined, 1, 1)
   ];
 
-  if (isApiRoutePath(input.filePath)) {
-    facts.push(factRecord(input, "file_role_detected", "api_route", undefined, 1, 1));
+  for (const role of fileRoles(input.filePath)) {
+    facts.push(factRecord(input, "file_role_detected", role, undefined, 1, 1));
   }
 
   for (const importUsed of extractImports(source)) {
@@ -34,6 +34,59 @@ export function extractFactsFromFile(input: {
   }
 
   return facts;
+}
+
+function fileRoles(filePath: string): string[] {
+  const roles = new Set<string>();
+  if (isApiRoutePath(filePath)) {
+    roles.add("api_route");
+  }
+  if (filePath.includes("/services/") || filePath.endsWith(".service.ts") || filePath.endsWith(".service.tsx")) {
+    roles.add("service_module");
+  }
+  if (filePath.includes("/db/") || filePath.includes("/database/") || filePath.endsWith("/db.ts") || filePath.endsWith("/prisma.ts")) {
+    roles.add("data_access_module");
+  }
+  if (filePath.startsWith("packages/cli/src/commands/") || filePath.includes("/cli/src/commands/")) {
+    roles.add("cli_command_module");
+  }
+  if (filePath.startsWith("packages/storage/src/") || filePath.includes("/storage/src/")) {
+    roles.add("storage_module");
+  }
+  if (filePath.startsWith("packages/cli/src/engine/") || filePath.includes("/cli/src/engine/")) {
+    roles.add("engine_bridge_module");
+  }
+  if (filePath.startsWith("packages/mcp/src/") || filePath.includes("/mcp/src/")) {
+    roles.add("mcp_module");
+  }
+  if (isTestPath(filePath)) {
+    roles.add("test");
+  }
+  if (isConfigPath(filePath)) {
+    roles.add("config");
+  }
+  return [...roles].sort();
+}
+
+function isTestPath(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return lower.includes("/test/") ||
+    lower.includes("/tests/") ||
+    /\.(test|spec)\.[cm]?[jt]sx?$/.test(lower);
+}
+
+function isConfigPath(filePath: string): boolean {
+  const fileName = basename(filePath).toLowerCase();
+  return fileName.includes(".config.") ||
+    [
+      "vite.config.ts",
+      "vitest.config.ts",
+      "eslint.config.js",
+      "eslint.config.mjs",
+      "next.config.js",
+      "next.config.mjs",
+      "next.config.ts"
+    ].includes(fileName);
 }
 
 export function factRecord(

@@ -31,7 +31,8 @@ describe("SQLite Drift storage", () => {
       "004_backup_manifests",
       "005_audit_integrity",
       "006_fact_graph_artifacts",
-      "007_fact_graph_v2_projections"
+      "007_fact_graph_v2_projections",
+      "008_scan_file_changes"
     ]);
     storage.close();
   });
@@ -68,7 +69,8 @@ describe("SQLite Drift storage", () => {
       "004_backup_manifests",
       "005_audit_integrity",
       "006_fact_graph_artifacts",
-      "007_fact_graph_v2_projections"
+      "007_fact_graph_v2_projections",
+      "008_scan_file_changes"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();
@@ -299,6 +301,60 @@ describe("SQLite Drift storage", () => {
         content_hash: "hash-abc",
         byte_size: 100,
         indexed: true
+      }
+    ]);
+    storage.close();
+  });
+
+  it("persists scan file change records", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_abc",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    });
+    storage.upsertScanManifest({
+      id: "scan_abc",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 1,
+      fact_count: 1,
+      finding_count: 0,
+      started_at: "2026-05-10T00:00:00.000Z",
+      completed_at: "2026-05-10T00:00:01.000Z"
+    });
+
+    storage.upsertScanFileChanges([
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "apps/web/app/api/users/route.ts",
+        change_kind: "modified",
+        previous_hash: "old-hash",
+        current_hash: "new-hash",
+        created_at: "2026-05-10T00:00:01.000Z"
+      }
+    ]);
+
+    expect(storage.listScanFileChanges("repo_abc", "scan_abc")).toEqual([
+      {
+        repo_id: "repo_abc",
+        scan_id: "scan_abc",
+        file_path: "apps/web/app/api/users/route.ts",
+        change_kind: "modified",
+        previous_hash: "old-hash",
+        current_hash: "new-hash",
+        created_at: "2026-05-10T00:00:01.000Z"
       }
     ]);
     storage.close();

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   AcceptedConventionSchema,
   DRIFT_CONTRACT_SCHEMA_VERSION,
+  DRIFT_RESOLVER_VERSION,
   DRIFT_RULE_ENGINE_VERSION,
   DRIFT_SCANNER_VERSION,
   DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+  FileRoleSchema,
   FindingSchema,
   RepoContractSchema,
   authorizeContextExport,
@@ -22,7 +24,16 @@ describe("core domain", () => {
     expect(DRIFT_SCANNER_VERSION).toBe("0.1.0");
     expect(DRIFT_TYPESCRIPT_ADAPTER_VERSION).toBe("0.1.0");
     expect(DRIFT_RULE_ENGINE_VERSION).toBe("0.1.0");
+    expect(DRIFT_RESOLVER_VERSION).toBe("0.1.0");
     expect(DRIFT_CONTRACT_SCHEMA_VERSION).toBe(1);
+  });
+
+  it("accepts deterministic package and module role names", () => {
+    expect(FileRoleSchema.parse("cli_command_module")).toBe("cli_command_module");
+    expect(FileRoleSchema.parse("storage_module")).toBe("storage_module");
+    expect(FileRoleSchema.parse("engine_bridge_module")).toBe("engine_bridge_module");
+    expect(FileRoleSchema.parse("mcp_module")).toBe("mcp_module");
+    expect(FileRoleSchema.parse("package_manifest")).toBe("package_manifest");
   });
 
   it("validates accepted deterministic conventions", () => {

@@ -6,8 +6,10 @@ import { resolveRepoId } from "../args/repo-flags.js";
 import { isActiveConvention } from "../check/rule-evaluation.js";
 import { baselineSummary } from "../domain/baselines.js";
 import { isOpenPreflightFinding } from "../domain/findings.js";
+import { graphPreflightContext } from "../domain/graph-preflight.js";
 import { preflightGovernance } from "../domain/governance.js";
 import { countDeniedFiles,preflightSummary,preparedConvention,relevantFilesForTask,requiredChecksForFiles,riskyAreasForFiles,waiversForFiles } from "../domain/preflight.js";
+import { repoContractOrDefault } from "../domain/repo-paths.js";
 import { assertFreshScanIfRequired,freshnessRequirement,scanStatusPayload } from "../domain/scan-status.js";
 import { formatPrepareText } from "../formatters/preflight.js";
 
@@ -20,10 +22,10 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   if (!repo) {
     throw new Error(`Unknown repo ${repoId}.`);
   }
-  const contract = storage.getRepoContract(repoId);
-  if (!contract) {
-    throw new Error(`No repo contract exists for ${repoId}.`);
-  }
+  const storedContract = storage.getRepoContract(repoId);
+  const contract = storedContract ?? repoContractOrDefault(storage, repoId);
+  const contractReady = Boolean(storedContract);
+  const candidateCount = storage.listConventionCandidates(repoId, { status: "candidate" }).length;
 
   const policy = authorizeContextExport(contract, "cli-preflight");
   if (!policy.allowed) {
@@ -59,6 +61,13 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   const scanStatus = scanStatusPayload(storage, repoId);
   const requireFresh = parsed.flags.has("require-fresh");
   assertFreshScanIfRequired(repoId, scanStatus, requireFresh);
+  const graphContext = graphPreflightContext({
+    storage,
+    repoId,
+    scanStatus,
+    targetPath,
+    relevantFiles
+  });
   const auditIntegrity = scanStatus.audit_integrity;
   const redactions = {
     denied_globs: contract.context_egress.denied_globs,
@@ -72,11 +81,14 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     generated_at: now,
     policy,
     contract: {
-      id: contract.id,
+      id: storedContract?.id ?? null,
       schema_version: contract.contract_schema_version,
-      updated_at: contract.updated_at
+      updated_at: storedContract?.updated_at ?? null,
+      ready: contractReady,
+      source: contractReady ? "accepted_contract" : "default_local_policy"
     },
-    summary: preflightSummary({
+    summary: {
+      ...preflightSummary({
       conventions,
       relevantFiles,
       riskyAreas,
@@ -86,11 +98,15 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
       safeCommands: contract.safe_commands,
       baseline,
       scanStatus
-    }),
+      }),
+      contract_ready: contractReady,
+      candidate_count: candidateCount
+    },
     conventions,
     audit_integrity: auditIntegrity,
     scan_status: scanStatus,
     freshness_requirement: freshnessRequirement(requireFresh, scanStatus),
+    graph_context: graphContext,
     baseline,
     findings,
     relevant_files: relevantFiles,
@@ -100,10 +116,16 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     safe_commands: contract.safe_commands,
     governance: preflightGovernance(),
     redactions,
-    next_commands: [
-      `drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`,
-      `drift findings list --repo ${repoId} --json`
-    ]
+    next_commands: contractReady
+      ? [
+        `drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`,
+        `drift findings list --repo ${repoId} --json`
+      ]
+      : [
+        `drift conventions list --repo ${repoId} --status candidate --json`,
+        `drift repo map --repo ${repoId} --json`,
+        `drift scan status --repo ${repoId} --json`
+      ]
   };
 
   return {

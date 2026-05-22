@@ -1,4 +1,4 @@
-import { type AuditChainVerification,type ConventionCandidate,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type RepoRecord,type ScanManifest } from "@drift/core";
+import { type AuditChainVerification,type ConventionCandidate,DRIFT_RESOLVER_VERSION,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type RepoRecord,type ScanFileChange,type ScanManifest } from "@drift/core";
 import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,statSync } from "node:fs";
@@ -39,6 +39,7 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
     diagnostics_count: number;
     candidates_count: number;
     engine_source: "rust" | "typescript";
+    incremental_changes: ReturnType<typeof scanFileChangeSummary>;
   };
   database_path: string;
 }> {
@@ -90,7 +91,10 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
       previous_scan_id: previousScan?.id,
       scanner_version: DRIFT_SCANNER_VERSION,
-      adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
+      adapter_versions: {
+        typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+        resolver: DRIFT_RESOLVER_VERSION
+      },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "completed",
       file_count: scanData.files.length,
@@ -140,11 +144,23 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
           dirty: graphRepo.dirty
         }
       });
+    const scanFileChanges = classifyScanFileChanges({
+      repoId: repo.id,
+      scanId,
+      previousSnapshots: previousScan
+        ? storage.listFileSnapshots(repo.id, previousScan.id)
+        : [],
+      currentSnapshots: scanData.snapshots,
+      createdAt: now
+    });
+    const incrementalChanges = scanFileChangeSummary(scanFileChanges);
+
     storage.transaction(() => {
       storage.upsertScanManifest(scan);
       for (const snapshot of scanData.snapshots) {
         storage.upsertFileSnapshot(snapshot);
       }
+      storage.upsertScanFileChanges(scanFileChanges);
       storage.upsertFacts(scanData.facts);
       storage.upsertFactGraphArtifact(graphArtifact);
       for (const candidate of candidates) {
@@ -163,7 +179,8 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
           facts_count: scanData.facts.length,
           diagnostics_count: scanData.diagnostics.length,
           candidates_count: candidates.length,
-          engine_source: scanData.engineSource
+          engine_source: scanData.engineSource,
+          incremental_changes: incrementalChanges
         },
         createdAt: now
       }));
@@ -179,7 +196,8 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
         facts_count: scanData.facts.length,
         diagnostics_count: scanData.diagnostics.length,
         candidates_count: candidates.length,
-        engine_source: scanData.engineSource
+        engine_source: scanData.engineSource,
+        incremental_changes: incrementalChanges
       },
       database_path: input.databasePath
     };
@@ -193,7 +211,10 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       dirty: Boolean(gitOutput(repoRoot, ["status", "--porcelain"])),
       previous_scan_id: previousScan?.id,
       scanner_version: DRIFT_SCANNER_VERSION,
-      adapter_versions: { typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION },
+      adapter_versions: {
+        typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
+        resolver: DRIFT_RESOLVER_VERSION
+      },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "failed",
       file_count: 0,
@@ -235,6 +256,69 @@ function readTsconfigPathAliases(repoRoot: string): Record<string, string[]> {
   }
 }
 
+export function classifyScanFileChanges(input: {
+  repoId: string;
+  scanId: string;
+  previousSnapshots: FileSnapshot[];
+  currentSnapshots: FileSnapshot[];
+  createdAt: string;
+}): ScanFileChange[] {
+  const previous = new Map(input.previousSnapshots.map((snapshot) => [snapshot.file_path, snapshot]));
+  const current = new Map(input.currentSnapshots.map((snapshot) => [snapshot.file_path, snapshot]));
+  const changes: ScanFileChange[] = [];
+
+  for (const snapshot of input.currentSnapshots) {
+    const previousSnapshot = previous.get(snapshot.file_path);
+    const changeKind = !previousSnapshot
+      ? "added"
+      : previousSnapshot.content_hash === snapshot.content_hash
+        ? "unchanged"
+        : "modified";
+    changes.push({
+      repo_id: input.repoId,
+      scan_id: input.scanId,
+      file_path: snapshot.file_path,
+      change_kind: changeKind,
+      previous_hash: previousSnapshot?.content_hash,
+      current_hash: snapshot.content_hash,
+      created_at: input.createdAt
+    });
+  }
+
+  for (const snapshot of input.previousSnapshots) {
+    if (current.has(snapshot.file_path)) {
+      continue;
+    }
+    changes.push({
+      repo_id: input.repoId,
+      scan_id: input.scanId,
+      file_path: snapshot.file_path,
+      change_kind: "deleted",
+      previous_hash: snapshot.content_hash,
+      current_hash: undefined,
+      created_at: input.createdAt
+    });
+  }
+
+  return changes.sort((left, right) => left.file_path.localeCompare(right.file_path));
+}
+
+export function scanFileChangeSummary(changes: ScanFileChange[]): {
+  added: number;
+  modified: number;
+  deleted: number;
+  unchanged: number;
+  total: number;
+} {
+  return {
+    added: changes.filter((change) => change.change_kind === "added").length,
+    modified: changes.filter((change) => change.change_kind === "modified").length,
+    deleted: changes.filter((change) => change.change_kind === "deleted").length,
+    unchanged: changes.filter((change) => change.change_kind === "unchanged").length,
+    total: changes.length
+  };
+}
+
 export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
   const repo = storage.getRepo(repoId);
   if (!repo) {
@@ -258,6 +342,13 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
       scan_fingerprint: null,
       indexed_file_count: 0,
       source_change_count: 0,
+      latest_scan_change_summary: {
+        added: 0,
+        modified: 0,
+        deleted: 0,
+        unchanged: 0,
+        total: 0
+      },
       governance: preflightGovernance(),
       summary: scanStatusSummary({
         latestScanId: null,
@@ -278,6 +369,7 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
   }
 
   const snapshots = storage.listFileSnapshots(repoId, latestScan.id);
+  const scanFileChanges = storage.listScanFileChanges(repoId, latestScan.id);
   const repoRootMissing = !existsSync(repo.root_path);
   const changes = repoRootMissing
     ? {
@@ -305,6 +397,7 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
     scan_fingerprint: scanFingerprint(latestScan, snapshots),
     indexed_file_count: latestScan.file_count,
     source_change_count: sourceChangeCount,
+    latest_scan_change_summary: scanFileChangeSummary(scanFileChanges),
     governance: preflightGovernance(),
     summary: scanStatusSummary({
       latestScanId: latestScan.id,
@@ -458,6 +551,9 @@ export function scanInvalidationReasons(
   }
   if (scan.adapter_versions.typescript !== DRIFT_TYPESCRIPT_ADAPTER_VERSION) {
     reasons.push("adapter_version_changed:typescript");
+  }
+  if (scan.adapter_versions.resolver && scan.adapter_versions.resolver !== DRIFT_RESOLVER_VERSION) {
+    reasons.push("resolver_version_changed");
   }
   if (scan.rule_engine_version !== DRIFT_RULE_ENGINE_VERSION) {
     reasons.push("rule_engine_version_changed");

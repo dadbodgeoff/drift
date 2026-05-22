@@ -13,6 +13,7 @@ import type {
   Finding,
   RepoContract,
   RepoRecord,
+  ScanFileChange,
   ScanManifest
 } from "@drift/core";
 import {
@@ -26,6 +27,7 @@ import {
   FindingSchema,
   RepoContractSchema,
   RepoRecordSchema,
+  ScanFileChangeSchema,
   ScanManifestSchema,
   auditEventHash
 } from "@drift/core";
@@ -237,6 +239,41 @@ export class SqliteDriftStorage {
       .prepare("SELECT * FROM file_snapshots WHERE repo_id = ? AND scan_id = ? ORDER BY file_path")
       .all(repoId, scanId)
       .map(fileSnapshotFromRow);
+  }
+
+  upsertScanFileChanges(changes: ScanFileChange[]): void {
+    const parsedChanges = changes.map((change) => ScanFileChangeSchema.parse(change));
+    const insert = this.db.prepare(`
+      INSERT INTO scan_file_changes (
+        repo_id, scan_id, file_path, change_kind, previous_hash, current_hash, created_at
+      )
+      VALUES (
+        @repo_id, @scan_id, @file_path, @change_kind, @previous_hash, @current_hash, @created_at
+      )
+      ON CONFLICT(repo_id, scan_id, file_path) DO UPDATE SET
+        change_kind = excluded.change_kind,
+        previous_hash = excluded.previous_hash,
+        current_hash = excluded.current_hash,
+        created_at = excluded.created_at
+    `);
+
+    const transaction = this.db.transaction(() => {
+      for (const change of parsedChanges) {
+        insert.run({
+          ...change,
+          previous_hash: change.previous_hash ?? null,
+          current_hash: change.current_hash ?? null
+        });
+      }
+    });
+    transaction();
+  }
+
+  listScanFileChanges(repoId: string, scanId: string): ScanFileChange[] {
+    return this.db
+      .prepare("SELECT * FROM scan_file_changes WHERE repo_id = ? AND scan_id = ? ORDER BY file_path")
+      .all(repoId, scanId)
+      .map(scanFileChangeFromRow);
   }
 
   upsertBackupManifest(manifest: BackupManifest): void {
@@ -907,6 +944,15 @@ function fileSnapshotFromRow(row: unknown): FileSnapshot {
   return FileSnapshotSchema.parse({
     ...record,
     indexed: record.indexed === 1
+  });
+}
+
+function scanFileChangeFromRow(row: unknown): ScanFileChange {
+  const record = row as Record<string, unknown>;
+  return ScanFileChangeSchema.parse({
+    ...record,
+    previous_hash: record.previous_hash ?? undefined,
+    current_hash: record.current_hash ?? undefined
   });
 }
 

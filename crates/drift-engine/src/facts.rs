@@ -357,6 +357,24 @@ fn file_roles(file_path: &str) -> Vec<&'static str> {
     if is_data_access_module_path(file_path) {
         roles.push("data_access_module");
     }
+    if is_cli_command_module_path(file_path) {
+        roles.push("cli_command_module");
+    }
+    if is_storage_module_path(file_path) {
+        roles.push("storage_module");
+    }
+    if is_engine_bridge_module_path(file_path) {
+        roles.push("engine_bridge_module");
+    }
+    if is_mcp_module_path(file_path) {
+        roles.push("mcp_module");
+    }
+    if is_test_path(file_path) {
+        roles.push("test");
+    }
+    if is_config_path(file_path) {
+        roles.push("config");
+    }
     roles
 }
 
@@ -391,6 +409,53 @@ fn is_data_access_module_path(file_path: &str) -> bool {
         || file_path.ends_with("/database.tsx")
         || file_path.ends_with("/prisma.ts")
         || file_path.ends_with("/prisma.tsx")
+}
+
+fn is_cli_command_module_path(file_path: &str) -> bool {
+    file_path.contains("/cli/src/commands/") || file_path.starts_with("packages/cli/src/commands/")
+}
+
+fn is_storage_module_path(file_path: &str) -> bool {
+    file_path.contains("/storage/src/") || file_path.starts_with("packages/storage/src/")
+}
+
+fn is_engine_bridge_module_path(file_path: &str) -> bool {
+    file_path.contains("/cli/src/engine/") || file_path.starts_with("packages/cli/src/engine/")
+}
+
+fn is_mcp_module_path(file_path: &str) -> bool {
+    file_path.contains("/mcp/src/") || file_path.starts_with("packages/mcp/src/")
+}
+
+fn is_test_path(file_path: &str) -> bool {
+    let lower = file_path.to_ascii_lowercase();
+    lower.contains("/test/")
+        || lower.contains("/tests/")
+        || lower.ends_with(".test.ts")
+        || lower.ends_with(".test.tsx")
+        || lower.ends_with(".spec.ts")
+        || lower.ends_with(".spec.tsx")
+        || lower.ends_with(".test.js")
+        || lower.ends_with(".spec.js")
+}
+
+fn is_config_path(file_path: &str) -> bool {
+    let file_name = file_path
+        .rsplit('/')
+        .next()
+        .unwrap_or(file_path)
+        .to_ascii_lowercase();
+    file_name.contains(".config.")
+        || matches!(
+            file_name.as_str(),
+            "vite.config.ts"
+                | "vitest.config.ts"
+                | "eslint.config.js"
+                | "eslint.config.mjs"
+                | "next.config.js"
+                | "next.config.mjs"
+                | "next.config.ts"
+        )
 }
 
 fn path_segments(file_path: &str) -> Vec<String> {

@@ -6,7 +6,7 @@ import { resolveRepoId } from "../args/repo-flags.js";
 import { isActiveConvention } from "../check/rule-evaluation.js";
 import { preflightGovernance } from "../domain/governance.js";
 import { askSummary,conventionsForFiles,findingsForTopic,preparedConvention,relevantFilesForTask } from "../domain/preflight.js";
-import { requiredRepoContract } from "../domain/repo-paths.js";
+import { repoContractOrDefault } from "../domain/repo-paths.js";
 import { assertFreshScanIfRequired,freshnessRequirement,scanStatusPayload } from "../domain/scan-status.js";
 import { formatAskText } from "../formatters/preflight.js";
 
@@ -19,7 +19,10 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
   if (!repo) {
     throw new Error(`Unknown repo ${repoId}.`);
   }
-  const contract = requiredRepoContract(storage, repoId);
+  const storedContract = storage.getRepoContract(repoId);
+  const contract = storedContract ?? repoContractOrDefault(storage, repoId);
+  const contractReady = Boolean(storedContract);
+  const candidateCount = storage.listConventionCandidates(repoId, { status: "candidate" }).length;
   const policy = authorizeContextExport(contract, "cli-preflight");
   if (!policy.allowed) {
     throw new Error(`Policy denied ask output: ${policy.reason}`);
@@ -60,7 +63,9 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
     matched_convention_count: conventions.length,
     open_finding_count: findings.length,
     relevant_file_count: relevantFiles.length,
-    scan_stale: scanStatus.stale
+    scan_stale: scanStatus.stale,
+    contract_ready: contractReady,
+    candidate_count: candidateCount
   };
   const payload = {
     repo_id: repoId,
@@ -69,10 +74,24 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
     generated_at: now,
     answer: {
       source: "deterministic_local_state",
-      summary: askSummary(summary)
+      summary: contractReady
+        ? askSummary(summary)
+        : [
+          `Matched ${conventions.length} accepted convention${conventions.length === 1 ? "" : "s"}`,
+          `${findings.length} open finding${findings.length === 1 ? "" : "s"}`,
+          `${relevantFiles.length} relevant file${relevantFiles.length === 1 ? "" : "s"}`,
+          `and ${candidateCount} candidate convention${candidateCount === 1 ? "" : "s"} awaiting review.`
+        ].join(", ")
     },
     policy,
     governance: preflightGovernance(),
+    contract: {
+      id: storedContract?.id ?? null,
+      schema_version: contract.contract_schema_version,
+      updated_at: storedContract?.updated_at ?? null,
+      ready: contractReady,
+      source: contractReady ? "accepted_contract" : "default_local_policy"
+    },
     summary,
     scan_status: scanStatus,
     freshness_requirement: freshnessRequirement(requireFresh, scanStatus),
@@ -83,12 +102,20 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
       denied_globs: contract.context_egress.denied_globs,
       snippets_included: false
     },
-    next_commands: [
-      targetPath
-        ? `drift prepare "${topic}" --repo ${repoId} --path ${targetPath} --json`
-        : `drift prepare "${topic}" --repo ${repoId} --json`,
-      `drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`
-    ]
+    next_commands: contractReady
+      ? [
+        targetPath
+          ? `drift prepare "${topic}" --repo ${repoId} --path ${targetPath} --json`
+          : `drift prepare "${topic}" --repo ${repoId} --json`,
+        `drift check --repo ${repoId} --diff main...HEAD --scope changed-hunks --json`
+      ]
+      : [
+        `drift conventions list --repo ${repoId} --status candidate --json`,
+        targetPath
+          ? `drift prepare "${topic}" --repo ${repoId} --path ${targetPath} --json`
+          : `drift prepare "${topic}" --repo ${repoId} --json`,
+        `drift repo map --repo ${repoId} --json`
+      ]
   };
 
   return {
