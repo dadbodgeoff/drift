@@ -338,7 +338,7 @@ jobs:
             packages/cli \
             packages/mcp
           do
-            npm pack "${package_dir}" --ignore-scripts --json --pack-destination .release/npm
+            npm pack "./${package_dir}" --ignore-scripts --json --pack-destination .release/npm
           done
 
       - name: Upload npm tarballs
