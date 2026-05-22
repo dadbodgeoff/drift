@@ -94,18 +94,20 @@ jobs:
         run: node scripts/validate-engine-release-matrix.mjs
 
       - name: Generate beta proof
-        run: DRIFT_VERIFY_CI_STATUS=passed node scripts/run-beta-proof.mjs --output beta-proof.json
+        run: |
+          mkdir -p "${RUNNER_TEMP}/drift-release-proof"
+          DRIFT_VERIFY_CI_STATUS=passed node scripts/run-beta-proof.mjs --output "${RUNNER_TEMP}/drift-release-proof/beta-proof.json"
 
       - name: Generate release proof
-        run: DRIFT_VERIFY_CI_STATUS=passed node scripts/generate-release-proof.mjs --require-clean --require-built-cli --require-beta-proof --beta-proof-file beta-proof.json --output release-proof.json
+        run: DRIFT_VERIFY_CI_STATUS=passed node scripts/generate-release-proof.mjs --require-clean --require-built-cli --require-beta-proof --beta-proof-file "${RUNNER_TEMP}/drift-release-proof/beta-proof.json" --output "${RUNNER_TEMP}/drift-release-proof/release-proof.json"
 
       - name: Upload beta preflight proof
         uses: actions/upload-artifact@v4
         with:
           name: drift-beta-preflight-proof
           path: |
-            drift v3/beta-proof.json
-            drift v3/release-proof.json
+            ${{ runner.temp }}/drift-release-proof/beta-proof.json
+            ${{ runner.temp }}/drift-release-proof/release-proof.json
           if-no-files-found: error
 
   build-engine:
