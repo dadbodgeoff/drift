@@ -311,13 +311,13 @@ jobs:
             cp "${dir}/engine-manifest.json" "packages/${package_dir}/engine-manifest.json"
           done
 
+      - name: Build JavaScript packages
+        run: pnpm -r --filter './packages/*' build
+
       - name: Prepare exact publish manifests
         run: |
           node scripts/prepare-npm-publish-manifests.mjs "${{ needs.preflight.outputs.version }}"
           node scripts/assert-release-versions.mjs "${{ needs.preflight.outputs.version }}"
-
-      - name: Build JavaScript packages
-        run: pnpm -r --filter './packages/*' build
 
       - name: Pack npm tarballs
         shell: bash
