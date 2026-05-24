@@ -357,6 +357,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download npm tarballs
         uses: actions/download-artifact@v4
         with:
