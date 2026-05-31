@@ -152,6 +152,117 @@ fn infer_candidates_uses_resolved_import_targets_for_data_access_modules() {
 }
 
 #[test]
+fn infer_candidates_uses_graph_only_client_data_access_modules() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/lib/client.ts", "file", "src/lib/client.ts", json!({ "path": "src/lib/client.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/lib/client.ts", "module", "src/lib/client.ts", json!({ "file_path": "src/lib/client.ts" })),
+                {
+                    "id": "import_decl:route:client",
+                    "kind": "import_decl",
+                    "label": "client from @/lib/client",
+                    "stable": false,
+                    "evidence_ids": ["evidence_client_import"],
+                    "metadata": {
+                        "file_path": "app/api/users/route.ts",
+                        "source": "@/lib/client",
+                        "local_name": "client",
+                        "imported_name": "client",
+                        "resolved_file_path": "src/lib/client.ts",
+                        "resolved_module_id": "module:src/lib/client.ts"
+                    }
+                }
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/client.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/client.ts", "module:src/lib/client.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:route:client", "module:app/api/users/route.ts", "evidence_client_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:route:client", "module:src/lib/client.ts", "evidence_client_import")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_client_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_graph_client_import"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "app/api/users/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "src/lib/client.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 80,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "app/api/users/route.ts",
+                    "name": "api_route",
+                    "start_line": 1,
+                    "end_line": 5
+                },
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "src/lib/client.ts",
+                    "name": "data_access_module",
+                    "start_line": 1,
+                    "end_line": 5
+                },
+                {
+                    "kind": "import_used",
+                    "file_path": "app/api/users/route.ts",
+                    "name": "client",
+                    "value": "@/lib/client",
+                    "start_line": 1,
+                    "end_line": 1
+                }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let direct = payload["candidates"]
+        .as_array()
+        .expect("candidates")
+        .iter()
+        .find(|candidate| candidate["kind"] == "api_route_no_direct_data_access")
+        .expect("direct data-access candidate");
+
+    assert_eq!(
+        direct["matcher"]["forbidden_imports"],
+        json!(["@/lib/client"])
+    );
+    assert_eq!(
+        direct["evidence_refs"][0]["fact_ids"],
+        json!(["fact_graph_client_import"])
+    );
+}
+
+#[test]
 fn infer_candidates_learns_workspace_wrappers_as_auth_patterns() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
@@ -649,6 +760,198 @@ fn infer_candidates_does_not_make_api_route_helpers_direct_data_access_forbidden
             .iter()
             .any(|candidate| candidate["kind"] == "api_route_no_direct_data_access"),
         "{payload:#?}"
+    );
+}
+
+#[test]
+fn infer_candidates_keeps_auth_and_payment_imports_out_of_direct_data_access() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:src/app/api/webhooks/stripe/route.ts", "file", "src/app/api/webhooks/stripe/route.ts", json!({ "path": "src/app/api/webhooks/stripe/route.ts" })),
+                graph_node("file:src/lib/server/auth/session.ts", "file", "src/lib/server/auth/session.ts", json!({ "path": "src/lib/server/auth/session.ts" })),
+                graph_node("file:src/lib/server/payment.ts", "file", "src/lib/server/payment.ts", json!({ "path": "src/lib/server/payment.ts" })),
+                graph_node("file:src/lib/server/db.ts", "file", "src/lib/server/db.ts", json!({ "path": "src/lib/server/db.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:src/app/api/webhooks/stripe/route.ts", "module", "src/app/api/webhooks/stripe/route.ts", json!({ "file_path": "src/app/api/webhooks/stripe/route.ts" })),
+                graph_node("module:src/lib/server/auth/session.ts", "module", "src/lib/server/auth/session.ts", json!({ "file_path": "src/lib/server/auth/session.ts" })),
+                graph_node("module:src/lib/server/payment.ts", "module", "src/lib/server/payment.ts", json!({ "file_path": "src/lib/server/payment.ts" })),
+                graph_node("module:src/lib/server/db.ts", "module", "src/lib/server/db.ts", json!({ "file_path": "src/lib/server/db.ts" })),
+                {
+                    "id": "import_decl:route:getCurrentSession",
+                    "kind": "import_decl",
+                    "label": "getCurrentSession from ~/lib/server/auth/session",
+                    "stable": false,
+                    "evidence_ids": ["evidence_auth_import"],
+                    "metadata": {
+                        "file_path": "src/app/api/webhooks/stripe/route.ts",
+                        "source": "~/lib/server/auth/session",
+                        "local_name": "getCurrentSession",
+                        "imported_name": "getCurrentSession",
+                        "resolved_file_path": "src/lib/server/auth/session.ts",
+                        "resolved_module_id": "module:src/lib/server/auth/session.ts"
+                    }
+                },
+                {
+                    "id": "import_decl:route:stripe",
+                    "kind": "import_decl",
+                    "label": "stripe from ~/lib/server/payment",
+                    "stable": false,
+                    "evidence_ids": ["evidence_payment_import"],
+                    "metadata": {
+                        "file_path": "src/app/api/webhooks/stripe/route.ts",
+                        "source": "~/lib/server/payment",
+                        "local_name": "stripe",
+                        "imported_name": "stripe",
+                        "resolved_file_path": "src/lib/server/payment.ts",
+                        "resolved_module_id": "module:src/lib/server/payment.ts"
+                    }
+                },
+                {
+                    "id": "import_decl:route:prisma",
+                    "kind": "import_decl",
+                    "label": "prisma from ~/lib/server/db",
+                    "stable": false,
+                    "evidence_ids": ["evidence_db_import"],
+                    "metadata": {
+                        "file_path": "src/app/api/webhooks/stripe/route.ts",
+                        "source": "~/lib/server/db",
+                        "local_name": "prisma",
+                        "imported_name": "prisma",
+                        "resolved_file_path": "src/lib/server/db.ts",
+                        "resolved_module_id": "module:src/lib/server/db.ts"
+                    }
+                }
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:src/app/api/webhooks/stripe/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/server/auth/session.ts", "file_role:data_access_module"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/server/payment.ts", "file_role:data_access_module"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/server/db.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/app/api/webhooks/stripe/route.ts", "module:src/app/api/webhooks/stripe/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/server/auth/session.ts", "module:src/lib/server/auth/session.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/server/payment.ts", "module:src/lib/server/payment.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/server/db.ts", "module:src/lib/server/db.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:route:getCurrentSession", "module:src/app/api/webhooks/stripe/route.ts", "evidence_auth_import"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:route:stripe", "module:src/app/api/webhooks/stripe/route.ts", "evidence_payment_import"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:route:prisma", "module:src/app/api/webhooks/stripe/route.ts", "evidence_db_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:route:getCurrentSession", "module:src/lib/server/auth/session.ts", "evidence_auth_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:route:stripe", "module:src/lib/server/payment.ts", "evidence_payment_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:route:prisma", "module:src/lib/server/db.ts", "evidence_db_import")
+            ],
+            "graph_evidence": [
+                {
+                    "id": "evidence_auth_import",
+                    "repo_id": "repo_abc",
+                    "scan_id": "scan_abc",
+                    "artifact_id": "file_version:src/app/api/webhooks/stripe/route.ts:aaaaaaaaaaaa",
+                    "file_path": "src/app/api/webhooks/stripe/route.ts",
+                    "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "start_line": 1,
+                    "end_line": 1,
+                    "adapter_id": "typescript",
+                    "adapter_version": "0.1.0",
+                    "fact_ids": ["fact_auth_import"],
+                    "redaction_state": "none"
+                },
+                {
+                    "id": "evidence_payment_import",
+                    "repo_id": "repo_abc",
+                    "scan_id": "scan_abc",
+                    "artifact_id": "file_version:src/app/api/webhooks/stripe/route.ts:aaaaaaaaaaaa",
+                    "file_path": "src/app/api/webhooks/stripe/route.ts",
+                    "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "start_line": 2,
+                    "end_line": 2,
+                    "adapter_id": "typescript",
+                    "adapter_version": "0.1.0",
+                    "fact_ids": ["fact_payment_import"],
+                    "redaction_state": "none"
+                },
+                {
+                    "id": "evidence_db_import",
+                    "repo_id": "repo_abc",
+                    "scan_id": "scan_abc",
+                    "artifact_id": "file_version:src/app/api/webhooks/stripe/route.ts:aaaaaaaaaaaa",
+                    "file_path": "src/app/api/webhooks/stripe/route.ts",
+                    "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "start_line": 4,
+                    "end_line": 4,
+                    "adapter_id": "typescript",
+                    "adapter_version": "0.1.0",
+                    "fact_ids": ["fact_db_import"],
+                    "redaction_state": "none"
+                }
+            ]
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "src/app/api/webhooks/stripe/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 220,
+                    "indexed": true
+                },
+                {
+                    "file_path": "src/lib/server/auth/session.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 90,
+                    "indexed": true
+                },
+                {
+                    "file_path": "src/lib/server/payment.ts",
+                    "content_hash": "c".repeat(64),
+                    "byte_size": 90,
+                    "indexed": true
+                },
+                {
+                    "file_path": "src/lib/server/db.ts",
+                    "content_hash": "d".repeat(64),
+                    "byte_size": 90,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                { "kind": "file_role_detected", "file_path": "src/app/api/webhooks/stripe/route.ts", "name": "api_route", "start_line": 1, "end_line": 1 },
+                { "kind": "import_used", "file_path": "src/app/api/webhooks/stripe/route.ts", "name": "PrismaClientKnownRequestError", "value": "@prisma/client/runtime/library", "start_line": 1, "end_line": 1 },
+                { "kind": "import_used", "file_path": "src/app/api/webhooks/stripe/route.ts", "name": "getCurrentSession", "value": "~/lib/server/auth/session", "start_line": 2, "end_line": 2 },
+                { "kind": "import_used", "file_path": "src/app/api/webhooks/stripe/route.ts", "name": "stripe", "value": "~/lib/server/payment", "start_line": 3, "end_line": 3 },
+                { "kind": "import_used", "file_path": "src/app/api/webhooks/stripe/route.ts", "name": "prisma", "value": "~/lib/server/db", "start_line": 4, "end_line": 4 },
+                { "kind": "import_used", "file_path": "src/lib/server/auth/session.ts", "name": "prisma", "value": "~/lib/server/db", "start_line": 1, "end_line": 1 },
+                { "kind": "import_used", "file_path": "src/lib/server/payment.ts", "name": "prisma", "value": "~/lib/server/db", "start_line": 1, "end_line": 1 }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let direct = payload["candidates"]
+        .as_array()
+        .expect("candidates")
+        .iter()
+        .find(|candidate| candidate["kind"] == "api_route_no_direct_data_access")
+        .expect("direct data-access candidate");
+
+    assert_eq!(
+        direct["matcher"]["forbidden_imports"],
+        json!(["~/lib/server/db"])
+    );
+    assert_eq!(
+        direct["evidence_refs"]
+            .as_array()
+            .expect("evidence")
+            .iter()
+            .map(|evidence| evidence["symbol"].as_str().expect("symbol"))
+            .collect::<Vec<_>>(),
+        vec!["prisma"]
+    );
+    assert_eq!(
+        direct["evidence_refs"][0]["fact_ids"],
+        json!([
+            "fact:import_used:src/app/api/webhooks/stripe/route.ts:prisma:4-4",
+            "fact_db_import"
+        ])
     );
 }
 

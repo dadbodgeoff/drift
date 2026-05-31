@@ -2557,6 +2557,14 @@ export function runFullRepoCheck(
       ? storage.listFileSnapshots(repoId, latestScan.id).map((snapshot) => [snapshot.file_path, snapshot])
       : []
   );
+  const importFactsByKey = new Map(
+    latestScan
+      ? storage.listFacts(latestScan.id, { kind: "import_used" }).map((fact) => [
+          importFactEvidenceKey(fact.file_path, fact.start_line, fact.name, String(fact.value ?? "")),
+          fact.id
+        ])
+      : []
+  );
 
   const findings: Finding[] = [];
   for (const convention of contract.conventions) {
@@ -2605,6 +2613,9 @@ export function runFullRepoCheck(
         }
 
         const fingerprint = findingFingerprint(convention.id, filePath, importUsed.name, importUsed.source);
+        const factId = importFactsByKey.get(
+          importFactEvidenceKey(filePath, importUsed.line, importUsed.name, importUsed.source)
+        );
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
           repo_id: repoId,
@@ -2624,7 +2635,7 @@ export function runFullRepoCheck(
             end_line: importUsed.end_line,
             symbol: importUsed.name,
             import_source: importUsed.source,
-            fact_ids: [],
+            fact_ids: factId ? [factId] : [],
             scan_id: latestScan?.id ?? `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
             file_hash: snapshot?.content_hash ?? fileContentHash(join(repo.root_path, filePath)),
             redaction_state: "none"
@@ -2638,6 +2649,10 @@ export function runFullRepoCheck(
   }
 
   return findings;
+}
+
+function importFactEvidenceKey(filePath: string, line: number, name: string, source: string): string {
+  return `${filePath}\0${line}\0${name}\0${source}`;
 }
 
 export function checkNextCommands(

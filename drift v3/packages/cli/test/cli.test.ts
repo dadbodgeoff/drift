@@ -2525,6 +2525,7 @@ supported_sqlite_schema_version: 27,
       end_line: 1,
       symbol: "prisma",
       import_source: "@/lib/prisma",
+      fact_ids: [expect.stringMatching(/^fact[:_]/)],
       redaction_state: "none"
     });
     expect(storage.listFindings(repoId!)[0]?.evidence_refs[0]?.scan_id).toMatch(/^scan_/);
@@ -4598,7 +4599,12 @@ storage_schema_version: 27
     });
     expect(payload.findings[0]).toMatchObject({
       status: "new",
-      diff_status: "touched_existing"
+      diff_status: "touched_existing",
+      evidence_refs: [
+        expect.objectContaining({
+          fact_ids: [expect.stringMatching(/^fact[:_]/)]
+        })
+      ]
     });
   });
 

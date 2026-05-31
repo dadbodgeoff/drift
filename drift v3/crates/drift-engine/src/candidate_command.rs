@@ -281,11 +281,12 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
 
 fn is_data_access_source(source: &str) -> bool {
     let lower = source.to_ascii_lowercase();
-    lower.contains("prisma")
-        || lower.contains("database")
-        || lower.contains("/db")
-        || lower.ends_with("db")
-        || lower.contains("data-access")
+    !lower.contains("@prisma/client/runtime")
+        && (lower.contains("prisma")
+            || lower.contains("database")
+            || lower.contains("/db")
+            || lower.ends_with("db")
+            || lower.contains("data-access"))
 }
 
 fn is_next_app_tree_path(file_path: &str) -> bool {
@@ -294,6 +295,19 @@ fn is_next_app_tree_path(file_path: &str) -> bool {
 
 fn is_data_access_module_path(file_path: &str) -> bool {
     !is_next_app_tree_path(file_path) && is_data_access_source(file_path)
+}
+
+fn imports_data_access_as_data_client(file_path: &str) -> bool {
+    let lower = file_path.to_ascii_lowercase();
+    !is_next_app_tree_path(file_path)
+        && !lower.contains("/auth/")
+        && !lower.contains("/auth.")
+        && !lower.contains("/payment")
+        && !lower.contains("/session")
+        && !lower.contains("/stripe")
+        && (lower.contains("/client")
+            || lower.ends_with("client.ts")
+            || lower.ends_with("client.js"))
 }
 
 fn security_candidates(
@@ -1189,6 +1203,8 @@ fn data_access_files<'a>(
         if fact.kind == "import_used"
             && !service_files.contains(fact.file_path.as_str())
             && !is_next_app_tree_path(&fact.file_path)
+            && (is_data_access_module_path(&fact.file_path)
+                || imports_data_access_as_data_client(&fact.file_path))
             && fact.value.as_deref().is_some_and(is_data_access_source)
         {
             files.insert(fact.file_path.as_str());
@@ -1247,7 +1263,9 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .collect::<BTreeSet<_>>();
     let data_modules = graph_role_files(request, "data_access_module")
         .into_iter()
-        .filter(|file_path| is_data_access_module_path(file_path))
+        .filter(|file_path| {
+            is_data_access_module_path(file_path) || imports_data_access_as_data_client(file_path)
+        })
         .filter_map(|file_path| module_by_file.get(file_path.as_str()).copied())
         .collect::<BTreeSet<_>>();
     let import_owner_module = request
@@ -1458,7 +1476,30 @@ fn combined_evidence_refs(
                 redaction_state: "none".to_string(),
             }),
     );
-    refs
+    let mut deduped: Vec<EngineCandidateEvidenceRef> = Vec::new();
+    let mut refs_by_key: BTreeMap<String, usize> = BTreeMap::new();
+    for reference in refs {
+        let key = format!(
+            "{}\0{:?}\0{:?}\0{:?}\0{:?}",
+            reference.file_path,
+            reference.start_line,
+            reference.end_line,
+            reference.symbol,
+            reference.import_source
+        );
+        if let Some(index) = refs_by_key.get(&key).copied() {
+            let existing = &mut deduped[index];
+            for fact_id in reference.fact_ids {
+                if !existing.fact_ids.contains(&fact_id) {
+                    existing.fact_ids.push(fact_id);
+                }
+            }
+            continue;
+        }
+        refs_by_key.insert(key, deduped.len());
+        deduped.push(reference);
+    }
+    deduped
 }
 
 fn fact_key(fact: &CheckFact) -> String {
