@@ -546,6 +546,10 @@ export class SqliteDriftStorage {
         @repo_id, @scan_id, @adapter_id, @framework, @adapter_json
       )
     `);
+    // Duplicate entrypoint ids must never abort onboarding. The engine dedupes at
+    // emission (crates/drift-engine/src/frameworks/mod.rs); this is the second layer
+    // so that any future producer bug degrades to a no-op write instead of a
+    // `UNIQUE constraint failed` that leaves the repo with no database at all.
     const insertEntrypoint = this.db.prepare(`
       INSERT INTO normalized_entrypoints (
         repo_id, scan_id, entrypoint_id, adapter_id, framework, kind, file_path,
@@ -555,6 +559,7 @@ export class SqliteDriftStorage {
         @repo_id, @scan_id, @entrypoint_id, @adapter_id, @framework, @kind, @file_path,
         @route_pattern, @method, @entrypoint_json
       )
+      ON CONFLICT (repo_id, scan_id, entrypoint_id) DO NOTHING
     `);
     const insertParserGap = this.db.prepare(`
       INSERT INTO framework_parser_gaps (

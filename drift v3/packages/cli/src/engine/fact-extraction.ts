@@ -216,14 +216,28 @@ export interface ImportUsed {
 
 export function extractImports(source: string): ImportUsed[] {
   const imports: ImportUsed[] = [];
-  const importPattern = /^\s*import\s+([\s\S]+?)\s+from\s+["']([^"']+)["']/gm;
+  // `[ \t]*` rather than `\s*`: `\s` matches newlines, so a blank line before an
+  // import made the match index point at the blank line and reported the import one
+  // line early. That line number is part of the evidence key used to reconcile these
+  // bindings against engine facts, so an off-by-one broke the lookup outright.
+  // The clause may span lines (multi-line named imports) but must not span
+  // *statements*. Excluding `;` and quote characters stops a side-effect import such
+  // as `import "server-only";` from swallowing the value import that follows it,
+  // which previously made the next import invisible to enforcement.
+  const importPattern = /^[ \t]*import\s+([^;"']+?)\s+from\s+["']([^"']+)["']/gm;
   for (const match of source.matchAll(importPattern)) {
-    const startLine = lineNumberForOffset(source, match.index ?? 0);
+    const names = parseImportNames(match[1]!);
+    if (names.length === 0) {
+      continue;
+    }
+    // Line of the `import` keyword itself, not of any leading whitespace.
+    const keywordOffset = (match.index ?? 0) + match[0].indexOf("import");
+    const startLine = lineNumberForOffset(source, keywordOffset);
     const endLine = lineNumberForOffset(source, (match.index ?? 0) + match[0].length);
-    for (const name of parseImportNames(match[1])) {
+    for (const name of names) {
       imports.push({
         name,
-        source: match[2],
+        source: match[2]!,
         line: startLine,
         end_line: endLine
       });
@@ -236,15 +250,61 @@ export function lineNumberForOffset(source: string, offset: number): number {
   return source.slice(0, offset).split(/\r?\n/).length;
 }
 
+/**
+ * Value bindings introduced by an import clause, matching the engine's semantics in
+ * `crates/drift-engine/src/facts.rs`. These names are reconciled against engine
+ * `import_used` facts by evidence key, so any divergence here is a correctness bug.
+ *
+ * Type-only bindings are excluded: they are erased at compile time and create no
+ * runtime dependency on the module. The engine already skips them, so emitting them
+ * here produced findings with no corresponding fact.
+ */
 export function parseImportNames(importClause: string): string[] {
-  const named = importClause.match(/\{([^}]+)\}/);
-  if (named) {
-    return named[1]
-      .split(",")
-      .map((part) => part.trim().split(/\s+as\s+/).at(-1)?.trim())
-      .filter((name): name is string => Boolean(name));
+  const clause = importClause.trim();
+
+  // `import type { ... } from "x"` / `import type X from "x"` - entirely type-only.
+  if (/^type\s/.test(clause)) {
+    return [];
   }
 
-  const defaultImport = importClause.split(",")[0]?.trim();
-  return defaultImport ? [defaultImport] : ["import"];
+  const names: string[] = [];
+
+  // Named bindings: `{ a, b as c, type D }`.
+  const named = clause.match(/\{([^}]*)\}/);
+  if (named) {
+    for (const part of named[1]!.split(",")) {
+      const specifier = part.trim();
+      if (!specifier) {
+        continue;
+      }
+      // Inline type modifier: `{ type Foo }`. Previously the `type ` prefix was folded
+      // into the binding name, producing symbols like "type Foo" that matched no fact.
+      if (/^type\s/.test(specifier)) {
+        continue;
+      }
+      const bound = specifier.split(/\s+as\s+/).at(-1)?.trim();
+      if (bound) {
+        names.push(bound);
+      }
+    }
+  }
+
+  // Default and namespace bindings sit before the braces: `d`, `* as ns`, `d, * as ns`.
+  const beforeBraces = named ? clause.slice(0, clause.indexOf("{")) : clause;
+  for (const part of beforeBraces.split(",")) {
+    const specifier = part.trim().replace(/,$/, "").trim();
+    if (!specifier) {
+      continue;
+    }
+    const namespace = specifier.match(/^\*\s*as\s+(.+)$/);
+    if (namespace) {
+      names.push(namespace[1]!.trim());
+      continue;
+    }
+    if (/^[A-Za-z_$][\w$]*$/.test(specifier)) {
+      names.push(specifier);
+    }
+  }
+
+  return [...new Set(names)];
 }

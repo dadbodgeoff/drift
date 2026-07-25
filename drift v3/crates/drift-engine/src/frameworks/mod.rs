@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::protocol::{
     EngineFact, EngineFrameworkAdapter, EngineFrameworkCapability, EngineFrameworkParserGap,
     EngineNormalizedEntrypoint, ScannedFile,
@@ -30,6 +32,10 @@ pub fn collect_framework_scan_data(
 ) -> FrameworkScanData {
     let mut data = FrameworkScanData::default();
     let mut next_seen = false;
+    // `entrypoint_id` is the storage primary key (repo_id, scan_id, entrypoint_id).
+    // Emitting the same id twice aborted onboarding with a UNIQUE constraint failure,
+    // so uniqueness is enforced here at the source rather than relying on the writer.
+    let mut seen_entrypoint_ids: HashSet<String> = HashSet::new();
 
     for (_file, facts) in scanned {
         for fact in facts.iter().filter(|fact| fact.kind == "route_declared") {
@@ -39,12 +45,16 @@ pub fn collect_framework_scan_data(
             if endpoint.adapter_id == NEXT_ADAPTER_ID {
                 next_seen = true;
             }
+            let entrypoint_id = format!(
+                "entrypoint:{}:{}:{}",
+                endpoint.framework, fact.file_path, fact.name
+            );
+            if !seen_entrypoint_ids.insert(entrypoint_id.clone()) {
+                continue;
+            }
             data.entrypoints.push(EngineNormalizedEntrypoint {
                 schema_version: "engine.normalized_entrypoint.v1",
-                entrypoint_id: format!(
-                    "entrypoint:{}:{}:{}",
-                    endpoint.framework, fact.file_path, fact.name
-                ),
+                entrypoint_id,
                 repo_id: repo_id.to_string(),
                 scan_id: scan_id.to_string(),
                 adapter_id: endpoint.adapter_id.to_string(),

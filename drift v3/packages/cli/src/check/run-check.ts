@@ -2542,6 +2542,16 @@ export function runFullRepoCheck(
   }
   const checkId = `check_full_${hashStable(`${repoId}:${now}`).slice(0, 16)}`;
 
+  // Bindings we detected but could not reconcile against an engine import fact.
+  // Collected rather than thrown so a single unparseable file degrades that file
+  // instead of aborting onboarding. See the reconciliation site below.
+  const importFactReconciliationGaps: Array<{
+    filePath: string;
+    line: number;
+    symbol: string;
+    importSource: string;
+  }> = [];
+
   const files = walkIndexableFiles(repo.root_path).filter(isApiRoutePath);
   const diff = {
     // Full-repo baseline sweep over files that already exist: nothing here is added.
@@ -2618,9 +2628,18 @@ export function runFullRepoCheck(
           importFactEvidenceKey(filePath, importUsed.line, importUsed.name, importUsed.source)
         );
         if (!factId) {
-          throw new Error(
-            `Missing import_used fact for deterministic direct-data finding: ${filePath}:${importUsed.line} ${importUsed.name} from ${importUsed.source}`
-          );
+          // A binding we detected has no corresponding engine fact, which means the two
+          // import parsers disagree about this file. That is a parser gap in one file,
+          // not grounds for aborting the whole run: throwing here left repos with no
+          // database at all and no way to onboard. Record it and skip the binding so the
+          // divergence is visible and attributable instead of fatal.
+          importFactReconciliationGaps.push({
+            filePath,
+            line: importUsed.line,
+            symbol: importUsed.name,
+            importSource: importUsed.source
+          });
+          continue;
         }
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
@@ -2652,6 +2671,23 @@ export function runFullRepoCheck(
         findings.push(finding);
       }
     }
+  }
+
+  if (importFactReconciliationGaps.length > 0) {
+    const affectedFiles = [...new Set(importFactReconciliationGaps.map((gap) => gap.filePath))];
+    process.stderr.write(
+      `drift: ${importFactReconciliationGaps.length} import binding(s) across ${affectedFiles.length} file(s) ` +
+        `could not be reconciled against engine facts and were skipped during baseline materialization. ` +
+        `Enforcement for those bindings is degraded. Report at ` +
+        `https://github.com/dadbodgeoff/drift/issues with the paths below.\n` +
+        importFactReconciliationGaps
+          .slice(0, 20)
+          .map((gap) => `  ${gap.filePath}:${gap.line} ${gap.symbol} from ${gap.importSource}\n`)
+          .join("") +
+        (importFactReconciliationGaps.length > 20
+          ? `  ... and ${importFactReconciliationGaps.length - 20} more\n`
+          : "")
+    );
   }
 
   return findings;

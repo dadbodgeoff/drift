@@ -318,16 +318,32 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             end_line,
         });
 
+        let is_default_export = statement
+            .as_deref()
+            .is_some_and(|value| value.trim_start().starts_with("export default"));
+
+        // In a Next.js pages/api module the request handler is the *default* export.
+        // Named exports are not handlers: `export const config = { api: { bodyParser:
+        // false } }` is Next.js route configuration (the documented idiom for webhooks
+        // and uploads), and files also legitimately export helpers and types.
+        //
+        // Emitting RouteDeclared for every named export meant such a file produced two
+        // route declarations both named "default", which collided into duplicate
+        // `normalized_entrypoints` rows and aborted onboarding with a UNIQUE constraint
+        // failure (cal.com, papermark). It also polluted method resolution, since
+        // `config` was reported as a route method.
         if is_next_pages_api_path(file_path) {
-            facts.push(Fact {
-                kind: FactKind::RouteDeclared,
-                file_path: file_path.to_string(),
-                name: "default".to_string(),
-                value: Some(name.clone()),
-                imported_name: None,
-                start_line,
-                end_line,
-            });
+            if is_default_export {
+                facts.push(Fact {
+                    kind: FactKind::RouteDeclared,
+                    file_path: file_path.to_string(),
+                    name: "default".to_string(),
+                    value: Some(name.clone()),
+                    imported_name: None,
+                    start_line,
+                    end_line,
+                });
+            }
         } else if is_api_route_path(file_path)
             && matches!(name.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE")
         {
@@ -341,10 +357,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 end_line,
             });
         }
-        if statement
-            .as_deref()
-            .is_some_and(|value| value.trim_start().starts_with("export default"))
-        {
+        if is_default_export {
             facts.push(Fact {
                 kind: FactKind::ExportedSymbol,
                 file_path: file_path.to_string(),
