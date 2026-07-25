@@ -1,5 +1,6 @@
 import type { ContextPolicyMatrix, PolicyDecision, RepoContract } from "./domain.js";
 import { ContextPolicyMatrixSchema } from "./schemas.js";
+import { matchesGlob } from "./globs.js";
 
 export type PolicyRedactionState = "none" | "metadata_only" | "snippet_limited" | "denied";
 
@@ -195,11 +196,5 @@ function isRepoRelativeContextPath(filePath: string): boolean {
     !filePath.split(/[\\/]+/).includes("..");
 }
 
-function matchesGlob(filePath: string, glob: string): boolean {
-  const escaped = glob
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*\*/g, "\u0000")
-    .replace(/\*/g, "[^/]*")
-    .replace(/\u0000/g, ".*");
-  return new RegExp(`^${escaped}$`).test(filePath);
-}
+// Glob semantics live in ./globs.js - the single source of truth shared with
+// the CLI and engine contract. Do not reintroduce a local implementation.

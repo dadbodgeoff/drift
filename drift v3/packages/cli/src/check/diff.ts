@@ -1,13 +1,13 @@
-import { expandApiRouteScopeGlobs,type AcceptedConvention,type FindingDiffStatus } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS,expandApiRouteScopeGlobs,type AcceptedConvention,type FindingDiffStatus } from "@drift/core";
 import { execFileSync } from "node:child_process";
 import { existsSync,readFileSync,statSync } from "node:fs";
 import { ParsedArgs } from "../app/command-types.js";
 import { stringFlag } from "../args/flag-readers.js";
-import { matchesGlob } from "../domain/repo-paths.js";
+import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 
 export interface ParsedDiff {
-  files: Array<{ path: string; changedLines: Set<number> }>;
+  files: Array<{ path: string; changedLines: Set<number>; isAdded: boolean }>;
   deletedFiles: string[];
 }
 
@@ -62,7 +62,10 @@ export function parseUnifiedDiff(input: string): ParsedDiff {
       if (!path && oldPath) {
         deletedFiles.add(oldPath);
       }
-      current = path ? { path, changedLines: new Set<number>() } : undefined;
+      // `--- /dev/null` normalizes to undefined, which marks an added file.
+      current = path
+        ? { path, changedLines: new Set<number>(), isAdded: oldPath === undefined }
+        : undefined;
       newLine = undefined;
       continue;
     }
@@ -96,7 +99,8 @@ export function fullRepoDiff(repoRoot: string): ParsedDiff {
   return {
     files: walkIndexableFiles(repoRoot).map((path) => ({
       path,
-      changedLines: new Set<number>()
+      changedLines: new Set<number>(),
+      isAdded: false
     })),
     deletedFiles: []
   };
@@ -108,19 +112,48 @@ export function filesForConvention(
   scope: string
 ): string[] {
   const diffFiles = diff.files.map((file) => file.path);
-  const pathGlobs = appliesToApiRouteFiles(convention)
+  const isApiRouteConvention = appliesToApiRouteFiles(convention);
+  const pathGlobs = isApiRouteConvention
     ? expandApiRouteScopeGlobs(convention.scope.path_globs)
     : convention.scope.path_globs;
-  const scoped = diffFiles.filter((filePath) =>
-    (pathGlobs.length === 0 ||
-      pathGlobs.some((glob) => matchesGlob(filePath, glob))) &&
-    !(convention.scope.exclude_path_globs ?? []).some((glob) => matchesGlob(filePath, glob))
-  );
+
+  const scoped = diffFiles.filter((filePath) => {
+    if ((convention.scope.exclude_path_globs ?? []).some((glob) => matchesGlob(filePath, glob))) {
+      return false;
+    }
+
+    // For api-route conventions the engine's segment-based route detection is
+    // authoritative: it is what assigns `file_role_detected: api_route` and what
+    // candidate inference used to build this contract. Path globs are only ever an
+    // *additional* narrowing filter, never the thing that decides whether a route
+    // is a route. Previously the CLI re-derived route membership from globs alone,
+    // which silently disabled enforcement for repo-root `app/` and `pages/`
+    // layouts while inference still produced a correct contract.
+    if (isApiRouteConvention) {
+      if (!isApiRoutePath(filePath)) {
+        return false;
+      }
+      // Default scope globs are the auto-generated API_ROUTE_SCOPE_GLOBS set, which
+      // is fully redundant with the role check above. Only apply globs when the
+      // author narrowed the scope to something more specific.
+      if (isDefaultApiRouteScope(pathGlobs)) {
+        return true;
+      }
+    }
+
+    return pathGlobs.length === 0 || pathGlobs.some((glob) => matchesGlob(filePath, glob));
+  });
 
   if (scope === "full") {
     return scoped;
   }
   return scoped;
+}
+
+const DEFAULT_API_ROUTE_SCOPE = new Set(expandApiRouteScopeGlobs([...API_ROUTE_SCOPE_GLOBS]));
+
+function isDefaultApiRouteScope(pathGlobs: readonly string[]): boolean {
+  return pathGlobs.length > 0 && pathGlobs.every((glob) => DEFAULT_API_ROUTE_SCOPE.has(glob));
 }
 
 function appliesToApiRouteFiles(convention: AcceptedConvention): boolean {
@@ -143,6 +176,14 @@ export function diffStatusFor(
   const file = diff.files.find((entry) => entry.path === filePath);
   if (!file) {
     return "outside_diff";
+  }
+
+  // F7: an added file is entirely new code, so every line in it is a new hunk.
+  // Classifying it as `touched_existing` let brand-new violating routes through
+  // even in block mode, because "touched existing" is what the baseline shields.
+  // This holds in every scope mode, including changed-files.
+  if (file.isAdded) {
+    return "new_in_diff";
   }
 
   if (scope === "changed-files") {

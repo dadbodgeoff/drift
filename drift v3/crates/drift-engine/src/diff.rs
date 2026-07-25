@@ -11,6 +11,12 @@ pub struct ParsedDiff {
 pub struct DiffFile {
     pub path: String,
     pub changed_lines: Vec<usize>,
+    /// True when this file is newly added in the diff (`--- /dev/null`).
+    /// Every line of an added file is new code, so findings in it are always
+    /// `NewInDiff` regardless of diff scope. Treating added files as
+    /// `TouchedExisting` let brand-new violations inherit the baseline's
+    /// legacy-code exemption.
+    pub is_added: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,19 +43,29 @@ pub fn parse_unified_diff(input: &str) -> ParsedDiff {
     let mut files = Vec::new();
     let mut current_file: Option<DiffFile> = None;
     let mut current_new_line: Option<usize> = None;
+    // `--- /dev/null` normalizes to None and marks the next `+++` as an added file.
+    let mut previous_old_path: Option<String> = None;
 
     for line in input.lines() {
+        if let Some(path) = line.strip_prefix("--- ") {
+            previous_old_path = normalize_diff_path(path);
+            continue;
+        }
+
         if let Some(path) = line.strip_prefix("+++ ") {
             if let Some(file) = current_file.take() {
                 files.push(file);
             }
 
             let normalized = normalize_diff_path(path);
+            let is_added = previous_old_path.is_none();
             current_file = normalized.map(|path| DiffFile {
                 path,
                 changed_lines: Vec::new(),
+                is_added,
             });
             current_new_line = None;
+            previous_old_path = None;
             continue;
         }
 
@@ -91,6 +107,12 @@ pub fn classify_findings_against_diff(
     scope: DiffScope,
 ) -> Vec<DiffClassifiedFinding> {
     let changed_files: HashSet<&str> = diff.files.iter().map(|file| file.path.as_str()).collect();
+    let added_files: HashSet<&str> = diff
+        .files
+        .iter()
+        .filter(|file| file.is_added)
+        .map(|file| file.path.as_str())
+        .collect();
     let changed_lines_by_file: HashMap<&str, HashSet<usize>> = diff
         .files
         .iter()
@@ -105,16 +127,23 @@ pub fn classify_findings_against_diff(
     findings
         .into_iter()
         .map(|finding| {
-            let diff_status = match scope {
-                DiffScope::Full => DiffStatus::TouchedExisting,
-                DiffScope::ChangedFiles => {
-                    if changed_files.contains(finding.file_path.as_str()) {
-                        DiffStatus::TouchedExisting
-                    } else {
-                        DiffStatus::OutsideDiff
+            // An added file is entirely new code in every scope mode. Checking this
+            // before the scope match keeps `changed-files` and `changed-hunks` from
+            // classifying a brand-new violating file as pre-existing debt.
+            let diff_status = if added_files.contains(finding.file_path.as_str()) {
+                DiffStatus::NewInDiff
+            } else {
+                match scope {
+                    DiffScope::Full => DiffStatus::TouchedExisting,
+                    DiffScope::ChangedFiles => {
+                        if changed_files.contains(finding.file_path.as_str()) {
+                            DiffStatus::TouchedExisting
+                        } else {
+                            DiffStatus::OutsideDiff
+                        }
                     }
+                    DiffScope::ChangedHunks => changed_hunk_status(&finding, &changed_lines_by_file),
                 }
-                DiffScope::ChangedHunks => changed_hunk_status(&finding, &changed_lines_by_file),
             };
 
             DiffClassifiedFinding {

@@ -58,6 +58,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             .map(|file| DiffFile {
                 path: file.path,
                 changed_lines: file.changed_lines,
+                is_added: file.is_added,
             })
             .collect(),
     };

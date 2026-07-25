@@ -173,7 +173,7 @@ function previewRepoContractWithConvention(
       : defaultRequiredChecksForConventions(repoId, acceptedConventions),
     context_egress: existing?.context_egress ?? {
       default_mode: "local_only",
-      denied_globs: [".env*", "**/*.pem", "**/*.key", "**/*.crt"],
+      denied_globs: ["**/.env", "**/.env.*", "**/*.pem", "**/*.key", "**/*.crt", "**/*.p12", "**/id_rsa", "**/id_ed25519"],
       max_snippet_chars: 1200,
       allow_full_file_content: false
     },

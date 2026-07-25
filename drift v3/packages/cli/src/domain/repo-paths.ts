@@ -38,7 +38,7 @@ export function repoContractOrDefault(storage: SqliteDriftStorage, repoId: strin
     required_checks: [],
     context_egress: {
       default_mode: "local_only",
-      denied_globs: [".env*", "**/*.pem", "**/*.key", "**/*.crt"],
+      denied_globs: ["**/.env", "**/.env.*", "**/*.pem", "**/*.key", "**/*.crt", "**/*.p12", "**/id_rsa", "**/id_ed25519"],
       max_snippet_chars: 1200,
       allow_full_file_content: false
     },
@@ -228,14 +228,9 @@ export function isApiRoutePath(filePath: string): boolean {
   return isNextApiRoutePath(filePath);
 }
 
-export function matchesGlob(filePath: string, glob: string): boolean {
-  const escaped = glob
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*\*/g, "\u0000")
-    .replace(/\*/g, "[^/]*")
-    .replace(/\u0000/g, ".*");
-  return new RegExp(`^${escaped}$`).test(filePath);
-}
+// Re-exported from @drift/core so the CLI, policy layer, and engine contract
+// share one glob implementation. See packages/core/src/globs.ts.
+export { matchesGlob } from "@drift/core";
 
 export function isRepoRelativePolicyPattern(value: string): boolean {
   return value.length > 0 &&

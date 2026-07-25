@@ -108,7 +108,8 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
       mode: input.scope,
       files: input.diff.files.map((file) => ({
         path: file.path,
-        changed_lines: [...file.changedLines].sort((a, b) => a - b)
+        changed_lines: [...file.changedLines].sort((a, b) => a - b),
+        is_added: file.isAdded
       })),
       deleted_files: input.diff.deletedFiles
     },

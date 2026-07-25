@@ -2544,7 +2544,8 @@ export function runFullRepoCheck(
 
   const files = walkIndexableFiles(repo.root_path).filter(isApiRoutePath);
   const diff = {
-    files: files.map((path) => ({ path, changedLines: new Set<number>() })),
+    // Full-repo baseline sweep over files that already exist: nothing here is added.
+    files: files.map((path) => ({ path, changedLines: new Set<number>(), isAdded: false })),
     deletedFiles: []
   };
   const contract = storage.getRepoContract(repoId);

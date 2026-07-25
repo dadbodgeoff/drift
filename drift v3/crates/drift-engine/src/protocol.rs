@@ -456,6 +456,11 @@ pub struct CheckDiff {
 pub struct CheckDiffFile {
     pub path: String,
     pub changed_lines: Vec<usize>,
+    /// Newly added file. Optional for backward compatibility with older CLIs;
+    /// absent means "unknown", which conservatively falls back to scope-based
+    /// classification.
+    #[serde(default)]
+    pub is_added: bool,
 }
 
 #[derive(Debug, Serialize)]
