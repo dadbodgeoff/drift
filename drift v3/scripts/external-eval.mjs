@@ -143,6 +143,11 @@ function drift(cwd, extraEnv, ...a) {
   }
 }
 
+function ensureDir(dir) {
+  mkdirSync(dir, { recursive: true });
+  return join(dir, "route.ts");
+}
+
 function writeRoute(root, relDir, sub, module, symbol) {
   const dir = join(root, relDir, sub);
   mkdirSync(dir, { recursive: true });
@@ -271,6 +276,43 @@ function evaluateRepo(cfg) {
     cfg.cleanModule,
     cfg.cleanSymbol
   );
+
+  // T03 negative controls. The suite proved detection but never restraint: a rule that
+  // flagged everything would satisfy every other assertion here. Each of these is a route
+  // that must NOT be flagged, and each pins a specific fix against real repos rather than
+  // fixtures.
+  //
+  //   type-only  - A3/F5: `import type` from the data module is erased at compile time and
+  //                creates no runtime dependency.
+  //   lookalike  - B3: `<dataModule>-legacy` must not match a forbidden `<dataModule>`,
+  //                which bare substring matching got wrong.
+  //   subpath    - B3 the other way: a *genuine* subpath of the data module must still be
+  //                caught, so the boundary fix did not overshoot into a false negative.
+  const typeOnlyPath = `${cfg.routeDir}/drift-eval-typeonly/route.ts`;
+  writeFileSync(
+    ensureDir(join(root, cfg.routeDir, "drift-eval-typeonly")),
+    `import { NextResponse } from "next/server";\n` +
+      `import type { ${cfg.dataSymbol} } from "${cfg.dataModule}";\n\n` +
+      `export async function GET() {\n` +
+      `  const value: ${cfg.dataSymbol} | undefined = undefined;\n` +
+      `  return NextResponse.json({ ok: value === undefined });\n` +
+      `}\n`
+  );
+  const lookalikePath = writeRoute(
+    root,
+    cfg.routeDir,
+    "drift-eval-lookalike",
+    `${cfg.dataModule}-legacy`,
+    cfg.dataSymbol
+  );
+  const subpathPath = writeRoute(
+    root,
+    cfg.routeDir,
+    "drift-eval-subpath",
+    `${cfg.dataModule}/internal`,
+    cfg.dataSymbol
+  );
+
   git(root, "add", "-A");
 
   const check = drift(
@@ -320,6 +362,9 @@ function evaluateRepo(cfg) {
         ? null
         : result.injection_enforcement === result.enforcement_mode;
     result.clean_control_false_positive = onClean.length > 0;
+    result.fp_type_only_import = findings.some((f) => hasPath(f, typeOnlyPath));
+    result.fp_lookalike_module = findings.some((f) => hasPath(f, lookalikePath));
+    result.catches_genuine_subpath = findings.some((f) => hasPath(f, subpathPath));
   } catch {
     result.check_status = "UNPARSEABLE";
   }
@@ -341,6 +386,9 @@ function evaluateRepo(cfg) {
     result.injection_caught &&
     result.injection_evidence_correct &&
     !result.clean_control_false_positive &&
+    result.fp_type_only_import === false &&
+    result.fp_lookalike_module === false &&
+    result.catches_genuine_subpath === true &&
     result.engine_source === "rust" &&
     result.fallback_used === false
       ? "PASS"
@@ -349,6 +397,15 @@ function evaluateRepo(cfg) {
 }
 
 // Counts move as upstream repos change; compared for reporting only, not for regressions.
+/**
+ * T04: onboarding time is compared against a generous ceiling rather than exactly, so a
+ * real regression fails while ordinary upstream growth does not. The ceiling comes from the
+ * baseline (3x, floor 30s) because absolute numbers differ per machine.
+ */
+function performanceCeiling(baselineSeconds) {
+  return Math.max(30, Math.round((baselineSeconds ?? 0) * 3));
+}
+
 const VOLATILE = new Set([
   "onboard_seconds",
   "repo_id",
@@ -387,6 +444,8 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
       ` injected=${r.injection_caught ? "y" : "n"}` +
       ` evidence=${r.injection_evidence_correct ? "y" : "n"}` +
       ` cleanFP=${r.clean_control_false_positive ? "YES" : "no"}` +
+      ` neg=${r.fp_type_only_import === false && r.fp_lookalike_module === false ? "ok" : "FP"}` +
+      ` subpath=${r.catches_genuine_subpath ? "y" : "n"}` +
       (r.discovery_named_data_layer !== undefined
         ? ` f4gap=${r.inference_alone_found_data_layer === false && r.discovery_named_data_layer ? "y" : "n"}`
         : "") +
@@ -407,7 +466,16 @@ const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8"
 const byName = new Map(baseline.map((r) => [r.repo, r]));
 const changed = [];
 for (const after of results) {
-  const changes = diffResult(byName.get(after.repo), after);
+  const before = byName.get(after.repo);
+  const ceiling = performanceCeiling(before?.onboard_seconds);
+  if (before && after.onboard_seconds > ceiling) {
+    changed.push(
+      `  ${after.repo}:`,
+      `    onboard_seconds: ${before.onboard_seconds} -> ${after.onboard_seconds} (exceeds ${ceiling}s ceiling)`
+    );
+    after.status = "FAIL";
+  }
+  const changes = diffResult(before, after);
   if (changes.length) {
     changed.push(`  ${after.repo}:`);
     for (const line of changes) changed.push(`    ${line}`);
