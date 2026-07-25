@@ -30,6 +30,36 @@ export function acceptCandidate(
   });
 }
 
+/**
+ * A7 candidate noise floor.
+ *
+ * Secondary heuristics promote any repeated helper name to a candidate, which buried the
+ * signal: on dub, 19 of 21 candidates sat under 5% coverage (for example "validate
+ * request input with `validateBounty`" - 2 occurrences across 494 route files). A human
+ * accepting defaults had to read past all of them.
+ *
+ * Candidates below the floor are withheld from the default listing but never dropped:
+ * the payload reports how many were hidden and the exact command to see them. The
+ * accepted data-access convention is exempt - it is the enforced wedge and must always
+ * be visible regardless of how much of the repo currently violates it.
+ *
+ * The floor is coverage only, deliberately. An absolute minimum on supporting examples
+ * looks reasonable but penalizes small repos: 2 occurrences across 3 route files is 67%
+ * coverage and a genuine pattern, while dub's `validateBounty` is 2 occurrences across
+ * 494 files. Same count, opposite meaning - the ratio is what separates them.
+ */
+export const CANDIDATE_MIN_COVERAGE_RATIO = 0.2;
+
+function isBelowNoiseFloor(candidate: ConventionCandidate): boolean {
+  if (candidate.status !== "candidate") {
+    return false;
+  }
+  if (candidate.kind === "api_route_no_direct_data_access") {
+    return false;
+  }
+  return (candidate.scoring?.coverage_ratio ?? 0) < CANDIDATE_MIN_COVERAGE_RATIO;
+}
+
 export function listConventionCandidates(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {
   const repoId = resolveRepoId(parsed);
   requiredRepo(storage, repoId);
@@ -38,12 +68,17 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
   const capability = optionalEnforcementCapabilityFlag(parsed, "capability");
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const offset = optionalNonNegativeIntegerFlag(parsed, "offset") ?? 0;
+  const includeLowConfidence = parsed.flags.has("include-low-confidence");
   const allCandidates = storage.listConventionCandidates(repoId);
-  const filteredCandidates = orderConventionCandidatesForReview(allCandidates.filter((candidate) =>
+  const matching = allCandidates.filter((candidate) =>
     (!status || candidate.status === status) &&
     (!kind || candidate.kind === kind) &&
     (!capability || candidate.enforcement_capability === capability)
-  ));
+  );
+  const belowFloor = matching.filter((candidate) => isBelowNoiseFloor(candidate));
+  const filteredCandidates = orderConventionCandidatesForReview(
+    includeLowConfidence ? matching : matching.filter((candidate) => !isBelowNoiseFloor(candidate))
+  );
   const candidates = paginateConventionCandidates(filteredCandidates, limit, offset);
   const listedStatus: ConventionStatus | "all" = status ?? "all";
   const payload = {
@@ -57,6 +92,13 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
     governance: preflightGovernance(),
     summary: conventionCandidateSummary(allCandidates, filteredCandidates, candidates),
     pagination: paginationSummary(filteredCandidates.length, candidates.length, limit, offset),
+    // A7: never truncate silently. If a candidate was withheld, say so and say how to see it.
+    low_confidence: {
+      hidden_count: includeLowConfidence ? 0 : belowFloor.length,
+      included: includeLowConfidence,
+      floor: { min_coverage_ratio: CANDIDATE_MIN_COVERAGE_RATIO },
+      reveal_command: `drift conventions list --repo ${repoId} --include-low-confidence`
+    },
     review_items: candidates.map(conventionCandidateReviewItem),
     next_commands: conventionCandidateListNextCommands(repoId, candidates),
     candidates
