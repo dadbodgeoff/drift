@@ -23,7 +23,8 @@
     "release:proof": "node scripts/generate-release-proof.mjs",
     "verify:ci": "pnpm verify && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
     "eval:external": "node scripts/external-eval.mjs",
-    "eval:external:update": "node scripts/external-eval.mjs --update"
+    "eval:external:update": "node scripts/external-eval.mjs --update",
+    "run:log": "node scripts/run-log.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
