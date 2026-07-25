@@ -170,6 +170,11 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           `  Evidence: ${candidate.scoring.supporting_examples_count} matching import${candidate.scoring.supporting_examples_count === 1 ? "" : "s"}.`
         ].join("\n")
       : noCandidateText(dataLayerDiscovery),
+    // Surface the data-layer gap even when some *other* convention was inferred. Gating
+    // this on "no candidates at all" hid it on every real repo that infers an auth-helper
+    // or validation candidate, which is most of them - the F4 gap stayed silent exactly
+    // where it mattered.
+    ...(dataLayerDiscovery && candidate ? ["", noCandidateText(dataLayerDiscovery)] : []),
     "",
     "State:",
     `  export DRIFT_DB=${result.database_path}`,

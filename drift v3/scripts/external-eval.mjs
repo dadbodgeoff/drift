@@ -82,6 +82,22 @@ const REPOS = [
     expectForbidden: ["@/lib/prisma"]
   },
   {
+    // T01: the only repo whose data layer defeats the substring whitelist in
+    // is_data_access_source. Without it the suite passes whether or not F4 exists, because
+    // every other repo names its data layer prisma/db/database. `whitelistIndependent`
+    // switches on the F4 assertions in evaluateRepo.
+    name: "midday",
+    routeDir: "apps/dashboard/src/app/api",
+    dataModule: "@midday/supabase/server",
+    dataSymbol: "createClient",
+    cleanModule: "@midday/utils/sanitize-redirect",
+    cleanSymbol: "sanitizeRedirect",
+    expectForbidden: ["@midday/supabase/server"],
+    whitelistIndependent: true,
+    declaredDataModules: "@midday/supabase/server,@midday/supabase/cached-queries",
+    expectDiscoveryWrapper: "packages/supabase/src/client/server.ts"
+  },
+  {
     name: "openstatus",
     routeDir: "apps/dashboard/src/app/api",
     dataModule: "@openstatus/db",
@@ -172,8 +188,44 @@ function evaluateRepo(cfg) {
   const home = mkdtempSync(join(tmpdir(), "drift-eval-home-"));
   const repoEnv = { HOME: home, DRIFT_HOME: home };
 
+  // T02: for a repo whose data layer the whitelist cannot see, first prove the F4 gap is
+  // actually exercised - inference alone must find no data-access convention, and A6
+  // discovery must name the wrapper anyway. Without this the repo is in the suite but
+  // tests nothing it was added for.
+  if (cfg.whitelistIndependent) {
+    const probeHome = mkdtempSync(join(tmpdir(), "drift-eval-probe-"));
+    const probe = drift(
+      root,
+      { HOME: probeHome, DRIFT_HOME: probeHome },
+      "start",
+      "--repo-root",
+      ".",
+      "--accept-defaults",
+      "--json"
+    );
+    try {
+      const payload = JSON.parse(probe.stdout);
+      const discovery = payload.data_layer_discovery;
+      result.inference_alone_found_data_layer = discovery === undefined;
+      result.discovery_named_data_layer = Boolean(
+        discovery?.suggestions?.some((s) => s.filePath === cfg.expectDiscoveryWrapper)
+      );
+      result.discovery_reason = discovery?.reason ?? null;
+    } catch {
+      result.inference_alone_found_data_layer = null;
+      result.discovery_named_data_layer = false;
+      result.discovery_reason = "probe_unparseable";
+    }
+    rmSync(probeHome, { recursive: true, force: true });
+    resetTree(root);
+  }
+
   const started = Date.now();
-  const start = drift(root, repoEnv, "start", "--repo-root", ".", "--accept-defaults");
+  const startArgs = ["start", "--repo-root", ".", "--accept-defaults"];
+  if (cfg.declaredDataModules) {
+    startArgs.push("--data-modules", cfg.declaredDataModules);
+  }
+  const start = drift(root, repoEnv, ...startArgs);
   result.onboard_seconds = Number(((Date.now() - started) / 1000).toFixed(1));
   result.onboarded = start.ok;
 
@@ -256,6 +308,17 @@ function evaluateRepo(cfg) {
       evidence?.start_line === 2 && evidence?.import_source === cfg.dataModule;
     result.injection_diff_status = onBad[0]?.diff_status ?? null;
     result.injection_enforcement = onBad[0]?.enforcement_result ?? null;
+    result.injection_finding_status = onBad[0]?.status ?? null;
+    // Recorded, not yet asserted. On midday the contract materialises with
+    // enforcement_mode "block" but the finding comes back "none", while the same
+    // injection run by hand returns "block". Until that is explained this field is
+    // diagnostic only - see the run log entry for T01c. Promoting it to an assertion is
+    // the right end state: a block-mode convention that does not block is an F3-class
+    // silent failure.
+    result.enforcement_matches_mode =
+      result.enforcement_mode === null || onBad.length === 0
+        ? null
+        : result.injection_enforcement === result.enforcement_mode;
     result.clean_control_false_positive = onClean.length > 0;
   } catch {
     result.check_status = "UNPARSEABLE";
@@ -264,8 +327,16 @@ function evaluateRepo(cfg) {
   resetTree(root);
   rmSync(home, { recursive: true, force: true });
 
+  const f4AssertionsHold =
+    !cfg.whitelistIndependent ||
+    // The F4 gap is *exercised* when inference alone finds nothing and discovery names the
+    // wrapper anyway. Asserting inference succeeds would assert the bug is absent, which is
+    // the opposite of what this repo is here to prove.
+    (result.inference_alone_found_data_layer === false && result.discovery_named_data_layer === true);
+
   result.status =
     result.onboarded &&
+    f4AssertionsHold &&
     result.contract_names_real_data_layer &&
     result.injection_caught &&
     result.injection_evidence_correct &&
@@ -316,6 +387,9 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
       ` injected=${r.injection_caught ? "y" : "n"}` +
       ` evidence=${r.injection_evidence_correct ? "y" : "n"}` +
       ` cleanFP=${r.clean_control_false_positive ? "YES" : "no"}` +
+      (r.discovery_named_data_layer !== undefined
+        ? ` f4gap=${r.inference_alone_found_data_layer === false && r.discovery_named_data_layer ? "y" : "n"}`
+        : "") +
       ` (${r.onboard_seconds ?? "?"}s)` +
       (r.error ? `\n       ${r.error}` : "")
   );

@@ -83,6 +83,39 @@ export interface DataLayerDiscovery {
   suggestions: DataLayerSuggestion[];
 }
 
+/**
+ * Map each workspace package name to its directory, read from the `name` field of every
+ * manifest.
+ *
+ * Needed because in a monorepo an API route reaches the data layer by *package name*
+ * (`@midday/supabase/server`), not by path alias. Matching specifier tails against file
+ * paths resolves `@/lib/store` but never `@midday/supabase/server`, whose wrapper lives
+ * at `packages/supabase/src/client/server.ts`. Four of the six evaluation repos are
+ * monorepos, so this is the common case.
+ */
+export function workspacePackageDirectories(
+  repoRoot: string,
+  manifestPaths: string[]
+): Map<string, string> {
+  const byName = new Map<string, string>();
+  for (const relative of manifestPaths) {
+    const absolute = join(repoRoot, relative);
+    if (!existsSync(absolute)) {
+      continue;
+    }
+    try {
+      const manifest = JSON.parse(readFileSync(absolute, "utf8")) as { name?: unknown };
+      if (typeof manifest.name === "string" && manifest.name) {
+        const directory = relative.replace(/\/?package\.json$/, "");
+        byName.set(manifest.name, directory);
+      }
+    } catch {
+      continue;
+    }
+  }
+  return byName;
+}
+
 interface ImportFactLike {
   file_path: string;
   value?: string | null;
@@ -132,6 +165,14 @@ export function discoverDataLayer(
   if (declaredPackages.length === 0) {
     return { declaredPackages, suggestions: [] };
   }
+  // Workspace package name -> directory, so `@midday/supabase/server` can resolve to
+  // packages/supabase/src/client/server.ts. Declared data packages are excluded so a
+  // dependency is never mistaken for a local wrapper.
+  const workspaceDirs = new Map(
+    [...workspacePackageDirectories(repoRoot, manifestPaths)].filter(
+      ([name]) => !declaredPackages.includes(name)
+    )
+  );
 
   // Local modules that import one of the declared data packages.
   const wrapperToPackage = new Map<string, string>();
@@ -161,7 +202,7 @@ export function discoverDataLayer(
       continue;
     }
     for (const wrapper of wrapperToPackage.keys()) {
-      if (!specifierPointsAt(source, wrapper)) {
+      if (!specifierPointsAt(source, wrapper, workspaceDirs)) {
         continue;
       }
       const entry = importersByWrapper.get(wrapper) ?? { specifiers: new Set(), routes: new Set() };
@@ -196,8 +237,38 @@ export function discoverDataLayer(
  * and `/index` stripped, so `@/lib/store`, `~/lib/store` and `../lib/store` all match
  * `src/lib/store.ts` without resolving tsconfig aliases.
  */
-function specifierPointsAt(specifier: string, wrapperPath: string): boolean {
+function specifierPointsAt(
+  specifier: string,
+  wrapperPath: string,
+  workspaceDirs: Map<string, string> = new Map()
+): boolean {
   const wrapper = wrapperPath.replace(/\.(ts|tsx|js|jsx|mjs|cjs)$/, "").replace(/\/index$/, "");
+
+  // Monorepo package import: `@scope/pkg` or `@scope/pkg/subpath`. Resolve through the
+  // package's directory rather than by comparing path tails, which cannot work when the
+  // specifier is a package name and the wrapper is a file inside that package.
+  for (const [packageName, packageDir] of workspaceDirs) {
+    if (specifier !== packageName && !specifier.startsWith(`${packageName}/`)) {
+      continue;
+    }
+    if (packageDir && !wrapper.startsWith(`${packageDir}/`)) {
+      continue;
+    }
+    const subpath = specifier === packageName ? "" : specifier.slice(packageName.length + 1);
+    if (!subpath) {
+      // Bare package import resolves to the package entry point.
+      return /\/(index|main)$/.test(wrapper) || wrapper === packageDir;
+    }
+    const segments = subpath.split("/").filter(Boolean);
+    const wrapperSegments = wrapper.split("/").filter(Boolean);
+    if (segments.length > wrapperSegments.length) {
+      continue;
+    }
+    if (wrapperSegments.slice(-segments.length).join("/") === segments.join("/")) {
+      return true;
+    }
+  }
+
   const cleaned = specifier
     .replace(/\.(ts|tsx|js|jsx|mjs|cjs)$/, "")
     .replace(/\/index$/, "")
