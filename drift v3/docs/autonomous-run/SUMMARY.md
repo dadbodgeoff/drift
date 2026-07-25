@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 7 |
+| Done | 9 |
 | Done (partial) | 1 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
@@ -20,6 +20,8 @@
 - **T04** Assert performance envelopes in the harness — max_onboard_seconds = 3x baseline with a 30s floor, soft-asserted so upstream repo growth does not cause flakes. Counts stay volatile.
 - **T05** Record the harness own failure modes as tests — 6 tests pinning resetTree staged-file removal, no-commit-in-eval-repos, /dev/null added-file diff shape (which F7 depends on), volatile-field exclusion, every behavioural baseline field, and the presence of a whitelist-independent repo with the F4 gap exercised. Wired into verify:ci as test:harness.
 - **T06** Make the harness runnable against an arbitrary repo path — --repo-path with --data-module/--data-symbol/--route-dir/--clean-module/--declare. Prints one result row, never compares to or writes the baseline. Verified against the A6 Supabase fixture: PASS.
+- **T08** Verify B4 gitignore claims — Premise CONFIRMED and narrowed. Root .gitignore IS honored (src/generated/ excluded). Nested .gitignore is NOT: packages/inner/ignored-here.ts was indexed despite packages/inner/.gitignore listing it. The ! negation part of the claim is not separately testable because nested ignore files are never read at all.
+- **T09** Verify B5 typed-error claim — Premise CONFIRMED: 8 sites, 7 in run-cli.ts plus one in rust-engine.ts. All are user-facing classification, not internal.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 
 ## Discoveries made while working
