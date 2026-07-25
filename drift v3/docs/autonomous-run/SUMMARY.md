@@ -7,7 +7,7 @@
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
 | Skipped — dependency blocked | 0 |
-| Deferred — human-gated | 0 |
+| Deferred — human-gated | 1 |
 | Discoveries | 4 |
 | Baseline changes | 0 |
 
@@ -36,6 +36,10 @@
   - evidence: candidate_command.rs:1035 matches!(lower, ... | "withworkspace"). None of the surrounding broad conditions match withWorkspace: it does not start with get and contains none of session/login/authenticate/authguard. So the literal is required for the match.
 - **T-disk** Disk exhaustion produced two false test failures mid-run
   - evidence: Free space hit 1.8GB. pnpm -r test reported 2 failures (doctor state, version metadata) and the external suite reported "database or disk is full" for formbricks and calcom. All passed on retry after remediation with no code change.
+
+## Deferred — human-gated by design
+
+- **T-halt** Run halted cleanly: context exhausted after Phase 1 and Phase 2 — Resume at T12 per docs/autonomous-run/HALT.md. Tree green, nothing pushed, 7/7 suite passing.
 
 ## Discussion agenda
 
