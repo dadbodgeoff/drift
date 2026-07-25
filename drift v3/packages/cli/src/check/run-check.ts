@@ -28,6 +28,24 @@ import { currentMachineContractVersions } from "../domain/versions.js";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
 import { runEngineCheck } from "../engine/engine-check.js";
 import { extractImports,importFactsForFile } from "../engine/fact-extraction.js";
+
+/**
+ * Exit-code contract for `drift check`.
+ *
+ *   0  pass     - no blocking violation in scope
+ *   2  blocked  - a new violation in a changed hunk under a block-mode convention
+ *   3  refused  - fail-closed: enforcement could not be performed (engine unavailable,
+ *                 stale scan, missing contract), so no pass claim is made
+ *   1  error    - operational failure inside drift itself
+ *
+ * `blocked` is deliberately distinct from `error` so CI can distinguish "this diff
+ * violates the contract" from "drift broke", and so a crash can never be mistaken for a
+ * clean run.
+ */
+export const CHECK_EXIT_PASS = 0;
+export const CHECK_EXIT_ERROR = 1;
+export const CHECK_EXIT_BLOCKED = 2;
+export const CHECK_EXIT_REFUSED = 3;
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { formatCheckText } from "../formatters/checks.js";
 import { fileContentHash } from "../io/file-hash.js";
@@ -157,7 +175,9 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       findings: []
     };
     return {
-      exitCode: 1,
+      // Refusal, not a violation and not a crash: the engine could not be used, so no
+      // enforcement claim can be made. Fail closed with its own code.
+      exitCode: CHECK_EXIT_REFUSED,
       payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
     };
   }
@@ -538,7 +558,11 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   };
 
   return {
-    exitCode: blockingCount > 0 ? 1 : 0,
+    // Documented exit-code contract (see docs and `drift --help`):
+    //   0 pass · 2 blocked · 3 refused (fail-closed) · 1 operational error
+    // `2` is distinct from `1` so CI can tell "this diff violates the contract" from
+    // "drift itself failed", and so a crash is never silently read as a clean run.
+    exitCode: blockingCount > 0 ? CHECK_EXIT_BLOCKED : CHECK_EXIT_PASS,
     payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
   };
 }

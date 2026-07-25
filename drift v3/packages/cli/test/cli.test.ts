@@ -3667,7 +3667,7 @@ supported_sqlite_schema_version: 27,
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.policy).toMatchObject({
       allowed: true,
@@ -3869,7 +3869,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary).toMatchObject({
       findings_count: 1,
@@ -4053,7 +4053,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0]).toMatchObject({
@@ -4128,7 +4128,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0]).toMatchObject({
@@ -4206,7 +4206,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0]).toMatchObject({
@@ -4287,7 +4287,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary.blocking_count).toBe(1);
     expect(payload.findings[0]).toMatchObject({
@@ -4361,7 +4361,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     const directDataFinding = payload.findings.find((finding: { actual_layer?: string }) =>
       finding.actual_layer === "direct_data_access"
@@ -4395,7 +4395,7 @@ storage_schema_version: 27
         "--json"
       ]);
 
-      expect(result.exitCode).toBe(1);
+      expect(result.exitCode).toBe(3);
       const payload = JSON.parse(result.stdout);
       expect(payload.check).toMatchObject({
         status: "blocked",
@@ -4549,7 +4549,7 @@ storage_schema_version: 27
       "--now", "2026-05-10T00:00:30.000Z"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     expect(result.stdout).toContain("Drift check");
     expect(result.stdout).toContain("Scope: changed-hunks");
     expect(result.stdout).toContain("Findings: 1");
@@ -5339,7 +5339,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.findings).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -5390,7 +5390,7 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     expect(JSON.parse(result.stdout).summary).toMatchObject({
       findings_count: 1,
       blocking_count: 1,
@@ -12655,7 +12655,7 @@ schema_version: 27,
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = JSON.parse(result.stdout);
     expect(payload.findings).toEqual([
       expect.objectContaining({
@@ -12747,7 +12747,7 @@ schema_version: 27,
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     expect(JSON.parse(result.stdout).findings).toEqual([
       expect.objectContaining({
         convention_id: "agent_contract_smoke_checks",

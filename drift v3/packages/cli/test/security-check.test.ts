@@ -519,7 +519,7 @@ describe("security check bridge", () => {
     });
     storage.close();
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = result.payload as {
       security_boundary_proofs?: Array<{ auth?: { required: boolean; proven: boolean; proof_kind: string } }>;
       findings?: Array<{ convention_id: string; enforcement_result: string }>;
@@ -556,7 +556,7 @@ describe("security check bridge", () => {
     });
     storage.close();
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(2);
     const payload = result.payload as {
       findings?: Array<{
         convention_id: string;
@@ -589,7 +589,7 @@ describe("security check bridge", () => {
       ])
     });
     unwaivedStorage.close();
-    expect(blocked.exitCode).toBe(1);
+    expect(blocked.exitCode).toBe(2);
 
     const waived = await seedPhase4TenantWaiverCheckDatabase(true);
     const waivedStorage = openDriftStorage({ databasePath: waived.databasePath });

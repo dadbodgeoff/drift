@@ -137,7 +137,11 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             matcher,
             requires: None,
             suggested_severity: "error".to_string(),
-            suggested_enforcement_mode: "warn".to_string(),
+            suggested_enforcement_mode: suggested_mode_for_coverage(
+                unique_evidence_file_count(&data_imports, &graph_data_imports),
+                scope_file_count,
+            )
+            .to_string(),
             enforcement_capability: "deterministic_check".to_string(),
             confidence_label: "high".to_string(),
             scoring: scoring(
@@ -1377,6 +1381,33 @@ fn import_key_parts(file_path: &str, local_name: &str, source: &str) -> String {
     format!("{file_path}\0{local_name}\0{source}")
 }
 
+/// Fraction of in-scope files that may violate a convention before it is treated as an
+/// aspiration rather than an established practice.
+pub const CONVENTION_MAJORITY_VIOLATION_THRESHOLD: f64 = 0.5;
+
+/// Choose the enforcement mode from the *direction* of the evidence, not just its volume.
+///
+/// This candidate is inferred from violations, so a repo where direct data access is
+/// universal produces the same statement as a repo where it happens once. Enforcing
+/// `block` in the first case would reject new routes written exactly like their
+/// neighbours - the opposite of holding code to the repo's established patterns, and
+/// precisely the code an agent following local convention would write.
+///
+/// So: when a minority of in-scope files violate, the convention is real and new
+/// violations block. When a majority violate, the statement is a refactor goal; it is
+/// still materialized with full evidence, but only warns until a human decides otherwise.
+pub fn suggested_mode_for_coverage(violating_files: usize, scope_files: usize) -> &'static str {
+    if scope_files == 0 {
+        return "warn";
+    }
+    let violation_ratio = (violating_files as f64 / scope_files as f64).min(1.0);
+    if violation_ratio > CONVENTION_MAJORITY_VIOLATION_THRESHOLD {
+        "warn"
+    } else {
+        "block"
+    }
+}
+
 fn scoring(
     supporting: usize,
     counterexamples: usize,
@@ -1562,4 +1593,29 @@ fn graph_fingerprint(request: &CandidateRequest) -> String {
 
 fn stable_hash(value: &str) -> String {
     format!("{:x}", Sha256::digest(value.as_bytes()))
+}
+
+#[cfg(test)]
+mod coverage_direction_tests {
+    use super::suggested_mode_for_coverage;
+
+    /// The data-access candidate is inferred *from violations*, so a repo where direct
+    /// data access is universal produces the same statement as one where it happens
+    /// once. Blocking in the first case would reject new routes written exactly like
+    /// their neighbours - the opposite of holding code to established local patterns.
+    #[test]
+    fn suggests_block_only_when_a_minority_of_routes_violate() {
+        // formbricks shape: 1 of 83 routes violates - a real convention with one outlier.
+        assert_eq!(suggested_mode_for_coverage(1, 83), "block");
+        // Exactly half is still treated as established practice.
+        assert_eq!(suggested_mode_for_coverage(5, 10), "block");
+        // taxonomy shape: 4 of 7 routes violate - direct access is the local norm.
+        assert_eq!(suggested_mode_for_coverage(4, 7), "warn");
+        // dub shape: ~323 of 494 routes violate - an aspiration, not a convention.
+        assert_eq!(suggested_mode_for_coverage(323, 494), "warn");
+        // Universal violation must never block.
+        assert_eq!(suggested_mode_for_coverage(10, 10), "warn");
+        // A degenerate scope cannot justify blocking.
+        assert_eq!(suggested_mode_for_coverage(0, 0), "warn");
+    }
 }
