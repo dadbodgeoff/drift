@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 3 |
+| Done | 7 |
 | Done (partial) | 0 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 1 |
@@ -16,6 +16,10 @@
 - **T00** Install autonomous run protocol, plan, and log tooling — triage-and-continue lifecycle; log.jsonl as resume substrate; tacit-knowledge section covering the traps that cost time in the prior session
 - **T01** Add a 7th eval repo whose data layer defeats the substring whitelist — midday-ai/midday (Supabase monorepo, @midday/supabase/server). Screened 3 candidates; basejump had 0 API routes, supabase/supabase studio uses an apiWrapper indirection. midday exercises the F4 gap on a real repo: 3 candidates inferred, none data-access.
 - **T02** Assert the F4 path in the harness, not just observe it — whitelistIndependent repos run a pre-pass without --data-modules; assert inference alone finds nothing AND discovery names the expected wrapper. Caught my own inverted assertion polarity before it became a false green.
+- **T03** Add negative controls to the harness — Three per repo: type-only import of the data module (A3/F5), a <dataModule>-legacy lookalike (B3), and a genuine subpath that must still be caught (B3 in the other direction, guarding against overshoot into a false negative).
+- **T04** Assert performance envelopes in the harness — max_onboard_seconds = 3x baseline with a 30s floor, soft-asserted so upstream repo growth does not cause flakes. Counts stay volatile.
+- **T05** Record the harness own failure modes as tests — 6 tests pinning resetTree staged-file removal, no-commit-in-eval-repos, /dev/null added-file diff shape (which F7 depends on), volatile-field exclusion, every behavioural baseline field, and the presence of a whitelist-independent repo with the F4 gap exercised. Wired into verify:ci as test:harness.
+- **T06** Make the harness runnable against an arbitrary repo path — --repo-path with --data-module/--data-symbol/--route-dir/--clean-module/--declare. Prints one result row, never compares to or writes the baseline. Verified against the A6 Supabase fixture: PASS.
 
 ## Discoveries made while working
 

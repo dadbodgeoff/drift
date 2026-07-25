@@ -110,6 +110,19 @@ const REPOS = [
 
 const args = process.argv.slice(2);
 const UPDATE = args.includes("--update");
+const flag = (name) => {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+};
+
+/**
+ * T06: evaluate a repo that is not in the suite, for triaging user reports without
+ * committing to the baseline. Results are printed but never compared or written.
+ *
+ *   node scripts/external-eval.mjs --repo-path <dir> --data-module <spec> \
+ *     --data-symbol <sym> --route-dir <dir> [--clean-module <spec>] [--declare <specs>]
+ */
+const AD_HOC = flag("--repo-path");
 const onlyIndex = args.indexOf("--only");
 const only =
   onlyIndex >= 0 && args[onlyIndex + 1]
@@ -181,7 +194,11 @@ function resetTree(root) {
 }
 
 function evaluateRepo(cfg) {
-  const root = join(REPOS_DIR, cfg.name);
+  return evaluateRepoAt(REPOS_DIR, cfg);
+}
+
+function evaluateRepoAt(reposDir, cfg) {
+  const root = join(reposDir, cfg.name);
   const result = { repo: cfg.name };
   if (!existsSync(root)) {
     return { ...result, status: "MISSING_REPO" };
@@ -433,6 +450,29 @@ if (!existsSync(CLI)) {
 if (!existsSync(ENGINE)) {
   console.error(`Missing engine at ${ENGINE}. Run: cargo build --release -p drift-engine`);
   process.exit(1);
+}
+
+if (AD_HOC) {
+  const { basename, dirname: parentOf } = await import("node:path");
+  const adHocCfg = {
+    name: basename(AD_HOC),
+    routeDir: flag("--route-dir") ?? "app/api",
+    dataModule: flag("--data-module") ?? "",
+    dataSymbol: flag("--data-symbol") ?? "db",
+    cleanModule: flag("--clean-module") ?? "next/server",
+    cleanSymbol: "NextResponse",
+    expectForbidden: flag("--data-module") ? [flag("--data-module")] : [],
+    ...(flag("--declare") ? { declaredDataModules: flag("--declare") } : {})
+  };
+  if (!adHocCfg.dataModule) {
+    console.error("--repo-path requires --data-module");
+    process.exit(1);
+  }
+  // evaluateRepo resolves the repo under REPOS_DIR, so point that at the parent.
+  process.env.DRIFT_EVAL_REPOS = parentOf(AD_HOC);
+  const adHocResult = evaluateRepoAt(parentOf(AD_HOC), adHocCfg);
+  console.log(JSON.stringify(adHocResult, null, 2));
+  process.exit(adHocResult.status === "PASS" ? 0 : 1);
 }
 
 const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg) => {
