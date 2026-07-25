@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { extractImports, parseImportNames } from "../src/engine/fact-extraction.js";
+import { isForbiddenImport } from "../src/check/rule-evaluation.js";
 
 /**
  * Regression suite for finding A3/F2/F5 from the 6-repo falsification test.
@@ -105,5 +106,33 @@ describe("extractImports: line numbers match the import keyword", () => {
     );
     expect(fromSchema.map((entry) => entry.name)).toEqual(["messageSchema"]);
     expect(fromSchema[0]!.line).toBe(2);
+  });
+});
+
+describe("isForbiddenImport: segment-boundary matching (B3)", () => {
+  it("matches exactly", () => {
+    expect(isForbiddenImport("@/lib/db", ["@/lib/db"])).toBe(true);
+  });
+
+  it("matches subpaths of a forbidden module", () => {
+    // Real case: cal.com forbids @calcom/prisma, and @calcom/prisma/enums is the same
+    // package's generated surface.
+    expect(isForbiddenImport("@calcom/prisma/enums", ["@calcom/prisma"])).toBe(true);
+    expect(isForbiddenImport("@/lib/db/client", ["@/lib/db"])).toBe(true);
+  });
+
+  it("does not match a merely similar specifier", () => {
+    // The substring bug: these all used to be flagged as direct data access.
+    expect(isForbiddenImport("@/lib/dbutils", ["@/lib/db"])).toBe(false);
+    expect(isForbiddenImport("@/lib/db-legacy", ["@/lib/db"])).toBe(false);
+    expect(isForbiddenImport("@calcom/prismafoo", ["@calcom/prisma"])).toBe(false);
+  });
+
+  it("does not match when the forbidden module is a suffix of another path", () => {
+    expect(isForbiddenImport("@vendor/lib/db", ["lib/db"])).toBe(false);
+  });
+
+  it("matches nothing for an empty list", () => {
+    expect(isForbiddenImport("@/lib/db", [])).toBe(false);
   });
 });

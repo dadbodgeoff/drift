@@ -168,10 +168,22 @@ pub fn classify_findings_against_baseline(
         .collect()
 }
 
-fn is_forbidden_import(import_source: &str, forbidden_imports: &[String]) -> bool {
-    forbidden_imports
-        .iter()
-        .any(|forbidden| import_source == forbidden || import_source.contains(forbidden))
+/// Match a forbidden import specifier.
+///
+/// Exact match, or a prefix that ends on a path-segment boundary. Bare `contains` was
+/// wrong in both directions: forbidding `@/lib/db` also matched `@/lib/dbutils` and
+/// `@scope/lib/db-legacy`, while a subpath like `@calcom/prisma/enums` genuinely should
+/// match a forbidden `@calcom/prisma`. Requiring the following character to be `/`
+/// keeps the subpath behaviour and drops the accidental substring hits.
+///
+/// Mirrored in packages/cli/src/check/rule-evaluation.ts - keep the two in step.
+pub fn is_forbidden_import(import_source: &str, forbidden_imports: &[String]) -> bool {
+    forbidden_imports.iter().any(|forbidden| {
+        import_source == forbidden
+            || import_source
+                .strip_prefix(forbidden.as_str())
+                .is_some_and(|rest| rest.starts_with('/'))
+    })
 }
 
 fn direct_data_access_fingerprint(violation: &DirectDataAccessViolation) -> String {
