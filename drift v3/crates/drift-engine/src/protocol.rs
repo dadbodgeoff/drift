@@ -604,20 +604,42 @@ pub fn engine_stats(
     }
 }
 
-pub fn repo_completeness() -> Vec<EngineCompleteness> {
+/// Completeness for a repo scan.
+///
+/// This previously took no arguments and hardcoded `complete: true, can_block: true`,
+/// so the engine asserted full coverage even when files had been skipped. That is the
+/// same failure shape as reporting a clean check while enforcement is disabled: a
+/// guardrail that overstates what it inspected is worse than one that admits a gap.
+///
+/// `files_skipped_unreadable` is the count of files that could not be read or parsed
+/// during discovery. Any skipped file means syntax facts are incomplete for the repo.
+pub fn repo_completeness(files_skipped_unreadable: usize) -> Vec<EngineCompleteness> {
     let required = vec![
         "file_discovery".to_string(),
         "syntax_facts".to_string(),
         "graph_stream".to_string(),
     ];
+    let complete = files_skipped_unreadable == 0;
+    let (missing_capabilities, reasons) = if complete {
+        (Vec::new(), Vec::new())
+    } else {
+        (
+            vec!["syntax_facts".to_string()],
+            vec![format!(
+                "{files_skipped_unreadable} file(s) could not be read or parsed and were skipped"
+            )],
+        )
+    };
     vec![EngineCompleteness {
         scope: "repo".to_string(),
-        complete: true,
+        complete,
         required_capabilities: required,
-        missing_capabilities: Vec::new(),
+        missing_capabilities,
         truncated: false,
+        // Findings that were produced remain trustworthy, so a partial scan can still
+        // block. What it must not do is claim it saw everything.
         can_block: true,
-        reasons: Vec::new(),
+        reasons,
     }]
 }
 
@@ -653,4 +675,27 @@ pub fn certified_capabilities() -> Vec<String> {
     .into_iter()
     .map(ToOwned::to_owned)
     .collect()
+}
+
+#[cfg(test)]
+mod completeness_tests {
+    use super::repo_completeness;
+
+    /// A scan that skipped files must not claim it saw everything. This previously
+    /// hardcoded `complete: true`, so one unreadable file produced either a hard abort
+    /// or - had the abort been removed alone - a silent claim of full coverage.
+    #[test]
+    fn repo_completeness_reports_skipped_files() {
+        let clean = &repo_completeness(0)[0];
+        assert!(clean.complete);
+        assert!(clean.missing_capabilities.is_empty());
+        assert!(clean.reasons.is_empty());
+
+        let degraded = &repo_completeness(3)[0];
+        assert!(!degraded.complete);
+        assert_eq!(degraded.missing_capabilities, vec!["syntax_facts"]);
+        assert_eq!(degraded.reasons.len(), 1);
+        // Findings that were produced are still trustworthy, so blocking stays available.
+        assert!(degraded.can_block);
+    }
 }

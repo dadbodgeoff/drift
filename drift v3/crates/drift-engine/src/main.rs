@@ -29,6 +29,9 @@ type ScannedFileFacts = (ScannedFile, Vec<EngineFact>);
 struct ScanFilesResult {
     scanned: Vec<ScannedFileFacts>,
     files_reused: usize,
+    /// Files that could not be read or parsed. Surfaced in the scan summary so partial
+    /// coverage is reported rather than silently presented as complete.
+    files_skipped_unreadable: usize,
 }
 
 struct ReuseIndex {
@@ -203,7 +206,7 @@ fn scan_repo(
         framework_capabilities: framework_scan_data.capabilities,
         diagnostics,
         stats,
-        completeness: repo_completeness(),
+        completeness: repo_completeness(scanned.files_skipped_unreadable),
     })
 }
 
@@ -377,7 +380,7 @@ fn stream_scan_repo(
         &ScanStreamEvent::ScanCompleted {
             schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
             stats,
-            completeness: repo_completeness(),
+            completeness: repo_completeness(scanned.files_skipped_unreadable),
         },
     )?;
     stdout.flush()?;
@@ -484,13 +487,28 @@ fn scan_files(
 ) -> EngineResult<ScanFilesResult> {
     let mut result = ScanFilesResult::default();
     for file_path in files {
-        if let Some((file, facts, reused)) =
-            scan_file_with_reuse(repo_root, file_path, diagnostics, reuse)?
-        {
-            if reused {
-                result.files_reused += 1;
+        // Fail closed on the file, not on the repo. A single unreadable or non-UTF-8
+        // file used to propagate its error and abort the entire scan, leaving the repo
+        // with no database and no way to onboard. Record it as a diagnostic, mark the
+        // file unindexed, and keep going: partial coverage that says so beats no
+        // coverage at all, and the gap is visible rather than silent.
+        match scan_file_with_reuse(repo_root, file_path, diagnostics, reuse) {
+            Ok(Some((file, facts, reused))) => {
+                if reused {
+                    result.files_reused += 1;
+                }
+                result.scanned.push((file, facts));
             }
-            result.scanned.push((file, facts));
+            Ok(None) => {}
+            Err(error) => {
+                diagnostics.push(EngineDiagnostic {
+                    severity: "warning".to_string(),
+                    code: "file_unreadable".to_string(),
+                    message: format!("file skipped: {error}"),
+                    file_path: Some(normalize_path(file_path)),
+                });
+                result.files_skipped_unreadable += 1;
+            }
         }
     }
     Ok(result)
