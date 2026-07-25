@@ -8,8 +8,9 @@ import { runFullRepoCheck } from "../check/run-check.js";
 import { createBaselineForFindings } from "../domain/baselines.js";
 import { betaStartResponse } from "../domain/beta-surfaces.js";
 import { materializeRepoContract } from "../domain/contract-materialization.js";
-import { acceptDefaultCandidate } from "../domain/convention-candidates.js";
+import { acceptDefaultCandidate,declaredDataModulesCandidate } from "../domain/convention-candidates.js";
 import { engineProvenance } from "../domain/engine-provenance.js";
+import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
 import { contractIdForRepo } from "../domain/identifiers.js";
 import { runScanRepo } from "../domain/scan-status.js";
 import { currentMachineContractVersions,doctorV1Scope } from "../domain/versions.js";
@@ -23,6 +24,30 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
     databasePath: requiredDatabasePath(parsed)
   });
   const actor = actorFlag(parsed);
+  // A6: `--data-modules` supplies the data layer inference could not name. The declared
+  // candidate is persisted and accepted through the identical path as an inferred one,
+  // so evidence, baselining and contract materialization all behave the same.
+  const declaredModules = (stringFlag(parsed, "data-modules") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const declaredCandidate =
+    declaredModules.length > 0 &&
+    !result.candidates.some((entry) => entry.kind === "api_route_no_direct_data_access")
+      ? declaredDataModulesCandidate({
+          repoId: result.repo.id,
+          scanId: result.scan.id,
+          repoRoot: result.repo.root_path,
+          now,
+          declaredModules,
+          facts: storage.listFacts(result.scan.id)
+        })
+      : undefined;
+  if (declaredCandidate) {
+    storage.upsertConventionCandidate(declaredCandidate);
+    result.candidates.unshift(declaredCandidate);
+    result.summary.candidates_count = result.candidates.length;
+  }
   const candidate = result.candidates[0];
   const accepted = parsed.flags.has("accept-defaults") && candidate
     ? acceptDefaultCandidate(storage, { now, actor }, candidate)
@@ -34,6 +59,31 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
         return contract;
       })
     : undefined;
+  // F4: candidate inference only recognises data layers whose import specifier contains
+  // prisma/database/db/data-access, so a repo using Supabase - or Drizzle behind a module
+  // called `store`, `repository` or `models` - produced zero candidates with the
+  // violation in plain sight, and said nothing about why. A silent zero is
+  // indistinguishable from "this repo has no convention to enforce".
+  //
+  // When no data-access candidate was inferred, fall back to something that does not
+  // depend on local naming: the ORM or driver declared in package.json, traced through
+  // the repo's own imports to the local module that wraps it. Report it as a suggestion
+  // to declare, never as an enforced contract.
+  const inferredDataAccess = result.candidates.some(
+    (candidate) => candidate.kind === "api_route_no_direct_data_access"
+  );
+  const dataLayerDiscovery = inferredDataAccess
+    ? undefined
+    : discoverDataLayer(
+        result.repo.root_path,
+        packageManifestPathsFromFiles(
+          storage.listFileSnapshots(result.repo.id, result.scan.id).map((snapshot) => snapshot.file_path)
+        ),
+        storage
+          .listFacts(result.scan.id, { kind: "import_used" })
+          .map((fact) => ({ file_path: fact.file_path, value: fact.value, name: fact.name }))
+      );
+
   const contractReady = Boolean(accepted || defaultContract || storage.getRepoContract(result.repo.id));
   const initialFindings = accepted
     ? runFullRepoCheck(storage, parsed, result.repo.id, result.scan.completed_at ?? result.scan.started_at)
@@ -77,6 +127,21 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
       baselined_count: baselinedCount,
       candidate_count: result.candidates.length
     },
+    ...(dataLayerDiscovery
+      ? {
+          data_layer_discovery: {
+            inferred_data_access_convention: false,
+            declared_packages: dataLayerDiscovery.declaredPackages,
+            suggestions: dataLayerDiscovery.suggestions,
+            reason:
+              dataLayerDiscovery.suggestions.length > 0
+                ? "no_data_access_candidate_inferred_but_data_layer_found"
+                : dataLayerDiscovery.declaredPackages.length > 0
+                  ? "data_dependency_declared_but_no_local_wrapper_reached_by_routes"
+                  : "no_data_dependency_declared"
+          }
+        }
+      : {}),
     state: {
       repo_id: result.repo.id,
       repo_root: result.repo.root_path,
@@ -104,7 +169,7 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           `  ${candidate.statement}`,
           `  Evidence: ${candidate.scoring.supporting_examples_count} matching import${candidate.scoring.supporting_examples_count === 1 ? "" : "s"}.`
         ].join("\n")
-      : "No enforceable convention candidates found yet.",
+      : noCandidateText(dataLayerDiscovery),
     "",
     "State:",
     `  export DRIFT_DB=${result.database_path}`,
@@ -121,4 +186,59 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
 
 function betaStartEngineSource(engineSource: "rust" | "typescript"): "rust" | "typescript_fallback" {
   return engineSource === "rust" ? "rust" : "typescript_fallback";
+}
+
+/**
+ * What to say when inference produced no enforceable data-access convention.
+ *
+ * "No enforceable convention candidates found yet." was indistinguishable from "this
+ * repo has no convention to enforce", which is what made F4 invisible: a Supabase repo
+ * with a route calling the database directly got the same message as a perfectly layered
+ * one. If a data layer was found structurally, name it and give the command to declare it.
+ */
+function noCandidateText(discovery?: {
+  declaredPackages: string[];
+  suggestions: Array<{ filePath: string; packageName: string; importedAs: string[]; routeImporterCount: number }>;
+}): string {
+  if (!discovery) {
+    return "No enforceable convention candidates found yet.";
+  }
+  if (discovery.suggestions.length > 0) {
+    const lines = [
+      "No data-access convention was inferred, but a data layer was found.",
+      "",
+      "Inference only recognises data modules named like prisma/database/db. These were",
+      "found instead by tracing your declared dependencies through your own imports:"
+    ];
+    for (const suggestion of discovery.suggestions.slice(0, 5)) {
+      lines.push(
+        `  ${suggestion.filePath}  (wraps ${suggestion.packageName}; imported by ${suggestion.routeImporterCount} route${suggestion.routeImporterCount === 1 ? "" : "s"} as ${suggestion.importedAs.join(", ")})`
+      );
+    }
+    lines.push(
+      "",
+      "To enforce layering on it:",
+      `  drift start --repo-root . --accept-defaults --data-modules "${discovery.suggestions
+        .slice(0, 3)
+        .flatMap((suggestion) => suggestion.importedAs)
+        .join(",")}"`
+    );
+    return lines.join("\n");
+  }
+  if (discovery.declaredPackages.length > 0) {
+    return [
+      "No data-access convention was inferred.",
+      "",
+      `Declared data dependencies: ${discovery.declaredPackages.join(", ")}.`,
+      "No local module wrapping them is imported by an API route, so there is nothing to",
+      "enforce yet. Declare one explicitly with --data-modules if that is wrong."
+    ].join("\n");
+  }
+  return [
+    "No enforceable convention candidates found yet.",
+    "",
+    "No database or ORM dependency was found in package.json, so Drift has nothing to",
+    "infer a data-layer convention from. Declare one with --data-modules if it is",
+    "vendored or reached another way."
+  ].join("\n");
 }

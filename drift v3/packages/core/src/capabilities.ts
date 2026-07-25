@@ -127,7 +127,14 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
       "duplicate_helper_detection",
       "mutation_capable_mcp",
       "general_ai_code_review",
-      "broad_language_support"
+      "broad_language_support",
+      // Candidate inference recognises a data layer only when its import specifier
+      // contains prisma/database/db/data-access. Repos naming theirs store, supabase,
+      // repository or models infer nothing, so Drift cannot claim to learn conventions
+      // generally - it bootstraps and enforces a *declared* layering contract. Lift these
+      // when structural construction-site detection replaces the substring test.
+      "automatic_convention_inference_for_any_data_layer",
+      "convention_learning"
     ]
   };
 }

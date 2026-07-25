@@ -1,4 +1,5 @@
 export const VALUE_FLAGS = new Set([
+  "data-modules",
   "action",
   "agent",
   "actor",

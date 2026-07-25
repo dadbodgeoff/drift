@@ -384,6 +384,105 @@ export function exceptionNextCommands(repoId: string): string[] {
   ];
 }
 
+/**
+ * Build a data-access candidate from data modules a human declared explicitly.
+ *
+ * Inference recognises a data layer only if its import specifier contains
+ * prisma/database/db/data-access, so repos that name theirs `store`, `supabase`,
+ * `repository` or `models` produce nothing (finding F4). `--data-modules` lets the human
+ * supply what inference could not see, and this builds the same shape of candidate from
+ * it - real evidence refs from the routes that actually import those specifiers - so it
+ * flows through the identical accept, materialize and baseline path. Nothing here
+ * bypasses human approval; the candidate is still accepted explicitly.
+ *
+ * Returns undefined when no API route imports any declared module, rather than
+ * materializing a contract with no evidence behind it.
+ */
+export function declaredDataModulesCandidate(input: {
+  repoId: string;
+  scanId: string;
+  repoRoot: string;
+  now: string;
+  declaredModules: string[];
+  facts: FactRecord[];
+}): ConventionCandidate | undefined {
+  const declared = [...new Set(input.declaredModules.map((value) => value.trim()).filter(Boolean))];
+  if (declared.length === 0) {
+    return undefined;
+  }
+  const apiRouteFiles = new Set(
+    input.facts
+      .filter((fact) => fact.kind === "file_role_detected" && fact.name === "api_route")
+      .map((fact) => fact.file_path)
+  );
+  const matchesDeclared = (source: string): boolean =>
+    declared.some(
+      (module) => source === module || (source.startsWith(module) && source[module.length] === "/")
+    );
+  const dataImports = input.facts.filter(
+    (fact) =>
+      fact.kind === "import_used" &&
+      apiRouteFiles.has(fact.file_path) &&
+      fact.value &&
+      matchesDeclared(fact.value)
+  );
+  if (dataImports.length === 0) {
+    return undefined;
+  }
+
+  const evidence = evidenceRefsForFacts({
+    repoRoot: input.repoRoot,
+    scanId: input.scanId,
+    kind: "supporting",
+    facts: dataImports
+  });
+  const matcher = {
+    kind: "api_route_no_direct_data_access" as const,
+    forbidden_imports: declared,
+    applies_to_file_roles: ["api_route" as const]
+  };
+  const scope = {
+    path_globs: [...API_ROUTE_SCOPE_GLOBS],
+    file_roles: ["api_route" as const]
+  };
+  const violatingFiles = new Set(dataImports.map((fact) => fact.file_path)).size;
+  const coverageRatio = apiRouteFiles.size === 0 ? 0 : violatingFiles / apiRouteFiles.size;
+  return {
+    id: `candidate_${hashStable(`${input.repoId}:declared_data_modules:${declared.join(",")}`).slice(0, 16)}`,
+    repo_id: input.repoId,
+    scan_id: input.scanId,
+    kind: "api_route_no_direct_data_access",
+    statement: "API routes should not import declared data-access modules directly.",
+    rationale: `Data modules declared by the operator: ${declared.join(", ")}.`,
+    scope,
+    matcher,
+    requires: { forbidden_imports: declared },
+    suggested_severity: "error",
+    // Same coverage-direction rule as inferred candidates (A5): if most routes already
+    // import the data layer directly, that is the local norm and blocking new ones would
+    // reject code written like its neighbours.
+    suggested_enforcement_mode: coverageRatio > 0.5 ? "warn" : "block",
+    enforcement_capability: "deterministic_check",
+    confidence_label: "high",
+    scoring: {
+      supporting_examples_count: dataImports.length,
+      counterexamples_count: 0,
+      scope_files_count: apiRouteFiles.size,
+      coverage_ratio: coverageRatio,
+      heuristic_id: "declared-data-modules-v1"
+    },
+    evidence_refs: evidence,
+    counterexample_refs: [],
+    matcher_fingerprint: hashStable(JSON.stringify(matcher)),
+    scope_fingerprint: hashStable(JSON.stringify(scope)),
+    evidence_fingerprint: hashStable(JSON.stringify(evidence)),
+    required_capabilities: ["syntax_facts", "import_resolution", "route_detection"],
+    reason_not_blocking: "candidate_not_accepted",
+    status: "candidate",
+    created_at: input.now
+  };
+}
+
 export function inferConventionCandidates(input: {
   repoId: string;
   scanId: string;

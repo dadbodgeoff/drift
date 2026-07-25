@@ -17,7 +17,9 @@
     "duplicate_helper_detection",
     "mutation_capable_mcp",
     "general_ai_code_review",
-    "broad_language_support"
+    "broad_language_support",
+    "automatic_convention_inference_for_any_data_layer",
+    "convention_learning"
   ],
   "promotion_rules": {
     "source_of_truth": "packages/core/src/capabilities.ts:createDriftCapabilities",
@@ -59,5 +61,8 @@
       ],
       "fixture": "scripts/run-beta-proof.mjs parser-gap quality proof plus test/e2e/fixture-matrix.test.ts realistic Next/Node fixtures"
     }
+  },
+  "claim_notes": {
+    "automatic_convention_inference_for_any_data_layer": "Candidate inference recognises a data layer only when its import specifier contains prisma, database, db, or data-access (is_data_access_source in crates/drift-engine/src/candidate_command.rs). Repos naming theirs store/supabase/repository/models yield zero inferred candidates. Drift reports this explicitly and suggests the module found by tracing package.json dependencies through repo imports; the human declares it with --data-modules. Claimable capability is therefore 'bootstraps and enforces a declared layering contract with per-line evidence', not 'learns your conventions'. Lift when structural construction-site detection lands."
   }
 }
