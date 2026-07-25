@@ -3,12 +3,12 @@
 | Outcome | Count |
 |---|---|
 | Done | 7 |
-| Done (partial) | 0 |
+| Done (partial) | 1 |
 | Premise false (no change needed) | 0 |
-| Blocked — needs discussion | 1 |
+| Blocked — needs discussion | 2 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 0 |
-| Discoveries | 2 |
+| Discoveries | 3 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -20,6 +20,7 @@
 - **T04** Assert performance envelopes in the harness — max_onboard_seconds = 3x baseline with a 30s floor, soft-asserted so upstream repo growth does not cause flakes. Counts stay volatile.
 - **T05** Record the harness own failure modes as tests — 6 tests pinning resetTree staged-file removal, no-commit-in-eval-repos, /dev/null added-file diff shape (which F7 depends on), volatile-field exclusion, every behavioural baseline field, and the presence of a whitelist-independent repo with the F4 gap exercised. Wired into verify:ci as test:harness.
 - **T06** Make the harness runnable against an arbitrary repo path — --repo-path with --data-module/--data-symbol/--route-dir/--clean-module/--declare. Prints one result row, never compares to or writes the baseline. Verified against the A6 Supabase fixture: PASS.
+- **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 
 ## Discoveries made while working
 
@@ -27,6 +28,8 @@
   - evidence: midday: data_layer_discovery present in --json but absent from text output because 3 non-data-access candidates exist, so noCandidateText() is never reached. The A6 fixture had zero candidates of any kind, so it passed.
 - **T01b** A6 discovery cannot resolve monorepo workspace package imports
   - evidence: midday: declared @supabase/supabase-js and @supabase/ssr found, but reason=data_dependency_declared_but_no_local_wrapper_reached_by_routes. Routes import @midday/supabase/server; the wrapper lives at packages/supabase/src/... specifierPointsAt matches specifier tails against file paths, which handles @/lib/store but not workspace package names.
+- **T07c** An inference heuristic hardcodes dub auth helper name, and it is load-bearing
+  - evidence: candidate_command.rs:1035 matches!(lower, ... | "withworkspace"). None of the surrounding broad conditions match withWorkspace: it does not start with get and contains none of session/login/authenticate/authguard. So the literal is required for the match.
 
 ## Discussion agenda
 
@@ -41,4 +44,11 @@ recommendation. Work reverted; the tree is green.
 - **diagnosis:** Isolated to declaredDataModulesCandidate (A6), not the engine: enforcementResultFor and enforcement_mode_from_str both map block correctly, and every inferred-candidate repo matches. Not reproducible by hand, which suggests something about the harness sequence (it injects a clean control route alongside the bad one, and runs a separate F4 probe first) interacts with the declared path.
 - **needs:** A focused investigation with the declared path instrumented at the point the engine payload is built. This is an F3-class silent failure - a block-mode contract that returns pass - so it should block beta. enforcement_matches_mode is now recorded per repo in the harness baseline; promote it to a hard assertion once fixed.
 - **reverted to:** `n/a - diagnostic field added, no behaviour change reverted`
+
+### T07b — Exercise dominance/branch/tenant claims end-to-end with a hand-written auth contract
+
+- **reason:** scope_too_large
+- **attempted:** Scanned test/fixtures/security-auth-branch-bypass directly; only data_operation_detected was emitted, no AuthGuardCalled, because guard facts require an accepted convention naming the helper.
+- **evidence:** security-auth-branch-bypass fixture exists for the exact bypass case (guard on line 6 inside a branch, sink on line 8 in the else) and NO test in the repo references it. Line 6 < line 8, so naive dominance marks the line-8 sink protected.
+- **needs:** A hand-written contract declaring requireUser as the auth helper, plus fixtures for guard-in-dead-branch, guard-in-unrelated-function, else-if chain, ternary guard, and destructured tenant id. Split out because it is a days-scale task, not a verification step.
 
