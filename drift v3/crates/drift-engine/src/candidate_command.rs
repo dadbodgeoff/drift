@@ -258,7 +258,18 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
     );
     stats.graph_nodes = request.graph.graph_nodes.len();
     stats.graph_edges = request.graph.graph_edges.len();
-    stats.capabilities = capability_stats(&["candidate_inference"], &[]);
+    let data_access_candidate_found = candidates
+        .iter()
+        .any(|candidate| candidate.kind == "api_route_no_direct_data_access");
+    let inference_complete = data_access_candidate_found || scope_file_count == 0;
+    stats.capabilities = capability_stats(
+        &["candidate_inference"],
+        if inference_complete {
+            &[]
+        } else {
+            &["data_access_inference"]
+        },
+    );
 
     CandidateResult {
         schema_version: ENGINE_CANDIDATES_RESULT_SCHEMA_VERSION,
