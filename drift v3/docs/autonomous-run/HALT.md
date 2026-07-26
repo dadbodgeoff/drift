@@ -2,7 +2,7 @@
 
 **Tree state:** green. External suite **7/7**, TS suites green, Rust **23** suites green.
 **Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 33 tasks (26 done, 5 partial, 2 premise-false). 5 blocked, 6 discoveries.
+**Completed:** 35 tasks (27 done, 6 partial, 2 premise-false). 5 blocked, 6 discoveries.
 
 ## Resume
 
@@ -62,6 +62,8 @@ real overclaim.
 | **T29** | Context egress pinned with 15 tests on the exact shapes F9 let through. The canary test alone would have misled: those files were never indexed because only TS/JS is, which is incidental, not the policy. |
 | **T19** | Premise false - foreign contracts *are* refused. But see T19b. |
 | **T22, T18** | Attempted, reverted, logged with root cause. |
+| **T27** | Pinned the contract fields the engine deliberately ignores. B2's premise was false; the real risk was that the CLI-side layering was undocumented and unpinned, so deleting it would silently stop honouring exceptions and waivers while checks still passed. |
+| **T28** | **Seven** contract fields are accepted, stored, and read by nothing - including `enforcement_policy`, whose name reads as the control for how enforcement behaves. Three were found by the tripwire test, not by reading the interface. |
 
 ## Discussion agenda — read `SUMMARY.md` for full evidence
 
@@ -104,7 +106,7 @@ real overclaim.
 
 ## Next, in order
 
-**T25/T26** security gating and literal removal — scoped by T07, and the largest remaining
+**T25/T26** security gating and literal removal (next up) — scoped by T07, and the largest remaining
 correctness item (12 `can_block: true` sites plus vocabulary and fixture literals). **T27/T28**
 contract-field enforcement mapping. **T31** claims ↔ behaviour reconciliation. **T42/T43** scaling
 probes (need a ~20k-file repo). **T44** hooks pack — now unblocked by T17. **T46** `drift prepare`
