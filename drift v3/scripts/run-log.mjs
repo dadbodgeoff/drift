@@ -152,6 +152,39 @@ function render() {
   );
 }
 
+/**
+ * Next actionable task, for a self-terminating loop.
+ *
+ * A task is settled when it is DONE, DONE_PARTIAL, PREMISE_FALSE, BLOCKED or DEFERRED_HUMAN -
+ * finished, or recorded with a reason it was not. Exits 1 when nothing actionable remains,
+ * which is the loop's stop signal.
+ */
+function next() {
+  const settled = new Set(
+    entries()
+      .filter((entry) =>
+        ["DONE", "DONE_PARTIAL", "PREMISE_FALSE", "BLOCKED", "DEFERRED_HUMAN"].includes(
+          entry.status
+        )
+      )
+      .map((entry) => entry.task)
+  );
+
+  const planPath = join(DIR, "PLAN.md");
+  const plan = existsSync(planPath) ? readFileSync(planPath, "utf8") : "";
+  const ids = [...plan.matchAll(/^### (T\d+[a-z]?) /gm)].map((match) => match[1]);
+  const remaining = ids.filter((id) => !settled.has(id));
+
+  if (remaining.length === 0) {
+    console.log("no actionable tasks remain");
+    process.exit(1);
+  }
+  console.log(remaining[0]);
+  const preview = remaining.slice(0, 8).join(", ");
+  console.log(`remaining: ${remaining.length} (${preview}${remaining.length > 8 ? ", ..." : ""})`);
+  process.exit(0);
+}
+
 function status() {
   const all = entries();
   const counts = all.reduce((acc, entry) => {
@@ -169,12 +202,13 @@ const [command, argument] = process.argv.slice(2);
 if (command === "append") append(argument);
 else if (command === "render") render();
 else if (command === "status") status();
+else if (command === "next") next();
 else if (command === "done") {
   const hit = entries().some(
     (entry) => entry.task === argument && (entry.status === "DONE" || entry.status === "PREMISE_FALSE")
   );
   process.exit(hit ? 0 : 1);
 } else {
-  console.error("usage: run-log.mjs append '<json>' | render | status | done <TASK>");
+  console.error("usage: run-log.mjs append '<json>' | render | status | next | done <TASK>");
   process.exit(1);
 }

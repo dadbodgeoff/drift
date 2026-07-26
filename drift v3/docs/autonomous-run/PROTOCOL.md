@@ -121,6 +121,33 @@ resume command, and stop. Never push, never publish.
 `BASELINE_CHANGE` naming each field that moved and why. An unexplained baseline move is treated as a
 regression: revert and log BLOCKED.
 
+## 6b. Running this as a loop
+
+The plan spans more work than one context window holds, so it is designed to be driven by
+`/loop`. Each firing resumes from the log rather than from memory:
+
+```
+node scripts/run-log.mjs next     # prints the next unsettled task id, or exits 1 when none remain
+```
+
+A task is **settled** when it is `DONE`, `DONE_PARTIAL`, `PREMISE_FALSE`, `BLOCKED` or
+`DEFERRED_HUMAN` - finished, or recorded with a reason it was not. `next` exiting 1 is the loop's
+stop signal: at that point every task in PLAN.md has an outcome, and `SUMMARY.md` holds the
+discussion agenda.
+
+Per iteration:
+
+1. `df -h ~` - halt if under 5 GB (see the halt table).
+2. `pnpm build && cargo build --release -p drift-engine`.
+3. `pnpm eval:external` - if it fails on unmodified code, the oracle is unreliable: halt.
+4. `node scripts/run-log.mjs next` - take that task.
+5. Work it, verify at the right tier, commit, append to the log, commit the log.
+6. Repeat until context runs low, then write HALT.md and stop cleanly.
+
+**"All complete" cannot mean zero deferrals.** Nine tasks are human-gated by design - anything
+that publishes, pushes, or posts. Those will always come back `DEFERRED_HUMAN`, and that is the
+correct terminal state for them, not a failure.
+
 ## 7. End-of-run report
 
 Regenerate `docs/autonomous-run/SUMMARY.md` with: tasks done, partial, blocked (grouped by reason),
