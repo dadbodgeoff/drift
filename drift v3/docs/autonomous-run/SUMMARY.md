@@ -2,9 +2,9 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 21 |
+| Done | 23 |
 | Done (partial) | 4 |
-| Premise false (no change needed) | 0 |
+| Premise false (no change needed) | 1 |
 | Blocked — needs discussion | 2 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
@@ -34,10 +34,17 @@
 - **T20** Deleted-file handling in check — Verified on formbricks: deleting the baselined violating route yields 0 findings, the path is recorded in skipped_deleted_files, deleted_file_count is 1, and no orphaned or re-reported finding appears. Behaviour was already correct; now pinned by tests.
 - **T21** Renamed/moved route handling — The concern did NOT materialise. I expected a git rename to present as delete+add, which under A5 block-new would punish a refactor by treating a moved legacy violation as new code.
 - **T30** Define the FP metric in the DoD — Definition fixed in PLAN.md: type-only usage counts as a false positive; a runtime import of the data package that is not itself a query (the Prisma error-namespace case) does not, and is documented as policy. Enforcement is the T03 per-repo negative control, not a rate threshold, because after T12 the engine cannot emit a type-only finding by construction.
+- **T72** Document the enforcement model honestly — docs/reference/enforcement.md explains why the same violation blocks on formbricks/cal.com/openstatus and only warns on taxonomy/dub/papermark, with the real ratios. Without that explanation the split reads as inconsistency; it is the coverage-direction gate refusing to reject code written like its neighbours.
+- **T73** Exit-code and JSON contract reference — Exit codes now in drift --help and in docs/reference/enforcement.md, plus the three fields that get conflated: check.status (did anything blocking happen), finding.enforcement_result (what would this convention do), summary.blocking_count (how many actually block). Documents that enforcement_result block with status pass is not a contradiction, the diff-status semantics including added/renamed/deleted files, the baseline, and how to read completeness.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
 - **T63** Pin version-constant coupling _(partial)_ — Four TypeScript constants plus the Rust DRIFT_ENGINE_VERSION all read 0.1.0 independently, which makes them look interchangeable. T15 proved they are not: incremental reuse needs the engine version and no TypeScript constant tracks it, so the version had to be threaded from the engine scan_started event. Tests now pin the coupling to package.json and Cargo.toml so a bump cannot silently desynchronise them. Genuinely single-sourcing (generate from one file) is still open.
+
+## Premise false — deliberately no change
+
+- **T70** Docs audit against A5 behaviour changes
+  - Expected docs describing exit 1 for a blocked check to be wrong after A5. They were not: the README and docs never documented drift check exit codes at all, and the only exit-1 references are about the CI gate script. Nothing became stale. The real gap is the inverse - exit codes are now a documented contract with nothing documenting them - which is T73, done alongside.
 
 ## Discoveries made while working
 
