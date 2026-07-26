@@ -126,6 +126,25 @@ export class SqliteDriftStorage {
     `);
 
     const applied = new Set(this.getAppliedMigrations());
+
+    // Refuse a database written by a newer Drift.
+    //
+    // Migrations are tracked by id and applied forward-only, which handles upgrades correctly.
+    // The reverse was unguarded: an older build opening a newer database sees only ids it does
+    // not recognise, finds all of *its* migrations already applied, applies nothing, and then
+    // operates against a schema containing tables and columns it knows nothing about. That is a
+    // silent wrong answer rather than a failure, so it fails closed instead.
+    const known = new Set(MIGRATIONS.map((migration) => migration.id));
+    const unknown = [...applied].filter((id) => !known.has(id)).sort();
+    if (unknown.length > 0) {
+      throw new Error(
+        `Unsupported local state schema: this database was written by a newer version of Drift ` +
+          `(unrecognised migrations: ${unknown.slice(0, 3).join(", ")}` +
+          `${unknown.length > 3 ? `, +${unknown.length - 3} more` : ""}). ` +
+          `Upgrade Drift, or point --db at a different path.`
+      );
+    }
+
     const applyMigration = this.db.prepare(
       "INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)"
     );

@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 23 |
+| Done | 24 |
 | Done (partial) | 4 |
 | Premise false (no change needed) | 1 |
 | Blocked — needs discussion | 3 |
@@ -36,6 +36,7 @@
 - **T30** Define the FP metric in the DoD — Definition fixed in PLAN.md: type-only usage counts as a false positive; a runtime import of the data package that is not itself a query (the Prisma error-namespace case) does not, and is documented as policy. Enforcement is the T03 per-repo negative control, not a rate threshold, because after T12 the engine cannot emit a type-only finding by construction.
 - **T72** Document the enforcement model honestly — docs/reference/enforcement.md explains why the same violation blocks on formbricks/cal.com/openstatus and only warns on taxonomy/dub/papermark, with the real ratios. Without that explanation the split reads as inconsistency; it is the coverage-direction gate refusing to reject code written like its neighbours.
 - **T73** Exit-code and JSON contract reference — Exit codes now in drift --help and in docs/reference/enforcement.md, plus the three fields that get conflated: check.status (did anything blocking happen), finding.enforcement_result (what would this convention do), summary.blocking_count (how many actually block). Documents that enforcement_result block with status pass is not a contradiction, the diff-status semantics including added/renamed/deleted files, the baseline, and how to read completeness.
+- **T16** Storage migration path for existing users — Forward migration verified: id-based, forward-only, idempotent, and a database that stopped at migration 8 upgrades to all 27 with data intact. Ids are asserted unique, since they are the upgrade key and a duplicate or rename would silently skip a migration on an existing install.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
