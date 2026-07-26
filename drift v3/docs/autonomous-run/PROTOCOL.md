@@ -97,14 +97,32 @@ Each must attempt self-remediation first.
 
 | Condition | Remediate | If remediation fails |
 |---|---|---|
-| Disk free < 5 GB | `rm -rf ~/.drift`, `cargo clean` on debug artifacts, clear `/tmp/drift-*` | **HALT** — low disk produces false failures, so further results are untrustworthy |
-| Cannot restore a green tree | `git reset --hard` to last green, `git clean -fd` | **HALT** — everything downstream is unreliable |
+| Disk free < 6 GB | **`./scripts/reclaim-disk.sh`** — four tiers of regenerable artifacts only, cheapest first. Not a halt condition: reclaim and carry on. | Only if every tier ran and space is still short. Report what is left rather than deleting the pinned evaluation repos, since re-cloning silently changes what the suite measures. |
+| Cannot restore a green tree | `git reset --hard` to last green, `git clean -fd` | **HALT** — genuinely unrecoverable: without a known-good baseline nothing downstream can be trusted |
 | Oracle is lying: `pnpm eval:external` fails on the last known-green commit | re-run once; rebuild engine + TS | **HALT** — verification is meaningless, so no task can be validated |
 | 5 consecutive BLOCKED tasks | none | **HALT** — likely systemic, not per-task |
 | Context exhausted | **first: switch to small tasks.** Re-sort the remaining plan by size and take contained ones (single-file edits, harness assertions, doc corrections, prose deliverables). Only halt when even a small task will not fit. | **HALT cleanly** with the log committed |
 
 On HALT: commit the log, write `docs/autonomous-run/HALT.md` explaining the condition and the exact
 resume command, and stop. Never push, never publish.
+
+### Bias strongly toward continuing
+
+Halting costs the rest of the window, so the bar is "this cannot be recovered", not "this is
+inconvenient". Exhaust the remedies first:
+
+- **Out of space** → `./scripts/reclaim-disk.sh`, then carry on. Never a halt.
+- **Missing release binary** → `cargo build --release -p drift-engine`. This is the single most
+  common cause of a confusing failure, because `cargo test` builds debug only.
+- **Stale `dist/`** → `pnpm build`.
+- **A test fails for an unrelated reason** → re-run it in isolation before believing it. Four
+  false failures in this run came from low disk alone and all passed on retry with no code change.
+- **A task cannot be finished** → revert it, log BLOCKED with evidence, take the next one. This is
+  the normal path, not an exception.
+
+Only three things genuinely stop the run: an unrecoverable git tree, an oracle that fails on
+unmodified code (verification would be meaningless), and context exhaustion - which is a clean
+handoff via HALT.md rather than a failure, and which the loop resumes from.
 
 ## 5. Never attempt unattended, regardless of status
 
