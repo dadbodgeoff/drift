@@ -109,6 +109,12 @@ export class SqliteDriftStorage {
     this.db = new Database(options.databasePath);
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
+    // Three processes can legitimately hold this database at once: an edit-time hook running
+    // `drift check`, a developer running the CLI, and an agent holding the MCP server open. WAL
+    // keeps readers from blocking the writer, but two writers still collide - and without a
+    // busy timeout SQLite fails immediately with SQLITE_BUSY, which would surface to the user
+    // as a crash rather than a brief wait. Five seconds comfortably covers a single-file check.
+    this.db.pragma("busy_timeout = 5000");
   }
 
   migrate(): void {
