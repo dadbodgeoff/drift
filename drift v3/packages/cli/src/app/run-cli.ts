@@ -1,4 +1,5 @@
 import { openDriftStorage } from "@drift/storage";
+import { isDriftError } from "./drift-error.js";
 import { createAgentEnvelopeV2 } from "@drift/core";
 import { unknownCommandError,validateCommandShape } from "../args/command-shape.js";
 import { helpText,isHelpRequest,isVersionRequest } from "../args/help.js";
@@ -96,9 +97,9 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CLI error.";
-    const failure = operationalFailureForMessage(message);
+    const failure = operationalFailureFor(error, message);
     if (wantsJson) {
-      const staleRefusal = message.startsWith("Scan is stale");
+      const staleRefusal = failure.code === "stale_scan";
       return {
         exitCode: 1,
         stdout: `${JSON.stringify({
@@ -134,6 +135,29 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       stderr: `${message}\n`
     };
   }
+}
+
+/**
+ * Classify a thrown value.
+ *
+ * Prefers a `DriftError`'s own code over matching on message text. The string-matching branches
+ * below remain as a fallback for throw sites not yet migrated - they are the reason rewording an
+ * error message could previously change exit-code behaviour, since the stale-scan branch maps to
+ * a fail-closed refusal.
+ */
+function operationalFailureFor(error: unknown, message: string) {
+  if (isDriftError(error)) {
+    return {
+      code: error.code,
+      surface: "cli" as const,
+      severity: "error" as const,
+      safe_to_retry: error.safeToRetry,
+      user_action: error.userAction,
+      recovery_commands: error.recoveryCommands,
+      diagnostics: [message]
+    };
+  }
+  return operationalFailureForMessage(message);
 }
 
 function operationalFailureForMessage(message: string): {

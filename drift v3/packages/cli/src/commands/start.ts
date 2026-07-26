@@ -13,6 +13,7 @@ import { engineProvenance } from "../domain/engine-provenance.js";
 import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
 import { contractIdForRepo } from "../domain/identifiers.js";
 import { checkDiskSpace,insufficientDiskMessage } from "../domain/disk-space.js";
+import { DriftError } from "../app/drift-error.js";
 import { dirname } from "node:path";
 import { runScanRepo } from "../domain/scan-status.js";
 import { currentMachineContractVersions,doctorV1Scope } from "../domain/versions.js";
@@ -27,10 +28,14 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   const databasePath = requiredDatabasePath(parsed);
   const diskSpace = checkDiskSpace(databasePath);
   if (!diskSpace.sufficient) {
-    return {
-      exitCode: 3,
-      payload: insufficientDiskMessage(diskSpace, dirname(databasePath))
-    };
+    // Typed so the failure classifier reports insufficient_disk rather than inferring a code
+    // from prose. This is a refusal, not an error: nothing is claimed about the repo.
+    throw new DriftError(insufficientDiskMessage(diskSpace, dirname(databasePath)), {
+      code: "insufficient_disk",
+      userAction: "Free disk space for Drift's local state, then retry.",
+      recoveryCommands: ["drift doctor --repo-root . --json"],
+      safeToRetry: true
+    });
   }
   const result = await runScanRepo(storage, {
     now,

@@ -6,6 +6,7 @@ import {
   type RepoRecord
 } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
+import { DriftError } from "../app/drift-error.js";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync,lstatSync,mkdirSync,readdirSync,readFileSync,statSync } from "node:fs";
@@ -16,7 +17,14 @@ export function requiredRepoContract(storage: SqliteDriftStorage, repoId: string
   requiredRepo(storage, repoId);
   const contract = storage.getRepoContract(repoId);
   if (!contract) {
-    throw new Error(`No repo contract exists for ${repoId}.`);
+    throw new DriftError(`No repo contract exists for ${repoId}.`, {
+      code: "missing_contract",
+      userAction: "Accept or import a repo contract before running contract-backed enforcement.",
+      recoveryCommands: [
+        "drift conventions list --status candidate --json",
+        "drift contract import <contract.json> --dry-run --json"
+      ]
+    });
   }
   return contract;
 }

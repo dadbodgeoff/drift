@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 24 |
-| Done (partial) | 4 |
+| Done (partial) | 5 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 5 |
 | Skipped — dependency blocked | 0 |
@@ -41,6 +41,7 @@
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
 - **T63** Pin version-constant coupling _(partial)_ — Four TypeScript constants plus the Rust DRIFT_ENGINE_VERSION all read 0.1.0 independently, which makes them look interchangeable. T15 proved they are not: incremental reuse needs the engine version and no TypeScript constant tracks it, so the version had to be threaded from the engine scan_started event. Tests now pin the coupling to package.json and Cargo.toml so a bump cannot silently desynchronise them. Genuinely single-sourcing (generate from one file) is still open.
+- **T23** Typed errors for user-facing failures _(partial)_ — Added DriftError carrying its own failure code, user action, recovery commands and retryability. The top-level classifier now reads error.code first and falls back to the existing string matching, so this is incremental rather than a rewrite and no throw site breaks. Migrated the two highest-value sites: missing_contract in repo-paths.ts and insufficient_disk in start.ts (which also converts the disk refusal from a hand-built exit-3 payload into a classified throw).
 
 ## Premise false — deliberately no change
 
