@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 27 |
-| Done (partial) | 5 |
+| Done (partial) | 6 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 5 |
 | Skipped — dependency blocked | 0 |
@@ -45,6 +45,7 @@
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
 - **T63** Pin version-constant coupling _(partial)_ — Four TypeScript constants plus the Rust DRIFT_ENGINE_VERSION all read 0.1.0 independently, which makes them look interchangeable. T15 proved they are not: incremental reuse needs the engine version and no TypeScript constant tracks it, so the version had to be threaded from the engine scan_started event. Tests now pin the coupling to package.json and Cargo.toml so a bump cannot silently desynchronise them. Genuinely single-sourcing (generate from one file) is still open.
 - **T23** Typed errors for user-facing failures _(partial)_ — Added DriftError carrying its own failure code, user action, recovery commands and retryability. The top-level classifier now reads error.code first and falls back to the existing string matching, so this is incremental rather than a rewrite and no throw site breaks. Migrated the two highest-value sites: missing_contract in repo-paths.ts and insufficient_disk in start.ts (which also converts the disk refusal from a hand-built exit-3 payload into a classified throw).
+- **T28** Map every contract field to its enforcement site _(partial)_ — Mapped all RepoContract fields. 13 are genuinely enforced. SEVEN are declared in the schema and read by nothing: enforcement_policy, active_convention_rule_ids, beta_claim_profile, active_semantic_capability_ids, architecture_contract_id, architecture_contract_fingerprint, semantic_capability_contract_version. layer_architecture is a near-miss - written by contract-materialization but never read back.
 
 ## Premise false — deliberately no change
 
