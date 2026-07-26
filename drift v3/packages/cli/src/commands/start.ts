@@ -12,11 +12,26 @@ import { acceptDefaultCandidate,declaredDataModulesCandidate } from "../domain/c
 import { engineProvenance } from "../domain/engine-provenance.js";
 import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
 import { contractIdForRepo } from "../domain/identifiers.js";
+import { checkDiskSpace,insufficientDiskMessage } from "../domain/disk-space.js";
+import { dirname } from "node:path";
 import { runScanRepo } from "../domain/scan-status.js";
 import { currentMachineContractVersions,doctorV1Scope } from "../domain/versions.js";
 
 export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+
+  // Refuse before scanning rather than failing mid-write. Running out of space during a scan
+  // leaves a partially written database and surfaces a raw SQLite error, and subsequent
+  // operations then report failures unrelated to the repo. Exit 3 is the fail-closed refusal
+  // code: enforcement could not be performed, so nothing is claimed about the repo.
+  const databasePath = requiredDatabasePath(parsed);
+  const diskSpace = checkDiskSpace(databasePath);
+  if (!diskSpace.sufficient) {
+    return {
+      exitCode: 3,
+      payload: insufficientDiskMessage(diskSpace, dirname(databasePath))
+    };
+  }
   const result = await runScanRepo(storage, {
     now,
     repoRoot: resolveRepoRoot(parsed),

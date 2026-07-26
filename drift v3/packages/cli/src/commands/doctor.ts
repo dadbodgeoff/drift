@@ -7,6 +7,7 @@ import { doctorNextCommands } from "../args/doctor-commands.js";
 import { stringFlag } from "../args/flag-readers.js";
 import { defaultDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
 import { betaDoctorResponse } from "../domain/beta-surfaces.js";
+import { checkDiskSpace } from "../domain/disk-space.js";
 import { engineProvenance,type EngineProvenance } from "../domain/engine-provenance.js";
 import { contractFingerprint,repoIdForRoot } from "../domain/identifiers.js";
 import { detectPackageManager,detectWorkspace,isApiRoutePath } from "../domain/repo-paths.js";
@@ -83,6 +84,7 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
     : repoExists
       ? `${repoRoot} is not a directory`
       : `${repoRoot} does not exist`;
+  const diskSpace = checkDiskSpace(databasePath, files.length);
   const checks: DoctorCheck[] = [
     {
       id: "repo_root",
@@ -133,6 +135,17 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       label: "Local state",
       status: stateExists ? "ok" : "warn",
       detail: stateExists ? `existing database at ${databasePath}` : `will create ${databasePath}`
+    },
+    {
+      // Drift's per-repo state runs to roughly 1 GB for a 5,000-file monorepo, and exhausting
+      // the disk mid-scan does not fail cleanly: SQLite reports a raw "database or disk is
+      // full", the database is left partially written, and later operations report failures
+      // unrelated to the repo. Surfacing the estimate here means a user finds out before a
+      // long scan rather than during one.
+      id: "disk_space",
+      label: "Disk space",
+      status: diskSpace.sufficient ? "ok" : "fail",
+      detail: diskSpace.detail
     },
     {
       id: "drift_state",
