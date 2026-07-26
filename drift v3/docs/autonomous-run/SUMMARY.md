@@ -2,13 +2,13 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 12 |
-| Done (partial) | 2 |
+| Done | 14 |
+| Done (partial) | 3 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
-| Discoveries | 5 |
+| Discoveries | 6 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -25,8 +25,11 @@
 - **T11** Audit for other unconditional capability assertions — 22 sites classified in docs/architecture/capability-assertion-audit.md. One real overclaim fixed: candidate inference reported complete:true unconditionally while deciding the data layer by five-substring match - on midday it finds nothing and claimed full coverage. Now derived from whether a data-access candidate was produced, with missing_capabilities and a reason pointing at --data-modules.
 - **T11b** Invert the factgraph fail-open completeness default and wire the engine measurement through — Both factgraph completeness fallbacks now default to complete:false with missing_capabilities [completeness_not_reported] and a reason, instead of claiming full coverage plus blocking authority when a caller omits the measurement.
 - **T12** Symbol-level type classification: drop imports used only in type positions — dub baseline findings 458 -> 417; type-only false-positive rate 8.5% -> 3.1%, with real headroom under the <10% gate. Zero reconciliation gaps.
+- **T13** Reduce whitelist over-matching — cal.com forbidden_imports 6 -> 1: exactly ["@calcom/prisma"], its real data layer. openstatus 4 -> 3, keeping @openstatus/db/src/schema.
+- **T14** Assert exact forbidden_imports sets — expectForbiddenExact pins the full set for taxonomy, formbricks, calcom and openstatus; expectForbidden alone only proved the real data layer was present, so cal.com passed while carrying four wrong entries out of six. dub/papermark/midday left as null pending a decision on their expected exact sets.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
+- **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
 
 ## Discoveries made while working
 
@@ -40,6 +43,8 @@
   - evidence: Free space hit 1.8GB. pnpm -r test reported 2 failures (doctor state, version metadata) and the external suite reported "database or disk is full" for formbricks and calcom. All passed on retry after remediation with no code change.
 - **T-stale-binary** Verified against a stale release binary after a Rust source fix
   - evidence: Corrected the T12 retain predicate, ran cargo test (debug) which passed, then measured against target/release which still held the inverted logic - producing a misleading 8.4% result and 3 spurious reconciliation gaps. Rebuilding release gave the true 3.1%.
+- **T13b** Boundary rule drops ../../lib/prismaClient, a legitimate client specifier
+  - evidence: cal.com previously listed ../../lib/prismaClient; the word-boundary rule drops it because "prisma" is followed by "C" and "client" is preceded by "prisma", so neither token sits at a boundary in the lowercased string.
 
 ## Deferred — human-gated by design
 

@@ -294,14 +294,74 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
     }
 }
 
+/// Surfaces of a data package that are types, enums or schemas rather than a client.
+///
+/// Importing `@calcom/prisma/enums` gives you generated enum values; importing
+/// `@calcom/prisma/zod-utils` gives you validation schemas. Neither is a database client, and
+/// treating them as one put four wrong entries in cal.com's learned contract out of six.
+///
+/// `/schema` is deliberately absent. In a Drizzle repo the schema module *is* part of the data
+/// layer - `@openstatus/db/src/schema` is imported at runtime and passed to queries - so
+/// excluding it would trade these false positives for a false negative on a real data layer.
+const DATA_LAYER_TYPE_SURFACES: [&str; 4] = ["/enums", "/zod-utils", "/types", "/constants"];
+
+/// True when a data-layer name occurs at a path or word boundary rather than mid-identifier.
+///
+/// `is_data_access_source` matched raw substrings, so `@calcom/lib/isPrismaObj` - a type-guard
+/// utility - matched "prisma" inside a camelCase identifier and was recorded as a database
+/// client. This is the same boundary principle applied to forbidden-import matching in B3.
+fn contains_data_layer_token(lower: &str, token: &str) -> bool {
+    let mut from = 0;
+    while let Some(offset) = lower[from..].find(token) {
+        let start = from + offset;
+        let end = start + token.len();
+        let before_ok = start == 0
+            || !lower[..start]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric());
+        let after_ok = end == lower.len()
+            || !lower[end..]
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_alphanumeric());
+        if before_ok && after_ok {
+            return true;
+        }
+        from = end;
+    }
+    false
+}
+
 fn is_data_access_source(source: &str) -> bool {
     let lower = source.to_ascii_lowercase();
-    !lower.contains("@prisma/client/runtime")
-        && (lower.contains("prisma")
-            || lower.contains("database")
-            || lower.contains("/db")
-            || lower.ends_with("db")
-            || lower.contains("data-access"))
+    if lower.contains("@prisma/client/runtime") {
+        return false;
+    }
+    // Compare with any file extension removed, so this catches both the import specifier
+    // form (`@calcom/prisma/zod-utils`) and the resolved file form
+    // (`packages/prisma/zod-utils.ts`).
+    let without_extension = lower
+        .rsplit_once('.')
+        .map(|(stem, ext)| {
+            if matches!(ext, "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs") {
+                stem
+            } else {
+                lower.as_str()
+            }
+        })
+        .unwrap_or(lower.as_str());
+    if DATA_LAYER_TYPE_SURFACES
+        .iter()
+        .any(|surface| without_extension.ends_with(surface))
+    {
+        return false;
+    }
+    contains_data_layer_token(&lower, "prisma")
+        || contains_data_layer_token(&lower, "database")
+        || lower.contains("/db")
+        || lower.ends_with("db")
+        || lower.contains("data-access")
 }
 
 fn is_next_app_tree_path(file_path: &str) -> bool {
@@ -320,9 +380,13 @@ fn imports_data_access_as_data_client(file_path: &str) -> bool {
         && !lower.contains("/payment")
         && !lower.contains("/session")
         && !lower.contains("/stripe")
+        // `client` must sit at a path or word boundary. Matching it as a bare substring made
+        // `videoClient.ts` - a conferencing service that happens to query the database - read
+        // as a database client, which inverts the convention: a route importing a service that
+        // owns its data access is delegating correctly. `lib/client.ts` and `db/client.ts`
+        // still match.
         && (lower.contains("/client")
-            || lower.ends_with("client.ts")
-            || lower.ends_with("client.js"))
+            || contains_data_layer_token(&lower, "client"))
 }
 
 fn security_candidates(

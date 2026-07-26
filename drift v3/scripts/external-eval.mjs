@@ -43,7 +43,8 @@ const REPOS = [
     dataSymbol: "db",
     cleanModule: "@/lib/session",
     cleanSymbol: "getCurrentUser",
-    expectForbidden: ["@/lib/db"]
+    expectForbidden: ["@/lib/db"],
+    expectForbiddenExact: ["@/lib/db"]
   },
   {
     name: "dub",
@@ -61,7 +62,8 @@ const REPOS = [
     dataSymbol: "prisma",
     cleanModule: "@/app/lib/api/response",
     cleanSymbol: "responses",
-    expectForbidden: ["@formbricks/database"]
+    expectForbidden: ["@formbricks/database"],
+    expectForbiddenExact: ["@formbricks/database"]
   },
   {
     name: "calcom",
@@ -70,7 +72,8 @@ const REPOS = [
     dataSymbol: "prisma",
     cleanModule: "@calcom/lib/constants",
     cleanSymbol: "WEBAPP_URL",
-    expectForbidden: ["@calcom/prisma"]
+    expectForbidden: ["@calcom/prisma"],
+    expectForbiddenExact: ["@calcom/prisma"]
   },
   {
     name: "papermark",
@@ -104,7 +107,8 @@ const REPOS = [
     dataSymbol: "db",
     cleanModule: "@openstatus/api",
     cleanSymbol: "edgeRouter",
-    expectForbidden: ["@openstatus/db"]
+    expectForbidden: ["@openstatus/db"],
+    expectForbiddenExact: ["@openstatus/db", "@openstatus/db/src/db", "@openstatus/db/src/schema"]
   }
 ];
 
@@ -281,6 +285,13 @@ function evaluateRepoAt(reposDir, cfg) {
   result.contract_names_real_data_layer = cfg.expectForbidden.every((want) =>
     forbidden.includes(want)
   );
+  // T14: pin the exact set where it is known. expectForbidden alone only proves the real data
+  // layer is present, so it would not notice over-matching creeping back - cal.com carried four
+  // wrong entries out of six while passing that check.
+  result.forbidden_imports_exact_match =
+    cfg.expectForbiddenExact === undefined
+      ? null
+      : JSON.stringify([...cfg.expectForbiddenExact].sort()) === JSON.stringify(result.forbidden_imports);
 
   // Injection and clean control land in the same diff. No commit is needed: the tree is
   // already a pristine HEAD checkout, and `git diff HEAD` includes staged new files.
@@ -400,6 +411,7 @@ function evaluateRepoAt(reposDir, cfg) {
     result.onboarded &&
     f4AssertionsHold &&
     result.contract_names_real_data_layer &&
+    result.forbidden_imports_exact_match !== false &&
     result.injection_caught &&
     result.injection_evidence_correct &&
     !result.clean_control_false_positive &&
@@ -441,6 +453,33 @@ function diffResult(before, after) {
     if (a !== b) changes.push(`${key}: ${a ?? "(absent)"} -> ${b}`);
   }
   return changes;
+}
+
+/**
+ * Disk preflight. Each repo's evaluation builds a fresh Drift state in a temp HOME, and for a
+ * large repo that reaches ~1 GB. Exhausting the disk mid-run does not fail cleanly: it
+ * produces false test failures and a raw "database or disk is full" from SQLite, so results
+ * become untrustworthy rather than merely incomplete. Refuse up front instead.
+ */
+function freeSpaceGb() {
+  try {
+    const out = execFileSync("df", ["-k", REPOS_DIR], { encoding: "utf8" }).trim().split("\n").pop();
+    const available = Number(out.split(/\s+/)[3]);
+    return Number.isFinite(available) ? available / 1024 / 1024 : Infinity;
+  } catch {
+    return Infinity;
+  }
+}
+
+const MIN_FREE_GB = 5;
+const free = freeSpaceGb();
+if (free < MIN_FREE_GB) {
+  console.error(
+    `Refusing to run: ${free.toFixed(1)} GB free, need ${MIN_FREE_GB} GB.\n` +
+      `Each repo builds a fresh Drift state (~1 GB for the largest). Free space with:\n` +
+      `  rm -rf ~/.drift /tmp/drift-eval-*`
+  );
+  process.exit(3);
 }
 
 if (!existsSync(CLI)) {
