@@ -1197,7 +1197,13 @@ export class SqliteDriftStorage {
     this.db.transaction(() => {
       upsertArtifact.run({
         ...parsed,
-        graph_json: stringifyJson(parsed.graph)
+        // Store the graph *without* its bulk collections. nodes, edges and evidence are
+        // already written to graph_nodes/graph_edges/graph_evidence immediately below, and
+        // keeping a second serialized copy dominated local state: on dub, graph_json was
+        // 206 MB of a 599 MB database while the normalized tables held the same data in
+        // 201 MB. getFactGraphArtifact rehydrates them from those tables, so the artifact
+        // consumers receive is unchanged.
+        graph_json: stringifyJson(graphWithoutBulkCollections(parsed.graph))
       });
       deleteNodes.run(parsed.repo_id, parsed.scan_id);
       deleteEdges.run(parsed.repo_id, parsed.scan_id);
@@ -1295,7 +1301,17 @@ export class SqliteDriftStorage {
     const row = this.db
       .prepare("SELECT * FROM fact_graph_artifacts WHERE repo_id = ? AND scan_id = ?")
       .get(repoId, scanId);
-    return row ? factGraphArtifactFromRow(row) : undefined;
+    if (!row) {
+      return undefined;
+    }
+    // Rehydrate the bulk collections from the normalized tables. They are deliberately not
+    // stored in graph_json (see upsertFactGraphArtifact), so callers get the same artifact
+    // they always did without the database carrying two copies of the graph.
+    return factGraphArtifactFromRow(row, {
+      nodes: this.listGraphNodes(repoId, scanId),
+      edges: this.listGraphEdges(repoId, scanId),
+      evidence: this.listGraphEvidence(repoId, scanId)
+    });
   }
 
   listGraphNodes(repoId: string, scanId: string): GraphNode[] {
@@ -2168,12 +2184,29 @@ function scanFileChangeFromRow(row: unknown): ScanFileChange {
   });
 }
 
-function factGraphArtifactFromRow(row: unknown): FactGraphArtifact {
+function factGraphArtifactFromRow(
+  row: unknown,
+  hydrate?: { nodes: unknown[]; edges: unknown[]; evidence: unknown[] }
+): FactGraphArtifact {
   const record = row as Record<string, unknown>;
+  const graph = parseJsonObject(record.graph_json) as Record<string, unknown>;
   return FactGraphArtifactSchema.parse({
     ...record,
-    graph: parseJsonObject(record.graph_json)
+    graph: hydrate
+      ? { ...graph, nodes: hydrate.nodes, edges: hydrate.edges, evidence: hydrate.evidence }
+      : graph
   });
+}
+
+/**
+ * The graph minus the collections that are stored relationally.
+ *
+ * Keeping nodes, edges and evidence in graph_json as well as in their own tables doubled the
+ * cost of the largest thing Drift stores. Everything else in the graph - adapters, artifacts,
+ * completeness, diagnostics, stats - is small and is read directly from the blob.
+ */
+function graphWithoutBulkCollections(graph: Record<string, unknown>): Record<string, unknown> {
+  return { ...graph, nodes: [], edges: [], evidence: [] };
 }
 
 function graphNodeFromRow(row: unknown): GraphNode {

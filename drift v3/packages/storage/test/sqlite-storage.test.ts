@@ -1456,6 +1456,15 @@ describe("SQLite Drift storage", () => {
       complete: true,
       can_block: true
     })]);
+
+    // T40: the graph must not be stored twice. nodes/edges/evidence live in their own tables;
+    // graph_json keeps only the small metadata. On dub the duplicate blob was 206 MB of a
+    // 599 MB database. The artifact callers receive is still complete, rehydrated on read.
+    const roundTripped = storage.getFactGraphArtifact("repo_abc", "scan_abc");
+    expect(roundTripped?.graph.nodes.length).toBeGreaterThan(0);
+    expect(roundTripped?.graph.nodes.map((node) => node.id).sort()).toEqual(
+      storage.listGraphNodes("repo_abc", "scan_abc").map((node) => node.id).sort()
+    );
     storage.close();
   });
 
