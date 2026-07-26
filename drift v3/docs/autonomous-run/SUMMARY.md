@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 18 |
+| Done | 20 |
 | Done (partial) | 4 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
@@ -31,6 +31,8 @@
 - **T41** Disk-space preflight in doctor and start — doctor gains a disk_space check reporting free space against an estimate scaled by indexable file count (~220KB of state per file, measured across the eval repos); start refuses with exit 3 and names the remedy rather than only the problem. The external suite already refuses below 5GB from the earlier partial.
 - **T40** Stop storing the fact graph twice — dub per-repo state 599 MB -> 394 MB, a 34% reduction, with no functional change.
 - **T17** Concurrency: busy_timeout for hook + CLI + MCP — WAL and foreign_keys were already on but busy_timeout was absent, so two concurrent writers hit SQLITE_BUSY immediately - reaching the user as a crash rather than a brief wait. Set to 5000ms, which comfortably covers a single-file check. Three tests: pragmas set, a second connection reads while the first holds the database, and 20 interleaved writes from two connections all land.
+- **T20** Deleted-file handling in check — Verified on formbricks: deleting the baselined violating route yields 0 findings, the path is recorded in skipped_deleted_files, deleted_file_count is 1, and no orphaned or re-reported finding appears. Behaviour was already correct; now pinned by tests.
+- **T21** Renamed/moved route handling — The concern did NOT materialise. I expected a git rename to present as delete+add, which under A5 block-new would punish a refactor by treating a moved legacy violation as new code.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
