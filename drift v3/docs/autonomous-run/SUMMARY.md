@@ -5,7 +5,7 @@
 | Done | 23 |
 | Done (partial) | 4 |
 | Premise false (no change needed) | 1 |
-| Blocked — needs discussion | 2 |
+| Blocked — needs discussion | 3 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
 | Discoveries | 6 |
@@ -85,4 +85,13 @@ recommendation. Work reverted; the tree is green.
 - **attempted:** Scanned test/fixtures/security-auth-branch-bypass directly; only data_operation_detected was emitted, no AuthGuardCalled, because guard facts require an accepted convention naming the helper.
 - **evidence:** security-auth-branch-bypass fixture exists for the exact bypass case (guard on line 6 inside a branch, sink on line 8 in the else) and NO test in the repo references it. Line 6 < line 8, so naive dominance marks the line-8 sink protected.
 - **needs:** A hand-written contract declaring requireUser as the auth helper, plus fixtures for guard-in-dead-branch, guard-in-unrelated-function, else-if chain, ternary guard, and destructured tenant id. Split out because it is a days-scale task, not a verification step.
+
+### T22 — Gitignore correctness via the ignore crate
+
+- **reason:** verification_failed
+- **attempted:** Replaced the hand-rolled IgnoreMatcher with ignore::gitignore::GitignoreBuilder rooted at the repo, adding every .gitignore discovered in the tree. Fixture verification passed: nested .gitignore honored (was not) and ! negations honored (were discarded).
+- **evidence:** The external suite caught a real regression on openstatus - injection_caught true -> false, catches_genuine_subpath true -> false, status PASS -> FAIL. Root cause: apps/server/.gitignore contains a bare pattern `app`, and GitignoreBuilder::add() interprets patterns relative to the *builder root*, not the added file directory. So a pattern scoped to apps/server/ went repo-wide and excluded apps/dashboard/src/app/ - swallowing openstatus real API routes.
+- **diagnosis:** My approach was wrong, not the crate. Per-directory scoping is normally handled by ignore::WalkBuilder, which constructs a separate Gitignore per directory and applies precedence nearest-first. Reverted: a wrong ignore implementation that silently excludes real routes is far worse than the original limitation, since excluded files produce no findings at all.
+- **needs:** Either (a) build one Gitignore per directory rooted at that directory and test a path against each applicable one nearest-first, or (b) adopt ignore::WalkBuilder for file discovery, which handles this natively but replaces the existing walk. (b) is cleaner but larger. Note the fixture from T08 passes under the naive approach, so fixture-only verification is insufficient here - the suite is what caught it.
+- **reverted to:** `185b9b0`
 
