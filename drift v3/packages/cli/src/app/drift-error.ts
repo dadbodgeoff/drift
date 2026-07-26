@@ -20,6 +20,9 @@ export type DriftFailureCode =
   | "unsupported_database"
   | "missing_database"
   | "insufficient_disk"
+  | "disk_full"
+  | "corrupt_database"
+  | "permission_denied"
   | "cli_error";
 
 export interface DriftErrorOptions {

@@ -228,6 +228,53 @@ function operationalFailureForMessage(message: string): {
       diagnostics: [message]
     };
   }
+  // Failures that reached users as a raw SQLite or filesystem string. Each of these was
+  // observed during development: "database or disk is full" surfaced verbatim mid-scan with no
+  // indication of what to do, which is how a guardrail loses trust - the error message is the
+  // support channel for a local-first tool.
+  if (message.includes("disk is full") || message.includes("ENOSPC") || message.includes("SQLITE_FULL")) {
+    return {
+      code: "disk_full",
+      surface: "cli",
+      severity: "error",
+      safe_to_retry: true,
+      user_action: "Free disk space for Drift's local state, then rerun. Existing state may be incomplete.",
+      recovery_commands: ["drift doctor --repo-root . --json", "drift state size --json"],
+      diagnostics: [message]
+    };
+  }
+  if (
+    message.includes("database disk image is malformed") ||
+    message.includes("file is not a database") ||
+    message.includes("SQLITE_CORRUPT") ||
+    message.includes("SQLITE_NOTADB")
+  ) {
+    return {
+      code: "corrupt_database",
+      surface: "cli",
+      severity: "error",
+      // Rerunning cannot repair a corrupt file; say so rather than inviting a retry loop.
+      safe_to_retry: false,
+      user_action: "The local database is unreadable. Restore a backup, or delete the repo's state directory to rebuild it from a fresh scan.",
+      recovery_commands: ["drift backup list --json", "drift doctor --repo-root . --json"],
+      diagnostics: [message]
+    };
+  }
+  if (
+    message.includes("EACCES") ||
+    message.includes("EPERM") ||
+    message.includes("permission denied")
+  ) {
+    return {
+      code: "permission_denied",
+      surface: "cli",
+      severity: "error",
+      safe_to_retry: false,
+      user_action: "Drift cannot read or write a required path. Check ownership of the repo and of the Drift state directory.",
+      recovery_commands: ["drift doctor --repo-root . --json"],
+      diagnostics: [message]
+    };
+  }
   return {
     code: "cli_error",
     surface: "cli",
