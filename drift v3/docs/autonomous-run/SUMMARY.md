@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 26 |
+| Done | 27 |
 | Done (partial) | 5 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 5 |
@@ -39,6 +39,7 @@
 - **T16** Storage migration path for existing users — Forward migration verified: id-based, forward-only, idempotent, and a database that stopped at migration 8 upgrades to all 27 with data intact. Ids are asserted unique, since they are the upgrade key and a duplicate or rename would silently skip a migration on an existing install.
 - **T24** Error-message quality pass — Added the three codes that previously reached users as raw SQLite or filesystem strings: disk_full (I hit "database or disk is full" verbatim mid-scan, with no indication of what to do), corrupt_database and permission_denied. Each carries a cause, a next action, recovery commands, and an honest safe_to_retry - false for corrupt_database and permission_denied, since rerunning cannot fix either and inviting a retry loop wastes time.
 - **T29** Verify secret redaction actually applies — Canary test across six surfaces (prepare, ask, repo map, contract show, scan status, findings list) with a marked secret in .env, apps/web/.env and server.pem: zero leaks. Then pinned the mechanism with 15 policy tests.
+- **T27** Pin CLI-side enforcement of engine-ignored contract fields — Rewritten from B2, whose premise was false. The engine does bind waivers/exceptions/scope/governance to _ in check_command.rs, but the CLI applies them at every enforcement site, so it is layering rather than a fail-open - and implementing B2 as written would have broken every contract using an exception or waiver.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
