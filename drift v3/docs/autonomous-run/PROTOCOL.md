@@ -71,6 +71,19 @@ task so an interruption loses at most one task. A rendered `SUMMARY.md` is regen
 platform runner) · `needs_new_dependency` (not pre-authorised) · `scope_too_large` (task should be
 split — propose the split) · `upstream_defect` (a bug outside Drift) · `context_exhausted`
 
+## 2b. Size tasks to the remaining budget
+
+Context is a budget, not a cliff. As it depletes, stop taking tasks in plan order and take them in
+size order instead. Halting with 60 open items because the *next* one is large wastes the rest of
+the window - there is almost always a contained task that fits.
+
+Rough sizes, smallest first: doc corrections and prose deliverables (T30, T70, T72, T73) < harness
+assertions (T14) < single-file code changes (T11b, T11c, T63) < multi-file refactors (T23, T51) <
+new subsystems and parser work (T12, T22, T44, T52).
+
+Only halt when even the smallest remaining task will not fit, and say in HALT.md which tasks were
+skipped for size rather than for a blocker.
+
 ## 3. Prefer DONE_PARTIAL over BLOCKED
 
 If a task has separable value, land what works and log the remainder as a **new task appended to the
@@ -88,7 +101,7 @@ Each must attempt self-remediation first.
 | Cannot restore a green tree | `git reset --hard` to last green, `git clean -fd` | **HALT** — everything downstream is unreliable |
 | Oracle is lying: `pnpm eval:external` fails on the last known-green commit | re-run once; rebuild engine + TS | **HALT** — verification is meaningless, so no task can be validated |
 | 5 consecutive BLOCKED tasks | none | **HALT** — likely systemic, not per-task |
-| Context exhausted | write a resume handoff into the log | **HALT cleanly** with the log committed |
+| Context exhausted | **first: switch to small tasks.** Re-sort the remaining plan by size and take contained ones (single-file edits, harness assertions, doc corrections, prose deliverables). Only halt when even a small task will not fit. | **HALT cleanly** with the log committed |
 
 On HALT: commit the log, write `docs/autonomous-run/HALT.md` explaining the condition and the exact
 resume command, and stop. Never push, never publish.

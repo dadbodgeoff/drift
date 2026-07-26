@@ -1388,6 +1388,17 @@ describe("SQLite Drift storage", () => {
       completed_at: "2026-05-10T00:00:01.000Z"
     });
     const graph = buildFactGraphArtifact({
+      // Declared explicitly: the fallback now defaults to incomplete (T11b), so a caller
+      // that means "full coverage" has to say so. See the default-fallback test below.
+      completeness: [{
+        scope: "repo",
+        complete: true,
+        required_capabilities: ["file_discovery", "syntax_facts"],
+        missing_capabilities: [],
+        truncated: false,
+        can_block: true,
+        reasons: []
+      }],
       repo: {
         repo_id: "repo_abc",
         scan_id: "scan_abc",

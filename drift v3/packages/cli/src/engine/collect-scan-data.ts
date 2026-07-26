@@ -8,7 +8,7 @@ import type {
 } from "@drift/core";
 import type { EngineDiagnostic,EngineScanResult,EngineStats,EngineStreamEvent } from "@drift/engine-contract";
 import type { GraphEdge,GraphEvidence,GraphNode } from "@drift/factgraph";
-import { parseEngineScanResult,parseEngineStreamEvent } from "@drift/engine-contract";
+import { parseEngineScanResult,parseEngineStreamEvent,type EngineCompleteness} from "@drift/engine-contract";
 import { extractFactsFromFile,factRecord,fileSnapshotForFile } from "./fact-extraction.js";
 import { streamRustEngineLines } from "./rust-engine.js";
 import { walkIndexableFiles } from "./ts-fallback-scanner.js";
@@ -29,6 +29,15 @@ export interface ScanData {
   normalized_entrypoints: NormalizedEntrypointFact[];
   framework_parser_gaps: FrameworkParserGap[];
   framework_capabilities: FrameworkCapability[];
+  /**
+   * The engine's own completeness measurement for this scan.
+   *
+   * Previously discarded, which meant the honest computation added for A4 - reporting
+   * complete:false when files were skipped - never reached the user: the factgraph
+   * substituted a hardcoded default, so graph completeness was always a constant rather
+   * than a measurement.
+   */
+  completeness?: EngineCompleteness[];
 }
 
 export interface ScanFallbackStatus {
@@ -174,6 +183,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
   const frameworkParserGaps: EngineScanResult["framework_parser_gaps"] = [];
   const frameworkCapabilities: EngineScanResult["framework_capabilities"] = [];
   let stats: EngineStats | undefined;
+  let completeness: EngineCompleteness[] | undefined;
   let completed = false;
 
   for (const event of events) {
@@ -208,6 +218,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
       case "scan_completed":
         completed = true;
         stats = event.stats;
+        completeness = event.completeness;
         break;
       case "diagnostic_batch":
         diagnostics.push(...event.diagnostics);
@@ -239,6 +250,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
     normalized_entrypoints: normalizedEntrypoints.map(engineNormalizedEntrypoint),
     framework_parser_gaps: frameworkParserGaps.map(engineFrameworkParserGap),
     framework_capabilities: frameworkCapabilities.map(engineFrameworkCapability),
+    completeness,
     stats
   };
 }

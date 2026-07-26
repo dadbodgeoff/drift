@@ -1308,6 +1308,17 @@ describe("GraphQueryService", () => {
         commit: "abc123",
         dirty: false
       },
+      // Declared explicitly: the fallback defaults to incomplete (T11b), so a graph that
+      // means "full coverage" must say so rather than inherit an optimistic default.
+      completeness: [{
+        scope: "repo",
+        complete: true,
+        required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+        missing_capabilities: [],
+        truncated: false,
+        can_block: true,
+        reasons: []
+      }],
       snapshots,
       nodes: [
         graphNode("module:src/services/users.ts", "module", "src/services/users.ts", { file_path: "src/services/users.ts" }),

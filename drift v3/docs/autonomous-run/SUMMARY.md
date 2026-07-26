@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 10 |
+| Done | 11 |
 | Done (partial) | 2 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
@@ -23,6 +23,7 @@
 - **T08** Verify B4 gitignore claims — Premise CONFIRMED and narrowed. Root .gitignore IS honored (src/generated/ excluded). Nested .gitignore is NOT: packages/inner/ignored-here.ts was indexed despite packages/inner/.gitignore listing it. The ! negation part of the claim is not separately testable because nested ignore files are never read at all.
 - **T09** Verify B5 typed-error claim — Premise CONFIRMED: 8 sites, 7 in run-cli.ts plus one in rust-engine.ts. All are user-facing classification, not internal.
 - **T11** Audit for other unconditional capability assertions — 22 sites classified in docs/architecture/capability-assertion-audit.md. One real overclaim fixed: candidate inference reported complete:true unconditionally while deciding the data layer by five-substring match - on midday it finds nothing and claimed full coverage. Now derived from whether a data-access candidate was produced, with missing_capabilities and a reason pointing at --data-modules.
+- **T11b** Invert the factgraph fail-open completeness default and wire the engine measurement through — Both factgraph completeness fallbacks now default to complete:false with missing_capabilities [completeness_not_reported] and a reason, instead of claiming full coverage plus blocking authority when a caller omits the measurement.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 

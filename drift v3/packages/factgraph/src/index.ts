@@ -442,14 +442,18 @@ export function buildFactGraphArtifact(input: BuildFactGraphInput): FactGraphArt
     edges: [...edgesById.values()].sort(byId),
     evidence: [...evidenceById.values()].sort(byId),
     diagnostics: [...(input.diagnostics ?? [])].sort(byId),
+    // T11b: default to *incomplete*, not complete. This is the fallback used when a caller
+    // omits completeness, and the optimistic default meant forgetting the argument produced a
+    // graph claiming full coverage and blocking authority. A fail-open default in a guardrail
+    // has to be inverted: a missing measurement is visible rather than flattering.
     completeness: input.completeness ?? [{
       scope: "repo",
-      complete: true,
+      complete: false,
       required_capabilities: ["file_discovery", "syntax_facts"],
-      missing_capabilities: [],
+      missing_capabilities: ["completeness_not_reported"],
       truncated: false,
       can_block: true,
-      reasons: []
+      reasons: ["graph built without a completeness measurement from the caller"]
     }],
     stats: {
       node_count: nodesById.size,
@@ -499,14 +503,16 @@ export function buildFactGraphArtifactFromParts(input: BuildFactGraphFromPartsIn
     edges: input.edges.map((edge) => GraphEdgeSchema.parse(edge)).sort(byId),
     evidence: input.evidence.map((evidence) => GraphEvidenceSchema.parse(evidence)).sort(byId),
     diagnostics: [...(input.diagnostics ?? [])].sort(byId),
+    // T11b: see the note on the other completeness fallback in this file. Default to
+    // incomplete so an omitted measurement is visible rather than flattering.
     completeness: input.completeness ?? [{
       scope: "repo",
-      complete: true,
+      complete: false,
       required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
-      missing_capabilities: [],
+      missing_capabilities: ["completeness_not_reported"],
       truncated: false,
       can_block: true,
-      reasons: []
+      reasons: ["graph built without a completeness measurement from the caller"]
     }],
     stats: {
       node_count: input.nodes.length,

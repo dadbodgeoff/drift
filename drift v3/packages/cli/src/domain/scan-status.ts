@@ -156,6 +156,9 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
           deterministic: true,
           capabilities: ["file_discovery", "syntax_facts", "graph_stream"]
         }],
+        // Carry the engine's measurement rather than letting the factgraph substitute its
+        // default, so a scan that skipped files reports incomplete to the user (A4/T11b).
+        ...(scanData.completeness ? { completeness: scanData.completeness } : {}),
         createdAt: now
       })
       : buildFactGraphArtifact({
@@ -165,6 +168,7 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
         facts: scanData.facts,
         createdAt: now,
         pathAliases: readTsconfigPathAliases(repoRoot),
+        ...(scanData.completeness ? { completeness: scanData.completeness } : {}),
         repo: {
           root_hash: graphRepo.root_hash,
           branch: graphRepo.branch,

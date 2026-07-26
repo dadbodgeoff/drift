@@ -11,6 +11,7 @@ export function buildFactGraphArtifact(input: {
   facts: FactRecord[];
   createdAt: string;
   pathAliases?: Record<string, string[]>;
+  completeness?: FactGraphArtifact["graph"]["completeness"];
   repo?: {
     root_hash: string;
     branch: string;
@@ -30,6 +31,7 @@ export function buildFactGraphArtifact(input: {
     snapshots: input.snapshots,
     facts: input.facts,
     createdAt: input.createdAt,
-    pathAliases: input.pathAliases
+    pathAliases: input.pathAliases,
+    ...(input.completeness ? { completeness: input.completeness } : {})
   });
 }

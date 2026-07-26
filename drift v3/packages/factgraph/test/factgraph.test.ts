@@ -270,3 +270,67 @@ describe("FactGraph V1", () => {
     }));
   });
 });
+
+describe("completeness fallback defaults to incomplete (T11b)", () => {
+  // A guardrail's fail-open defaults are the dangerous ones. Omitting the measurement used to
+  // produce a graph claiming full coverage and blocking authority; the omission must be visible
+  // instead. Both constructors share the fallback.
+  const NOW = "2026-05-10T00:00:00.000Z";
+  const repo = {
+    repo_id: "repo_a",
+    scan_id: "scan_a",
+    root_hash: "root_hash",
+    branch: "main",
+    commit: "abc123",
+    dirty: false
+  };
+
+  it("reports incomplete when the caller omits completeness", () => {
+    const artifact = buildFactGraphArtifact({
+      repo,
+      snapshots: [],
+      facts: [],
+      createdAt: NOW
+    });
+    const [completeness] = artifact.graph.completeness;
+    expect(completeness?.complete).toBe(false);
+    expect(completeness?.missing_capabilities).toContain("completeness_not_reported");
+    expect((completeness?.reasons ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("reports incomplete from parts when the caller omits completeness", () => {
+    const artifact = buildFactGraphArtifactFromParts({
+      repo,
+      snapshots: [],
+      nodes: [],
+      edges: [],
+      evidence: [],
+      createdAt: NOW
+    });
+    const [completeness] = artifact.graph.completeness;
+    expect(completeness?.complete).toBe(false);
+    expect(completeness?.missing_capabilities).toContain("completeness_not_reported");
+  });
+
+  it("honours an explicit completeness measurement", () => {
+    const artifact = buildFactGraphArtifact({
+      repo,
+      snapshots: [],
+      facts: [],
+      createdAt: NOW,
+      completeness: [
+        {
+          scope: "repo",
+          complete: true,
+          required_capabilities: ["file_discovery"],
+          missing_capabilities: [],
+          truncated: false,
+          can_block: true,
+          reasons: []
+        }
+      ]
+    });
+    expect(artifact.graph.completeness[0]?.complete).toBe(true);
+    expect(artifact.graph.completeness[0]?.missing_capabilities).toEqual([]);
+  });
+});
