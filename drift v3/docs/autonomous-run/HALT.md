@@ -1,77 +1,89 @@
-# Run halted — context exhausted (clean)
+# Run paused — context exhausted (clean)
 
-**Halt condition:** #5, context exhausted. This is the planned clean-halt path, not a failure.
-**Tree state:** green. External suite 7/7, TS 721 tests, Rust 22 suites, all passing.
-**Last commit:** `1559512` on `fix/phase-a-correctness`. Nothing pushed.
+**Tree state:** green. External suite **7/7**, TS suites green, Rust **23** suites green.
+**Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
+**Completed:** 27 tasks (23 done, 4 partial, 1 premise-false). 3 blocked, 6 discoveries.
 
 ## Resume
 
 ```bash
 cd ~/drift-falsification/drift/"drift v3"
-node scripts/run-log.mjs status          # what is already done
+df -h ~                                   # need >5 GB; the suite refuses below that now
 pnpm build && cargo build --release -p drift-engine
-pnpm eval:external                       # confirm the oracle is green before trusting anything
+pnpm eval:external                        # confirm the oracle before trusting anything
+node scripts/run-log.mjs status
 ```
 
-Then read `PROTOCOL.md` (triage-and-continue lifecycle, tacit knowledge) and continue at
-**T12** in `PLAN.md`. Skip any task `run-log.mjs done <ID>` reports as complete.
+Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions). Continue at
+**T16** in `PLAN.md`, skipping anything `run-log.mjs done <ID>` reports complete.
 
-Check free disk before starting: this run hit 1.8 GB and produced four false failures. Keep
-above 5 GB. `cargo clean --release` deletes the engine binary the harness needs — rebuild after.
-
-## Completed this run
+## Completed
 
 **Phase 1 — gate integrity (T01–T06).** The suite could not detect F4 regressions; now it can.
+Added **midday-ai/midday**, a Supabase monorepo whose data layer matches no whitelist substring,
+and asserted the gap is *exercised* rather than merely present. Added negative controls
+(type-only import, lookalike module, genuine subpath), a performance ceiling, harness
+self-tests, and `--repo-path` for ad-hoc triage.
 
-- **T01** added midday-ai/midday, a Supabase monorepo whose data layer (`@midday/supabase/server`)
-  matches none of the whitelist substrings. Screened two alternatives first.
-- **T02** asserts the F4 gap is *exercised*: inference alone must find nothing and discovery must
-  name the wrapper. My first attempt asserted the opposite polarity, which would have asserted the
-  bug's absence.
-- **T03** negative controls — type-only import, lookalike module, and a genuine subpath that must
-  still be caught. The suite previously could not distinguish a correct rule from one that flags
-  everything.
-- **T04** performance ceiling, **T05** harness self-tests (6), **T06** ad-hoc `--repo-path` mode.
+**Phase 2 — premise verification (T07–T11).** All B1 security claims confirmed; the sharpest is
+that `unsupported_dynamic_control_flow()` — the layer's own "too dynamic to prove anything"
+valve — matches only Drift's fixture strings, so it opens for test inputs and never for real
+dynamic dispatch. B4 confirmed and narrowed. B5 confirmed and more consequential than stated,
+since A5 made exit codes a contract. T11 audited 22 capability-assertion sites and fixed one
+real overclaim.
 
-Two defects in the A6 work from the prior session, both found only by using a real repo:
-the discovery message was suppressed whenever any other candidate kind existed, and discovery
-could not resolve monorepo workspace imports (4 of 6 repos are monorepos).
+**Phase 3/5 — correctness and footprint.**
 
-**Phase 2 — premise verification (T07–T11).** B2's premise was false last session, so premises are
-now checked before scope is committed. All confirmed this time, plus two new findings.
+| Task | Outcome |
+|---|---|
+| **T12** | dub FP rate **8.5% → 3.1%**, findings 458 → 417. AST-based via tree-sitter's `type_identifier`/`identifier` distinction. Also forced B3's structural fix: `runFullRepoCheck` now reads engine facts instead of re-deriving imports, eliminating the TS/Rust divergence class. |
+| **T13** | cal.com forbidden imports **6 → 1** (exactly `@calcom/prisma`); openstatus 4 → 3 keeping `/src/schema`. |
+| **T15** | Reuse now refuses facts from a different engine version. Without it, T12/T13 would have silently kept stale facts for every unchanged file after an upgrade. |
+| **T40** | dub state **599 MB → 394 MB**. `graph_json` was a 206 MB duplicate of the normalized graph tables. |
+| **T41** | Disk preflight in `doctor`, `start`, and the suite. |
+| **T17** | `busy_timeout` set — concurrent holders wait instead of hitting `SQLITE_BUSY`. Unblocks T44. |
+| **T11b** | Inverted the fail-open completeness default, which revealed that A4's honest measurement never reached users at all. |
+| **T20/T21** | Verified and pinned; the block-new refactor risk did **not** materialize. |
+| **T30/T72/T73** | FP metric defined; enforcement contract documented. |
 
-- **T07** all five security claims confirmed. The sharpest:
-  `unsupported_dynamic_control_flow()` — the layer's own "too dynamic to prove anything" valve —
-  is `contains("guards[") || contains("await guard(") || contains("computed_handler")`, all
-  fixture strings. Real dynamic dispatch matches none, so the valve only opens for test inputs and
-  line-ordering dominance proceeds as if flow were straight-line.
-- **T07c (new)** `candidate_command.rs:1035` hardcodes `"withworkspace"`, and it is load-bearing —
-  none of the surrounding broad conditions match it. The falsification report called dub's
-  `withWorkspace` observation the most useful output across six repos; it exists because dub is an
-  eval repo and its helper name is compiled into the engine. T26 will correctly cost that candidate.
-- **T08** gitignore confirmed and narrowed: root honored, **nested `.gitignore` not read at all**.
-- **T09** typed errors confirmed, 8 sites — and now more consequential, since A5 made exit codes a
-  contract and the stale-scan branch maps to exit 3.
-- **T11** 22 capability-assertion sites audited. Fixed one real overclaim: inference reported
-  `complete: true` unconditionally while deciding the data layer by substring; now derived.
+## Discussion agenda — read `SUMMARY.md` for full evidence
 
-## Discussion agenda (see SUMMARY.md for full evidence)
+1. **T01c — beta-blocking.** On midday the contract materializes `enforcement_mode: block` but
+   the finding reports `enforcement_result: "none"`, so `blocking_count` is 0 and check exits 0.
+   Only repo using the `--data-modules` path; only mismatch across seven repos; not reproducible
+   by hand in two attempts. F3-class silent failure. `enforcement_matches_mode` is recorded per
+   repo — promote to a hard assertion once fixed.
+2. **T22 — gitignore.** Attempted and reverted. `GitignoreBuilder::add()` interprets patterns
+   relative to the *builder root*, not the added file's directory, so a bare `app` in
+   `apps/server/.gitignore` went repo-wide and swallowed openstatus's real routes. Fix is
+   per-directory scoping or `ignore::WalkBuilder`. **T08's fixture passes under the broken
+   version** — the suite is what caught it.
+3. **T07b** — dominance/branch/tenant claims need a hand-written auth contract to exercise;
+   `security-auth-branch-bypass` still has no test referencing it.
 
-1. **T01c — beta-blocking.** On midday the contract materialises `enforcement_mode: block` but the
-   finding reports `enforcement_result: "none"`, so `blocking_count` is 0 and check exits 0. Only
-   repo using the `--data-modules` path; only mismatch; not reproducible by hand in two attempts.
-   F3-class silent failure. `enforcement_matches_mode` is recorded per repo — promote to a hard
-   assertion once fixed.
-2. **T07b** — dominance/branch/tenant claims need a hand-written auth contract to exercise
-   end-to-end; `security-auth-branch-bypass` has no test referencing it. Days-scale, split out.
+## Two findings that change how you read earlier results
 
-## Next tasks, in order
+- **T07c:** `candidate_command.rs:1035` hardcodes `"withworkspace"`, and it is load-bearing —
+  none of the surrounding conditions match it. The falsification report called dub's
+  `withWorkspace` observation the most useful output across six repos; it exists because dub is
+  an eval repo and its helper name is compiled into the engine. **T26 will correctly cost that
+  candidate.**
+- **T13b:** the boundary rule also drops `../../lib/prismaClient`, a legitimate client. A
+  camelCase-aware boundary cannot separate `prismaClient` from `isPrismaObj`; that needs the
+  structural signal (does the module export an instantiated client), which is E2.
 
-**T12** symbol-level type classification (closes the residual 8.5% FP on dub; needs tree-sitter
-type-position detection — guard with fixtures for `Pick<>`, generic constraints, re-exported types).
-Then **T13** over-match reduction — note the caution recorded in PROTOCOL.md: excluding `/schema`
-would also drop `@openstatus/db/src/schema`, which *is* that repo's real Drizzle data layer.
-Then **T14** exact-list assertions, **T15** incremental-scan staleness across engine versions.
+## Next, in order
 
-**Promoted:** T40/T41 (disk footprint) now have direct evidence from this run — ~1 GB per large
-repo, and exhaustion produced false results twice.
+**T16** storage migration from 0.9.x · **T18** baseline drift matrix · **T19** contract
+portability · **T23** typed errors (8 sites, scoped by T09) · **T24** error-message quality ·
+**T25/T26** security gating and literal removal (scoped by T07) · **T44** hooks pack (now
+unblocked by T17) · **T46** `drift prepare` quality eval.
+
+## Protocol lessons earned this run
+
+- `cargo test` builds **debug**; the CLI and harness use `target/release`. Verifying against a
+  stale release binary produced a plausible-but-wrong 8.4% and three spurious parser gaps.
+- Disk exhaustion produced **four false test failures** in one run and, in another, left no
+  space to write tool output at all. Both remediated with no code change.
+- Fixture-only verification was insufficient twice (T01 discovery suppression, T22 gitignore).
+  The seven-repo suite caught both.
