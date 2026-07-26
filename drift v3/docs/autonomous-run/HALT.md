@@ -2,7 +2,7 @@
 
 **Tree state:** green. External suite **7/7**, TS suites green, Rust **23** suites green.
 **Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 27 tasks (23 done, 4 partial, 1 premise-false). 3 blocked, 6 discoveries.
+**Completed:** 33 tasks (26 done, 5 partial, 2 premise-false). 5 blocked, 6 discoveries.
 
 ## Resume
 
@@ -14,8 +14,14 @@ pnpm eval:external                        # confirm the oracle before trusting a
 node scripts/run-log.mjs status
 ```
 
-Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions). Continue at
-**T16** in `PLAN.md`, skipping anything `run-log.mjs done <ID>` reports complete.
+Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions). Then:
+
+```bash
+node scripts/run-log.mjs next     # prints the next unsettled task; exits 1 when none remain
+```
+
+Continue at **T25**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
+tiers of regenerable artifacts only, and never touches the pinned evaluation repos.
 
 ## Completed
 
@@ -46,6 +52,17 @@ real overclaim.
 | **T20/T21** | Verified and pinned; the block-new refactor risk did **not** materialize. |
 | **T30/T72/T73** | FP metric defined; enforcement contract documented. |
 
+## Second batch (after the first handoff)
+
+| Task | Outcome |
+|---|---|
+| **T16** | Refuses a database written by a *newer* Drift. An older build previously applied nothing and carried on against a schema it did not know - silent wrong behaviour. Forward migration from an 8-migration-old database verified with data intact. |
+| **T23** | `DriftError` carries its own failure code; the classifier reads it before falling back to matching prose. Rewording an error string used to change exit-code behaviour, since stale-scan maps to exit 3. |
+| **T24** | Added `disk_full`, `corrupt_database`, `permission_denied` - all previously reaching users as raw SQLite or filesystem strings. `docs/reference/errors.md` tables all ten codes with honest `safe_to_retry`. |
+| **T29** | Context egress pinned with 15 tests on the exact shapes F9 let through. The canary test alone would have misled: those files were never indexed because only TS/JS is, which is incidental, not the policy. |
+| **T19** | Premise false - foreign contracts *are* refused. But see T19b. |
+| **T22, T18** | Attempted, reverted, logged with root cause. |
+
 ## Discussion agenda — read `SUMMARY.md` for full evidence
 
 1. **T01c — beta-blocking.** On midday the contract materializes `enforcement_mode: block` but
@@ -58,7 +75,20 @@ real overclaim.
    `apps/server/.gitignore` went repo-wide and swallowed openstatus's real routes. Fix is
    per-directory scoping or `ignore::WalkBuilder`. **T08's fixture passes under the broken
    version** — the suite is what caught it.
-3. **T07b** — dominance/branch/tenant claims need a hand-written auth contract to exercise;
+3. **T19b — blocks E3 and E4.** Contract portability is impossible: `repoIdForRoot` hashes the
+   **absolute path**, so every teammate's checkout is a different repo and no one can import a
+   committed contract. E3 pitches `drift.lock` as "a package-lock for your conventions"; that
+   cannot work today, and CI checks out to a path no developer shares. Needs a path-independent
+   identity (git remote + root commit, falling back to repo content).
+4. **T18 — baseline is a permanent per-violation waiver.** Rewriting a baselined violating line,
+   or removing and reintroducing it, stays exempt forever. I implemented the fix and all four
+   matrix cases behaved as pre-registered, then reverted: two tests encode the current contract
+   deliberately. `baseline_violations` has no provenance column, so an automatic onboarding
+   shield cannot be told apart from a considered waiver. Recommend adding provenance.
+5. **T22 — gitignore.** Reverted. `GitignoreBuilder::add()` scopes patterns to the *builder root*,
+   so a bare `app` in `apps/server/.gitignore` went repo-wide and swallowed openstatus's routes.
+   **T08's fixture passes under the broken version** — the suite caught it.
+6. **T07b** — dominance/branch/tenant claims need a hand-written auth contract to exercise;
    `security-auth-branch-bypass` still has no test referencing it.
 
 ## Two findings that change how you read earlier results
@@ -74,10 +104,11 @@ real overclaim.
 
 ## Next, in order
 
-**T16** storage migration from 0.9.x · **T18** baseline drift matrix · **T19** contract
-portability · **T23** typed errors (8 sites, scoped by T09) · **T24** error-message quality ·
-**T25/T26** security gating and literal removal (scoped by T07) · **T44** hooks pack (now
-unblocked by T17) · **T46** `drift prepare` quality eval.
+**T25/T26** security gating and literal removal — scoped by T07, and the largest remaining
+correctness item (12 `can_block: true` sites plus vocabulary and fixture literals). **T27/T28**
+contract-field enforcement mapping. **T31** claims ↔ behaviour reconciliation. **T42/T43** scaling
+probes (need a ~20k-file repo). **T44** hooks pack — now unblocked by T17. **T46** `drift prepare`
+quality eval, which is the untested half of the context claim.
 
 ## Protocol lessons earned this run
 
