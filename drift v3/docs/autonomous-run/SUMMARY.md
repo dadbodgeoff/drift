@@ -4,8 +4,8 @@
 |---|---|
 | Done | 24 |
 | Done (partial) | 4 |
-| Premise false (no change needed) | 1 |
-| Blocked — needs discussion | 4 |
+| Premise false (no change needed) | 2 |
+| Blocked — needs discussion | 5 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
 | Discoveries | 6 |
@@ -46,6 +46,8 @@
 
 - **T70** Docs audit against A5 behaviour changes
   - Expected docs describing exit 1 for a blocked check to be wrong after A5. They were not: the README and docs never documented drift check exit codes at all, and the only exit-1 references are about the CI gate script. Nothing became stale. The real gap is the inverse - exit codes are now a documented contract with nothing documenting them - which is T73, done alongside.
+- **T19** Contract portability across machines
+  - The stated concern - that importing a contract from an unrelated repo would be silently accepted - is false. Importing cal.com contract into taxonomy returns imported:false, compatible:false, with reasons [repo_id_mismatch, repo_fingerprint_mismatch]. My first probe reported ACCEPTED only because it checked for an error key rather than reading the compatibility block. The safety check works.
 
 ## Discoveries made while working
 
@@ -104,4 +106,13 @@ recommendation. Work reverted; the tree is green.
 - **diagnosis:** Not a bug - a product decision, and two tests encode the current contract explicitly ("does not fail check for active baseline findings" reuses the same diff that otherwise exits 2, and "preserves human-governed finding statuses during repeated checks"). The tension is that --accept-defaults baselines everything automatically, so an onboarding-time bulk shield is being treated as a considered per-finding waiver. baseline_violations has no provenance column, so the two cannot be distinguished today.
 - **needs:** A decision between: (A) keep as-is, baseline = permanent per-fingerprint waiver; (B) baseline shields untouched code only, so rewriting or reintroducing a violation blocks - stronger promise, breaks the tested contract, makes previously-passing diffs fail; (C) add a provenance column to baseline_violations and honour explicit waivers permanently while onboarding baselines shield only untouched code. Recommend C: Drift already has explicit waiver mechanisms (findings suppress, contract waivers), so the bulk onboarding baseline should not silently double as one. C needs a migration, hence the decision.
 - **reverted to:** `27ef387`
+
+### T19b — Contract portability is impossible, which invalidates E3 drift.lock premise
+
+- **reason:** needs_human_decision
+- **attempted:** Exported taxonomy contract on one checkout and imported it into a second checkout of the same repo at a different path.
+- **evidence:** Refused: imported:false, reasons [repo_id_mismatch, repo_fingerprint_mismatch]. Root cause is repoIdForRoot in packages/cli/src/domain/identifiers.ts - repo_${hashStable(resolve(repoRoot))} - so repo identity is derived from the ABSOLUTE PATH. Every teammate checkout is a different repo as far as Drift is concerned, and the repo_fingerprint carries the same derivation.
+- **diagnosis:** The compatibility check is correct for foreign contracts; the problem is that path-derived identity cannot distinguish "same repo, different checkout" from "different repo". Direct consequence: E3 pitches contract export as a committed, PR-reviewable drift.lock - a package-lock for your conventions - and that cannot work today, because no teammate can import the committed contract. E4 (GitHub Action) has the same problem: CI checks out to a different path than any developer.
+- **needs:** A path-independent repo identity before E3 or E4 can ship. Options: (a) derive from git remote URL plus root commit sha - stable across clones, breaks for repos with no remote; (b) derive from repo content (e.g. root package.json name plus root commit) - no remote needed; (c) allow import with an explicit --allow-path-mismatch flag, cheapest but leaves the identity wrong everywhere else. Recommend (a) with (b) as fallback. This is a design decision affecting stored ids, so it needs a migration story too.
+- **blocks:** T49, T50
 
