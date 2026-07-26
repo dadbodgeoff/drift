@@ -344,7 +344,33 @@ confirm it is denied/redacted in CLI *and* MCP output.
 **Verify:** new test greps every payload for the canary string.
 **Risk:** this is the highest-severity untested claim in the product.
 
-### T30 — Define the FP metric in the DoD
+### T30 — Define the FP metric in the DoD  ✅ RESOLVED
+
+**Definition (fixed):**
+
+- **Counts as a false positive:** a flagged binding used only in *type* positions. TypeScript
+  erases it, so it creates no runtime dependency on the data layer.
+- **Does not count:** a runtime import of the data package that is not itself a query - the
+  canonical case being `Prisma` imported for `instanceof Prisma.PrismaClientKnownRequestError`.
+  That is a real runtime dependency on the client package, so flagging it is a policy choice,
+  not an error. Revisit only with symbol-level classification of the imported member.
+
+**How it is enforced:** not by a separate rate calculation. After T12 the engine drops
+type-only bindings at the AST level, using tree-sitter's own `type_identifier` vs `identifier`
+distinction, so a type-only finding cannot be emitted by construction. The per-repo negative
+control added in T03 (`fp_type_only_import`) asserts exactly that against all seven real repos,
+which is stronger than any rate threshold.
+
+**Rejected approach, recorded because it looked right:** a false-positive rate computed in the
+harness by re-classifying each finding's import statement. Implemented and measured, it put
+cal.com at 12.8% and failed the gate. Every one of those five "false positives" was
+`import { prisma } from "@calcom/prisma"` - a genuine client import - misclassified because the
+regex looks for `prisma` followed by `.` or `(`, and the real usage was
+`new CalendarCacheEventRepository(prisma)`, passing it as an argument. The classifier was
+strictly weaker than the engine's AST detection, so it could only add noise to a property the
+engine already guarantees. Removed.
+
+### T30 (original description)
 **Why:** dub is at 8.5% or ~17% depending on whether the 38 `Prisma` error-namespace imports count.
 The gate says <10%. This will be litigated under launch pressure.
 **Do:** write the definition into the release gate: type-only usage = FP (removed by T12);
