@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use crate::next_routes::next_api_route_identity;
@@ -118,8 +119,80 @@ pub fn extract_typescript_facts(
     }
 
     walk_node(root, source.as_bytes(), &file_path, &mut facts);
+    drop_type_only_usage_imports(root, source.as_bytes(), &mut facts);
 
     Ok(facts)
+}
+
+/// Remove `import_used` facts for bindings that are only ever used in *type* positions.
+///
+/// `import type { X }` and inline `type X` are already skipped syntactically, but a plain
+/// value-syntax import whose binding is used only as a type is erased by TypeScript just the
+/// same and creates no runtime dependency on the module. On dub this was 39 of 458 baseline
+/// findings (8.5%) - shapes like:
+///
+/// ```ts
+/// import { Domain } from "@prisma/client";
+/// function f(d: Pick<Domain, "id">) {}   // never a value
+/// ```
+///
+/// The direction of caution matters. Wrongly dropping a real data client would create a
+/// silent miss, which is the worst failure class in this codebase, so a binding is dropped
+/// only when the AST shows at least one type-position use and *no* value-position use.
+/// Absent positive evidence of type usage, the fact is kept.
+fn drop_type_only_usage_imports(root: Node<'_>, source: &[u8], facts: &mut Vec<Fact>) {
+    let mut value_uses: BTreeSet<String> = BTreeSet::new();
+    let mut type_uses: BTreeSet<String> = BTreeSet::new();
+    collect_identifier_usage(root, source, &mut value_uses, &mut type_uses);
+
+    facts.retain(|fact| {
+        if fact.kind != FactKind::ImportUsed {
+            return true;
+        }
+        let name = fact.name.as_str();
+        let used_as_type = type_uses.contains(name);
+        let used_as_value = value_uses.contains(name);
+        // Drop only on positive evidence: used as a type somewhere, never as a value.
+        // A binding with no type use at all, or with any value use, is kept.
+        !(used_as_type && !used_as_value)
+    });
+}
+
+/// Partition every identifier occurrence into type positions and value positions.
+///
+/// tree-sitter-typescript exposes these as distinct node kinds: a name used as a type parses
+/// as `type_identifier`, and one used as a value parses as `identifier`. That distinction is
+/// the grammar's, not a heuristic of ours, which is why this is done on the AST rather than
+/// by matching text.
+fn collect_identifier_usage(
+    node: Node<'_>,
+    source: &[u8],
+    value_uses: &mut BTreeSet<String>,
+    type_uses: &mut BTreeSet<String>,
+) {
+    // Do not count the import clause itself as a use of its own bindings.
+    if node.kind() == "import_statement" {
+        return;
+    }
+
+    match node.kind() {
+        "type_identifier" => {
+            if let Some(text) = node_text(node, source) {
+                type_uses.insert(text);
+            }
+        }
+        "identifier" | "shorthand_property_identifier" => {
+            if let Some(text) = node_text(node, source) {
+                value_uses.insert(text);
+            }
+        }
+        _ => {}
+    }
+
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_identifier_usage(child, source, value_uses, type_uses);
+    }
 }
 
 fn walk_node(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {

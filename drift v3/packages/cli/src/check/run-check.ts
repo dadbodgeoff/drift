@@ -2592,14 +2592,20 @@ export function runFullRepoCheck(
       ? storage.listFileSnapshots(repoId, latestScan.id).map((snapshot) => [snapshot.file_path, snapshot])
       : []
   );
-  const importFactsByKey = new Map(
-    latestScan
-      ? storage.listFacts(latestScan.id, { kind: "import_used" }).map((fact) => [
-          importFactEvidenceKey(fact.file_path, fact.start_line, fact.name, String(fact.value ?? "")),
-          fact.id
-        ])
-      : []
-  );
+  // Engine import facts, grouped by file. This is the authoritative set: the engine decides
+  // what counts as a value import, including dropping bindings used only in type positions.
+  //
+  // Baseline materialization used to re-derive imports from source with the CLI's own regex
+  // and then look the results up here by evidence key. Any disagreement between the two
+  // parsers produced a finding with no fact behind it - originally a crash (F2), later a
+  // reported parser gap (A3.3). Reading the facts directly removes the possibility: there is
+  // one parser, and it is the engine's.
+  const importFactsByFile = new Map<string, FactRecord[]>();
+  if (latestScan) {
+    for (const fact of storage.listFacts(latestScan.id, { kind: "import_used" })) {
+      importFactsByFile.set(fact.file_path, [...(importFactsByFile.get(fact.file_path) ?? []), fact]);
+    }
+  }
 
   const findings: Finding[] = [];
   for (const convention of contract.conventions) {
@@ -2611,8 +2617,16 @@ export function runFullRepoCheck(
       if (isExceptedPath(filePath, convention, now)) {
         continue;
       }
-      const source = readFileSync(join(repo.root_path, filePath), "utf8");
-      for (const importUsed of extractImports(source)) {
+      for (const fact of importFactsByFile.get(filePath) ?? []) {
+        const importUsed = {
+          name: fact.name,
+          source: String(fact.value ?? ""),
+          line: fact.start_line,
+          end_line: fact.end_line
+        };
+        if (!importUsed.source) {
+          continue;
+        }
         if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
           continue;
         }
@@ -2648,9 +2662,7 @@ export function runFullRepoCheck(
         }
 
         const fingerprint = findingFingerprint(convention.id, filePath, importUsed.name, importUsed.source);
-        const factId = importFactsByKey.get(
-          importFactEvidenceKey(filePath, importUsed.line, importUsed.name, importUsed.source)
-        );
+        const factId: string | undefined = fact.id;
         if (!factId) {
           // A binding we detected has no corresponding engine fact, which means the two
           // import parsers disagree about this file. That is a parser gap in one file,

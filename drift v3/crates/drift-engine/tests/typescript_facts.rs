@@ -288,3 +288,84 @@ fn detects_package_and_module_roles_from_paths() {
         );
     }
 }
+
+/// T12: a value-syntax import whose binding is only ever used as a type is erased by
+/// TypeScript just as `import type` is, and creates no runtime dependency. On dub this shape
+/// accounted for 39 of 458 baseline findings.
+#[test]
+fn skips_value_syntax_imports_used_only_in_type_positions() {
+    let source = r#"
+import { Domain } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const rows = await prisma.domain.findMany();
+  return Response.json(rows);
+}
+
+function shape(input: Pick<Domain, "id" | "slug">) {
+  return input;
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/domains/route.ts", source).expect("typescript facts");
+
+    // Domain is only ever a type: no runtime dependency on @prisma/client from this route.
+    assert!(
+        !facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Domain"),
+        "Domain is used only in a type position and must not be a value import"
+    );
+    // prisma is called, so it must survive - dropping it would be a silent miss.
+    assert!(
+        facts.iter().any(|fact| fact.kind == FactKind::ImportUsed
+            && fact.name == "prisma"
+            && fact.value.as_deref() == Some("@/lib/prisma")),
+        "prisma is called at runtime and must remain a value import"
+    );
+}
+
+#[test]
+fn keeps_imports_used_as_both_type_and_value() {
+    // The Prisma namespace is a real runtime import (error classes) even though it also
+    // appears in type positions. Ambiguity must resolve toward keeping the fact.
+    let source = r#"
+import { Prisma } from "@prisma/client";
+
+export async function GET() {
+  try {
+    return Response.json({});
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return Response.json({ code: error.code });
+    }
+    throw error;
+  }
+}
+
+function widen(input: Prisma.UserWhereInput) {
+  return input;
+}
+"#;
+
+    let facts = extract_typescript_facts("app/api/x/route.ts", source).expect("typescript facts");
+    assert!(
+        facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Prisma"),
+        "a binding used as both a value and a type must be kept"
+    );
+}
+
+#[test]
+fn keeps_imports_with_no_type_usage_evidence() {
+    // No type position anywhere: the fact must be kept regardless of how the value is used.
+    let source = r#"
+import { db } from "@/lib/db";
+
+export async function GET() {
+  return Response.json(await db.user.findMany());
+}
+"#;
+
+    let facts = extract_typescript_facts("app/api/y/route.ts", source).expect("typescript facts");
+    assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "db"));
+}

@@ -150,8 +150,11 @@ blocked items that need a decision, most consequential first, each with the reco
 - `packages/cli/test/cli.test.ts` is ~15.8k lines. Use `pnpm vitest run test/cli.test.ts -t "<name>"`
   to run one case. It contains 198 `exitCode).toBe(1)` assertions; only a subset relate to blocked
   checks, so never blanket-replace them — map each to its test name first.
-- `pnpm build` after **every** source edit before running the CLI. I once verified a fix against a
-  stale `dist/` and got a misleading result.
+- `pnpm build` after **every** TS source edit, and `cargo build --release -p drift-engine` after
+  **every** Rust edit, before running the CLI or the harness. `cargo test` builds *debug* only, so
+  a passing test suite does not mean the release binary the CLI invokes has your change. This bit
+  twice: once against a stale `dist/`, once against a stale release engine that produced a
+  plausible-but-wrong measurement (8.4% instead of 3.1%) plus three spurious parser gaps.
 
 **The eval harness**
 - Hermetic: temp `HOME` per repo, hard-resets the repo, creates no commits. Manual `drift` runs are

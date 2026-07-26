@@ -2,13 +2,13 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 11 |
+| Done | 12 |
 | Done (partial) | 2 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
-| Discoveries | 4 |
+| Discoveries | 5 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -24,6 +24,7 @@
 - **T09** Verify B5 typed-error claim — Premise CONFIRMED: 8 sites, 7 in run-cli.ts plus one in rust-engine.ts. All are user-facing classification, not internal.
 - **T11** Audit for other unconditional capability assertions — 22 sites classified in docs/architecture/capability-assertion-audit.md. One real overclaim fixed: candidate inference reported complete:true unconditionally while deciding the data layer by five-substring match - on midday it finds nothing and claimed full coverage. Now derived from whether a data-access candidate was produced, with missing_capabilities and a reason pointing at --data-modules.
 - **T11b** Invert the factgraph fail-open completeness default and wire the engine measurement through — Both factgraph completeness fallbacks now default to complete:false with missing_capabilities [completeness_not_reported] and a reason, instead of claiming full coverage plus blocking authority when a caller omits the measurement.
+- **T12** Symbol-level type classification: drop imports used only in type positions — dub baseline findings 458 -> 417; type-only false-positive rate 8.5% -> 3.1%, with real headroom under the <10% gate. Zero reconciliation gaps.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 
@@ -37,6 +38,8 @@
   - evidence: candidate_command.rs:1035 matches!(lower, ... | "withworkspace"). None of the surrounding broad conditions match withWorkspace: it does not start with get and contains none of session/login/authenticate/authguard. So the literal is required for the match.
 - **T-disk** Disk exhaustion produced two false test failures mid-run
   - evidence: Free space hit 1.8GB. pnpm -r test reported 2 failures (doctor state, version metadata) and the external suite reported "database or disk is full" for formbricks and calcom. All passed on retry after remediation with no code change.
+- **T-stale-binary** Verified against a stale release binary after a Rust source fix
+  - evidence: Corrected the T12 retain predicate, ran cargo test (debug) which passed, then measured against target/release which still held the inverted logic - producing a misleading 8.4% result and 3 spurious reconciliation gaps. Rebuilding release gave the true 3.1%.
 
 ## Deferred — human-gated by design
 
