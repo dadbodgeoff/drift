@@ -5,7 +5,7 @@
 | Done | 24 |
 | Done (partial) | 4 |
 | Premise false (no change needed) | 1 |
-| Blocked — needs discussion | 3 |
+| Blocked — needs discussion | 4 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
 | Discoveries | 6 |
@@ -95,4 +95,13 @@ recommendation. Work reverted; the tree is green.
 - **diagnosis:** My approach was wrong, not the crate. Per-directory scoping is normally handled by ignore::WalkBuilder, which constructs a separate Gitignore per directory and applies precedence nearest-first. Reverted: a wrong ignore implementation that silently excludes real routes is far worse than the original limitation, since excluded files produce no findings at all.
 - **needs:** Either (a) build one Gitignore per directory rooted at that directory and test a path against each applicable one nearest-first, or (b) adopt ignore::WalkBuilder for file discovery, which handles this natively but replaces the existing walk. (b) is cleaner but larger. Note the fixture from T08 passes under the naive approach, so fixture-only verification is insufficient here - the suite is what caught it.
 - **reverted to:** `185b9b0`
+
+### T18 — Baseline drift semantics when a baselined file changes
+
+- **reason:** needs_human_decision
+- **attempted:** Mapped the full four-case matrix on formbricks, then changed the blocking predicates (blockingCount, blockingNewHunks, warnings, preExisting accounting) so a finding blocks on diff_status=new_in_diff + block regardless of baseline status. Verified all four cases behaved as the plan pre-registered. Reverted after two existing tests failed.
+- **evidence:** Matrix as shipped: (1) untouched baselined violation -> no finding, pass. (2) file edited elsewhere -> pre_existing/touched_existing, pass. (3) violating line itself REWRITTEN -> pre_existing/new_in_diff/block but blocking_count 0, pass. (4) violation REMOVED, committed, then REINTRODUCED -> same, pass. So a baseline fingerprint match is a permanent per-violation waiver: rewriting the line or deleting and re-adding it stays exempt forever. My plan pre-registered that (4) must block.
+- **diagnosis:** Not a bug - a product decision, and two tests encode the current contract explicitly ("does not fail check for active baseline findings" reuses the same diff that otherwise exits 2, and "preserves human-governed finding statuses during repeated checks"). The tension is that --accept-defaults baselines everything automatically, so an onboarding-time bulk shield is being treated as a considered per-finding waiver. baseline_violations has no provenance column, so the two cannot be distinguished today.
+- **needs:** A decision between: (A) keep as-is, baseline = permanent per-fingerprint waiver; (B) baseline shields untouched code only, so rewriting or reintroducing a violation blocks - stronger promise, breaks the tested contract, makes previously-passing diffs fail; (C) add a provenance column to baseline_violations and honour explicit waivers permanently while onboarding baselines shield only untouched code. Recommend C: Drift already has explicit waiver mechanisms (findings suppress, contract waivers), so the bulk onboarding baseline should not silently double as one. C needs a migration, hence the decision.
+- **reverted to:** `27ef387`
 
