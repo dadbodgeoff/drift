@@ -38,6 +38,13 @@ export interface ScanData {
    * than a measurement.
    */
   completeness?: EngineCompleteness[];
+  /**
+   * Version of the engine binary that produced this scan, taken from the `scan_started`
+   * event. Persisted per scan so incremental reuse can refuse facts written by a different
+   * engine: reuse is otherwise keyed only on file content, which assumes a file always yields
+   * the same facts - an assumption every extraction change breaks.
+   */
+  engineVersion?: string;
 }
 
 export interface ScanFallbackStatus {
@@ -184,6 +191,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
   const frameworkCapabilities: EngineScanResult["framework_capabilities"] = [];
   let stats: EngineStats | undefined;
   let completeness: EngineCompleteness[] | undefined;
+  let engineVersion: string | undefined;
   let completed = false;
 
   for (const event of events) {
@@ -224,6 +232,8 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
         diagnostics.push(...event.diagnostics);
         break;
       case "scan_started":
+        engineVersion = event.engine_version;
+        break;
       case "stats_delta":
         break;
     }
@@ -251,6 +261,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
     framework_parser_gaps: frameworkParserGaps.map(engineFrameworkParserGap),
     framework_capabilities: frameworkCapabilities.map(engineFrameworkCapability),
     completeness,
+    engineVersion,
     stats
   };
 }

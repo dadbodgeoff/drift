@@ -125,6 +125,10 @@ export async function GET() {
     let manifest = serde_json::json!({
         "schema_version": "engine.reuse_manifest.v1",
         "previous_scan_id": "scan_first",
+        // Required for reuse: the engine refuses facts written by a different version,
+        // because reuse is keyed on file content and every extraction change invalidates that
+        // assumption. See tests/scan_reuse.rs.
+        "engine_version": drift_engine::DRIFT_ENGINE_VERSION,
         "file_snapshots": first_json["file_snapshots"],
         "facts": first_json["facts"]
     });

@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 14 |
+| Done | 15 |
 | Done (partial) | 3 |
 | Premise false (no change needed) | 0 |
 | Blocked — needs discussion | 2 |
@@ -27,6 +27,7 @@
 - **T12** Symbol-level type classification: drop imports used only in type positions — dub baseline findings 458 -> 417; type-only false-positive rate 8.5% -> 3.1%, with real headroom under the <10% gate. Zero reconciliation gaps.
 - **T13** Reduce whitelist over-matching — cal.com forbidden_imports 6 -> 1: exactly ["@calcom/prisma"], its real data layer. openstatus 4 -> 3, keeping @openstatus/db/src/schema.
 - **T14** Assert exact forbidden_imports sets — expectForbiddenExact pins the full set for taxonomy, formbricks, calcom and openstatus; expectForbidden alone only proved the real data layer was present, so cal.com passed while carrying four wrong entries out of six. dub/papermark/midday left as null pending a decision on their expected exact sets.
+- **T15** Version-gate incremental scan reuse — Reuse was keyed only on content_hash and byte_size, which assumes a file always yields the same facts. T12 (stop emitting type-only imports) and T13 (narrow data-layer matching) both broke that assumption, so upgrading Drift and rescanning would have silently kept stale facts for every unchanged file - stale analysis presented as current, the exact failure this product exists to prevent.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).

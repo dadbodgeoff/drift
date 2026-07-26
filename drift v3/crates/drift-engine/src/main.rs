@@ -412,6 +412,12 @@ fn load_reuse_index(path: Option<&Path>) -> EngineResult<Option<ReuseIndex>> {
     if manifest.previous_scan_id.trim().is_empty() {
         return Err("reuse manifest previous_scan_id is required".into());
     }
+    // Fail closed on an engine change: reparse rather than trust facts produced by different
+    // extraction logic. Cheaper to rescan once after an upgrade than to enforce against a
+    // stale view of the repo.
+    if manifest.engine_version.as_deref() != Some(drift_engine::DRIFT_ENGINE_VERSION) {
+        return Ok(None);
+    }
 
     let mut facts_by_file = BTreeMap::<String, Vec<EngineFact>>::new();
     for fact in manifest.facts {

@@ -121,7 +121,9 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       adapter_versions: {
         typescript: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
         resolver: DRIFT_RESOLVER_VERSION,
-        resolver_inputs: currentResolverInputFingerprint
+        resolver_inputs: currentResolverInputFingerprint,
+        // Persisted so incremental reuse can tell whether stored facts came from this engine.
+        ...(scanData.engineVersion ? { engine: scanData.engineVersion } : {})
       },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "completed",
@@ -355,6 +357,12 @@ function createScanReuseManifest(input: {
   writeFileSync(path, JSON.stringify({
     schema_version: "engine.reuse_manifest.v1",
     previous_scan_id: input.previousScan.id,
+    // The engine that produced these facts. The engine refuses to reuse facts written by a
+    // different version, because reuse is otherwise keyed only on file content - which
+    // assumes a file always yields the same facts. Every extraction change breaks that
+    // assumption, so without this an upgrade would silently keep stale facts for every
+    // unchanged file.
+    engine_version: input.previousScan.adapter_versions?.engine ?? null,
     file_snapshots: snapshots.map((snapshot) => ({
       file_path: snapshot.file_path,
       content_hash: snapshot.content_hash,

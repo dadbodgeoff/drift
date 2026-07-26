@@ -174,6 +174,20 @@ pub struct EngineStats {
 pub struct ScanReuseManifest {
     pub schema_version: String,
     pub previous_scan_id: String,
+    /// Engine version that produced these facts.
+    ///
+    /// Reuse is otherwise keyed only on file content, which assumes a given file always
+    /// yields the same facts. That assumption breaks on every engine change that alters
+    /// extraction - T12 stopped emitting type-only imports and T13 narrowed data-layer
+    /// matching, so an unchanged file legitimately produces different facts than it did
+    /// before. Without this, upgrading Drift and rescanning would silently keep the old
+    /// facts for every unchanged file, which is exactly the stale-analysis failure this
+    /// project exists to prevent.
+    ///
+    /// Optional so manifests written by older engines still parse; absent means unknown,
+    /// which is treated as not reusable.
+    #[serde(default)]
+    pub engine_version: Option<String>,
     pub file_snapshots: Vec<ScannedFile>,
     pub facts: Vec<EngineFact>,
 }
@@ -573,10 +587,19 @@ pub enum ScanStreamEvent {
 }
 
 pub fn adapter_versions() -> BTreeMap<String, String> {
-    BTreeMap::from([(
-        "typescript".to_string(),
-        drift_engine::DRIFT_ENGINE_VERSION.to_string(),
-    )])
+    BTreeMap::from([
+        (
+            "typescript".to_string(),
+            drift_engine::DRIFT_ENGINE_VERSION.to_string(),
+        ),
+        // Recorded per scan so incremental reuse can tell whether stored facts were produced
+        // by this engine. Reuse is otherwise keyed only on file content, which assumes a file
+        // always yields the same facts - an assumption every extraction change breaks.
+        (
+            "engine".to_string(),
+            drift_engine::DRIFT_ENGINE_VERSION.to_string(),
+        ),
+    ])
 }
 
 pub fn engine_stats(
