@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 40 |
+| Done | 41 |
 | Done (partial) | 20 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
@@ -53,6 +53,7 @@
 - **T81** Packed-artifact smoke test (D2) — The DoD was already largely met - installed-flow.test.ts packs the packages, installs them into a clean consumer dir, strips DRIFT_ENGINE_BIN and the fallback env var, and runs doctor, scan, start, prepare, check, findings and MCP status from the tarball, asserting the engine resolves from the packaged optional dependency. Closed the real gap: it only ever saw the pass path.
 - **T82** Repo surgery (D3) — drift v3 promoted to the repo root; the two legacy trees (Drift V1, drift v1 depreciated, drift v2 - 356MB, 6000 files) removed from the working tree and preserved on the archive/v1-v2-trees branch. verify:ci exit 0 from the new root, e2e 63/63, external suite 7/7, Rust 24 suites.
 - **T92** Dogfood on Drift itself — DoD met: drift start on Drift now reports something actionable instead of a bare zero. It scans 299 files, finds 0 candidates, and explains why - "Declared data dependencies: @prisma/client, better-sqlite3. No local module wrapping them is imported by an API route, so there is nothing to enforce yet. Declare one explicitly with --data-modules if that is wrong." That is correct: Drift is a CLI with no API routes, so there genuinely is nothing to enforce, and A6 says so rather than reporting silence.
+- **T93** Adversarial self-review of the enforcement claim — Six attempts to make drift check report pass over a real violation in a changed hunk under a block-mode convention. Four held: plain violation, aliased import, namespace import, dynamic await import(). TWO SUCCEEDED and are filed as blocking, with permanent fixtures.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
