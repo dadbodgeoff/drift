@@ -3,13 +3,13 @@
 **Tree state:** green. **`pnpm verify:ci` exits 0** — the full release gate, for the first time
 since before this run. External suite **7/7**, e2e **63/63**, Rust **24** suites, TS green.
 **Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 57 tasks (34 done, 13 partial, 2 premise-false, 2 skipped-dependency). 6 blocked,
+**Completed:** 68 tasks (39 done, 17 partial, 2 premise-false, 2 skipped-dependency). 6 blocked,
 8 discoveries, 2 deferred.
 
 ## Resume
 
 ```bash
-cd ~/drift-falsification/drift/"drift v3"
+cd ~/drift-falsification/drift          # T82: the workspace is now the repo root
 df -h ~                                   # need >5 GB; the suite refuses below that now
 pnpm build && cargo build --release -p drift-engine
 pnpm eval:external                        # confirm the oracle before trusting anything
@@ -22,7 +22,7 @@ Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions)
 node scripts/run-log.mjs next     # prints the next unsettled task; exits 1 when none remain
 ```
 
-Continue at **T61**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
+Continue at **T83**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
 tiers of regenerable artifacts only, and never touches the pinned evaluation repos.
 
 ## Completed
