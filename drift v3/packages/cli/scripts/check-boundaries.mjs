@@ -101,12 +101,46 @@ for (const file of files) {
   }
 }
 
+/**
+ * The MCP server must not depend on the CLI.
+ *
+ * They are separate surfaces over the same data, and the CLI owns argument parsing, process exit
+ * codes and terminal formatting - none of which mean anything to an agent over stdio. Shared
+ * logic belongs in @drift/query, which is where T51 moved preflight ranking after the two copies
+ * silently diverged.
+ *
+ * Asserted rather than assumed: the boundary holds today, and this keeps a convenient import from
+ * quietly establishing the dependency.
+ */
+for (const { pkg, root, file } of packageFiles) {
+  if (pkg !== "mcp") {
+    continue;
+  }
+  const fileRel = relative(root, file).replaceAll("\\", "/");
+  const source = readFileSync(file, "utf8");
+  if (/(?:from|require\()\s*["'`](?:@drift\/cli|(?:\.\.\/)+cli\/)/.test(source)) {
+    failures.push(
+      `packages/mcp/${fileRel} imports from the CLI; shared logic belongs in @drift/query`
+    );
+  }
+}
+
 for (const { pkg, root, file } of packageFiles) {
   const fileRel = relative(root, file).replaceAll("\\", "/");
   const repoRel = relative(repoRoot, file).replaceAll("\\", "/");
   const source = readFileSync(file, "utf8");
 
-  if (pkg !== "storage" && (source.includes("better-sqlite3") || source.includes("new Database("))) {
+  // Match an actual import of the driver, not any mention of its name.
+  //
+  // This previously tested `source.includes("better-sqlite3")`, which fired on
+  // data-layer-discovery.ts - where "better-sqlite3" is one entry in a list of known data-layer
+  // package names used for *detection*, not a database call. The gate had therefore been red
+  // since commit 201f462, well before this run, and a boundary check that has been failing that
+  // long is one nobody reads. Same shape as the problem this product exists to catch: a rule
+  // declared, checked, and ignored.
+  const importsSqliteDriver =
+    /(?:from|require\()\s*["'`]better-sqlite3["'`]/.test(source) || source.includes("new Database(");
+  if (pkg !== "storage" && importsSqliteDriver) {
     failures.push(`${repoRel} uses raw SQLite; database access belongs in packages/storage`);
   }
 
