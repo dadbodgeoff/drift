@@ -3,11 +3,11 @@
 | Outcome | Count |
 |---|---|
 | Done | 39 |
-| Done (partial) | 18 |
+| Done (partial) | 19 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
-| Deferred — human-gated | 2 |
+| Deferred — human-gated | 3 |
 | Discoveries | 8 |
 | Baseline changes | 0 |
 
@@ -70,6 +70,7 @@
 - **T75** Publish the failure catalog as launch content (F2) _(partial)_ — Drafted in-repo at docs/archive/failure-catalog-draft.md, clearly marked NOT PUBLISHED. Not published, and not queued for publishing - it is outward-facing and needs explicit approval.
 - **T80** Engine binary pipeline (D1) _(partial)_ — scripts/build-engine-artifacts.mjs builds each target with SHA-256 and a manifest; the matrix validator now checks artifacts, not just declarations. 2 of 5 targets built here: darwin-arm64 verified by execution, darwin-x64 cross-built and explicitly marked unverified.
 - **T83** Fresh-machine install test _(partial)_ — macOS arm64 verified; Linux and Windows cannot be verified from this machine, and docs/architecture/install-verification.md states that per platform rather than implying broader coverage.
+- **T90** Full gate run _(partial)_ — Recorded in docs/autonomous-run/GATE.md. verify:ci exit 0; external suite 7/7 with all negative controls; prepare quality 3/3; harness self-tests 6/6.
 
 ## Premise false — deliberately no change
 
@@ -106,6 +107,7 @@
 
 - **T-halt** Run halted cleanly: context exhausted after Phase 1 and Phase 2 — Resume at T12 per docs/autonomous-run/HALT.md. Tree green, nothing pushed, 7/7 suite passing.
 - **T52** MCP SDK migration — Explicitly gated in the plan as not before 2026-07-28, and T47 found no reason to bring it forward: the current hand-rolled server negotiates correctly, accepts clients two revisions newer, and serves a full session. Note T47 could not verify what the 2026-07-28 revision actually contains, so the trigger for this task is itself unconfirmed.
+- **T84** npm publish (D4) — Explicit human approval - the plan marks it so, and it is irreversible and outward-facing. Beyond approval, two things should be true first: T83 shows only macOS arm64 is verified (Linux and Windows have no engine binary at all, so those optionalDependencies would resolve to empty packages), and the version is 0.1.0 across a workspace whose release matrix only just started checking that artifacts exist. Publishing now would ship three platform packages containing no binary.
 
 ## Discussion agenda
 
