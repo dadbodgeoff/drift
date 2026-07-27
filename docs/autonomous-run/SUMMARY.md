@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 39 |
-| Done (partial) | 17 |
+| Done (partial) | 18 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
@@ -69,6 +69,7 @@
 - **T74** README rewrite (D5) _(partial)_ — First screen now answers what, for whom, and limits. Opens with one sentence and a four-line install-to-check block, then a scope table that says what Drift does NOT do before anything else.
 - **T75** Publish the failure catalog as launch content (F2) _(partial)_ — Drafted in-repo at docs/archive/failure-catalog-draft.md, clearly marked NOT PUBLISHED. Not published, and not queued for publishing - it is outward-facing and needs explicit approval.
 - **T80** Engine binary pipeline (D1) _(partial)_ — scripts/build-engine-artifacts.mjs builds each target with SHA-256 and a manifest; the matrix validator now checks artifacts, not just declarations. 2 of 5 targets built here: darwin-arm64 verified by execution, darwin-x64 cross-built and explicitly marked unverified.
+- **T83** Fresh-machine install test _(partial)_ — macOS arm64 verified; Linux and Windows cannot be verified from this machine, and docs/architecture/install-verification.md states that per platform rather than implying broader coverage.
 
 ## Premise false — deliberately no change
 
