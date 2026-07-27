@@ -25,7 +25,8 @@
     "eval:external": "node scripts/external-eval.mjs",
     "eval:external:update": "node scripts/external-eval.mjs --update",
     "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run scripts/external-eval.test.mjs"
+    "test:harness": "vitest run scripts/external-eval.test.mjs",
+    "eval:prepare": "node scripts/prepare-quality-eval.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

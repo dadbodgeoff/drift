@@ -208,7 +208,51 @@ export function relevantFilesForTask(input: {
     }
   }
 
-  return files.slice(0, 25);
+  // Rank before truncating.
+  //
+  // This previously returned `files.slice(0, 25)` in filesystem-walk order, so the cap was
+  // exhausted by whichever files happened to sort first - and "in scope for this convention"
+  // matches every API route in the repository, so it always had thousands of candidates.
+  //
+  // Measured on dub with "add an endpoint that lists workspace invites": 24 of the 25 returned
+  // files were arbitrary routes matched only by convention scope, none matched "invite", and
+  // apps/web/app/api/workspaces/[idOrSlug]/invites/route.ts - the one file someone doing that
+  // task must see - never appeared, because the walk reached app/(ee)/api/admin/* first. The
+  // context claim rests on this function, so ordering it by relevance is the whole point.
+  return files
+    .map((file) => ({ file, score: relevanceScore(file) }))
+    .sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
+    .slice(0, 25)
+    .map((entry) => entry.file);
+}
+
+/**
+ * How relevant a file is to the task, highest first.
+ *
+ * Task-token matches dominate deliberately: a file whose path names what the task is about is
+ * evidence of an existing pattern to follow, whereas convention scope only says the file is the
+ * kind of thing the rule applies to - true of every route.
+ */
+function relevanceScore(file: RelevantFile): number {
+  let score = 0;
+  for (const reason of file.reasons) {
+    if (reason === "requested path") {
+      score += 1000;
+    } else if (reason.startsWith("task token:")) {
+      // Each distinct token match compounds: matching both "workspace" and "invites" is a much
+      // stronger signal than matching either alone.
+      score += 100;
+    } else if (reason.startsWith("in scope for")) {
+      score += 1;
+    } else {
+      score += 5;
+    }
+  }
+  // Prefer routes over components when otherwise equal - the task is usually about an endpoint.
+  if (file.roles.includes("api_route")) {
+    score += 2;
+  }
+  return score;
 }
 
 export function relevantFileForPath(

@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 30 |
+| Done | 31 |
 | Done (partial) | 9 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
@@ -43,6 +43,7 @@
 - **T25** Gate the security heuristics layer behind --experimental-security — Security convention kinds are hidden from listings by default and can never be auto-accepted by --accept-defaults. On dub the default listing drops from 20 candidates to 1 (the layering wedge), with 19 security candidates hidden AND reported, plus the reveal command. Verified the accepted default convention is still the data-access one.
 - **T31** Claims to behaviour reconciliation — Every allowed claim is now mapped to the test that proves it, and adding an allowed claim without evidence fails the suite. Also asserts the JSON manifest stays in step with the code manifest, and that the four demoted claims (convention_learning, automatic_convention_inference_for_any_data_layer, security_boundary_proofs, auth_dominance_analysis) stay blocked - a regression re-allowing them would be an overclaim, not a feature.
 - **T43** Memory ceiling under load — Measured peak RSS on 20k files: Rust engine 93MB, Node CLI 1.76GB - 19x, for the same scan. The CLI holds the whole payload (86k facts plus graph nodes/edges/evidence) as JS objects. Heap ceiling found by capping max-old-space-size: 512MB crashes, 1024MB works. Working rule documented: ~52KB heap per indexable file.
+- **T46** drift prepare quality eval (the context claim) — Found prepare essentially broken for its stated purpose, fixed it, and added a measuring harness. pnpm eval:prepare - 3/3 tasks now surface the expected file at rank 4, 1, 1.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
