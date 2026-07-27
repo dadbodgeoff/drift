@@ -1,83 +1,84 @@
 # Run 2 — paused, context exhausted
 
-**Tree:** green. External suite **7/7** with zero baseline drift · e2e **63/63** · TS 791 · Rust 24
-suites. Eval repos clean. **3 commits. Nothing pushed, nothing published.**
+**Tree:** green. External suite **7/7** zero drift · e2e **63/63** · TS 791 · Rust 25 suites ·
+clippy + rustfmt clean. Eval repos clean. **9 commits. Nothing pushed, nothing published.**
 
 **Resume:** `cd ~/drift-falsification/drift`, then
-`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T101** (finish), then T102.
+`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T111**.
 
-Run-2 state lives in `docs/autonomous-run-2/` (`DRIFT_RUN_DIR` selects it, so run 1's log stays
-an immutable record).
-
-## Done
-
-**T100 — both enforcement bypasses closed.** The relative import and the barrel re-export now
-block; the clean control still passes; external suite 7/7 with **zero baseline drift**, so nothing
-overshot.
-
-The plan's premise was partly wrong and locating the real defect was most of the work. Four
-layers, in the order they had to be peeled:
-
-1. The engine's graph matcher **was never called** during a check — instrumented it, got no output
-   at all. Dead code on that path.
-2. The deciding logic is a CLI-side pre-filter, `graphImportResolvesToForbidden`, carrying the
-   identical defect: `isForbiddenImport(resolvedPath, forbiddenImports)` compares a resolved file
-   path against specifiers.
-3. Fixing that was still not enough — the engine gets a graph **scoped to the changed files**, so
-   it cannot know what `@/lib/prisma` names. The CLI now computes the identities from the full
-   graph and passes them as `matcher.forbidden_module_files`.
-4. `MODULE_REEXPORTS_MODULE` was not in the kept-edge list, so the barrel chain never reached the
-   engine even once it could use it.
-
-**T100b — the run-1 fixtures did not reproduce the bug they were filed for.**
-`bypass-relative-import` inferred `forbidden_imports: ["../../../lib/prisma"]` — it learned the
-sneaky route's own spelling, so it would have passed with the bug fully present.
-`bypass-barrel-reexport` inferred nothing at all. Both rebuilt with a tsconfig paths mapping and
-an alias-form violating route, and pinned by `packages/cli/test/bypass-fixtures.test.ts`, which
-drives the real CLI end to end.
-
-## In flight — T101, reproduced, cause narrowed, not fixed
-
-**Two corrections to run 1.** It is **not midday-only**: `enforcement_matches_mode` is false on
-**four** repos — taxonomy, cal.com, papermark, midday — and correct on three. The harness had that
-recorded all along. And it is **not the `--data-modules` path**: midday blocks correctly by hand
-with the declared contract materialising exactly right.
-
-**The trigger is route count.** Bisected on midday:
-
-| Diff contents | enforcement |
+| Outcome | Count |
 |---|---|
-| bad route alone | **block** |
-| bad + clean | none |
-| bad + lookalike | none |
-| bad + subpath | none |
-| bad + typeonly | **block** |
+| Done | 4 |
+| Done (partial) | 2 |
+| Premise false | 1 |
+| Discovery | 1 |
 
-`typeonly` is the tell: T12 drops type-only imports, so that route contributes no import fact and
-the count effectively stays at one. **Any second route with a real import collapses
-`enforcement_result` to `none`.**
+## Phase 1 complete — both beta blockers closed
 
-**Candidate mechanism, not confirmed.** `check_command.rs:280` downgrades `enforcement_result` to
-`"none"` when `can_block` is false; `can_block` (line 37) is `completeness_reasons.is_empty()`,
-fed by `check_graph_completeness_reasons` flagging `unresolved_import` on API route files. Not
-confirmed because the CLI-reported `capability_completeness.can_block` stays **true** with no
-unresolved diagnostics in the payload — the engine's internal gate reads something in the scoped
-request the CLI does not expose.
+**T100 — the two enforcement bypasses.** Relative import and barrel re-export now block; clean
+control still passes; 7/7 with **zero baseline drift**. Four layers had to be peeled: the engine's
+graph matcher was never called during a check; the deciding logic is a CLI-side pre-filter with the
+same path-vs-specifier defect; the engine gets a graph **scoped to the changed files** so it cannot
+derive what `@/lib/prisma` names (the CLI now computes identities from the full graph and passes
+them); and `MODULE_REEXPORTS_MODULE` was filtered out before the engine saw it.
 
-**Next step:** instrument `completeness_reasons` in the engine for the two-route case. That is one
-run and it should settle it.
+**T100b — the run-1 fixtures did not reproduce the bug they were filed for.** One had learned the
+sneaky route's own spelling; the other inferred no contract at all. Both rebuilt with a tsconfig
+paths mapping and an alias-form violation, and pinned by a test that drives the real CLI.
 
-## Two things worth carrying into any further work here
+**T101 — the silent pass was the harness, and the product was right.** Enforcement now matches the
+contract on all seven repos and is a **hard assertion** (verified to bite). Two causes: midday's
+`cleanSymbol` was `sanitizeRedirect` where the module exports `sanitizeRedirectPath`, and
+structurally the lookalike/subpath probes *must* import non-existent modules, which legitimately
+makes coverage incomplete. The harness was suppressing what it was measuring. I implemented
+per-file gating in the engine first and reverted it — it produces results
+`packages/engine-contract` rejects, and that invariant is deliberate and tested.
 
-- **The harness records more than it asserts.** `enforcement_matches_mode` was diagnostic-only, and
-  four repos were failing it in the committed baseline while the suite reported 7/7. T101's DoD
-  (promote it to a hard assertion) matters more than it looked.
-- **A fixture can pass for the wrong reason.** Two of mine did. When a fixture exists to prove a
-  bug is fixed, check that it fails with the fix reverted.
+Two corrections to run 1's record: **four** repos were affected, not one, and `--data-modules` was
+never implicated.
+
+**T102 — gitignore, second attempt, this time correct.** `ignore::WalkBuilder` gives per-directory
+precedence natively. The fixture carries the exact shape that reverted attempt 1: a bare `app`
+pattern in one package plus API routes in another. Caught a regression of my own — WalkBuilder
+yields a missing repo root as an error *entry*, so a scan of a non-existent repo reported an empty
+repo and exited 0. The root must now be readable or the scan fails; per-entry errors deeper in the
+tree stay diagnostics.
+
+**T103 — premise false.** Both halves were already fixed. Verified on midday *with three candidates
+present* — the case T01b said would suppress it. Added tests for the text-output path, which was
+the one thing unguarded.
+
+## Phase 2 started
+
+**T110 — state growth is now bounded.** dub across five `start` runs: `393 → 787 → 1179 → 1179 →
+1179 MB`, facts fixed at two scans. Before: `393 → 787 → 1180 → 1573 → 1963` and climbing.
+
+The DoD's ≤1.2× is **not** met (it is 3×) for two deliberate reasons: `keep=2` retains two fact
+sets because incremental reuse needs the predecessor's, and I removed `VACUUM` after it demanded
+~2× the file size in free space and failed a run with a disk I/O error — housekeeping becoming the
+disk-exhaustion failure T41 exists to prevent.
+
+**Settled on the record:** stored scan count does **not** affect check latency (2.7s on dub at both
+2 and 10 scans). Retention is a footprint fix, not a speed one. The 3.9s-vs-18.7s discrepancy in
+the benchmark is therefore *not* scan accumulation — still unexplained.
+
+## Carry forward
+
+- **One run exited 1 under disk pressure then recovered** (T110). Unexplained; worth a look.
+- **T101b** — one intermittent MCP parity flake at default concurrency, then three clean runs. T64
+  removed serialisation on four green runs; this is a fifth-run failure.
+- **These test runs eat disk fast.** Two disk-I/O failures this session. `./scripts/reclaim-disk.sh`
+  between repos, and delete `/tmp/t1*` HOMEs as you go.
+
+## Two rules earned this run
+
+- **A fixture can pass for the wrong reason.** Two of mine did. When a fixture exists to prove a bug
+  is fixed, check it fails with the fix reverted.
+- **The harness can cause what it reports.** T101 was four repos of "product bug" that was the
+  negative controls suppressing the measurement. Check the instrument before the subject.
 
 ## Not started
 
-T102 (gitignore via `ignore::WalkBuilder`), T103 (A6 workspace resolution), Phase 2 (T110–T114,
-performance to sub-1s and the hooks pack), Phase 3 (T120–T124, identity/baseline/contract fields
-— all four maintainer decisions are pre-registered in `PLAN.md` §0.3), Phase 4 (T130–T137),
-Phase 5 (T140–T141).
+T111 (changed-files-only engine mode — the T114 gate), T112 (scoped graph loading), T113 (`repo map`
+from SQL), T114 (hooks pack), Phase 3 (T120–T124 — all four maintainer decisions pre-registered in
+`PLAN.md` §0.3), Phase 4 (T130–T137), Phase 5 (T140–T141).
