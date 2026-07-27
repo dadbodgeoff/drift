@@ -444,6 +444,15 @@ pub struct CheckConvention {
 #[derive(Debug, Deserialize)]
 pub struct CheckMatcher {
     pub forbidden_imports: Option<Vec<String>>,
+    /// Repo-relative files the forbidden specifiers resolve to.
+    ///
+    /// T100: the engine receives a graph scoped to the changed files, so it cannot derive this
+    /// itself - the imports that establish what `@/lib/prisma` *means* live in files that are not
+    /// part of the diff. The CLI has the whole graph and computes it there. Without it, matching
+    /// falls back to comparing specifier strings, which is what let a relative import and a barrel
+    /// re-export of the same module through (T93).
+    #[serde(default)]
+    pub forbidden_module_files: Option<Vec<String>>,
     pub allowed_delegate_imports: Option<Vec<String>>,
     pub required_calls: Option<Vec<String>>,
     pub applies_to_file_roles: Option<Vec<String>>,

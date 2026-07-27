@@ -1893,7 +1893,12 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
     );
     const snapshots = input.checkData.snapshots.filter((snapshot) => fileSet.has(snapshot.file_path));
     const graph = graphForEngineCheck(input.checkData, fileSet, allowedGraphImportFacts);
+    // Computed from the full graph, before it is scoped to the diff.
+    const forbiddenModuleFiles = [
+      ...forbiddenModuleFiles_(input.checkData, convention.matcher.forbidden_imports ?? [])
+    ];
     const result = await runEngineCheck({
+      forbiddenModuleFiles,
       repoId: input.repoId,
       repoRoot: input.repoRoot,
       scanId: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
@@ -2365,7 +2370,11 @@ function graphForEngineCheck(
     "FILE_DEFINES_MODULE",
     "IMPORT_DECL_REFERENCES_MODULE",
     "IMPORT_RESOLVES_TO_MODULE",
-    "MODULE_IMPORTS_MODULE"
+    "MODULE_IMPORTS_MODULE",
+    // T100: without these the engine cannot follow a barrel to the module it re-exports, so
+    // `import { prisma } from "@/lib/barrel"` passed while the direct import blocked. The edges
+    // exist in the scan; they were simply filtered out before the engine saw them.
+    "MODULE_REEXPORTS_MODULE"
   ]);
   const keptEdges = checkData.graph_edges.filter((edge) => {
     if (!edgeKindsForCheck.has(edge.kind)) {
@@ -2437,13 +2446,109 @@ function graphImportResolvesToForbidden(
   if (!importNode) {
     return false;
   }
+
+  // T100: compare resolved identity, not strings.
+  //
+  // This previously called isForbiddenImport(resolvedPath, forbiddenImports) - a resolved file
+  // path like `src/lib/prisma.ts` against specifiers like `@/lib/prisma`. That can only match when
+  // a forbidden entry happens to be a path, which is why two bypasses survived (T93):
+  // `../../../lib/prisma` resolves to the same file and passed, and a barrel re-exporting the
+  // client passed.
+  //
+  // The repository tells us what a specifier means: wherever any file imports a forbidden
+  // specifier and the resolver placed that edge, the target is the file it names.
+  const forbiddenFiles = forbiddenModuleFiles_(checkData, forbiddenImports);
+  const reexportTargets = moduleReexportTargets(checkData);
+
   return checkData.graph_edges
     .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE" && edge.from === importNode.id)
     .some((edge) => {
       const resolved = nodesById.get(edge.to);
       const resolvedPath = resolved ? stringMetadata(resolved.metadata, "file_path") : undefined;
-      return Boolean(resolvedPath && isForbiddenImport(resolvedPath, forbiddenImports));
+      if (!resolvedPath) {
+        return false;
+      }
+      if (forbiddenFiles.has(resolvedPath)) {
+        return true;
+      }
+      // A barrel that re-exports the client is still a dependency on the client.
+      if (reachesForbiddenViaReexport(edge.to, reexportTargets, nodesById, forbiddenFiles)) {
+        return true;
+      }
+      // Retained for bare package names that resolve to no local file.
+      return isForbiddenImport(resolvedPath, forbiddenImports);
     });
+}
+
+/**
+ * Files that the convention's forbidden specifiers actually resolve to.
+ *
+ * Derived from the repo's own resolved imports rather than by re-resolving, so it needs no second
+ * resolver and cannot disagree with the one that built the graph. Empty when nothing imports a
+ * forbidden specifier resolvably, in which case matching falls back to specifiers exactly as
+ * before - a repo that never exercised the resolver cannot regress.
+ *
+ * A lookalike module (`@/lib/prisma-legacy`) resolves to its own distinct file and never lands
+ * here, which is what keeps the T03 negative control green.
+ */
+function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
+  const files = new Set<string>();
+  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "IMPORT_RESOLVES_TO_MODULE") {
+      continue;
+    }
+    const importNode = nodesById.get(edge.from);
+    const source = importNode ? stringMetadata(importNode.metadata, "source") : undefined;
+    if (!source || !isForbiddenImport(source, forbiddenImports)) {
+      continue;
+    }
+    const target = nodesById.get(edge.to);
+    const targetPath = target ? stringMetadata(target.metadata, "file_path") : undefined;
+    if (targetPath) {
+      files.add(targetPath);
+    }
+  }
+  return files;
+}
+
+/** module id -> modules it re-exports, for chain walking. */
+function moduleReexportTargets(checkData: ScanData): Map<string, string[]> {
+  const targets = new Map<string, string[]>();
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "MODULE_REEXPORTS_MODULE") {
+      continue;
+    }
+    targets.set(edge.from, [...(targets.get(edge.from) ?? []), edge.to]);
+  }
+  return targets;
+}
+
+/** Does a re-export chain from `moduleId` reach one of the forbidden files? */
+function reachesForbiddenViaReexport(
+  moduleId: string,
+  reexportTargets: Map<string, string[]>,
+  nodesById: Map<string, ScanData["graph_nodes"][number]>,
+  forbiddenFiles: Set<string>
+): boolean {
+  const seen = new Set<string>();
+  const queue = [moduleId];
+  while (queue.length > 0) {
+    const current = queue.pop()!;
+    if (seen.has(current)) {
+      continue;
+    }
+    seen.add(current);
+    for (const next of reexportTargets.get(current) ?? []) {
+      const node = nodesById.get(next);
+      const path = node ? stringMetadata(node.metadata, "file_path") : undefined;
+      if (path && forbiddenFiles.has(path)) {
+        return true;
+      }
+      queue.push(next);
+    }
+  }
+  return false;
 }
 
 function exceptionContextForImport(

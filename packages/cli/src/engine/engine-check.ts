@@ -20,6 +20,8 @@ export interface EngineCheckInput {
   graphEdges?: GraphEdge[];
   graphEvidence?: GraphEvidence[];
   graphDiagnostics?: EngineDiagnostic[];
+  /** Files the forbidden specifiers resolve to; see the matcher note below. */
+  forbiddenModuleFiles?: string[];
   conventions: AcceptedConvention[];
   baseline: BaselineViolation[];
   diff: ParsedDiff;
@@ -74,7 +76,15 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
         id: convention.id,
         rule_id: convention.kind,
         kind: convention.kind,
-        matcher: convention.matcher as unknown as Record<string, unknown>,
+        // T100: the engine receives a graph scoped to the changed files, so it cannot derive
+        // what a forbidden specifier resolves to - the imports establishing that live in files
+        // outside the diff. The caller computes it from the whole graph and passes it here.
+        matcher: {
+          ...(convention.matcher as unknown as Record<string, unknown>),
+          ...(input.forbiddenModuleFiles?.length
+            ? { forbidden_module_files: input.forbiddenModuleFiles }
+            : {})
+        },
         scope: convention.scope as unknown as Record<string, unknown>,
         requires: securityRequires(convention),
         exceptions: convention.exceptions as unknown as Array<Record<string, unknown>>,

@@ -8,6 +8,13 @@ use crate::{Fact, FactKind};
 pub struct DirectDataAccessRule {
     pub convention_id: String,
     pub forbidden_imports: Vec<String>,
+    /// Repo-relative files the forbidden specifiers resolve to, supplied by the CLI.
+    ///
+    /// T100: on a diff-scoped check the engine sees only the changed files' graph, so it cannot
+    /// work out what `@/lib/prisma` names - the imports that establish that live elsewhere in the
+    /// repo. The CLI holds the whole graph and computes it there. Empty on paths that do not
+    /// supply it, where matching falls back to specifier comparison as before.
+    pub forbidden_module_files: Vec<String>,
     pub severity: Severity,
     pub enforcement_mode: EnforcementMode,
 }
