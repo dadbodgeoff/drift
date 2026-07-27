@@ -1,6 +1,0 @@
-# Laravel demo driftignore
-vendor/
-node_modules/
-storage/
-bootstrap/cache/
-.env
