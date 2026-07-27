@@ -1105,9 +1105,19 @@ fn is_auth_candidate_symbol(symbol: &str) -> bool {
                 || lower.contains("authguard")))
             || lower.contains("session")
             || lower.contains("login")
+            // Generic identity-helper shapes only. `"withworkspace"` used to sit in this list
+            // and was load-bearing: none of the broader conditions above match it, because it
+            // does not start with `get` and contains none of session/login/authenticate/authguard.
+            //
+            // That literal is dub's auth wrapper, and dub is one of the evaluation repos. The
+            // falsification report singled out `withWorkspace` at 253 occurrences as the most
+            // useful single output across six repositories - a result that existed because the
+            // repo's helper name was compiled into the engine. Production behaviour must never
+            // key on a specific codebase's vocabulary, so it is gone, and the candidate goes
+            // with it. That is the honest baseline.
             || matches!(
                 lower.as_str(),
-                "requireuser" | "getuser" | "getcurrentuser" | "currentuser" | "withworkspace"
+                "requireuser" | "getuser" | "getcurrentuser" | "currentuser"
             ))
 }
 

@@ -720,8 +720,18 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
     );
 }
 
+/// T26: `withWorkspace` is NOT recognised as an auth helper, and that is the correct behaviour.
+///
+/// This test previously asserted the opposite, and passed only because `"withworkspace"` was
+/// hardcoded in the auth-helper name list. That literal is dub's auth wrapper, and dub is one of
+/// the evaluation repos - so the falsification report's "most useful single output across six
+/// repositories" existed because a specific codebase's vocabulary was compiled into the engine.
+///
+/// Removing it costs that candidate. Keeping the assertion inverted here records the honest
+/// baseline: generic identity-helper shapes are recognised, repo-specific names are not, and
+/// recognising them would require the structural signal rather than a name list.
 #[test]
-fn infer_candidates_learns_workspace_wrappers_as_auth_patterns() {
+fn does_not_recognise_repo_specific_wrappers_as_auth_helpers() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
         "graph": {
@@ -799,14 +809,14 @@ fn infer_candidates_learns_workspace_wrappers_as_auth_patterns() {
     let candidates = payload["candidates"].as_array().expect("candidates");
 
     assert!(
-        candidates.iter().any(|candidate| {
+        !candidates.iter().any(|candidate| {
             candidate["kind"] == "api_route_requires_auth_helper"
                 && candidate["matcher"]["required_calls"]
                     .as_array()
                     .is_some_and(|calls| calls.iter().any(|call| call == "withWorkspace"))
-                && candidate["scoring"]["supporting_examples_count"] == 2
         }),
-        "{payload:#?}"
+        "withWorkspace must not be recognised as an auth helper: it matched only because dub's \
+         wrapper name was hardcoded in the engine. {payload:#?}"
     );
 }
 

@@ -159,10 +159,79 @@ pub fn callback_boundary_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
     }
 }
 
+/// True when control flow is too dynamic for the straight-line analysis to say anything.
+///
+/// This is the layer's safety valve: when it fires, the auth conclusion is degraded rather than
+/// asserted. It previously tested for `guards[`, `await guard(` and `computed_handler` - all
+/// three shapes taken from Drift's own fixtures. Real dynamic dispatch matches none of them, so
+/// the valve opened for test inputs and never for production code, and line-ordering dominance
+/// proceeded as though the flow were straight-line. A safety valve that only works on tests is
+/// worse than none, because it makes the analysis look guarded.
+///
+/// These patterns are shapes rather than identifiers: indexing a collection to obtain a handler,
+/// invoking the result of a call, composing middleware, or iterating guards. Deliberately
+/// over-inclusive - a false "too dynamic" costs a degraded conclusion, while a false "analysable"
+/// costs a wrong one.
 pub fn unsupported_dynamic_control_flow(source: &str) -> bool {
-    source.contains("guards[")
-        || source.contains("await guard(")
-        || source.contains("computed_handler")
+    let code: Vec<&str> = source
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.starts_with("//") && !line.starts_with('*'))
+        .collect();
+
+    for line in &code {
+        // Immediate dispatch: `routes[key](...)`, or invoking the result of a call.
+        if line.contains("](") || line.contains(")(") {
+            return true;
+        }
+        // Composition and iteration over handlers or guards.
+        if line.contains("compose(")
+            || line.contains("applyMiddleware")
+            || ((line.contains("middleware") || line.contains("guard"))
+                && (line.contains(".forEach") || line.contains(".reduce") || line.contains(".map(")))
+        {
+            return true;
+        }
+    }
+
+    // Deferred dispatch, which is the common shape and spans lines:
+    //
+    //     const guard = guards[request.headers.get("x-guard")];
+    //     await guard();
+    //
+    // A binding assigned from a collection lookup and later invoked. Matching this needs the two
+    // statements considered together, which is why a line-at-a-time scan missed it - and why the
+    // original fixture-string check appeared to work while covering nothing real.
+    for line in &code {
+        let Some((left, right)) = line.split_once('=') else {
+            continue;
+        };
+        if !right.trim_start().contains('[') {
+            continue;
+        }
+        let Some(binding) = left
+            .trim()
+            .trim_start_matches("const ")
+            .trim_start_matches("let ")
+            .trim_start_matches("var ")
+            .split_whitespace()
+            .next()
+        else {
+            continue;
+        };
+        if binding.is_empty() || !binding.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            continue;
+        }
+        let invoked = format!("{binding}(");
+        if code
+            .iter()
+            .any(|other| other != line && other.contains(&invoked))
+        {
+            return true;
+        }
+    }
+
+    false
 }
 
 pub fn indirect_secret_flow_parser_gaps(
