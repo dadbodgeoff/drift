@@ -259,6 +259,25 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       }));
     });
 
+    // T110: drop scans nothing needs, after the new one is safely committed.
+    //
+    // Outside the transaction deliberately. Pruning is housekeeping, and a failure to reclaim
+    // space must never roll back a scan that succeeded - the worst case is a larger database,
+    // which the next scan will tidy.
+    const pruned = storage.pruneSupersededScans(repo.id);
+    if (pruned.deleted.length > 0) {
+      storage.appendAuditEvent(auditEvent({
+        id: `audit_event_scans_pruned_${repo.id}_${scanId}`,
+        repoId: repo.id,
+        actor,
+        action: "scans_pruned",
+        targetType: "repo",
+        targetId: repo.id,
+        metadata: { pruned_scan_ids: pruned.deleted, retained_scan_count: pruned.kept },
+        createdAt: now
+      }));
+    }
+
     return {
       repo,
       scan,
