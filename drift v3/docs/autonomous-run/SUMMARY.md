@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 31 |
-| Done (partial) | 9 |
+| Done (partial) | 10 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 0 |
@@ -53,6 +53,7 @@
 - **T26** Remove test-tailored literals from production paths _(partial)_ — Removed "withworkspace" from the auth-helper name list, and generalised the dynamic-control-flow valve from three fixture strings to actual dispatch shapes.
 - **T42** Large-repo scaling probe _(partial)_ — Measured envelope on a synthetic 20k-file repo (4k routes) documented in docs/reference/performance.md. Onboarding 19.5s, check on one changed file 2.4s, state 226MB - all fine. prepare 27.7s and repo map ~100s are not.
 - **T45** Incremental single-file check performance _(partial)_ — formbricks single-file check 6.9s -> 3.9s (43%). Root cause: drift check called collectScanData with NO reuse manifest, so every check re-parsed the entire repository through the engine even for a one-line edit. Profiling showed 5.1s of the 6.9s was the Node process sitting idle waiting on the engine subprocess.
+- **T47** MCP protocol revision risk assessment _(partial)_ — Verdict: GO for beta, not launch-blocking. docs/architecture/mcp-compatibility.md records the finding with evidence.
 
 ## Premise false — deliberately no change
 
