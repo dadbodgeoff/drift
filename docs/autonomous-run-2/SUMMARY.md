@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 3 |
+| Done | 4 |
 | Done (partial) | 1 |
 | Premise false (no change needed) | 1 |
 | Blocked — needs discussion | 0 |
@@ -16,6 +16,7 @@
 - **T100** Match on resolved module identity, not specifier strings — Both T93 bypasses closed. Relative import (../../../lib/prisma) and barrel re-export now block; the clean control still passes; external suite 7/7 with ZERO baseline drift, so no overshoot.
 - **T100b** Rebuild the T93 fixtures so they actually reproduce — The fixtures I committed in run 1 did not reproduce the bypass they were filed for. Each now carries a tsconfig paths mapping and a route violating via the ALIAS form, so inference learns @/lib/prisma and the sneaky route is genuinely the odd one out. Pinned by packages/cli/test/bypass-fixtures.test.ts, which drives the real CLI end to end.
 - **T101** T01c: block-mode contract, finding reports enforcement none — RESOLVED, and the product behaviour was correct all along. enforcement_matches_mode is now true on all seven repos and promoted to a HARD ASSERTION - verified to bite by forcing it false, which flips midday to FAIL.
+- **T102** Gitignore correctness via per-directory semantics — Adopted ignore::WalkBuilder for file discovery. Nested .gitignore files and ! negations now work, patterns stay scoped to the directory that declares them, and the external suite is 7/7 with zero drift - openstatus keeps injection_caught and catches_genuine_subpath, the exact fields the first attempt regressed.
 - **T101** T01c: block-mode contract, finding reports enforcement none _(partial)_ — REPRODUCED deterministically, and the scope is four times larger than T01c stated. Root cause narrowed to one gate; not yet fixed.
 
 ## Premise false — deliberately no change
