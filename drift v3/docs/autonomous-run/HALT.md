@@ -1,8 +1,10 @@
 # Run paused — context exhausted (clean)
 
-**Tree state:** green. External suite **7/7**, TS suites green, Rust **23** suites green.
+**Tree state:** green. **`pnpm verify:ci` exits 0** — the full release gate, for the first time
+since before this run. External suite **7/7**, e2e **63/63**, Rust **24** suites, TS green.
 **Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 44 tasks (29 done, 8 partial, 2 premise-false). 5 blocked, 6 discoveries.
+**Completed:** 57 tasks (34 done, 13 partial, 2 premise-false, 2 skipped-dependency). 6 blocked,
+8 discoveries, 2 deferred.
 
 ## Resume
 
@@ -20,7 +22,7 @@ Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions)
 node scripts/run-log.mjs next     # prints the next unsettled task; exits 1 when none remain
 ```
 
-Continue at **T43**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
+Continue at **T61**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
 tiers of regenerable artifacts only, and never touches the pinned evaluation repos.
 
 ## Completed
@@ -68,6 +70,13 @@ real overclaim.
 | **T26** | Removed `"withworkspace"` - it was load-bearing, and its test asserted Drift "learns" wrappers it only matched because dub's name was compiled in. Generalised the dynamic-control-flow valve from three fixture strings to real dispatch shapes. |
 | **T31** | Every allowed claim mapped to the test that proves it; adding one without evidence now fails. |
 | **T42** | Issue #99 **reproduced**: `repo map` ~100s, `prepare` 27.7s at 20k files. Fixed the part T40 caused (eager graph hydration); the rest needs scoped loading. |
+| **T43** | Node CLI peaks at **1.76 GB** vs the engine's 93 MB on 20k files. A 512 MB heap crashed with a raw V8 fatal error; now a classified refusal naming the fix. |
+| **T45** | `check` was re-scanning the whole repo every time — 6.9s → 3.9s on formbricks. Still 4× the hooks-pack budget, so **T44 is blocked, not shipped**. |
+| **T46** | `prepare` returned **0 of 25** task-relevant files on dub; the cap was spent in filesystem order before ranking existed. Now 8/25 with the target at rank 4. `pnpm eval:prepare` measures it. |
+| **T47** | MCP compatibility: **go for beta**. Server accepts clients two revisions newer and serves a full session. Could not verify the 2026-07-28 revision exists — stated as a limit. |
+| **T51** | The T46 fix had **not** reached MCP — `get_task_preflight` still returned unranked files. Ranking now shared via `@drift/query`. |
+| **T53** | `check:boundaries` had been red since before the run on a **false positive**; fixed, then added the CLI/MCP boundary assertion. |
+| **T62/T62a** | rustfmt + clippy green; **19 stale exit-code expectations** fixed. `verify:ci` exits 0. |
 
 ## Discussion agenda — read `SUMMARY.md` for full evidence
 
