@@ -152,9 +152,12 @@ fn drop_type_only_usage_imports(root: Node<'_>, source: &[u8], facts: &mut Vec<F
         let name = fact.name.as_str();
         let used_as_type = type_uses.contains(name);
         let used_as_value = value_uses.contains(name);
-        // Drop only on positive evidence: used as a type somewhere, never as a value.
-        // A binding with no type use at all, or with any value use, is kept.
-        !(used_as_type && !used_as_value)
+        // Drop only on positive evidence: used as a type somewhere and never as a value.
+        // A binding with no type use at all, or with any value use, is kept - naming the
+        // condition rather than negating it inline, since `!used_as_type || used_as_value`
+        // is the same predicate with the reasoning removed.
+        let erased_at_runtime = used_as_type && !used_as_value;
+        !erased_at_runtime
     });
 }
 

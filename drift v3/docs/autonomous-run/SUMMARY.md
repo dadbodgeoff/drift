@@ -2,13 +2,13 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 32 |
+| Done | 33 |
 | Done (partial) | 13 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
 | Deferred — human-gated | 2 |
-| Discoveries | 7 |
+| Discoveries | 8 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -45,6 +45,7 @@
 - **T43** Memory ceiling under load — Measured peak RSS on 20k files: Rust engine 93MB, Node CLI 1.76GB - 19x, for the same scan. The CLI holds the whole payload (86k facts plus graph nodes/edges/evidence) as JS objects. Heap ceiling found by capping max-old-space-size: 512MB crashes, 1024MB works. Working rule documented: ~52KB heap per indexable file.
 - **T46** drift prepare quality eval (the context claim) — Found prepare essentially broken for its stated purpose, fixed it, and added a measuring harness. pnpm eval:prepare - 3/3 tasks now surface the expected file at rank 4, 1, 1.
 - **T53** Enforce the CLI/MCP dependency boundary — Fixed the boundary gate itself, then added the CLI/MCP assertion the task asked for. pnpm check:boundaries is green for the first time since before this run.
+- **T62** Lint, formatting, and the e2e gate — cargo fmt and clippy were both failing; both now green. The clippy error was mine from T12 - !(used_as_type && !used_as_value). Clippy suggested !used_as_type || used_as_value, which is the same predicate with the reasoning removed, so I named the concept instead: let erased_at_runtime = used_as_type && !used_as_value.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
@@ -82,6 +83,8 @@
   - evidence: cal.com previously listed ../../lib/prismaClient; the word-boundary rule drops it because "prisma" is followed by "C" and "client" is preceded by "prisma", so neither token sits at a boundary in the lowercased string.
 - **T53a** pnpm check:boundaries has been failing since before this run
   - evidence: packages/cli/src/domain/data-layer-discovery.ts uses raw SQLite; the check reports database access belongs in packages/storage. Confirmed pre-existing by stashing all my changes and re-running - still fails. git log -S traces it to 201f462 (the A6 work), and it is present at this run base commit 393f2ee.
+- **T62a** Six e2e tests have been failing since before this run
+  - evidence: Attributed by building base commit 393f2ee in a worktree and running pnpm test:e2e there: release-hygiene beta proof, the dogfood MCP package-boundary enforcement proof, and four security fixture matrices (validation, tenant authorization, sensitive response, Phase 6) all fail at base. The security-validation one expects exit 1 where check now returns 2, which is A5 behaviour that predates this run.
 
 ## Skipped — dependency blocked
 

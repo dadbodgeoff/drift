@@ -142,7 +142,9 @@ pub fn classify_findings_against_diff(
                             DiffStatus::OutsideDiff
                         }
                     }
-                    DiffScope::ChangedHunks => changed_hunk_status(&finding, &changed_lines_by_file),
+                    DiffScope::ChangedHunks => {
+                        changed_hunk_status(&finding, &changed_lines_by_file)
+                    }
                 }
             };
 

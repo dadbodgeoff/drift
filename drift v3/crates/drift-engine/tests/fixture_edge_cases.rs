@@ -3,8 +3,8 @@ use std::process::Command;
 
 use serde_json::Value;
 
-/// T60. Falsification findings that lived as throwaway `/tmp` scripts, promoted to permanent
-/// fixtures so they are checked on every run rather than remembered.
+// T60. Falsification findings that lived as throwaway `/tmp` scripts, promoted to permanent
+// fixtures so they are checked on every run rather than remembered.
 
 fn fixture(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -78,7 +78,9 @@ fn undecodable_and_binary_files_do_not_break_the_scan() {
 
     // The healthy route is still found.
     assert!(
-        indexed.iter().any(|path| path.ends_with("api/health/route.ts")),
+        indexed
+            .iter()
+            .any(|path| path.ends_with("api/health/route.ts")),
         "the readable route must still be scanned, got {indexed:?}"
     );
     // A .png is not indexable source and should not appear at all.

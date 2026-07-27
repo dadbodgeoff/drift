@@ -55,7 +55,11 @@ fn refuses_reuse_from_a_different_engine_version() {
     let same = dir.path().join("same.json");
     let different = dir.path().join("different.json");
     let absent = dir.path().join("absent.json");
-    fs::write(&same, manifest_json(Some(drift_engine::DRIFT_ENGINE_VERSION))).expect("same");
+    fs::write(
+        &same,
+        manifest_json(Some(drift_engine::DRIFT_ENGINE_VERSION)),
+    )
+    .expect("same");
     fs::write(&different, manifest_json(Some("9.9.9-different"))).expect("different");
     fs::write(&absent, manifest_json(None)).expect("absent");
 

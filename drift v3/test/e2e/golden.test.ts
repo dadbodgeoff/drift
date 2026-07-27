@@ -249,6 +249,8 @@ describe("golden fixture CLI lifecycle", () => {
           "typescript_files",
           "api_routes",
           "local_state",
+          "disk_space",
+          "memory_headroom",
           "drift_state",
           "contract",
           "scan_freshness",

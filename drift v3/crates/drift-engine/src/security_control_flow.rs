@@ -188,7 +188,9 @@ pub fn unsupported_dynamic_control_flow(source: &str) -> bool {
         if line.contains("compose(")
             || line.contains("applyMiddleware")
             || ((line.contains("middleware") || line.contains("guard"))
-                && (line.contains(".forEach") || line.contains(".reduce") || line.contains(".map(")))
+                && (line.contains(".forEach")
+                    || line.contains(".reduce")
+                    || line.contains(".map(")))
         {
             return true;
         }

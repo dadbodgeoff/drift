@@ -313,7 +313,9 @@ function shape(input: Pick<Domain, "id" | "slug">) {
 
     // Domain is only ever a type: no runtime dependency on @prisma/client from this route.
     assert!(
-        !facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Domain"),
+        !facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Domain"),
         "Domain is used only in a type position and must not be a value import"
     );
     // prisma is called, so it must survive - dropping it would be a silent miss.
@@ -350,7 +352,9 @@ function widen(input: Prisma.UserWhereInput) {
 
     let facts = extract_typescript_facts("app/api/x/route.ts", source).expect("typescript facts");
     assert!(
-        facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Prisma"),
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "Prisma"),
         "a binding used as both a value and a type must be kept"
     );
 }
@@ -367,5 +371,9 @@ export async function GET() {
 "#;
 
     let facts = extract_typescript_facts("app/api/y/route.ts", source).expect("typescript facts");
-    assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "db"));
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "db")
+    );
 }

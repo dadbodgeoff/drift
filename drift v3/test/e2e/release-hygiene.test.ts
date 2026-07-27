@@ -29,7 +29,9 @@ describe("release hygiene", () => {
     expect(manifest.scripts["beta:proof"]).toBe("node scripts/run-beta-proof.mjs");
     expect(manifest.scripts["release:proof"]).toBe("node scripts/generate-release-proof.mjs");
     expect(manifest.scripts["verify:ci"]).toBe(
-      "pnpm verify && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      // T04 added `pnpm test:harness`: the external evaluation harness is the oracle every other
+    // gate trusts, so a release must prove the oracle itself still works.
+    "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
   });
 
