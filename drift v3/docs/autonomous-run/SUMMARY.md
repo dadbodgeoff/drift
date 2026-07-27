@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 36 |
+| Done | 37 |
 | Done (partial) | 14 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
@@ -49,6 +49,7 @@
 - **T62a** Fix the six pre-existing e2e failures; verify:ci green — pnpm verify:ci now exits 0 - the full release gate (build, typecheck, unit, e2e, harness, rustfmt, clippy, boundaries, release matrix, claims, beta proof, git diff --check) passes for the first time since before this run. e2e 63/63.
 - **T64** Test-isolation hardening — Removed --workspace-concurrency=1 from pnpm test. Four consecutive default-concurrency runs green across 789 tests in nine packages, then verify:ci exit 0.
 - **T65** Mutation-style check on the enforcement core — All five core behaviours deliberately broken; every mutation caught, no new tests needed. Table in docs/architecture/mutation-check.md.
+- **T71** Prune docs to four documents (D3) — docs/ went from 71 markdown files with four stale specs at top level to three user-facing documents (quickstart, concepts, agent-integration) plus reference/, architecture/, autonomous-run/ and archive/. All internal links verified to resolve.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).
