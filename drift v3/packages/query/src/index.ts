@@ -1450,3 +1450,4 @@ function sorted(values: Iterable<string>): string[] {
 function unique(values: string[]): string[] {
   return sorted(new Set(values));
 }
+export { MAX_RELEVANT_FILES, rankRelevantFiles, relevanceScore, type RankableFile } from "./relevance.js";

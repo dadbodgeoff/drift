@@ -75,8 +75,7 @@ import {
   selectRelevantTests,
   type ChangeImpactRouteFlow,
   type DriftReadinessSurface,
-  type RepoMapFile
-} from "@drift/query";
+  type RepoMapFile,rankRelevantFiles} from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -2040,8 +2039,10 @@ function relevantFilesForTask(input: {
   const files = walkIndexableFiles(input.repoRoot)
     .filter((filePath) => !deniedGlobs.some((glob) => matchesPolicyGlob(filePath, glob)))
     .map((filePath) => relevantFileForPath(filePath, tokens, input.contract))
-    .filter((file): file is RelevantFile => Boolean(file))
-    .slice(0, 25);
+    .filter((file): file is RelevantFile => Boolean(file));
+  // Deliberately NOT truncated here. This surface used to cut to 25 during the walk, so the cap
+  // was spent on whichever files sorted first and ranking downstream could not recover the ones
+  // already discarded. rankRelevantFiles below scores the full candidate set, then truncates.
   if (
     input.targetPath &&
     !deniedGlobs.some((glob) => matchesPolicyGlob(input.targetPath!, glob)) &&
@@ -2057,7 +2058,10 @@ function relevantFilesForTask(input: {
       existing.reasons = uniqueSorted([...existing.reasons, "requested path"]);
     }
   }
-  return files.slice(0, 25);
+  // Shared with `drift prepare`. This surface previously had its own `files.slice(0, 25)` in
+  // filesystem-walk order, so when T46 added relevance ranking to the CLI, the MCP tool that
+  // agents actually call kept returning arbitrary files. Same divergence class as B3/T12.
+  return rankRelevantFiles(files);
 }
 
 function relevantFileForPath(

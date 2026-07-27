@@ -163,9 +163,16 @@ function next() {
   const settled = new Set(
     entries()
       .filter((entry) =>
-        ["DONE", "DONE_PARTIAL", "PREMISE_FALSE", "BLOCKED", "DEFERRED_HUMAN"].includes(
-          entry.status
-        )
+        [
+          "DONE",
+          "DONE_PARTIAL",
+          "PREMISE_FALSE",
+          "BLOCKED",
+          // A task skipped for a recorded, blocked prerequisite is settled: it has an outcome
+          // and a reason. Leaving it unsettled would stall the loop on work that cannot proceed.
+          "SKIPPED_DEPENDENCY",
+          "DEFERRED_HUMAN"
+        ].includes(entry.status)
       )
       .map((entry) => entry.task)
   );

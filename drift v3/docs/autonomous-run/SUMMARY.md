@@ -3,12 +3,12 @@
 | Outcome | Count |
 |---|---|
 | Done | 31 |
-| Done (partial) | 11 |
+| Done (partial) | 12 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
-| Skipped — dependency blocked | 0 |
-| Deferred — human-gated | 1 |
-| Discoveries | 6 |
+| Skipped — dependency blocked | 2 |
+| Deferred — human-gated | 2 |
+| Discoveries | 7 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -55,6 +55,7 @@
 - **T45** Incremental single-file check performance _(partial)_ — formbricks single-file check 6.9s -> 3.9s (43%). Root cause: drift check called collectScanData with NO reuse manifest, so every check re-parsed the entire repository through the engine even for a one-line edit. Profiling showed 5.1s of the 6.9s was the Node process sitting idle waiting on the engine subprocess.
 - **T47** MCP protocol revision risk assessment _(partial)_ — Verdict: GO for beta, not launch-blocking. docs/architecture/mcp-compatibility.md records the finding with evidence.
 - **T48** Trim the MCP preflight packet _(partial)_ — Measured the packet for the first time: 84,729 bytes / ~21,000 tokens for ONE get_task_preflight call on taxonomy - a 131-file repo. 33 top-level keys. Removed legacy_packet (3,012 bytes), taking it to 80,012 / ~20,000 tokens. DoD of <=12 top-level keys NOT met.
+- **T51** CLI/MCP payload deduplication (C4) _(partial)_ — Extracted relevance ranking into @drift/query and pointed both surfaces at it. This was not cleanup - it fixed a live bug I had just caused.
 
 ## Premise false — deliberately no change
 
@@ -77,10 +78,18 @@
   - evidence: Corrected the T12 retain predicate, ran cargo test (debug) which passed, then measured against target/release which still held the inverted logic - producing a misleading 8.4% result and 3 spurious reconciliation gaps. Rebuilding release gave the true 3.1%.
 - **T13b** Boundary rule drops ../../lib/prismaClient, a legitimate client specifier
   - evidence: cal.com previously listed ../../lib/prismaClient; the word-boundary rule drops it because "prisma" is followed by "C" and "client" is preceded by "prisma", so neither token sits at a boundary in the lowercased string.
+- **T53a** pnpm check:boundaries has been failing since before this run
+  - evidence: packages/cli/src/domain/data-layer-discovery.ts uses raw SQLite; the check reports database access belongs in packages/storage. Confirmed pre-existing by stashing all my changes and re-running - still fails. git log -S traces it to 201f462 (the A6 work), and it is present at this run base commit 393f2ee.
+
+## Skipped — dependency blocked
+
+- **T49** drift.lock framing (E3) — waiting on T19b — a path-independent repo identity. E3 pitches contract export as a committed, PR-reviewable drift.lock, and T19b proved no teammate can import one: repoIdForRoot hashes the ABSOLUTE PATH, so every checkout is a different repo and contract import refuses with repo_id_mismatch and repo_fingerprint_mismatch. Framing the feature before it can work would document something users cannot do.
+- **T50** GitHub Action (E4) — waiting on T19b, same root cause. CI checks out to a path no developer shares, so the Action cannot consume a committed contract either. Also gated behind T45: a check that takes 3.9s on formbricks is tolerable in CI, unlike at edit time, so this is less severe here than for T44 — but the identity problem is fatal.
 
 ## Deferred — human-gated by design
 
 - **T-halt** Run halted cleanly: context exhausted after Phase 1 and Phase 2 — Resume at T12 per docs/autonomous-run/HALT.md. Tree green, nothing pushed, 7/7 suite passing.
+- **T52** MCP SDK migration — Explicitly gated in the plan as not before 2026-07-28, and T47 found no reason to bring it forward: the current hand-rolled server negotiates correctly, accepts clients two revisions newer, and serves a full session. Note T47 could not verify what the 2026-07-28 revision actually contains, so the trigger for this task is itself unconfirmed.
 
 ## Discussion agenda
 
