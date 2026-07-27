@@ -294,3 +294,9 @@ function noCandidateText(discovery?: {
     "vendored or reached another way."
   ].join("\n");
 }
+
+/**
+ * Exported for tests. The discovery message is the difference between "no convention here" and
+ * "inference cannot see your data layer" - see packages/cli/test/discovery-message.test.ts.
+ */
+export const noCandidateTextForTest = noCandidateText;

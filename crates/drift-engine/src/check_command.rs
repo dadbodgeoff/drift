@@ -531,7 +531,7 @@ fn graph_direct_data_access_findings(
             module_files.get(edge.to.as_str()).copied()
         })
         .collect::<BTreeSet<&str>>();
-
+    forbidden_module_paths.extend(derived);
 
     let mut findings = Vec::new();
     for edge in resolved_import_edges {
