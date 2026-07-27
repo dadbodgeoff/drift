@@ -1,8 +1,71 @@
 # Drift
 
-Drift is a local-first repo intelligence guardrail for AI-assisted code changes.
+**Drift stops an AI agent from writing code that violates conventions your repo already
+follows.** It runs entirely on your machine.
 
-V1 focuses on one deterministic wedge: TypeScript/JavaScript API route layering. Drift scans a repo, stores facts in SQLite, lets a human approve inferred conventions, baselines legacy violations, and gives agents a compact preflight packet before they write code.
+```bash
+npm install -g @drift/cli
+cd your-repo
+drift start --repo-root . --accept-defaults
+drift check --diff main...HEAD --scope changed-hunks
+```
+
+An agent adds a route that queries the database directly, the way a hundred other routes in your
+repo do not. `drift check` exits `2` and names the file, the line, and the convention it broke.
+
+## Scope — read this before adopting
+
+Drift enforces **one** convention family well, and says so rather than implying more:
+
+| | |
+|---|---|
+| **Languages** | TypeScript, JavaScript |
+| **Frameworks** | Next.js API routes (App Router and Pages) |
+| **Convention** | API routes must not import data-access clients directly |
+| **Status** | Beta — local CLI and a read-only MCP server |
+
+**It does not** review code generally, support other languages, modify your source, or sync
+anything to a server.
+
+The data layer is recognised when its import specifier contains `prisma`, `database`, `db` or
+`data-access`. A repo naming its data layer `store` or `supabase` must declare it with
+`--data-modules`. Drift bootstraps and enforces a *declared* layering contract — it does not
+learn conventions in general, and the claims manifest blocks that claim explicitly.
+
+Security heuristics exist behind `--experimental-security` and are **not** proofs. Their own audit
+is in [docs/architecture/security-heuristic-audit.md](docs/architecture/security-heuristic-audit.md).
+
+## What it does on real repositories
+
+Evaluated on seven open-source Next.js repos on every change
+([`pnpm eval:external`](scripts/external-eval.mjs)):
+
+| | |
+|---|---|
+| Onboards, learns the real data layer, catches an injected violation | **7 / 7** |
+| Correct `file:line` evidence | **7 / 7** |
+| A properly layered route falsely flagged | **0 / 7** |
+| False-positive rate (dub, 494 routes) | **3.1%** |
+
+## Why your repo might only warn
+
+If findings appear but the check exits `0`, the convention is in **warn** mode, deliberately.
+
+Drift infers the convention from the violations themselves, so a repo where every route touches
+the database produces the same statement as one where a single route does. Enforcing both
+identically would reject new code written exactly like its neighbours. Instead the mode follows
+the evidence: a **minority** violating means new violations block; a **majority** violating means
+it is a refactor goal, and Drift warns until a human decides.
+
+formbricks (1 route of 83) blocks. dub (~323 of 494) warns.
+
+## Documentation
+
+- [Quickstart](docs/quickstart.md) — install to first blocked change
+- [Concepts](docs/concepts.md) — facts → contract → baseline → check
+- [Agent integration](docs/agent-integration.md) — MCP, hooks, CI
+- [Enforcement reference](docs/reference/enforcement.md) — exit codes and JSON contract
+- [Claims](docs/architecture/beta-claims.json) — every claim, and what is deliberately blocked
 
 ## First Five Minutes
 
