@@ -1,7 +1,7 @@
 import { execFile, spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile, mkdir} from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -523,6 +523,44 @@ supported_sqlite_schema_version: 27,
     expect(check.stdout).toContain("Drift check");
     expect(check.stdout).toContain("Findings: 1");
     expect(check.stdout).toContain("Blocking: 0");
+
+    // T81: exercise the enforcement *classification* from the packed artifact, not just the
+    // pass path.
+    //
+    // Everything above sees a baselined finding, so Blocking is 0 and the diff classification is
+    // never tested. Presenting the existing violating route as an added file proves the packed
+    // CLI classifies it as new code in a changed hunk, with real file:line evidence.
+    //
+    // Deliberately done with a patch rather than by writing a new route: adding and removing a
+    // file leaves a retired finding in storage and perturbs the assertions below. The check reads
+    // the diff for classification and stored facts for findings, so no repo mutation is needed.
+    //
+    // It does not *block*, and that is correct rather than a gap. This fixture has one route and
+    // it violates, so coverage is 100% and A5's direction gate puts the convention in warn mode -
+    // enforcing there would reject new routes written exactly like the only existing one. The
+    // block path is covered by the seven-repo external suite, where minorities violate.
+    const routeRel = "apps/web/app/api/users/route.ts";
+    const routeSource = await readFile(join(repoRoot, routeRel), "utf8");
+    const patchPath = join(consumerDir, "installed-smoke.patch");
+    await writeFile(
+      patchPath,
+      `diff --git a/${routeRel} b/${routeRel}\n` +
+        "new file mode 100644\n" +
+        "--- /dev/null\n" +
+        `+++ b/${routeRel}\n` +
+        `@@ -0,0 +1,${routeSource.split("\n").length} @@\n` +
+        `${routeSource.split("\n").map((line) => `+${line}`).join("\n")}\n`
+    );
+
+    const classified = await runInstalledDrift(consumerDir, [
+      "--db", databasePath!,
+      "check",
+      "--repo", repoId!,
+      "--diff-file", patchPath,
+      "--scope", "changed-hunks"
+    ]);
+    expect(classified.stdout).toContain("new_in_diff");
+    expect(classified.stdout).toContain(`${routeRel}:`);
 
     const findings = await runInstalledDrift(consumerDir, [
       "--db", databasePath!,
