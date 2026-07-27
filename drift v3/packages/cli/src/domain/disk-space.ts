@@ -1,4 +1,5 @@
 import { statfsSync } from "node:fs";
+import { getHeapStatistics } from "node:v8";
 import { dirname } from "node:path";
 
 /**
@@ -108,5 +109,56 @@ export function insufficientDiskMessage(report: DiskSpaceReport, statePath: stri
     "Drift keeps a scan database per repo. Free space, then retry:",
     "  drift state size            # what Drift is using",
     "  rm -rf ~/.drift/repos/<id>  # discard one repo's state (it is rebuilt on next scan)"
+  ].join("\n");
+}
+
+/**
+ * Heap preflight.
+ *
+ * Measured on a synthetic 20,000-file repository: the Rust engine peaks at 93 MB, while the Node
+ * CLI peaks at 1.76 GB doing storage and graph assembly - 19x the engine, for the same scan. With
+ * the heap capped at 512 MB the process dies with `FATAL ERROR: JavaScript heap out of memory`
+ * and exit 134: no Drift error, no code, no next action, and a partially written database.
+ *
+ * Constrained CI runners routinely cap Node's heap, so this is a real configuration rather than a
+ * contrived one. Refusing with an instruction beats crashing without one.
+ */
+
+/** Heap bytes per indexable file, from the 20k-file measurement (1 GB sufficed, 512 MB did not). */
+const HEAP_BYTES_PER_FILE = 52 * 1024;
+
+export interface HeapReport {
+  limitBytes: number;
+  estimatedBytes: number | null;
+  sufficient: boolean;
+  detail: string;
+}
+
+export function checkHeadroom(indexableFileCount?: number): HeapReport {
+  // `heap_size_limit` reflects --max-old-space-size and the platform default.
+  const limitBytes = getHeapStatistics().heap_size_limit;
+  const estimatedBytes =
+    indexableFileCount === undefined ? null : indexableFileCount * HEAP_BYTES_PER_FILE;
+  const sufficient = estimatedBytes === null ? true : limitBytes >= estimatedBytes;
+  const gb = (bytes: number) => `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  return {
+    limitBytes,
+    estimatedBytes,
+    sufficient,
+    detail:
+      estimatedBytes === null
+        ? `${gb(limitBytes)} heap limit`
+        : `${gb(limitBytes)} heap limit, about ${gb(estimatedBytes)} needed for ${indexableFileCount} files`
+  };
+}
+
+export function insufficientHeapMessage(report: HeapReport, fileCount: number): string {
+  return [
+    `Not enough heap for a repository this size: ${report.detail}.`,
+    "",
+    "Node would run out of memory part-way through the scan and exit without a usable error,",
+    "leaving the database partially written. Raise the limit and retry:",
+    "",
+    `  NODE_OPTIONS=--max-old-space-size=${Math.ceil((fileCount * HEAP_BYTES_PER_FILE) / 1024 ** 2 / 512) * 512} drift start --repo-root .`
   ].join("\n");
 }

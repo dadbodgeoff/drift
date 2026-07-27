@@ -12,7 +12,8 @@ import { acceptDefaultCandidate,declaredDataModulesCandidate } from "../domain/c
 import { engineProvenance } from "../domain/engine-provenance.js";
 import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
 import { contractIdForRepo } from "../domain/identifiers.js";
-import { checkDiskSpace,insufficientDiskMessage } from "../domain/disk-space.js";
+import { checkDiskSpace,checkHeadroom,insufficientDiskMessage,insufficientHeapMessage } from "../domain/disk-space.js";
+import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { DriftError } from "../app/drift-error.js";
 import { dirname } from "node:path";
 import { runScanRepo } from "../domain/scan-status.js";
@@ -26,6 +27,25 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   // operations then report failures unrelated to the repo. Exit 3 is the fail-closed refusal
   // code: enforcement could not be performed, so nothing is claimed about the repo.
   const databasePath = requiredDatabasePath(parsed);
+
+  // Heap preflight, before the scan rather than during it. The Node CLI peaks around 19x the
+  // Rust engine's memory doing storage and graph assembly, and when it runs out V8 kills the
+  // process with a raw FATAL ERROR and exit 134 - no Drift error, no guidance, and a partially
+  // written database. Constrained CI runners cap the heap routinely, so this is a real setup.
+  const repoRootForHeap = stringFlag(parsed, "repo-root");
+  if (repoRootForHeap) {
+    const fileCount = walkIndexableFiles(repoRootForHeap).length;
+    const headroom = checkHeadroom(fileCount);
+    if (!headroom.sufficient) {
+      throw new DriftError(insufficientHeapMessage(headroom, fileCount), {
+        code: "insufficient_memory",
+        userAction: "Raise Node's heap limit with NODE_OPTIONS=--max-old-space-size, then retry.",
+        recoveryCommands: ["drift doctor --repo-root . --json"],
+        safeToRetry: true
+      });
+    }
+  }
+
   const diskSpace = checkDiskSpace(databasePath);
   if (!diskSpace.sufficient) {
     // Typed so the failure classifier reports insufficient_disk rather than inferring a code

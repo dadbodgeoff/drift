@@ -20,6 +20,7 @@ export type DriftFailureCode =
   | "unsupported_database"
   | "missing_database"
   | "insufficient_disk"
+  | "insufficient_memory"
   | "disk_full"
   | "corrupt_database"
   | "permission_denied"

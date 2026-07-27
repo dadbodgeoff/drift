@@ -260,6 +260,17 @@ function operationalFailureForMessage(message: string): {
       diagnostics: [message]
     };
   }
+  if (message.includes("JavaScript heap out of memory") || message.includes("Not enough heap")) {
+    return {
+      code: "insufficient_memory",
+      surface: "cli",
+      severity: "error",
+      safe_to_retry: true,
+      user_action: "Raise Node's heap limit with NODE_OPTIONS=--max-old-space-size, then retry.",
+      recovery_commands: ["drift doctor --repo-root . --json"],
+      diagnostics: [message]
+    };
+  }
   if (
     message.includes("EACCES") ||
     message.includes("EPERM") ||

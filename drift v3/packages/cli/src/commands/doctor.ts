@@ -7,7 +7,7 @@ import { doctorNextCommands } from "../args/doctor-commands.js";
 import { stringFlag } from "../args/flag-readers.js";
 import { defaultDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
 import { betaDoctorResponse } from "../domain/beta-surfaces.js";
-import { checkDiskSpace } from "../domain/disk-space.js";
+import { checkDiskSpace,checkHeadroom } from "../domain/disk-space.js";
 import { engineProvenance,type EngineProvenance } from "../domain/engine-provenance.js";
 import { contractFingerprint,repoIdForRoot } from "../domain/identifiers.js";
 import { detectPackageManager,detectWorkspace,isApiRoutePath } from "../domain/repo-paths.js";
@@ -85,6 +85,7 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       ? `${repoRoot} is not a directory`
       : `${repoRoot} does not exist`;
   const diskSpace = checkDiskSpace(databasePath, files.length);
+  const headroom = checkHeadroom(files.length);
   const checks: DoctorCheck[] = [
     {
       id: "repo_root",
@@ -146,6 +147,15 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       label: "Disk space",
       status: diskSpace.sufficient ? "ok" : "fail",
       detail: diskSpace.detail
+    },
+    {
+      // The Node CLI peaks around 19x the Rust engine's memory doing storage and graph assembly.
+      // Below the needed heap the process dies with a raw V8 FATAL ERROR and exit 134, which is
+      // no use to anyone - so surface it here, before a long scan.
+      id: "memory_headroom",
+      label: "Memory headroom",
+      status: headroom.sufficient ? "ok" : "fail",
+      detail: headroom.detail
     },
     {
       id: "drift_state",

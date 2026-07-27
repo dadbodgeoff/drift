@@ -57,6 +57,35 @@ should be proportional to the task.
 code. At 28s it is unusable in the edit loop that T44's hooks pack targets. Fixing it is a
 prerequisite for that pack being worth shipping, not a follow-up to it.
 
+## Memory
+
+Peak resident set during onboarding of the same 20,000-file repository:
+
+| Process | Peak RSS |
+|---|---|
+| Rust engine (`scan-repo`) | **93 MB** |
+| Node CLI (`drift start`) | **1.76 GB** |
+
+The engine parses every file and stays under 100 MB. The CLI uses nineteen times that doing
+storage and graph assembly, because it holds the whole scan payload — 86,004 facts plus graph
+nodes, edges and evidence — as JavaScript objects.
+
+Heap required, measured by capping `--max-old-space-size`:
+
+| Heap cap | 20k files |
+|---|---|
+| 512 MB | **crash** — `FATAL ERROR: JavaScript heap out of memory`, exit 134 |
+| 1024 MB | ok |
+
+That crash was uncontrolled: no Drift error, no failure code, no next action, and a partially
+written database. Constrained CI runners cap Node's heap routinely, so it is a real configuration
+rather than a contrived one. `doctor` now reports a `memory_headroom` check and `start` refuses up
+front with the exact `NODE_OPTIONS` line to use.
+
+**Working rule: budget ~52 KB of heap per indexable file.** 20k files needs ~1 GB; a 60k-file
+monorepo would need ~3 GB and should be treated as unsupported until the CLI streams into storage
+instead of buffering the whole payload.
+
 ## Reproducing
 
 The synthetic repository generator is in the T42 entry of `docs/autonomous-run/log.jsonl`.
