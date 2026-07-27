@@ -195,6 +195,25 @@ function operationalFailureForMessage(message: string): {
       diagnostics: [message]
     };
   }
+  // Dogfooding surfaced this: running from a Cargo workspace resolves the engine to `cargo run`,
+  // and if the Rust toolchain is not resolvable the raw rustup text reached the user with no
+  // Drift framing at all. Only affects people running from a checkout, but that is contributors.
+  if (
+    message.includes("rustup could not choose") ||
+    message.includes("no default toolchain") ||
+    (message.includes("cargo") && message.includes("toolchain"))
+  ) {
+    return {
+      code: "missing_engine",
+      surface: "cli",
+      severity: "error",
+      safe_to_retry: true,
+      user_action:
+        "Drift resolved its engine to `cargo run` because it is running from a Cargo workspace, and the Rust toolchain is not configured. Run `rustup default stable`, or set DRIFT_ENGINE_BIN to a built drift-engine binary.",
+      recovery_commands: ["rustup default stable", "drift doctor --repo-root . --json"],
+      diagnostics: [message]
+    };
+  }
   if (message.includes("DRIFT_ENGINE_BIN") || message.includes("Rust engine")) {
     return {
       code: "missing_engine",
