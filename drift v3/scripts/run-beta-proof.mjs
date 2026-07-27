@@ -157,7 +157,10 @@ try {
     "--scope", "changed-hunks",
     "--now", "2026-05-10T00:00:03.000Z",
     "--json"
-  ], { exitCodes: [1] });
+    // A5: a blocked diff exits 2. Blocking is the expected outcome here - this is the proof
+    // that an accepted contract stops a bad route - so 2 is success, not failure. Exit 1 would
+    // now mean Drift itself broke, which must still fail the proof.
+  ], { exitCodes: [2] });
 
   const parity = await mcpCliParity({ databasePath, repoId });
   const securityContext = createReadOnlyMcpHandlers({ databasePath })
@@ -786,6 +789,29 @@ async function runJson(args, options = {}) {
   return JSON.parse(result.stdout);
 }
 
+/** Paths where two payloads differ, as `path: cli=… mcp=…`, deepest useful level only. */
+function differingPaths(cli, mcp, path = "") {
+  const brief = (value) => {
+    const text = JSON.stringify(value);
+    if (text === undefined) return "undefined";
+    return text.length > 70 ? `${text.slice(0, 70)}…` : text;
+  };
+  if (canonicalJson(cli) === canonicalJson(mcp)) {
+    return [];
+  }
+  const bothObjects =
+    cli && mcp && typeof cli === "object" && typeof mcp === "object" &&
+    !Array.isArray(cli) && !Array.isArray(mcp);
+  if (!bothObjects) {
+    return [`${path || "(root)"}: cli=${brief(cli)} mcp=${brief(mcp)}`];
+  }
+  const out = [];
+  for (const key of new Set([...Object.keys(cli), ...Object.keys(mcp)])) {
+    out.push(...differingPaths(cli[key], mcp[key], path ? `${path}.${key}` : key));
+  }
+  return out;
+}
+
 async function mcpCliParity({ databasePath, repoId }) {
   const handlers = createReadOnlyMcpHandlers({ databasePath });
   const generatedAt = "2026-05-10T00:00:04.000Z";
@@ -877,10 +903,11 @@ async function mcpCliParity({ databasePath, repoId }) {
   }
   if (mismatches.length > 0) {
     const first = mismatches[0];
+    // Name the differing paths rather than dumping two 20KB payloads. The old message printed
+    // both sides in full, which is unreadable and forces whoever hits this to diff by hand.
     throw new Error([
       `CLI/MCP parity mismatch: ${mismatches.join(", ")}`,
-      `First mismatch (${first}) CLI: ${canonicalJson(bundle[first].cli)}`,
-      `First mismatch (${first}) MCP: ${canonicalJson(bundle[first].mcp)}`
+      ...differingPaths(bundle[first].cli, bundle[first].mcp).slice(0, 12).map((entry) => `  ${entry}`)
     ].join("\n"));
   }
   return {

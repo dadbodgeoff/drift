@@ -9759,11 +9759,12 @@ schema_version: 27,
       context_policy: {
         egress_level: "symbol_only",
         can_modify_contract: false
-      },
-      legacy_packet: {
-        schema_version: "drift.agent.preflight.v3"
       }
     });
+    // T48: legacy_packet duplicated the sibling agent_contract_packet byte for byte - 3,012
+    // bytes in a packet agents pay tokens to read. Asserted absent rather than merely
+    // unasserted, so it cannot quietly come back on this surface either.
+    expect(payload.task_preflight_packet).not.toHaveProperty("legacy_packet");
     expect(payload.change_impact).toMatchObject({
       schema_version: "drift.change_impact.v1",
       repo_id: repoId

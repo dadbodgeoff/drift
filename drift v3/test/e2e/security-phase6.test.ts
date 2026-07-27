@@ -48,6 +48,9 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+// A5 made `drift check` exit 2 for a blocked diff, distinct from 1 (Drift itself failed) and
+// 3 (fail-closed refusal). CI has to tell "this diff violates the contract" from "the tool
+// broke". These matrices predate that and expected 1 for every blocking case.
 describe("security Phase 6 fixture matrix", () => {
   it("proves SSRF, raw SQL, CORS, CSRF, and rate-limit contracts through drift check", async () => {
     const cases = [
@@ -55,7 +58,7 @@ describe("security Phase 6 fixture matrix", () => {
         name: "security-ssrf",
         routePath: "app/api/proxy/route.ts",
         convention: ssrfConvention(),
-        exitCode: 1,
+        exitCode: 2,
         proofPath: ["ssrf"],
         proofStatus: "missing_proof",
         missingCode: "request_controlled_url"
@@ -72,7 +75,7 @@ describe("security Phase 6 fixture matrix", () => {
         name: "security-raw-sql",
         routePath: "app/api/users/route.ts",
         convention: rawSqlConvention(),
-        exitCode: 1,
+        exitCode: 2,
         proofPath: ["raw_sql"],
         proofStatus: "missing_proof",
         missingCode: "raw_sql_unparameterized"
@@ -89,7 +92,7 @@ describe("security Phase 6 fixture matrix", () => {
         name: "security-cors-policy-violation",
         routePath: "app/api/public/route.ts",
         convention: corsConvention(),
-        exitCode: 1,
+        exitCode: 2,
         proofPath: ["cors"],
         proofStatus: "missing_proof",
         missingCode: "wildcard_origin_with_credentials"
@@ -98,7 +101,7 @@ describe("security Phase 6 fixture matrix", () => {
         name: "security-csrf-missing",
         routePath: "app/api/settings/route.ts",
         convention: csrfConvention(),
-        exitCode: 1,
+        exitCode: 2,
         proofPath: ["csrf"],
         proofStatus: "missing_proof",
         missingCode: "missing_csrf_guard"
@@ -107,7 +110,7 @@ describe("security Phase 6 fixture matrix", () => {
         name: "security-rate-limit-missing",
         routePath: "app/api/login/route.ts",
         convention: rateLimitConvention(),
-        exitCode: 1,
+        exitCode: 2,
         proofPath: ["rate_limit"],
         proofStatus: "missing_proof",
         missingCode: "missing_rate_limit_guard"

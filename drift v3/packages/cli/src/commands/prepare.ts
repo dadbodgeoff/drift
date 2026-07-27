@@ -177,8 +177,7 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     confidence: {
       graph_confidence: readiness.confidence,
       reasons: readiness.reasons
-    },
-    legacy_packet: agentContractPacket
+    }
   });
   const auditIntegrity = scanStatus.audit_integrity;
   const redactions = {

@@ -41,12 +41,15 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+// A5 made `drift check` exit 2 for a blocked diff, distinct from 1 (Drift itself failed) and
+// 3 (fail-closed refusal). CI has to tell "this diff violates the contract" from "the tool
+// broke". These matrices predate that and expected 1 for every blocking case.
 describe("security validation fixture matrix", () => {
   it("security validation fixture matrix proves request input validation and gaps", async () => {
     const cases = [
       {
         name: "security-validation-missing",
-        exitCode: 1,
+        exitCode: 2,
         proven: false,
         parserGap: false,
         missingReason: "request_input_not_validated",
@@ -57,7 +60,7 @@ describe("security validation fixture matrix", () => {
       },
       {
         name: "security-validation-result-unused",
-        exitCode: 1,
+        exitCode: 2,
         proven: false,
         parserGap: false,
         missingReason: "request_input_not_validated",
@@ -77,7 +80,7 @@ describe("security validation fixture matrix", () => {
       },
       {
         name: "security-validation-dynamic-body-parser-gap",
-        exitCode: 1,
+        exitCode: 2,
         proven: false,
         parserGap: true,
         missingReason: "unsupported_request_input_spread",

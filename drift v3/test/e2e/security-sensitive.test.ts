@@ -41,12 +41,15 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+// A5 made `drift check` exit 2 for a blocked diff, distinct from 1 (Drift itself failed) and
+// 3 (fail-closed refusal). CI has to tell "this diff violates the contract" from "the tool
+// broke". These matrices predate that and expected 1 for every blocking case.
 describe("security sensitive response fixture matrix", () => {
   it("blocks Phase 5 sensitive response and secret exposure cases", async () => {
     const cases = [
       {
         name: "security-sensitive-leak",
-        exitCode: 1,
+        exitCode: 2,
         convention: sensitiveConvention(),
         proofKey: "response_shape",
         proofStatus: "missing_proof",
@@ -61,7 +64,7 @@ describe("security sensitive response fixture matrix", () => {
       },
       {
         name: "security-secret-leak",
-        exitCode: 1,
+        exitCode: 2,
         convention: secretConvention(),
         proofKey: "sinks",
         proofStatus: "missing_proof",
@@ -69,7 +72,7 @@ describe("security sensitive response fixture matrix", () => {
       },
       {
         name: "security-response-spread-missing-proof",
-        exitCode: 1,
+        exitCode: 2,
         convention: sensitiveConvention(),
         proofKey: "response_shape",
         proofStatus: "parser_gap",
@@ -77,7 +80,7 @@ describe("security sensitive response fixture matrix", () => {
       },
       {
         name: "security-sensitive-wrong-serializer-import",
-        exitCode: 1,
+        exitCode: 2,
         convention: sensitiveConvention(),
         proofKey: "response_shape",
         proofStatus: "missing_proof",

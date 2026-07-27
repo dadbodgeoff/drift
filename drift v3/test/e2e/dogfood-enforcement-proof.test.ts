@@ -145,7 +145,9 @@ describe("Drift-on-Drift accepted-contract enforcement proof", () => {
       "--now", "2026-05-25T00:00:03.000Z",
       "--json"
     ]);
-    expect(badCheck.exitCode).toBe(1);
+    // A5: a blocked diff exits 2, distinct from 1 (Drift itself failed) and 3 (refusal). This
+    // proof is Drift enforcing its own package boundary, so it must assert the blocked code.
+    expect(badCheck.exitCode).toBe(2);
     const badPayload = JSON.parse(badCheck.stdout);
     const finding = badPayload.findings[0];
 

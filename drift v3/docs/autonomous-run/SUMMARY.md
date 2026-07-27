@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 33 |
+| Done | 34 |
 | Done (partial) | 13 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
@@ -46,6 +46,7 @@
 - **T46** drift prepare quality eval (the context claim) — Found prepare essentially broken for its stated purpose, fixed it, and added a measuring harness. pnpm eval:prepare - 3/3 tasks now surface the expected file at rank 4, 1, 1.
 - **T53** Enforce the CLI/MCP dependency boundary — Fixed the boundary gate itself, then added the CLI/MCP assertion the task asked for. pnpm check:boundaries is green for the first time since before this run.
 - **T62** Lint, formatting, and the e2e gate — cargo fmt and clippy were both failing; both now green. The clippy error was mine from T12 - !(used_as_type && !used_as_value). Clippy suggested !used_as_type || used_as_value, which is the same predicate with the reasoning removed, so I named the concept instead: let erased_at_runtime = used_as_type && !used_as_value.
+- **T62a** Fix the six pre-existing e2e failures; verify:ci green — pnpm verify:ci now exits 0 - the full release gate (build, typecheck, unit, e2e, harness, rustfmt, clippy, boundaries, release matrix, claims, beta proof, git diff --check) passes for the first time since before this run. e2e 63/63.
 - **T07** Verify B1 security-layer claims individually _(partial)_ — All 5 audit claims CONFIRMED, plus a 6th found. Written to docs/architecture/security-heuristic-audit.md. Claims 1/2/5 are inspection-only - exercising them needs a hand-written contract naming the auth helper, filed as T07b.
 - **T10** Verify remaining A4 sweep items _(partial)_ — Two of four A4 sub-items were already fixed (scan abort, repo_completeness). The remaining two are check_command.rs:655-665 silent continue on unreadable files and :1865 zero security findings when repo_root is absent. Both fold into T25 scope since they sit in the security path being gated; recorded in the capability audit rather than fixed separately.
 - **T41** Disk preflight in the external suite _(partial)_ — The suite now refuses to start below 5GB free with exit 3 and the remediation command, rather than failing mid-run. Disk exhaustion happened twice this session; the first time it produced four false failures, the second left the tool unable to write output at all. The drift CLI itself still needs the same preflight (T41 proper).

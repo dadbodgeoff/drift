@@ -41,13 +41,16 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
+// A5 made `drift check` exit 2 for a blocked diff, distinct from 1 (Drift itself failed) and
+// 3 (fail-closed refusal). CI has to tell "this diff violates the contract" from "the tool
+// broke". These matrices predate that and expected 1 for every blocking case.
 describe("security tenant authorization fixture matrix", () => {
   it("security tenant authorization fixture matrix proves phase4 trust and gaps", async () => {
     const cases = [
       {
         name: "security-tenant-missing",
         kind: "api_route_requires_tenant_scope",
-        exitCode: 1,
+        exitCode: 2,
         proof: "tenant",
         proven: false,
         missingReason: "tenant_predicate_missing",
@@ -56,7 +59,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-tenant-param-unused",
         kind: "api_route_requires_tenant_scope",
-        exitCode: 1,
+        exitCode: 2,
         proof: "tenant",
         proven: false,
         missingReason: "tenant_predicate_not_bound_to_query",
@@ -73,7 +76,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-tenant-untrusted-source",
         kind: "api_route_requires_tenant_scope",
-        exitCode: 1,
+        exitCode: 2,
         proof: "tenant",
         proven: false,
         missingReason: "tenant_source_untrusted",
@@ -82,7 +85,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-tenant-parser-gap",
         kind: "api_route_requires_tenant_scope",
-        exitCode: 1,
+        exitCode: 2,
         proof: "tenant",
         proven: false,
         parserGap: true
@@ -90,7 +93,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-role-missing",
         kind: "api_route_requires_authorization",
-        exitCode: 1,
+        exitCode: 2,
         proof: "authorization",
         proven: false,
         missingReason: "authorization_guard_missing",
@@ -107,7 +110,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-role-branch-bypass",
         kind: "api_route_requires_authorization",
-        exitCode: 1,
+        exitCode: 2,
         proof: "authorization",
         proven: false,
         missingReason: "authorization_guard_not_dominating_sink",
@@ -116,7 +119,7 @@ describe("security tenant authorization fixture matrix", () => {
       {
         name: "security-session-from-request-untrusted",
         kind: "session_object_must_come_from_trusted_helper",
-        exitCode: 1,
+        exitCode: 2,
         proof: "session_trust",
         proven: false,
         missingReason: "derived_from_request",
