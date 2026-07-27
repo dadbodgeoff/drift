@@ -3,9 +3,9 @@
 | Outcome | Count |
 |---|---|
 | Done | 30 |
-| Done (partial) | 8 |
+| Done (partial) | 9 |
 | Premise false (no change needed) | 2 |
-| Blocked — needs discussion | 5 |
+| Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 1 |
 | Discoveries | 6 |
@@ -51,6 +51,7 @@
 - **T28** Map every contract field to its enforcement site _(partial)_ — Mapped all RepoContract fields. 13 are genuinely enforced. SEVEN are declared in the schema and read by nothing: enforcement_policy, active_convention_rule_ids, beta_claim_profile, active_semantic_capability_ids, architecture_contract_id, architecture_contract_fingerprint, semantic_capability_contract_version. layer_architecture is a near-miss - written by contract-materialization but never read back.
 - **T26** Remove test-tailored literals from production paths _(partial)_ — Removed "withworkspace" from the auth-helper name list, and generalised the dynamic-control-flow valve from three fixture strings to actual dispatch shapes.
 - **T42** Large-repo scaling probe _(partial)_ — Measured envelope on a synthetic 20k-file repo (4k routes) documented in docs/reference/performance.md. Onboarding 19.5s, check on one changed file 2.4s, state 226MB - all fine. prepare 27.7s and repo map ~100s are not.
+- **T45** Incremental single-file check performance _(partial)_ — formbricks single-file check 6.9s -> 3.9s (43%). Root cause: drift check called collectScanData with NO reuse manifest, so every check re-parsed the entire repository through the engine even for a one-line edit. Profiling showed 5.1s of the 6.9s was the Node process sitting idle waiting on the engine subprocess.
 
 ## Premise false — deliberately no change
 
@@ -125,4 +126,12 @@ recommendation. Work reverted; the tree is green.
 - **diagnosis:** The compatibility check is correct for foreign contracts; the problem is that path-derived identity cannot distinguish "same repo, different checkout" from "different repo". Direct consequence: E3 pitches contract export as a committed, PR-reviewable drift.lock - a package-lock for your conventions - and that cannot work today, because no teammate can import the committed contract. E4 (GitHub Action) has the same problem: CI checks out to a different path than any developer.
 - **needs:** A path-independent repo identity before E3 or E4 can ship. Options: (a) derive from git remote URL plus root commit sha - stable across clones, breaks for repos with no remote; (b) derive from repo content (e.g. root package.json name plus root commit) - no remote needed; (c) allow import with an explicit --allow-path-mismatch flag, cheapest but leaves the identity wrong everywhere else. Recommend (a) with (b) as fallback. This is a design decision affecting stored ids, so it needs a migration story too.
 - **blocks:** T49, T50
+
+### T44 — Hooks pack (E1, the launch headline)
+
+- **reason:** dependency_not_met
+- **attempted:** Measured the edit-time path before writing the hook, since the DoD requires blocking in under 1s.
+- **evidence:** On formbricks a single-file check took 6.9s before T45 and 3.9s after - still ~4x the DoD. Detection itself is correct: exit 2 with blocking_count 1 for a violating edit, exit 0 for a clean edit, verified on the warn/block split.
+- **diagnosis:** Deliberately not shipping the hook at this latency. E1 is the item that makes Drift agent-native rather than another linter, and a 4-second pause on every file edit would undermine exactly that claim - a slow guardrail gets disabled, and a disabled guardrail enforces nothing. The correctness half is proven and ready; only the speed is missing.
+- **needs:** T45 completed to its sub-1s target via a changed-files-only engine mode. Once check is under 1s the hook itself is a small piece of work, and the block/warn messaging is already specified in docs/reference/enforcement.md.
 

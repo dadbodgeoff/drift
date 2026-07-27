@@ -26,6 +26,7 @@ import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { parserGapsFromDiagnostics } from "../domain/scan-status.js";
 import { currentMachineContractVersions } from "../domain/versions.js";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
+import { cleanupScanReuseManifest,createScanReuseManifest,latestIndexedScan,resolverInputFingerprint } from "../domain/scan-status.js";
 import { runEngineCheck } from "../engine/engine-check.js";
 import { extractImports,importFactsForFile } from "../engine/fact-extraction.js";
 
@@ -93,11 +94,33 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.listFindings(repoId).map((finding) => [finding.fingerprint, finding])
   );
   const expiredFindingsCount = expireFindingsForExpiredConventions(storage, parsed, repoId, contract, now);
-  const checkData = await collectScanData({
+  // T45: reuse the previous scan's facts for unchanged files.
+  //
+  // Without this every `drift check` re-parsed the whole repository through the engine, even for
+  // a one-line edit: on formbricks a single-file check took 6.9s, of which 5.1s was the Node
+  // process sitting idle waiting on the engine subprocess. That is the difference between a
+  // usable edit-time hook and an unusable one.
+  //
+  // Safe because of T15's version gate - facts produced by a different engine are refused, so
+  // reuse can never serve stale extraction after an upgrade.
+  const previousScan = latestIndexedScan(storage.listScanManifests(repoId));
+  const reuseManifest = createScanReuseManifest({
+    storage,
     repoId,
-    scanId: checkScanId,
-    repoRoot: repo.root_path
+    previousScan,
+    currentResolverInputFingerprint: resolverInputFingerprint(repo.root_path)
   });
+  let checkData: ScanData;
+  try {
+    checkData = await collectScanData({
+      repoId,
+      scanId: checkScanId,
+      repoRoot: repo.root_path,
+      reuseManifestPath: reuseManifest?.path
+    });
+  } finally {
+    cleanupScanReuseManifest(reuseManifest);
+  }
   const snapshotsByPath = new Map(checkData.snapshots.map((snapshot) => [snapshot.file_path, snapshot]));
   if (checkData.fallbackStatus.fallback_used) {
     const fallbackStatus = fallbackStatusForCheck(checkData);

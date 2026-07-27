@@ -333,7 +333,7 @@ function readTsconfigPathAliases(repoRoot: string): Record<string, string[]> {
   }
 }
 
-function createScanReuseManifest(input: {
+export function createScanReuseManifest(input: {
   storage: SqliteDriftStorage;
   repoId: string;
   previousScan?: ScanManifest;
@@ -382,7 +382,7 @@ function createScanReuseManifest(input: {
   return { path, dir, blocked_reasons: [] };
 }
 
-function cleanupScanReuseManifest(manifest: { dir: string } | null): void {
+export function cleanupScanReuseManifest(manifest: { dir: string } | null): void {
   if (!manifest) {
     return;
   }
