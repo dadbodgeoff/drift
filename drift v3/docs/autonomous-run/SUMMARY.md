@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 37 |
-| Done (partial) | 16 |
+| Done (partial) | 17 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
@@ -66,6 +66,7 @@
 - **T61** Split cli.test.ts as files are touched _(partial)_ — Extracted the contiguous positional-argument family into cli-positional-args.test.ts and lifted the shared seedDatabase helper into test/support/. cli.test.ts 15,846 -> 15,772 lines. Package test count identical before and after: 436 -> 436.
 - **T74** README rewrite (D5) _(partial)_ — First screen now answers what, for whom, and limits. Opens with one sentence and a four-line install-to-check block, then a scope table that says what Drift does NOT do before anything else.
 - **T75** Publish the failure catalog as launch content (F2) _(partial)_ — Drafted in-repo at docs/archive/failure-catalog-draft.md, clearly marked NOT PUBLISHED. Not published, and not queued for publishing - it is outward-facing and needs explicit approval.
+- **T80** Engine binary pipeline (D1) _(partial)_ — scripts/build-engine-artifacts.mjs builds each target with SHA-256 and a manifest; the matrix validator now checks artifacts, not just declarations. 2 of 5 targets built here: darwin-arm64 verified by execution, darwin-x64 cross-built and explicitly marked unverified.
 
 ## Premise false — deliberately no change
 
