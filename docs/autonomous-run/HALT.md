@@ -1,137 +1,69 @@
-# Run paused — context exhausted (clean)
+# Run complete
 
-**Tree state:** green. **`pnpm verify:ci` exits 0** — the full release gate, for the first time
-since before this run. External suite **7/7**, e2e **63/63**, Rust **24** suites, TS green.
-**Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 68 tasks (39 done, 17 partial, 2 premise-false, 2 skipped-dependency). 6 blocked,
-8 discoveries, 2 deferred.
+`node scripts/run-log.mjs next` reports **no actionable tasks remain**. Every task in PLAN.md has
+an outcome: finished, or recorded with the reason it was not.
+
+**Tree:** green. `pnpm verify:ci` exit 0 · external suite 7/7 · prepare quality 3/3 · e2e 63/63 ·
+Rust 24 suites · 789 unit tests. **63 commits. Nothing pushed. Nothing published.**
+
+| Outcome | Count |
+|---|---|
+| Done | 42 |
+| Done (partial — scope stated in each log entry) | 20 |
+| Premise false — deliberately no change | 2 |
+| Blocked — needs a human decision | 6 |
+| Skipped — dependency blocked | 2 |
+| Deferred — human-gated by design | 3 |
+| Discoveries made while working | 8 |
+
+## Read these six first
+
+Full evidence in `SUMMARY.md`; each is logged with what was attempted and what it needs.
+
+1. **T01c — beta-blocking.** On midday a contract materialises `enforcement_mode: block` but the
+   finding reports `enforcement_result: "none"`, so the check exits 0. Only repo using
+   `--data-modules`; not reproducible by hand. F3-class silent failure.
+2. **T93 — two enforcement bypasses, found by attacking the product.** A relative import of the
+   same module, and a barrel re-export, both produce a confident `pass` over a real violation.
+   One root cause: matching compares import *specifier strings*, not resolved module paths.
+   Fixtures recorded; not fixed, because it changes the core matcher.
+3. **T19b — blocks E3 and E4.** Repo identity hashes the absolute path, so no teammate or CI job
+   can import a committed contract. `drift.lock` cannot work until this changes.
+4. **T18 — the baseline is a permanent per-violation waiver.** Rewriting a baselined violating
+   line, or removing and re-adding it, stays exempt forever. Fix implemented and reverted: two
+   tests encode the current contract deliberately.
+5. **T28 — seven contract fields are accepted, stored, and enforced by nothing**, including
+   `enforcement_policy`. Three were found by a tripwire test, not by reading the interface.
+6. **T22 — gitignore.** Reverted. `GitignoreBuilder::add()` scopes patterns to the builder root,
+   so a bare `app` in one package went repo-wide and swallowed openstatus's routes.
+
+## Not releasable yet, and why
+
+- **3 of 5 engine artifacts are missing** — no Linux or Windows binary can be built here
+  (tree-sitter needs a cross C toolchain). `--require-artifacts` makes this fatal in CI.
+- **Install verified on macOS arm64 only** — same cause; there is nothing to install elsewhere.
+- **T84 npm publish is human-gated**, and publishing now would ship three empty platform packages.
 
 ## Resume
 
 ```bash
-cd ~/drift-falsification/drift          # T82: the workspace is now the repo root
-df -h ~                                   # need >5 GB; the suite refuses below that now
-pnpm build && cargo build --release -p drift-engine
-pnpm eval:external                        # confirm the oracle before trusting anything
+cd ~/drift-falsification/drift        # T82: the workspace is now the repo root
+pnpm verify:ci                        # expect exit 0
 node scripts/run-log.mjs status
 ```
 
-Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions). Then:
+To take on the blocked items, start with `SUMMARY.md` — each carries the attempt, the evidence,
+the diagnosis, and a recommendation.
 
-```bash
-node scripts/run-log.mjs next     # prints the next unsettled task; exits 1 when none remain
-```
+## Four things this run established about how to work on this codebase
 
-Continue at **T83**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
-tiers of regenerable artifacts only, and never touches the pinned evaluation repos.
-
-## Completed
-
-**Phase 1 — gate integrity (T01–T06).** The suite could not detect F4 regressions; now it can.
-Added **midday-ai/midday**, a Supabase monorepo whose data layer matches no whitelist substring,
-and asserted the gap is *exercised* rather than merely present. Added negative controls
-(type-only import, lookalike module, genuine subpath), a performance ceiling, harness
-self-tests, and `--repo-path` for ad-hoc triage.
-
-**Phase 2 — premise verification (T07–T11).** All B1 security claims confirmed; the sharpest is
-that `unsupported_dynamic_control_flow()` — the layer's own "too dynamic to prove anything"
-valve — matches only Drift's fixture strings, so it opens for test inputs and never for real
-dynamic dispatch. B4 confirmed and narrowed. B5 confirmed and more consequential than stated,
-since A5 made exit codes a contract. T11 audited 22 capability-assertion sites and fixed one
-real overclaim.
-
-**Phase 3/5 — correctness and footprint.**
-
-| Task | Outcome |
-|---|---|
-| **T12** | dub FP rate **8.5% → 3.1%**, findings 458 → 417. AST-based via tree-sitter's `type_identifier`/`identifier` distinction. Also forced B3's structural fix: `runFullRepoCheck` now reads engine facts instead of re-deriving imports, eliminating the TS/Rust divergence class. |
-| **T13** | cal.com forbidden imports **6 → 1** (exactly `@calcom/prisma`); openstatus 4 → 3 keeping `/src/schema`. |
-| **T15** | Reuse now refuses facts from a different engine version. Without it, T12/T13 would have silently kept stale facts for every unchanged file after an upgrade. |
-| **T40** | dub state **599 MB → 394 MB**. `graph_json` was a 206 MB duplicate of the normalized graph tables. |
-| **T41** | Disk preflight in `doctor`, `start`, and the suite. |
-| **T17** | `busy_timeout` set — concurrent holders wait instead of hitting `SQLITE_BUSY`. Unblocks T44. |
-| **T11b** | Inverted the fail-open completeness default, which revealed that A4's honest measurement never reached users at all. |
-| **T20/T21** | Verified and pinned; the block-new refactor risk did **not** materialize. |
-| **T30/T72/T73** | FP metric defined; enforcement contract documented. |
-
-## Second batch (after the first handoff)
-
-| Task | Outcome |
-|---|---|
-| **T16** | Refuses a database written by a *newer* Drift. An older build previously applied nothing and carried on against a schema it did not know - silent wrong behaviour. Forward migration from an 8-migration-old database verified with data intact. |
-| **T23** | `DriftError` carries its own failure code; the classifier reads it before falling back to matching prose. Rewording an error string used to change exit-code behaviour, since stale-scan maps to exit 3. |
-| **T24** | Added `disk_full`, `corrupt_database`, `permission_denied` - all previously reaching users as raw SQLite or filesystem strings. `docs/reference/errors.md` tables all ten codes with honest `safe_to_retry`. |
-| **T29** | Context egress pinned with 15 tests on the exact shapes F9 let through. The canary test alone would have misled: those files were never indexed because only TS/JS is, which is incidental, not the policy. |
-| **T19** | Premise false - foreign contracts *are* refused. But see T19b. |
-| **T22, T18** | Attempted, reverted, logged with root cause. |
-| **T27** | Pinned the contract fields the engine deliberately ignores. B2's premise was false; the real risk was that the CLI-side layering was undocumented and unpinned, so deleting it would silently stop honouring exceptions and waivers while checks still passed. |
-| **T28** | **Seven** contract fields are accepted, stored, and read by nothing - including `enforcement_policy`, whose name reads as the control for how enforcement behaves. Three were found by the tripwire test, not by reading the interface. |
-| **T25** | Security layer gated behind `--experimental-security`; never auto-accepted. dub's default listing drops 20 candidates to 1. Claims demoted in both manifests. |
-| **T26** | Removed `"withworkspace"` - it was load-bearing, and its test asserted Drift "learns" wrappers it only matched because dub's name was compiled in. Generalised the dynamic-control-flow valve from three fixture strings to real dispatch shapes. |
-| **T31** | Every allowed claim mapped to the test that proves it; adding one without evidence now fails. |
-| **T42** | Issue #99 **reproduced**: `repo map` ~100s, `prepare` 27.7s at 20k files. Fixed the part T40 caused (eager graph hydration); the rest needs scoped loading. |
-| **T43** | Node CLI peaks at **1.76 GB** vs the engine's 93 MB on 20k files. A 512 MB heap crashed with a raw V8 fatal error; now a classified refusal naming the fix. |
-| **T45** | `check` was re-scanning the whole repo every time — 6.9s → 3.9s on formbricks. Still 4× the hooks-pack budget, so **T44 is blocked, not shipped**. |
-| **T46** | `prepare` returned **0 of 25** task-relevant files on dub; the cap was spent in filesystem order before ranking existed. Now 8/25 with the target at rank 4. `pnpm eval:prepare` measures it. |
-| **T47** | MCP compatibility: **go for beta**. Server accepts clients two revisions newer and serves a full session. Could not verify the 2026-07-28 revision exists — stated as a limit. |
-| **T51** | The T46 fix had **not** reached MCP — `get_task_preflight` still returned unranked files. Ranking now shared via `@drift/query`. |
-| **T53** | `check:boundaries` had been red since before the run on a **false positive**; fixed, then added the CLI/MCP boundary assertion. |
-| **T62/T62a** | rustfmt + clippy green; **19 stale exit-code expectations** fixed. `verify:ci` exits 0. |
-
-## Discussion agenda — read `SUMMARY.md` for full evidence
-
-1. **T01c — beta-blocking.** On midday the contract materializes `enforcement_mode: block` but
-   the finding reports `enforcement_result: "none"`, so `blocking_count` is 0 and check exits 0.
-   Only repo using the `--data-modules` path; only mismatch across seven repos; not reproducible
-   by hand in two attempts. F3-class silent failure. `enforcement_matches_mode` is recorded per
-   repo — promote to a hard assertion once fixed.
-2. **T22 — gitignore.** Attempted and reverted. `GitignoreBuilder::add()` interprets patterns
-   relative to the *builder root*, not the added file's directory, so a bare `app` in
-   `apps/server/.gitignore` went repo-wide and swallowed openstatus's real routes. Fix is
-   per-directory scoping or `ignore::WalkBuilder`. **T08's fixture passes under the broken
-   version** — the suite is what caught it.
-3. **T19b — blocks E3 and E4.** Contract portability is impossible: `repoIdForRoot` hashes the
-   **absolute path**, so every teammate's checkout is a different repo and no one can import a
-   committed contract. E3 pitches `drift.lock` as "a package-lock for your conventions"; that
-   cannot work today, and CI checks out to a path no developer shares. Needs a path-independent
-   identity (git remote + root commit, falling back to repo content).
-4. **T18 — baseline is a permanent per-violation waiver.** Rewriting a baselined violating line,
-   or removing and reintroducing it, stays exempt forever. I implemented the fix and all four
-   matrix cases behaved as pre-registered, then reverted: two tests encode the current contract
-   deliberately. `baseline_violations` has no provenance column, so an automatic onboarding
-   shield cannot be told apart from a considered waiver. Recommend adding provenance.
-5. **T22 — gitignore.** Reverted. `GitignoreBuilder::add()` scopes patterns to the *builder root*,
-   so a bare `app` in `apps/server/.gitignore` went repo-wide and swallowed openstatus's routes.
-   **T08's fixture passes under the broken version** — the suite caught it.
-6. **T07b** — dominance/branch/tenant claims need a hand-written auth contract to exercise;
-   `security-auth-branch-bypass` still has no test referencing it.
-
-## Two findings that change how you read earlier results
-
-- **T07c:** `candidate_command.rs:1035` hardcodes `"withworkspace"`, and it is load-bearing —
-  none of the surrounding conditions match it. The falsification report called dub's
-  `withWorkspace` observation the most useful output across six repos; it exists because dub is
-  an eval repo and its helper name is compiled into the engine. **T26 will correctly cost that
-  candidate.**
-- **T13b:** the boundary rule also drops `../../lib/prismaClient`, a legitimate client. A
-  camelCase-aware boundary cannot separate `prismaClient` from `isPrismaObj`; that needs the
-  structural signal (does the module export an instantiated client), which is E2.
-
-## Next, in order
-
-**T43** memory ceiling · **T44** hooks pack — but see the T42 caveat: `prepare` at 28s is
-unusable at edit time, so scoped graph loading is a prerequisite, not a follow-up. **T45**
-single-file check performance. **T46** `drift prepare` quality eval. **T47** MCP revision risk — scoped by T07, and the largest remaining
-correctness item (12 `can_block: true` sites plus vocabulary and fixture literals). **T27/T28**
-contract-field enforcement mapping. **T31** claims ↔ behaviour reconciliation. **T42/T43** scaling
-probes (need a ~20k-file repo). **T44** hooks pack — now unblocked by T17. **T46** `drift prepare`
-quality eval, which is the untested half of the context claim.
-
-## Protocol lessons earned this run
-
-- `cargo test` builds **debug**; the CLI and harness use `target/release`. Verifying against a
-  stale release binary produced a plausible-but-wrong 8.4% and three spurious parser gaps.
-- Disk exhaustion produced **four false test failures** in one run and, in another, left no
-  space to write tool output at all. Both remediated with no code change.
-- Fixture-only verification was insufficient twice (T01 discovery suppression, T22 gitignore).
-  The seven-repo suite caught both.
+- **`cargo test` builds debug; the CLI and harness use `target/release`.** Verifying against a
+  stale release binary produced a plausible-but-wrong 8.4% and three phantom parser gaps.
+- **Fixture-only verification is insufficient.** It passed while T22's gitignore rewrite swallowed
+  real routes and while T51's ranking fix never reached MCP. The seven-repo suite caught both, and
+  T65's mutation check confirmed why: two core mutations were caught by one unit test but by
+  fourteen checks across the real repos.
+- **The CLI and MCP surfaces duplicate ~25 functions and diverge silently.** That cost three
+  separate bugs in this run alone.
+- **A green gate is not a read gate.** `check:boundaries`, six e2e tests and the engine release
+  matrix had all been failing or vacuous since before this run started.
