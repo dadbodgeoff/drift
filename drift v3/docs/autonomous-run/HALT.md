@@ -2,7 +2,7 @@
 
 **Tree state:** green. External suite **7/7**, TS suites green, Rust **23** suites green.
 **Branch:** `fix/phase-a-correctness`. **Nothing pushed.**
-**Completed:** 35 tasks (27 done, 6 partial, 2 premise-false). 5 blocked, 6 discoveries.
+**Completed:** 44 tasks (29 done, 8 partial, 2 premise-false). 5 blocked, 6 discoveries.
 
 ## Resume
 
@@ -20,7 +20,7 @@ Read `PROTOCOL.md` first (triage-and-continue, tacit knowledge, halt conditions)
 node scripts/run-log.mjs next     # prints the next unsettled task; exits 1 when none remain
 ```
 
-Continue at **T25**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
+Continue at **T43**. Disk no longer halts the run - `./scripts/reclaim-disk.sh` reclaims in four
 tiers of regenerable artifacts only, and never touches the pinned evaluation repos.
 
 ## Completed
@@ -64,6 +64,10 @@ real overclaim.
 | **T22, T18** | Attempted, reverted, logged with root cause. |
 | **T27** | Pinned the contract fields the engine deliberately ignores. B2's premise was false; the real risk was that the CLI-side layering was undocumented and unpinned, so deleting it would silently stop honouring exceptions and waivers while checks still passed. |
 | **T28** | **Seven** contract fields are accepted, stored, and read by nothing - including `enforcement_policy`, whose name reads as the control for how enforcement behaves. Three were found by the tripwire test, not by reading the interface. |
+| **T25** | Security layer gated behind `--experimental-security`; never auto-accepted. dub's default listing drops 20 candidates to 1. Claims demoted in both manifests. |
+| **T26** | Removed `"withworkspace"` - it was load-bearing, and its test asserted Drift "learns" wrappers it only matched because dub's name was compiled in. Generalised the dynamic-control-flow valve from three fixture strings to real dispatch shapes. |
+| **T31** | Every allowed claim mapped to the test that proves it; adding one without evidence now fails. |
+| **T42** | Issue #99 **reproduced**: `repo map` ~100s, `prepare` 27.7s at 20k files. Fixed the part T40 caused (eager graph hydration); the rest needs scoped loading. |
 
 ## Discussion agenda — read `SUMMARY.md` for full evidence
 
@@ -106,7 +110,9 @@ real overclaim.
 
 ## Next, in order
 
-**T25/T26** security gating and literal removal (next up) — scoped by T07, and the largest remaining
+**T43** memory ceiling · **T44** hooks pack — but see the T42 caveat: `prepare` at 28s is
+unusable at edit time, so scoped graph loading is a prerequisite, not a follow-up. **T45**
+single-file check performance. **T46** `drift prepare` quality eval. **T47** MCP revision risk — scoped by T07, and the largest remaining
 correctness item (12 `can_block: true` sites plus vocabulary and fixture literals). **T27/T28**
 contract-field enforcement mapping. **T31** claims ↔ behaviour reconciliation. **T42/T43** scaling
 probes (need a ~20k-file repo). **T44** hooks pack — now unblocked by T17. **T46** `drift prepare`
