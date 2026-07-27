@@ -393,6 +393,146 @@ export class SqliteDriftStorage {
     return row ? scanManifestFromRow(row) : undefined;
   }
 
+  /**
+   * Delete scans that nothing needs any more.
+   *
+   * Every `drift start` appends a complete fact set and graph artifact and nothing ever removed
+   * them: five consecutive runs on dub produced a 1,963 MB database - 393 MB per run, linear. A
+   * beta user re-scanning daily reaches multi-gigabyte state inside a week, which is an adoption
+   * problem for a tool whose pitch is that it lives on your machine.
+   *
+   * Retention is deliberately conservative, because deleting a scan someone still needs is far
+   * worse than keeping one nobody does:
+   *
+   *   - the newest `keep` scans, always
+   *   - any scan referenced by a finding, a baseline entry, or a check run
+   *   - any scan another retained scan names as its `previous_scan_id`, so the reuse chain the
+   *     incremental path walks is never broken mid-way
+   *
+   * Measured separately and worth recording: stored scan count does **not** affect check latency
+   * (2.7s on dub at both 2 and 10 scans). This is a footprint fix, not a speed one - so it does
+   * not need to be aggressive to be worth doing.
+   */
+  pruneSupersededScans(repoId: string, options: { keep?: number } = {}): {
+    deleted: string[];
+    kept: number;
+  } {
+    const keep = Math.max(1, options.keep ?? 2);
+    const scans = this.listScanManifests(repoId);
+    if (scans.length <= keep) {
+      return { deleted: [], kept: scans.length };
+    }
+
+    const ordered = [...scans].sort((a, b) =>
+      (b.completed_at ?? b.started_at ?? "").localeCompare(a.completed_at ?? a.started_at ?? "")
+    );
+    const retained = new Set(ordered.slice(0, keep).map((scan) => scan.id));
+
+    const referenced = (table: string, column = "scan_id") => {
+      try {
+        for (const row of this.db
+          .prepare(`SELECT DISTINCT ${column} AS id FROM ${table} WHERE repo_id = ?`)
+          .all(repoId) as Array<{ id: string | null }>) {
+          if (row.id) {
+            retained.add(row.id);
+          }
+        }
+      } catch {
+        /* table absent in this schema version */
+      }
+    };
+    // Anything a human or a governance decision points at must survive.
+    referenced("findings");
+    referenced("baseline_violations", "first_seen_scan_id");
+    referenced("check_runs");
+
+    // Keep the newest scan's immediate predecessor, and only that.
+    //
+    // Walking the chain transitively retains the entire history - every scan names the last one,
+    // so following the links from all retained scans keeps everything and prunes nothing. Reuse
+    // needs one step back from the newest scan, which is what this preserves.
+    const newestPredecessor = ordered[0]?.previous_scan_id;
+    if (newestPredecessor) {
+      retained.add(newestPredecessor);
+    }
+
+    const doomed = ordered.filter((scan) => !retained.has(scan.id)).map((scan) => scan.id);
+    if (doomed.length === 0) {
+      return { deleted: [], kept: retained.size };
+    }
+
+    const scanTables = this.tablesWithScanId().filter((table) => table !== "scan_manifests");
+    const placeholders = doomed.map(() => "?").join(", ");
+    this.db.transaction(() => {
+      for (const table of scanTables) {
+        this.db
+          .prepare(`DELETE FROM ${table} WHERE repo_id = ? AND scan_id IN (${placeholders})`)
+          .run(repoId, ...doomed);
+      }
+      this.db
+        .prepare(`DELETE FROM scan_manifests WHERE repo_id = ? AND id IN (${placeholders})`)
+        .run(repoId, ...doomed);
+    })();
+
+    // The predecessor is kept only so incremental reuse has its facts. The reuse manifest carries
+    // facts and file snapshots and nothing else (see createScanReuseManifest), so that scan's
+    // graph - nodes, edges, evidence, which is the bulk of it - serves no purpose. Dropping it
+    // keeps reuse working while roughly halving what a retained predecessor costs.
+    const predecessorOnly = newestPredecessor && retained.has(newestPredecessor)
+      ? [newestPredecessor]
+      : [];
+    if (predecessorOnly.length > 0 && ordered[0]?.id !== newestPredecessor) {
+      const graphOnlyTables = [
+        "graph_nodes",
+        "graph_edges",
+        "graph_evidence",
+        "graph_completeness",
+        "fact_graph_artifacts",
+        "symbol_occurrences"
+      ];
+      this.db.transaction(() => {
+        for (const table of graphOnlyTables) {
+          try {
+            this.db
+              .prepare(`DELETE FROM ${table} WHERE repo_id = ? AND scan_id = ?`)
+              .run(repoId, newestPredecessor);
+          } catch {
+            /* table absent in this schema version */
+          }
+        }
+      })();
+    }
+
+    // Deliberately no VACUUM.
+    //
+    // It would shrink the file, but it rewrites the whole database and needs roughly twice its
+    // size in free space to do it. On a 786 MB database that is 1.5 GB of headroom demanded during
+    // a scan, and it failed here with a disk I/O error on the third consecutive run - turning a
+    // housekeeping step into the very disk-exhaustion failure T41 exists to prevent.
+    //
+    // Not vacuuming is sufficient for the actual goal. Freed pages are reused by subsequent scans,
+    // so the file plateaus instead of growing without bound; it simply plateaus at its high-water
+    // mark rather than shrinking. `drift state size` reports the real figure either way.
+
+    return { deleted: doomed, kept: retained.size };
+  }
+
+  /** Tables keyed by scan_id, read from the live schema rather than hardcoded. */
+  private tablesWithScanId(): string[] {
+    const tables = this.db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all() as Array<{ name: string }>;
+    return tables
+      .map((row) => row.name)
+      .filter((name) => {
+        const columns = this.db.prepare(`PRAGMA table_info("${name}")`).all() as Array<{
+          name: string;
+        }>;
+        const names = new Set(columns.map((column) => column.name));
+        return names.has("scan_id") && names.has("repo_id");
+      });
+  }
+
   listScanManifests(repoId: string): ScanManifest[] {
     return this.db
       .prepare("SELECT * FROM scan_manifests WHERE repo_id = ? ORDER BY started_at DESC, id DESC")

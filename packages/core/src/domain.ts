@@ -999,6 +999,10 @@ export interface AuditEvent {
     | "scan_started"
     | "scan_completed"
     | "scan_failed"
+    // T110: superseded scans are pruned after a successful scan. Recorded because reclaiming
+    // state is a state change, and this project's whole argument is that those should be visible
+    // rather than silent - even when what was removed is data nothing referenced.
+    | "scans_pruned"
     | "election_accepted"
     | "election_rejected"
     | "election_edited"

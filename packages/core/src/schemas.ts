@@ -1045,6 +1045,7 @@ export const AuditEventSchema = z.object({
     "scan_started",
     "scan_completed",
     "scan_failed",
+    "scans_pruned",
     "election_accepted",
     "election_rejected",
     "election_edited",
