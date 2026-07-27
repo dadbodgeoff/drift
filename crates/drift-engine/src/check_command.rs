@@ -89,6 +89,10 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             let rule = DirectDataAccessRule {
                 convention_id: convention.id.clone(),
                 forbidden_imports: convention.matcher.forbidden_imports.unwrap_or_default(),
+                forbidden_module_files: convention
+                    .matcher
+                    .forbidden_module_files
+                    .unwrap_or_default(),
                 severity,
                 enforcement_mode,
             };
@@ -494,6 +498,41 @@ fn graph_direct_data_access_findings(
         .map(|evidence| (evidence.id.as_str(), evidence.start_line))
         .collect::<BTreeMap<_, _>>();
 
+    // T100: the file identities the forbidden specifiers actually name.
+    //
+    // A convention's `forbidden_imports` holds specifiers - `@/lib/prisma`, `@calcom/prisma` - so
+    // matching by string missed every other spelling of the same module. `../../../lib/prisma`
+    // resolved to the identical file and passed; a barrel re-exporting the client passed. Both
+    // were confirmed bypasses (T93): a real violation reported as a clean check.
+    //
+    // The repository resolves this for us. Wherever some file imports a forbidden specifier and
+    // the resolver placed that edge, the edge target is the file the specifier means. Collecting
+    // those targets turns specifier matching into identity matching without a second resolver.
+    //
+    // Derived rather than assumed, which is what makes it safe in both directions. If nothing
+    // imports a forbidden specifier resolvably the set is empty and behaviour is exactly as
+    // before. And because entries arrive only through real resolution, a lookalike module
+    // (`@/lib/prisma-legacy`) resolves to its own distinct file and never lands here - which is
+    // what keeps the T03 negative control green.
+    let supplied_forbidden_files = rule.forbidden_module_files.clone();
+    let mut forbidden_module_paths = supplied_forbidden_files
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<&str>>();
+    // Local derivation still runs, for whole-repo checks where the graph is not scoped.
+    let derived = resolved_import_edges
+        .iter()
+        .filter_map(|edge| {
+            let import_node = nodes_by_id.get(edge.from.as_str())?;
+            let source = string_metadata(import_node, "source")?;
+            if !is_forbidden_import_source(source, &rule.forbidden_imports) {
+                return None;
+            }
+            module_files.get(edge.to.as_str()).copied()
+        })
+        .collect::<BTreeSet<&str>>();
+
+
     let mut findings = Vec::new();
     for edge in resolved_import_edges {
         let Some(owner_module) = import_owner_module.get(edge.from.as_str()) else {
@@ -521,6 +560,7 @@ fn graph_direct_data_access_findings(
                 &graph.graph_edges,
                 &module_files,
                 &rule.forbidden_imports,
+                &forbidden_module_paths,
             )
         else {
             continue;
@@ -3142,7 +3182,14 @@ fn is_forbidden_graph_import(
     import_node: &GraphNode,
     resolved_path: &str,
     forbidden_imports: &[String],
+    forbidden_module_paths: &BTreeSet<&str>,
 ) -> bool {
+    // Resolved identity is the reliable signal. The `resolved_path == forbidden` comparison below
+    // pits a file path against a specifier and can only match when the forbidden entry is itself
+    // a path, which is why the relative-import and barrel bypasses survived.
+    if forbidden_module_paths.contains(resolved_path) {
+        return true;
+    }
     let import_source = string_metadata(import_node, "source").unwrap_or("");
     forbidden_imports.iter().any(|forbidden| {
         resolved_path == forbidden
@@ -3159,8 +3206,14 @@ fn forbidden_graph_import_target<'a>(
     edges: &'a [GraphEdge],
     module_files: &BTreeMap<&'a str, &'a str>,
     forbidden_imports: &[String],
+    forbidden_module_paths: &BTreeSet<&str>,
 ) -> Option<(&'a str, &'a str, Vec<String>)> {
-    if is_forbidden_graph_import(import_node, resolved_path, forbidden_imports) {
+    if is_forbidden_graph_import(
+        import_node,
+        resolved_path,
+        forbidden_imports,
+        forbidden_module_paths,
+    ) {
         return Some((resolved_module_id, resolved_path, Vec::new()));
     }
     let mut visited = BTreeSet::new();
@@ -3179,9 +3232,13 @@ fn forbidden_graph_import_target<'a>(
             let mut next_chain = chain.clone();
             next_chain.push(edge.from.clone());
             next_chain.push(edge.to.clone());
-            if forbidden_imports
-                .iter()
-                .any(|forbidden| target_path == forbidden || target_path.contains(forbidden))
+            // Identity first: a re-export chain ending at the forbidden module's own file is a
+            // violation however the intermediate modules are named. Specifier comparison stays as
+            // the fallback for bare package names that resolve to no local file.
+            if forbidden_module_paths.contains(target_path)
+                || forbidden_imports
+                    .iter()
+                    .any(|forbidden| target_path == forbidden || target_path.contains(forbidden))
             {
                 return Some((edge.to.as_str(), target_path, next_chain));
             }

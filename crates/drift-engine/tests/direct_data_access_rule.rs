@@ -19,6 +19,7 @@ export async function POST() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -53,6 +54,7 @@ export async function POST() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -74,6 +76,7 @@ export async function GET() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -95,6 +98,7 @@ export async function loadWorkspace() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -117,6 +121,7 @@ export async function GET() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["../../server/db".to_string(), "@repo/database".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -159,6 +164,7 @@ export async function POST() {
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -203,6 +209,7 @@ export async function POST() { return Response.json(await prisma.user.findMany()
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string(), "@repo/database".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Warning,
         enforcement_mode: EnforcementMode::Warn,
     };
@@ -236,6 +243,7 @@ export async function POST() { return Response.json(await prisma.user.findMany()
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
@@ -263,6 +271,7 @@ export async function POST() { return Response.json(await prisma.user.findMany()
     let rule = DirectDataAccessRule {
         convention_id: "convention_no_direct_data_access".to_string(),
         forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
         severity: Severity::Error,
         enforcement_mode: EnforcementMode::Block,
     };
