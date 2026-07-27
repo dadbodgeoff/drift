@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 32 |
-| Done (partial) | 12 |
+| Done (partial) | 13 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
@@ -57,6 +57,7 @@
 - **T47** MCP protocol revision risk assessment _(partial)_ — Verdict: GO for beta, not launch-blocking. docs/architecture/mcp-compatibility.md records the finding with evidence.
 - **T48** Trim the MCP preflight packet _(partial)_ — Measured the packet for the first time: 84,729 bytes / ~21,000 tokens for ONE get_task_preflight call on taxonomy - a 131-file repo. 33 top-level keys. Removed legacy_packet (3,012 bytes), taking it to 80,012 / ~20,000 tokens. DoD of <=12 top-level keys NOT met.
 - **T51** CLI/MCP payload deduplication (C4) _(partial)_ — Extracted relevance ranking into @drift/query and pointed both surfaces at it. This was not cleanup - it fixed a live bug I had just caused.
+- **T60** Convert remaining repros to fixtures (C2) _(partial)_ — Added two permanent fixtures with tests, covering the two falsification findings that guard work from this run: test/fixtures/type-only-imports (T12) and test/fixtures/binary-and-unreadable (A4). Rust suites 23 -> 24.
 
 ## Premise false — deliberately no change
 
