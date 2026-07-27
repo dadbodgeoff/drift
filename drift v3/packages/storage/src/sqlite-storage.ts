@@ -1329,13 +1329,20 @@ export class SqliteDriftStorage {
     if (!row) {
       return undefined;
     }
-    // Rehydrate the bulk collections from the normalized tables. They are deliberately not
-    // stored in graph_json (see upsertFactGraphArtifact), so callers get the same artifact
-    // they always did without the database carrying two copies of the graph.
+    // Rehydrate the bulk collections *lazily*. They are deliberately not stored in graph_json
+    // (see upsertFactGraphArtifact), so callers still see a complete artifact - but eager
+    // hydration meant every getFactGraphArtifact() call ran three full table scans over the
+    // graph, and `drift prepare` calls it several times. On a 20k-file repository that was the
+    // dominant cost of the query surfaces: ~31s for prepare, most of it in listGraphNodes /
+    // listGraphEdges / listGraphEvidence plus the resulting GC.
+    //
+    // Every current consumer reads only `.graph.completeness` and `.graph.adapters`, so in
+    // practice these getters are never invoked - but a future one that needs the collections
+    // still gets them, and pays only then.
     return factGraphArtifactFromRow(row, {
-      nodes: this.listGraphNodes(repoId, scanId),
-      edges: this.listGraphEdges(repoId, scanId),
-      evidence: this.listGraphEvidence(repoId, scanId)
+      nodes: () => this.listGraphNodes(repoId, scanId),
+      edges: () => this.listGraphEdges(repoId, scanId),
+      evidence: () => this.listGraphEvidence(repoId, scanId)
     });
   }
 
@@ -2211,16 +2218,41 @@ function scanFileChangeFromRow(row: unknown): ScanFileChange {
 
 function factGraphArtifactFromRow(
   row: unknown,
-  hydrate?: { nodes: unknown[]; edges: unknown[]; evidence: unknown[] }
+  hydrate?: {
+    nodes: () => unknown[];
+    edges: () => unknown[];
+    evidence: () => unknown[];
+  }
 ): FactGraphArtifact {
   const record = row as Record<string, unknown>;
   const graph = parseJsonObject(record.graph_json) as Record<string, unknown>;
-  return FactGraphArtifactSchema.parse({
+  if (!hydrate) {
+    return FactGraphArtifactSchema.parse({ ...record, graph });
+  }
+
+  // Schema validation would force the collections to materialize, so validate the metadata and
+  // attach the collections behind memoized getters afterwards.
+  const parsed = FactGraphArtifactSchema.parse({
     ...record,
-    graph: hydrate
-      ? { ...graph, nodes: hydrate.nodes, edges: hydrate.edges, evidence: hydrate.evidence }
-      : graph
+    graph: { ...graph, nodes: [], edges: [], evidence: [] }
   });
+  const cache = new Map<string, unknown[]>();
+  const lazily = (key: "nodes" | "edges" | "evidence", load: () => unknown[]) => {
+    Object.defineProperty(parsed.graph, key, {
+      configurable: true,
+      enumerable: true,
+      get() {
+        if (!cache.has(key)) {
+          cache.set(key, load());
+        }
+        return cache.get(key);
+      }
+    });
+  };
+  lazily("nodes", hydrate.nodes);
+  lazily("edges", hydrate.edges);
+  lazily("evidence", hydrate.evidence);
+  return parsed;
 }
 
 /**

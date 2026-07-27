@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 29 |
-| Done (partial) | 7 |
+| Done (partial) | 8 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 5 |
 | Skipped — dependency blocked | 0 |
@@ -49,6 +49,7 @@
 - **T23** Typed errors for user-facing failures _(partial)_ — Added DriftError carrying its own failure code, user action, recovery commands and retryability. The top-level classifier now reads error.code first and falls back to the existing string matching, so this is incremental rather than a rewrite and no throw site breaks. Migrated the two highest-value sites: missing_contract in repo-paths.ts and insufficient_disk in start.ts (which also converts the disk refusal from a hand-built exit-3 payload into a classified throw).
 - **T28** Map every contract field to its enforcement site _(partial)_ — Mapped all RepoContract fields. 13 are genuinely enforced. SEVEN are declared in the schema and read by nothing: enforcement_policy, active_convention_rule_ids, beta_claim_profile, active_semantic_capability_ids, architecture_contract_id, architecture_contract_fingerprint, semantic_capability_contract_version. layer_architecture is a near-miss - written by contract-materialization but never read back.
 - **T26** Remove test-tailored literals from production paths _(partial)_ — Removed "withworkspace" from the auth-helper name list, and generalised the dynamic-control-flow valve from three fixture strings to actual dispatch shapes.
+- **T42** Large-repo scaling probe _(partial)_ — Measured envelope on a synthetic 20k-file repo (4k routes) documented in docs/reference/performance.md. Onboarding 19.5s, check on one changed file 2.4s, state 226MB - all fine. prepare 27.7s and repo map ~100s are not.
 
 ## Premise false — deliberately no change
 

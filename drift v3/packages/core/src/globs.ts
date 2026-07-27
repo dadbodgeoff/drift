@@ -31,8 +31,31 @@ function escapeLiteral(value: string): string {
   return value.replace(REGEX_METACHARS, "\\$&");
 }
 
-/** Compile a glob pattern to an anchored RegExp. */
+/**
+ * Compiled patterns, memoized.
+ *
+ * Glob matching runs per file per convention per pattern, so on a 20k-file repository a single
+ * `drift prepare` compiles on the order of half a million RegExps. Patterns come from contracts
+ * and a fixed scope list, so the set is small and bounded and caching them is free.
+ *
+ * Measured honestly: this did NOT move the needle on the slow surfaces - prepare stayed at ~31s
+ * and repo map at ~92s on 20k files, so RegExp compilation is not the bottleneck. Kept because
+ * it is strictly cheaper and removes a plausible-looking suspect from future profiling.
+ */
+const COMPILED = new Map<string, RegExp>();
+
+/** Compile a glob pattern to an anchored RegExp. Cached; patterns are a bounded set. */
 export function globToRegExp(glob: string): RegExp {
+  const cached = COMPILED.get(glob);
+  if (cached) {
+    return cached;
+  }
+  const compiled = compileGlob(glob);
+  COMPILED.set(glob, compiled);
+  return compiled;
+}
+
+function compileGlob(glob: string): RegExp {
   const pattern = glob.replace(/\\/g, "/");
   let out = "";
   let i = 0;
