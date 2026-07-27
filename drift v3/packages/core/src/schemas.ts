@@ -1468,7 +1468,10 @@ export const AgentPreflightPacketV2Schema = z.object({
     graph_confidence: z.number().min(0).max(1),
     reasons: z.array(z.string().min(1))
   }),
-  legacy_packet: AgentPreflightPacketSchema
+  // T48: no longer emitted. It was byte-identical to the sibling top-level agent_contract_packet
+  // - 3,012 bytes of pure duplication in a packet agents pay tokens to read. Kept optional so a
+  // consumer that still reads it parses rather than throws.
+  legacy_packet: AgentPreflightPacketSchema.optional()
 });
 
 export const ContractFindingV2Schema = z.object({

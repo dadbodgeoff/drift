@@ -1296,9 +1296,6 @@ describe("read-only MCP handlers", () => {
         context_policy: {
           egress_level: "symbol_only",
           can_modify_contract: false
-        },
-        legacy_packet: {
-          schema_version: "drift.agent.preflight.v3"
         }
       },
       test_intelligence: [],
@@ -1320,6 +1317,11 @@ describe("read-only MCP handlers", () => {
         "drift findings list --repo repo_abc --json"
       ]
     });
+
+    // T48: legacy_packet was byte-identical to the sibling top-level agent_contract_packet -
+    // 3,012 bytes of pure duplication in a packet agents pay tokens to read. Asserted absent
+    // rather than merely unasserted, so it cannot quietly come back.
+    expect(preflight.task_preflight_packet).not.toHaveProperty("legacy_packet");
     expect(preflight.findings[0]).toMatchObject({
       id: "finding_abc",
       convention_id: "convention_no_direct_db",

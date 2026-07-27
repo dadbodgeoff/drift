@@ -322,7 +322,6 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           graph_confidence: readiness.confidence,
           reasons: readiness.reasons
         },
-        legacy_packet: agentContractPacket
       });
       return {
         response_schema: "drift.task.preflight.v1",

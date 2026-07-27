@@ -1497,7 +1497,8 @@ export interface AgentPreflightPacketV2 {
     graph_confidence: number;
     reasons: string[];
   };
-  legacy_packet: AgentPreflightPacket;
+  /** @deprecated T48: duplicated agent_contract_packet; no longer emitted. */
+  legacy_packet?: AgentPreflightPacket;
 }
 
 export interface ContractFindingV2 {
