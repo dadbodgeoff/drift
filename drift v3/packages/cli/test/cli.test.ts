@@ -80,57 +80,9 @@ function phase8SecurityProof(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function seedDatabase(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "drift-cli-"));
-  tempDirs.push(dir);
-  const databasePath = join(dir, "drift.sqlite");
-  const storage = openDriftStorage({ databasePath });
-  storage.migrate();
-  storage.upsertRepo({
-    id: "repo_abc",
-    root_path: "/repo",
-    fingerprint: "repo-fp",
-    created_at: "2026-05-10T00:00:00.000Z",
-    updated_at: "2026-05-10T00:00:00.000Z"
-  });
-  storage.upsertConventionCandidate({
-    id: "candidate_no_direct_db",
-    repo_id: "repo_abc",
-    scan_id: "scan_abc",
-    kind: "api_route_no_direct_data_access",
-    statement: "API routes should not import data-access clients directly.",
-    scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
-    matcher: {
-      kind: "api_route_no_direct_data_access",
-      forbidden_imports: ["@/lib/prisma"],
-      applies_to_file_roles: ["api_route"]
-    },
-    requires: { forbidden_imports: ["@/lib/prisma"] },
-    suggested_severity: "error",
-    suggested_enforcement_mode: "block",
-    enforcement_capability: "deterministic_check",
-    confidence_label: "high",
-    scoring: {
-      supporting_examples_count: 12,
-      counterexamples_count: 0,
-      scope_files_count: 12,
-      coverage_ratio: 1,
-      heuristic_id: "direct-data-access-import-v1"
-    },
-    evidence_refs: [],
-    counterexample_refs: [],
-    matcher_fingerprint: "matcher_fp",
-    scope_fingerprint: "scope_fp",
-    graph_fingerprint: "graph_fp",
-    evidence_fingerprint: "evidence_fp",
-    required_capabilities: ["syntax_facts", "import_resolution"],
-    reason_not_blocking: "candidate_not_accepted",
-    status: "candidate",
-    created_at: "2026-05-10T00:00:01.000Z"
-  });
-  storage.close();
-  return databasePath;
-}
+import { seedDatabase as seedDatabaseShared } from "./support/seed-database.js";
+
+const seedDatabase = (): Promise<string> => seedDatabaseShared(tempDirs);
 
 function upsertReviewFinding(storage: ReturnType<typeof openDriftStorage>): void {
   storage.upsertFinding({
@@ -901,81 +853,6 @@ supported_sqlite_schema_version: 27,
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("--now must be an ISO timestamp.");
-  });
-
-  it("rejects unexpected init positional arguments", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "drift-init-extra-arg-"));
-    tempDirs.push(dir);
-    const repoRoot = join(dir, "repo");
-    await mkdir(repoRoot, { recursive: true });
-
-    const result = await runCli([
-      "init",
-      "extra",
-      "--repo-root", repoRoot,
-      "--state-root", join(dir, "state"),
-      "--json"
-    ]);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Unexpected argument for init: extra");
-  });
-
-  it("rejects unexpected scan status positional arguments", async () => {
-    const databasePath = await seedDatabase();
-
-    const result = await runCli([
-      "--db", databasePath,
-      "scan", "status", "extra",
-      "--repo", "repo_abc",
-      "--json"
-    ]);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Unexpected argument for scan status: extra");
-  });
-
-  it("rejects unexpected convention show positional arguments", async () => {
-    const databasePath = await seedDatabase();
-
-    const result = await runCli([
-      "--db", databasePath,
-      "conventions", "show", "candidate_no_direct_db", "extra",
-      "--json"
-    ]);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Unexpected argument for conventions show: extra");
-  });
-
-  it("rejects unexpected contract import positional arguments", async () => {
-    const databasePath = await seedDatabase();
-
-    const result = await runCli([
-      "--db", databasePath,
-      "contract", "import", "/tmp/contract.json", "extra",
-      "--repo", "repo_abc",
-      "--dry-run",
-      "--json"
-    ]);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Unexpected argument for contract import: extra");
-  });
-
-  it("rejects unexpected finding resolution positional arguments", async () => {
-    const databasePath = await seedDatabase();
-
-    const result = await runCli([
-      "--db", databasePath,
-      "findings", "mark-fixed", "finding_abc", "extra",
-      "--repo", "repo_abc",
-      "--evidence", "apps/web/app/api/users/route.ts:12",
-      "--json"
-    ]);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Unexpected argument for findings mark-fixed: extra");
   });
 
   it("rejects blank init actors before registering the repo", async () => {

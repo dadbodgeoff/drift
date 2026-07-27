@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 34 |
-| Done (partial) | 13 |
+| Done (partial) | 14 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
@@ -60,6 +60,7 @@
 - **T48** Trim the MCP preflight packet _(partial)_ — Measured the packet for the first time: 84,729 bytes / ~21,000 tokens for ONE get_task_preflight call on taxonomy - a 131-file repo. 33 top-level keys. Removed legacy_packet (3,012 bytes), taking it to 80,012 / ~20,000 tokens. DoD of <=12 top-level keys NOT met.
 - **T51** CLI/MCP payload deduplication (C4) _(partial)_ — Extracted relevance ranking into @drift/query and pointed both surfaces at it. This was not cleanup - it fixed a live bug I had just caused.
 - **T60** Convert remaining repros to fixtures (C2) _(partial)_ — Added two permanent fixtures with tests, covering the two falsification findings that guard work from this run: test/fixtures/type-only-imports (T12) and test/fixtures/binary-and-unreadable (A4). Rust suites 23 -> 24.
+- **T61** Split cli.test.ts as files are touched _(partial)_ — Extracted the contiguous positional-argument family into cli-positional-args.test.ts and lifted the shared seedDatabase helper into test/support/. cli.test.ts 15,846 -> 15,772 lines. Package test count identical before and after: 436 -> 436.
 
 ## Premise false — deliberately no change
 
