@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 39 |
-| Done (partial) | 19 |
+| Done (partial) | 20 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 6 |
 | Skipped — dependency blocked | 2 |
@@ -71,6 +71,7 @@
 - **T80** Engine binary pipeline (D1) _(partial)_ — scripts/build-engine-artifacts.mjs builds each target with SHA-256 and a manifest; the matrix validator now checks artifacts, not just declarations. 2 of 5 targets built here: darwin-arm64 verified by execution, darwin-x64 cross-built and explicitly marked unverified.
 - **T83** Fresh-machine install test _(partial)_ — macOS arm64 verified; Linux and Windows cannot be verified from this machine, and docs/architecture/install-verification.md states that per platform rather than implying broader coverage.
 - **T90** Full gate run _(partial)_ — Recorded in docs/autonomous-run/GATE.md. verify:ci exit 0; external suite 7/7 with all negative controls; prepare quality 3/3; harness self-tests 6/6.
+- **T91** Triage open issues _(partial)_ — Four substantive replies drafted in docs/autonomous-run/issue-replies/, none sent - all outward-facing. #99, #98, #97 and PR #100.
 
 ## Premise false — deliberately no change
 
