@@ -1,0 +1,48 @@
+{
+  "name": "@drift/cli",
+  "version": "0.1.0",
+  "description": "Drift CLI for local repo scans, convention review, preflight, checks, and governance.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "drift": "./dist/main.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@drift/core": "workspace:*",
+    "@drift/engine-contract": "workspace:*",
+    "@drift/factgraph": "workspace:*",
+    "@drift/query": "workspace:*",
+    "@drift/storage": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@drift/engine-darwin-arm64": "workspace:*",
+    "@drift/engine-darwin-x64": "workspace:*",
+    "@drift/engine-linux-arm64-gnu": "workspace:*",
+    "@drift/engine-linux-x64-gnu": "workspace:*",
+    "@drift/engine-win32-x64": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

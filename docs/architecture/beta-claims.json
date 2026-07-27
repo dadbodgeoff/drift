@@ -1,0 +1,71 @@
+{
+  "schema_version": "drift.production.claims.v1",
+  "source_of_truth": "createDriftCapabilities",
+  "allowed_claims": [
+    "local_first_cli",
+    "typescript_api_route_layering",
+    "sqlite_local_state",
+    "human_confirmed_governance",
+    "read_only_mcp",
+    "accepted_contract_blocks_direct_data_access",
+    "incremental_reuse"
+  ],
+  "blocked_claims": [
+    "cloud_sync",
+    "desktop_ui",
+    "python_adapter",
+    "duplicate_helper_detection",
+    "mutation_capable_mcp",
+    "general_ai_code_review",
+    "broad_language_support",
+    "automatic_convention_inference_for_any_data_layer",
+    "convention_learning",
+    "security_boundary_proofs",
+    "auth_dominance_analysis"
+  ],
+  "promotion_rules": {
+    "source_of_truth": "packages/core/src/capabilities.ts:createDriftCapabilities",
+    "requires_contract_parity_complete": true,
+    "requires_cli_mcp_parity_for_agent_surfaces": true,
+    "requires_release_proof_coverage_for_beta_surfaces": true,
+    "requires_semantic_capability_proof_for_ts_claims": true,
+    "deferred_capabilities_must_remain_blocked": true,
+    "fixture_required_before_supported_claim": true
+  },
+  "claim_support": {
+    "accepted_contract_blocks_direct_data_access": {
+      "required_contracts": [
+        "RepoContract",
+        "RuleContract",
+        "FindingContract",
+        "CheckProofContract",
+        "ReleaseProofContract"
+      ],
+      "fixture": "scripts/run-beta-proof.mjs"
+    },
+    "incremental_reuse": {
+      "required_contracts": [
+        "ParsedFactContract",
+        "GraphContract",
+        "ScanStatusContract"
+      ],
+      "fixture": "crates/drift-engine/tests/stream_graph.rs and packages/cli/test/cli.test.ts"
+    },
+    "typescript_api_route_layering": {
+      "required_contracts": [
+        "ParsedFactContract",
+        "GraphContract",
+        "SemanticCapabilityContract",
+        "RoleOntologyContract",
+        "LayerArchitectureContract",
+        "AdapterContract",
+        "EntrypointContract"
+      ],
+      "fixture": "scripts/run-beta-proof.mjs parser-gap quality proof plus test/e2e/fixture-matrix.test.ts realistic Next/Node fixtures"
+    }
+  },
+  "claim_notes": {
+    "automatic_convention_inference_for_any_data_layer": "Candidate inference recognises a data layer only when its import specifier contains prisma, database, db, or data-access (is_data_access_source in crates/drift-engine/src/candidate_command.rs). Repos naming theirs store/supabase/repository/models yield zero inferred candidates. Drift reports this explicitly and suggests the module found by tracing package.json dependencies through repo imports; the human declares it with --data-modules. Claimable capability is therefore 'bootstraps and enforces a declared layering contract with per-line evidence', not 'learns your conventions'. Lift when structural construction-site detection lands.",
+    "security_boundary_proofs": "The security heuristics layer is gated behind --experimental-security for beta and its conventions are never auto-accepted. Its own audit (docs/architecture/security-heuristic-audit.md) found guard dominance is a line-number comparison, branch detection is line.contains(\"if\"), and unsupported_dynamic_control_flow() - the valve meant to degrade a proof when control flow is too dynamic - matches only Drift fixture strings, so it opens for test inputs and never for real dynamic dispatch. The findings are not worthless but cannot honestly be called proofs. Lift when the layer is rebuilt on AST analysis."
+  }
+}

@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible Drift bug without sharing private source.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Drift version
+      description: Output from `drift version --json`.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Describe the bug without private source code or secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Provide minimal commands, fixture shape, and sanitized output.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Privacy check
+      description: Confirm no private source, `.env`, tokens, certs, or customer data are included.
+    validations:
+      required: true

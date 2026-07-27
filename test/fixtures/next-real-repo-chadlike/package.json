@@ -1,0 +1,10 @@
+{
+  "name": "next-real-repo-chadlike",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prisma/client": "latest",
+    "next": "latest",
+    "stripe": "latest"
+  }
+}

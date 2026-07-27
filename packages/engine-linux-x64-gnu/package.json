@@ -1,0 +1,26 @@
+{
+  "name": "@drift/engine-linux-x64-gnu",
+  "version": "0.1.0",
+  "description": "Drift Rust engine binary for Linux x64 glibc.",
+  "license": "MIT",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "libc": [
+    "glibc"
+  ],
+  "bin": {
+    "drift-engine": "./bin/drift-engine"
+  },
+  "files": [
+    "bin",
+    "engine-manifest.json",
+    "README.md"
+  ],
+  "scripts": {
+    "prepack": "node ../../scripts/prepare-engine-package.mjs --target x86_64-unknown-linux-gnu --platform linux --arch x64 --binary-name drift-engine"
+  }
+}

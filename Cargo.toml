@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/drift-engine"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "UNLICENSED"
+version = "0.1.0"

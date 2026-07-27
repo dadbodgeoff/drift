@@ -1,0 +1,45 @@
+{
+  "name": "drift",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm test:engine && pnpm -r test",
+    "test:engine": "cargo test -p drift-engine",
+    "format:engine": "cargo fmt --all",
+    "format:engine:check": "cargo fmt --all -- --check",
+    "lint:engine": "cargo clippy -p drift-engine --all-targets -- -D warnings",
+    "test:e2e": "vitest run test/e2e --no-file-parallelism --maxWorkers=1",
+    "typecheck": "pnpm -r typecheck",
+    "verify": "pnpm build && pnpm typecheck && pnpm test && pnpm test:e2e",
+    "check:boundaries": "node packages/cli/scripts/check-boundaries.mjs",
+    "validate:release-matrix": "node scripts/validate-engine-release-matrix.mjs",
+    "validate:claims": "node scripts/validate-product-claims.mjs",
+    "beta:proof": "node scripts/run-beta-proof.mjs",
+    "release:proof": "node scripts/generate-release-proof.mjs",
+    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
+    "eval:external": "node scripts/external-eval.mjs",
+    "eval:external:update": "node scripts/external-eval.mjs --update",
+    "run:log": "node scripts/run-log.mjs",
+    "test:harness": "vitest run scripts/external-eval.test.mjs",
+    "eval:prepare": "node scripts/prepare-quality-eval.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "packageManager": "pnpm@10.28.0",
+  "license": "MIT",
+  "description": "Local-first repo intelligence guardrail for AI-assisted code changes."
+}

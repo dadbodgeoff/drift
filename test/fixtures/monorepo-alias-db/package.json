@@ -1,0 +1,1 @@
+{"name":"monorepo-alias-db-fixture","private":true,"workspaces":["apps/*","packages/*"]}
