@@ -92,3 +92,45 @@ fn undecodable_and_binary_files_do_not_break_the_scan() {
     // is what the assertions above already prove by reaching this point.
     assert!(result["stats"]["files_seen"].as_u64().unwrap_or(0) > 0);
 }
+
+/// T102: `.gitignore` must behave the way git does — nested files, `!` negations, and patterns
+/// scoped to the directory that declares them.
+///
+/// The last of those is why the first attempt at this was reverted. It built one `Gitignore` rooted
+/// at the repo and added every nested file to it, but `GitignoreBuilder::add()` interprets patterns
+/// relative to the *builder* root — so a bare `app` in one package went repo-wide and swallowed a
+/// different package's API routes. The fixture carries exactly that shape.
+#[test]
+fn gitignore_is_honoured_per_directory() {
+    let result = scan("gitignore-nested");
+    let indexed: Vec<&str> = result["file_snapshots"]
+        .as_array()
+        .expect("snapshots")
+        .iter()
+        .filter_map(|snapshot| snapshot["file_path"].as_str())
+        .collect();
+
+    let has = |suffix: &str| indexed.iter().any(|path| path.ends_with(suffix));
+
+    assert!(
+        !has("src/generated/gen.ts"),
+        "root .gitignore must apply: {indexed:?}"
+    );
+    assert!(
+        !has("packages/inner/ignored-here.ts"),
+        "a nested .gitignore must apply: {indexed:?}"
+    );
+    assert!(
+        has("packages/inner/kept.ts"),
+        "a `!` negation must re-include the file: {indexed:?}"
+    );
+    // The regression that reverted attempt 1.
+    assert!(
+        has("packages/dashboard/src/app/api/routes/route.ts"),
+        "a bare pattern in packages/server must not reach packages/dashboard: {indexed:?}"
+    );
+    assert!(
+        has("src/app/api/a/route.ts"),
+        "unignored files must be scanned: {indexed:?}"
+    );
+}

@@ -152,8 +152,7 @@ fn scan_repo(
     reuse_manifest_path: Option<&Path>,
 ) -> Result<ScanRepoOutput, Box<dyn std::error::Error>> {
     let started = Instant::now();
-    let ignore = IgnoreMatcher::from_repo(repo_root);
-    let discovery = collect_indexable_files(repo_root, &ignore)?;
+    let discovery = collect_indexable_files(repo_root)?;
     let mut files = discovery.files;
     files.sort();
     let mut resolver = build_resolver_context(repo_root, &files);
@@ -228,8 +227,7 @@ fn stream_scan_repo(
         },
     )?;
 
-    let ignore = IgnoreMatcher::from_repo(repo_root);
-    let discovery = collect_indexable_files(repo_root, &ignore)?;
+    let discovery = collect_indexable_files(repo_root)?;
     let mut files = discovery.files;
     files.sort();
     let mut resolver = build_resolver_context(repo_root, &files);
@@ -642,34 +640,72 @@ fn reused_file(file: &ScannedFile, reuse: Option<&ReuseIndex>) -> bool {
     reusable_facts_for_file(file, reuse).is_some()
 }
 
-fn collect_indexable_files(
-    repo_root: &Path,
-    ignore: &IgnoreMatcher,
-) -> io::Result<FileDiscoveryResult> {
-    let mut result = FileDiscoveryResult::default();
-    collect_indexable_files_in_dir(repo_root, repo_root, &mut result, ignore)?;
-    Ok(result)
-}
+/// Discover indexable files, honouring `.gitignore` the way git does.
+///
+/// Uses `ignore::WalkBuilder` rather than a hand-rolled walk so that nested `.gitignore` files and
+/// `!` negations work with correct per-directory precedence. The previous implementation read only
+/// the repository-root file and discarded every line beginning with `!`, so generated and vendored
+/// output inside a package was scanned and could produce findings in files a user cannot fix.
+///
+/// A first attempt built one `Gitignore` rooted at the repo and added every nested file to it.
+/// That is wrong in a way that looks right: `GitignoreBuilder::add()` interprets patterns relative
+/// to the *builder* root, so a bare `app` pattern in `apps/server/.gitignore` went repo-wide and
+/// swallowed another package's API routes. Per-directory scoping is exactly what WalkBuilder
+/// provides.
+///
+/// Deliberately narrow about which ignore sources are consulted: `.gitignore` only, no global or
+/// per-user files and nothing above the repository root, so two machines scanning the same commit
+/// see the same files.
+fn collect_indexable_files(repo_root: &Path) -> io::Result<FileDiscoveryResult> {
+    // A missing or unreadable *root* is a hard failure, not a diagnostic.
+    //
+    // The hand-rolled walk got this for free: `fs::read_dir(repo_root)?` propagated. WalkBuilder
+    // instead yields the failure as an error entry, and treating that like any other unreadable
+    // path made a scan of a non-existent repo report an empty repo and exit 0 - reporting success
+    // for a repository it never saw, which is the exact failure this product exists to prevent.
+    //
+    // Per-entry errors deeper in the tree stay diagnostics: partial coverage that says so is
+    // honest, and a scan should not be lost to one unreadable subdirectory.
+    fs::read_dir(repo_root)?;
 
-fn collect_indexable_files_in_dir(
-    repo_root: &Path,
-    dir: &Path,
-    result: &mut FileDiscoveryResult,
-    ignore: &IgnoreMatcher,
-) -> io::Result<()> {
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
+    let mut result = FileDiscoveryResult::default();
+    let walker = ignore::WalkBuilder::new(repo_root)
+        .git_ignore(true)
+        .git_exclude(true)
+        .require_git(false)
+        .git_global(false)
+        .parents(false)
+        .ignore(false)
+        .hidden(false)
+        .follow_links(false)
+        .build();
+
+    for entry in walker {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(error) => {
+                // A directory we cannot traverse is reported, not silently skipped: a scan that
+                // quietly saw less than the repo is the failure this product exists to prevent.
+                result.diagnostics.push(EngineDiagnostic {
+                    severity: "warning".to_string(),
+                    code: "unreadable_path".to_string(),
+                    message: format!("Skipped a path that could not be read: {error}"),
+                    file_path: None,
+                });
+                continue;
+            }
+        };
         let path = entry.path();
-        let file_type = entry.file_type()?;
-        let relative = path.strip_prefix(repo_root).unwrap_or(&path);
-        if ignore.is_ignored(relative) {
+        let relative = path.strip_prefix(repo_root).unwrap_or(path);
+        if relative.as_os_str().is_empty() || !should_index_path(relative) {
             continue;
         }
-        if !should_index_path(relative) {
+
+        let Some(file_type) = entry.file_type() else {
             continue;
-        }
+        };
         if file_type.is_symlink() {
-            if let Err(error) = fs::metadata(&path) {
+            if let Err(error) = fs::metadata(path) {
                 let code = if error.kind() == io::ErrorKind::NotFound {
                     "broken_symlink"
                 } else {
@@ -688,99 +724,11 @@ fn collect_indexable_files_in_dir(
             }
             continue;
         }
-
-        if file_type.is_dir() {
-            collect_indexable_files_in_dir(repo_root, &path, result, ignore)?;
-        } else if file_type.is_file() && is_typescript_path(&path) {
+        if file_type.is_file() && is_typescript_path(path) {
             result.files.push(relative.to_path_buf());
         }
     }
-    Ok(())
-}
-
-#[derive(Default)]
-struct IgnoreMatcher {
-    patterns: Vec<String>,
-}
-
-impl IgnoreMatcher {
-    fn from_repo(repo_root: &Path) -> Self {
-        let Ok(contents) = fs::read_to_string(repo_root.join(".gitignore")) else {
-            return Self::default();
-        };
-        let patterns = contents
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty() && !line.starts_with('#') && !line.starts_with('!'))
-            .map(|line| line.trim_start_matches('/').to_string())
-            .collect();
-        Self { patterns }
-    }
-
-    fn is_ignored(&self, relative: &Path) -> bool {
-        let path = normalize_path(relative);
-        let file_name = relative
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or(path.as_str());
-        self.patterns
-            .iter()
-            .any(|pattern| gitignore_pattern_matches(pattern, &path, file_name))
-    }
-}
-
-fn gitignore_pattern_matches(pattern: &str, path: &str, file_name: &str) -> bool {
-    if let Some(prefix) = pattern.strip_suffix("/**") {
-        let prefix = prefix.trim_end_matches('/');
-        return path == prefix || path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some(prefix) = pattern.strip_suffix('/') {
-        return path == prefix || path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some(suffix) = pattern.strip_prefix('*') {
-        return file_name.ends_with(suffix) || path.ends_with(suffix);
-    }
-    if pattern.contains('*') {
-        if let Some(rest) = pattern.strip_prefix("**/") {
-            return wildcard_matches(rest, file_name)
-                || wildcard_matches(rest, path)
-                || wildcard_matches(pattern, path);
-        }
-        if pattern.contains('/') {
-            return wildcard_matches(pattern, path);
-        }
-        return path
-            .split('/')
-            .any(|component| wildcard_matches(pattern, component));
-    }
-    if pattern.contains('/') {
-        return path == pattern || path.starts_with(&format!("{pattern}/"));
-    }
-    path.split('/').any(|component| component == pattern)
-}
-
-fn wildcard_matches(pattern: &str, value: &str) -> bool {
-    let pattern = pattern.as_bytes();
-    let value = value.as_bytes();
-    let mut previous = vec![false; value.len() + 1];
-    previous[0] = true;
-
-    for pattern_byte in pattern {
-        let mut current = vec![false; value.len() + 1];
-        if *pattern_byte == b'*' {
-            current[0] = previous[0];
-            for index in 1..=value.len() {
-                current[index] = previous[index] || current[index - 1];
-            }
-        } else {
-            for index in 0..value.len() {
-                current[index + 1] = previous[index] && *pattern_byte == value[index];
-            }
-        }
-        previous = current;
-    }
-
-    previous[value.len()]
+    Ok(result)
 }
 
 fn is_typescript_path(path: &Path) -> bool {
