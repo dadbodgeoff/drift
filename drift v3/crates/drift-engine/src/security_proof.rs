@@ -281,7 +281,7 @@ pub fn build_auth_boundary_proof(
                 .first()
                 .map(|fact| fact.file_path.clone())
                 .unwrap_or_else(|| "unknown".to_string()),
-            reason: "Unsupported dynamic control flow prevents auth dominance proof".to_string(),
+            reason: "Dynamic control flow could not be analysed, so auth coverage for this route is unknown".to_string(),
             blocks_enforcement: true,
         }]
     } else {
@@ -455,7 +455,7 @@ fn build_route_auth_boundary_proof(
             parser_gap_id: format!("{route_id}:parser_gap:unsupported_dynamic_control_flow"),
             code: "unsupported_dynamic_control_flow".to_string(),
             file_path: file_path.clone(),
-            reason: "Unsupported dynamic control flow prevents auth dominance proof".to_string(),
+            reason: "Dynamic control flow could not be analysed, so auth coverage for this route is unknown".to_string(),
             blocks_enforcement: true,
         }]
     } else {

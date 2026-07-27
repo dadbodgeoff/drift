@@ -64,6 +64,7 @@ export const BOOLEAN_FLAGS = new Set([
   "deny-full-file-content",
   "dry-run",
   "include-low-confidence",
+  "experimental-security",
   "force",
   "full-file",
   "help",

@@ -1,4 +1,4 @@
-import { BETA_START_RESPONSE_SCHEMA } from "@drift/core";
+import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { doctorCommand } from "../args/doctor-commands.js";
@@ -68,7 +68,14 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
     result.candidates.unshift(declaredCandidate);
     result.summary.candidates_count = result.candidates.length;
   }
-  const candidate = result.candidates[0];
+  // T25: never auto-accept an experimental security convention. --accept-defaults takes the top
+  // candidate, and on several real repos an auth-helper candidate ranks first, which would have
+  // meant onboarding silently enabled a heuristic layer whose own audit says it cannot prove what
+  // it claims.
+  const acceptableCandidates = parsed.flags.has("experimental-security")
+    ? result.candidates
+    : result.candidates.filter((entry) => !isExperimentalSecurityKind(entry.kind));
+  const candidate = acceptableCandidates[0];
   const accepted = parsed.flags.has("accept-defaults") && candidate
     ? acceptDefaultCandidate(storage, { now, actor }, candidate)
     : undefined;

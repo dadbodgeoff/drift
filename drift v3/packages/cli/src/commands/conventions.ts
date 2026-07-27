@@ -1,4 +1,4 @@
-import { authorizeContextExport,type AcceptedConvention,type ConventionCandidate,type ConventionException,type ConventionScope,ConventionScopeSchema,type ConventionStatus,type RepoContract } from "@drift/core";
+import { authorizeContextExport,isExperimentalSecurityKind,type AcceptedConvention,type ConventionCandidate,type ConventionException,type ConventionScope,ConventionScopeSchema,type ConventionStatus,type RepoContract } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,statSync } from "node:fs";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
@@ -69,12 +69,25 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
   const limit = optionalPositiveIntegerFlag(parsed, "limit");
   const offset = optionalNonNegativeIntegerFlag(parsed, "offset") ?? 0;
   const includeLowConfidence = parsed.flags.has("include-low-confidence");
+  // T25: the security heuristics layer is experimental and hidden by default. Its own audit
+  // found that the valve meant to degrade a proof when control flow is too dynamic only matches
+  // Drift's fixture strings, so it never fires on real code. Surfacing those candidates as
+  // ordinary findings would overstate what they are.
+  const includeSecurity = parsed.flags.has("experimental-security");
   const allCandidates = storage.listConventionCandidates(repoId);
   const matching = allCandidates.filter((candidate) =>
     (!status || candidate.status === status) &&
     (!kind || candidate.kind === kind) &&
-    (!capability || candidate.enforcement_capability === capability)
+    (!capability || candidate.enforcement_capability === capability) &&
+    (includeSecurity || !isExperimentalSecurityKind(candidate.kind))
   );
+  const hiddenSecurityCount = includeSecurity
+    ? 0
+    : allCandidates.filter(
+        (candidate) =>
+          isExperimentalSecurityKind(candidate.kind) &&
+          (!status || candidate.status === status)
+      ).length;
   const belowFloor = matching.filter((candidate) => isBelowNoiseFloor(candidate));
   const filteredCandidates = orderConventionCandidatesForReview(
     includeLowConfidence ? matching : matching.filter((candidate) => !isBelowNoiseFloor(candidate))
@@ -98,6 +111,13 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
       included: includeLowConfidence,
       floor: { min_coverage_ratio: CANDIDATE_MIN_COVERAGE_RATIO },
       reveal_command: `drift conventions list --repo ${repoId} --include-low-confidence`
+    },
+    // Never hide silently: say how many were withheld and how to see them.
+    experimental_security: {
+      hidden_count: hiddenSecurityCount,
+      included: includeSecurity,
+      reason: "security heuristics are experimental; see docs/architecture/security-heuristic-audit.md",
+      reveal_command: `drift conventions list --repo ${repoId} --experimental-security`
     },
     review_items: candidates.map(conventionCandidateReviewItem),
     next_commands: conventionCandidateListNextCommands(repoId, candidates),

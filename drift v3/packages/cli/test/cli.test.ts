@@ -13205,6 +13205,7 @@ schema_version: 27,
       "conventions", "list",
       "--repo", "repo_abc",
       "--status", "candidate",
+      "--experimental-security",
       "--limit", "2",
       "--offset", "1",
       "--json"

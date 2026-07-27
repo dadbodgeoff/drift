@@ -19,7 +19,9 @@
     "general_ai_code_review",
     "broad_language_support",
     "automatic_convention_inference_for_any_data_layer",
-    "convention_learning"
+    "convention_learning",
+    "security_boundary_proofs",
+    "auth_dominance_analysis"
   ],
   "promotion_rules": {
     "source_of_truth": "packages/core/src/capabilities.ts:createDriftCapabilities",
@@ -63,6 +65,7 @@
     }
   },
   "claim_notes": {
-    "automatic_convention_inference_for_any_data_layer": "Candidate inference recognises a data layer only when its import specifier contains prisma, database, db, or data-access (is_data_access_source in crates/drift-engine/src/candidate_command.rs). Repos naming theirs store/supabase/repository/models yield zero inferred candidates. Drift reports this explicitly and suggests the module found by tracing package.json dependencies through repo imports; the human declares it with --data-modules. Claimable capability is therefore 'bootstraps and enforces a declared layering contract with per-line evidence', not 'learns your conventions'. Lift when structural construction-site detection lands."
+    "automatic_convention_inference_for_any_data_layer": "Candidate inference recognises a data layer only when its import specifier contains prisma, database, db, or data-access (is_data_access_source in crates/drift-engine/src/candidate_command.rs). Repos naming theirs store/supabase/repository/models yield zero inferred candidates. Drift reports this explicitly and suggests the module found by tracing package.json dependencies through repo imports; the human declares it with --data-modules. Claimable capability is therefore 'bootstraps and enforces a declared layering contract with per-line evidence', not 'learns your conventions'. Lift when structural construction-site detection lands.",
+    "security_boundary_proofs": "The security heuristics layer is gated behind --experimental-security for beta and its conventions are never auto-accepted. Its own audit (docs/architecture/security-heuristic-audit.md) found guard dominance is a line-number comparison, branch detection is line.contains(\"if\"), and unsupported_dynamic_control_flow() - the valve meant to degrade a proof when control flow is too dynamic - matches only Drift fixture strings, so it opens for test inputs and never for real dynamic dispatch. The findings are not worthless but cannot honestly be called proofs. Lift when the layer is rebuilt on AST analysis."
   }
 }

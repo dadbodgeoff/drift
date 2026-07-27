@@ -134,7 +134,47 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
       // generally - it bootstraps and enforces a *declared* layering contract. Lift these
       // when structural construction-site detection replaces the substring test.
       "automatic_convention_inference_for_any_data_layer",
-      "convention_learning"
+      "convention_learning",
+      // The security layer is gated behind --experimental-security. Its "proofs" are line-order
+      // comparisons, and the valve that should degrade them on dynamic control flow only matches
+      // Drift's own fixture strings. See docs/architecture/security-heuristic-audit.md.
+      "security_boundary_proofs",
+      "auth_dominance_analysis"
     ]
   };
+}
+
+/**
+ * Convention kinds produced by the security heuristics layer.
+ *
+ * Gated behind `--experimental-security` for beta. The layer's own audit (T07,
+ * docs/architecture/security-heuristic-audit.md) confirmed that guard "dominance" is a
+ * line-number comparison, branch detection is `line.contains("if")`, and - most consequentially -
+ * `unsupported_dynamic_control_flow()`, the valve that is supposed to degrade the proof when
+ * control flow is too dynamic to reason about, matches only Drift's own fixture strings. It opens
+ * for test inputs and never for real dynamic dispatch.
+ *
+ * The findings are not worthless, but they cannot honestly be called proofs, and a security
+ * claim that overstates itself is worse than no security claim.
+ *
+ * `api_route_no_direct_data_access` and `api_route_requires_service_delegation` are NOT here:
+ * they are the layering wedge, deterministic, and stay on by default.
+ */
+export const EXPERIMENTAL_SECURITY_CONVENTION_KINDS = [
+  "api_route_requires_auth_helper",
+  "api_route_requires_authorization",
+  "api_route_requires_csrf_for_mutation",
+  "api_route_requires_rate_limit",
+  "api_route_requires_request_validation",
+  "api_route_requires_tenant_scope",
+  "api_route_forbids_raw_sql_without_params",
+  "api_route_forbids_sensitive_response_fields",
+  "api_route_forbids_untrusted_ssrf",
+  "api_route_cors_must_match_policy",
+  "middleware_must_cover_routes",
+  "session_object_must_come_from_trusted_helper"
+] as const;
+
+export function isExperimentalSecurityKind(kind: string): boolean {
+  return (EXPERIMENTAL_SECURITY_CONVENTION_KINDS as readonly string[]).includes(kind);
 }
