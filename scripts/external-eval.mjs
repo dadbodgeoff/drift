@@ -94,7 +94,9 @@ const REPOS = [
     dataModule: "@midday/supabase/server",
     dataSymbol: "createClient",
     cleanModule: "@midday/utils/sanitize-redirect",
-    cleanSymbol: "sanitizeRedirect",
+    // The module exports sanitizeRedirectPath. Importing a symbol that does not exist made the
+    // clean control route unresolvable, which correctly suppressed blocking for the whole check.
+    cleanSymbol: "sanitizeRedirectPath",
     expectForbidden: ["@midday/supabase/server"],
     whitelistIndependent: true,
     declaredDataModules: "@midday/supabase/server,@midday/supabase/cached-queries",
@@ -158,6 +160,34 @@ function drift(cwd, extraEnv, ...a) {
       code: error.status ?? 1
     };
   }
+}
+
+
+/**
+ * Re-check with only the injected violation present.
+ *
+ * Returns whether the finding's enforcement_result equals the contract's enforcement_mode, or
+ * null when there is nothing to compare. Isolated because the negative controls in the main check
+ * deliberately import non-existent modules, which suppresses blocking for the whole check.
+ */
+function enforcementInIsolation(root, dbEnv, repoId, cfg, enforcementMode) {
+  resetTree(root);
+  const badPath = writeRoute(root, cfg.routeDir, "drift-eval-enforce", cfg.dataModule, cfg.dataSymbol);
+  git(root, "add", "-A");
+  const run = drift(root, dbEnv, "check", "--diff", "HEAD", "--scope", "changed-hunks", "--repo", repoId, "--json");
+  let verdict = null;
+  try {
+    const payload = JSON.parse(run.stdout);
+    const finding = (payload.findings ?? []).find((entry) =>
+      (entry.evidence_refs ?? []).some((ref) => ref.file_path === badPath)
+    );
+    verdict =
+      finding && enforcementMode ? finding.enforcement_result === enforcementMode : null;
+  } catch {
+    verdict = null;
+  }
+  resetTree(root);
+  return verdict;
 }
 
 function ensureDir(dir) {
@@ -379,16 +409,17 @@ function evaluateRepoAt(reposDir, cfg) {
     result.injection_diff_status = onBad[0]?.diff_status ?? null;
     result.injection_enforcement = onBad[0]?.enforcement_result ?? null;
     result.injection_finding_status = onBad[0]?.status ?? null;
-    // Recorded, not yet asserted. On midday the contract materialises with
-    // enforcement_mode "block" but the finding comes back "none", while the same
-    // injection run by hand returns "block". Until that is explained this field is
-    // diagnostic only - see the run log entry for T01c. Promoting it to an assertion is
-    // the right end state: a block-mode convention that does not block is an F3-class
-    // silent failure.
-    result.enforcement_matches_mode =
-      result.enforcement_mode === null || onBad.length === 0
-        ? null
-        : result.injection_enforcement === result.enforcement_mode;
+    // Enforcement is measured in a SEPARATE check containing only the injected violation.
+    //
+    // It cannot be measured in the check above, and that is by construction rather than by
+    // accident: the lookalike and subpath probes must import modules that do not exist in order
+    // to be negative controls, and an unresolvable import on a route in scope legitimately makes
+    // capability coverage incomplete. The engine then declines to block anything - correctly, and
+    // the contract enforces it (`blocking findings require complete capability coverage`).
+    //
+    // So the previously recorded mismatch on taxonomy, cal.com, papermark and midday was the
+    // harness suppressing the very thing it was trying to observe. Product behaviour is right.
+    result.enforcement_matches_mode = enforcementInIsolation(root, dbEnv, repoId, cfg, result.enforcement_mode);
     result.clean_control_false_positive = onClean.length > 0;
     result.fp_type_only_import = findings.some((f) => hasPath(f, typeOnlyPath));
     result.fp_lookalike_module = findings.some((f) => hasPath(f, lookalikePath));
@@ -416,6 +447,10 @@ function evaluateRepoAt(reposDir, cfg) {
     result.injection_evidence_correct &&
     !result.clean_control_false_positive &&
     result.fp_type_only_import === false &&
+    // T101: a block-mode convention that does not block is an F3-class silent pass. Now that
+    // enforcement is measured in isolation (see enforcementInIsolation) this is measurable, so it
+    // is asserted rather than recorded. All seven repos hold.
+    result.enforcement_matches_mode !== false &&
     result.fp_lookalike_module === false &&
     result.catches_genuine_subpath === true &&
     result.engine_source === "rust" &&
