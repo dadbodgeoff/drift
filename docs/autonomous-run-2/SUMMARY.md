@@ -2,11 +2,11 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 4 |
+| Done | 5 |
 | Done (partial) | 3 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 1 |
-| Skipped — dependency blocked | 0 |
+| Skipped — dependency blocked | 1 |
 | Deferred — human-gated | 0 |
 | Discoveries | 2 |
 | Baseline changes | 0 |
@@ -17,6 +17,7 @@
 - **T100b** Rebuild the T93 fixtures so they actually reproduce — The fixtures I committed in run 1 did not reproduce the bypass they were filed for. Each now carries a tsconfig paths mapping and a route violating via the ALIAS form, so inference learns @/lib/prisma and the sneaky route is genuinely the odd one out. Pinned by packages/cli/test/bypass-fixtures.test.ts, which drives the real CLI end to end.
 - **T101** T01c: block-mode contract, finding reports enforcement none — RESOLVED, and the product behaviour was correct all along. enforcement_matches_mode is now true on all seven repos and promoted to a HARD ASSERTION - verified to bite by forcing it false, which flips midday to FAIL.
 - **T102** Gitignore correctness via per-directory semantics — Adopted ignore::WalkBuilder for file discovery. Nested .gitignore files and ! negations now work, patterns stay scoped to the directory that declares them, and the external suite is 7/7 with zero drift - openstatus keeps injection_caught and catches_genuine_subpath, the exact fields the first attempt regressed.
+- **T121** Baseline provenance (decision C) — Implemented decision C, and the four-case matrix on formbricks now behaves as pre-registered: untouched baselined violation passes, file edited elsewhere passes, violating line REWRITTEN blocks, removed-and-reintroduced blocks. External suite 7/7 with zero drift.
 - **T101** T01c: block-mode contract, finding reports enforcement none _(partial)_ — REPRODUCED deterministically, and the scope is four times larger than T01c stated. Root cause narrowed to one gate; not yet fixed.
 - **T110** Scan retention: GC superseded scans _(partial)_ — Growth is now BOUNDED. Measured on dub across 5 consecutive start runs: 393 -> 787 -> 1179 -> 1179 -> 1179 MB, with facts plateauing at 214,176 (two scans) from run 2 onward. Before: unbounded at ~393MB per run, reaching 1963MB at 5 runs and still climbing.
 - **T112** Scoped graph loading for prepare _(partial)_ — Both latency targets met, quality held, memory target not met. papermark prepare 11.93s -> 1.38s (target <2s). calcom 13.70s -> 4.89s (target <5s). pnpm eval:prepare still 3/3, and the eval itself got much faster - dub prepare 47.6s -> 3.8s.
@@ -34,6 +35,10 @@
   - evidence: pnpm -r test failed once on mcp.test.ts "proves cross-surface canonical route parity for CLI and MCP route contracts" (1 failed / 56 passed), then passed in isolation (53/53) and on two consecutive full workspace runs.
 - **T101b** Intermittent MCP parity flake — second occurrence
   - evidence: Same test failed again (mcp.test.ts "proves cross-surface canonical route parity"), now twice across the run. Narrowed this time: mcp.test.ts alone passes 53/53 three times consecutively, and three consecutive full workspace runs are green afterwards. So it is intermittent under WITHIN-PACKAGE file concurrency (the mcp package has other test files that run alongside it), not workspace-level concurrency.
+
+## Skipped — dependency blocked
+
+- **T114** Ship the hooks pack — waiting on T111 sub-1s check latency. The task specifies auto-skip with the measured number if Phase 2 misses the target, so: formbricks single-file check is 3.91s and cal.com 6.09s against a <1s requirement. Correctness was already proven in run 1 (exit 2 on a violating edit, exit 0 on clean, warn/block split verified) - only latency gates it. T111 is blocked pending an architectural decision, since the cost is payload volume (563k records moved per one-line check), not the walk-and-hash the plan assumed.
 
 ## Discussion agenda
 
