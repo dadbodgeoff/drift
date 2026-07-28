@@ -59,6 +59,61 @@ import {
 import { enforcementResultFor,isActiveConvention,isForbiddenImport } from "./rule-evaluation.js";
 import { findContractWaiverForImport,isExceptedImport,isExceptedPath,waiverRequiresReapproval } from "./waivers.js";
 
+
+/**
+ * S1-01: was enforcement silently weakened by incomplete coverage?
+ *
+ * The engine zeroes every finding's `enforcement_result` when any API-route file in the checked
+ * scope carries an unresolved-import diagnostic - one boolean for the whole check
+ * (check_command.rs:37, applied at :276). Verified consequence at a48ac41: a new violating route
+ * alone exits 2 with `enforcement_result: "block"`; add an adjacent route whose only sin is a
+ * namespace import of a real workspace package, and the same violation comes back `"none"` and the
+ * check exits 0. The violation did not change. Uncertainty was reported as success.
+ *
+ * The engine's demotion is contract-mandated - engine-contract only objects when some finding is
+ * `"block"`, so an all-`"none"` payload is legal at any completeness. Reporting *pass* is not
+ * mandated, and that is what changes here. This deliberately does not touch the demotion itself:
+ * per-finding enforcement is a separate problem, and attempting it here reproduces an approach that
+ * was already tried and correctly reverted.
+ */
+export function enforcementDegradedByCompleteness(input: {
+  findings: Array<{ enforcement_result: string; convention?: { enforcement_mode?: string } }>;
+}): boolean {
+  // Detect the *effect*, not the cause.
+  //
+  // `enforcement_result_for` maps block to "block" and warn to "warn" unconditionally, so a finding
+  // under a block- or warn-mode convention can only carry "none" because something zeroed it. That
+  // makes the findings an exact signal and needs no plumbing.
+  //
+  // The plan proposed reading `checkData.completeness` instead. That is the *scan's* completeness,
+  // and measured on the repro it reports `can_block: true, complete: true, reasons: []` while the
+  // finding is already demoted - the demotion happens inside check-repo, whose completeness is a
+  // separate measurement the CLI discards. Reading the scan's would have produced a fix that never
+  // fires, which is worse than no fix.
+  return input.findings.some(
+    (finding) =>
+      finding.enforcement_result === "none" &&
+      (finding.convention?.enforcement_mode === "block" ||
+        finding.convention?.enforcement_mode === "warn")
+  );
+}
+
+/**
+ * The exit code, as one decision.
+ *
+ * A real block still wins over a refusal: degradation must not mask a violation Drift did manage to
+ * establish. Otherwise incomplete coverage refuses rather than passing.
+ */
+export function checkExitCodeFor(input: {
+  blockingCount: number;
+  enforcementDegraded: boolean;
+}): number {
+  if (input.blockingCount > 0) {
+    return CHECK_EXIT_BLOCKED;
+  }
+  return input.enforcementDegraded ? CHECK_EXIT_REFUSED : CHECK_EXIT_PASS;
+}
+
 export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
   const repoId = resolveRepoId(parsed);
   const repo = storage.getRepo(repoId);
@@ -514,6 +569,24 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     finding.status !== "needs_review"
   ).length;
   const checkStatus: CheckRun["status"] = blockingCount > 0 ? "fail" : "pass";
+
+  // S1-01: did incomplete coverage silently weaken enforcement?
+  //
+  // Uses the engine's own completeness, which collect-scan-data already carries - no protocol change.
+  // A finding whose convention would enforce but whose enforcement_result is "none" is one the engine
+  // zeroed for coverage, and the check must refuse rather than report a clean run.
+  const enforcementDegraded = enforcementDegradedByCompleteness({
+    findings: findings.map((finding) => ({
+      enforcement_result: finding.enforcement_result,
+      convention: {
+        enforcement_mode: contract.conventions.find(
+          (convention) => convention.id === finding.convention_id
+        )?.enforcement_mode
+      }
+    }))
+  });
+
+
   const fallbackStatus = fallbackStatusForCheck(checkData);
   const capabilityCompleteness = capabilityCompletenessForCheck(checkData);
   const readiness = readinessForCheck({
@@ -581,6 +654,28 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       scope,
       findings_count: findings.length,
       blocking_count: blockingCount,
+      // S1-01: name the files whose coverage gap cost us enforcement. The engine's reasons already
+      // carry the path (`unsupported_route_namespace_import:<path>`), so pass them through verbatim
+      // rather than paraphrasing - a refusal a user cannot act on is barely better than a false pass.
+      blocked_reasons: enforcementDegraded
+        ? [
+            "enforcement_degraded_by_incomplete_coverage",
+            // Name the files whose unresolved imports cost the coverage, restricted to this diff.
+            // A refusal a user cannot act on is barely better than a false pass.
+            ...(checkData.diagnostics ?? [])
+              .filter((diagnostic) =>
+                [
+                  "unresolved_import",
+                  "unresolved_import_symbol",
+                  "unsupported_namespace_import_symbol"
+                ].includes(diagnostic.code)
+              )
+              .map((diagnostic) => diagnostic.file_path)
+              .filter((filePath): filePath is string => Boolean(filePath))
+              .filter((filePath) => parsedDiff.files.some((file) => file.path === filePath))
+              .map((filePath) => `unresolved_route_import:${filePath}`)
+          ]
+        : [],
       waived_findings_count: waivedFindingsCount,
       expired_findings_count: expiredFindingsCount,
       skipped_deleted_files: parsedDiff.deletedFiles,
@@ -604,7 +699,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     //   0 pass · 2 blocked · 3 refused (fail-closed) · 1 operational error
     // `2` is distinct from `1` so CI can tell "this diff violates the contract" from
     // "drift itself failed", and so a crash is never silently read as a clean run.
-    exitCode: blockingCount > 0 ? CHECK_EXIT_BLOCKED : CHECK_EXIT_PASS,
+    exitCode: checkExitCodeFor({ blockingCount, enforcementDegraded }),
     payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
   };
 }
