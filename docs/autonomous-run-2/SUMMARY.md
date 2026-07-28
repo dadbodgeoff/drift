@@ -5,7 +5,7 @@
 | Done | 4 |
 | Done (partial) | 2 |
 | Premise false (no change needed) | 1 |
-| Blocked — needs discussion | 0 |
+| Blocked — needs discussion | 1 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 0 |
 | Discoveries | 1 |
@@ -29,4 +29,16 @@
 
 - **T101b** Intermittent MCP parity flake at default concurrency
   - evidence: pnpm -r test failed once on mcp.test.ts "proves cross-surface canonical route parity for CLI and MCP route contracts" (1 failed / 56 passed), then passed in isolation (53/53) and on two consecutive full workspace runs.
+
+## Discussion agenda
+
+Blocked tasks in plan order. Each records what was attempted, the evidence, and the
+recommendation. Work reverted; the tree is green.
+
+### T111 — Changed-files-only engine mode
+
+- **reason:** premise_wrong_needs_redesign
+- **attempted:** Measured the actual cost of a single-file check before implementing, on formbricks (2,819 ts files) and cal.com (5,025). Baseline: formbricks 3.91s (matches run 1 exactly), cal.com 6.09s. Targets were <1s and <1.5s.
+- **evidence:** The plan premise is wrong on both counts. It says the engine still walks and hashes every file to decide reusability, at a cost of 3.9s. Measured: reuse is already perfect - seen=2871 parsed=1 reused=2870 - and hashing all 2,837 files takes 0.04s for 14MB. Neither walking nor hashing nor parsing is the cost. Instrumented the split: engine 1750ms, CLI ~2250ms, and BOTH are dominated by moving the payload - the engine emits 157,319 facts, 162,362 graph nodes and 243,622 edges for the whole repository on every check, and the CLI re-ingests and re-assembles all of it, for a one-line change.
+- **diagnosis:** So T111 and T112 are one task with a different fix than either describes: the check should not move the whole repo graph at all. It needs the changed file facts plus the stored graph already in SQLite. Two designs - (a) engine emits only changed-file facts and the CLI merges against stored state, (b) engine emits a delta plus an unchanged marker and the CLI patches the stored graph. Both are architectural; the CLI currently rebuilds the graph from the full stream every time. NOT started, because beginning it with limited context would leave the check path half-migrated. Also confirms T114 (hooks pack) stays blocked, and note the reason it took instrumentation to find: the check payload does not surface scan stats at all, which run 1 T45 flagged and which made this invisible.
 
