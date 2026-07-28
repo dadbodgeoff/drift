@@ -4,16 +4,19 @@
 clippy + rustfmt clean. Eval repos clean. **9 commits. Nothing pushed, nothing published.**
 
 **Resume:** `cd ~/drift-falsification/drift`, then
-`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T113**.
+`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T120**.
 
 **Read the T111 entry before touching Phase 2 further** — it invalidates how the plan frames both
 T111 and T112.
 
 | Outcome | Count |
 |---|---|
-| Done | 4 |
+| Done | 5 |
 | Done (partial) | 3 |
+| Premise false | 2 |
 | Blocked — needs redesign | 1 |
+| Skipped — dependency | 1 |
+| Discoveries | 2 |
 | Premise false | 1 |
 | Discovery | 1 |
 
@@ -99,6 +102,38 @@ loads all of it per route — so `prepare` loaded the whole graph ten times. A p
 **RSS target not met**, and the two numbers are different problems: `prepare` at 1.08 GB is the graph
 in memory and is T112's remaining half (scoped SQL, which caching does not substitute for);
 `check` at 1.64 GB is T111's payload problem and will not move until that is redesigned.
+
+## T113 / T114 — both resolved without implementation
+
+**T113 premise false.** `repo map --limit 10` already returns in **0.09s** against a <5s target, and
+pagination is honest: `returned_count`, `has_more`, `next_offset`, plus `indexed_file_count: 5064`
+alongside `listed_file_count: 10`. The plan's "the whole map is built first" is wrong. Full map is
+84s, which is real but is not what the DoD asks for and not what anyone is blocked by. Added the one
+missing piece — the DoD's correctness pin — which now also guards T112's memo by asserting a second
+call returns an identical projection.
+
+**T114 auto-skipped** per its own gate, with the measured numbers: formbricks 3.91s, cal.com 6.09s
+against <1s. Correctness was already proven in run 1; only latency gates it, and that is T111.
+
+## T121 — decision C landed, implemented *without* the column it specifies
+
+Four-case matrix on formbricks now behaves as pre-registered:
+
+    untouched baselined violation   pass
+    file edited elsewhere           pass
+    violating line rewritten        BLOCK   (was pass)
+    removed then reintroduced       BLOCK   (was pass)
+
+**No provenance column**, and this is worth understanding before anyone adds one. All four baseline
+write sites are bulk paths, and `findings suppress` does not write baseline rows at all — it sets a
+finding status carried forward by `preservedGovernanceStatus`. So `explicit` would never have been
+written: a two-value enum with one used value is the T28 anti-pattern. I wrote migration 028 and the
+type/schema/writer changes, then reverted them once that was clear.
+
+**My first version would have broken suppression** — dropping the `status === "new"` check meant a
+suppressed finding on a changed line would start blocking again, against decision C's own terms. The
+predicates now exempt human governance decisions. The test that caught it,
+"preserves human-governed finding statuses during repeated checks", passes unmodified.
 
 ## Carry forward
 
