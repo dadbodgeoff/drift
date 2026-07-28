@@ -128,3 +128,30 @@ describe("repo identity", () => {
     expect(identity.detail).toContain(dir.split("/").pop()!);
   });
 });
+
+describe("portable fingerprint (T120)", () => {
+  it("gives two checkouts the same fingerprint while their local ids differ", async () => {
+    const { repoRecordForRoot } = await import("../src/domain/repo-paths.js");
+    const origin = await makeRepo({ remote: "git@github.com:acme/app.git" });
+    const clone = await cloneOf(origin);
+    const a = repoRecordForRoot(origin, "2026-05-10T00:00:00.000Z");
+    const b = repoRecordForRoot(clone, "2026-05-10T00:00:00.000Z");
+
+    // The fingerprint is the portable identity that `contract import` compares. If these differ, a
+    // committed contract cannot be imported by a teammate or by CI - which was the whole defect.
+    expect(a.fingerprint).toBe(b.fingerprint);
+
+    // The id stays path-derived on purpose: it names the local state directory, so making it
+    // portable would orphan every existing database. Two checkouts must therefore disagree on it,
+    // and the import path treats that as a storage detail rather than an incompatibility.
+    expect(a.id).not.toBe(b.id);
+  }, 60_000);
+
+  it("gives different repositories different fingerprints", async () => {
+    const { repoRecordForRoot } = await import("../src/domain/repo-paths.js");
+    const one = await makeRepo({ remote: "git@github.com:acme/app.git", name: "one" });
+    const two = await makeRepo({ remote: "git@github.com:acme/other.git", name: "two" });
+    expect(repoRecordForRoot(one, "2026-05-10T00:00:00.000Z").fingerprint)
+      .not.toBe(repoRecordForRoot(two, "2026-05-10T00:00:00.000Z").fingerprint);
+  }, 60_000);
+});

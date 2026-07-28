@@ -2,7 +2,7 @@
 
 | Outcome | Count |
 |---|---|
-| Done | 5 |
+| Done | 6 |
 | Done (partial) | 3 |
 | Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 1 |
@@ -18,6 +18,7 @@
 - **T101** T01c: block-mode contract, finding reports enforcement none — RESOLVED, and the product behaviour was correct all along. enforcement_matches_mode is now true on all seven repos and promoted to a HARD ASSERTION - verified to bite by forcing it false, which flips midday to FAIL.
 - **T102** Gitignore correctness via per-directory semantics — Adopted ignore::WalkBuilder for file discovery. Nested .gitignore files and ! negations now work, patterns stay scoped to the directory that declares them, and the external suite is 7/7 with zero drift - openstatus keeps injection_caught and catches_genuine_subpath, the exact fields the first attempt regressed.
 - **T121** Baseline provenance (decision C) — Implemented decision C, and the four-case matrix on formbricks now behaves as pre-registered: untouched baselined violation passes, file edited elsewhere passes, violating line REWRITTEN blocks, removed-and-reintroduced blocks. External suite 7/7 with zero drift.
+- **T120** Path-independent repo identity — Both DoD directions proven end to end on real checkouts. Export from checkout A of taxonomy, import into checkout B at a different path -> imported=True, compatible=True. cal.com contract into the taxonomy checkout -> imported=False with reasons [repo_id_mismatch, repo_fingerprint_mismatch]. 11 tests.
 - **T101** T01c: block-mode contract, finding reports enforcement none _(partial)_ — REPRODUCED deterministically, and the scope is four times larger than T01c stated. Root cause narrowed to one gate; not yet fixed.
 - **T110** Scan retention: GC superseded scans _(partial)_ — Growth is now BOUNDED. Measured on dub across 5 consecutive start runs: 393 -> 787 -> 1179 -> 1179 -> 1179 MB, with facts plateauing at 214,176 (two scans) from run 2 onward. Before: unbounded at ~393MB per run, reaching 1963MB at 5 runs and still climbing.
 - **T112** Scoped graph loading for prepare _(partial)_ — Both latency targets met, quality held, memory target not met. papermark prepare 11.93s -> 1.38s (target <2s). calcom 13.70s -> 4.89s (target <5s). pnpm eval:prepare still 3/3, and the eval itself got much faster - dub prepare 47.6s -> 3.8s.

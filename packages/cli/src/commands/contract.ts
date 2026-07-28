@@ -193,7 +193,18 @@ export function importContractDryRun(
   );
   const compatibilityReasons = [
     !repo ? "target_repo_missing" : undefined,
-    expectedRepoId !== contract.repo_id ? "repo_id_mismatch" : undefined,
+    // T120: a repo_id difference alone no longer blocks an import.
+    //
+    // The id names the local state directory and is derived from the absolute path, so two
+    // checkouts of the same repository necessarily disagree on it. Treating that as incompatible
+    // is what made a committed contract unimportable by a teammate or by CI. The portable identity
+    // is the fingerprint, compared immediately below, and that is what decides whether the
+    // contract belongs here — a foreign repo still fails on it.
+    expectedRepoId !== contract.repo_id && expectedFingerprint === contract.repo_fingerprint
+      ? undefined
+      : expectedRepoId !== contract.repo_id
+        ? "repo_id_mismatch"
+        : undefined,
     expectedFingerprint && expectedFingerprint !== contract.repo_fingerprint
       ? "repo_fingerprint_mismatch"
       : undefined,
@@ -288,7 +299,14 @@ export function importContractDryRun(
     for (const convention of contract.conventions) {
       storage.upsertAcceptedConvention(expectedRepoId, convention);
     }
-    storage.upsertRepoContract(contract);
+    // T120: re-key the contract to the local repo id.
+    //
+    // A portable contract identifies its repository by fingerprint; `repo_id` is the exporting
+    // machine's local storage key and means nothing here. Persisting it as-is violates the foreign
+    // key to repos(id) - which is what a cross-checkout import hit once the compatibility check
+    // stopped rejecting it. The fingerprint has already been verified equal by then, so the two ids
+    // refer to the same repository by definition.
+    storage.upsertRepoContract({ ...contract, repo_id: expectedRepoId });
     storage.appendAuditEvent(auditEvent({
       id: `audit_event_contract_import_${expectedRepoId}_${now}`,
       repoId: expectedRepoId,
