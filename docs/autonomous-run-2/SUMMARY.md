@@ -4,11 +4,11 @@
 |---|---|
 | Done | 4 |
 | Done (partial) | 3 |
-| Premise false (no change needed) | 1 |
+| Premise false (no change needed) | 2 |
 | Blocked — needs discussion | 1 |
 | Skipped — dependency blocked | 0 |
 | Deferred — human-gated | 0 |
-| Discoveries | 1 |
+| Discoveries | 2 |
 | Baseline changes | 0 |
 
 ## Completed
@@ -25,11 +25,15 @@
 
 - **T103** A6 discovery: workspace-package resolution and message suppression
   - Both halves were already fixed; the plan premise (from run-1 discoveries T01a/T01b) is stale. specifierPointsAt already resolves workspace package names through workspaceDirs built from the workspace manifest, and start.ts line 224 already appends the discovery text when a candidate exists. Verified empirically on midday, which has 3 convention candidates: the message IS visible, names packages/supabase/src/client/server.ts with the local path, states it is imported by 2 routes as @midday/supabase/server, explains that inference only recognises prisma/database/db names, and gives the exact --data-modules command. That is the DoD, met.
+- **T113** repo map answers from SQL, paginated
+  - The DoD is already met and the premise is wrong. Plan says --limit/--offset exist but the whole map is built first. Measured on cal.com: repo map --limit 10 returns in 0.09s against a <5s target. Pagination is also fully honest, not silently truncating - it reports returned_count 10, has_more true, next_offset 10, and the summary carries indexed_file_count 5064 and filtered_file_count 5064, so a consumer knows exactly what it has and where to continue.
 
 ## Discoveries made while working
 
 - **T101b** Intermittent MCP parity flake at default concurrency
   - evidence: pnpm -r test failed once on mcp.test.ts "proves cross-surface canonical route parity for CLI and MCP route contracts" (1 failed / 56 passed), then passed in isolation (53/53) and on two consecutive full workspace runs.
+- **T101b** Intermittent MCP parity flake — second occurrence
+  - evidence: Same test failed again (mcp.test.ts "proves cross-surface canonical route parity"), now twice across the run. Narrowed this time: mcp.test.ts alone passes 53/53 three times consecutively, and three consecutive full workspace runs are green afterwards. So it is intermittent under WITHIN-PACKAGE file concurrency (the mcp package has other test files that run alongside it), not workspace-level concurrency.
 
 ## Discussion agenda
 
