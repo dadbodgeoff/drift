@@ -332,6 +332,37 @@ export interface GraphDiagnosticSummary extends GraphQueryMetadata {
 export class GraphQueryService {
   constructor(private readonly storage: GraphQueryStorage) {}
 
+  /**
+   * Per-scan graph cache.
+   *
+   * The graph was loaded in full at eighteen separate call sites, and `getRouteFlow` loads all of
+   * it for a single route - so `drift prepare`, which asks about up to ten paths, loaded the entire
+   * repository graph ten times over. Profiling papermark: 7.5s of a 13.7s prepare was
+   * listGraphEdges, listGraphNodes and listGraphEvidence plus the Zod parsing of every row.
+   *
+   * Safe to cache because a scan's graph is immutable once written: the key includes the scan id,
+   * so a new scan cannot read stale entries. Scoped to the service instance rather than global,
+   * so it lives exactly as long as the command that created it.
+   */
+  private readonly graphCache = new Map<
+    string,
+    { nodes: GraphNode[]; edges: GraphEdge[]; evidence: GraphEvidence[] }
+  >();
+
+  private graphFor(repoId: string, scanId: string) {
+    const key = `${repoId}\u0000${scanId}`;
+    let cached = this.graphCache.get(key);
+    if (!cached) {
+      cached = {
+        nodes: this.storage.listGraphNodes(repoId, scanId),
+        edges: this.storage.listGraphEdges(repoId, scanId),
+        evidence: this.storage.listGraphEvidence(repoId, scanId)
+      };
+      this.graphCache.set(key, cached);
+    }
+    return cached;
+  }
+
   getRepoMap(input: GraphQueryContext): GraphRepoMap {
     return this.repoMap({ repoId: input.repo_id, scanId: requireScanId(input) });
   }
@@ -340,9 +371,7 @@ export class GraphQueryService {
     const snapshots = this.storage.listFileSnapshots(input.repoId, input.scanId)
       .filter((snapshot) => snapshot.indexed)
       .sort((left, right) => left.file_path.localeCompare(right.file_path));
-    const nodes = this.storage.listGraphNodes(input.repoId, input.scanId);
-    const edges = this.storage.listGraphEdges(input.repoId, input.scanId);
-    const evidence = this.storage.listGraphEvidence(input.repoId, input.scanId);
+    const { nodes, edges, evidence } = this.graphFor(input.repoId, input.scanId);
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const evidenceIdsByFile = groupEvidenceByFile(evidence);
     const files = snapshots.map((snapshot) => {
@@ -432,9 +461,7 @@ export class GraphQueryService {
     method?: string;
   }): GraphRouteFlow {
     const scanId = requireScanId(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
-    const evidence = this.storage.listGraphEvidence(input.repo_id, scanId);
+    const { nodes, edges, evidence } = this.graphFor(input.repo_id, scanId);
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const moduleByFile = moduleIdsByFile(nodes);
     const rolesByFile = fileRolesByPath(edges, nodesById);
@@ -491,9 +518,7 @@ export class GraphQueryService {
     method?: string;
   }): GraphReachableDataAccess {
     const flow = this.getRouteFlow(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, flow.scan_id);
-    const edges = this.storage.listGraphEdges(input.repo_id, flow.scan_id);
-    const evidence = this.storage.listGraphEvidence(input.repo_id, flow.scan_id);
+    const { nodes, edges, evidence } = this.graphFor(input.repo_id, flow.scan_id);
     const dataOperations = reachableDataOperations(flow.module_path, nodes, edges, evidence);
     return {
       ...queryMetadata(input, flow.scan_id, flow.diagnostics),
@@ -508,7 +533,7 @@ export class GraphQueryService {
 
   getAffectedFiles(input: GraphQueryContext & { path: string }): GraphAffectedFiles {
     const scanId = requireScanId(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
+    const { nodes } = this.graphFor(input.repo_id, scanId);
     const moduleByFile = moduleIdsByFile(nodes);
     const fileByModule = moduleFilesById(nodes);
     const moduleId = moduleByFile.get(input.path);
@@ -528,7 +553,7 @@ export class GraphQueryService {
     const projectionBacked = Boolean(resolverDependencies || dependents);
 
     if (moduleId && !projectionBacked) {
-      const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+      const { edges } = this.graphFor(input.repo_id, scanId);
       const nodesById = new Map(nodes.map((node) => [node.id, node]));
       for (const edge of edges) {
         if (edge.from !== moduleId && edge.to !== moduleId) {
@@ -584,8 +609,7 @@ export class GraphQueryService {
     depth?: 1 | 2;
   }): GraphSymbolNeighborhood {
     const scanId = requireScanId(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+    const { nodes, edges } = this.graphFor(input.repo_id, scanId);
     const symbolExists = nodes.some((node) => node.id === input.symbol_id && node.kind === "symbol");
     if (!symbolExists) {
       return {
@@ -633,9 +657,7 @@ export class GraphQueryService {
 
   getFindingEvidence(input: GraphFindingEvidenceInput): GraphFindingEvidence {
     const scanId = requireScanId(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
-    const evidence = this.storage.listGraphEvidence(input.repo_id, scanId);
+    const { nodes, edges, evidence } = this.graphFor(input.repo_id, scanId);
     const explicitEvidenceIds = new Set(input.evidence_ids ?? []);
     const factIds = new Set(input.fact_ids ?? []);
     const filePaths = new Set(input.file_paths ?? []);
@@ -677,8 +699,7 @@ export class GraphQueryService {
 
   getCompleteness(input: GraphQueryContext): GraphCompleteness {
     const scanId = requireScanId(input);
-    const nodes = this.storage.listGraphNodes(input.repo_id, scanId);
-    const edges = this.storage.listGraphEdges(input.repo_id, scanId);
+    const { nodes, edges } = this.graphFor(input.repo_id, scanId);
     const reasons: string[] = [];
     if (nodes.length === 0) {
       reasons.push("graph_empty");

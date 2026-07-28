@@ -3,7 +3,7 @@
 | Outcome | Count |
 |---|---|
 | Done | 4 |
-| Done (partial) | 2 |
+| Done (partial) | 3 |
 | Premise false (no change needed) | 1 |
 | Blocked — needs discussion | 1 |
 | Skipped — dependency blocked | 0 |
@@ -19,6 +19,7 @@
 - **T102** Gitignore correctness via per-directory semantics — Adopted ignore::WalkBuilder for file discovery. Nested .gitignore files and ! negations now work, patterns stay scoped to the directory that declares them, and the external suite is 7/7 with zero drift - openstatus keeps injection_caught and catches_genuine_subpath, the exact fields the first attempt regressed.
 - **T101** T01c: block-mode contract, finding reports enforcement none _(partial)_ — REPRODUCED deterministically, and the scope is four times larger than T01c stated. Root cause narrowed to one gate; not yet fixed.
 - **T110** Scan retention: GC superseded scans _(partial)_ — Growth is now BOUNDED. Measured on dub across 5 consecutive start runs: 393 -> 787 -> 1179 -> 1179 -> 1179 MB, with facts plateauing at 214,176 (two scans) from run 2 onward. Before: unbounded at ~393MB per run, reaching 1963MB at 5 runs and still climbing.
+- **T112** Scoped graph loading for prepare _(partial)_ — Both latency targets met, quality held, memory target not met. papermark prepare 11.93s -> 1.38s (target <2s). calcom 13.70s -> 4.89s (target <5s). pnpm eval:prepare still 3/3, and the eval itself got much faster - dub prepare 47.6s -> 3.8s.
 
 ## Premise false — deliberately no change
 
