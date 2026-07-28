@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { existsSync,lstatSync,mkdirSync,readdirSync,readFileSync,statSync } from "node:fs";
 import { dirname,join,relative } from "node:path";
 import { hashStable,repoIdForRoot } from "./identifiers.js";
+import { repoIdentityFor } from "./repo-identity.js";
 
 export function requiredRepoContract(storage: SqliteDriftStorage, repoId: string): RepoContract {
   requiredRepo(storage, repoId);
@@ -135,7 +136,16 @@ export function repoRecordForRoot(repoRoot: string, now: string): RepoRecord {
   return {
     id: repoIdForRoot(repoRoot),
     root_path: repoRoot,
-    fingerprint: hashStable(repoRoot),
+    // T120: the fingerprint is the *portable* identity — it must be equal for two checkouts of
+    // the same repository, because it is what `contract import` compares to decide whether a
+    // committed contract belongs here. It was hash(repoRoot), which made every checkout a
+    // different repo and left a shared drift.lock unimportable by anyone.
+    //
+    // The `id` above stays path-derived on purpose. It names the local state directory
+    // (~/.drift/repos/<id>/), so changing it would orphan every existing database and require
+    // re-keying twenty-three tables. Keeping it local and making the fingerprint portable achieves
+    // what portability needs without that risk.
+    fingerprint: repoIdentityFor(repoRoot).id.replace(/^repo_/, ""),
     vcs_provider: detectVcsProvider(repoRoot),
     remote_url_hash: remoteUrlHash(repoRoot),
     package_manager: detectPackageManager(repoRoot),
