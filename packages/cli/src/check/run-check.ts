@@ -489,10 +489,29 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
 
+  // T121 (decision C): a baseline shields code nobody has touched, not a line someone rewrote.
+  //
+  // A baseline fingerprint match set `status: "pre_existing"` permanently, so rewriting the
+  // violating line - or deleting it and adding it back - stayed exempt forever. That turned
+  // "existing code is grandfathered" into "this exact violation is waived for all time", which is a
+  // different and much weaker promise than the one the baseline is for.
+  //
+  // `diff_status: "new_in_diff"` is precisely the signal that the line itself changed, so it is what
+  // separates inherited debt from a choice made in this diff. Untouched baselined code produces no
+  // finding at all, and a baselined violation in a file changed elsewhere comes back
+  // `touched_existing` - both still pass.
+  //
+  // Deliberate suppression is unaffected: `findings suppress` sets a finding status which
+  // preservedGovernanceStatus carries forward, and it never writes a baseline row. So the explicit
+  // mechanism stays permanent without needing to be distinguished here.
   const blockingCount = findings.filter((finding) =>
-    finding.status === "new" &&
     finding.diff_status === "new_in_diff" &&
-    finding.enforcement_result === "block"
+    finding.enforcement_result === "block" &&
+    // A human decision still holds. `findings suppress`, accept-drift and false-positive are the
+    // explicit mechanisms the decision keeps permanent, and dropping the `status === "new"` check
+    // would have silently overridden all three - suppression is meant to survive a rescan.
+    !isClosedFindingStatus(finding.status) &&
+    finding.status !== "needs_review"
   ).length;
   const checkStatus: CheckRun["status"] = blockingCount > 0 ? "fail" : "pass";
   const fallbackStatus = fallbackStatusForCheck(checkData);
@@ -1730,17 +1749,23 @@ function checkOutcomeSummary(
   const statusCounts = countFindingsBy(findings, (finding) => finding.status);
   const diffStatusCounts = countFindingsBy(findings, (finding) => finding.diff_status);
   const enforcementCounts = countFindingsBy(findings, (finding) => finding.enforcement_result);
+  // Same rule as blockingCount above; see the T121 note there.
   const blockingNewHunks = findings.filter((finding) =>
-    finding.status === "new" &&
     finding.diff_status === "new_in_diff" &&
-    finding.enforcement_result === "block"
+    finding.enforcement_result === "block" &&
+    !isClosedFindingStatus(finding.status) &&
+    finding.status !== "needs_review"
   ).length;
   const warnings = findings.filter((finding) =>
-    finding.status === "new" &&
     finding.diff_status === "new_in_diff" &&
-    finding.enforcement_result === "warn"
+    finding.enforcement_result === "warn" &&
+    !isClosedFindingStatus(finding.status)
   ).length;
-  const preExisting = findings.filter((finding) => finding.status === "pre_existing").length;
+  // Counted non-blocking only when the line itself was not changed; a baselined violation whose
+  // line is new code in this diff is counted above instead.
+  const preExisting = findings.filter(
+    (finding) => finding.status === "pre_existing" && finding.diff_status !== "new_in_diff"
+  ).length;
   const touchedExisting = findings.filter((finding) =>
     finding.status === "new" && finding.diff_status === "touched_existing"
   ).length;

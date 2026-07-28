@@ -4435,7 +4435,14 @@ storage_schema_version: 27
     expect(result.stdout).toContain("apps/web/app/api/users/route.ts:1");
   });
 
-  it("does not fail check for active baseline findings", async () => {
+  // T121 (decision C): renamed and inverted. This previously asserted that a baseline entry makes a
+  // violation pass *even when the violating line is in a changed hunk* - the diff here is the same
+  // one that otherwise exits 2. That is the permanent-waiver semantics the maintainer decided
+  // against: a baseline shields code nobody has touched, not a line someone rewrote.
+  //
+  // The pass path is still covered, by the untouched and touched-elsewhere cases in the four-case
+  // matrix (test/e2e and packages/cli/test/diff-lifecycle.test.ts).
+  it("blocks a baselined violation whose line is rewritten in the diff", async () => {
     const { databasePath, repoRoot } = await seedAcceptedDatabase();
     const diffFile = join(repoRoot, "..", "diff.patch");
     const first = await runCli([
@@ -4489,17 +4496,19 @@ storage_schema_version: 27
       "--json"
     ]);
 
-    expect(second.exitCode).toBe(0);
+    // Exit 2: the line is new code in this diff under a block-mode convention, baseline or not.
+    expect(second.exitCode).toBe(2);
     const payload = JSON.parse(second.stdout);
+    // status stays pre_existing - it records where the violation came from, which is still true.
+    // What changed is that it no longer buys an exemption for a line the diff rewrote.
     expect(payload.findings[0].status).toBe("pre_existing");
+    expect(payload.findings[0].diff_status).toBe("new_in_diff");
+    expect(payload.summary.blocking_count).toBe(1);
     expect(payload.summary.outcome).toMatchObject({
       status_counts: { pre_existing: 1 },
-      non_blocking_reasons: [
-        {
-          reason: "pre_existing_baseline",
-          count: 1
-        }
-      ]
+      // No pre_existing_baseline reason any more: the baseline is not what decides this case, so
+      // reporting it as the reason nothing blocked would be untrue.
+      non_blocking_reasons: []
     });
   });
 
