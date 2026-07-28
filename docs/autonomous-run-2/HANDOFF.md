@@ -4,12 +4,16 @@
 clippy + rustfmt clean. Eval repos clean. **9 commits. Nothing pushed, nothing published.**
 
 **Resume:** `cd ~/drift-falsification/drift`, then
-`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T111**.
+`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T113**.
+
+**Read the T111 entry before touching Phase 2 further** — it invalidates how the plan frames both
+T111 and T112.
 
 | Outcome | Count |
 |---|---|
 | Done | 4 |
-| Done (partial) | 2 |
+| Done (partial) | 3 |
+| Blocked — needs redesign | 1 |
 | Premise false | 1 |
 | Discovery | 1 |
 
@@ -61,6 +65,40 @@ disk-exhaustion failure T41 exists to prevent.
 **Settled on the record:** stored scan count does **not** affect check latency (2.7s on dub at both
 2 and 10 scans). Retention is a footprint fix, not a speed one. The 3.9s-vs-18.7s discrepancy in
 the benchmark is therefore *not* scan accumulation — still unexplained.
+
+## T111 — the plan's premise is wrong; T111 and T112 are one task
+
+T111 assumes the engine walks and hashes every file to decide reusability, at ~3.9s. Measured on
+formbricks:
+
+    reuse:      seen=2871  parsed=1  reused=2870     already perfect
+    walk+hash:  0.04s for 2,837 files / 14 MB        free
+    engine:     1750 ms
+    CLI:        ~2250 ms
+    total:      3.91s  (matches run 1; cal.com 6.09s)
+
+Neither walking, hashing, nor parsing is the cost. **Both halves are dominated by payload volume**:
+the engine emits 157k facts, 162k nodes and 244k edges for the whole repo on every check, and the
+CLI re-ingests and re-assembles all of it — for a one-line change.
+
+So the fix is not a changed-files scan mode. The check should not move the whole graph at all; it
+needs the changed file's facts plus the stored graph already in SQLite. Two designs are open (engine
+emits changed-file facts and the CLI merges; or engine emits a delta and the CLI patches stored
+state). Both are architectural, so I did not start one with limited context. **T114 stays blocked.**
+
+## T112 — latency fixed, footprint not
+
+    papermark   11.93s → 1.38s      (target <2s)  ✓
+    cal.com     13.70s → 4.89s      (target <5s)  ✓
+    dub         47.6s  → 3.8s
+    eval:prepare 3/3, ranks unchanged
+
+Cause was not slow SQL: the graph was loaded in full at **eighteen** call sites, and `getRouteFlow`
+loads all of it per route — so `prepare` loaded the whole graph ten times. A per-scan memo fixed it.
+
+**RSS target not met**, and the two numbers are different problems: `prepare` at 1.08 GB is the graph
+in memory and is T112's remaining half (scoped SQL, which caching does not substitute for);
+`check` at 1.64 GB is T111's payload problem and will not move until that is redesigned.
 
 ## Carry forward
 
