@@ -4,14 +4,14 @@
 clippy + rustfmt clean. Eval repos clean. **9 commits. Nothing pushed, nothing published.**
 
 **Resume:** `cd ~/drift-falsification/drift`, then
-`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T120**.
+`DRIFT_RUN_DIR=docs/autonomous-run-2 node scripts/run-log.mjs next` → **T124**.
 
 **Read the T111 entry before touching Phase 2 further** — it invalidates how the plan frames both
 T111 and T112.
 
 | Outcome | Count |
 |---|---|
-| Done | 5 |
+| Done | 8 |
 | Done (partial) | 3 |
 | Premise false | 2 |
 | Blocked — needs redesign | 1 |
@@ -134,6 +134,35 @@ type/schema/writer changes, then reverted them once that was clear.
 suppressed finding on a changed line would start blocking again, against decision C's own terms. The
 predicates now exempt human governance decisions. The test that caught it,
 "preserves human-governed finding statuses during repeated checks", passes unmodified.
+
+## Phase 3 — identity unblocked E3, and E4 as far as it can go
+
+**T120 — repo identity is portable.** Proven both directions on real checkouts of taxonomy: a
+contract exported from checkout A imports into checkout B at a different path (`imported=True`), and
+a cal.com contract into the taxonomy checkout is still refused on `repo_fingerprint_mismatch`. Two
+checkouts now share fingerprint `89f97112320de567` while their local ids differ.
+
+**I departed from the plan's mechanism deliberately.** It asks for a stored-id migration re-keying
+existing databases. But the id names the local state directory (`~/.drift/repos/<id>/`), so changing
+it orphans every existing database and means re-keying twenty-three tables — the riskiest change
+available. Instead the id stays path-derived as the local storage key it actually is, and the
+**fingerprint** became the portable identity, which `contract import` already compared. Same DoD, no
+migration, nothing orphaned.
+
+Two consequences worth knowing: a `repo_id` difference alone no longer blocks an import when
+fingerprints match, and the importer re-keys the contract to the local id — without which a
+cross-checkout import violates the foreign key to `repos(id)`, which is exactly what it hit the
+moment the compatibility check stopped rejecting it.
+
+**T122 — `drift.lock` works.** Export, commit, import in another checkout. The ergonomic ask was
+blocked by validation, not design: `--output` rejected anything not ending `.json`. One honest limit
+— the file travelled between checkouts by copy, not `git pull`, because I had repointed the clone's
+remote for T120's test.
+
+**T123 — CI workflow authored, unverified, not pushed.** Builds the engine with cargo rather than
+installing a platform package, because there is no Linux binary and `npm install` would resolve to an
+empty package. Two quiet failure modes documented: `fetch-depth: 0` is required or identity silently
+falls back to path-derived, and exit 3 must fail the job or a refusal reads as a pass.
 
 ## Carry forward
 
