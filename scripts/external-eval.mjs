@@ -385,6 +385,13 @@ function evaluateRepoAt(reposDir, cfg) {
     repoId,
     "--json"
   );
+  // S1-01 transitional: taxonomy, cal.com, papermark and midday record 3 (refused) rather than 0.
+  // That is the fix working, not a regression - those checks genuinely cannot enforce, because an
+  // unresolved import on a route in the diff zeroes every finding's enforcement_result and the check
+  // used to report that as a clean run.
+  //
+  // These flip back to 2 when S1-04 lands resolver coverage (nested tsconfig + workspace packages),
+  // which is what makes those imports resolvable. Do not "fix" this by reverting S1-01.
   result.check_exit_code = check.code;
   try {
     const payload = JSON.parse(check.stdout);
