@@ -855,7 +855,22 @@ describe("GraphQueryService", () => {
       createdAt: "2026-05-22T00:00:00.000Z"
     }));
 
-    const map = createGraphQueryService(storage).repoMap({ repoId: "repo_abc", scanId: "scan_abc" });
+    const service = createGraphQueryService(storage);
+    const map = service.repoMap({ repoId: "repo_abc", scanId: "scan_abc" });
+
+    // T113: pin the whole projection, not just the fields this test happens to assert.
+    //
+    // T112 memoised the graph per scan, which changes *how* the projection is fed without
+    // intending to change what it produces. A shape pin is what makes that claim checkable, and it
+    // is cheap: any difference in the projected map fails here rather than surfacing as a subtly
+    // different repo map in someone's agent context.
+    expect(map).toMatchSnapshot("repoMap projection");
+
+    // T112: the memo must return an identical projection on a second call, and not a shared
+    // mutable object that a caller could have altered.
+    const second = service.repoMap({ repoId: "repo_abc", scanId: "scan_abc" });
+    expect(second).toEqual(map);
+
     storage.close();
 
     expect(map.graph_summary).toMatchObject({
