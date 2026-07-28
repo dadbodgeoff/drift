@@ -90,8 +90,14 @@ export function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs):
     if (existsSync(outputPath) && statSync(outputPath).isDirectory()) {
       throw new Error("Contract export output must be a file path.");
     }
-    if (extname(outputPath) !== ".json") {
-      throw new Error("Contract export output must end with .json.");
+    // T122: `.lock` alongside `.json`, so a contract can be committed as `drift.lock`.
+    //
+    // The file is JSON either way; the extension is about how a team reads it in review. A lockfile
+    // name says "committed, diffable, changes on purpose" in a way `contract.json` does not, and
+    // that framing is the point of E3. Still a closed set rather than any extension, so a typo'd
+    // path fails loudly instead of writing a contract somewhere unexpected.
+    if (![".json", ".lock"].includes(extname(outputPath))) {
+      throw new Error("Contract export output must end with .json or .lock.");
     }
     if (existsSync(outputPath) && !parsed.flags.has("force")) {
       throw new Error("Contract export output already exists. Pass --force to overwrite it.");

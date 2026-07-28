@@ -68,3 +68,39 @@ is a pattern to follow; the second is a rule to work around.
 `prepare` and `get_task_preflight` both return that shape. Ranking is by task relevance: a file
 whose path names what the task is about ranks far above one that merely sits in a convention's
 scope. Measured with `pnpm eval:prepare` across three real repos.
+
+## Sharing a contract: `drift.lock`
+
+A contract can be committed and reviewed like a lockfile.
+
+```bash
+drift contract export --repo <repo_id> --output drift.lock --confirm
+git add drift.lock && git commit -m "pin drift conventions"
+```
+
+A teammate, or CI, then adopts it:
+
+```bash
+drift contract import drift.lock --repo <repo_id> --confirm
+```
+
+The framing is the point. A lockfile name says *committed, diffable, changes on purpose* in a way
+`contract.json` does not — a convention change shows up in review as a diff someone has to approve,
+which is where a change to what the whole team is held to belongs.
+
+**This only became possible in T120.** Repo identity used to be `hash(absolute path)`, so every
+checkout was a different repository and `contract import` refused a committed contract with
+`repo_id_mismatch` — correctly by its own logic, and uselessly. Identity is now derived from the git
+remote and root commit, so two checkouts agree.
+
+What still gets refused, and should be: a contract from a *different* repository fails on
+`repo_fingerprint_mismatch`. Verified both directions on two checkouts of taxonomy plus a cal.com
+contract.
+
+Two things to know:
+
+- `drift doctor` reports the identity source. If it says the identity is path-derived — no git
+  history, or no remote and no `package.json` name — a contract exported there **will not** import
+  elsewhere, and that is worth checking before relying on the flow.
+- The importer re-keys the contract to the local repo id. That id names the local state directory
+  and is not portable; the fingerprint is what establishes the contract belongs here.
