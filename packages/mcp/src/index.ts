@@ -25,6 +25,7 @@ import {
   FileRoleSchema,
   authorizeContextExport,
   canonicalScanStateJson,
+  classifyFailure,
   createAgentEnvelopeV2,
   createAgentPreflightPacket,
   createContextPolicyMatrix,
@@ -657,11 +658,17 @@ export function handleMcpJsonRpcRequest(
 
     return errorResponse(request.id, -32601, `Unsupported MCP method: ${request.method}`);
   } catch (error) {
-    return errorResponse(
-      request.id,
-      -32000,
-      error instanceof Error ? error.message : "Unknown Drift MCP error."
-    );
+    // F-2 (R-3): classify before forwarding. Raw SQLite strings ("file is not a database",
+    // "database disk image is malformed", "disk I/O error") used to reach agents verbatim with
+    // nothing to branch on; the classified data mirrors the CLI's failure payload.
+    const message = error instanceof Error ? error.message : "Unknown Drift MCP error.";
+    const failure = classifyFailure(error, message);
+    return errorResponse(request.id, -32000, message, {
+      code: failure.code,
+      user_action: failure.user_action,
+      safe_to_retry: failure.safe_to_retry,
+      recovery_commands: failure.recovery_commands
+    });
   }
 }
 
@@ -821,13 +828,19 @@ function response(id: JsonRpcRequest["id"], result: unknown): JsonRpcResponse {
   };
 }
 
-function errorResponse(id: JsonRpcRequest["id"], code: number, message: string): JsonRpcResponse {
+function errorResponse(
+  id: JsonRpcRequest["id"],
+  code: number,
+  message: string,
+  data?: NonNullable<JsonRpcResponse["error"]>["data"]
+): JsonRpcResponse {
   return {
     jsonrpc: "2.0",
     id: id ?? null,
     error: {
       code,
-      message
+      message,
+      ...(data ? { data } : {})
     }
   };
 }
