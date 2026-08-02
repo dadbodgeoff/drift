@@ -83,3 +83,110 @@ export function repoVerdict(result, cfg) {
 
   return { status: failures.length ? "FAIL" : "PASS", failures };
 }
+
+/**
+ * O-3: the evasion matrix's per-shape verdict.
+ *
+ * Same hardened semantics as repoVerdict - exit code, enforcement-vs-mode, attribution -
+ * plus the two pins this run's discoveries added:
+ *
+ *  (a) attribution checks EVERY finding on the injected paths, not just the first: each
+ *      one's leading evidence must name the injected route itself, so a second finding
+ *      attributed to an intermediate barrel fails the shape;
+ *  (b) split scenario semantics: the blocking scenario (real violation alone) must exit
+ *      2 on block-mode repos, and the refusal scenario (non-existent decoy) must exit 3
+ *      with blocked_reasons naming the decoy.
+ *
+ * Outcome classes a catch shape may legitimately land in are pinned by the committed
+ * baseline (evasion-baseline.json), not hardcoded here: blocked (exit 2), warned
+ * (exit 0 + enforcement warn), refused (exit 3, fail-closed). What is hardcoded is what
+ * may NEVER happen: a caught violation exiting 0 under a block-mode convention (the
+ * exit-0-with-demotion class G1 forbids), a mis-attributed finding, a negative control
+ * producing a finding, and a payload status contradicting the exit code. An evasion that
+ * still exists is tolerated only when the baseline records it (`known_evasion: true`) -
+ * KNOWN_EVASION, never PASS - so progress and regression are both pinned.
+ *
+ * @param {object} record  the per-shape record built by the evasion runner
+ * @param {object} context { shapeClass: "catch"|"silent"|"observe"|"refuse",
+ *                           enforcementMode, isBlockingScenario, knownEvasion }
+ * @returns {{ status: "PASS" | "FAIL" | "KNOWN_EVASION", failures: string[] }}
+ */
+export function shapeVerdict(record, context) {
+  const failures = [];
+  const assert = (name, ok) => {
+    if (!ok) failures.push(name);
+  };
+
+  // E-1 (B-3): the payload's status must agree with the process exit code, on every
+  // shape. Exit codes outside the check contract (e.g. 1) fail the shape outright.
+  const statusForExit = { 0: "pass", 2: "fail", 3: "refused" }[record.exit];
+  assert("check_exit_code_in_contract", statusForExit !== undefined);
+  assert(
+    "check_status_consistent_with_exit",
+    statusForExit === undefined || record.check_status === statusForExit
+  );
+
+  if (context.shapeClass === "silent") {
+    // Negative controls prove restraint. A finding here is a false positive regardless
+    // of anything else the check did.
+    assert("negative_control_silent", record.caught === false && record.findings_count === 0);
+    return { status: failures.length ? "FAIL" : "PASS", failures };
+  }
+
+  if (context.shapeClass === "refuse") {
+    // Pin (b), refusal half: a deliberately non-existent decoy must produce a fail-closed
+    // refusal that names the decoy - never a block (claiming to enforce the unresolvable)
+    // and never a pass (the silent path S1-01 closed).
+    assert("refusal_exits_3", record.exit === 3);
+    assert("refusal_names_decoy", record.refusal_names_decoy === true);
+    return { status: failures.length ? "FAIL" : "PASS", failures };
+  }
+
+  if (context.shapeClass === "observe") {
+    // Recorded and baseline-pinned, no class-level expectation.
+    return { status: failures.length ? "FAIL" : "PASS", failures };
+  }
+
+  // shapeClass "catch"
+  if (record.caught) {
+    // Pin (a): every finding on the injected paths must lead with evidence naming the
+    // injected route itself. attributed_files collects evidence_refs[0].file_path of
+    // EVERY such finding, so a second barrel-attributed finding fails here.
+    assert(
+      "every_finding_attributed_to_route",
+      Array.isArray(record.attributed_files) &&
+        record.attributed_files.length > 0 &&
+        record.attributed_files.every((filePath) => filePath === record.route)
+    );
+    // The core invariant, shape-level: no path from "a violation was found" to exit 0
+    // under a block-mode convention.
+    assert(
+      "caught_block_mode_cannot_exit_zero",
+      !(context.enforcementMode === "block" && record.exit === 0)
+    );
+    if (record.exit === 0) {
+      // A catch that passes (warn-mode repo) must carry the mode, strictly - null was
+      // the recording idiom O-1 killed.
+      assert("enforcement_matches_mode", record.enforcement === context.enforcementMode);
+    }
+    if (record.exit === 2) {
+      assert(
+        "blocked_only_under_block_mode",
+        context.enforcementMode === "block" && record.enforcement === "block"
+      );
+    }
+    // exit 3 (refused) is a legitimate fail-closed landing for a catch shape; the
+    // baseline pins which cells live there.
+  } else if (context.knownEvasion) {
+    return { status: failures.length ? "FAIL" : "KNOWN_EVASION", failures };
+  } else {
+    assert("should_catch_shape_evaded", false);
+  }
+
+  if (context.isBlockingScenario && context.enforcementMode === "block") {
+    // Pin (b), blocking half: the real violation ALONE must block on block-mode repos.
+    assert("blocking_scenario_blocks", record.exit === 2);
+  }
+
+  return { status: failures.length ? "FAIL" : "PASS", failures };
+}

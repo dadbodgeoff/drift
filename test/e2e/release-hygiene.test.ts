@@ -30,9 +30,12 @@ describe("release hygiene", () => {
     expect(manifest.scripts["release:proof"]).toBe("node scripts/generate-release-proof.mjs");
     expect(manifest.scripts["verify:ci"]).toBe(
       // T04 added `pnpm test:harness`: the external evaluation harness is the oracle every other
-    // gate trusts, so a release must prove the oracle itself still works.
-    "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      // gate trusts, so a release must prove the oracle itself still works. O-3 added the two
+      // eval suites themselves: the gate runs the external eval AND the pinned evasion matrix,
+      // so no release can go green while an enforcement shape regressed on a real repo.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && git diff --check",
     );
+    expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
   });
 
   it("keeps root ignores from hiding package source files", async () => {
