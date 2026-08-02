@@ -23,6 +23,8 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { repoVerdict } from "./external-eval-predicate.mjs";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
 const CLI = join(REPO_ROOT, "packages/cli/dist/main.js");
@@ -34,6 +36,17 @@ const REPOS_DIR = process.env.DRIFT_EVAL_REPOS || join(homedir(), "drift-falsifi
  * dataModule/dataSymbol   real data layer, used for the injected violation
  * cleanModule/cleanSymbol properly layered import, used for the false-positive control
  * expectForbidden         entries that MUST appear in the learned forbidden_imports
+ * expectedExitCode        the exit code the main check MUST produce (O-1). Recorded per
+ *                         repo, never hardcoded in the predicate, so every transitional
+ *                         value is explicit and reviewable here.
+ *
+ * On the expectedExitCode values (S1-01 transitional): taxonomy, calcom, papermark and
+ * midday expect 3 (refused), not 0 or 2. That is S1-01 working, not a regression - an
+ * unresolved import on a route in the diff zeroes every finding's enforcement_result, and
+ * the check now refuses (exit 3) instead of reporting that as a clean run. These flip when
+ * S1-04 lands resolver coverage (nested tsconfig + workspace packages), which makes those
+ * imports resolvable: block-mode repos to 2, warn-mode repos to 0. Do not "fix" a 3 here
+ * by reverting S1-01.
  */
 const REPOS = [
   {
@@ -44,7 +57,8 @@ const REPOS = [
     cleanModule: "@/lib/session",
     cleanSymbol: "getCurrentUser",
     expectForbidden: ["@/lib/db"],
-    expectForbiddenExact: ["@/lib/db"]
+    expectForbiddenExact: ["@/lib/db"],
+    expectedExitCode: 3
   },
   {
     name: "dub",
@@ -53,7 +67,8 @@ const REPOS = [
     dataSymbol: "prisma",
     cleanModule: "@/lib/api/errors",
     cleanSymbol: "handleAndReturnErrorResponse",
-    expectForbidden: ["@/lib/prisma"]
+    expectForbidden: ["@/lib/prisma"],
+    expectedExitCode: 0
   },
   {
     name: "formbricks",
@@ -63,7 +78,8 @@ const REPOS = [
     cleanModule: "@/app/lib/api/response",
     cleanSymbol: "responses",
     expectForbidden: ["@formbricks/database"],
-    expectForbiddenExact: ["@formbricks/database"]
+    expectForbiddenExact: ["@formbricks/database"],
+    expectedExitCode: 2
   },
   {
     name: "calcom",
@@ -73,7 +89,8 @@ const REPOS = [
     cleanModule: "@calcom/lib/constants",
     cleanSymbol: "WEBAPP_URL",
     expectForbidden: ["@calcom/prisma"],
-    expectForbiddenExact: ["@calcom/prisma"]
+    expectForbiddenExact: ["@calcom/prisma"],
+    expectedExitCode: 3
   },
   {
     name: "papermark",
@@ -82,7 +99,8 @@ const REPOS = [
     dataSymbol: "prisma",
     cleanModule: "@/lib/utils",
     cleanSymbol: "cn",
-    expectForbidden: ["@/lib/prisma"]
+    expectForbidden: ["@/lib/prisma"],
+    expectedExitCode: 3
   },
   {
     // T01: the only repo whose data layer defeats the substring whitelist in
@@ -100,7 +118,8 @@ const REPOS = [
     expectForbidden: ["@midday/supabase/server"],
     whitelistIndependent: true,
     declaredDataModules: "@midday/supabase/server,@midday/supabase/cached-queries",
-    expectDiscoveryWrapper: "packages/supabase/src/client/server.ts"
+    expectDiscoveryWrapper: "packages/supabase/src/client/server.ts",
+    expectedExitCode: 3
   },
   {
     name: "openstatus",
@@ -110,9 +129,20 @@ const REPOS = [
     cleanModule: "@openstatus/api",
     cleanSymbol: "edgeRouter",
     expectForbidden: ["@openstatus/db"],
-    expectForbiddenExact: ["@openstatus/db", "@openstatus/db/src/db", "@openstatus/db/src/schema"]
+    expectForbiddenExact: ["@openstatus/db", "@openstatus/db/src/db", "@openstatus/db/src/schema"],
+    expectedExitCode: 2
   }
 ];
+
+// O-1: the exit-code assertion fails closed (a missing expectation is a FAIL), so refuse
+// to even start with a suite repo that lacks one - the failure should name the config gap,
+// not surface as a per-repo FAIL an hour into a run.
+for (const cfg of REPOS) {
+  if (!Number.isInteger(cfg.expectedExitCode)) {
+    console.error(`REPOS entry "${cfg.name}" has no integer expectedExitCode; every suite repo must record one.`);
+    process.exit(1);
+  }
+}
 
 const args = process.argv.slice(2);
 const UPDATE = args.includes("--update");
@@ -126,7 +156,12 @@ const flag = (name) => {
  * committing to the baseline. Results are printed but never compared or written.
  *
  *   node scripts/external-eval.mjs --repo-path <dir> --data-module <spec> \
- *     --data-symbol <sym> --route-dir <dir> [--clean-module <spec>] [--declare <specs>]
+ *     --data-symbol <sym> --route-dir <dir> [--clean-module <spec>] [--declare <specs>] \
+ *     [--expect-exit-code <n>]
+ *
+ * The exit-code assertion fails closed: without --expect-exit-code the ad-hoc result is
+ * FAIL with `exit_code_expectation_recorded` named, so the printed record still shows
+ * every measured field for triage.
  */
 const AD_HOC = flag("--repo-path");
 const onlyIndex = args.indexOf("--only");
@@ -385,14 +420,10 @@ function evaluateRepoAt(reposDir, cfg) {
     repoId,
     "--json"
   );
-  // S1-01 transitional: taxonomy, cal.com, papermark and midday record 3 (refused) rather than 0.
-  // That is the fix working, not a regression - those checks genuinely cannot enforce, because an
-  // unresolved import on a route in the diff zeroes every finding's enforcement_result and the check
-  // used to report that as a clean run.
-  //
-  // These flip back to 2 when S1-04 lands resolver coverage (nested tsconfig + workspace packages),
-  // which is what makes those imports resolvable. Do not "fix" this by reverting S1-01.
+  // O-1: the exit code is asserted against the per-repo expectation, not merely recorded.
+  // See the expectedExitCode note on REPOS for why several repos legitimately expect 3.
   result.check_exit_code = check.code;
+  result.expected_exit_code = cfg.expectedExitCode ?? null;
   try {
     const payload = JSON.parse(check.stdout);
     const findings = payload.findings ?? [];
@@ -413,6 +444,11 @@ function evaluateRepoAt(reposDir, cfg) {
     // The violating import is always line 2 of the generated route.
     result.injection_evidence_correct =
       evidence?.start_line === 2 && evidence?.import_source === cfg.dataModule;
+    // O-1 attribution: the evidence the finding leads with must name the injected route
+    // itself. `injection_caught` only proves SOME evidence ref touches the route; a finding
+    // attributed to an intermediate barrel would still satisfy it (the papermark artifact).
+    result.injected_route = badPath;
+    result.injection_evidence_file = evidence?.file_path ?? null;
     result.injection_diff_status = onBad[0]?.diff_status ?? null;
     result.injection_enforcement = onBad[0]?.enforcement_result ?? null;
     result.injection_finding_status = onBad[0]?.status ?? null;
@@ -438,32 +474,11 @@ function evaluateRepoAt(reposDir, cfg) {
   resetTree(root);
   rmSync(home, { recursive: true, force: true });
 
-  const f4AssertionsHold =
-    !cfg.whitelistIndependent ||
-    // The F4 gap is *exercised* when inference alone finds nothing and discovery names the
-    // wrapper anyway. Asserting inference succeeds would assert the bug is absent, which is
-    // the opposite of what this repo is here to prove.
-    (result.inference_alone_found_data_layer === false && result.discovery_named_data_layer === true);
-
-  result.status =
-    result.onboarded &&
-    f4AssertionsHold &&
-    result.contract_names_real_data_layer &&
-    result.forbidden_imports_exact_match !== false &&
-    result.injection_caught &&
-    result.injection_evidence_correct &&
-    !result.clean_control_false_positive &&
-    result.fp_type_only_import === false &&
-    // T101: a block-mode convention that does not block is an F3-class silent pass. Now that
-    // enforcement is measured in isolation (see enforcementInIsolation) this is measurable, so it
-    // is asserted rather than recorded. All seven repos hold.
-    result.enforcement_matches_mode !== false &&
-    result.fp_lookalike_module === false &&
-    result.catches_genuine_subpath === true &&
-    result.engine_source === "rust" &&
-    result.fallback_used === false
-      ? "PASS"
-      : "FAIL";
+  const verdict = repoVerdict(result, cfg);
+  result.status = verdict.status;
+  if (verdict.failures.length) {
+    result.failed_assertions = verdict.failures;
+  }
   return result;
 }
 
@@ -543,7 +558,10 @@ if (AD_HOC) {
     cleanModule: flag("--clean-module") ?? "next/server",
     cleanSymbol: "NextResponse",
     expectForbidden: flag("--data-module") ? [flag("--data-module")] : [],
-    ...(flag("--declare") ? { declaredDataModules: flag("--declare") } : {})
+    ...(flag("--declare") ? { declaredDataModules: flag("--declare") } : {}),
+    ...(flag("--expect-exit-code") !== undefined
+      ? { expectedExitCode: Number(flag("--expect-exit-code")) }
+      : {})
   };
   if (!adHocCfg.dataModule) {
     console.error("--repo-path requires --data-module");
@@ -571,7 +589,8 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
         ? ` f4gap=${r.inference_alone_found_data_layer === false && r.discovery_named_data_layer ? "y" : "n"}`
         : "") +
       ` (${r.onboard_seconds ?? "?"}s)` +
-      (r.error ? `\n       ${r.error}` : "")
+      (r.error ? `\n       ${r.error}` : "") +
+      (r.failed_assertions ? `\n       failed: ${r.failed_assertions.join(", ")}` : "")
   );
   return r;
 });

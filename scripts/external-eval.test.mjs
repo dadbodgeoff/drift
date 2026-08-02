@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { repoVerdict } from "./external-eval-predicate.mjs";
+
 /**
  * T05: tests for the evaluation harness itself.
  *
@@ -85,6 +87,93 @@ describe("added files appear in git diff HEAD once staged", () => {
   });
 });
 
+/**
+ * O-1 (S1-03): the PASS predicate itself. B-4 was a suite that could not fail: it never
+ * asserted the check's exit code, treated a null enforcement measurement as agreement
+ * (`!== false`), and never asserted the finding was attributed to the injected file rather
+ * than an intermediate barrel. Each synthetic result below is a shape that historically
+ * read as a pass and must now be a FAIL.
+ */
+describe("repoVerdict", () => {
+  // A result that satisfies every assertion. Each test perturbs exactly one field, so a
+  // failure isolates the assertion under test and this base guards against a predicate
+  // that fails everything.
+  const goodCfg = () => ({
+    name: "synthetic",
+    expectedExitCode: 2
+  });
+  const goodResult = () => ({
+    onboarded: true,
+    contract_names_real_data_layer: true,
+    forbidden_imports_exact_match: true,
+    check_exit_code: 2,
+    expected_exit_code: 2,
+    engine_source: "rust",
+    fallback_used: false,
+    injection_caught: true,
+    injection_evidence_correct: true,
+    injected_route: "app/api/drift-eval-bad/route.ts",
+    injection_evidence_file: "app/api/drift-eval-bad/route.ts",
+    enforcement_matches_mode: true,
+    clean_control_false_positive: false,
+    fp_type_only_import: false,
+    fp_lookalike_module: false,
+    catches_genuine_subpath: true
+  });
+
+  it("passes a fully healthy result", () => {
+    expect(repoVerdict(goodResult(), goodCfg())).toEqual({ status: "PASS", failures: [] });
+  });
+
+  it("fails when the enforcement measurement is null rather than true", () => {
+    // `!== false` was a recording idiom, not an asserting one: if enforcementInIsolation
+    // errors or returns nothing, null must read as "unobserved", never as "agrees".
+    const result = { ...goodResult(), enforcement_matches_mode: null };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("enforcement_matches_mode");
+  });
+
+  it("fails when the enforcement measurement is absent entirely", () => {
+    const result = goodResult();
+    delete result.enforcement_matches_mode;
+    expect(repoVerdict(result, goodCfg()).status).toBe("FAIL");
+  });
+
+  it("fails a check that found the violation but exited 0 when 2 was expected", () => {
+    // S1-01's own commit is the proof of this gap: 4 repos' exit codes changed 0 -> 3 and
+    // the suite printed ok for all 7.
+    const result = { ...goodResult(), check_exit_code: 0 };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("check_exit_code_matches_expected");
+  });
+
+  it("fails when no exit-code expectation is recorded at all", () => {
+    // Fail closed: a repo added to the suite without an expected exit code must not
+    // silently skip the assertion.
+    const verdict = repoVerdict(goodResult(), { name: "synthetic" });
+    expect(verdict.status).toBe("FAIL");
+  });
+
+  it("fails when the finding is attributed to a file other than the injected route", () => {
+    // The papermark barrel artifact: a finding whose evidence names an intermediate
+    // barrel rather than the injected route read as a catch.
+    const result = {
+      ...goodResult(),
+      injection_evidence_file: "app/api/drift-eval-bad/index.ts"
+    };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("injection_attributed_to_injected_file");
+  });
+
+  it("fails when the evidence file is unrecorded", () => {
+    const result = { ...goodResult(), injection_evidence_file: null };
+    expect(repoVerdict(result, goodCfg()).status).toBe("FAIL");
+  });
+});
+
 describe("baseline shape", () => {
   it("excludes volatile counts from regression comparison", () => {
     const source = readFileSync(new URL("./external-eval.mjs", import.meta.url), "utf8");
@@ -111,6 +200,14 @@ describe("baseline shape", () => {
       expect(row.fp_type_only_import).toBe(false);
       expect(row.fp_lookalike_module).toBe(false);
       expect(row.catches_genuine_subpath).toBe(true);
+      // O-1: exit code asserted against a recorded per-repo expectation; enforcement
+      // agreement strictly true (null was a silent pass); evidence attributed to the
+      // injected route itself, never an intermediate file.
+      expect(Number.isInteger(row.expected_exit_code)).toBe(true);
+      expect(row.check_exit_code).toBe(row.expected_exit_code);
+      expect(row.enforcement_matches_mode).toBe(true);
+      expect(typeof row.injected_route).toBe("string");
+      expect(row.injection_evidence_file).toBe(row.injected_route);
       expect(row.status).toBe("PASS");
     }
   });
