@@ -150,7 +150,20 @@ export const ConventionScoreSchema = z.object({
   counterexamples_count: z.number().int().nonnegative(),
   scope_files_count: z.number().int().nonnegative(),
   coverage_ratio: z.number().min(0).max(1),
-  heuristic_id: z.string().min(1)
+  heuristic_id: z.string().min(1),
+  // E-6 (D-2): the coverage-direction decision, computed from the baseline scan only.
+  // `demoted: true` is the explicit marker that the direction gate chose warn because
+  // the baseline itself violates in the majority - never because the analyzed diff
+  // added newly-detected violations.
+  coverage_direction: z
+    .object({
+      violating_files: z.number().int().nonnegative(),
+      scope_files: z.number().int().nonnegative(),
+      violation_ratio: z.number().min(0).max(1),
+      threshold: z.number().min(0).max(1),
+      demoted: z.boolean()
+    })
+    .optional()
 });
 
 export const ConventionExceptionSchema = z.object({
@@ -1049,6 +1062,7 @@ export const AuditEventSchema = z.object({
     "election_accepted",
     "election_rejected",
     "election_edited",
+    "enforcement_demoted",
     "finding_resolved",
     "finding_suppressed",
     "finding_flagged_for_review",

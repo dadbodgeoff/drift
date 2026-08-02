@@ -131,6 +131,18 @@ export interface ConventionScore {
   scope_files_count: number;
   coverage_ratio: number;
   heuristic_id: string;
+  /**
+   * E-6 (D-2): the coverage-direction decision, computed from the baseline scan only
+   * (files the analyzed diff changed are excluded from both counts). `demoted: true`
+   * marks a legitimate baseline-driven demotion explicitly.
+   */
+  coverage_direction?: {
+    violating_files: number;
+    scope_files: number;
+    violation_ratio: number;
+    threshold: number;
+    demoted: boolean;
+  };
 }
 
 export interface ConventionException {
@@ -1006,6 +1018,10 @@ export interface AuditEvent {
     | "election_accepted"
     | "election_rejected"
     | "election_edited"
+    // E-6 (D-2): an accepted convention moved from block to a weaker mode. Explicit by
+    // design - a silent block -> warn transition is how T100's recall improvement
+    // weakened taxonomy's enforcement without any output saying so.
+    | "enforcement_demoted"
     | "finding_resolved"
     | "finding_suppressed"
     | "finding_flagged_for_review"

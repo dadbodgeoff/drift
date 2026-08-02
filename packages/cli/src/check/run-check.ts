@@ -150,6 +150,10 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   if (!policy.allowed) {
     throw new Error(`Policy denied check output: ${policy.reason}`);
   }
+  // E-6 (D-2): while a convention runs weaker than block because something demoted it,
+  // every check says so. A block -> warn transition that only lives in the audit log is
+  // still effectively silent for the consumers that matter (agents and CI read this JSON).
+  const enforcementDemotions = enforcementDemotionsForContract(storage, repoId, contract);
 
   const scope = stringFlag(parsed, "scope") ?? "changed-hunks";
   if (!["changed-hunks", "changed-files", "full"].includes(scope)) {
@@ -265,7 +269,10 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           expiredFindingsCount,
           scope: scope as "changed-hunks" | "changed-files" | "full"
         }),
-        blocked_reasons: ["typescript_fallback_used"]
+        blocked_reasons: ["typescript_fallback_used"],
+        ...(enforcementDemotions.length > 0
+          ? { enforcement_demotions: enforcementDemotions }
+          : {})
       },
       review_items: [],
       waived_findings: [],
@@ -707,7 +714,10 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       skipped_deleted_files: parsedDiff.deletedFiles,
       engine_source: checkData.engineSource,
       affected_scope: affectedScopeSummary(parsedDiff, scope),
-      outcome
+      outcome,
+      ...(enforcementDemotions.length > 0
+        ? { enforcement_demotions: enforcementDemotions }
+        : {})
     },
     review_items: findings.map(reviewFinding),
     waived_findings: waivedFindings,
@@ -732,6 +742,60 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
 
 function fallbackStatusForCheck(checkData: ScanData): ScanData["fallbackStatus"] {
   return checkData.fallbackStatus;
+}
+
+/**
+ * E-6 (decision D-2): the standing demotion record for a contract's conventions.
+ *
+ * For every convention currently running weaker than block, the latest
+ * `enforcement_demoted` audit event (written when an accept or contract import moved it
+ * off block) is surfaced in the check summary. A convention promoted back to block stops
+ * being reported - the record follows the effective state, not the history.
+ */
+interface EnforcementDemotion {
+  convention_id: string;
+  from: string;
+  to: string;
+  at: string;
+  actor: string;
+  coverage_direction?: unknown;
+}
+
+function enforcementDemotionsForContract(
+  storage: SqliteDriftStorage,
+  repoId: string,
+  contract: RepoContract
+): EnforcementDemotion[] {
+  const weakConventionIds = new Set(
+    contract.conventions
+      .filter((convention) => convention.enforcement_mode !== "block")
+      .map((convention) => convention.id)
+  );
+  if (weakConventionIds.size === 0) {
+    return [];
+  }
+  const latestByConvention = new Map<string, EnforcementDemotion>();
+  for (const event of storage.listAuditEvents(repoId)) {
+    if (event.action !== "enforcement_demoted" || !weakConventionIds.has(event.target_id)) {
+      continue;
+    }
+    const metadata = event.metadata as {
+      from?: unknown;
+      to?: unknown;
+      coverage_direction?: unknown;
+    };
+    latestByConvention.set(event.target_id, {
+      convention_id: event.target_id,
+      from: typeof metadata.from === "string" ? metadata.from : "block",
+      to: typeof metadata.to === "string" ? metadata.to : "warn",
+      at: event.created_at,
+      actor: event.actor,
+      ...(metadata.coverage_direction !== undefined
+        ? { coverage_direction: metadata.coverage_direction }
+        : {})
+    });
+  }
+  return [...latestByConvention.values()];
 }
 
 function capabilityCompletenessForCheck(

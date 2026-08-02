@@ -126,6 +126,28 @@ export function acceptConventionCandidate(
       metadata: { candidate_id: candidate.id },
       createdAt: now
     }));
+    // E-6 (D-2): a block -> weaker transition is never silent. T100's recall improvement
+    // demoted taxonomy block -> warn with nothing in any output saying so; this event is
+    // what the check JSON surfaces for as long as the weaker mode is in effect.
+    if (existingAccepted?.enforcement_mode === "block" && mode !== "block") {
+      storage.appendAuditEvent(auditEvent({
+        id: `audit_event_enforcement_demoted_${convention.id}_${now}`,
+        repoId: candidate.repo_id,
+        actor,
+        action: "enforcement_demoted",
+        targetType: "convention",
+        targetId: convention.id,
+        metadata: {
+          candidate_id: candidate.id,
+          from: existingAccepted.enforcement_mode,
+          to: mode,
+          ...(candidate.scoring.coverage_direction
+            ? { coverage_direction: candidate.scoring.coverage_direction }
+            : {})
+        },
+        createdAt: now
+      }));
+    }
     return materializedContract;
   });
 
@@ -405,6 +427,11 @@ export function declaredDataModulesCandidate(input: {
   now: string;
   declaredModules: string[];
   facts: FactRecord[];
+  /**
+   * E-6 (D-2): repo-relative paths changed in the working tree relative to HEAD,
+   * excluded from the coverage direction exactly as the engine excludes them.
+   */
+  diffChangedFiles?: string[];
 }): ConventionCandidate | undefined {
   const declared = [...new Set(input.declaredModules.map((value) => value.trim()).filter(Boolean))];
   if (declared.length === 0) {
@@ -447,6 +474,23 @@ export function declaredDataModulesCandidate(input: {
   };
   const violatingFiles = new Set(dataImports.map((fact) => fact.file_path)).size;
   const coverageRatio = apiRouteFiles.size === 0 ? 0 : violatingFiles / apiRouteFiles.size;
+  // E-6 (D-2): direction from the baseline scan only - files the working tree changed
+  // relative to HEAD are excluded from both counts, mirroring the engine's
+  // baseline_coverage_direction, so a dirty tree's own new violations cannot argue the
+  // declared convention down to warn.
+  const changedFiles = new Set(input.diffChangedFiles ?? []);
+  const baselineScopeFiles = [...apiRouteFiles].filter((filePath) => !changedFiles.has(filePath)).length;
+  const baselineViolatingFiles = [...new Set(dataImports.map((fact) => fact.file_path))]
+    .filter((filePath) => !changedFiles.has(filePath)).length;
+  const baselineViolationRatio =
+    baselineScopeFiles === 0 ? 0 : Math.min(baselineViolatingFiles / baselineScopeFiles, 1);
+  const coverageDirection = {
+    violating_files: baselineViolatingFiles,
+    scope_files: baselineScopeFiles,
+    violation_ratio: baselineViolationRatio,
+    threshold: 0.5,
+    demoted: baselineScopeFiles > 0 && baselineViolationRatio > 0.5
+  };
   return {
     id: `candidate_${hashStable(`${input.repoId}:declared_data_modules:${declared.join(",")}`).slice(0, 16)}`,
     repo_id: input.repoId,
@@ -460,8 +504,9 @@ export function declaredDataModulesCandidate(input: {
     suggested_severity: "error",
     // Same coverage-direction rule as inferred candidates (A5): if most routes already
     // import the data layer directly, that is the local norm and blocking new ones would
-    // reject code written like its neighbours.
-    suggested_enforcement_mode: coverageRatio > 0.5 ? "warn" : "block",
+    // reject code written like its neighbours. E-6: measured on the baseline only.
+    suggested_enforcement_mode:
+      baselineScopeFiles === 0 || baselineViolationRatio > 0.5 ? "warn" : "block",
     enforcement_capability: "deterministic_check",
     confidence_label: "high",
     scoring: {
@@ -469,7 +514,8 @@ export function declaredDataModulesCandidate(input: {
       counterexamples_count: 0,
       scope_files_count: apiRouteFiles.size,
       coverage_ratio: coverageRatio,
-      heuristic_id: "declared-data-modules-v1"
+      heuristic_id: "declared-data-modules-v1",
+      coverage_direction: coverageDirection
     },
     evidence_refs: evidence,
     counterexample_refs: [],

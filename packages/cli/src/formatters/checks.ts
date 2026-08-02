@@ -22,6 +22,14 @@ export function formatCheckText(payload: {
       warning_reasons: Array<{ reason: string; count: number }>;
       non_blocking_reasons: Array<{ reason: string; count: number }>;
     };
+    // E-6 (D-2): conventions currently running weaker than block because something
+    // explicitly demoted them. Present only while the weaker mode is in effect.
+    enforcement_demotions?: Array<{
+      convention_id: string;
+      from: string;
+      to: string;
+      at: string;
+    }>;
   };
   findings: Finding[];
   security_boundary_proofs?: SecurityBoundaryProof[];
@@ -49,6 +57,10 @@ export function formatCheckText(payload: {
     ...reasonLines("Block reasons", payload.summary.outcome?.blocking_reasons ?? []),
     ...reasonLines("Warn reasons", payload.summary.outcome?.warning_reasons ?? []),
     ...reasonLines("Non-blocking reasons", payload.summary.outcome?.non_blocking_reasons ?? []),
+    ...(payload.summary.enforcement_demotions ?? []).map(
+      (demotion) =>
+        `Enforcement demoted: ${demotion.convention_id} ${demotion.from} -> ${demotion.to} at ${demotion.at}`
+    ),
     `Skipped deleted files: ${payload.summary.skipped_deleted_files.length}`,
     "",
     "Findings:",

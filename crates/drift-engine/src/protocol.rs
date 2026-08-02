@@ -350,6 +350,14 @@ pub struct CandidateRequest {
     #[serde(default)]
     pub graph: CheckGraphData,
     pub scan: CheckScanData,
+    /// E-6 (decision D-2): repo-relative paths of files changed in the working tree
+    /// relative to the git baseline (HEAD) - staged, unstaged, and untracked. Coverage
+    /// direction is computed from the baseline only, so newly-detected violations in an
+    /// analyzed diff can never argue a convention down from block to warn (the T100
+    /// pathology). Absent or empty means "everything is baseline", which preserves the
+    /// old behaviour for non-git callers.
+    #[serde(default)]
+    pub diff_changed_files: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]

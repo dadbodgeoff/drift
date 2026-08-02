@@ -42,12 +42,17 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
         .filter(|fact| is_candidate_scope_file(&fact.file_path))
         .map(|fact| fact.file_path.as_str())
         .collect::<BTreeSet<_>>();
-    let scope_file_count = api_route_files
+    let scope_files = api_route_files
         .iter()
         .copied()
         .chain(graph_api_route_files.iter().map(String::as_str))
-        .collect::<BTreeSet<_>>()
-        .len();
+        .collect::<BTreeSet<_>>();
+    let scope_file_count = scope_files.len();
+    let diff_changed_files = request
+        .diff_changed_files
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
     let imports = request
         .scan
         .facts
@@ -116,6 +121,25 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
         );
         let counterexample_refs = Vec::new();
         let evidence_fingerprint = evidence_fingerprint(&evidence_refs);
+        let violating_files = data_imports
+            .iter()
+            .map(|fact| fact.file_path.as_str())
+            .chain(
+                graph_data_imports
+                    .iter()
+                    .map(|import| import.file_path.as_str()),
+            )
+            .collect::<BTreeSet<_>>();
+        let direction =
+            baseline_coverage_direction(&violating_files, &scope_files, &diff_changed_files);
+        let mut data_access_scoring = scoring(
+            data_imports.len() + graph_data_imports.len(),
+            0,
+            scope_file_count,
+            unique_evidence_file_count(&data_imports, &graph_data_imports),
+            "engine-direct-data-access-v1",
+        );
+        data_access_scoring["coverage_direction"] = direction.to_json();
         candidates.push(EngineCandidate {
             candidate_id: candidate_id(
                 &request.repo.repo_id,
@@ -137,20 +161,12 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             matcher,
             requires: None,
             suggested_severity: "error".to_string(),
-            suggested_enforcement_mode: suggested_mode_for_coverage(
-                unique_evidence_file_count(&data_imports, &graph_data_imports),
-                scope_file_count,
-            )
-            .to_string(),
+            // E-6 (D-2): direction comes from the baseline scan, never from files the
+            // analyzed diff introduced - see baseline_coverage_direction.
+            suggested_enforcement_mode: direction.mode.to_string(),
             enforcement_capability: "deterministic_check".to_string(),
             confidence_label: "high".to_string(),
-            scoring: scoring(
-                data_imports.len() + graph_data_imports.len(),
-                0,
-                scope_file_count,
-                unique_evidence_file_count(&data_imports, &graph_data_imports),
-                "engine-direct-data-access-v1",
-            ),
+            scoring: data_access_scoring,
             required_capabilities: vec![
                 "syntax_facts".to_string(),
                 "import_resolution".to_string(),
@@ -1490,6 +1506,67 @@ pub fn suggested_mode_for_coverage(violating_files: usize, scope_files: usize) -
         "warn"
     } else {
         "block"
+    }
+}
+
+/// The coverage-direction decision, computed from the baseline scan only (E-6 / D-2).
+///
+/// `demoted` is the explicit marker for a *legitimate* baseline-driven demotion: the
+/// repo's own committed files violate in the majority, so the statement is an aspiration
+/// and only warns. It is machine-readable in `scoring.coverage_direction` precisely so a
+/// block -> warn direction can never move silently - T100's recall improvement demoted
+/// taxonomy with nothing in any output saying so.
+pub struct CoverageDirection {
+    pub violating_files: usize,
+    pub scope_files: usize,
+    pub violation_ratio: f64,
+    pub demoted: bool,
+    pub mode: &'static str,
+}
+
+impl CoverageDirection {
+    pub fn to_json(&self) -> Value {
+        json!({
+            "violating_files": self.violating_files,
+            "scope_files": self.scope_files,
+            "violation_ratio": self.violation_ratio,
+            "threshold": CONVENTION_MAJORITY_VIOLATION_THRESHOLD,
+            "demoted": self.demoted
+        })
+    }
+}
+
+/// Compute enforcement direction from the files that were already part of the repo.
+///
+/// Files named in `diff_changed_files` (changed relative to the git baseline) are
+/// excluded from both the numerator and the denominator: a diff that adds newly-detected
+/// violations must not be able to push the violating ratio past the threshold and demote
+/// the convention (the T100 pathology, pre-registered as decision D-2). An empty
+/// exclusion set reproduces the old computation exactly.
+pub fn baseline_coverage_direction(
+    violating_files: &BTreeSet<&str>,
+    scope_files: &BTreeSet<&str>,
+    diff_changed_files: &BTreeSet<&str>,
+) -> CoverageDirection {
+    let baseline_scope = scope_files
+        .iter()
+        .filter(|file_path| !diff_changed_files.contains(*file_path))
+        .count();
+    let baseline_violating = violating_files
+        .iter()
+        .filter(|file_path| !diff_changed_files.contains(*file_path))
+        .count();
+    let violation_ratio = if baseline_scope == 0 {
+        0.0
+    } else {
+        (baseline_violating as f64 / baseline_scope as f64).min(1.0)
+    };
+    CoverageDirection {
+        violating_files: baseline_violating,
+        scope_files: baseline_scope,
+        violation_ratio,
+        demoted: baseline_scope > 0 && violation_ratio > CONVENTION_MAJORITY_VIOLATION_THRESHOLD,
+        mode: suggested_mode_for_coverage(baseline_violating, baseline_scope),
     }
 }
 
