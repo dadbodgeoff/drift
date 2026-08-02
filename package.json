@@ -21,11 +21,13 @@
     "validate:claims": "node scripts/validate-product-claims.mjs",
     "beta:proof": "node scripts/run-beta-proof.mjs",
     "release:proof": "node scripts/generate-release-proof.mjs",
-    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && git diff --check",
+    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && git diff --check",
     "eval:external": "node scripts/external-eval.mjs",
     "eval:external:update": "node scripts/external-eval.mjs --update",
+    "eval:evasion": "node scripts/evasion-matrix.mjs",
+    "eval:evasion:update": "node scripts/evasion-matrix.mjs --update",
     "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run scripts/external-eval.test.mjs",
+    "test:harness": "vitest run scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs",
     "eval:prepare": "node scripts/prepare-quality-eval.mjs"
   },
   "devDependencies": {

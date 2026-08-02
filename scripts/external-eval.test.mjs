@@ -242,7 +242,8 @@ describe("baseline shape", () => {
   });
 
   it("includes a repo whose data layer defeats the substring whitelist", () => {
-    const source = readFileSync(new URL("./external-eval.mjs", import.meta.url), "utf8");
+    // O-3 moved the repo table to eval-repos.mjs (shared with the evasion matrix).
+    const source = readFileSync(new URL("./eval-repos.mjs", import.meta.url), "utf8");
     expect(source).toContain("whitelistIndependent: true");
     const baseline = JSON.parse(
       readFileSync(new URL("./external-eval-baseline.json", import.meta.url), "utf8")
