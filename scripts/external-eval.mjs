@@ -137,7 +137,13 @@ const REPOS = [
     cleanSymbol: "edgeRouter",
     expectForbidden: ["@openstatus/db"],
     expectForbiddenExact: ["@openstatus/db", "@openstatus/db/src/db", "@openstatus/db/src/schema"],
-    expectedExitCode: 2
+    // E-3 transitional: was 2. Deep workspace globs (packages/**/*) made @openstatus/db
+    // imports resolve to packages/db/src/index.ts, whose exports are all `export *`
+    // re-exports - the injected route's `db` import now trips the conservative
+    // member-level symbol gate (unresolved_import_symbol), so S1-01 refuses (3) where
+    // specifier string-matching used to block (2). Same S1-05 residual class as
+    // formbricks under E-2; flips back to 2 when E-5 lands.
+    expectedExitCode: 3
   }
 ];
 

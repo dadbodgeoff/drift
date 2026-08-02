@@ -1,0 +1,5 @@
+{
+  "name": "resolve-workspace-deep-glob-fixture",
+  "private": true,
+  "workspaces": ["packages/**/*", "tools/docker", "packages/*/mid-*"]
+}

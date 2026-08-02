@@ -154,13 +154,13 @@ fn scan_repo(
     let started = Instant::now();
     let discovery = collect_indexable_files(repo_root)?;
     let mut files = discovery.files;
+    let mut diagnostics = discovery.diagnostics;
     files.sort();
-    let mut resolver = build_resolver_context(repo_root, &files);
+    let mut resolver = build_resolver_context(repo_root, &files, &mut diagnostics);
     let reuse_index = load_reuse_index(reuse_manifest_path)?;
 
     let mut scanned_files = Vec::new();
     let mut facts = Vec::new();
-    let mut diagnostics = discovery.diagnostics;
     let mut graph_node_count = 0_usize;
     let mut graph_edge_count = 0_usize;
     let scanned = scan_files(repo_root, &files, &mut diagnostics, reuse_index.as_ref())?;
@@ -230,7 +230,10 @@ fn stream_scan_repo(
     let discovery = collect_indexable_files(repo_root)?;
     let mut files = discovery.files;
     files.sort();
-    let mut resolver = build_resolver_context(repo_root, &files);
+    // Resolver-configuration diagnostics (e.g. unsupported_workspace_glob) are streamed in
+    // their own batch and do not count as skipped files.
+    let mut resolver_diagnostics = Vec::new();
+    let mut resolver = build_resolver_context(repo_root, &files, &mut resolver_diagnostics);
     let reuse_index = load_reuse_index(reuse_manifest_path)?;
 
     let mut files_parsed = 0_usize;
@@ -256,6 +259,16 @@ fn stream_scan_repo(
             &ScanStreamEvent::DiagnosticBatch {
                 schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
                 diagnostics: scan_diagnostics,
+            },
+        )?;
+    }
+    if !resolver_diagnostics.is_empty() {
+        diagnostics_emitted += resolver_diagnostics.len();
+        write_event(
+            &mut stdout,
+            &ScanStreamEvent::DiagnosticBatch {
+                schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
+                diagnostics: resolver_diagnostics,
             },
         )?;
     }
@@ -1671,14 +1684,18 @@ fn fact_id(fact: &EngineFact) -> String {
     )
 }
 
-fn build_resolver_context(repo_root: &Path, files: &[PathBuf]) -> ResolverContext {
+fn build_resolver_context(
+    repo_root: &Path,
+    files: &[PathBuf],
+    diagnostics: &mut Vec<EngineDiagnostic>,
+) -> ResolverContext {
     let (path_aliases, base_urls) = read_js_ts_config_resolution(repo_root);
     ResolverContext {
         snapshot_paths: files.iter().map(|file| normalize_path(file)).collect(),
         path_aliases,
         package_imports: read_package_imports(repo_root),
         base_urls,
-        packages: read_workspace_packages(repo_root),
+        packages: read_workspace_packages(repo_root, diagnostics),
         exported_symbols: BTreeMap::new(),
     }
 }
@@ -1960,37 +1977,33 @@ fn read_package_imports(repo_root: &Path) -> Vec<PathAlias> {
         .collect()
 }
 
-fn read_workspace_packages(repo_root: &Path) -> BTreeMap<String, WorkspacePackage> {
+fn read_workspace_packages(
+    repo_root: &Path,
+    diagnostics: &mut Vec<EngineDiagnostic>,
+) -> BTreeMap<String, WorkspacePackage> {
     let mut packages = BTreeMap::new();
-    let mut globs: Vec<String> = Vec::new();
+    let mut globs: Vec<(String, &'static str)> = Vec::new();
     if let Ok(contents) = fs::read_to_string(repo_root.join("package.json")) {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) {
-            globs.extend(
-                json.get("workspaces")
-                    .and_then(workspace_globs)
-                    .unwrap_or_default(),
-            );
+            for glob in json
+                .get("workspaces")
+                .and_then(workspace_globs)
+                .unwrap_or_default()
+            {
+                globs.push((glob, "package.json"));
+            }
         }
     }
     // S1-04 Gap 1 (E-2): pnpm monorepos declare workspaces in pnpm-workspace.yaml, often
     // with no package.json#workspaces at all (formbricks, dub). Union both sources.
     for glob in read_pnpm_workspace_globs(repo_root) {
-        push_unique(&mut globs, glob);
+        if !globs.iter().any(|(existing, _)| existing == &glob) {
+            globs.push((glob, "pnpm-workspace.yaml"));
+        }
     }
 
-    for glob in globs {
-        let Some(prefix) = glob.strip_suffix("/*") else {
-            continue;
-        };
-        let workspace_root = repo_root.join(prefix);
-        let Ok(entries) = fs::read_dir(&workspace_root) else {
-            continue;
-        };
-        for entry in entries.flatten() {
-            let package_dir = entry.path();
-            if !package_dir.is_dir() {
-                continue;
-            }
+    for (glob, declared_in) in globs {
+        for package_dir in workspace_package_dirs(repo_root, &glob, declared_in, diagnostics) {
             let Ok(package_json) = fs::read_to_string(package_dir.join("package.json")) else {
                 continue;
             };
@@ -2018,6 +2031,90 @@ fn read_workspace_packages(repo_root: &Path) -> BTreeMap<String, WorkspacePackag
         }
     }
     packages
+}
+
+/// Candidate package directories for one workspace glob. S1-04 Gap 2 (E-3): previously only
+/// `<prefix>/*` was honoured and everything else was silently dropped — openstatus's
+/// `packages/**/*` and cal.com's literal `packages/app-store` never produced a package. A
+/// shape this function cannot interpret now emits `unsupported_workspace_glob` rather than
+/// vanishing: a silently-ignored workspace glob is how Gap 2 stayed invisible.
+fn workspace_package_dirs(
+    repo_root: &Path,
+    glob: &str,
+    declared_in: &str,
+    diagnostics: &mut Vec<EngineDiagnostic>,
+) -> Vec<PathBuf> {
+    let has_glob_chars = |value: &str| value.contains(['*', '?', '[', ']', '{', '}', '!']);
+    let unsupported = |diagnostics: &mut Vec<EngineDiagnostic>, detail: &str| {
+        diagnostics.push(EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "unsupported_workspace_glob".to_string(),
+            message: format!(
+                "Workspace glob {glob} in {declared_in} is not supported by the resolver ({detail}); packages it names will not resolve."
+            ),
+            file_path: Some(declared_in.to_string()),
+        });
+    };
+
+    if let Some(pattern) = glob.strip_prefix('!') {
+        // Exclusions only ever remove packages; not applying one can over-include, never
+        // silently drop, but it must still be visible.
+        let _ = pattern;
+        unsupported(diagnostics, "exclusion patterns are not applied");
+        return Vec::new();
+    }
+    if let Some(prefix) = glob
+        .strip_suffix("/**/*")
+        .or_else(|| glob.strip_suffix("/**"))
+    {
+        if !has_glob_chars(prefix) {
+            let mut dirs = Vec::new();
+            collect_descendant_dirs(&repo_root.join(prefix), 0, &mut dirs);
+            return dirs;
+        }
+    } else if let Some(prefix) = glob.strip_suffix("/*") {
+        if !has_glob_chars(prefix) {
+            let Ok(entries) = fs::read_dir(repo_root.join(prefix)) else {
+                return Vec::new();
+            };
+            return entries
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.is_dir())
+                .collect();
+        }
+    } else if !has_glob_chars(glob) {
+        // A literal entry (`packages/app-store`, `docker`, `apps/web/.react-email`).
+        let dir = repo_root.join(glob);
+        return if dir.is_dir() { vec![dir] } else { Vec::new() };
+    }
+    unsupported(diagnostics, "glob shape not recognised");
+    Vec::new()
+}
+
+/// Every descendant directory (depth >= 1) under `root`, skipping `node_modules` and
+/// dot-directories. Bounded so a pathological tree cannot stall the scan.
+fn collect_descendant_dirs(root: &Path, depth: usize, dirs: &mut Vec<PathBuf>) {
+    const MAX_WORKSPACE_GLOB_DEPTH: usize = 8;
+    if depth >= MAX_WORKSPACE_GLOB_DEPTH {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name == "node_modules" || name.starts_with('.') {
+            continue;
+        }
+        dirs.push(path.clone());
+        collect_descendant_dirs(&path, depth + 1, dirs);
+    }
 }
 
 fn read_pnpm_workspace_globs(repo_root: &Path) -> Vec<String> {
