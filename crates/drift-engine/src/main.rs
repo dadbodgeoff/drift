@@ -1042,9 +1042,8 @@ fn graph_for_file(
                     fact.end_line,
                 );
                 let resolved = resolve_import(&fact.file_path, source, resolver);
-                let should_report_unresolved =
-                    resolved.is_none()
-                        && should_report_unresolved_import(&fact.file_path, source, resolver);
+                let should_report_unresolved = resolved.is_none()
+                    && should_report_unresolved_import(&fact.file_path, source, resolver);
                 let resolution_status = if resolved.is_some() {
                     "resolved"
                 } else if should_report_unresolved {
@@ -1108,8 +1107,7 @@ fn graph_for_file(
                         fact.runtime_use.as_deref() == Some(drift_engine::RUNTIME_USE_DYNAMIC);
                     let runtime_use_proven = fact.runtime_use.is_some();
                     if let Some(declaring_file) = &symbol_resolution.declaring_file {
-                        let resolved_symbol =
-                            symbol_id(declaring_file, "function", imported_name);
+                        let resolved_symbol = symbol_id(declaring_file, "function", imported_name);
                         insert_edge(
                             &mut edges,
                             "IMPORT_RESOLVES_TO_SYMBOL",
@@ -1924,11 +1922,7 @@ fn import_bases(from_file: &str, source: &str, resolver: &ResolverContext) -> Ve
             scope_contains(&alias.scope, from_file) && alias_matches(&alias.pattern, source)
         })
         .collect();
-    if let Some(deepest) = matching_aliases
-        .iter()
-        .map(|alias| alias.scope.len())
-        .max()
-    {
+    if let Some(deepest) = matching_aliases.iter().map(|alias| alias.scope.len()).max() {
         matching_aliases.retain(|alias| alias.scope.len() == deepest);
         for alias in matching_aliases {
             let captured = alias_capture(&alias.pattern, source);
@@ -2047,11 +2041,8 @@ fn read_js_ts_config_resolution(
             if !repo_root.join(&config_path).is_file() {
                 continue;
             }
-            let config = read_js_ts_config_file(
-                repo_root,
-                &config_path,
-                &mut BTreeSet::<String>::new(),
-            );
+            let config =
+                read_js_ts_config_file(repo_root, &config_path, &mut BTreeSet::<String>::new());
             let Some(config) = config else {
                 continue;
             };
@@ -2356,16 +2347,18 @@ fn parse_pnpm_workspace_packages(contents: &str) -> Vec<String> {
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        let is_top_level_key =
-            !raw_line.starts_with([' ', '\t']) && !trimmed.starts_with('-') && trimmed.contains(':');
+        let is_top_level_key = !raw_line.starts_with([' ', '\t'])
+            && !trimmed.starts_with('-')
+            && trimmed.contains(':');
         if is_top_level_key {
             in_packages = false;
             if let Some(rest) = trimmed.strip_prefix("packages:") {
                 let rest = rest.trim();
                 if rest.is_empty() {
                     in_packages = true;
-                } else if let Some(list) =
-                    rest.strip_prefix('[').and_then(|list| list.strip_suffix(']'))
+                } else if let Some(list) = rest
+                    .strip_prefix('[')
+                    .and_then(|list| list.strip_suffix(']'))
                 {
                     for item in list.split(',') {
                         if let Some(glob) = yaml_scalar(item) {
