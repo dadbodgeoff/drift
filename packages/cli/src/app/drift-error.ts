@@ -25,6 +25,7 @@ export type DriftFailureCode =
   | "disk_io_error"
   | "corrupt_database"
   | "permission_denied"
+  | "shallow_clone"
   | "cli_error";
 
 export interface DriftErrorOptions {
@@ -35,6 +36,12 @@ export interface DriftErrorOptions {
   recoveryCommands?: string[];
   /** Whether the same invocation could succeed unchanged. */
   safeToRetry?: boolean;
+  /**
+   * Process exit code. Defaults to 1 (an error). A fail-closed refusal - Drift declining to
+   * claim anything rather than reporting something wrong - exits 3, matching CHECK_EXIT_REFUSED,
+   * so CI and agents can tell "this is broken" from "this refused to guess".
+   */
+  exitCode?: number;
 }
 
 export class DriftError extends Error {
@@ -42,6 +49,7 @@ export class DriftError extends Error {
   readonly userAction: string;
   readonly recoveryCommands: string[];
   readonly safeToRetry: boolean;
+  readonly exitCode: number;
 
   constructor(message: string, options: DriftErrorOptions) {
     super(message);
@@ -50,6 +58,7 @@ export class DriftError extends Error {
     this.userAction = options.userAction;
     this.recoveryCommands = options.recoveryCommands ?? [];
     this.safeToRetry = options.safeToRetry ?? true;
+    this.exitCode = options.exitCode ?? 1;
   }
 }
 
