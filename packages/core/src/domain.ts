@@ -1124,7 +1124,16 @@ export type FindingDiffStatus =
   | "touched_existing"
   | "outside_diff";
 
-export type CheckRunStatus = "pass" | "fail" | "blocked";
+/**
+ * What the check actually did (E-1 / S1-02):
+ *   pass     - coverage adequate, nothing blocked
+ *   fail     - at least one blocking finding
+ *   refused  - the check declined to make an enforcement claim (exit 3): enforcement was
+ *              degraded by incomplete coverage, or only the TypeScript fallback ran
+ *   blocked  - legacy value written by pre-E-1 fallback refusals; kept so stored rows
+ *              remain readable, never written by current code
+ */
+export type CheckRunStatus = "pass" | "fail" | "refused" | "blocked";
 
 export interface CheckRun {
   id: string;

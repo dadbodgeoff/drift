@@ -823,5 +823,51 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_parser_gaps_repo_capability
         ON parser_gaps(repo_id, scan_id);
     `
+  },
+  {
+    // E-1 (S1-02 / D-3): a check that refuses to make an enforcement claim (exit 3) must
+    // be able to record status 'refused'. Migration 011's CHECK constraint allowed only
+    // pass/fail/blocked, and SQLite cannot alter a CHECK, so the table is rebuilt in
+    // place. 'blocked' stays allowed so rows written by pre-E-1 fallback refusals remain
+    // valid; current code never writes it.
+    id: "028_check_runs_refused_status",
+    sql: `
+      ALTER TABLE check_runs RENAME TO check_runs_pre_refused;
+
+      CREATE TABLE check_runs (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT NOT NULL,
+        repo_contract_id TEXT NOT NULL,
+        contract_fingerprint TEXT NOT NULL,
+        scan_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pass', 'fail', 'refused', 'blocked')),
+        scope TEXT NOT NULL CHECK (scope IN ('changed-hunks', 'changed-files', 'full')),
+        engine_source TEXT NOT NULL CHECK (engine_source IN ('rust', 'typescript')),
+        fallback_used INTEGER NOT NULL CHECK (fallback_used IN (0, 1)),
+        stale_scan INTEGER NOT NULL CHECK (stale_scan IN (0, 1)),
+        capability_complete INTEGER NOT NULL CHECK (capability_complete IN (0, 1)),
+        findings_count INTEGER NOT NULL,
+        blocking_count INTEGER NOT NULL,
+        started_at TEXT NOT NULL,
+        completed_at TEXT NOT NULL,
+        machine_contract_versions_json TEXT
+      );
+
+      INSERT INTO check_runs (
+        id, repo_id, repo_contract_id, contract_fingerprint, scan_id, status, scope,
+        engine_source, fallback_used, stale_scan, capability_complete, findings_count,
+        blocking_count, started_at, completed_at, machine_contract_versions_json
+      )
+      SELECT
+        id, repo_id, repo_contract_id, contract_fingerprint, scan_id, status, scope,
+        engine_source, fallback_used, stale_scan, capability_complete, findings_count,
+        blocking_count, started_at, completed_at, machine_contract_versions_json
+      FROM check_runs_pre_refused;
+
+      DROP TABLE check_runs_pre_refused;
+
+      CREATE INDEX IF NOT EXISTS idx_check_runs_repo_completed
+        ON check_runs(repo_id, completed_at);
+    `
   }
 ];

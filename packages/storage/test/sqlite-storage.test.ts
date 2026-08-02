@@ -110,7 +110,8 @@ describe("SQLite Drift storage", () => {
       "024_phase7_candidate_election_metadata",
       "025_security_boundary_proof_runs",
       "026_framework_entrypoints",
-      "027_parser_gap_v2_metadata"
+      "027_parser_gap_v2_metadata",
+      "028_check_runs_refused_status"
     ]);
     storage.close();
   });
@@ -183,7 +184,8 @@ describe("SQLite Drift storage", () => {
       "024_phase7_candidate_election_metadata",
       "025_security_boundary_proof_runs",
       "026_framework_entrypoints",
-      "027_parser_gap_v2_metadata"
+      "027_parser_gap_v2_metadata",
+      "028_check_runs_refused_status"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();
@@ -2245,6 +2247,84 @@ describe("SQLite Drift storage", () => {
       requires: { forbidden_imports: ["@/lib/prisma"] }
     });
     expect(storage.getRepoContract("repo_abc")?.conventions[0]?.id).toBe("convention_no_direct_db");
+    storage.close();
+  });
+});
+
+describe("check_runs refused status (E-1 / S1-02 / D-3)", () => {
+  // `check_runs.status` is persisted with a SQL CHECK constraint (migration 011 allowed
+  // only pass/fail/blocked), and CheckRunSchema validates rows on write AND read. A check
+  // that refuses to enforce (exit 3) must be able to record what it actually did.
+  it("round-trips a refused check run through insert and read-back", async () => {
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_refused",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-08-02T00:00:00.000Z",
+      updated_at: "2026-08-02T00:00:00.000Z"
+    });
+    storage.upsertCheckRun({
+      id: "check_refused",
+      repo_id: "repo_refused",
+      repo_contract_id: "contract_abc",
+      contract_fingerprint: "contract-fp",
+      scan_id: "scan_abc",
+      status: "refused",
+      scope: "changed-hunks",
+      engine_source: "rust",
+      fallback_used: false,
+      stale_scan: false,
+      capability_complete: false,
+      findings_count: 1,
+      blocking_count: 0,
+      started_at: "2026-08-02T00:00:01.000Z",
+      completed_at: "2026-08-02T00:00:02.000Z"
+    });
+
+    expect(storage.listCheckRuns("repo_refused")[0]).toMatchObject({
+      id: "check_refused",
+      status: "refused",
+      capability_complete: false,
+      blocking_count: 0
+    });
+    storage.close();
+  });
+
+  it("still reads legacy blocked rows", async () => {
+    // Databases written before E-1 contain 'blocked' rows (the TypeScript-fallback
+    // refusal path); the enum keeps the value so old rows stay readable.
+    const storage = openDriftStorage({ databasePath: await tempDatabasePath() });
+    storage.migrate();
+
+    storage.upsertRepo({
+      id: "repo_legacy",
+      root_path: "/repo",
+      fingerprint: "repo-fp",
+      created_at: "2026-08-02T00:00:00.000Z",
+      updated_at: "2026-08-02T00:00:00.000Z"
+    });
+    storage.upsertCheckRun({
+      id: "check_legacy",
+      repo_id: "repo_legacy",
+      repo_contract_id: "contract_abc",
+      contract_fingerprint: "contract-fp",
+      scan_id: "scan_abc",
+      status: "blocked",
+      scope: "changed-hunks",
+      engine_source: "typescript",
+      fallback_used: true,
+      stale_scan: false,
+      capability_complete: false,
+      findings_count: 0,
+      blocking_count: 0,
+      started_at: "2026-08-02T00:00:01.000Z",
+      completed_at: "2026-08-02T00:00:02.000Z"
+    });
+
+    expect(storage.listCheckRuns("repo_legacy")[0]).toMatchObject({ status: "blocked" });
     storage.close();
   });
 });
