@@ -27,11 +27,17 @@ afterEach(async () => {
   await Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
-/** A namespace import of a real workspace package, used at runtime. No violation in it. */
+/**
+ * A namespace import of a real workspace package whose binding is never used. No violation
+ * in it. E-5 (S1-05) made VALUE-USED namespace imports runtime-provable - they no longer
+ * degrade coverage - so the degradation scenario this file pins now needs a binding with no
+ * usage evidence at all, which stays conservative by design (the unused-binding pin lives in
+ * crates/drift-engine/tests/runtime_provable_imports.rs).
+ */
 const ADJACENT = `import * as util from "@acme/util";
 
 export async function GET() {
-  return Response.json({ value: util.helper(1) });
+  return Response.json({ value: 1 });
 }
 `;
 
