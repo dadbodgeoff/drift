@@ -20,7 +20,7 @@ import { actorFlag,stringFlag } from "../args/flag-readers.js";
 import { resolveRepoId } from "../args/repo-flags.js";
 import { isClosedFindingStatus,preservedGovernanceStatus,reviewFinding } from "../domain/findings.js";
 import { auditEvent,preflightGovernance } from "../domain/governance.js";
-import { contractFingerprint,hashStable } from "../domain/identifiers.js";
+import { checkRunIdsFor,contractFingerprint,hashStable } from "../domain/identifiers.js";
 import { WaivedFinding } from "../domain/preflight.js";
 import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { parserGapsFromDiagnostics } from "../domain/scan-status.js";
@@ -161,8 +161,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   }
 
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
-  const checkId = `check_${hashStable(`${repoId}:${scope}:${now}`).slice(0, 16)}`;
-  const checkScanId = `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`;
+  const { checkId, checkScanId } = checkRunIdsFor(repoId, scope, now);
   const contractFingerprintValue = contractFingerprint(contract);
   const machineContractVersions = currentMachineContractVersions();
   const rawDiff = scope === "full" ? null : loadDiff(repo.root_path, parsed);
