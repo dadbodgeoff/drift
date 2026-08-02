@@ -49,7 +49,10 @@ fn scan_graph(name: &str) -> ScanGraph {
         edges: Vec::new(),
         diagnostics: Vec::new(),
     };
-    for line in String::from_utf8(output.stdout).expect("utf8 stdout").lines() {
+    for line in String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+    {
         let event = serde_json::from_str::<Value>(line).expect("json line");
         match event["event"].as_str() {
             Some("graph_node_batch") => graph
@@ -58,9 +61,9 @@ fn scan_graph(name: &str) -> ScanGraph {
             Some("graph_edge_batch") => graph
                 .edges
                 .extend(event["graph_edges"].as_array().cloned().unwrap_or_default()),
-            Some("diagnostic_batch") => graph.diagnostics.extend(
-                event["diagnostics"].as_array().cloned().unwrap_or_default(),
-            ),
+            Some("diagnostic_batch") => graph
+                .diagnostics
+                .extend(event["diagnostics"].as_array().cloned().unwrap_or_default()),
             _ => {}
         }
     }
@@ -71,9 +74,7 @@ impl ScanGraph {
     fn diagnostics_on(&self, file_path: &str, code: &str) -> Vec<&Value> {
         self.diagnostics
             .iter()
-            .filter(|diagnostic| {
-                diagnostic["code"] == code && diagnostic["file_path"] == file_path
-            })
+            .filter(|diagnostic| diagnostic["code"] == code && diagnostic["file_path"] == file_path)
             .collect()
     }
 
@@ -124,17 +125,23 @@ fn named_import_resolves_through_export_star_chain() {
     let route = "app/api/chain/route.ts";
 
     assert_eq!(
-        graph.resolved_module_for(route, "@acme/database").as_deref(),
+        graph
+            .resolved_module_for(route, "@acme/database")
+            .as_deref(),
         Some("packages/database/src/index.ts"),
         "module-level resolution is a precondition (E-2 behaviour)"
     );
     assert_eq!(
-        graph.resolved_symbol_for(route, "@acme/database").as_deref(),
+        graph
+            .resolved_symbol_for(route, "@acme/database")
+            .as_deref(),
         Some("symbol:packages/database/src/client.ts:function:prisma"),
         "prisma must resolve through the export * chain to its declaring file"
     );
     assert!(
-        graph.diagnostics_on(route, "unresolved_import_symbol").is_empty(),
+        graph
+            .diagnostics_on(route, "unresolved_import_symbol")
+            .is_empty(),
         "no unresolved_import_symbol may fire for a symbol reachable through the chain, got {:?}",
         graph.diagnostics_on(route, "unresolved_import_symbol")
     );
@@ -148,7 +155,9 @@ fn value_used_namespace_import_is_runtime_provable() {
     let route = "app/api/namespace/route.ts";
 
     assert_eq!(
-        graph.resolved_module_for(route, "@acme/database").as_deref(),
+        graph
+            .resolved_module_for(route, "@acme/database")
+            .as_deref(),
         Some("packages/database/src/index.ts"),
         "namespace import must still resolve at module level"
     );
@@ -171,12 +180,16 @@ fn dynamic_import_and_require_are_runtime_by_construction() {
 
     for route in ["app/api/dynamic/route.ts", "app/api/require/route.ts"] {
         assert_eq!(
-            graph.resolved_module_for(route, "@acme/database").as_deref(),
+            graph
+                .resolved_module_for(route, "@acme/database")
+                .as_deref(),
             Some("packages/database/src/index.ts"),
             "{route}: runtime import must resolve at module level"
         );
         assert!(
-            graph.diagnostics_on(route, "unresolved_import_symbol").is_empty(),
+            graph
+                .diagnostics_on(route, "unresolved_import_symbol")
+                .is_empty(),
             "{route}: a runtime-by-construction import must not carry a symbol \
              conservatism diagnostic, got {:?}",
             graph.diagnostics_on(route, "unresolved_import_symbol")
@@ -229,7 +242,9 @@ fn pure_type_usage_of_namespace_import_is_not_runtime_use() {
         "no namespace conservatism diagnostic for a type-erased namespace import"
     );
     assert!(
-        graph.diagnostics_on(route, "unresolved_import_symbol").is_empty(),
+        graph
+            .diagnostics_on(route, "unresolved_import_symbol")
+            .is_empty(),
         "no symbol diagnostic of any kind on the type-only route"
     );
 }

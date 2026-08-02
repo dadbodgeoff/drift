@@ -45,7 +45,10 @@ fn scan_graph(name: &str) -> ScanGraph {
         edges: Vec::new(),
         diagnostics: Vec::new(),
     };
-    for line in String::from_utf8(output.stdout).expect("utf8 stdout").lines() {
+    for line in String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+    {
         let event = serde_json::from_str::<Value>(line).expect("json line");
         match event["event"].as_str() {
             Some("graph_node_batch") => graph
@@ -54,9 +57,9 @@ fn scan_graph(name: &str) -> ScanGraph {
             Some("graph_edge_batch") => graph
                 .edges
                 .extend(event["graph_edges"].as_array().cloned().unwrap_or_default()),
-            Some("diagnostic_batch") => graph.diagnostics.extend(
-                event["diagnostics"].as_array().cloned().unwrap_or_default(),
-            ),
+            Some("diagnostic_batch") => graph
+                .diagnostics
+                .extend(event["diagnostics"].as_array().cloned().unwrap_or_default()),
             _ => {}
         }
     }
@@ -106,7 +109,9 @@ fn pnpm_workspace_yaml_package_import_resolves_to_module() {
     let route = "app/api/users/route.ts";
 
     assert_eq!(
-        graph.resolved_module_for(route, "@acme/database").as_deref(),
+        graph
+            .resolved_module_for(route, "@acme/database")
+            .as_deref(),
         Some("packages/database/src/index.ts"),
         "package entry import must resolve via pnpm-workspace.yaml packages"
     );
@@ -134,7 +139,9 @@ fn deep_glob_and_literal_workspace_entries_resolve() {
         "packages/**/* must reach a package two levels down (openstatus shape)"
     );
     assert_eq!(
-        graph.resolved_module_for(route, "@acme/dockerlib").as_deref(),
+        graph
+            .resolved_module_for(route, "@acme/dockerlib")
+            .as_deref(),
         Some("tools/docker/src/index.ts"),
         "a literal workspace entry must resolve (calcom/formbricks shape)"
     );
