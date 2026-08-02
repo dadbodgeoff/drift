@@ -2053,16 +2053,15 @@ fn read_js_ts_config_resolution(
             for (pattern, targets) in config.aliases {
                 aliases_by_scope_pattern.insert((scope.clone(), pattern), targets);
             }
-            if let Some(base_url) = config.base_url {
-                if !base_urls
+            if let Some(base_url) = config.base_url
+                && !base_urls
                     .iter()
                     .any(|entry| &entry.scope == scope && entry.base_url == base_url)
-                {
-                    base_urls.push(ScopedBaseUrl {
-                        scope: scope.clone(),
-                        base_url,
-                    });
-                }
+            {
+                base_urls.push(ScopedBaseUrl {
+                    scope: scope.clone(),
+                    base_url,
+                });
             }
         }
     }
@@ -2193,15 +2192,15 @@ fn read_workspace_packages(
 ) -> BTreeMap<String, WorkspacePackage> {
     let mut packages = BTreeMap::new();
     let mut globs: Vec<(String, &'static str)> = Vec::new();
-    if let Ok(contents) = fs::read_to_string(repo_root.join("package.json")) {
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) {
-            for glob in json
-                .get("workspaces")
-                .and_then(workspace_globs)
-                .unwrap_or_default()
-            {
-                globs.push((glob, "package.json"));
-            }
+    if let Ok(contents) = fs::read_to_string(repo_root.join("package.json"))
+        && let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents)
+    {
+        for glob in json
+            .get("workspaces")
+            .and_then(workspace_globs)
+            .unwrap_or_default()
+        {
+            globs.push((glob, "package.json"));
         }
     }
     // S1-04 Gap 1 (E-2): pnpm monorepos declare workspaces in pnpm-workspace.yaml, often
@@ -2369,12 +2368,11 @@ fn parse_pnpm_workspace_packages(contents: &str) -> Vec<String> {
             }
             continue;
         }
-        if in_packages {
-            if let Some(item) = trimmed.strip_prefix('-') {
-                if let Some(glob) = yaml_scalar(item) {
-                    push_unique(&mut globs, glob);
-                }
-            }
+        if in_packages
+            && let Some(item) = trimmed.strip_prefix('-')
+            && let Some(glob) = yaml_scalar(item)
+        {
+            push_unique(&mut globs, glob);
         }
     }
     globs
