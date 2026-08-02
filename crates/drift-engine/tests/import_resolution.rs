@@ -159,6 +159,82 @@ fn unparseable_workspace_glob_emits_a_diagnostic() {
     );
 }
 
+/// E-4 (S1-04 Gap 3): tsconfig/jsconfig were read at the repo root only. dub has NO root
+/// tsconfig at all — apps/web/tsconfig.json declares `@/lib/*`, which is why 0 of its 844
+/// `@/lib/prisma` imports resolved. Nested configs must be discovered, with `paths`/`baseUrl`
+/// resolved relative to the DECLARING config's directory.
+#[test]
+fn nested_tsconfig_paths_resolve_relative_to_declaring_config() {
+    let graph = scan_graph("resolve-nested-tsconfig");
+
+    assert_eq!(
+        graph
+            .resolved_module_for("apps/web/app/api/users/route.ts", "@/lib/db")
+            .as_deref(),
+        Some("apps/web/lib/db.ts"),
+        "@/lib/* declared in apps/web/tsconfig.json must resolve relative to apps/web"
+    );
+}
+
+/// E-4 precedence: two apps declaring the SAME `@/lib/*` pattern to different directories
+/// must each resolve to their own — a nested alias must not leak to sibling apps — and a
+/// file outside both apps must not resolve through either.
+#[test]
+fn nested_tsconfig_aliases_do_not_leak_across_scopes() {
+    let graph = scan_graph("resolve-nested-tsconfig");
+
+    assert_eq!(
+        graph
+            .resolved_module_for("apps/admin/app/api/users/route.ts", "@/lib/db")
+            .as_deref(),
+        Some("apps/admin/lib/db.ts"),
+        "apps/admin's identical @/lib/* pattern must resolve to apps/admin's own lib"
+    );
+    assert_eq!(
+        graph.resolved_module_for("src/consumer.ts", "@/lib/db"),
+        None,
+        "a file outside apps/web and apps/admin must not resolve through either's alias"
+    );
+}
+
+/// E-4 classification: apps/web declares a match-all `"*": ["./*"]` paths pattern (the
+/// openstatus shape). It must not reclassify bare package imports as unresolved — neither in
+/// a sibling app (scope) nor in apps/web itself (a match-all pattern is no localness
+/// evidence; tsc falls back to node_modules when the mapped path misses). A regression here
+/// puts `unresolved_import` on route files and turns every check into an S1-01 refusal.
+#[test]
+fn match_all_alias_does_not_reclassify_bare_imports_as_unresolved() {
+    let graph = scan_graph("resolve-nested-tsconfig");
+
+    let admin_route = "apps/admin/app/api/users/route.ts";
+    let next_import_status = graph
+        .nodes
+        .iter()
+        .find(|node| {
+            node["kind"] == "import_decl"
+                && node["metadata"]["file_path"] == admin_route
+                && node["metadata"]["source"] == "next/server"
+        })
+        .map(|node| node["metadata"]["resolution_status"].clone());
+    assert_eq!(
+        next_import_status,
+        Some(serde_json::json!("external")),
+        "next/server must stay external, not unresolved"
+    );
+    let unresolved_diag = graph.diagnostics.iter().any(|diagnostic| {
+        diagnostic["code"] == "unresolved_import"
+            && diagnostic["message"]
+                .as_str()
+                .unwrap_or("")
+                .contains("next/server")
+    });
+    assert!(
+        !unresolved_diag,
+        "no unresolved_import diagnostic may be emitted for next/server, got {:?}",
+        graph.diagnostics
+    );
+}
+
 /// Negative controls for E-2, same commit (risk register row 1): resolving more must not
 /// over-match. The sibling lookalike package resolves to its OWN module — never to the real
 /// data package — and a type-only import produces no import_decl at all (T12).

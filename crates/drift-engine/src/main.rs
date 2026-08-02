@@ -833,14 +833,24 @@ struct ResolverContext {
     snapshot_paths: BTreeSet<String>,
     path_aliases: Vec<PathAlias>,
     package_imports: Vec<PathAlias>,
-    base_urls: Vec<String>,
+    base_urls: Vec<ScopedBaseUrl>,
     packages: BTreeMap<String, WorkspacePackage>,
     exported_symbols: BTreeMap<String, BTreeSet<String>>,
 }
 
+/// A tsconfig/jsconfig `paths` alias, scoped to the directory of the config that declared
+/// it (`""` for the repo root). S1-04 Gap 3 (E-4): an alias applies only to files under its
+/// declaring config's directory — `apps/web`'s `@/lib/*` must not leak to `apps/admin`.
 struct PathAlias {
+    scope: String,
     pattern: String,
     targets: Vec<String>,
+}
+
+/// A tsconfig/jsconfig `baseUrl`, scoped like `PathAlias`.
+struct ScopedBaseUrl {
+    scope: String,
+    base_url: String,
 }
 
 struct WorkspacePackage {
@@ -1023,7 +1033,8 @@ fn graph_for_file(
                 );
                 let resolved = resolve_import(&fact.file_path, source, resolver);
                 let should_report_unresolved =
-                    resolved.is_none() && should_report_unresolved_import(source, resolver);
+                    resolved.is_none()
+                        && should_report_unresolved_import(&fact.file_path, source, resolver);
                 let resolution_status = if resolved.is_some() {
                     "resolved"
                 } else if should_report_unresolved {
@@ -1689,7 +1700,7 @@ fn build_resolver_context(
     files: &[PathBuf],
     diagnostics: &mut Vec<EngineDiagnostic>,
 ) -> ResolverContext {
-    let (path_aliases, base_urls) = read_js_ts_config_resolution(repo_root);
+    let (path_aliases, base_urls) = read_js_ts_config_resolution(repo_root, files);
     ResolverContext {
         snapshot_paths: files.iter().map(|file| normalize_path(file)).collect(),
         path_aliases,
@@ -1743,12 +1754,20 @@ fn resolve_import(from_file: &str, source: &str, resolver: &ResolverContext) -> 
         .find(|candidate| resolver.snapshot_paths.contains(candidate))
 }
 
-fn should_report_unresolved_import(source: &str, resolver: &ResolverContext) -> bool {
+fn should_report_unresolved_import(
+    from_file: &str,
+    source: &str,
+    resolver: &ResolverContext,
+) -> bool {
+    // E-4: classification is scope-aware — an alias declared in apps/web must not make an
+    // import in apps/dashboard look local (openstatus's apps/web declares a match-all `*`
+    // path; unscoped, it reclassified `next/server` repo-wide from external to unresolved).
     source.starts_with('.')
-        || resolver
-            .path_aliases
-            .iter()
-            .any(|alias| alias_matches(&alias.pattern, source))
+        || resolver.path_aliases.iter().any(|alias| {
+            scope_contains(&alias.scope, from_file)
+                && alias_pattern_signals_local(&alias.pattern)
+                && alias_matches(&alias.pattern, source)
+        })
         || resolver
             .packages
             .keys()
@@ -1757,7 +1776,15 @@ fn should_report_unresolved_import(source: &str, resolver: &ResolverContext) -> 
             .package_imports
             .iter()
             .any(|package_import| alias_matches(&package_import.pattern, source))
-        || base_url_import_may_be_local(source, resolver)
+        || base_url_import_may_be_local(from_file, source, resolver)
+}
+
+/// A match-all `*` paths pattern (`"*": ["./*"]`) matches every specifier, so a match is no
+/// evidence the import is local: tsc itself falls back to normal node_modules resolution
+/// when the mapped path misses. Such patterns still participate in resolution (a hit is a
+/// hit) — they just cannot flag a miss as `unresolved`.
+fn alias_pattern_signals_local(pattern: &str) -> bool {
+    pattern != "*"
 }
 
 fn import_bases(from_file: &str, source: &str, resolver: &ResolverContext) -> Vec<String> {
@@ -1770,13 +1797,29 @@ fn import_bases(from_file: &str, source: &str, resolver: &ResolverContext) -> Ve
     }
 
     let mut bases = Vec::new();
-    for alias in &resolver.path_aliases {
-        if !alias_matches(&alias.pattern, source) {
-            continue;
-        }
-        let captured = alias_capture(&alias.pattern, source);
-        for target in &alias.targets {
-            bases.push(target.replace('*', &captured).replace('\\', "/"));
+    // E-4 precedence, explicit: of the aliases whose scope governs the importing file AND
+    // whose pattern matches, only those from the DEEPEST such scope contribute — the config
+    // nearest the importing file wins over the root, and a nested alias never leaks to
+    // sibling directories. Shallower scopes apply only when no deeper scope has a matching
+    // pattern.
+    let mut matching_aliases: Vec<&PathAlias> = resolver
+        .path_aliases
+        .iter()
+        .filter(|alias| {
+            scope_contains(&alias.scope, from_file) && alias_matches(&alias.pattern, source)
+        })
+        .collect();
+    if let Some(deepest) = matching_aliases
+        .iter()
+        .map(|alias| alias.scope.len())
+        .max()
+    {
+        matching_aliases.retain(|alias| alias.scope.len() == deepest);
+        for alias in matching_aliases {
+            let captured = alias_capture(&alias.pattern, source);
+            for target in &alias.targets {
+                bases.push(target.replace('*', &captured).replace('\\', "/"));
+            }
         }
     }
 
@@ -1814,8 +1857,15 @@ fn import_bases(from_file: &str, source: &str, resolver: &ResolverContext) -> Ve
     }
 
     if is_base_url_import(source) {
-        for base_url in &resolver.base_urls {
-            bases.push(join_repo_path(base_url, source));
+        let mut applicable: Vec<&ScopedBaseUrl> = resolver
+            .base_urls
+            .iter()
+            .filter(|entry| scope_contains(&entry.scope, from_file))
+            .collect();
+        // Nearest baseUrl's candidates first, for the same reason as alias precedence.
+        applicable.sort_by(|left, right| right.scope.len().cmp(&left.scope.len()));
+        for entry in applicable {
+            bases.push(join_repo_path(&entry.base_url, source));
         }
     }
 
@@ -1829,15 +1879,18 @@ fn is_base_url_import(source: &str) -> bool {
         && source.contains('/')
 }
 
-fn base_url_import_may_be_local(source: &str, resolver: &ResolverContext) -> bool {
+fn base_url_import_may_be_local(from_file: &str, source: &str, resolver: &ResolverContext) -> bool {
     if resolver.base_urls.is_empty() || !is_base_url_import(source) {
         return false;
     }
     let Some(first_segment) = source.split('/').next() else {
         return false;
     };
-    resolver.base_urls.iter().any(|base_url| {
-        let local_prefix = join_repo_path(base_url, first_segment);
+    resolver.base_urls.iter().any(|entry| {
+        if !scope_contains(&entry.scope, from_file) {
+            return false;
+        }
+        let local_prefix = join_repo_path(&entry.base_url, first_segment);
         resolver
             .snapshot_paths
             .iter()
@@ -1845,33 +1898,83 @@ fn base_url_import_may_be_local(source: &str, resolver: &ResolverContext) -> boo
     })
 }
 
-fn read_js_ts_config_resolution(repo_root: &Path) -> (Vec<PathAlias>, Vec<String>) {
-    let mut aliases_by_pattern = BTreeMap::<String, Vec<String>>::new();
-    let mut base_urls = Vec::new();
-    for config_name in ["tsconfig.json", "jsconfig.json"] {
-        if !repo_root.join(config_name).is_file() {
-            continue;
-        };
-        let config = read_js_ts_config_file(
-            repo_root,
-            Path::new(config_name),
-            &mut BTreeSet::<String>::new(),
-        );
-        let Some(config) = config else {
-            continue;
-        };
-        for (pattern, targets) in config.aliases {
-            aliases_by_pattern.insert(pattern, targets);
-        }
-        if let Some(base_url) = config.base_url {
-            push_unique(&mut base_urls, base_url);
+fn read_js_ts_config_resolution(
+    repo_root: &Path,
+    files: &[PathBuf],
+) -> (Vec<PathAlias>, Vec<ScopedBaseUrl>) {
+    // S1-04 Gap 3 (E-4): configs used to be read at the repo root only, so dub's
+    // apps/web/tsconfig.json (`@/lib/*`) was never seen — dub has no root tsconfig at all.
+    // Discover configs in the root and in every directory that is an ancestor of an indexed
+    // file; only in-repo configuration is consulted (determinism, per T102's precedent).
+    let mut config_dirs = BTreeSet::<String>::new();
+    config_dirs.insert(String::new());
+    for file in files {
+        let mut ancestor = Path::new(file).parent();
+        while let Some(dir) = ancestor {
+            let normalized = normalize_path(dir);
+            if normalized.is_empty() || !config_dirs.insert(normalized) {
+                // Reached the root, or this ancestor chain is already recorded.
+                break;
+            }
+            ancestor = dir.parent();
         }
     }
-    let aliases = aliases_by_pattern
+
+    let mut aliases_by_scope_pattern = BTreeMap::<(String, String), Vec<String>>::new();
+    let mut base_urls = Vec::<ScopedBaseUrl>::new();
+    for scope in &config_dirs {
+        for config_name in ["tsconfig.json", "jsconfig.json"] {
+            let config_path = if scope.is_empty() {
+                PathBuf::from(config_name)
+            } else {
+                Path::new(scope).join(config_name)
+            };
+            if !repo_root.join(&config_path).is_file() {
+                continue;
+            }
+            let config = read_js_ts_config_file(
+                repo_root,
+                &config_path,
+                &mut BTreeSet::<String>::new(),
+            );
+            let Some(config) = config else {
+                continue;
+            };
+            // `read_js_ts_config_file` already resolved `paths` targets and `baseUrl`
+            // relative to the DECLARING config's directory (its `effective_base_url`),
+            // including through `extends` chains — the scope only governs which files the
+            // alias applies to.
+            for (pattern, targets) in config.aliases {
+                aliases_by_scope_pattern.insert((scope.clone(), pattern), targets);
+            }
+            if let Some(base_url) = config.base_url {
+                if !base_urls
+                    .iter()
+                    .any(|entry| &entry.scope == scope && entry.base_url == base_url)
+                {
+                    base_urls.push(ScopedBaseUrl {
+                        scope: scope.clone(),
+                        base_url,
+                    });
+                }
+            }
+        }
+    }
+    let aliases = aliases_by_scope_pattern
         .into_iter()
-        .map(|(pattern, targets)| PathAlias { pattern, targets })
+        .map(|((scope, pattern), targets)| PathAlias {
+            scope,
+            pattern,
+            targets,
+        })
         .collect();
     (aliases, base_urls)
+}
+
+/// Does an alias/baseUrl declared at `scope` govern `file_path`? The root scope (`""`)
+/// governs everything; a nested scope governs only files strictly under it.
+fn scope_contains(scope: &str, file_path: &str) -> bool {
+    scope.is_empty() || file_path.starts_with(&format!("{scope}/"))
 }
 
 fn read_js_ts_config_file(
@@ -1970,6 +2073,7 @@ fn read_package_imports(repo_root: &Path) -> Vec<PathAlias> {
             }
             let target = package_export_target(value)?;
             Some(PathAlias {
+                scope: String::new(),
                 pattern: pattern.to_string(),
                 targets: vec![normalize_repo_string(target.trim_start_matches("./"))],
             })
