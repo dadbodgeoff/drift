@@ -119,6 +119,46 @@ fn pnpm_workspace_yaml_package_import_resolves_to_module() {
     );
 }
 
+/// E-3 (S1-04 Gap 2): only `<prefix>/*` workspace globs were honoured. openstatus declares
+/// `packages/**/*` (its @openstatus/db lives one level deeper than a single `*` reaches on
+/// nothing — the glob itself was silently dropped), and cal.com/formbricks carry literal
+/// entries (`packages/app-store`, `docker`). Both shapes must resolve.
+#[test]
+fn deep_glob_and_literal_workspace_entries_resolve() {
+    let graph = scan_graph("resolve-workspace-deep-glob");
+    let route = "app/api/users/route.ts";
+
+    assert_eq!(
+        graph.resolved_module_for(route, "@acme/db").as_deref(),
+        Some("packages/data/db/src/index.ts"),
+        "packages/**/* must reach a package two levels down (openstatus shape)"
+    );
+    assert_eq!(
+        graph.resolved_module_for(route, "@acme/dockerlib").as_deref(),
+        Some("tools/docker/src/index.ts"),
+        "a literal workspace entry must resolve (calcom/formbricks shape)"
+    );
+}
+
+/// E-3: an unparseable workspace glob must emit a diagnostic instead of vanishing — a
+/// silently-ignored glob is exactly how Gap 2 stayed invisible.
+#[test]
+fn unparseable_workspace_glob_emits_a_diagnostic() {
+    let graph = scan_graph("resolve-workspace-deep-glob");
+    let diagnostic = graph.diagnostics.iter().find(|diagnostic| {
+        diagnostic["code"] == "unsupported_workspace_glob"
+            && diagnostic["message"]
+                .as_str()
+                .unwrap_or("")
+                .contains("packages/*/mid-*")
+    });
+    assert!(
+        diagnostic.is_some(),
+        "the dropped glob must be named in an unsupported_workspace_glob diagnostic, got {:?}",
+        graph.diagnostics
+    );
+}
+
 /// Negative controls for E-2, same commit (risk register row 1): resolving more must not
 /// over-match. The sibling lookalike package resolves to its OWN module — never to the real
 /// data package — and a type-only import produces no import_decl at all (T12).
