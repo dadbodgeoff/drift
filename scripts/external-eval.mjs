@@ -23,7 +23,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { repoVerdict } from "./external-eval-predicate.mjs";
+import { mergeBaselineRows, repoVerdict, unsafeBaselineMoves, updateGate } from "./external-eval-predicate.mjs";
 import { EVAL_REPOS } from "./eval-repos.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -50,6 +50,10 @@ for (const cfg of REPOS) {
 
 const args = process.argv.slice(2);
 const UPDATE = args.includes("--update");
+// O-4: each explicitly accepted unsafe baseline move, as "<repo>:<field>". Repeatable.
+const ACCEPTED_REGRESSIONS = new Set(
+  args.flatMap((arg, index) => (arg === "--accept-regression" && args[index + 1] ? [args[index + 1]] : []))
+);
 const flag = (name) => {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : undefined;
@@ -499,15 +503,38 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
   return r;
 });
 
-if (UPDATE) {
-  writeFileSync(BASELINE, `${JSON.stringify(results, null, 2)}\n`);
-  const passing = results.filter((r) => r.status === "PASS").length;
-  console.log(`\nbaseline updated - ${passing}/${results.length} passing`);
-  process.exit(0);
-}
-
 const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : [];
 const byName = new Map(baseline.map((r) => [r.repo, r]));
+
+if (UPDATE) {
+  // O-4: --update is not a rubber stamp.
+  //  (1) --only merges into the existing baseline; it used to TRUNCATE it to the
+  //      filtered repos, silently destroying every other row (verified live: 7 -> 1).
+  //  (2) a safety-relevant field moving in the unsafe direction (enforcement
+  //      block -> none/warn, blocking_count > 0 -> 0, caught -> uncaught, exit 2/3 -> 0,
+  //      fail/refused -> pass) is refused with no write unless each move is named via
+  //      --accept-regression <repo>:<field>.
+  //  (3) a FAILING verdict is refused with no write and a nonzero exit - it used to
+  //      print "baseline updated - 0/1 passing" and exit 0.
+  const gate = updateGate({
+    results,
+    baselineByRepo: byName,
+    acceptedRegressions: ACCEPTED_REGRESSIONS,
+    unsafeMovesFor: unsafeBaselineMoves
+  });
+  if (!gate.ok) {
+    console.error("\nrefusing to update baseline:");
+    for (const refusal of gate.refusals) console.error(`  ${refusal}`);
+    process.exit(1);
+  }
+  const merged = mergeBaselineRows(baseline, results, REPOS.map((cfg) => cfg.name));
+  writeFileSync(BASELINE, `${JSON.stringify(merged, null, 2)}\n`);
+  console.log(
+    `\nbaseline updated - ${results.length}/${results.length} passing` +
+      (only ? ` (merged ${results.length} repo(s) into the ${merged.length}-row baseline)` : "")
+  );
+  process.exit(0);
+}
 const changed = [];
 for (const after of results) {
   const before = byName.get(after.repo);

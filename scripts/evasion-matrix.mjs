@@ -37,7 +37,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { EVAL_REPOS } from "./eval-repos.mjs";
-import { shapeVerdict } from "./external-eval-predicate.mjs";
+import { shapeVerdict, unsafeShapeMoves, updateGate } from "./external-eval-predicate.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
@@ -48,6 +48,10 @@ const REPOS_DIR = process.env.DRIFT_EVAL_REPOS || join(homedir(), "drift-falsifi
 
 const args = process.argv.slice(2);
 const UPDATE = args.includes("--update");
+// O-4: each explicitly accepted unsafe move, as "<repo>:<shapeId>.<field>". Repeatable.
+const ACCEPTED_REGRESSIONS = new Set(
+  args.flatMap((arg, index) => (arg === "--accept-regression" && args[index + 1] ? [args[index + 1]] : []))
+);
 const onlyIndex = args.indexOf("--only");
 const only =
   onlyIndex >= 0 && args[onlyIndex + 1]
@@ -485,6 +489,35 @@ const failing = results.flatMap((row) =>
 );
 
 if (UPDATE) {
+  // O-4, same gating as external-eval: a FAILING verdict or an unaccepted unsafe move
+  // (a shape whose catch regressed to an evasion, a block that became a pass, a new
+  // known_evasion) refuses with no write unless each move is named via
+  // --accept-regression <repo>:<shapeId>.<field>.
+  const gate = updateGate({
+    results: results.map((row) => ({
+      ...row,
+      status:
+        row.onboarded === false || (row.shapes ?? []).some((shape) => shape.verdict === "FAIL")
+          ? "FAIL"
+          : "PASS",
+      failed_assertions: (row.shapes ?? [])
+        .filter((shape) => shape.verdict === "FAIL")
+        .map((shape) => shape.id)
+    })),
+    baselineByRepo,
+    acceptedRegressions: ACCEPTED_REGRESSIONS,
+    unsafeMovesFor: (before, after) => {
+      const beforeShapes = new Map((before?.shapes ?? []).map((shape) => [shape.id, shape]));
+      return (after.shapes ?? []).flatMap((shape) =>
+        unsafeShapeMoves(beforeShapes.get(shape.id), shape)
+      );
+    }
+  });
+  if (!gate.ok) {
+    console.error("\nrefusing to update evasion baseline:");
+    for (const refusal of gate.refusals) console.error(`  ${refusal}`);
+    process.exit(1);
+  }
   // Merge, never truncate: --only re-measures a subset without destroying other rows.
   const merged = EVAL_REPOS.map(
     (cfg) => results.find((row) => row.repo === cfg.name) ?? baselineByRepo.get(cfg.name)
@@ -497,10 +530,6 @@ if (UPDATE) {
     `\nbaseline updated - ${results.length} repo(s) written` +
       (evasions.length ? `; known evasions recorded: ${evasions.join(", ")}` : "; no known evasions")
   );
-  if (failing.length) {
-    console.error(`FAILING shapes recorded - fix or explain before committing: ${failing.join(", ")}`);
-    process.exit(1);
-  }
   process.exit(0);
 }
 
