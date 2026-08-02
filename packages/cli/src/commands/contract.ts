@@ -298,12 +298,40 @@ export function importContractDryRun(
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
   const actor = actorFlag(parsed);
   storage.transaction(() => {
+    // E-6 (D-2): an import that carries a weaker mode for a convention that was block
+    // here is a demotion, and demotions are never silent regardless of the path they
+    // arrive by. Snapshot before the rows are replaced.
+    const previousModes = new Map(
+      storage
+        .listAcceptedConventions(expectedRepoId)
+        .map((convention) => [convention.id, convention.enforcement_mode])
+    );
     storage.deleteAcceptedConventionsExcept(
       expectedRepoId,
       contract.conventions.map((convention) => convention.id)
     );
     for (const convention of contract.conventions) {
       storage.upsertAcceptedConvention(expectedRepoId, convention);
+      if (
+        previousModes.get(convention.id) === "block" &&
+        convention.enforcement_mode !== "block"
+      ) {
+        storage.appendAuditEvent(auditEvent({
+          id: `audit_event_enforcement_demoted_${convention.id}_${now}`,
+          repoId: expectedRepoId,
+          actor,
+          action: "enforcement_demoted",
+          targetType: "convention",
+          targetId: convention.id,
+          metadata: {
+            from: "block",
+            to: convention.enforcement_mode,
+            source: "contract_import",
+            contract_path: contractPath
+          },
+          createdAt: now
+        }));
+      }
     }
     // T120: re-key the contract to the local repo id.
     //

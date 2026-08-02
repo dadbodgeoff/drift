@@ -11,11 +11,18 @@ export async function inferConventionCandidatesFromEngine(input: {
   scanId: string;
   scanData: ScanData;
   now: string;
+  /**
+   * E-6 (D-2): repo-relative paths changed in the working tree relative to HEAD. The
+   * engine excludes them from the coverage direction so a dirty scan cannot let the
+   * analyzed diff's own violations argue a convention down to warn.
+   */
+  diffChangedFiles?: string[];
 }): Promise<ConventionCandidate[]> {
   const result = parseEngineCandidatesResult(JSON.parse(await runRustEngineWithInput(
     ["infer-candidates"],
     JSON.stringify({
       repo: { repo_id: input.repoId },
+      diff_changed_files: input.diffChangedFiles ?? [],
       graph: {
         graph_nodes: input.scanData.graph_nodes,
         graph_edges: input.scanData.graph_edges,

@@ -14,6 +14,7 @@ import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-
 import { contractIdForRepo } from "../domain/identifiers.js";
 import { checkDiskSpace,checkHeadroom,insufficientDiskMessage,insufficientHeapMessage } from "../domain/disk-space.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
+import { workingTreeChangedFiles } from "../io/git.js";
 import { DriftError } from "../app/drift-error.js";
 import { dirname } from "node:path";
 import { runScanRepo } from "../domain/scan-status.js";
@@ -80,7 +81,9 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           repoRoot: result.repo.root_path,
           now,
           declaredModules,
-          facts: storage.listFacts(result.scan.id)
+          facts: storage.listFacts(result.scan.id),
+          // E-6 (D-2): direction from the baseline scan only, same as inferred candidates.
+          diffChangedFiles: workingTreeChangedFiles(result.repo.root_path)
         })
       : undefined;
   if (declaredCandidate) {

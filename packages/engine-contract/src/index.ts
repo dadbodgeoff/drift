@@ -503,7 +503,18 @@ export const EngineCandidateScoringSchema = z.object({
   counterexamples_count: z.number().int().nonnegative(),
   scope_files_count: z.number().int().nonnegative(),
   coverage_ratio: z.number().min(0).max(1),
-  heuristic_id: z.string().min(1)
+  heuristic_id: z.string().min(1),
+  // E-6 (D-2): baseline-only coverage-direction decision; `demoted` marks an explicit
+  // baseline-driven demotion so a block -> warn direction can never move silently.
+  coverage_direction: z
+    .object({
+      violating_files: z.number().int().nonnegative(),
+      scope_files: z.number().int().nonnegative(),
+      violation_ratio: z.number().min(0).max(1),
+      threshold: z.number().min(0).max(1),
+      demoted: z.boolean()
+    })
+    .optional()
 });
 
 export const EngineCandidateSchema = z.object({

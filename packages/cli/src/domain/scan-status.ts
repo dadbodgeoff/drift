@@ -11,7 +11,7 @@ import { inferConventionCandidatesFromEngine } from "../engine/engine-candidates
 import { buildFactGraphArtifact } from "../engine/fact-graph.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { fileContentHash } from "../io/file-hash.js";
-import { gitOutput } from "../io/git.js";
+import { gitOutput,workingTreeChangedFiles } from "../io/git.js";
 import { filterRejectedConventionCandidates,inferConventionCandidates } from "./convention-candidates.js";
 import { auditEvent,preflightGovernance } from "./governance.js";
 import { hashStable,scanFingerprint } from "./identifiers.js";
@@ -100,7 +100,11 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
           repoId: repo.id,
           scanId,
           scanData,
-          now
+          now,
+          // E-6 (D-2): the scan sees the working tree, so a dirty tree's own new
+          // violations would otherwise count toward the coverage direction and argue
+          // the convention down. Direction must come from the baseline only.
+          diffChangedFiles: workingTreeChangedFiles(repoRoot)
         })
       : inferConventionCandidates({
           repoId: repo.id,

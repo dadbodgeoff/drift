@@ -1496,6 +1496,122 @@ fn scan_repo_then_infer_candidates_covers_phase7_security_candidate_families() {
     fs::remove_dir_all(repo_root).ok();
 }
 
+/// E-6 (decision D-2, TDD S1-06): enforcement direction is frozen to the baseline scan.
+///
+/// T100's recall improvement demoted taxonomy block -> warn silently: newly-detected
+/// violations in the analyzed diff pushed the violating ratio past the 50% threshold, so
+/// better detection weakened enforcement. Direction must be computed from the files that
+/// were already part of the repo (the baseline), never from files the current diff added.
+fn direction_request(
+    baseline_clean: usize,
+    baseline_violating: usize,
+    diff_violating: usize,
+    declare_diff: bool,
+) -> Value {
+    let mut facts = Vec::new();
+    let mut snapshots = Vec::new();
+    let mut diff_changed_files = Vec::new();
+    let mut add_route = |name: &str, violating: bool, in_diff: bool| {
+        let path = format!("app/api/{name}/route.ts");
+        snapshots.push(json!({
+            "file_path": path,
+            "content_hash": "a".repeat(64),
+            "byte_size": 120,
+            "indexed": true
+        }));
+        facts.push(json!({
+            "kind": "file_role_detected",
+            "file_path": path,
+            "name": "api_route",
+            "start_line": 1,
+            "end_line": 5
+        }));
+        if violating {
+            facts.push(json!({
+                "kind": "import_used",
+                "file_path": path,
+                "name": "db",
+                "value": "@/lib/db",
+                "start_line": 1,
+                "end_line": 1
+            }));
+        }
+        if in_diff {
+            diff_changed_files.push(json!(path));
+        }
+    };
+    for index in 0..baseline_clean {
+        add_route(&format!("clean{index}"), false, false);
+    }
+    for index in 0..baseline_violating {
+        add_route(&format!("bad{index}"), true, false);
+    }
+    for index in 0..diff_violating {
+        add_route(&format!("diffbad{index}"), true, true);
+    }
+    let mut request = json!({
+        "repo": { "repo_id": "repo_direction" },
+        "graph": { "graph_nodes": [], "graph_edges": [], "graph_evidence": [] },
+        "scan": {
+            "scan_id": "scan_direction",
+            "file_snapshots": snapshots,
+            "facts": facts
+        }
+    });
+    if declare_diff {
+        request["diff_changed_files"] = json!(diff_changed_files);
+    }
+    request
+}
+
+#[test]
+fn coverage_direction_is_frozen_to_baseline_scan_not_the_analyzed_diff() {
+    // Baseline: 1 violating of 4 scope files -> block. The diff adds 5 newly-detected
+    // violating routes; recomputing over everything reads 6/9 > 0.5 -> warn. That is the
+    // exact T100 pathology: improved recall (more detected violations in the analyzed
+    // diff) silently demoting enforcement.
+    let payload = run_infer_candidates(direction_request(3, 1, 5, true));
+    let direct = direct_data_access_candidate(&payload);
+
+    assert_eq!(
+        direct["suggested_enforcement_mode"], "block",
+        "newly-detected violations in the diff must not argue the convention down: {direct:#?}"
+    );
+    let direction = &direct["scoring"]["coverage_direction"];
+    assert_eq!(direction["violating_files"], 1, "{direction:#?}");
+    assert_eq!(direction["scope_files"], 4, "{direction:#?}");
+    assert_eq!(direction["demoted"], false, "{direction:#?}");
+
+    // Control: the same shape with no diff information keeps today's behaviour (6/9 -> warn),
+    // so the freeze is driven by the declared diff, not by a blanket weakening of the gate.
+    let undeclared = run_infer_candidates(direction_request(3, 1, 5, false));
+    assert_eq!(
+        direct_data_access_candidate(&undeclared)["suggested_enforcement_mode"],
+        "warn"
+    );
+}
+
+#[test]
+fn legitimate_baseline_demotion_is_explicit_never_silent() {
+    // The baseline itself violates in the majority: 4 of 5 scope files. warn is the
+    // documented, correct direction (an aspiration, not a rule) - but it must carry an
+    // explicit machine-readable marker so no consumer can mistake it for a silent flip.
+    let payload = run_infer_candidates(direction_request(1, 4, 0, true));
+    let direct = direct_data_access_candidate(&payload);
+
+    assert_eq!(direct["suggested_enforcement_mode"], "warn");
+    let direction = &direct["scoring"]["coverage_direction"];
+    assert_eq!(direction["violating_files"], 4, "{direction:#?}");
+    assert_eq!(direction["scope_files"], 5, "{direction:#?}");
+    assert_eq!(direction["threshold"], 0.5, "{direction:#?}");
+    assert_eq!(
+        direction["demoted"], true,
+        "a baseline-driven demotion must be explicit: {direction:#?}"
+    );
+    let ratio = direction["violation_ratio"].as_f64().expect("ratio");
+    assert!((ratio - 0.8).abs() < 1e-9, "{direction:#?}");
+}
+
 fn run_infer_candidates(request: Value) -> Value {
     let mut child = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
         .arg("infer-candidates")
