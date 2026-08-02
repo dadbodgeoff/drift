@@ -24,6 +24,25 @@ export class StoredBlobCorruptionError extends Error {
   }
 }
 
+/**
+ * Thrown when the open-time integrity guard (`PRAGMA quick_check`) finds a damaged database.
+ *
+ * R-3 verified the silent mode this exists for: a database corrupted mid-file can keep serving
+ * the queried tables while silently missing rows, so read/serve paths returned success with
+ * incomplete data. Failing closed at open is the only honest option.
+ */
+export class DatabaseIntegrityError extends Error {
+  readonly driftFailureCode = "corrupt_database" as const;
+
+  constructor(databasePath: string, detail: string) {
+    super(
+      `Refusing to serve from ${databasePath}: SQLite quick_check reported the database is ` +
+        `damaged (${detail}). Serving from it could silently return incomplete data.`
+    );
+    this.name = "DatabaseIntegrityError";
+  }
+}
+
 /** True when a thrown value carries the corrupt-database marker, across package boundaries. */
 export function isCorruptStoredDataError(error: unknown): boolean {
   return (
