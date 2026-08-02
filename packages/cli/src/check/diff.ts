@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync,readFileSync,statSync } from "node:fs";
 import { ParsedArgs } from "../app/command-types.js";
 import { stringFlag } from "../args/flag-readers.js";
+import { isShallowRepository,SHALLOW_CLONE_REMEDIATION } from "../domain/repo-identity.js";
 import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 
@@ -31,14 +32,58 @@ export function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"]
       });
-    } catch {
+    } catch (error) {
+      // X-2: this catch used to swallow git's stderr and diagnose every failure as "not a
+      // worktree" - wrong advice in the one situation CI hits by default, a depth-1
+      // actions/checkout whose range crosses the shallow boundary. Distinguish the three
+      // failures git actually produces here, and always carry git's own words.
+      const gitStderr = stderrOf(error);
+      if (!isInsideGitWorktree(repoRoot)) {
+        throw new Error(
+          `Unable to read git diff for range ${diffRange}: ${repoRoot} is not a Git worktree. Run from a Git worktree or pass --diff-file <path>.`
+        );
+      }
+      if (isShallowRepository(repoRoot) && isUnresolvableRevision(gitStderr)) {
+        throw new Error(
+          `Unable to read git diff for range ${diffRange}: this repository is a shallow clone and the range crosses the shallow boundary - the commits it references were never fetched. ${SHALLOW_CLONE_REMEDIATION}${gitStderr ? ` git reported: ${gitStderr}` : ""}`
+        );
+      }
       throw new Error(
-        `Unable to read git diff for range ${diffRange}. Run from a Git worktree or pass --diff-file <path>.`
+        `Unable to read git diff for range ${diffRange}: git diff failed${gitStderr ? ` with: ${gitStderr}` : ""}. Check the range, or pass --diff-file <path>.`
       );
     }
   }
 
   throw new Error("Missing --diff <range> or --diff-file <path>.");
+}
+
+/** git's stderr from a failed execFileSync, trimmed to a single diagnostic line. */
+function stderrOf(error: unknown): string {
+  const raw = (error as { stderr?: unknown })?.stderr;
+  const text = typeof raw === "string" ? raw : Buffer.isBuffer(raw) ? raw.toString("utf8") : "";
+  // git prefixes the load-bearing line with "fatal:"; keep it and drop the usage hints below.
+  return (text.split("\n").find((line) => line.startsWith("fatal:")) ?? text.split("\n")[0] ?? "").trim();
+}
+
+function isInsideGitWorktree(repoRoot: string): boolean {
+  try {
+    return execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * True when git failed because a revision in the range does not exist locally. In a shallow
+ * clone that is the signature of a range crossing the shallow boundary: the parent commits were
+ * never fetched, so `HEAD~1` is an unknown revision even though the history "exists" upstream.
+ */
+function isUnresolvableRevision(gitStderr: string): boolean {
+  return /unknown revision|bad revision|invalid revision|ambiguous argument/i.test(gitStderr);
 }
 
 export function parseUnifiedDiff(input: string): ParsedDiff {
