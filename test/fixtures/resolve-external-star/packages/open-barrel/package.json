@@ -1,0 +1,4 @@
+{
+  "name": "@acme/open-barrel",
+  "main": "src/index.ts"
+}
