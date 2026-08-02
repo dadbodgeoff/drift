@@ -1,0 +1,4 @@
+{
+  "name": "@acme/database-legacy",
+  "main": "src/index.ts"
+}

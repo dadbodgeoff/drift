@@ -79,7 +79,14 @@ const REPOS = [
     cleanSymbol: "responses",
     expectForbidden: ["@formbricks/database"],
     expectForbiddenExact: ["@formbricks/database"],
-    expectedExitCode: 2
+    // E-2 transitional: was 2. Resolver coverage (pnpm-workspace.yaml) made
+    // @formbricks/database imports resolve, which exposed the S1-05 residual class:
+    // member-level symbol resolution stays conservative (unresolved_import_symbol on
+    // route files, e.g. Prisma re-exports through packages/database/src/prisma.ts), so
+    // S1-01 now refuses (3) where it previously blocked on specifier string-matching (2).
+    // Pre-registered in TDD S1-05 ("S1-01 will keep refusing where it could legitimately
+    // block"). Flips back to 2 when E-5 makes those symbols provable at runtime.
+    expectedExitCode: 3
   },
   {
     name: "calcom",
