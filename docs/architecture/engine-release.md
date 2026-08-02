@@ -34,16 +34,26 @@ only that it starts.
 ## Validate
 
 ```bash
-node scripts/validate-engine-release-matrix.mjs                     # report
-node scripts/validate-engine-release-matrix.mjs --require-artifacts # release job
+node scripts/validate-engine-release-matrix.mjs                     # release: fails closed
+node scripts/validate-engine-release-matrix.mjs --allow-unverified  # dev machines
 ```
 
-Reports per target: verified / unverified / missing / checksum mismatch.
+Reports per target: verified / unverified / missing / checksum mismatch, printing each
+manifest's own `verification_note`.
 
-**A checksum mismatch is always fatal**, with or without the flag: a binary that does not match
-its recorded hash is not the artifact that was built, and that is worth stopping for. Missing
-artifacts are fatal only under `--require-artifacts`, because a developer machine legitimately
-cannot build most targets.
+**The default fails closed** (D-2): anything short of a verified-by-execution artifact on every
+target — missing, never executed, unrecorded, checksum mismatch, or a manifest whose `target`
+differs from the declared matrix — exits nonzero, and the summary states how many targets are
+actually verified rather than claiming validation. Escape hatches are explicit:
+
+- `--allow-unverified` — dev machines legitimately cannot build most targets; missing and
+  unverified artifacts are reported as warnings instead of failing. Checksum mismatches and
+  unrecorded binaries stay fatal: a binary that does not match its recorded hash is not the
+  artifact that was built.
+- `--require-artifacts` — with `--allow-unverified`, keeps *missing* artifacts fatal.
+- `--accept-target-mismatch <packageDir>:<manifestTarget>` — acknowledges a deliberate target
+  substitution (D-5 authorizes shipping the `x86_64-pc-windows-gnu` build in the msvc-declared
+  win32 package); the mismatch is then reported as a warning naming the acknowledgment.
 
 This check was previously declaration-only. It validated `bin` paths and `files` lists in
 package.json and reported "Validated 5 engine release targets" while **four of the five packages
@@ -54,5 +64,7 @@ precisely the failure this product exists to catch.
 
 1. CI builds each target on its own platform, running the same script.
 2. Each job commits its `bin/drift-engine` and `engine-manifest.json`.
-3. The release job runs `--require-artifacts`, so a missing or mismatched artifact stops it.
+3. The release job runs the default (fail-closed) mode, so a missing, unverified, or
+   mismatched artifact stops it; a deliberate target substitution must be named with
+   `--accept-target-mismatch`.
 4. Publishing is human-approved (T84).
