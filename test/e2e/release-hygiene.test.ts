@@ -33,7 +33,10 @@ describe("release hygiene", () => {
       // gate trusts, so a release must prove the oracle itself still works. O-3 added the two
       // eval suites themselves: the gate runs the external eval AND the pinned evasion matrix,
       // so no release can go green while an enforcement shape regressed on a real repo.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm validate:release-matrix && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && git diff --check",
+      // F-5 (D-2): the matrix validator now fails closed by default; verify:ci runs on machines
+      // that legitimately cannot build most engine targets, so it names the dev escape hatch
+      // explicitly. The release workflow runs the fail-closed default.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && git diff --check",
     );
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
   });
@@ -320,11 +323,17 @@ describe("release hygiene", () => {
   });
 
   it("validates the engine release matrix against package manifests", () => {
-    const output = execFileSync("node", ["scripts/validate-engine-release-matrix.mjs"], {
-      encoding: "utf8"
-    });
+    // Dev mode: engine binaries are gitignored local artifacts, so this tree legitimately has
+    // gaps. F-5 (D-2): the summary must state how many targets are actually verified - the old
+    // output claimed "Validated 5 engine release targets" with zero artifacts present.
+    const output = execFileSync(
+      "node",
+      ["scripts/validate-engine-release-matrix.mjs", "--allow-unverified"],
+      { encoding: "utf8" }
+    );
 
-    expect(output).toContain("Validated 5 engine release targets");
+    expect(output).toMatch(/engine release targets verified for Drift/);
+    expect(output).not.toContain("Validated 5 engine release targets");
   });
 
   it("keeps engine binary package versions exact and workspace-free for publication", async () => {
