@@ -130,6 +130,16 @@ export interface JsonRpcResponse {
   error?: {
     code: number;
     message: string;
+    /**
+     * Classified failure shape (F-2). Agents branch on `code`/`safe_to_retry` instead of
+     * pattern-matching raw SQLite strings out of `message`.
+     */
+    data?: {
+      code: string;
+      user_action: string;
+      safe_to_retry: boolean;
+      recovery_commands: string[];
+    };
   };
 }
 

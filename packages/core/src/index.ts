@@ -8,6 +8,7 @@ export * from "./capabilities.js";
 export * from "./contracts.js";
 export * from "./contract-ledger.js";
 export * from "./domain.js";
+export * from "./failure-classification.js";
 export * from "./frameworks.js";
 export * from "./globs.js";
 export * from "./ids.js";
