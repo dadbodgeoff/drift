@@ -75,6 +75,7 @@ import {
   GraphEvidenceSchema,
   GraphNodeSchema
 } from "@drift/factgraph";
+import { StoredBlobCorruptionError } from "./corruption.js";
 import { MIGRATIONS, type Migration } from "./migrations.js";
 
 export interface DriftStorageOptions {
@@ -1044,7 +1045,9 @@ export class SqliteDriftStorage {
           .all(repoId);
 
     return rows.map((row) =>
-      SecurityBoundaryProofSchema.parse(JSON.parse(rowValue<string>(row, "proof_json")))
+      SecurityBoundaryProofSchema.parse(
+        parseStoredJson(rowValue<string>(row, "proof_json"), "security_boundary_proofs.proof_json")
+      )
     );
   }
 
@@ -1861,7 +1864,9 @@ export class SqliteDriftStorage {
     if (!row) {
       return undefined;
     }
-    return RepoContractSchema.parse(JSON.parse(rowValue<string>(row, "contract_json")));
+    return RepoContractSchema.parse(
+      parseStoredJson(rowValue<string>(row, "contract_json"), "repo_contracts.contract_json")
+    );
   }
 
   recordRequiredCheckExecution(execution: RequiredCheckExecution): void {
@@ -2207,7 +2212,7 @@ function factFromRow(row: unknown): FactRecord {
     imported_name: record.imported_name ?? undefined,
     ast_node_kind: record.ast_node_kind ?? null,
     source_span: typeof record.source_span_json === "string"
-      ? JSON.parse(record.source_span_json) as unknown
+      ? parseStoredJson(record.source_span_json, "facts.source_span_json")
       : record.source_span,
     last_seen_scan_id: record.last_seen_scan_id ?? record.scan_id
   });
@@ -2218,7 +2223,7 @@ function parserGapFromRow(row: unknown): ParserGap {
   return ParserGapSchema.parse({
     ...record,
     evidence_refs: typeof record.evidence_refs_json === "string"
-      ? JSON.parse(record.evidence_refs_json) as unknown
+      ? parseStoredJson(record.evidence_refs_json, "parser_gaps.evidence_refs_json")
       : []
   });
 }
@@ -2233,7 +2238,7 @@ function parserGapV2FromRow(row: unknown): ParserGapV2 {
     affected_contract_kinds: parseJsonArray(record.affected_contract_kinds_json),
     suggested_action: record.suggested_action,
     evidence_refs: typeof record.evidence_refs_json === "string"
-      ? JSON.parse(record.evidence_refs_json) as unknown
+      ? parseStoredJson(record.evidence_refs_json, "parser_gaps_v2.evidence_refs_json")
       : []
   });
 }
@@ -2297,7 +2302,9 @@ function securityBoundaryProofRunFromRow(row: unknown): StoredSecurityBoundaryPr
     affected_files: parseJsonArray(record.affected_files_json).filter((value): value is string =>
       typeof value === "string"
     ),
-    proof: SecurityBoundaryProofSchema.parse(JSON.parse(rowValue<string>(row, "proof_json"))),
+    proof: SecurityBoundaryProofSchema.parse(
+      parseStoredJson(rowValue<string>(row, "proof_json"), "security_boundary_proof_runs.proof_json")
+    ),
     created_at: rowValue<string>(row, "created_at")
   };
 }
@@ -2784,16 +2791,32 @@ function sortedUnique(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
-function parseJsonObject(value: unknown): Record<string, unknown> {
-  const parsed = JSON.parse(String(value));
+/**
+ * Parse a JSON blob read back from a database row.
+ *
+ * These bytes were written by Drift as valid JSON, so a parse failure here means SQLite handed
+ * back damaged content (a corrupted page that still passed the b-tree walk). Marking that at the
+ * throw site is what lets the CLI and MCP classifiers tell "corrupt local state" apart from
+ * "malformed user input" - both otherwise surface as the same SyntaxError.
+ */
+function parseStoredJson(value: unknown, context: string): unknown {
+  try {
+    return JSON.parse(String(value));
+  } catch (error) {
+    throw new StoredBlobCorruptionError(context, error);
+  }
+}
+
+function parseJsonObject(value: unknown, context = "a stored JSON object column"): Record<string, unknown> {
+  const parsed = parseStoredJson(value, context);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("Expected JSON object from SQLite row.");
   }
   return parsed as Record<string, unknown>;
 }
 
-function parseJsonArray(value: unknown): unknown[] {
-  const parsed = JSON.parse(String(value));
+function parseJsonArray(value: unknown, context = "a stored JSON array column"): unknown[] {
+  const parsed = parseStoredJson(value, context);
   if (!Array.isArray(parsed)) {
     throw new Error("Expected JSON array from SQLite row.");
   }

@@ -22,6 +22,7 @@ export type DriftFailureCode =
   | "insufficient_disk"
   | "insufficient_memory"
   | "disk_full"
+  | "disk_io_error"
   | "corrupt_database"
   | "permission_denied"
   | "cli_error";
