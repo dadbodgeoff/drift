@@ -82,6 +82,12 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     ensureDatabasePath(databasePath);
 
     const storage = openDriftStorage({ databasePath });
+    // F-3b: WAL recovery that discarded commit records is a data-loss signal SQLite itself
+    // never reports. It is a warning, not a failure - the recovered state is consistent - so
+    // it goes to stderr and never contaminates the JSON payload on stdout.
+    const openWarnings = storage.openDiagnostics
+      .map((diagnostic) => `warning(${diagnostic.code}): ${diagnostic.message}\n`)
+      .join("");
     assertSupportedLocalDatabase(storage.getAppliedMigrations());
     storage.migrate();
     assertSupportedLocalDatabase(storage.getAppliedMigrations());
@@ -90,7 +96,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       return {
         exitCode: result.exitCode ?? 0,
         stdout: formatOutput(result.payload, parsed),
-        stderr: ""
+        stderr: openWarnings
       };
     } finally {
       storage.close();

@@ -793,7 +793,10 @@ function mcpHelpText(): string {
 }
 
 function withStorage<T>(options: DriftMcpOptions, fn: (storage: ReturnType<typeof openDriftStorage>) => T): T {
-  const storage = openDriftStorage({ databasePath: options.databasePath });
+  // F-3a: the MCP serve path is where R-3 verified a mid-file-corrupted database being served
+  // as success with silently incomplete data. Fail closed at open instead; the guard's verdict
+  // is cached per process so healthy databases are not re-walked on every request.
+  const storage = openDriftStorage({ databasePath: options.databasePath, integrityGuard: true });
   try {
     assertMcpReadOnlySchemaReady(storage);
     return fn(storage);

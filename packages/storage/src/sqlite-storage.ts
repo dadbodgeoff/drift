@@ -1,4 +1,6 @@
 import Database from "better-sqlite3";
+import { closeSync, openSync, readSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import type {
   AuditChainVerification,
   AuditEvent,
@@ -75,11 +77,30 @@ import {
   GraphEvidenceSchema,
   GraphNodeSchema
 } from "@drift/factgraph";
-import { StoredBlobCorruptionError } from "./corruption.js";
+import { DatabaseIntegrityError, StoredBlobCorruptionError } from "./corruption.js";
 import { MIGRATIONS, type Migration } from "./migrations.js";
 
 export interface DriftStorageOptions {
   databasePath: string;
+  /**
+   * Run `PRAGMA quick_check` before serving from this database and fail closed with a
+   * corrupt-database error if it reports damage (F-3a).
+   *
+   * Verification is cached per process: an unchanged file (same size/mtime for the db and its
+   * -wal) is not re-scanned, and a changed file is re-verified at most once per
+   * {@link INTEGRITY_REVERIFY_INTERVAL_MS} so a busy writer cannot turn every open into a full
+   * b-tree walk (measured 2.2s on a 489MB indexed database). Default off: the CLI's single-file
+   * check has a <1s hot-path budget (G3) that an unconditional walk would blow; the MCP serve
+   * path - where R-3 verified incomplete data being served as success - enables it.
+   */
+  integrityGuard?: boolean;
+}
+
+/** A non-fatal condition observed while opening the database. */
+export interface StorageOpenDiagnostic {
+  code: "wal_recovery_discarded_commits";
+  severity: "warning";
+  message: string;
 }
 
 export interface StoredSecurityBoundaryProofRun {
@@ -106,7 +127,19 @@ type DatabaseHandle = Database.Database;
 export class SqliteDriftStorage {
   private readonly db: DatabaseHandle;
 
+  /**
+   * Non-fatal conditions observed while opening. Currently only WAL-recovery data loss (F-3b):
+   * SQLite recovers a write-ahead log by replaying frames until the first invalid one and says
+   * nothing about what it left behind, so committed transactions can vanish with exit 0
+   * everywhere. Callers surface these as warnings.
+   */
+  readonly openDiagnostics: readonly StorageOpenDiagnostic[];
+
   constructor(options: DriftStorageOptions) {
+    // Snapshot the WAL's frame headers BEFORE SQLite opens (and thereby recovers) the log, so
+    // recovery's discards are observable afterwards. Byte reads of frame headers only - no
+    // checksum math, no page images.
+    const walScan = scanWalFrameHeaders(options.databasePath);
     this.db = new Database(options.databasePath);
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
@@ -116,6 +149,10 @@ export class SqliteDriftStorage {
     // busy timeout SQLite fails immediately with SQLITE_BUSY, which would surface to the user
     // as a crash rather than a brief wait. Five seconds comfortably covers a single-file check.
     this.db.pragma("busy_timeout = 5000");
+    this.openDiagnostics = walRecoveryDiagnostics(this.db, options.databasePath, walScan);
+    if (options.integrityGuard) {
+      runIntegrityGuard(this.db, options.databasePath);
+    }
   }
 
   migrate(): void {
@@ -2129,6 +2166,222 @@ export class SqliteDriftStorage {
   close(): void {
     this.db.close();
   }
+}
+
+// ---------------------------------------------------------------------------
+// F-3a: open-time integrity guard.
+// ---------------------------------------------------------------------------
+
+/**
+ * How long a changed database may be served before quick_check re-verifies it. Bounds the
+ * guard's cost under active writing: without this, every open during a write burst re-walks
+ * the full b-tree (~2.2s measured on a 489MB indexed database).
+ */
+const INTEGRITY_REVERIFY_INTERVAL_MS = 30_000;
+
+interface FileIdentity {
+  size: number;
+  mtimeMs: number;
+  walSize: number;
+  walMtimeMs: number;
+}
+
+interface IntegrityCacheEntry {
+  identity: FileIdentity;
+  verifiedAt: number;
+  ok: boolean;
+  detail: string;
+}
+
+const integrityCache = new Map<string, IntegrityCacheEntry>();
+
+function fileIdentityFor(databasePath: string): FileIdentity {
+  const db = safeStat(databasePath);
+  const wal = safeStat(`${databasePath}-wal`);
+  return {
+    size: db?.size ?? 0,
+    mtimeMs: db?.mtimeMs ?? 0,
+    walSize: wal?.size ?? 0,
+    walMtimeMs: wal?.mtimeMs ?? 0
+  };
+}
+
+function safeStat(path: string): { size: number; mtimeMs: number } | undefined {
+  try {
+    const stats = statSync(path);
+    return { size: stats.size, mtimeMs: stats.mtimeMs };
+  } catch {
+    return undefined;
+  }
+}
+
+function identityEquals(left: FileIdentity, right: FileIdentity): boolean {
+  return (
+    left.size === right.size &&
+    left.mtimeMs === right.mtimeMs &&
+    left.walSize === right.walSize &&
+    left.walMtimeMs === right.walMtimeMs
+  );
+}
+
+function runIntegrityGuard(db: DatabaseHandle, databasePath: string): void {
+  const key = resolve(databasePath);
+  const identity = fileIdentityFor(databasePath);
+  const cached = integrityCache.get(key);
+  if (cached) {
+    const unchanged = identityEquals(cached.identity, identity);
+    const recentEnough = Date.now() - cached.verifiedAt < INTEGRITY_REVERIFY_INTERVAL_MS;
+    // A corrupt verdict is never aged out by the interval: the file cannot heal itself, so
+    // re-serving after 30s would reintroduce the silent mode this guard exists to close.
+    if (unchanged && !cached.ok) {
+      throw new DatabaseIntegrityError(databasePath, cached.detail);
+    }
+    if (cached.ok && (unchanged || recentEnough)) {
+      return;
+    }
+  }
+  let detail = "";
+  try {
+    const rows = db.pragma("quick_check(1)") as Array<{ quick_check: string }>;
+    const verdict = rows[0]?.quick_check ?? "no quick_check result";
+    if (rows.length === 1 && verdict === "ok") {
+      integrityCache.set(key, { identity, verifiedAt: Date.now(), ok: true, detail: "" });
+      return;
+    }
+    detail = verdict;
+  } catch (error) {
+    // Hard corruption can make quick_check itself throw (SQLITE_CORRUPT/SQLITE_NOTADB).
+    detail = error instanceof Error ? error.message : String(error);
+  }
+  integrityCache.set(key, { identity, verifiedAt: Date.now(), ok: false, detail });
+  throw new DatabaseIntegrityError(databasePath, detail);
+}
+
+// ---------------------------------------------------------------------------
+// F-3b: WAL-recovery observability.
+//
+// SQLite recovers a WAL by replaying frames until the first invalid checksum and silently
+// discards the rest. It cannot distinguish a torn write (normal crash, correct to discard)
+// from post-commit corruption, and neither can we - but "recovery discarded current-generation
+// frames that include a commit record" IS observable, and that is precisely the case where a
+// transaction someone was told committed may be gone. Detection: snapshot the WAL's frame
+// headers before open, compare the frame count SQLite accepted (wal_checkpoint's `log` field,
+// i.e. mxFrame) with salt-matched frames present in the file beyond that point. Stale frames
+// from an earlier checkpoint generation carry different salts and are excluded, so a normally
+// recycled WAL does not warn.
+// ---------------------------------------------------------------------------
+
+const WAL_HEADER_SIZE = 32;
+const WAL_FRAME_HEADER_SIZE = 24;
+/** Soft cap: a WAL beyond ~1M frames (4GB at 4k pages) is not scanned frame-by-frame. */
+const WAL_MAX_SCANNED_FRAMES = 1_000_000;
+
+interface WalFrameScan {
+  frameCount: number;
+  /** 1-based frame numbers whose salts match the current WAL generation. */
+  currentGeneration: Set<number>;
+  /** Subset of currentGeneration carrying a commit record (non-zero dbsize field). */
+  commitFrames: Set<number>;
+}
+
+function scanWalFrameHeaders(databasePath: string): WalFrameScan | undefined {
+  const walPath = `${databasePath}-wal`;
+  let fd: number | undefined;
+  try {
+    fd = openSync(walPath, "r");
+    const stats = statSync(walPath);
+    if (stats.size < WAL_HEADER_SIZE) {
+      return undefined;
+    }
+    const header = Buffer.alloc(WAL_HEADER_SIZE);
+    if (readSync(fd, header, 0, WAL_HEADER_SIZE, 0) !== WAL_HEADER_SIZE) {
+      return undefined;
+    }
+    const magic = header.readUInt32BE(0);
+    if (magic !== 0x377f0682 && magic !== 0x377f0683) {
+      return undefined;
+    }
+    const pageSize = header.readUInt32BE(8);
+    if (!Number.isInteger(pageSize) || pageSize < 512 || pageSize > 65536 || (pageSize & (pageSize - 1)) !== 0) {
+      return undefined;
+    }
+    const headerSalt = header.subarray(16, 24);
+    const frameSize = WAL_FRAME_HEADER_SIZE + pageSize;
+    const frameCount = Math.min(
+      Math.floor((stats.size - WAL_HEADER_SIZE) / frameSize),
+      WAL_MAX_SCANNED_FRAMES
+    );
+    const scan: WalFrameScan = {
+      frameCount,
+      currentGeneration: new Set(),
+      commitFrames: new Set()
+    };
+    const frameHeader = Buffer.alloc(WAL_FRAME_HEADER_SIZE);
+    for (let frame = 1; frame <= frameCount; frame++) {
+      const offset = WAL_HEADER_SIZE + (frame - 1) * frameSize;
+      if (readSync(fd, frameHeader, 0, WAL_FRAME_HEADER_SIZE, offset) !== WAL_FRAME_HEADER_SIZE) {
+        break;
+      }
+      if (frameHeader.subarray(8, 16).equals(headerSalt)) {
+        scan.currentGeneration.add(frame);
+        if (frameHeader.readUInt32BE(4) !== 0) {
+          scan.commitFrames.add(frame);
+        }
+      }
+    }
+    return scan;
+  } catch {
+    // No WAL file, or it is unreadable: nothing to observe.
+    return undefined;
+  } finally {
+    if (fd !== undefined) {
+      closeSync(fd);
+    }
+  }
+}
+
+function walRecoveryDiagnostics(
+  db: DatabaseHandle,
+  databasePath: string,
+  walScan: WalFrameScan | undefined
+): StorageOpenDiagnostic[] {
+  if (!walScan || walScan.frameCount === 0 || walScan.commitFrames.size === 0) {
+    return [];
+  }
+  let accepted: number;
+  try {
+    // PASSIVE never blocks and triggers recovery if it has not happened yet; `log` is mxFrame,
+    // the number of frames SQLite accepted as valid.
+    const rows = db.pragma("wal_checkpoint(PASSIVE)") as Array<{ busy: number; log: number; checkpointed: number }>;
+    accepted = rows[0]?.log ?? -1;
+  } catch {
+    // Readonly filesystem or corrupt DB: the checkpoint cannot run, so recovery loss is not
+    // observable here. The integrity guard (if enabled) still covers the corrupt case.
+    return [];
+  }
+  if (accepted < 0 || accepted >= walScan.frameCount) {
+    // A concurrent writer may legitimately have appended past our snapshot.
+    return [];
+  }
+  const discardedCurrent = [...walScan.currentGeneration].filter((frame) => frame > accepted);
+  const discardedCommits = [...walScan.commitFrames].filter((frame) => frame > accepted);
+  if (discardedCommits.length === 0) {
+    // Only torn, uncommitted, or stale frames beyond the recovery point: normal after an
+    // interrupted write, nothing durable was lost.
+    return [];
+  }
+  return [
+    {
+      code: "wal_recovery_discarded_commits",
+      severity: "warning",
+      message:
+        `SQLite recovered the write-ahead log of ${databasePath} and discarded ` +
+        `${discardedCurrent.length} unreplayable frame(s), including ${discardedCommits.length} ` +
+        `commit record(s). This can follow an interrupted write, but committed transactions may ` +
+        `have been lost - verify recent changes are present (drift audit verify, drift scan status) ` +
+        `and rescan if anything is missing.`
+    }
+  ];
 }
 
 export function openDriftStorage(options: DriftStorageOptions): SqliteDriftStorage {
