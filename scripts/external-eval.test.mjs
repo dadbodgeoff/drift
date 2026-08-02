@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { repoVerdict } from "./external-eval-predicate.mjs";
+import {
+  mergeBaselineRows,
+  repoVerdict,
+  unsafeBaselineMoves,
+  updateGate
+} from "./external-eval-predicate.mjs";
 
 /**
  * T05: tests for the evaluation harness itself.
@@ -200,6 +205,174 @@ describe("repoVerdict", () => {
     const verdict = repoVerdict(result, goodCfg());
     expect(verdict.status).toBe("FAIL");
     expect(verdict.failures).toContain("check_status_consistent_with_exit");
+  });
+});
+
+/**
+ * O-4: `--update` is not a rubber stamp.
+ *
+ * Three verified failure modes, each RED-first:
+ *  (1) `--only X --update` TRUNCATED the baseline to the filtered repos, silently
+ *      destroying every other row (live repro this run: 7 rows -> 1, exit 0);
+ *  (2) an update that moved a safety-relevant field in the unsafe direction (enforcement
+ *      block -> none, blocking_count > 0 -> 0, caught -> uncaught, exit 2/3 -> 0,
+ *      fail/refused -> pass) was written silently - `--update` as a rubber stamp is a
+ *      named anti-pattern in PLAN.md;
+ *  (3) `--update` on a FAILING verdict printed "baseline updated - 0/1 passing" and
+ *      exited 0.
+ */
+describe("mergeBaselineRows", () => {
+  const existing = [
+    { repo: "taxonomy", check_exit_code: 3 },
+    { repo: "dub", check_exit_code: 3 },
+    { repo: "openstatus", check_exit_code: 3 }
+  ];
+  const order = ["taxonomy", "dub", "openstatus"];
+
+  it("keeps rows for repos the filtered run did not touch", () => {
+    const merged = mergeBaselineRows(existing, [{ repo: "taxonomy", check_exit_code: 3, fresh: true }], order);
+    expect(merged.map((row) => row.repo)).toEqual(["taxonomy", "dub", "openstatus"]);
+    expect(merged[0].fresh).toBe(true);
+    expect(merged[1]).toEqual({ repo: "dub", check_exit_code: 3 });
+  });
+
+  it("replaces every row on an unfiltered run", () => {
+    const results = order.map((repo) => ({ repo, check_exit_code: 3, fresh: true }));
+    const merged = mergeBaselineRows(existing, results, order);
+    expect(merged.every((row) => row.fresh)).toBe(true);
+  });
+
+  it("appends a repo that has no baseline row yet", () => {
+    const merged = mergeBaselineRows(existing, [{ repo: "newrepo" }], [...order, "newrepo"]);
+    expect(merged.map((row) => row.repo)).toEqual(["taxonomy", "dub", "openstatus", "newrepo"]);
+  });
+});
+
+describe("unsafeBaselineMoves", () => {
+  const before = {
+    repo: "taxonomy",
+    injection_caught: true,
+    injection_enforcement: "block",
+    blocking_count: 2,
+    check_exit_code: 2,
+    check_status: "fail"
+  };
+
+  it("reports nothing when nothing weakened", () => {
+    expect(unsafeBaselineMoves(before, { ...before })).toEqual([]);
+    // Strengthening directions are free: refusing (3) where it blocked (2) is fail-closed.
+    expect(unsafeBaselineMoves(before, { ...before, check_exit_code: 3, check_status: "refused" })).toEqual([]);
+  });
+
+  it("names every safety-relevant field that moved in the unsafe direction", () => {
+    const after = {
+      ...before,
+      injection_caught: false,
+      injection_enforcement: "none",
+      blocking_count: 0,
+      check_exit_code: 0,
+      check_status: "pass"
+    };
+    expect(unsafeBaselineMoves(before, after).sort()).toEqual([
+      "blocking_count",
+      "check_exit_code",
+      "check_status",
+      "injection_caught",
+      "injection_enforcement"
+    ]);
+  });
+
+  it("flags enforcement demoted block to warn", () => {
+    expect(unsafeBaselineMoves(before, { ...before, injection_enforcement: "warn" })).toEqual([
+      "injection_enforcement"
+    ]);
+  });
+
+  it("flags a refusal that became a silent pass", () => {
+    const refused = { ...before, check_exit_code: 3, check_status: "refused", blocking_count: 0, injection_enforcement: "none" };
+    const moves = unsafeBaselineMoves(refused, { ...refused, check_exit_code: 0, check_status: "pass" });
+    expect(moves.sort()).toEqual(["check_exit_code", "check_status"]);
+  });
+
+  it("is silent for a brand-new repo with no baseline row", () => {
+    expect(unsafeBaselineMoves(undefined, before)).toEqual([]);
+  });
+});
+
+describe("updateGate", () => {
+  const passRow = (repo) => ({
+    repo,
+    status: "PASS",
+    injection_caught: true,
+    injection_enforcement: "block",
+    blocking_count: 2,
+    check_exit_code: 2,
+    check_status: "fail"
+  });
+
+  it("allows a clean update", () => {
+    const gate = updateGate({
+      results: [passRow("taxonomy")],
+      baselineByRepo: new Map([["taxonomy", passRow("taxonomy")]]),
+      acceptedRegressions: new Set(),
+      unsafeMovesFor: unsafeBaselineMoves
+    });
+    expect(gate).toEqual({ ok: true, refusals: [] });
+  });
+
+  it("refuses to write a FAILING verdict, naming the repo", () => {
+    // (3): 'baseline updated - 0/1 passing' exit 0 is the recorded bug.
+    const failing = { ...passRow("taxonomy"), status: "FAIL", failed_assertions: ["check_exit_code_matches_expected"] };
+    const gate = updateGate({
+      results: [failing],
+      baselineByRepo: new Map(),
+      acceptedRegressions: new Set(),
+      unsafeMovesFor: unsafeBaselineMoves
+    });
+    expect(gate.ok).toBe(false);
+    expect(gate.refusals.join("\n")).toContain("taxonomy");
+    expect(gate.refusals.join("\n")).toContain("FAIL");
+  });
+
+  it("refuses an unaccepted unsafe move and names the flag that would accept it", () => {
+    const weakened = { ...passRow("taxonomy"), blocking_count: 0, check_exit_code: 0, check_status: "pass", injection_enforcement: "none", injection_caught: true };
+    const gate = updateGate({
+      results: [weakened],
+      baselineByRepo: new Map([["taxonomy", passRow("taxonomy")]]),
+      acceptedRegressions: new Set(),
+      unsafeMovesFor: unsafeBaselineMoves
+    });
+    expect(gate.ok).toBe(false);
+    expect(gate.refusals.join("\n")).toContain("--accept-regression taxonomy:blocking_count");
+  });
+
+  it("allows the same move when every regression is named explicitly", () => {
+    const weakened = { ...passRow("taxonomy"), blocking_count: 0, check_exit_code: 0, check_status: "pass", injection_enforcement: "none" };
+    const gate = updateGate({
+      results: [weakened],
+      baselineByRepo: new Map([["taxonomy", passRow("taxonomy")]]),
+      acceptedRegressions: new Set([
+        "taxonomy:blocking_count",
+        "taxonomy:check_exit_code",
+        "taxonomy:check_status",
+        "taxonomy:injection_enforcement"
+      ]),
+      unsafeMovesFor: unsafeBaselineMoves
+    });
+    expect(gate).toEqual({ ok: true, refusals: [] });
+  });
+
+  it("does not let one accepted regression smuggle a second one through", () => {
+    const weakened = { ...passRow("taxonomy"), blocking_count: 0, check_exit_code: 0, check_status: "pass", injection_enforcement: "none" };
+    const gate = updateGate({
+      results: [weakened],
+      baselineByRepo: new Map([["taxonomy", passRow("taxonomy")]]),
+      acceptedRegressions: new Set(["taxonomy:blocking_count"]),
+      unsafeMovesFor: unsafeBaselineMoves
+    });
+    expect(gate.ok).toBe(false);
+    expect(gate.refusals.join("\n")).toContain("taxonomy:check_exit_code");
+    expect(gate.refusals.join("\n")).not.toContain("taxonomy:blocking_count is not");
   });
 });
 

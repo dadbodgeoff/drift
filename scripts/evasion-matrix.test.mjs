@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { shapeVerdict } from "./external-eval-predicate.mjs";
+import { shapeVerdict, unsafeShapeMoves } from "./external-eval-predicate.mjs";
 
 /**
  * O-3: the evasion matrix's per-shape verdict, driven synthetically the way O-1 drives
@@ -211,6 +211,64 @@ describe("shapeVerdict: refusal scenario", () => {
     const verdict = shapeVerdict(record, catchContext({ shapeClass: "refuse" }));
     expect(verdict.status).toBe("FAIL");
     expect(verdict.failures).toContain("refusal_names_decoy");
+  });
+});
+
+/**
+ * O-4, applied to the evasion baseline: an `--update` that weakens a shape cell must be
+ * refused unless each regression is named with `--accept-regression <repo>:<shape>.<field>`.
+ */
+describe("unsafeShapeMoves", () => {
+  const blocked = {
+    id: "S06-namespace-import",
+    caught: true,
+    exit: 2,
+    check_status: "fail",
+    enforcement: "block"
+  };
+
+  it("reports nothing when nothing weakened", () => {
+    expect(unsafeShapeMoves(blocked, { ...blocked })).toEqual([]);
+    // Refusing where it blocked is fail-closed, not a weakening.
+    expect(
+      unsafeShapeMoves(blocked, { ...blocked, exit: 3, check_status: "refused", enforcement: "none" })
+    ).toEqual(["S06-namespace-import.enforcement"]);
+  });
+
+  it("names a shape whose catch regressed to an evasion", () => {
+    const evaded = {
+      ...blocked,
+      caught: false,
+      exit: 0,
+      check_status: "pass",
+      enforcement: null,
+      known_evasion: true
+    };
+    expect(unsafeShapeMoves(blocked, evaded).sort()).toEqual([
+      "S06-namespace-import.caught",
+      "S06-namespace-import.check_status",
+      "S06-namespace-import.enforcement",
+      "S06-namespace-import.exit",
+      "S06-namespace-import.known_evasion"
+    ]);
+  });
+
+  it("names a block that silently became a pass", () => {
+    const moves = unsafeShapeMoves(blocked, {
+      ...blocked,
+      exit: 0,
+      check_status: "pass",
+      enforcement: "none"
+    });
+    expect(moves.sort()).toEqual([
+      "S06-namespace-import.check_status",
+      "S06-namespace-import.enforcement",
+      "S06-namespace-import.exit"
+    ]);
+  });
+
+  it("is silent for a cell with no baseline", () => {
+    expect(unsafeShapeMoves(undefined, blocked)).toEqual([]);
   });
 });
 
