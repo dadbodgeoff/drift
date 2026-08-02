@@ -1,4 +1,5 @@
 import { openDriftStorage } from "@drift/storage";
+import { isDriftError } from "./drift-error.js";
 import { operationalFailureFor } from "./failure-classification.js";
 import { createAgentEnvelopeV2 } from "@drift/core";
 import { unknownCommandError,validateCommandShape } from "../args/command-shape.js";
@@ -104,10 +105,13 @@ export async function runCli(argv: string[]): Promise<CliResult> {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CLI error.";
     const failure = operationalFailureFor(error, message);
+    // A DriftError may declare its own exit code: 3 marks a fail-closed refusal (e.g. the
+    // shallow-clone identity refusal, X-1), which CI must be able to tell from a plain error.
+    const exitCode = isDriftError(error) ? error.exitCode : 1;
     if (wantsJson) {
       const staleRefusal = failure.code === "stale_scan";
       return {
-        exitCode: 1,
+        exitCode,
         stdout: `${JSON.stringify({
           error: {
             message,
@@ -136,7 +140,7 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       };
     }
     return {
-      exitCode: 1,
+      exitCode,
       stdout: "",
       stderr: `${message}\n`
     };

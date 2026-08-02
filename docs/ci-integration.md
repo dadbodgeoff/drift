@@ -3,6 +3,25 @@
 `.github/workflows/drift-check.example.yml` is a reference workflow. It is named `.example.yml` so
 it does not run, and **no line of it has been executed on a Linux runner.**
 
+## Requirement 1: `fetch-depth: 0`
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0   # REQUIRED - Drift refuses shallow clones
+```
+
+`actions/checkout` clones depth-1 by default, and a shallow clone's root commit is the fetch
+graft, not the repository's real first commit — an identity derived from it would silently
+disagree with every developer's checkout, so the committed `drift.lock` could never import.
+Drift therefore **refuses to derive identity in a shallow clone**: every identity-deriving
+command (`start`, `scan`, `init`) exits **3** with this remediation before writing any state.
+Set `fetch-depth: 0`, or run `git fetch --unshallow` before invoking Drift.
+
+Partial clones (`--filter=blob:none`) are fine — they have the full commit graph and are not
+shallow. `drift doctor` reports the repo's shallow status, identity source, and fingerprint
+under the `repo_identity` check.
+
 ## What is verified, and where
 
 | | |
@@ -29,9 +48,9 @@ When Linux binaries are published, the two build steps collapse to `npm i -g @dr
 
 ## Two details that are easy to get wrong
 
-**`fetch-depth: 0`.** The check compares against the merge base, and a shallow clone has none.
-Identity also reads the root commit, which a depth-1 clone does not have — so a shallow checkout
-would silently fall back to path-derived identity and fail to import the committed contract.
+**`fetch-depth: 0`.** See Requirement 1 above. Beyond identity, the check compares against the
+merge base, and a shallow clone has none — a `--diff` range that crosses the shallow boundary
+fails, and the error names the boundary and the same remediation.
 
 **Exit 3 must fail the job.** It means Drift declined to answer — stale scan, missing contract,
 unavailable engine — and treating a refusal as a pass reintroduces the failure the exit codes exist
@@ -40,6 +59,8 @@ to prevent. The example maps it to failure explicitly.
 ## Before relying on this
 
 1. Run it once on a real Linux runner and record the result here.
-2. Confirm `drift doctor` reports identity source `git_remote` in CI. If it reports
-   `absolute_path`, the committed contract will not import and the check will run against a
-   freshly inferred contract instead — which is not the same thing and will not be obvious.
+2. Confirm `drift doctor` reports `repo_identity` with `shallow: false` and source `git_remote`
+   in CI. If it reports `absolute_path`, the committed contract will not import and the check
+   will run against a freshly inferred contract instead — which is not the same thing and will
+   not be obvious. If it reports `shallow: true`, every scan will refuse with exit 3 until the
+   checkout fetches full history.

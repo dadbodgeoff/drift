@@ -10,6 +10,7 @@ import { betaDoctorResponse } from "../domain/beta-surfaces.js";
 import { checkDiskSpace,checkHeadroom } from "../domain/disk-space.js";
 import { engineProvenance,type EngineProvenance } from "../domain/engine-provenance.js";
 import { contractFingerprint,repoIdForRoot } from "../domain/identifiers.js";
+import { inspectRepoIdentity,SHALLOW_CLONE_REMEDIATION,type RepoIdentityInspection } from "../domain/repo-identity.js";
 import { detectPackageManager,detectWorkspace,isApiRoutePath } from "../domain/repo-paths.js";
 import { scanStatusPayload } from "../domain/scan-status.js";
 import { SUPPORTED_SQLITE_SCHEMA_VERSION,currentMachineContractVersions,doctorRuntime,doctorV1Scope,sqliteSchemaCompatibility } from "../domain/versions.js";
@@ -70,6 +71,9 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
   const gitInside = repoIsDirectory && gitOutput(repoRoot, ["rev-parse", "--is-inside-work-tree"]) === "true";
   const branch = gitInside ? gitOutput(repoRoot, ["branch", "--show-current"]) || "detached" : "unknown";
   const commit = gitInside ? gitOutput(repoRoot, ["rev-parse", "--short", "HEAD"]) || "unknown" : "unknown";
+  // X-1: doctor diagnoses identity rather than refusing - it is the surface a user consults
+  // AFTER the shallow refusal, so it must be able to look at exactly the repo scan cannot.
+  const identityInspection = repoIsDirectory ? inspectRepoIdentity(repoRoot) : null;
   const databasePath = defaultDatabasePath(repoRoot, parsed, { createDir: false });
   const stateExists = existsSync(databasePath);
   const packageManager = repoIsDirectory ? detectPackageManager(repoRoot) : "unknown";
@@ -98,6 +102,29 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       label: "Git repo",
       status: gitInside ? "ok" : "warn",
       detail: gitInside ? `${branch} @ ${commit}` : "not inside a Git worktree"
+    },
+    {
+      // The X-RED gap: doctor said nothing about identity, so a shallow CI checkout's
+      // wrong fingerprint was invisible until `contract import` failed with mismatch codes.
+      // fail = shallow (identity underivable, scans will refuse); warn = path-bound (works
+      // locally, a committed contract will not travel); ok = portable, with the fingerprint
+      // shown so two machines can be compared by eye.
+      id: "repo_identity",
+      label: "Repo identity",
+      status: identityInspection
+        ? identityInspection.shallow
+          ? "fail"
+          : identityInspection.identity?.source === "absolute_path"
+            ? "warn"
+            : "ok"
+        : "warn",
+      detail: identityInspection
+        ? identityInspection.shallow
+          ? `shallow clone - identity cannot be derived and scans will refuse. ${SHALLOW_CLONE_REMEDIATION}`
+          : identityInspection.identity?.source === "absolute_path"
+            ? `path-bound (${identityInspection.identity.detail}); a committed contract will not import into another checkout`
+            : `source ${identityInspection.identity?.source}, fingerprint ${identityFingerprint(identityInspection)}, ${identityInspection.identity?.detail}`
+        : "unknown"
     },
     {
       id: "package_manifest",
@@ -238,6 +265,14 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
     status,
     repo_root: repoRoot,
     database_path: databasePath,
+    // Machine-readable identity facts (X-1): shallow status, derivation source, and the
+    // portable fingerprint `contract import` will compare against.
+    repo_identity: {
+      shallow: identityInspection?.shallow ?? false,
+      source: identityInspection?.identity?.source ?? null,
+      fingerprint: identityInspection?.identity ? identityFingerprint(identityInspection) : null,
+      detail: identityInspection?.identity?.detail ?? identityInspection?.refusal ?? null
+    },
     runtime,
     machine_contract_versions: machineContractVersions,
     engine: runtimeEngineProvenance(),
@@ -255,6 +290,11 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
 
 function runtimeEngineProvenance(): EngineProvenance {
   return engineProvenance();
+}
+
+/** The portable fingerprint as stored on RepoRecord (repo-paths.ts): the identity id sans prefix. */
+function identityFingerprint(inspection: RepoIdentityInspection): string {
+  return inspection.identity?.id.replace(/^repo_/, "") ?? "";
 }
 
 export function inspectDoctorState(databasePath: string, repoId: string): DoctorStateSummary {
