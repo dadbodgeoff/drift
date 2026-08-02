@@ -1962,18 +1962,23 @@ fn read_package_imports(repo_root: &Path) -> Vec<PathAlias> {
 
 fn read_workspace_packages(repo_root: &Path) -> BTreeMap<String, WorkspacePackage> {
     let mut packages = BTreeMap::new();
-    let Ok(contents) = fs::read_to_string(repo_root.join("package.json")) else {
-        return packages;
-    };
-    let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) else {
-        return packages;
-    };
-    let workspace_globs = json
-        .get("workspaces")
-        .and_then(workspace_globs)
-        .unwrap_or_default();
+    let mut globs: Vec<String> = Vec::new();
+    if let Ok(contents) = fs::read_to_string(repo_root.join("package.json")) {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) {
+            globs.extend(
+                json.get("workspaces")
+                    .and_then(workspace_globs)
+                    .unwrap_or_default(),
+            );
+        }
+    }
+    // S1-04 Gap 1 (E-2): pnpm monorepos declare workspaces in pnpm-workspace.yaml, often
+    // with no package.json#workspaces at all (formbricks, dub). Union both sources.
+    for glob in read_pnpm_workspace_globs(repo_root) {
+        push_unique(&mut globs, glob);
+    }
 
-    for glob in workspace_globs {
+    for glob in globs {
         let Some(prefix) = glob.strip_suffix("/*") else {
             continue;
         };
@@ -2013,6 +2018,74 @@ fn read_workspace_packages(repo_root: &Path) -> BTreeMap<String, WorkspacePackag
         }
     }
     packages
+}
+
+fn read_pnpm_workspace_globs(repo_root: &Path) -> Vec<String> {
+    let Ok(contents) = fs::read_to_string(repo_root.join("pnpm-workspace.yaml")) else {
+        return Vec::new();
+    };
+    parse_pnpm_workspace_packages(&contents)
+}
+
+/// Minimal reader for the `packages:` block of `pnpm-workspace.yaml`. The block pnpm
+/// documents is a flat sequence of scalar globs, so this is parsed directly rather than
+/// through a YAML dependency: the shapes in the wild (quoted/unquoted scalars, trailing
+/// comments, inline flow lists, unrelated sibling keys like `catalog:`/`allowBuilds:`) are
+/// all covered, and no new dependency enters the scan path.
+fn parse_pnpm_workspace_packages(contents: &str) -> Vec<String> {
+    let mut globs = Vec::new();
+    let mut in_packages = false;
+    for raw_line in contents.lines() {
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let is_top_level_key =
+            !raw_line.starts_with([' ', '\t']) && !trimmed.starts_with('-') && trimmed.contains(':');
+        if is_top_level_key {
+            in_packages = false;
+            if let Some(rest) = trimmed.strip_prefix("packages:") {
+                let rest = rest.trim();
+                if rest.is_empty() {
+                    in_packages = true;
+                } else if let Some(list) =
+                    rest.strip_prefix('[').and_then(|list| list.strip_suffix(']'))
+                {
+                    for item in list.split(',') {
+                        if let Some(glob) = yaml_scalar(item) {
+                            push_unique(&mut globs, glob);
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+        if in_packages {
+            if let Some(item) = trimmed.strip_prefix('-') {
+                if let Some(glob) = yaml_scalar(item) {
+                    push_unique(&mut globs, glob);
+                }
+            }
+        }
+    }
+    globs
+}
+
+/// A YAML scalar as pnpm workspace globs use them: optionally quoted, with an optional
+/// trailing comment. Exclusion patterns (`!dir`) are returned as written; the glob layer
+/// decides what to do with them.
+fn yaml_scalar(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if let Some(rest) = trimmed.strip_prefix('"') {
+        let scalar = rest.split('"').next().unwrap_or("");
+        return (!scalar.is_empty()).then(|| scalar.to_string());
+    }
+    if let Some(rest) = trimmed.strip_prefix('\'') {
+        let scalar = rest.split('\'').next().unwrap_or("");
+        return (!scalar.is_empty()).then(|| scalar.to_string());
+    }
+    let unquoted = trimmed.split(" #").next().unwrap_or("").trim();
+    (!unquoted.is_empty()).then(|| unquoted.to_string())
 }
 
 fn read_package_exports(value: &serde_json::Value) -> BTreeMap<String, String> {
@@ -2156,4 +2229,47 @@ fn normalize_repo_string(value: &str) -> String {
 
 fn hash_prefix(hash: &str) -> &str {
     &hash[..hash.len().min(12)]
+}
+
+#[cfg(test)]
+mod resolver_config_tests {
+    use super::parse_pnpm_workspace_packages;
+
+    #[test]
+    fn parses_quoted_unquoted_comments_and_sibling_keys() {
+        let yaml = r#"# header comment
+packages:
+  - "packages/*"
+  - apps/* # trailing comment
+  - 'docker'
+
+allowBuilds:
+  "@prisma/engines": true
+catalog:
+  react: 19.0.0
+"#;
+        assert_eq!(
+            parse_pnpm_workspace_packages(yaml),
+            vec!["packages/*", "apps/*", "docker"]
+        );
+    }
+
+    #[test]
+    fn parses_inline_flow_list() {
+        assert_eq!(
+            parse_pnpm_workspace_packages("packages: [\"apps/*\", packages/*]\n"),
+            vec!["apps/*", "packages/*"]
+        );
+    }
+
+    #[test]
+    fn sibling_sequences_are_not_packages() {
+        let yaml = "onlyBuiltDependencies:\n  - esbuild\npackages:\n  - packages/*\nother:\n  - not-a-glob\n";
+        assert_eq!(parse_pnpm_workspace_packages(yaml), vec!["packages/*"]);
+    }
+
+    #[test]
+    fn missing_packages_block_yields_nothing() {
+        assert!(parse_pnpm_workspace_packages("catalog:\n  react: 19.0.0\n").is_empty());
+    }
 }
