@@ -93,13 +93,17 @@ const REPOS = [
     // directly - a data-access wrapper reachable from routes, the same discovery shape as
     // midday's expectDiscoveryWrapper. A new true positive, not an over-match.
     expectForbiddenExact: ["@/lib/utils/resolve-client-id", "@formbricks/database"],
-    // E-2 transitional: was 2. Resolver coverage (pnpm-workspace.yaml) made
-    // @formbricks/database imports resolve, which exposed the S1-05 residual class:
-    // member-level symbol resolution stays conservative (unresolved_import_symbol on
-    // route files, e.g. Prisma re-exports through packages/database/src/prisma.ts), so
-    // S1-01 now refuses (3) where it previously blocked on specifier string-matching (2).
-    // Pre-registered in TDD S1-05 ("S1-01 will keep refusing where it could legitimately
-    // block"). Flips back to 2 when E-5 makes those symbols provable at runtime.
+    // E-2 transitional (cause re-measured under E-5): was 2. Once resolver coverage
+    // (pnpm-workspace.yaml) made @formbricks/database resolvable, the harness's own
+    // subpath negative control (`@formbricks/database/internal`, deliberately
+    // non-existent) became a genuinely unresolvable import on a route in the diff, so
+    // S1-01 refuses the main check (unresolved_route_import on the subpath probe) - the
+    // same decoy-driven class as dub. E-2's log attributed this to S1-05 symbol
+    // conservatism (unresolved_import_symbol via export * chains); E-5 measured that
+    // claim false: the isolated injected route exits 2 and the sole blocked_reason names
+    // drift-eval-subpath. This 3 is CORRECT fail-closed behaviour toward the decoy and
+    // does not flip with E-5; it flips only if the oracle measures the main check
+    // decoy-free (S1-03 follow-up).
     expectedExitCode: 3
   },
   {
@@ -151,12 +155,14 @@ const REPOS = [
     cleanSymbol: "edgeRouter",
     expectForbidden: ["@openstatus/db"],
     expectForbiddenExact: ["@openstatus/db", "@openstatus/db/src/db", "@openstatus/db/src/schema"],
-    // E-3 transitional: was 2. Deep workspace globs (packages/**/*) made @openstatus/db
-    // imports resolve to packages/db/src/index.ts, whose exports are all `export *`
-    // re-exports - the injected route's `db` import now trips the conservative
-    // member-level symbol gate (unresolved_import_symbol), so S1-01 refuses (3) where
-    // specifier string-matching used to block (2). Same S1-05 residual class as
-    // formbricks under E-2; flips back to 2 when E-5 lands.
+    // E-3 transitional (cause re-measured under E-5): was 2. Once deep workspace globs
+    // (packages/**/*) made @openstatus/db resolvable, the subpath negative control
+    // (`@openstatus/db/internal`, deliberately non-existent) became a genuinely
+    // unresolvable route import, so S1-01 refuses the main check - the same decoy-driven
+    // class as dub and formbricks. E-3's log attributed this to unresolved_import_symbol
+    // through the `export *` barrel; E-5 measured that claim false: the injected route in
+    // isolation exits 2 (block) and the sole blocked_reason names drift-eval-subpath.
+    // Does not flip with E-5; flips only with a decoy-free main-check measurement.
     expectedExitCode: 3
   }
 ];

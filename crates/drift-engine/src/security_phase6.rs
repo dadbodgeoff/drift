@@ -192,6 +192,7 @@ pub fn build_phase6_security_proof(
             name: "unknown".to_string(),
             value: None,
             imported_name: None,
+            runtime_use: None,
             start_line: 1,
             end_line: source.lines().count().max(1),
         });

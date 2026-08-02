@@ -47,9 +47,20 @@ pub struct Fact {
     pub name: String,
     pub value: Option<String>,
     pub imported_name: Option<String>,
+    /// S1-05: how (if at all) this import's runtime use is proven.
+    /// `Some(RUNTIME_USE_VALUE_POSITION)` - the local binding appears in a value position
+    /// (T12's identifier-usage partition). `Some(RUNTIME_USE_DYNAMIC)` - the import is
+    /// runtime by construction (`require()` / dynamic `import()`), for which no type-only
+    /// reading exists. `None` - no runtime use provable; downstream stays conservative.
+    pub runtime_use: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
 }
+
+/// Runtime use proven because the binding appears in a value position.
+pub const RUNTIME_USE_VALUE_POSITION: &str = "value_position";
+/// Runtime use proven by construction: `require()` and dynamic `import()` always execute.
+pub const RUNTIME_USE_DYNAMIC: &str = "dynamic";
 
 struct ImportBinding {
     imported_name: String,
@@ -101,6 +112,7 @@ pub fn extract_typescript_facts(
         name: file_path.clone(),
         value: None,
         imported_name: None,
+        runtime_use: None,
         start_line: 1,
         end_line: source.lines().count().max(1),
     });
@@ -113,13 +125,14 @@ pub fn extract_typescript_facts(
             name: role.to_string(),
             value: None,
             imported_name: None,
+            runtime_use: None,
             start_line: 1,
             end_line: line_count,
         });
     }
 
     walk_node(root, source.as_bytes(), &file_path, &mut facts);
-    drop_type_only_usage_imports(root, source.as_bytes(), &mut facts);
+    apply_runtime_use_analysis(root, source.as_bytes(), &mut facts);
 
     Ok(facts)
 }
@@ -140,13 +153,19 @@ pub fn extract_typescript_facts(
 /// silent miss, which is the worst failure class in this codebase, so a binding is dropped
 /// only when the AST shows at least one type-position use and *no* value-position use.
 /// Absent positive evidence of type usage, the fact is kept.
-fn drop_type_only_usage_imports(root: Node<'_>, source: &[u8], facts: &mut Vec<Fact>) {
+fn apply_runtime_use_analysis(root: Node<'_>, source: &[u8], facts: &mut Vec<Fact>) {
     let mut value_uses: BTreeSet<String> = BTreeSet::new();
     let mut type_uses: BTreeSet<String> = BTreeSet::new();
     collect_identifier_usage(root, source, &mut value_uses, &mut type_uses);
 
     facts.retain(|fact| {
         if fact.kind != FactKind::ImportUsed {
+            return true;
+        }
+        // Runtime-by-construction imports (`require()`, dynamic `import()`) execute the
+        // module regardless of how their binding is used; the type-only erasure below
+        // never applies to them.
+        if fact.runtime_use.as_deref() == Some(RUNTIME_USE_DYNAMIC) {
             return true;
         }
         let name = fact.name.as_str();
@@ -159,6 +178,18 @@ fn drop_type_only_usage_imports(root: Node<'_>, source: &[u8], facts: &mut Vec<F
         let erased_at_runtime = used_as_type && !used_as_value;
         !erased_at_runtime
     });
+
+    // S1-05: carry the value/type verdict forward on the fact rather than recomputing it at
+    // the graph-assembly diagnostic site - two copies of the analysis is how the duplicated
+    // resolvers in S1-04 diverged. A binding seen in a value position is provably runtime.
+    for fact in facts.iter_mut() {
+        if fact.kind == FactKind::ImportUsed
+            && fact.runtime_use.is_none()
+            && value_uses.contains(fact.name.as_str())
+        {
+            fact.runtime_use = Some(RUNTIME_USE_VALUE_POSITION.to_string());
+        }
+    }
 }
 
 /// Partition every identifier occurrence into type positions and value positions.
@@ -184,6 +215,14 @@ fn collect_identifier_usage(
                 type_uses.insert(text);
             }
         }
+        // A qualified type name (`type Row = T.PrismaLike`) parses its module part as a
+        // plain `identifier`, and a type query (`keyof typeof T`) wraps one too - but both
+        // are type positions erased at compile time. Counting them as value uses made a
+        // namespace import used only in types look runtime (S1-05's negative control).
+        "nested_type_identifier" | "type_query" => {
+            collect_type_context_identifiers(node, source, type_uses);
+            return;
+        }
         "identifier" | "shorthand_property_identifier" => {
             if let Some(text) = node_text(node, source) {
                 value_uses.insert(text);
@@ -195,6 +234,23 @@ fn collect_identifier_usage(
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         collect_identifier_usage(child, source, value_uses, type_uses);
+    }
+}
+
+/// Record every identifier under a type-context node as a type use.
+fn collect_type_context_identifiers(
+    node: Node<'_>,
+    source: &[u8],
+    type_uses: &mut BTreeSet<String>,
+) {
+    if matches!(node.kind(), "identifier" | "type_identifier")
+        && let Some(text) = node_text(node, source)
+    {
+        type_uses.insert(text);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_type_context_identifiers(child, source, type_uses);
     }
 }
 
@@ -231,6 +287,7 @@ fn extract_imports(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut V
             name: binding.local_name,
             value: source_value.clone(),
             imported_name: Some(binding.imported_name),
+            runtime_use: None,
             start_line: node.start_position().row + 1,
             end_line: node.end_position().row + 1,
         });
@@ -255,6 +312,9 @@ fn extract_runtime_imports(node: Node<'_>, source: &[u8], file_path: &str, facts
             name: binding.local_name,
             value: Some(source_value.clone()),
             imported_name: Some(binding.imported_name),
+            // `require()` and dynamic `import()` execute the module by construction; no
+            // type-only reading of them exists (S1-05).
+            runtime_use: Some(RUNTIME_USE_DYNAMIC.to_string()),
             start_line: node.start_position().row + 1,
             end_line: node.end_position().row + 1,
         });
@@ -327,6 +387,7 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         name: name.clone(),
         value: receiver.clone(),
         imported_name: None,
+        runtime_use: None,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
     });
@@ -346,6 +407,7 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         name,
         value: Some(receiver),
         imported_name: Some(format!("{operation_kind}:{store_name}")),
+        runtime_use: None,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
     });
@@ -359,15 +421,56 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         .map(unquote)
         && let Some(statement) = statement.as_deref()
     {
+        let start_line = node.start_position().row + 1;
+        let end_line = node.end_position().row + 1;
         for identifier in reexport_value_identifiers(statement) {
+            // `export * as ns from "m"` exports a NAMESPACE named `ns` - it does not
+            // flatten `m`'s exports into this file the way a bare `export *` does. Emit
+            // the namespace name as a directly exported symbol of this file (so importers
+            // of `ns` resolve here) and keep its ReExportUsed name distinct from `*` so
+            // the export-star chain map never descends through it.
+            if let Some(namespace_name) = identifier.strip_prefix("* as ") {
+                facts.push(Fact {
+                    kind: FactKind::ImportUsed,
+                    file_path: file_path.to_string(),
+                    name: namespace_name.to_string(),
+                    value: Some(source_value.clone()),
+                    imported_name: Some("*".to_string()),
+                    runtime_use: None,
+                    start_line,
+                    end_line,
+                });
+                facts.push(Fact {
+                    kind: FactKind::ReExportUsed,
+                    file_path: file_path.to_string(),
+                    name: namespace_name.to_string(),
+                    value: Some(source_value.clone()),
+                    imported_name: Some("*".to_string()),
+                    runtime_use: None,
+                    start_line,
+                    end_line,
+                });
+                facts.push(Fact {
+                    kind: FactKind::ExportedSymbol,
+                    file_path: file_path.to_string(),
+                    name: namespace_name.to_string(),
+                    value: None,
+                    imported_name: None,
+                    runtime_use: None,
+                    start_line,
+                    end_line,
+                });
+                continue;
+            }
             facts.push(Fact {
                 kind: FactKind::ImportUsed,
                 file_path: file_path.to_string(),
                 name: identifier.clone(),
                 value: Some(source_value.clone()),
                 imported_name: None,
-                start_line: node.start_position().row + 1,
-                end_line: node.end_position().row + 1,
+                runtime_use: None,
+                start_line,
+                end_line,
             });
             facts.push(Fact {
                 kind: FactKind::ReExportUsed,
@@ -375,8 +478,9 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 name: identifier,
                 value: Some(source_value.clone()),
                 imported_name: None,
-                start_line: node.start_position().row + 1,
-                end_line: node.end_position().row + 1,
+                runtime_use: None,
+                start_line,
+                end_line,
             });
         }
     }
@@ -390,6 +494,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             name: name.clone(),
             value: None,
             imported_name: None,
+            runtime_use: None,
             start_line,
             end_line,
         });
@@ -416,6 +521,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     name: "default".to_string(),
                     value: Some(name.clone()),
                     imported_name: None,
+                    runtime_use: None,
                     start_line,
                     end_line,
                 });
@@ -429,6 +535,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 name: name.clone(),
                 value: None,
                 imported_name: None,
+                runtime_use: None,
                 start_line,
                 end_line,
             });
@@ -440,6 +547,7 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 name: "default".to_string(),
                 value: Some(name),
                 imported_name: None,
+                runtime_use: None,
                 start_line,
                 end_line,
             });
@@ -528,7 +636,15 @@ fn reexport_value_identifiers(statement: &str) -> Vec<String> {
     if export_clause.is_empty() || export_clause.starts_with("type ") {
         return Vec::new();
     }
-    if export_clause.starts_with('*') {
+    if let Some(rest) = export_clause.strip_prefix('*') {
+        // `export * as ns from "m"`: return the marker `* as ns` so extract_export can
+        // treat the namespace re-export differently from a flattening `export *`.
+        if let Some(namespace_name) = rest.trim_start().strip_prefix("as ") {
+            let name = namespace_name.split_whitespace().next().unwrap_or("");
+            if !name.is_empty() && name.chars().all(is_identifier_char) {
+                return vec![format!("* as {name}")];
+            }
+        }
         return vec!["*".to_string()];
     }
 

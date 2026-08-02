@@ -60,6 +60,11 @@ pub struct EngineFact {
     pub value: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub imported_name: Option<String>,
+    /// S1-05: runtime-use proof carried forward from fact extraction (see facts.rs).
+    /// `default` on deserialize so facts recorded before this field existed stay
+    /// conservative (`None`) rather than failing to load.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runtime_use: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
 }

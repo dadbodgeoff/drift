@@ -3339,6 +3339,7 @@ fn check_fact_to_engine_fact(fact: CheckFact) -> Option<Fact> {
         name: fact.name,
         value: fact.value,
         imported_name: fact.imported_name,
+        runtime_use: None,
         start_line: fact.start_line,
         end_line: fact.end_line,
     })

@@ -24,7 +24,10 @@ pub use diff::{
     DiffClassifiedFinding, DiffFile, DiffScope, DiffStatus, ParsedDiff,
     classify_findings_against_diff, parse_unified_diff,
 };
-pub use facts::{Fact, FactExtractError, FactKind, extract_typescript_facts};
+pub use facts::{
+    Fact, FactExtractError, FactKind, RUNTIME_USE_DYNAMIC, RUNTIME_USE_VALUE_POSITION,
+    extract_typescript_facts,
+};
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
     DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,

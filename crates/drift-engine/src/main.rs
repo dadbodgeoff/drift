@@ -169,6 +169,7 @@ fn scan_repo(
     add_middleware_coverage_facts(&mut scanned.scanned);
     let framework_scan_data = collect_framework_scan_data(&repo_id, &scan_id, &scanned.scanned);
     resolver.exported_symbols = exported_symbols_by_file(&scanned.scanned);
+    resolver.export_star_sources = export_star_sources_by_file(&scanned.scanned);
     for (file, file_facts) in scanned.scanned {
         let graph = graph_for_file(&repo_id, &scan_id, &file, &file_facts, &resolver);
         graph_node_count += graph.nodes.len();
@@ -273,6 +274,7 @@ fn stream_scan_repo(
         )?;
     }
     resolver.exported_symbols = exported_symbols_by_file(&scanned.scanned);
+    resolver.export_star_sources = export_star_sources_by_file(&scanned.scanned);
     if !framework_scan_data.adapters.is_empty() {
         write_event(
             &mut stdout,
@@ -616,6 +618,7 @@ fn add_middleware_coverage_facts(scanned: &mut [(ScannedFile, Vec<EngineFact>)])
                         .to_string(),
                     ),
                     imported_name: Some(protection_kind),
+                    runtime_use: None,
                     start_line: route_line,
                     end_line: route_line,
                 });
@@ -637,6 +640,7 @@ fn middleware_fact_from_engine(fact: &EngineFact) -> Option<Fact> {
         name: fact.name.clone(),
         value: fact.value.clone(),
         imported_name: fact.imported_name.clone(),
+        runtime_use: None,
         start_line: fact.start_line,
         end_line: fact.end_line,
     })
@@ -776,6 +780,7 @@ fn engine_fact(fact: Fact) -> EngineFact {
         name: fact.name,
         value: fact.value,
         imported_name: fact.imported_name,
+        runtime_use: fact.runtime_use,
         start_line: fact.start_line,
         end_line: fact.end_line,
     }
@@ -836,6 +841,11 @@ struct ResolverContext {
     base_urls: Vec<ScopedBaseUrl>,
     packages: BTreeMap<String, WorkspacePackage>,
     exported_symbols: BTreeMap<String, BTreeSet<String>>,
+    /// S1-05 (E-5): per file, the raw specifiers of its flattening `export * from "m"`
+    /// statements, in declaration order. `export * as ns` is deliberately excluded - it
+    /// exports a namespace, not the target's members. Used to resolve imported symbols
+    /// through re-export chains.
+    export_star_sources: BTreeMap<String, Vec<String>>,
 }
 
 /// A tsconfig/jsconfig `paths` alias, scoped to the directory of the config that declared
@@ -1089,10 +1099,17 @@ fn graph_for_file(
                             ("resolved_module_id".to_string(), json!(resolved_module)),
                         ]),
                     );
-                    if let Some(symbol_name) =
-                        resolved_import_symbol_name(imported_name, resolved, resolver)
-                    {
-                        let resolved_symbol = symbol_id(resolved, "function", &symbol_name);
+                    // S1-05 (E-5): symbol resolution follows `export *` chains, and the
+                    // conservative diagnostics consult the runtime-use proof carried on
+                    // the fact instead of firing unconditionally.
+                    let symbol_resolution =
+                        resolve_import_symbol(imported_name, resolved, resolver);
+                    let runtime_by_construction =
+                        fact.runtime_use.as_deref() == Some(drift_engine::RUNTIME_USE_DYNAMIC);
+                    let runtime_use_proven = fact.runtime_use.is_some();
+                    if let Some(declaring_file) = &symbol_resolution.declaring_file {
+                        let resolved_symbol =
+                            symbol_id(declaring_file, "function", imported_name);
                         insert_edge(
                             &mut edges,
                             "IMPORT_RESOLVES_TO_SYMBOL",
@@ -1101,14 +1118,21 @@ fn graph_for_file(
                             vec![evidence_id.clone()],
                             BTreeMap::from([
                                 ("resolution_status".to_string(), json!("resolved")),
-                                ("imported_name".to_string(), json!(symbol_name)),
+                                ("imported_name".to_string(), json!(imported_name)),
                                 ("local_name".to_string(), json!(fact.name)),
-                                ("resolved_file_path".to_string(), json!(resolved)),
+                                ("resolved_file_path".to_string(), json!(declaring_file)),
                                 ("resolved_module_id".to_string(), json!(resolved_module)),
                             ]),
                         );
                     } else if is_symbol_resolvable_import(imported_name)
                         && resolver.exported_symbols.contains_key(resolved)
+                        // An open chain (`export * from "some-external-package"`) means
+                        // the symbol may legitimately come from outside the snapshot, so
+                        // its absence is not provable.
+                        && symbol_resolution.chain_closed
+                        // `require()` / dynamic `import()` are runtime by construction;
+                        // member-level conservatism must not refuse them (S1-05).
+                        && !runtime_by_construction
                     {
                         diagnostics.push(EngineDiagnostic {
                             severity: "warning".to_string(),
@@ -1118,7 +1142,11 @@ fn graph_for_file(
                             ),
                             file_path: Some(fact.file_path.clone()),
                         });
-                    } else if imported_name == "*" {
+                    } else if imported_name == "*" && !runtime_use_proven {
+                        // Emitted only when no runtime use is provable: the binding never
+                        // appears in a value position and the import is not runtime by
+                        // construction. Keeping this is the S1-05 direction of caution -
+                        // an unanalysable namespace import must stay conservative.
                         diagnostics.push(EngineDiagnostic {
                             severity: "warning".to_string(),
                             code: "unsupported_namespace_import_symbol".to_string(),
@@ -1708,6 +1736,7 @@ fn build_resolver_context(
         base_urls,
         packages: read_workspace_packages(repo_root, diagnostics),
         exported_symbols: BTreeMap::new(),
+        export_star_sources: BTreeMap::new(),
     }
 }
 
@@ -1729,18 +1758,104 @@ fn exported_symbols_by_file(
     exported
 }
 
+/// S1-05 (E-5): per file, the specifiers of its flattening `export * from "m"` statements in
+/// declaration order. `export * as ns` re-exports carry the namespace name (never `"*"`) in
+/// their fact, so they are excluded here by construction.
+fn export_star_sources_by_file(
+    scanned: &[(ScannedFile, Vec<EngineFact>)],
+) -> BTreeMap<String, Vec<String>> {
+    let mut sources = BTreeMap::<String, Vec<String>>::new();
+    for (file, facts) in scanned {
+        for fact in facts {
+            if fact.kind != "re_export_used" || fact.name != "*" {
+                continue;
+            }
+            let Some(spec) = &fact.value else {
+                continue;
+            };
+            let entry = sources.entry(file.file_path.clone()).or_default();
+            if !entry.contains(spec) {
+                entry.push(spec.clone());
+            }
+        }
+    }
+    sources
+}
+
+/// Outcome of resolving an imported symbol against a module's exports, following
+/// flattening `export *` chains (S1-05 / E-5).
+struct ImportSymbolResolution {
+    /// The file that actually declares the symbol, when found (the entry file itself or a
+    /// file reached through its `export *` chain).
+    declaring_file: Option<String>,
+    /// Whether the export set is fully known: every transitive `export *` target resolved
+    /// to an in-repo file. When a chain leads out of the repo (e.g. `export * from
+    /// "drizzle-orm"`) the symbol may come from there, so absence is NOT provable and the
+    /// conservative diagnostic must stay silent.
+    chain_closed: bool,
+}
+
+fn resolve_import_symbol(
+    imported_name: &str,
+    resolved_file_path: &str,
+    resolver: &ResolverContext,
+) -> ImportSymbolResolution {
+    if imported_name == "*" {
+        return ImportSymbolResolution {
+            declaring_file: None,
+            chain_closed: false,
+        };
+    }
+    // Breadth-first in declaration order, so the nearest declaration wins and traversal is
+    // deterministic when a symbol is reachable through more than one chain.
+    let mut visited = BTreeSet::new();
+    let mut queue = vec![resolved_file_path.to_string()];
+    let mut chain_closed = true;
+    let mut index = 0;
+    while index < queue.len() {
+        let file = queue[index].clone();
+        index += 1;
+        if !visited.insert(file.clone()) {
+            continue;
+        }
+        if resolver
+            .exported_symbols
+            .get(&file)
+            .is_some_and(|exports| exports.contains(imported_name))
+        {
+            return ImportSymbolResolution {
+                declaring_file: Some(file),
+                chain_closed,
+            };
+        }
+        for spec in resolver
+            .export_star_sources
+            .get(&file)
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+        {
+            match resolve_import(&file, spec, resolver) {
+                Some(target) => queue.push(target),
+                // The star target is outside the snapshot (external package or
+                // unresolvable): the export set is open-ended.
+                None => chain_closed = false,
+            }
+        }
+    }
+    ImportSymbolResolution {
+        declaring_file: None,
+        chain_closed,
+    }
+}
+
 fn resolved_import_symbol_name(
     imported_name: &str,
     resolved_file_path: &str,
     resolver: &ResolverContext,
 ) -> Option<String> {
-    if imported_name == "*" {
-        return None;
-    }
-    let exports = resolver.exported_symbols.get(resolved_file_path)?;
-    exports
-        .contains(imported_name)
-        .then(|| imported_name.to_string())
+    resolve_import_symbol(imported_name, resolved_file_path, resolver)
+        .declaring_file
+        .map(|_| imported_name.to_string())
 }
 
 fn is_symbol_resolvable_import(imported_name: &str) -> bool {

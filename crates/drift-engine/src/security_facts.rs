@@ -113,6 +113,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: Some(helper.symbol.clone()),
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -138,6 +139,7 @@ fn extract_security_facts_with_policy_and_phase5(
                         .to_string(),
                     ),
                     imported_name: Some(helper.symbol.clone()),
+                    runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
                 });
@@ -157,6 +159,7 @@ fn extract_security_facts_with_policy_and_phase5(
                         .to_string(),
                     ),
                     imported_name: None,
+                    runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
                 });
@@ -184,6 +187,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: Some(fact.name.clone()),
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -216,6 +220,7 @@ fn extract_security_facts_with_policy_and_phase5(
                         .to_string(),
                     ),
                     imported_name: Some(validator.symbol.clone()),
+                    runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
                 });
@@ -242,6 +247,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: Some(serializer.imported_name.clone()),
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -305,6 +311,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: Some(helper.symbol.clone()),
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -325,6 +332,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: None,
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -351,6 +359,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: None,
+                runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
             });
@@ -405,6 +414,7 @@ fn extract_security_facts_with_policy_and_phase5(
                 .to_string(),
             ),
             imported_name: None,
+            runtime_use: None,
             start_line: validated_use.start_line,
             end_line: validated_use.end_line,
         });
@@ -441,6 +451,7 @@ fn extract_security_facts_with_policy_and_phase5(
                 .to_string(),
             ),
             imported_name: None,
+            runtime_use: None,
             start_line: middleware_line,
             end_line: middleware_line,
         });
@@ -458,6 +469,7 @@ fn extract_security_facts_with_policy_and_phase5(
                     .to_string(),
                 ),
                 imported_name: None,
+                runtime_use: None,
                 start_line: matcher.start_line,
                 end_line: matcher.end_line,
             });
@@ -579,6 +591,7 @@ fn secret_read_fact(
         name: "secret_read".to_string(),
         value: Some(value.to_string()),
         imported_name: None,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -735,6 +748,7 @@ fn response_emits_field_fact(
         name: field_path.to_string(),
         value: Some(value.to_string()),
         imported_name: None,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -926,6 +940,7 @@ fn sensitive_field_fact_from_parts(
             .to_string(),
         ),
         imported_name: None,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -1270,6 +1285,7 @@ fn session_read_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fa
                 .to_string(),
             ),
             imported_name: None,
+            runtime_use: None,
             start_line: line_number,
             end_line: line_number,
         });
@@ -1528,6 +1544,7 @@ fn tenant_guard_fact(
             .to_string(),
         ),
         imported_name: helper_symbol,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -1556,6 +1573,7 @@ fn tenant_source_fact(
             .to_string(),
         ),
         imported_name: None,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -1596,6 +1614,7 @@ fn request_input_fact(
             .to_string(),
         ),
         imported_name: None,
+        runtime_use: None,
         start_line: line_number,
         end_line: line_number,
     }
@@ -1898,6 +1917,7 @@ fn raw_sql_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fact> {
                     .to_string(),
                 ),
                 imported_name: None,
+                runtime_use: None,
                 start_line: line_number,
                 end_line: line_number,
             });
@@ -1918,6 +1938,7 @@ fn raw_sql_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fact> {
                     .to_string(),
                 ),
                 imported_name: None,
+                runtime_use: None,
                 start_line: line_number,
                 end_line: line_number,
             });
@@ -1957,6 +1978,7 @@ fn cors_policy_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fac
             .to_string(),
         ),
         imported_name: None,
+        runtime_use: None,
         start_line: origin_line,
         end_line: origin_line,
     }]

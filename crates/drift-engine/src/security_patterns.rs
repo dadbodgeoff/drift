@@ -564,6 +564,7 @@ mod tests {
             name: "publicUser".to_string(),
             value: None,
             imported_name: None,
+            runtime_use: None,
             start_line: 4,
             end_line: 4,
         };
@@ -573,6 +574,7 @@ mod tests {
             name: "publicUser".to_string(),
             value: Some("@/lib/unsafe-serializers".to_string()),
             imported_name: Some("serializePublicUser".to_string()),
+            runtime_use: None,
             start_line: 1,
             end_line: 1,
         }];
@@ -592,6 +594,7 @@ mod tests {
             name: "publicUser".to_string(),
             value: Some("@/lib/serializers/user".to_string()),
             imported_name: Some("serializePublicUser".to_string()),
+            runtime_use: None,
             start_line: 1,
             end_line: 1,
         }];

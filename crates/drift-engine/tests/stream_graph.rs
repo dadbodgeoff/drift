@@ -1704,7 +1704,7 @@ export async function GET() {
 }
 
 #[test]
-fn scan_stream_resolves_default_exports_and_diagnoses_namespace_membership() {
+fn scan_stream_resolves_default_exports_and_value_used_namespace_has_no_diagnostic() {
     let dir = tempfile::tempdir().expect("tempdir");
     fs::write(
         dir.path().join("tsconfig.json"),
@@ -1789,11 +1789,15 @@ export async function GET() {
         }),
         "missing default import symbol edge: {edges:#?}"
     );
+    // S1-05 (E-5): `dbClient` appears in a value position (`dbClient.db.user.findMany()`),
+    // so its runtime use is proven and the conservative namespace diagnostic must NOT fire.
+    // The unused-binding case (where the diagnostic must remain) is pinned in
+    // runtime_provable_imports.rs::unused_namespace_import_stays_conservative.
     assert!(
-        diagnostics.iter().any(|diagnostic| {
+        !diagnostics.iter().any(|diagnostic| {
             diagnostic["code"] == "unsupported_namespace_import_symbol"
                 && diagnostic["file_path"] == "app/api/users/route.ts"
         }),
-        "missing namespace import diagnostic: {diagnostics:#?}"
+        "value-used namespace import must not carry the conservative diagnostic: {diagnostics:#?}"
     );
 }
