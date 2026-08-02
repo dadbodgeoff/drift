@@ -68,7 +68,16 @@ const REPOS = [
     cleanModule: "@/lib/api/errors",
     cleanSymbol: "handleAndReturnErrorResponse",
     expectForbidden: ["@/lib/prisma"],
-    expectedExitCode: 0
+    // E-4 transitional: was 0. Nested tsconfig discovery makes apps/web's `@/lib/*` alias
+    // match the harness's own deliberately non-existent negative-control imports
+    // (`@/lib/prisma-legacy`), which are now correctly classified unresolved instead of
+    // external - so S1-01 refuses the main check (3), exactly the state taxonomy, calcom,
+    // papermark and midday already record (their root aliases always matched the decoys).
+    // The injected violation itself resolves cleanly (no diagnostics on the injected route;
+    // measured directly) and enforcement-in-isolation still matches the warn mode. Flips to
+    // 0 when the isolation-aware oracle measurement (S1-03 follow-up) or E-5-era decoy
+    // handling lands.
+    expectedExitCode: 3
   },
   {
     name: "formbricks",
@@ -78,7 +87,12 @@ const REPOS = [
     cleanModule: "@/app/lib/api/response",
     cleanSymbol: "responses",
     expectForbidden: ["@formbricks/database"],
-    expectForbiddenExact: ["@formbricks/database"],
+    // E-4: @/lib/utils/resolve-client-id joined the learned set once nested tsconfig
+    // resolution made apps/web's `@/*` imports resolvable. Verified genuine: the module
+    // imports prisma from @formbricks/database and runs prisma.workspace.findFirst
+    // directly - a data-access wrapper reachable from routes, the same discovery shape as
+    // midday's expectDiscoveryWrapper. A new true positive, not an over-match.
+    expectForbiddenExact: ["@/lib/utils/resolve-client-id", "@formbricks/database"],
     // E-2 transitional: was 2. Resolver coverage (pnpm-workspace.yaml) made
     // @formbricks/database imports resolve, which exposed the S1-05 residual class:
     // member-level symbol resolution stays conservative (unresolved_import_symbol on
