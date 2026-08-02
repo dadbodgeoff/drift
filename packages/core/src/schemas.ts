@@ -1175,7 +1175,9 @@ export const FindingDiffStatusSchema = z.enum([
   "outside_diff"
 ]);
 
-export const CheckRunStatusSchema = z.enum(["pass", "fail", "blocked"]);
+// "refused" (E-1 / S1-02): the check made no enforcement claim - exit 3's truth in the
+// payload. "blocked" is legacy (pre-E-1 fallback refusals); kept readable, never written.
+export const CheckRunStatusSchema = z.enum(["pass", "fail", "refused", "blocked"]);
 
 export const CheckRunSchema = z.object({
   id: z.string().min(1),

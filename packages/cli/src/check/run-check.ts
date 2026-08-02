@@ -114,6 +114,28 @@ export function checkExitCodeFor(input: {
   return input.enforcementDegraded ? CHECK_EXIT_REFUSED : CHECK_EXIT_PASS;
 }
 
+/**
+ * The persisted/reported status, from the same inputs as the exit code (E-1 / S1-02).
+ *
+ * B-3's shape was exit 3 alongside `check.status: "pass"`: the exit code told the truth
+ * and the JSON did not, and the consumers Drift is built for - MCP, agents, CI steps
+ * parsing the payload - read `check.status`, not `$?`. One decision, shared inputs, so
+ * the two can never diverge again.
+ */
+export function checkStatusFor(input: {
+  blockingCount: number;
+  enforcementDegraded: boolean;
+}): "pass" | "fail" | "refused" {
+  switch (checkExitCodeFor(input)) {
+    case CHECK_EXIT_BLOCKED:
+      return "fail";
+    case CHECK_EXIT_REFUSED:
+      return "refused";
+    default:
+      return "pass";
+  }
+}
+
 export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
   const repoId = resolveRepoId(parsed);
   const repo = storage.getRepo(repoId);
@@ -187,6 +209,9 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       capabilityCompleteness,
       now
     });
+    // E-1 (S1-02): this path exits CHECK_EXIT_REFUSED with blocked_reasons
+    // ["typescript_fallback_used"] - it is a refusal, and it now says so. "blocked" was
+    // the pre-refused vocabulary; the enum keeps it only so old stored rows stay readable.
     const check = checkEnvelope({
       checkId,
       repoId,
@@ -194,7 +219,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       contractFingerprintValue,
       checkScanId,
       scope,
-      status: "blocked",
+      status: "refused",
       fallbackStatus,
       capabilityCompleteness,
       machineContractVersions
@@ -205,7 +230,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       repo_contract_id: contract.id,
       contract_fingerprint: contractFingerprintValue,
       scan_id: checkScanId,
-      status: "blocked",
+      status: "refused",
       scope: scope as "changed-hunks" | "changed-files" | "full",
       engine_source: checkData.engineSource,
       fallback_used: true,
@@ -568,8 +593,6 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     !isClosedFindingStatus(finding.status) &&
     finding.status !== "needs_review"
   ).length;
-  const checkStatus: CheckRun["status"] = blockingCount > 0 ? "fail" : "pass";
-
   // S1-01: did incomplete coverage silently weaken enforcement?
   //
   // Uses the engine's own completeness, which collect-scan-data already carries - no protocol change.
@@ -586,9 +609,12 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     }))
   });
 
+  // E-1 (S1-02): status and exit code are one decision - a refused check records
+  // "refused", never "pass" (B-3's contradiction, recorded on every eval baseline row).
+  const checkStatus: CheckRun["status"] = checkStatusFor({ blockingCount, enforcementDegraded });
 
   const fallbackStatus = fallbackStatusForCheck(checkData);
-  const capabilityCompleteness = capabilityCompletenessForCheck(checkData);
+  const capabilityCompleteness = capabilityCompletenessForCheck(checkData, { enforcementDegraded });
   const readiness = readinessForCheck({
     repoId,
     checkScanId,
@@ -708,7 +734,10 @@ function fallbackStatusForCheck(checkData: ScanData): ScanData["fallbackStatus"]
   return checkData.fallbackStatus;
 }
 
-function capabilityCompletenessForCheck(checkData: ScanData): {
+function capabilityCompletenessForCheck(
+  checkData: ScanData,
+  options?: { enforcementDegraded?: boolean }
+): {
   complete: boolean;
   missing_capabilities: string[];
   can_block: boolean;
@@ -718,7 +747,15 @@ function capabilityCompletenessForCheck(checkData: ScanData): {
     missing_capabilities: checkData.fallbackStatus.fallback_used
       ? checkData.fallbackStatus.degraded_capabilities
       : [],
-    can_block: checkData.engineSource === "rust" && !checkData.fallbackStatus.enforcement_degraded
+    // E-1 (S1-02 / B-3): derived from what the check actually DID, not recomputed
+    // optimistically from engine source alone. A check whose findings were zeroed for
+    // incomplete coverage (the S1-01 refusal) cannot claim it could have blocked - that
+    // optimistic answer is how the kill-switch payloads read `can_block: true` while the
+    // engine had already demoted everything.
+    can_block:
+      checkData.engineSource === "rust" &&
+      !checkData.fallbackStatus.enforcement_degraded &&
+      !(options?.enforcementDegraded ?? false)
   };
 }
 

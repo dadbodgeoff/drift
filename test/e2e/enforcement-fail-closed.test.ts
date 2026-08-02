@@ -107,6 +107,9 @@ describe("enforcement fails closed", () => {
 
     const result = run(["check", "--diff", "HEAD", "--scope", "changed-hunks", "--json"]);
     expect(result.code, result.stdout.slice(0, 400)).toBe(2);
+    // E-1 (S1-02): the payload's status must agree with the exit code.
+    const payload = JSON.parse(result.stdout) as { check?: { status?: string } };
+    expect(payload.check?.status).toBe("fail");
   }, 240_000);
 
   it("refuses rather than passing when an adjacent route degrades coverage", async () => {
@@ -120,6 +123,7 @@ describe("enforcement fails closed", () => {
     const payload = JSON.parse(result.stdout) as {
       findings?: unknown[];
       summary?: { blocked_reasons?: string[] };
+      check?: { status?: string; capability_completeness?: { can_block?: boolean } };
     };
 
     // The whole point: not 0.
@@ -129,5 +133,14 @@ describe("enforcement fails closed", () => {
     // And it must say which file cost us the coverage, or it is not actionable.
     const reasons = (payload.summary?.blocked_reasons ?? []).join(" ");
     expect(reasons).toMatch(/adjacent/);
+    // E-1 (S1-02 / B-3): the exit code told the truth and the JSON did not - the payload
+    // read `status: "pass"`, `can_block: true` on this exact shape. A JSON consumer (MCP,
+    // an agent, a CI step parsing the payload rather than $?) must never conclude success
+    // for a check that exited 3.
+    expect(payload.check?.status, "refused check must record status refused").toBe("refused");
+    expect(
+      payload.check?.capability_completeness?.can_block,
+      "a check that refused to enforce cannot claim it could block"
+    ).toBe(false);
   }, 240_000);
 });

@@ -4,6 +4,7 @@ import {
   CHECK_EXIT_PASS,
   CHECK_EXIT_REFUSED,
   checkExitCodeFor,
+  checkStatusFor,
   enforcementDegradedByCompleteness
 } from "../src/check/run-check.js";
 
@@ -84,5 +85,36 @@ describe("checkExitCodeFor", () => {
 
   it("passes only when coverage was adequate and nothing blocked", () => {
     expect(checkExitCodeFor({ blockingCount: 0, enforcementDegraded: false })).toBe(CHECK_EXIT_PASS);
+  });
+});
+
+/**
+ * E-1 (S1-02 / B-3). The status must be the exit code's truth in the payload: exit 3 with
+ * `check.status: "pass"` was the measured shape on cal.com at e0dc052 and is recorded on
+ * every baseline row today. One decision, same inputs as the exit code, so the two can
+ * never diverge.
+ */
+describe("checkStatusFor", () => {
+  it("records refused when enforcement was degraded and nothing blocked", () => {
+    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: true })).toBe("refused");
+  });
+
+  it("records fail when something actually blocks, even degraded", () => {
+    expect(checkStatusFor({ blockingCount: 1, enforcementDegraded: true })).toBe("fail");
+  });
+
+  it("records pass only for a clean, fully-enforced check", () => {
+    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: false })).toBe("pass");
+  });
+
+  it("agrees with the exit code on every input", () => {
+    for (const blockingCount of [0, 1, 5]) {
+      for (const enforcementDegraded of [false, true]) {
+        const status = checkStatusFor({ blockingCount, enforcementDegraded });
+        const exit = checkExitCodeFor({ blockingCount, enforcementDegraded });
+        const expected = { [CHECK_EXIT_PASS]: "pass", [CHECK_EXIT_BLOCKED]: "fail", [CHECK_EXIT_REFUSED]: "refused" }[exit];
+        expect(status).toBe(expected);
+      }
+    }
   });
 });

@@ -107,6 +107,7 @@ describe("repoVerdict", () => {
     contract_names_real_data_layer: true,
     forbidden_imports_exact_match: true,
     check_exit_code: 2,
+    check_status: "fail",
     expected_exit_code: 2,
     engine_source: "rust",
     fallback_used: false,
@@ -171,6 +172,34 @@ describe("repoVerdict", () => {
   it("fails when the evidence file is unrecorded", () => {
     const result = { ...goodResult(), injection_evidence_file: null };
     expect(repoVerdict(result, goodCfg()).status).toBe("FAIL");
+  });
+
+  // E-1 (S1-02 / B-3): exit code 3 alongside `check_status: "pass"` is the recorded shape
+  // of the can_block contradiction - two fields in one payload disagreeing about the
+  // outcome. The JSON consumers Drift is built for read check.status, not $?.
+  it("fails when a refused check (exit 3) records a passing status", () => {
+    const result = {
+      ...goodResult(),
+      check_exit_code: 3,
+      check_status: "pass",
+      injection_enforcement: "none"
+    };
+    const verdict = repoVerdict(result, { ...goodCfg(), expectedExitCode: 3 });
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("check_status_consistent_with_exit");
+  });
+
+  it("passes when a refused check records status refused", () => {
+    const result = { ...goodResult(), check_exit_code: 3, check_status: "refused" };
+    const verdict = repoVerdict(result, { ...goodCfg(), expectedExitCode: 3 });
+    expect(verdict.failures).not.toContain("check_status_consistent_with_exit");
+  });
+
+  it("fails when a blocked check (exit 2) records a passing status", () => {
+    const result = { ...goodResult(), check_status: "pass" };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("check_status_consistent_with_exit");
   });
 });
 

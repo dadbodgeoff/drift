@@ -56,6 +56,18 @@ export function repoVerdict(result, cfg) {
     Number.isInteger(cfg.expectedExitCode) && result.check_exit_code === cfg.expectedExitCode
   );
 
+  // E-1 (S1-02 / B-3): the payload's status must agree with the process exit code. Exit 3
+  // alongside check_status "pass" was recorded on every baseline row - the exit code told
+  // the truth and the JSON did not, and JSON consumers read check.status, not $?. The
+  // mapping asserts on the MEASURED exit code (consistency between two recorded fields);
+  // exit codes outside the check contract (e.g. 1, operational error) carry no status
+  // expectation here because check_exit_code_matches_expected already fails them.
+  const statusForExit = { 0: "pass", 2: "fail", 3: "refused" }[result.check_exit_code];
+  assert(
+    "check_status_consistent_with_exit",
+    statusForExit === undefined || result.check_status === statusForExit
+  );
+
   assert("no_clean_control_false_positive", !result.clean_control_false_positive);
   assert("no_type_only_false_positive", result.fp_type_only_import === false);
   // T101: a block-mode convention that does not block is an F3-class silent pass. Now that
