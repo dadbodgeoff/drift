@@ -103,7 +103,7 @@
       "source": "scripts/beta-bench.mjs",
       "baseline": "scripts/beta-bench-baseline.json",
       "measured_at": "2026-08-03",
-      "commit": "40dcf44c2316",
+      "commit": "1579003bafec",
       "refused": 0,
       "total": 56,
       "rate": 0,
