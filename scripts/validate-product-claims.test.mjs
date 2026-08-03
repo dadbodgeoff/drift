@@ -225,4 +225,72 @@ describe("product claims validator", () => {
     expect(result.code).toBe(1);
     expect(result.output).toMatch(/single_convention_scope must state how narrow the scope is/);
   });
+
+  it("requires a determinism measurement with a source, a date and a sha", () => {
+    const dir = sandbox();
+    editLedger(dir, (ledger) => {
+      delete ledger.enforcement_posture.measured_determinism;
+    });
+
+    const result = runValidator(dir);
+
+    expect(result.code).toBe(1);
+    expect(
+      result.output,
+      "'we measured determinism' is itself a claim, and it needs evidence like any other"
+    ).toMatch(/measured_determinism is required/);
+  });
+
+  it("refuses to let a flap be recorded as a determinism measurement", () => {
+    const dir = sandbox();
+    editLedger(dir, (ledger) => {
+      ledger.enforcement_posture.measured_determinism.per_repo.calcom.distinct_results = 2;
+    });
+
+    const result = runValidator(dir);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toMatch(/a flap is not a determinism measurement/);
+  });
+
+  it("fails a single-run determinism measurement, which cannot disagree with anything", () => {
+    const dir = sandbox();
+    editLedger(dir, (ledger) => {
+      ledger.enforcement_posture.measured_determinism.runs_per_repo = 1;
+    });
+
+    const result = runValidator(dir);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toMatch(/runs_per_repo must be at least 2/);
+  });
+
+  it("fails when an evaluation repo is accounted for in neither column", () => {
+    const dir = sandbox();
+    // Silence about a repo is how "measured on the eval repos" comes to mean "measured on the two
+    // that were convenient" - which is the state this whole item found.
+    editLedger(dir, (ledger) => {
+      ledger.enforcement_posture.measured_determinism.not_yet_measured =
+        ledger.enforcement_posture.measured_determinism.not_yet_measured.filter(
+          (repo) => repo !== "dub"
+        );
+    });
+
+    const result = runValidator(dir);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toMatch(/accounts for neither measuring nor deferring dub/);
+  });
+
+  it("fails a repo listed as both measured and not yet measured", () => {
+    const dir = sandbox();
+    editLedger(dir, (ledger) => {
+      ledger.enforcement_posture.measured_determinism.not_yet_measured.push("calcom");
+    });
+
+    const result = runValidator(dir);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toMatch(/lists calcom as both measured and not yet measured/);
+  });
 });

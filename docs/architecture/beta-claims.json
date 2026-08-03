@@ -151,6 +151,37 @@
           "import_resolution_rate": 0.9851
         }
       }
+    },
+    "measured_determinism": {
+      "note": "EW-7 (DET-2). Determinism is the marketed claim, and the published evidence covered taxonomy and papermark - neither of which is where the one observed flap happened. cal.com is, and it had never been measured. A run's digest covers what a user would notice change: exit code, check status, blocking count, partial-coverage flag, parser-gap count, and every finding's fingerprint, enforcement result, file, line and specifier. Ids and durations that vary by invocation by design are excluded, or the digest would differ every run and prove nothing.",
+      "source": "scripts/determinism.mjs",
+      "measured_at": "2026-08-03",
+      "commit": "1579003bafec",
+      "runs_per_repo": 5,
+      "contamination_guard": "scripts/worktree-contamination.mjs - a worktree with foreign changes is refused rather than measured, naming every injected file. Before this, 'it was harness contamination' and 'determinism is not what we claim' left identical evidence behind.",
+      "per_repo": {
+        "taxonomy": {
+          "runs": 5,
+          "distinct_results": 1,
+          "digest": "f208ce7ce3bef7a0"
+        },
+        "calcom": {
+          "runs": 5,
+          "distinct_results": 1,
+          "digest": "9f46437a2f0e618c"
+        },
+        "papermark": {
+          "runs": 5,
+          "distinct_results": 1,
+          "digest": "4b1b8cf4aa32ebc1"
+        }
+      },
+      "not_yet_measured": [
+        "dub",
+        "formbricks",
+        "midday",
+        "openstatus"
+      ]
     }
   },
   "prose_claim_region_ends_at": "## First Five Minutes",

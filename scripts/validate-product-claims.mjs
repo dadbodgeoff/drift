@@ -13,6 +13,16 @@ const CLAIM_VERBS =
   /\b(supports?|supported|enforces?|blocks?|proves?|guarantees?|detects?|learns?|prevents?|ensures?|stops?|catches?|analyses|analyzes|verifies|reports?|resolves?|refuses?)\b/i;
 
 const repoRoot = process.cwd();
+
+/**
+ * The evaluation repos, from the same module the harnesses use.
+ *
+ * Imported rather than restated so the ledger's determinism accounting cannot fall out of step with
+ * the suite - a repo added to the suite and forgotten in the ledger is how "measured on the eval
+ * repos" quietly comes to mean "measured on the convenient ones".
+ */
+const { EVAL_REPOS } = await import(pathToFileURL(join(repoRoot, "scripts", "eval-repos.mjs")).href);
+const evalRepoNames = EVAL_REPOS.map((repo) => repo.name);
 const claimsPath = join(repoRoot, "docs", "architecture", "beta-claims.json");
 const claims = JSON.parse(readFileSync(claimsPath, "utf8"));
 const {
@@ -175,6 +185,49 @@ if (!posture) {
   if (!posture.single_convention_scope) {
     failures.push("enforcement_posture.single_convention_scope must state how narrow the scope is");
   }
+  // EW-7 (DET-2): determinism is a claim, so the ledger records where it was measured - and the
+  // validator checks that record, or "we measured it" is itself an unevidenced claim.
+  const determinism = posture.measured_determinism;
+  if (!determinism) {
+    failures.push("enforcement_posture.measured_determinism is required");
+  } else {
+    if (!determinism.source || !existsSync(join(repoRoot, determinism.source))) {
+      failures.push(`measured_determinism.source does not exist: ${determinism.source}`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(determinism.measured_at ?? "")) {
+      failures.push("measured_determinism.measured_at must be an ISO date");
+    }
+    if (!determinism.commit || !/^[a-f0-9]{7,40}$/.test(determinism.commit)) {
+      failures.push("measured_determinism.commit must name the sha it was measured at");
+    }
+    if (!Number.isInteger(determinism.runs_per_repo) || determinism.runs_per_repo < 2) {
+      failures.push("measured_determinism.runs_per_repo must be at least 2 - one run cannot disagree");
+    }
+    for (const [repo, entry] of Object.entries(determinism.per_repo ?? {})) {
+      if (entry?.distinct_results !== 1) {
+        failures.push(
+          `measured_determinism.per_repo.${repo} records ${entry?.distinct_results} distinct results; ` +
+            "a flap is not a determinism measurement and must not be recorded as one"
+        );
+      }
+    }
+    // Every evaluation repo must be accounted for, in one column or the other. Silence about a repo
+    // is how "measured on the eval repos" comes to mean "measured on the two that were convenient".
+    const measured = new Set(Object.keys(determinism.per_repo ?? {}));
+    const pending = new Set(determinism.not_yet_measured ?? []);
+    for (const repo of evalRepoNames) {
+      if (!measured.has(repo) && !pending.has(repo)) {
+        failures.push(
+          `measured_determinism accounts for neither measuring nor deferring ${repo}; every ` +
+            "evaluation repo belongs in per_repo or not_yet_measured"
+        );
+      }
+      if (measured.has(repo) && pending.has(repo)) {
+        failures.push(`measured_determinism lists ${repo} as both measured and not yet measured`);
+      }
+    }
+  }
+
   const refusal = posture.measured_refusal_rate;
   if (!refusal) {
     failures.push("enforcement_posture.measured_refusal_rate is required");
