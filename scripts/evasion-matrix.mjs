@@ -38,6 +38,7 @@ import { fileURLToPath } from "node:url";
 
 import { EVAL_REPOS } from "./eval-repos.mjs";
 import { shapeVerdict, unsafeShapeMoves, updateGate } from "./external-eval-predicate.mjs";
+import { importOf } from "./data-layer-import.mjs";
 import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -164,25 +165,48 @@ function shapesFor(cfg, relSpec) {
   const spec = cfg.dataModule;
   const sym = cfg.dataSymbol;
   const use = (binding) => `  const __h = ${binding}; void __h;`;
+  // The repo's real import kind for its data layer. papermark default-exports and every one of its
+  // 204 routes imports it that way; injecting the named form there names a symbol the module does not
+  // have. See data-layer-import.mjs. Shapes that import a LOCAL module the matrix writes itself
+  // (S03-S05's barrels, S06's namespace) stay named, because those modules are written with named
+  // exports by this file.
+  const dataImport = (module) => importOf(cfg, module, sym);
+
+  // A barrel that re-exports the data layer under a chosen name.
+  //
+  // `export { prisma } from "@/lib/prisma"` is wrong for the same reason the named import was: on a
+  // module that only default-exports there is no `prisma` to re-export. The right form is
+  // `export { default as prisma } from "@/lib/prisma"` - still a re-export statement, which is what
+  // S03-S05 exist to test.
+  //
+  // The first attempt here used `import __data from "..."; export const prisma = __data;`. That
+  // compiles, but it is not a re-export, so the chain detection could not follow it and three catch
+  // cells silently became evasions. Laundering through import-then-const-export is a real evasion
+  // shape Drift does not currently catch, and it is worth recording as such - but it is a different
+  // shape from the one these cells pin, and quietly substituting it changed what they measure.
+  const reexportFromDataLayer = (exportedAs) =>
+    cfg.dataImportKind === "default"
+      ? `export { default as ${exportedAs} } from "${spec}";\n`
+      : `export { ${sym}${exportedAs === sym ? "" : ` as ${exportedAs}`} } from "${spec}";\n`;
   return [
     {
       id: "S01-control-canonical",
       class: "catch",
       isBlockingScenario: true,
-      files: (d) => ({ [`${d}/route.ts`]: routeBody(`import { ${sym} } from "${spec}";`, use(sym)) })
+      files: (d) => ({ [`${d}/route.ts`]: routeBody(dataImport(spec), use(sym)) })
     },
     relSpec
       ? {
           id: "S02-relative-path",
           class: "catch",
-          files: (d) => ({ [`${d}/route.ts`]: routeBody(`import { ${sym} } from "${relSpec(d)}";`, use(sym)) })
+          files: (d) => ({ [`${d}/route.ts`]: routeBody(dataImport(relSpec(d)), use(sym)) })
         }
       : { id: "S02-relative-path", class: "catch", untestable: "specifier not resolvable to a file" },
     {
       id: "S03-barrel-1hop",
       class: "catch",
       files: (d) => ({
-        [`${d}/data.ts`]: `export { ${sym} } from "${spec}";\n`,
+        [`${d}/data.ts`]: reexportFromDataLayer(sym),
         [`${d}/route.ts`]: routeBody(`import { ${sym} } from "./data";`, use(sym))
       })
     },
@@ -190,7 +214,7 @@ function shapesFor(cfg, relSpec) {
       id: "S04-barrel-2hop",
       class: "catch",
       files: (d) => ({
-        [`${d}/inner.ts`]: `export { ${sym} } from "${spec}";\n`,
+        [`${d}/inner.ts`]: reexportFromDataLayer(sym),
         [`${d}/outer.ts`]: `export { ${sym} } from "./inner";\n`,
         [`${d}/route.ts`]: routeBody(`import { ${sym} } from "./outer";`, use(sym))
       })
@@ -199,7 +223,7 @@ function shapesFor(cfg, relSpec) {
       id: "S05-renamed-reexport",
       class: "catch",
       files: (d) => ({
-        [`${d}/util.ts`]: `export { ${sym} as helper } from "${spec}";\n`,
+        [`${d}/util.ts`]: reexportFromDataLayer("helper"),
         [`${d}/route.ts`]: routeBody(`import { helper } from "./util";`, use("helper"))
       })
     },
@@ -248,7 +272,7 @@ function shapesFor(cfg, relSpec) {
       id: "S11-lookalike-negative",
       class: "silent",
       files: (d) => ({
-        [`${d}/route.ts`]: routeBody(`import { ${sym} } from "${spec}-legacy";`, use(sym))
+        [`${d}/route.ts`]: routeBody(dataImport(`${spec}-legacy`), use(sym))
       })
     },
     cfg.genuineSubpath
@@ -273,7 +297,7 @@ function shapesFor(cfg, relSpec) {
       id: "S13-refusal-decoy",
       class: "refuse",
       files: (d) => ({
-        [`${d}/route.ts`]: routeBody(`import { ${sym} } from "${spec}/internal";`, use(sym))
+        [`${d}/route.ts`]: routeBody(dataImport(`${spec}/internal`), use(sym))
       })
     }
   ];
