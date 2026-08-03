@@ -19,6 +19,60 @@ another. This is the surface CI and agents branch on, so it is specified rather 
 unavailable and the TypeScript fallback would be used, the stored scan is stale, no contract
 exists, or there is not enough disk for local state. A refusal is not a pass.
 
+`2` outranks `3`. A check that established one violation and could not judge another returns `2`:
+a refusal must never mask a violation Drift did manage to prove.
+
+## Partial coverage
+
+Coverage and enforcement are separate questions, and the exit code can only carry one of them.
+
+Drift withholds enforcement from a finding when the finding's **own** dependency chain is
+uncertain — the specifier it rests on did not resolve, so Drift cannot show it reaches the module
+the contract forbids rather than a lookalike. Uncertainty *elsewhere* does not withhold anything.
+An unresolved import in a sibling line, or in another file, is a gap in what Drift saw; it is not
+grounds to discard evidence that is complete. (This was once check-wide: one import written before
+its file existed suppressed every violation in the diff, which is ordinary mid-refactor editing.)
+
+That leaves a state the exit code cannot express — enforced some findings, failed to see part of
+the diff — so it is reported as a field rather than a code:
+
+| Field | Question it answers |
+|---|---|
+| `summary.partial_coverage.complete` | Did Drift resolve everything in this diff? |
+| `summary.partial_coverage.reasons` | Which files it could not fully resolve, as `unresolved_route_import:<path>` |
+| `summary.blocked_reasons` | Why enforcement was *withheld* — empty when nothing was withheld |
+
+The two are independent. `partial_coverage.complete: false` with `blocked_reasons: []` is the
+normal shape for "the violation blocks, and there is also something Drift did not see."
+
+`check.capability_completeness.can_block` remains the whole-run verdict and is `false` whenever
+coverage was partial, even when individual findings were enforced. It answers "could this run have
+judged everything?", not "did it enforce what it judged."
+
+**Reading this in CI.** Branch on the exit code. Treat `partial_coverage.complete: false` as a
+signal to look at the named files — usually an import written ahead of its file — not as a failure.
+
+## Coverage, as a number
+
+`partial_coverage` answers yes-or-no. `summary.import_coverage` answers how much, and it travels with
+every verdict so a clean check is never mistaken for full coverage:
+
+| Field | Meaning |
+|---|---|
+| `local_import_resolution_rate` | resolved ÷ (resolved + unresolved) for imports Drift classified as should-be-local. `null` when the repo has none — 0/0 is not 100% |
+| `resolved_local_imports` / `unresolved_local_imports` | the two sides of that ratio |
+| `parser_gap_count` | diagnostics that became `parser_gap` rows |
+| `reconciles` | whether the breakdown sums to `parser_gap_count`. A breakdown that does not add up is worse than none, so this is stated rather than assumed |
+| `by_code[]` | per diagnostic code: count, the top-level directories it falls in, the top offending specifiers, and a named `limitation` with remediation when the code is a shape Drift knowingly does not resolve |
+
+Third-party packages are excluded from both sides of the ratio. `next/server` resolves to no file in
+your repo and never should, so counting it as unresolved would report a coverage failure for correct
+behaviour.
+
+`drift doctor` reports the same numbers for the last real scan, and names each known limitation with
+what to do about it — which is the difference between "Drift is broken on my repo" and "Drift does
+not resolve this one construct."
+
 ## Three fields, three different questions
 
 A single check payload carries all of these, and they are not interchangeable:
@@ -28,6 +82,7 @@ A single check payload carries all of these, and they are not interchangeable:
 | `check.status` | Did anything blocking happen? (`pass` / `fail`) |
 | `finding.enforcement_result` | What would this convention do about this finding? (`block` / `warn` / `none`) |
 | `summary.blocking_count` | How many findings actually block this diff? |
+| `summary.partial_coverage.complete` | Did Drift resolve everything in scope? (independent of all three above) |
 
 A finding can carry `enforcement_result: "block"` while `status` stays `pass`. That is not a
 contradiction: the convention *would* block, but this particular finding is not new code — see
@@ -98,6 +153,10 @@ Removing a violation retires its finding. Deleting the file records it in
 
 `capability_completeness` and the scan's `completeness` report what Drift actually inspected.
 `complete: false` with `missing_capabilities` means coverage was partial — for example a file
-that could not be read, or no data-access convention could be inferred. `can_block` may still be
-true: findings that were produced remain trustworthy. What a partial scan must never do is claim
-it saw everything.
+that could not be read, or no data-access convention could be inferred. A *scan's* `can_block` may
+still be true: findings that were produced remain trustworthy. What a partial scan must never do
+is claim it saw everything.
+
+A **check's** `capability_completeness.can_block` is stricter: see Partial coverage above. It is
+`false` whenever the run left something unresolved, because a run cannot vouch for what it did not
+read — regardless of how much it did enforce.

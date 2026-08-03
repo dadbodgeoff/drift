@@ -128,6 +128,13 @@ export class SqliteDriftStorage {
   private readonly db: DatabaseHandle;
 
   /**
+   * The database's `auto_vacuum` mode as observed at open: 0 NONE, 1 FULL, 2 INCREMENTAL.
+   * Recorded because it decides whether pruning can return pages by itself (INCREMENTAL) or needs
+   * the one-time `reclaimDiskSpace()` migration first (NONE, every pre-EW-8 database).
+   */
+  private readonly autoVacuumMode: number;
+
+  /**
    * Non-fatal conditions observed while opening. Currently only WAL-recovery data loss (F-3b):
    * SQLite recovers a write-ahead log by replaying frames until the first invalid one and says
    * nothing about what it left behind, so committed transactions can vanish with exit 0
@@ -141,6 +148,23 @@ export class SqliteDriftStorage {
     // checksum math, no page images.
     const walScan = scanWalFrameHeaders(options.databasePath);
     this.db = new Database(options.databasePath);
+    // EW-8: incremental auto-vacuum, so freed pages can be returned to the OS.
+    //
+    // Pruning bounds growth by reusing freed pages, which meets the stated goal - but the file
+    // never shrinks, so a user sees a 1.5 GB directory after Drift has finished with the data. For
+    // a local-first tool, disk returned is the user-visible property, and 59% of free pages were
+    // measured never going back.
+    //
+    // This MUST precede `journal_mode`. `auto_vacuum` lives in the database header and can only be
+    // changed while the header is still unwritten; setting the journal mode writes it, after which
+    // the pragma is silently accepted and silently ignored - measured directly: WAL first leaves
+    // auto_vacuum at 0 with no error, auto_vacuum first leaves it at 2. A silently ignored pragma
+    // is the worst shape available here, because every later `incremental_vacuum` would also
+    // succeed and reclaim nothing.
+    //
+    // It is also a no-op on a database that already has tables, which is every pre-EW-8 database.
+    // Those take the explicit `reclaimDiskSpace()` path, opt-in because it needs a full VACUUM.
+    this.autoVacuumMode = enableIncrementalAutoVacuum(this.db);
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
     // Three processes can legitimately hold this database at once: an edit-time hook running
@@ -451,14 +475,44 @@ export class SqliteDriftStorage {
    * (2.7s on dub at both 2 and 10 scans). This is a footprint fix, not a speed one - so it does
    * not need to be aggressive to be worth doing.
    */
-  pruneSupersededScans(repoId: string, options: { keep?: number } = {}): {
+  pruneSupersededScans(
+    repoId: string,
+    options: {
+      keep?: number;
+      /**
+       * EW-8: free space on the volume, when the caller knows it.
+       *
+       * Supplied, a pre-EW-8 database (`auto_vacuum = NONE`) is upgraded to incremental mode on the
+       * spot - but only when there is room for the full VACUUM that requires *and* the scan floor
+       * left over afterwards. Omitted, no upgrade is attempted and the database keeps its old
+       * behaviour of bounded-but-never-shrinking growth.
+       *
+       * This is the "existing databases upgrade or decline" half of EW-8. It is conditional rather
+       * than unconditional because a full VACUUM wants roughly twice the database's size in scratch
+       * space, and doing that unasked on a machine near the disk floor is the hazard, not the fix.
+       */
+      availableBytes?: number;
+    } = {}
+  ): {
     deleted: string[];
     kept: number;
+    /** EW-8: bytes handed back to the OS. */
+    reclaimed_bytes: number;
+    /** EW-8: what the reclaim did - `none` when a pre-EW-8 database had no room to upgrade. */
+    reclaim_performed: "none" | "incremental" | "full_vacuum";
+    /** EW-8: why no disk came back, when none did. Null when there was nothing to explain. */
+    reclaim_declined_reason: string | null;
   } {
     const keep = Math.max(1, options.keep ?? 2);
     const scans = this.listScanManifests(repoId);
     if (scans.length <= keep) {
-      return { deleted: [], kept: scans.length };
+      return {
+        deleted: [],
+        kept: scans.length,
+        reclaimed_bytes: 0,
+        reclaim_performed: "none",
+        reclaim_declined_reason: null
+      };
     }
 
     const ordered = [...scans].sort((a, b) =>
@@ -496,7 +550,10 @@ export class SqliteDriftStorage {
 
     const doomed = ordered.filter((scan) => !retained.has(scan.id)).map((scan) => scan.id);
     if (doomed.length === 0) {
-      return { deleted: [], kept: retained.size };
+      // Nothing deleted, but pages freed by an earlier run may still be sitting in the file - a
+      // scan that overwrites a row frees its old page whether or not any scan was pruned.
+      const idle = this.reclaimAfterPrune(options.availableBytes);
+      return { deleted: [], kept: retained.size, ...idle };
     }
 
     const scanTables = this.tablesWithScanId().filter((table) => table !== "scan_manifests");
@@ -541,18 +598,156 @@ export class SqliteDriftStorage {
       })();
     }
 
-    // Deliberately no VACUUM.
+    // EW-8: return the freed pages to the OS, incrementally.
     //
-    // It would shrink the file, but it rewrites the whole database and needs roughly twice its
-    // size in free space to do it. On a 786 MB database that is 1.5 GB of headroom demanded during
-    // a scan, and it failed here with a disk I/O error on the third consecutive run - turning a
-    // housekeeping step into the very disk-exhaustion failure T41 exists to prevent.
+    // Still deliberately not a full VACUUM. That rewrites the whole database and needs roughly
+    // twice its size in free space; on a 786 MB database that is 1.5 GB of headroom demanded
+    // during a scan, and it failed here with a disk I/O error on the third consecutive run -
+    // turning housekeeping into the very disk-exhaustion failure T41 exists to prevent.
     //
-    // Not vacuuming is sufficient for the actual goal. Freed pages are reused by subsequent scans,
-    // so the file plateaus instead of growing without bound; it simply plateaus at its high-water
-    // mark rather than shrinking. `drift state size` reports the real figure either way.
+    // `incremental_vacuum` is the version that fits the constraint: it moves free pages to the end
+    // of the file and truncates, page by page, needing no scratch copy. It is also why the
+    // previous reasoning was not quite enough - "freed pages are reused, so growth is bounded" is
+    // true and answers a different question than "does the user get their disk back".
+    const reclaim = this.reclaimAfterPrune(options.availableBytes);
 
-    return { deleted: doomed, kept: retained.size };
+    return { deleted: doomed, kept: retained.size, ...reclaim };
+  }
+
+  /**
+   * Return disk after a prune, upgrading a pre-EW-8 database first when there is provably room.
+   *
+   * The upgrade is a full VACUUM, so it happens only with `availableBytes` in hand and only when that
+   * covers the rewrite *and* leaves the scan floor free. Otherwise it declines and says why, which is
+   * the message a user needs to understand why their state directory is not shrinking.
+   */
+  private reclaimAfterPrune(availableBytes?: number): {
+    reclaimed_bytes: number;
+    reclaim_performed: "none" | "incremental" | "full_vacuum";
+    reclaim_declined_reason: string | null;
+  } {
+    if (this.autoVacuumMode === AUTO_VACUUM_INCREMENTAL) {
+      return {
+        reclaimed_bytes: this.reclaimFreePages(),
+        reclaim_performed: "incremental",
+        reclaim_declined_reason: null
+      };
+    }
+    if (availableBytes === undefined) {
+      return {
+        reclaimed_bytes: 0,
+        reclaim_performed: "none",
+        reclaim_declined_reason:
+          "this database predates incremental vacuum and free space was not measured, so no " +
+          "one-time upgrade was attempted; growth stays bounded but the file will not shrink"
+      };
+    }
+    const result = this.reclaimDiskSpace({
+      availableBytes,
+      // Leave the scan floor free afterwards. Finishing with a smaller database and no room to scan
+      // it is not an improvement.
+      minimumFreeBytes: RECLAIM_HEADROOM_BYTES
+    });
+    return {
+      reclaimed_bytes: result.reclaimed_bytes,
+      reclaim_performed: result.performed,
+      reclaim_declined_reason: result.refused_reason
+    };
+  }
+
+  /**
+   * Return free pages to the OS without a full rewrite. Returns bytes reclaimed.
+   *
+   * A no-op returning 0 on a database whose `auto_vacuum` is NONE - which is every database
+   * created before EW-8. Those need `reclaimDiskSpace()` once; there is deliberately no automatic
+   * upgrade, because the upgrade requires a full VACUUM and doing that unbidden inside a scan is
+   * exactly the hazard this design avoids.
+   */
+  private reclaimFreePages(): number {
+    if (this.autoVacuumMode !== AUTO_VACUUM_INCREMENTAL) {
+      return 0;
+    }
+    const before = this.databaseFileBytes();
+    try {
+      // Checkpoint first: pages freed inside the WAL are not free in the main database until the
+      // WAL is folded back into it, so vacuuming before this reclaims almost nothing.
+      this.db.pragma("wal_checkpoint(TRUNCATE)");
+      this.db.pragma("incremental_vacuum");
+      this.db.pragma("wal_checkpoint(TRUNCATE)");
+    } catch {
+      // Housekeeping must never fail a scan that succeeded. A database that could not be shrunk
+      // is a larger file, which the next scan will try again.
+      return 0;
+    }
+    return Math.max(0, before - this.databaseFileBytes());
+  }
+
+  /** On-disk size of the database and its WAL - the number a user sees in a file listing. */
+  private databaseFileBytes(): number {
+    const path = this.db.name;
+    let total = 0;
+    for (const candidate of [path, `${path}-wal`, `${path}-shm`]) {
+      try {
+        total += statSync(candidate).size;
+      } catch {
+        /* absent */
+      }
+    }
+    return total;
+  }
+
+  /**
+   * The one-time opt-in reclaim for a database created before EW-8.
+   *
+   * Enabling `auto_vacuum=INCREMENTAL` on an existing database is not a pragma change: SQLite only
+   * applies it during a full VACUUM, so the upgrade *is* a full VACUUM. That needs roughly twice
+   * the database's size in temporary space, which is why it is opt-in and why it checks free space
+   * first and refuses rather than attempting it - a reclaim that fills the disk is worse than a
+   * large file, and "ran out of space during cleanup" is the failure mode T41 exists to prevent.
+   */
+  reclaimDiskSpace(options: { availableBytes?: number; minimumFreeBytes?: number } = {}): {
+    reclaimed_bytes: number;
+    performed: "none" | "incremental" | "full_vacuum";
+    refused_reason: string | null;
+    required_bytes: number;
+  } {
+    const before = this.databaseFileBytes();
+    if (this.autoVacuumMode === AUTO_VACUUM_INCREMENTAL) {
+      // Already incremental: nothing to migrate, and the cheap reclaim is always available.
+      return {
+        reclaimed_bytes: this.reclaimFreePages(),
+        performed: "incremental",
+        refused_reason: null,
+        required_bytes: 0
+      };
+    }
+
+    // A full VACUUM writes a complete second copy before swapping, so the requirement is the
+    // database's size again - plus whatever floor the caller insists on keeping free afterwards.
+    const minimumFree = options.minimumFreeBytes ?? 0;
+    const requiredBytes = before + minimumFree;
+    const availableBytes = options.availableBytes ?? Number.POSITIVE_INFINITY;
+    if (availableBytes < requiredBytes) {
+      return {
+        reclaimed_bytes: 0,
+        performed: "none",
+        refused_reason:
+          `a full VACUUM needs about ${formatBytes(requiredBytes)} free ` +
+          `(${formatBytes(before)} to copy the database, plus ${formatBytes(minimumFree)} kept free) ` +
+          `and only ${formatBytes(availableBytes)} is available`,
+        required_bytes: requiredBytes
+      };
+    }
+
+    this.db.pragma(`auto_vacuum = ${AUTO_VACUUM_INCREMENTAL}`);
+    this.db.exec("VACUUM");
+    this.db.pragma("wal_checkpoint(TRUNCATE)");
+    return {
+      reclaimed_bytes: Math.max(0, before - this.databaseFileBytes()),
+      performed: "full_vacuum",
+      refused_reason: null,
+      required_bytes: requiredBytes
+    };
   }
 
   /** Tables keyed by scan_id, read from the live schema rather than hardcoded. */
@@ -667,13 +862,15 @@ export class SqliteDriftStorage {
     const parsedFacts = facts.map((fact) => FactRecordSchema.parse(fact));
     const insert = this.db.prepare(`
       INSERT INTO facts (
-        id, repo_id, scan_id, kind, file_path, name, value, imported_name, start_line, end_line,
+        id, repo_id, scan_id, kind, file_path, name, value, imported_name, runtime_use,
+        start_line, end_line,
         source_span_json, ast_node_kind, extraction_method, extractor_version, parser_version,
         confidence, confidence_label, evidence_level, resolution_status, staleness_status,
         last_seen_scan_id
       )
       VALUES (
-        @id, @repo_id, @scan_id, @kind, @file_path, @name, @value, @imported_name, @start_line, @end_line,
+        @id, @repo_id, @scan_id, @kind, @file_path, @name, @value, @imported_name, @runtime_use,
+        @start_line, @end_line,
         @source_span_json, @ast_node_kind, @extraction_method, @extractor_version, @parser_version,
         @confidence, @confidence_label, @evidence_level, @resolution_status, @staleness_status,
         @last_seen_scan_id
@@ -684,6 +881,7 @@ export class SqliteDriftStorage {
         name = excluded.name,
         value = excluded.value,
         imported_name = excluded.imported_name,
+        runtime_use = excluded.runtime_use,
         start_line = excluded.start_line,
         end_line = excluded.end_line,
         source_span_json = excluded.source_span_json,
@@ -705,6 +903,7 @@ export class SqliteDriftStorage {
           ...fact,
           value: fact.value ?? null,
           imported_name: fact.imported_name ?? null,
+          runtime_use: fact.runtime_use ?? null,
           ast_node_kind: fact.ast_node_kind ?? null,
           source_span_json: JSON.stringify(fact.source_span)
         });
@@ -1357,10 +1556,10 @@ export class SqliteDriftStorage {
     `);
     const insertDiagnostic = this.db.prepare(`
       INSERT INTO graph_diagnostics (
-        repo_id, scan_id, id, severity, code, message, file_path, evidence_ids_json
+        repo_id, scan_id, id, severity, code, message, file_path, import_source, evidence_ids_json
       )
       VALUES (
-        @repo_id, @scan_id, @id, @severity, @code, @message, @file_path, @evidence_ids_json
+        @repo_id, @scan_id, @id, @severity, @code, @message, @file_path, @import_source, @evidence_ids_json
       )
     `);
     const insertCompleteness = this.db.prepare(`
@@ -1475,6 +1674,7 @@ export class SqliteDriftStorage {
           scan_id: parsed.scan_id,
           ...diagnostic,
           file_path: diagnostic.file_path ?? null,
+          import_source: diagnostic.import_source ?? null,
           evidence_ids_json: stringifyJson(diagnostic.evidence_ids)
         });
       }
@@ -2384,6 +2584,58 @@ function walRecoveryDiagnostics(
   ];
 }
 
+/** SQLite's `auto_vacuum` mode values: 0 NONE, 1 FULL, 2 INCREMENTAL. */
+const AUTO_VACUUM_INCREMENTAL = 2;
+
+/**
+ * Free space to leave after a one-time reclaim, matching the scan floor in
+ * packages/cli/src/domain/disk-space.ts. A reclaim that leaves no room to scan has moved the problem
+ * rather than solved it.
+ */
+const RECLAIM_HEADROOM_BYTES = 512 * 1024 * 1024;
+
+/**
+ * Put a *new* database into incremental auto-vacuum mode, and report the mode in force.
+ *
+ * `auto_vacuum` is stored in the database header and SQLite only honours a change to it while the
+ * database has no tables (or during a full VACUUM). So this succeeds exactly once, on creation,
+ * and is a no-op on every database that already has a schema - which is the correct behaviour: the
+ * upgrade path for those is the explicit, space-checked `reclaimDiskSpace()`.
+ */
+function enableIncrementalAutoVacuum(db: DatabaseHandle): number {
+  const currentMode = () => {
+    const rows = db.pragma("auto_vacuum") as Array<{ auto_vacuum: number }>;
+    return rows[0]?.auto_vacuum ?? 0;
+  };
+  if (currentMode() === AUTO_VACUUM_INCREMENTAL) {
+    return AUTO_VACUUM_INCREMENTAL;
+  }
+  const tableCount = (
+    db
+      .prepare("SELECT count(*) AS count FROM sqlite_master WHERE type = 'table'")
+      .get() as { count: number }
+  ).count;
+  if (tableCount > 0) {
+    return currentMode();
+  }
+  try {
+    db.pragma(`auto_vacuum = ${AUTO_VACUUM_INCREMENTAL}`);
+  } catch {
+    /* leave the mode as it is; pruning simply will not reclaim */
+  }
+  return currentMode();
+}
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes)) {
+    return "an unmeasurable amount";
+  }
+  if (bytes >= 1024 ** 3) {
+    return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  }
+  return `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
 export function openDriftStorage(options: DriftStorageOptions): SqliteDriftStorage {
   return new SqliteDriftStorage(options);
 }
@@ -2463,6 +2715,7 @@ function factFromRow(row: unknown): FactRecord {
     ...record,
     value: record.value ?? undefined,
     imported_name: record.imported_name ?? undefined,
+    runtime_use: record.runtime_use ?? undefined,
     ast_node_kind: record.ast_node_kind ?? null,
     source_span: typeof record.source_span_json === "string"
       ? parseStoredJson(record.source_span_json, "facts.source_span_json")
@@ -2706,6 +2959,7 @@ function graphDiagnosticFromRow(row: unknown): GraphDiagnostic {
   return GraphDiagnosticSchema.parse({
     ...record,
     file_path: record.file_path ?? undefined,
+    import_source: record.import_source ?? undefined,
     evidence_ids: parseJsonArray(record.evidence_ids_json)
   });
 }

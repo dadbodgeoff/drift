@@ -1,5 +1,5 @@
 import { type AuditChainVerification,type ConventionCandidate,DRIFT_RESOLVER_VERSION,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type ParserGap,type ParserGapConfidenceImpact,type ParserGapKind,type ParserGapV2,type RepoRecord,type ScanCapabilityReport,type ScanFileChange,type ScanManifest } from "@drift/core";
-import { buildFactGraphArtifactFromParts,type FactGraphArtifact } from "@drift/factgraph";
+import { buildFactGraphArtifactFromParts,type FactGraphArtifact,type GraphDiagnostic } from "@drift/factgraph";
 import { buildParserGapQuality,buildParserGapSummary,buildSecurityPhase8ReadModel,buildStoredScanReadiness,type DriftReadinessSurface } from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,mkdtempSync,readdirSync,rmSync,statSync,writeFileSync } from "node:fs";
@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
+import { checkDiskSpace } from "./disk-space.js";
 import { inferConventionCandidatesFromEngine } from "../engine/engine-candidates.js";
 import { buildFactGraphArtifact } from "../engine/fact-graph.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
@@ -156,6 +157,14 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
         nodes: scanData.graph_nodes,
         edges: scanData.graph_edges,
         evidence: scanData.graph_evidence,
+        // EW-3: the engine's diagnostics, persisted with the graph.
+        //
+        // They were never passed, so `graph_diagnostics` was empty for every scan and the only
+        // stored record of a coverage gap was the lossy `parser_gaps` projection - which keeps a
+        // mapped `kind` but drops the diagnostic code and the specifier. Doctor cannot report what
+        // the resolver could not place from that, and `drift doctor` is the surface a stranger on
+        // an unsupported stack consults first.
+        diagnostics: scanData.graph_diagnostics.map(graphDiagnosticRecord),
         adapters: [{
           id: "typescript",
           version: DRIFT_TYPESCRIPT_ADAPTER_VERSION,
@@ -268,7 +277,12 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
     // Outside the transaction deliberately. Pruning is housekeeping, and a failure to reclaim
     // space must never roll back a scan that succeeded - the worst case is a larger database,
     // which the next scan will tidy.
-    const pruned = storage.pruneSupersededScans(repo.id);
+    // EW-8: hand `availableBytes` in, so a database created before incremental vacuum can take its
+    // one-time upgrade when there is provably room for the full VACUUM that needs - and decline with
+    // a reason when there is not, rather than silently never shrinking.
+    const pruned = storage.pruneSupersededScans(repo.id, {
+      availableBytes: pruneAvailableBytes(input.databasePath)
+    });
     if (pruned.deleted.length > 0) {
       storage.appendAuditEvent(auditEvent({
         id: `audit_event_scans_pruned_${repo.id}_${scanId}`,
@@ -277,7 +291,16 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
         action: "scans_pruned",
         targetType: "repo",
         targetId: repo.id,
-        metadata: { pruned_scan_ids: pruned.deleted, retained_scan_count: pruned.kept },
+        metadata: {
+          pruned_scan_ids: pruned.deleted,
+          retained_scan_count: pruned.kept,
+          // EW-8: what the prune returned to the OS, and why nothing came back when nothing did.
+          reclaimed_bytes: pruned.reclaimed_bytes,
+          reclaim_performed: pruned.reclaim_performed,
+          ...(pruned.reclaim_declined_reason
+            ? { reclaim_declined_reason: pruned.reclaim_declined_reason }
+            : {})
+        },
         createdAt: now
       }));
     }
@@ -356,6 +379,18 @@ function readTsconfigPathAliases(repoRoot: string): Record<string, string[]> {
   }
 }
 
+/**
+ * Free space on the volume holding the database, for the EW-8 one-time reclaim decision.
+ *
+ * `undefined` when it cannot be measured, which the storage layer reads as "do not attempt the
+ * upgrade" - an unmeasurable disk is not an empty one, and guessing here is how a housekeeping step
+ * becomes the disk-exhaustion failure it exists to prevent.
+ */
+function pruneAvailableBytes(databasePath: string): number | undefined {
+  const report = checkDiskSpace(databasePath);
+  return Number.isFinite(report.availableBytes) ? report.availableBytes : undefined;
+}
+
 export function createScanReuseManifest(input: {
   storage: SqliteDriftStorage;
   repoId: string;
@@ -398,8 +433,18 @@ export function createScanReuseManifest(input: {
       name: fact.name,
       ...(fact.value ? { value: fact.value } : {}),
       ...(fact.imported_name ? { imported_name: fact.imported_name } : {}),
+      // EW-1: without this, a reused import fact arrives at the engine with no runtime-use
+      // proof, so `unresolved_import_symbol` fires on files a fresh scan reports clean - and
+      // one of those on a route refuses the whole check.
+      ...(fact.runtime_use ? { runtime_use: fact.runtime_use } : {}),
       start_line: fact.start_line,
-      end_line: fact.end_line
+      end_line: fact.end_line,
+      // EW-6 (DET-1): the columns, or a reused file re-collapses two occurrences on one line into
+      // one. Measured on a repo with four identical calls across two lines: a fresh scan stored 46
+      // facts, the same repo rescanned through reuse stored 40 - the reuse path was the second
+      // counting path all along, and it was quietly reintroducing the very drop this fixes.
+      start_column: fact.source_span?.start_column ?? 1,
+      end_column: fact.source_span?.end_column ?? 1
     }))
   }), "utf8");
   return { path, dir, blocked_reasons: [] };
@@ -687,6 +732,16 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
     current_branch: currentBranch,
     latest_scan: latestScan,
     scan_fingerprint: scanFingerprint(latestScan, snapshots),
+    /**
+     * EW-6 (DET-1): the number of facts actually stored, beside the manifest's emission count.
+     *
+     * Determinism is the marketed claim, and it was not externally checkable: the manifest recorded
+     * what the engine emitted while the facts table recorded what survived, and a fact dropped
+     * between the two (identical occurrences on one line collapsing to one id) made them disagree
+     * with nothing to compare. Exposing both makes the claim auditable from outside the process,
+     * which is the only kind of auditable that matters for a claim like this.
+     */
+    stored_fact_count: storage.listFacts(latestScan.id).length,
     indexed_file_count: latestScan.file_count,
     source_change_count: sourceChangeCount,
     scan_count: indexedScanCount,
@@ -895,7 +950,39 @@ function scanCapabilityReportForScan(input: {
   };
 }
 
-function parserGapKindForDiagnostic(code: string): ParserGapKind | null {
+/**
+ * Which parser-gap kind a diagnostic code becomes, or `null` when it becomes none.
+ *
+ * Exported for the EW-3 coverage report, which has to bucket diagnostics by code while
+ * reconciling its totals against the `parser_gap` rows this function decides. Two copies of
+ * this mapping would let the report and the stored gaps disagree, which is precisely the
+ * failure the report's `reconciles` flag exists to catch.
+ */
+/**
+ * An engine diagnostic as a storable graph diagnostic.
+ *
+ * The engine emits no id - it streams diagnostics, it does not address them - so one is derived
+ * from the content plus the ordinal. Content alone would collide for two identical diagnostics on
+ * one file (the same unresolved specifier imported twice), and the ordinal alone would not be
+ * stable across runs; together they are deterministic for a given scan, which the determinism
+ * digests require.
+ */
+function graphDiagnosticRecord(
+  diagnostic: { severity: string; code: string; message: string; file_path?: string; import_source?: string },
+  index: number
+): GraphDiagnostic {
+  return {
+    id: `graph_diagnostic_${hashStable(`${diagnostic.code}:${diagnostic.file_path ?? ""}:${diagnostic.import_source ?? ""}:${index}`).slice(0, 16)}`,
+    severity: diagnostic.severity as GraphDiagnostic["severity"],
+    code: diagnostic.code,
+    message: diagnostic.message,
+    ...(diagnostic.file_path ? { file_path: diagnostic.file_path } : {}),
+    ...(diagnostic.import_source ? { import_source: diagnostic.import_source } : {}),
+    evidence_ids: []
+  };
+}
+
+export function parserGapKindForDiagnostic(code: string): ParserGapKind | null {
   switch (code) {
     case "unresolved_import":
       return "unresolved_import";

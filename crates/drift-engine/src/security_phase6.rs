@@ -195,6 +195,8 @@ pub fn build_phase6_security_proof(
             runtime_use: None,
             start_line: 1,
             end_line: source.lines().count().max(1),
+            start_column: 1,
+            end_column: 1,
         });
     Ok(build_phase6_route_security_proof(
         &file_path, source, &facts, &route, contract,

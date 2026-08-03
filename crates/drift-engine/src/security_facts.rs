@@ -116,6 +116,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
             if matches!(
                 helper.behavior,
@@ -142,6 +144,8 @@ fn extract_security_facts_with_policy_and_phase5(
                     runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
+                    start_column: fact.start_column,
+                    end_column: fact.end_column,
                 });
             }
             if line_is_inside_callback(&source_lines, fact.start_line) {
@@ -162,6 +166,8 @@ fn extract_security_facts_with_policy_and_phase5(
                     runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
+                    start_column: fact.start_column,
+                    end_column: fact.end_column,
                 });
             }
         } else if let Some(line) = source_lines.get(fact.start_line.saturating_sub(1))
@@ -190,6 +196,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
         }
         if let Some(validator) =
@@ -223,6 +231,8 @@ fn extract_security_facts_with_policy_and_phase5(
                     runtime_use: None,
                     start_line: fact.start_line,
                     end_line: fact.end_line,
+                    start_column: fact.start_column,
+                    end_column: fact.end_column,
                 });
             }
         }
@@ -250,6 +260,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
         }
         if let Some(helper) = accepted_authorization_helper_for_call(
@@ -314,6 +326,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
         }
         if is_json_response_call(fact) {
@@ -335,6 +349,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
         }
         if is_outbound_request_call(fact) {
@@ -362,6 +378,8 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: fact.start_line,
                 end_line: fact.end_line,
+                start_column: fact.start_column,
+                end_column: fact.end_column,
             });
         }
     }
@@ -417,6 +435,10 @@ fn extract_security_facts_with_policy_and_phase5(
             runtime_use: None,
             start_line: validated_use.start_line,
             end_line: validated_use.end_line,
+            // The intermediate representation this is derived from carries lines but no columns, so
+            // there is no position to propagate. 1 rather than an invented column.
+            start_column: 1,
+            end_column: 1,
         });
     }
     if is_middleware_file(
@@ -454,6 +476,8 @@ fn extract_security_facts_with_policy_and_phase5(
             runtime_use: None,
             start_line: middleware_line,
             end_line: middleware_line,
+            start_column: 1,
+            end_column: 1,
         });
         for matcher in static_middleware_matchers(source) {
             security_facts.push(Fact {
@@ -472,6 +496,10 @@ fn extract_security_facts_with_policy_and_phase5(
                 runtime_use: None,
                 start_line: matcher.start_line,
                 end_line: matcher.end_line,
+                // The intermediate representation this is derived from carries lines but no columns, so
+                // there is no position to propagate. 1 rather than an invented column.
+                start_column: 1,
+                end_column: 1,
             });
         }
     }
@@ -594,6 +622,8 @@ fn secret_read_fact(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -751,6 +781,8 @@ fn response_emits_field_fact(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -943,6 +975,8 @@ fn sensitive_field_fact_from_parts(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -1288,6 +1322,8 @@ fn session_read_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fa
             runtime_use: None,
             start_line: line_number,
             end_line: line_number,
+            start_column: 1,
+            end_column: 1,
         });
     }
     session_facts
@@ -1547,6 +1583,8 @@ fn tenant_guard_fact(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -1576,6 +1614,8 @@ fn tenant_source_fact(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -1617,6 +1657,8 @@ fn request_input_fact(
         runtime_use: None,
         start_line: line_number,
         end_line: line_number,
+        start_column: 1,
+        end_column: 1,
     }
 }
 
@@ -1920,6 +1962,8 @@ fn raw_sql_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fact> {
                 runtime_use: None,
                 start_line: line_number,
                 end_line: line_number,
+                start_column: 1,
+                end_column: 1,
             });
         } else if line.contains("$queryRaw`")
             || line.contains("$executeRaw`")
@@ -1941,6 +1985,8 @@ fn raw_sql_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fact> {
                 runtime_use: None,
                 start_line: line_number,
                 end_line: line_number,
+                start_column: 1,
+                end_column: 1,
             });
         }
     }
@@ -1981,6 +2027,8 @@ fn cors_policy_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> Vec<Fac
         runtime_use: None,
         start_line: origin_line,
         end_line: origin_line,
+        start_column: 1,
+        end_column: 1,
     }]
 }
 

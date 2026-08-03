@@ -30,11 +30,25 @@ use crate::protocol::{
 pub fn check_repo(request: CheckRequest) -> CheckResult {
     let started = Instant::now();
     let repo_root = request.repo.repo_root.clone();
-    let mut completeness_reasons = check_limit_reasons(&request);
+    // EW-2. Two kinds of incompleteness, and only one of them is about the whole check.
+    //
+    // A *limit* breach (too many facts, a truncated graph, symlinks followed) compromises the
+    // graph itself: nothing derived from it can be trusted, so every finding is withheld. An
+    // *import-scoped* gap is about one import in one file. Whether it touches a given finding
+    // is a question with an answer, and answering it per finding is the whole of this change -
+    // conflating the two is how a single unfinished import came to hide every violation in a
+    // diff (S1-01's kill-switch, honest but check-wide).
+    let global_reasons = check_limit_reasons(&request);
+    let uncertain_imports = uncertain_route_imports(&request);
+    let mut completeness_reasons = global_reasons.clone();
     completeness_reasons.extend(check_graph_completeness_reasons(&request));
     completeness_reasons.sort();
     completeness_reasons.dedup();
+    // The check-wide verdict still reports the honest whole-run answer: a run with any gap did
+    // not see everything and must not claim it could have blocked cleanly. It no longer decides
+    // enforcement on its own.
     let can_block = completeness_reasons.is_empty();
+    let graph_intact = global_reasons.is_empty();
     let graph_node_count = request.graph.graph_nodes.len();
     let graph_edge_count = request.graph.graph_edges.len();
     let facts = request
@@ -277,7 +291,20 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 title: finding.title,
                 message: finding.message,
                 severity: severity_to_str(finding.severity).to_string(),
-                enforcement_result: if can_block {
+                // EW-2: withheld iff the graph is compromised outright, or the uncertainty
+                // is in *this* finding's own dependency chain. Uncertainty about the evidence
+                // and uncertainty elsewhere in the file are different things.
+                enforcement_result: if graph_intact
+                    && !uncertain_imports.covers(
+                        &finding.file_path,
+                        &finding.import_source,
+                        IMPORT_SCOPED_RULE_IDS.contains(
+                            &pending_by_fingerprint
+                                .get(&finding.fingerprint)
+                                .map(|pending| pending.rule_id.as_str())
+                                .unwrap_or(""),
+                        ),
+                    ) {
                     enforcement_result_to_str(finding.enforcement_result).to_string()
                 } else {
                     "none".to_string()
@@ -319,6 +346,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             code: "check_limits_exceeded".to_string(),
             message: reason.clone(),
             file_path: None,
+            import_source: None,
         })
         .collect::<Vec<_>>();
 
@@ -341,6 +369,9 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             missing_capabilities: Vec::new(),
             truncated: !can_block,
             can_block,
+            // EW-2: the graph is sound unless a *limit* was breached. Import-scoped gaps are
+            // recorded in `reasons` and handled per finding above.
+            graph_intact,
             reasons: completeness_reasons,
         }],
     }
@@ -378,6 +409,100 @@ fn check_limit_reasons(request: &CheckRequest) -> Vec<String> {
         reasons.push("follow_symlinks_not_supported".to_string());
     }
     reasons
+}
+
+/// What Drift could not resolve, split by how precisely it can be attributed.
+///
+/// `by_import` holds `(file, specifier)` pairs. A direct-data-access finding rests on exactly one
+/// claim - the specifier this route imported reaches the forbidden module - so its chain is
+/// uncertain precisely when a diagnostic names the same file *and* the same specifier. Not when
+/// some other import in that file is unresolved, and not when a different file has a gap.
+///
+/// `whole_file` holds files carrying an import-scoped diagnostic that names no specifier. Such a
+/// diagnostic cannot be shown to be outside any finding's chain, so it is treated as covering
+/// every finding in that file. Dropping these instead would be the unsafe direction: it would
+/// silently widen enforcement on exactly the payloads Drift understands least. In practice all
+/// three codes now carry a specifier, so this is the path for older or hand-built payloads.
+///
+/// Both are restricted to API-route files, matching `check_graph_completeness_reasons`: a gap in a
+/// non-route file already stops the resolver building the edge a finding would need, so no finding
+/// exists on the strength of one.
+struct UncertainImports {
+    by_import: BTreeSet<(String, String)>,
+    whole_file: BTreeSet<String>,
+}
+
+impl UncertainImports {
+    /// Whether this finding's own evidence is what Drift could not establish.
+    ///
+    /// `precise` is false for findings whose `import_source` is not an import specifier at all -
+    /// the security rules put a proof code there. Those get the file-level answer, because
+    /// matching a proof code against import specifiers would never hit and would quietly promote
+    /// them past a coverage gap they were previously held back by.
+    fn covers(&self, file_path: &str, import_source: &str, precise: bool) -> bool {
+        if self.whole_file.contains(file_path) {
+            return true;
+        }
+        if !precise {
+            // No import-scoped diagnostic on this file at all means nothing to be uncertain
+            // about; one that names a *different* specifier still cannot be reasoned about for a
+            // non-import finding, so it withholds.
+            return self
+                .by_import
+                .iter()
+                .any(|(diagnostic_file, _)| diagnostic_file == file_path);
+        }
+        self.by_import
+            .contains(&(file_path.to_string(), import_source.to_string()))
+    }
+}
+
+/// Rules whose `import_source` is a real import specifier, and so can be matched against a
+/// diagnostic's specifier. Everything else falls back to the file-level answer.
+const IMPORT_SCOPED_RULE_IDS: [&str; 2] = [
+    "api_route_no_direct_data_access",
+    "api_route_requires_service_delegation",
+];
+
+fn uncertain_route_imports(request: &CheckRequest) -> UncertainImports {
+    let nodes_by_id = request
+        .graph
+        .graph_nodes
+        .iter()
+        .map(|node| (node.id.as_str(), node))
+        .collect::<BTreeMap<_, _>>();
+    let api_route_files = api_route_files(&request.graph.graph_edges, &nodes_by_id);
+    let mut uncertain = UncertainImports {
+        by_import: BTreeSet::new(),
+        whole_file: BTreeSet::new(),
+    };
+    for diagnostic in &request.graph.graph_diagnostics {
+        if !matches!(
+            diagnostic.code.as_str(),
+            "unresolved_import"
+                | "unresolved_import_symbol"
+                | "unsupported_namespace_import_symbol"
+        ) {
+            continue;
+        }
+        let Some(file_path) = diagnostic.file_path.as_deref() else {
+            continue;
+        };
+        if !api_route_files.contains(file_path) {
+            continue;
+        }
+        match diagnostic.import_source.as_deref() {
+            Some(import_source) => {
+                uncertain
+                    .by_import
+                    .insert((file_path.to_string(), import_source.to_string()));
+            }
+            None => {
+                uncertain.whole_file.insert(file_path.to_string());
+            }
+        }
+    }
+    uncertain
 }
 
 fn check_graph_completeness_reasons(request: &CheckRequest) -> Vec<String> {
@@ -3339,9 +3464,11 @@ fn check_fact_to_engine_fact(fact: CheckFact) -> Option<Fact> {
         name: fact.name,
         value: fact.value,
         imported_name: fact.imported_name,
-        runtime_use: None,
+        runtime_use: fact.runtime_use,
         start_line: fact.start_line,
         end_line: fact.end_line,
+        start_column: fact.start_column,
+        end_column: fact.end_column,
     })
 }
 

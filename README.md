@@ -46,6 +46,20 @@ Evaluated on seven open-source Next.js repos on every change
 | Correct `file:line` evidence | **7 / 7** |
 | A properly layered route falsely flagged | **0 / 7** |
 | False-positive rate (dub, 494 routes) | **3.1%** |
+| Evasion shapes caught, at the contract's mode ([`pnpm eval:evasion`](scripts/evasion-matrix.mjs)) | **66 / 66** testable cells |
+
+And, because the number that decides whether a first session is tolerable is not recall but how often
+Drift declines to answer — eight ordinary edits per repo, none of them a violation
+([`pnpm eval:bench`](scripts/beta-bench.mjs)):
+
+| | |
+|---|---|
+| Ordinary edits refused rather than answered | **0 / 56** |
+| Local imports the resolver places | **96.1% – 99.9%** |
+
+Every check reports its own coverage, so a clean result is never mistaken for full coverage. Where
+Drift cannot resolve something it says so, with the offending specifiers — see
+[`drift doctor`](docs/reference/enforcement.md) and `summary.import_coverage`.
 
 ## Why your repo might only warn
 

@@ -25,8 +25,8 @@ pub use diff::{
     classify_findings_against_diff, parse_unified_diff,
 };
 pub use facts::{
-    Fact, FactExtractError, FactKind, RUNTIME_USE_DYNAMIC, RUNTIME_USE_VALUE_POSITION,
-    extract_typescript_facts,
+    Fact, FactExtractError, FactKind, RUNTIME_USE_DYNAMIC, RUNTIME_USE_SIDE_EFFECT,
+    RUNTIME_USE_VALUE_POSITION, SIDE_EFFECT_IMPORT_BINDING, extract_typescript_facts,
 };
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,

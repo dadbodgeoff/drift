@@ -55,12 +55,37 @@ pub struct Fact {
     pub runtime_use: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
+    /// EW-6 (DET-1): 1-based column, which is what makes two occurrences on one line two facts.
+    ///
+    /// Without it, `db.query(); db.query();` on a single line produced byte-identical facts, and
+    /// the CLI's fact id - derived from (scan, file, kind, name, value, line) - collapsed them into
+    /// one stored row. The full-scan path counted the engine's emissions and the incremental path
+    /// counted rows, so the two disagreed; the deeper problem was that the second occurrence was
+    /// genuinely lost rather than merely miscounted.
+    ///
+    /// A column rather than an occurrence ordinal, because a column is true independently of
+    /// emission order and improves the evidence a finding carries. 1-based to match `start_line`
+    /// and to match what an editor shows.
+    pub start_column: usize,
+    pub end_column: usize,
 }
 
 /// Runtime use proven because the binding appears in a value position.
 pub const RUNTIME_USE_VALUE_POSITION: &str = "value_position";
 /// Runtime use proven by construction: `require()` and dynamic `import()` always execute.
 pub const RUNTIME_USE_DYNAMIC: &str = "dynamic";
+/// S10. Runtime use proven by construction for a *bindingless* import declaration
+/// (`import "@acme/db";`). Executing the module for its side effects is the only thing such
+/// an import does, so it is a runtime dependency by definition - there is no type-only
+/// reading of it, and nothing for member-level symbol resolution to say about it.
+pub const RUNTIME_USE_SIDE_EFFECT: &str = "side_effect";
+
+/// S10. The local name recorded for a side-effect import, which binds nothing.
+///
+/// Deliberately not a legal JavaScript identifier: this name flows into the import node's
+/// `local_name` metadata and into binding-keyed lookups (call-site receivers, data-access
+/// binding roots), and it must never collide with a real binding in any of them.
+pub const SIDE_EFFECT_IMPORT_BINDING: &str = "(side-effect)";
 
 struct ImportBinding {
     imported_name: String,
@@ -115,6 +140,11 @@ pub fn extract_typescript_facts(
         runtime_use: None,
         start_line: 1,
         end_line: source.lines().count().max(1),
+        // A file-level fact spans the whole file, so its position is the file's first character.
+        // The same holds for the role facts below. These are the only facts whose column is a
+        // constant rather than a parse position, and it is a true one.
+        start_column: 1,
+        end_column: 1,
     });
 
     let line_count = source.lines().count().max(1);
@@ -128,6 +158,8 @@ pub fn extract_typescript_facts(
             runtime_use: None,
             start_line: 1,
             end_line: line_count,
+            start_column: 1,
+            end_column: 1,
         });
     }
 
@@ -162,10 +194,20 @@ fn apply_runtime_use_analysis(root: Node<'_>, source: &[u8], facts: &mut Vec<Fac
         if fact.kind != FactKind::ImportUsed {
             return true;
         }
-        // Runtime-by-construction imports (`require()`, dynamic `import()`) execute the
-        // module regardless of how their binding is used; the type-only erasure below
-        // never applies to them.
-        if fact.runtime_use.as_deref() == Some(RUNTIME_USE_DYNAMIC) {
+        // Runtime-by-construction imports (`require()`, dynamic `import()`, and the S10
+        // bindingless side-effect import) execute the module regardless of how any binding
+        // is used; the type-only erasure below never applies to them.
+        //
+        // The side-effect case is named explicitly rather than left to fall through. Its
+        // binding is the `(side-effect)` sentinel, which no identifier can equal, so
+        // `used_as_type` is necessarily false and the retain below would keep it anyway -
+        // but that is the filter's *default*, and a default is not a decision. If the
+        // sentinel ever became a real name this would silently start erasing the only fact
+        // that proves the dependency.
+        if matches!(
+            fact.runtime_use.as_deref(),
+            Some(RUNTIME_USE_DYNAMIC) | Some(RUNTIME_USE_SIDE_EFFECT)
+        ) {
             return true;
         }
         let name = fact.name.as_str();
@@ -280,7 +322,32 @@ fn extract_imports(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut V
         .and_then(|child| node_text(child, source))
         .map(unquote);
 
-    for binding in import_value_bindings(&statement) {
+    let bindings = import_value_bindings(&statement);
+    if bindings.is_empty() {
+        // S10: a bindingless `import "@acme/db";`. No binding is exactly why this shape was
+        // invisible - and exactly why it is a violation: an import with nothing to bind exists
+        // only to execute the module.
+        if let Some(specifier) = source_value.as_deref()
+            && is_bindingless_import(&statement)
+            && is_module_like_specifier(specifier)
+        {
+            facts.push(Fact {
+                kind: FactKind::ImportUsed,
+                file_path: file_path.to_string(),
+                name: SIDE_EFFECT_IMPORT_BINDING.to_string(),
+                value: source_value.clone(),
+                imported_name: Some(SIDE_EFFECT_IMPORT_BINDING.to_string()),
+                runtime_use: Some(RUNTIME_USE_SIDE_EFFECT.to_string()),
+                start_line: node.start_position().row + 1,
+                end_line: node.end_position().row + 1,
+                start_column: node.start_position().column + 1,
+                end_column: node.end_position().column + 1,
+            });
+        }
+        return;
+    }
+
+    for binding in bindings {
         facts.push(Fact {
             kind: FactKind::ImportUsed,
             file_path: file_path.to_string(),
@@ -290,7 +357,51 @@ fn extract_imports(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut V
             runtime_use: None,
             start_line: node.start_position().row + 1,
             end_line: node.end_position().row + 1,
+            start_column: node.start_position().column + 1,
+            end_column: node.end_position().column + 1,
         });
+    }
+}
+
+/// An import declaration whose clause is the module specifier itself: `import "x";`.
+///
+/// `import type ...`, `import x from "x"` and `import {} ... ` all fail this - the first
+/// because it is erased, the rest because they have a clause before the `from`.
+fn is_bindingless_import(statement: &str) -> bool {
+    let trimmed = statement.trim();
+    let Some(rest) = trimmed.strip_prefix("import") else {
+        return false;
+    };
+    let rest = rest.trim_start();
+    rest.starts_with('"') || rest.starts_with('\'')
+}
+
+/// Whether a bindingless specifier names a *module* rather than an asset.
+///
+/// `import "./globals.css"`, `import "../logo.svg"` and friends are bundler instructions, not
+/// module dependencies: nothing in a stylesheet can be a data layer, and the resolver cannot
+/// follow them because assets are not in the scanned snapshot. Left in, they would each raise
+/// an `unresolved_import` diagnostic - and one of those on a route file makes the entire check
+/// fail closed (exit 3). That would turn a recall fix into an availability bug.
+///
+/// The test is a whitelist, not a blacklist of known asset extensions, because the blacklist
+/// can only ever be as complete as today's bundler ecosystem while the whitelist errs toward
+/// the status quo (silence). A specifier with no extension is module-like; one with an
+/// extension is module-like only if that extension is JavaScript or TypeScript. The cost is
+/// that `import "@acme/db.core"` stays missed, which is where it already was.
+fn is_module_like_specifier(specifier: &str) -> bool {
+    let path = specifier
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(specifier)
+        .trim_end_matches('/');
+    let last_segment = path.rsplit('/').next().unwrap_or(path);
+    match last_segment.rsplit_once('.') {
+        None => true,
+        Some((_, extension)) => matches!(
+            extension.to_ascii_lowercase().as_str(),
+            "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "mts" | "cts"
+        ),
     }
 }
 
@@ -317,6 +428,8 @@ fn extract_runtime_imports(node: Node<'_>, source: &[u8], file_path: &str, facts
             runtime_use: Some(RUNTIME_USE_DYNAMIC.to_string()),
             start_line: node.start_position().row + 1,
             end_line: node.end_position().row + 1,
+            start_column: node.start_position().column + 1,
+            end_column: node.end_position().column + 1,
         });
     }
 }
@@ -390,6 +503,8 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         runtime_use: None,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
+        start_column: node.start_position().column + 1,
+        end_column: node.end_position().column + 1,
     });
 
     let Some(receiver) = receiver else {
@@ -410,6 +525,8 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         runtime_use: None,
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
+        start_column: node.start_position().column + 1,
+        end_column: node.end_position().column + 1,
     });
 }
 
@@ -423,6 +540,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
     {
         let start_line = node.start_position().row + 1;
         let end_line = node.end_position().row + 1;
+        let start_column = node.start_position().column + 1;
+        let end_column = node.end_position().column + 1;
         for identifier in reexport_value_identifiers(statement) {
             // `export * as ns from "m"` exports a NAMESPACE named `ns` - it does not
             // flatten `m`'s exports into this file the way a bare `export *` does. Emit
@@ -439,6 +558,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     runtime_use: None,
                     start_line,
                     end_line,
+                    start_column,
+                    end_column,
                 });
                 facts.push(Fact {
                     kind: FactKind::ReExportUsed,
@@ -449,6 +570,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     runtime_use: None,
                     start_line,
                     end_line,
+                    start_column,
+                    end_column,
                 });
                 facts.push(Fact {
                     kind: FactKind::ExportedSymbol,
@@ -459,6 +582,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     runtime_use: None,
                     start_line,
                     end_line,
+                    start_column,
+                    end_column,
                 });
                 continue;
             }
@@ -471,6 +596,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 runtime_use: None,
                 start_line,
                 end_line,
+                start_column,
+                end_column,
             });
             facts.push(Fact {
                 kind: FactKind::ReExportUsed,
@@ -481,13 +608,56 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 runtime_use: None,
                 start_line,
                 end_line,
+                start_column,
+                end_column,
             });
         }
+    }
+
+    // EW-4: `export default <expression>;` where the expression is not a declaration.
+    //
+    // The declaration branch below handles `export default function f() {}` and friends. It cannot
+    // see `export default prisma;` - the identifier was declared on an earlier line, so this
+    // statement has no declaration child and `first_named_declaration_identifier` returns None,
+    // skipping the whole branch. The module then reports no `default` export, and every
+    // `import x from "./m"` against it raises `unresolved_import_symbol`.
+    //
+    // Measured on cal.com: 242 such diagnostics against `packages/prisma/index.ts`, whose line 112
+    // is exactly `export default prisma;`. Because that is the *data layer*, every route importing
+    // it the ordinary way carried an unresolved symbol on the very import a finding rests on - so
+    // the finding stayed withheld and the check refused, on edits as small as adding a comment.
+    //
+    // Emitted only for an actual `export default`, never for a named export: claiming a default
+    // export a module does not have would turn a missing-symbol gap into a wrong answer. Type-only
+    // default exports (`export type { X as default }`) are erased and are excluded, matching how
+    // every other type-only export is treated here.
+    if statement
+        .as_deref()
+        .is_some_and(is_runtime_default_export_statement)
+        && first_named_declaration_identifier(node, source).is_none()
+    {
+        facts.push(Fact {
+            kind: FactKind::ExportedSymbol,
+            file_path: file_path.to_string(),
+            name: "default".to_string(),
+            // The local binding when there is one (`export default prisma`), so consumers can
+            // follow the default back to what it names. Absent for an anonymous expression, where
+            // there is nothing to follow - `default` is the whole of what the module exports.
+            value: default_export_identifier(node, source),
+            imported_name: None,
+            runtime_use: None,
+            start_line: node.start_position().row + 1,
+            end_line: node.end_position().row + 1,
+            start_column: node.start_position().column + 1,
+            end_column: node.end_position().column + 1,
+        });
     }
 
     if let Some(name) = first_named_declaration_identifier(node, source) {
         let start_line = node.start_position().row + 1;
         let end_line = node.end_position().row + 1;
+        let start_column = node.start_position().column + 1;
+        let end_column = node.end_position().column + 1;
         facts.push(Fact {
             kind: FactKind::ExportedSymbol,
             file_path: file_path.to_string(),
@@ -497,6 +667,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             runtime_use: None,
             start_line,
             end_line,
+            start_column,
+            end_column,
         });
 
         let is_default_export = statement
@@ -524,6 +696,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                     runtime_use: None,
                     start_line,
                     end_line,
+                    start_column,
+                    end_column,
                 });
             }
         } else if is_api_route_path(file_path)
@@ -538,6 +712,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 runtime_use: None,
                 start_line,
                 end_line,
+                start_column,
+                end_column,
             });
         }
         if is_default_export {
@@ -550,6 +726,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 runtime_use: None,
                 start_line,
                 end_line,
+                start_column,
+                end_column,
             });
         }
     }
@@ -807,6 +985,28 @@ fn data_operation_kind(operation_name: &str) -> &'static str {
     } else {
         "unknown"
     }
+}
+
+/// Whether a statement is a default export that exists at runtime.
+///
+/// `export default X` does. `export type { X as default }` does not - it is erased, like every other
+/// type-only export. The check is on the statement text because tree-sitter models a type-only
+/// export clause as an ordinary export statement with a `type` keyword child, and the text is what
+/// the rest of this module already reasons about.
+fn is_runtime_default_export_statement(statement: &str) -> bool {
+    let trimmed = statement.trim_start();
+    trimmed.starts_with("export default") && !trimmed.starts_with("export default type ")
+}
+
+/// The local binding a bare `export default <identifier>;` names, if it is a plain identifier.
+///
+/// `None` for anything else - an object literal, an arrow, a call - because there is no binding to
+/// name and inventing one would be worse than saying nothing.
+fn default_export_identifier(node: Node<'_>, source: &[u8]) -> Option<String> {
+    let mut cursor = node.walk();
+    node.children(&mut cursor)
+        .find(|child| child.kind() == "identifier")
+        .and_then(|child| node_text(child, source))
 }
 
 fn first_named_declaration_identifier(node: Node<'_>, source: &[u8]) -> Option<String> {

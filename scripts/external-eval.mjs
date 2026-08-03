@@ -181,6 +181,22 @@ function evaluateRepoAt(reposDir, cfg) {
     return { ...result, status: "MISSING_REPO" };
   }
 
+  // EW-7 (DET-2): refuse a contaminated worktree rather than measuring it.
+  //
+  // Before the reset, deliberately - the reset is what destroyed the evidence that made the cal.com
+  // findings flap unfalsifiable. A number from a repo another process was editing is not a slightly
+  // wrong number, it is a number about a different repo, and publishing it looks like measurement.
+  const contamination = contaminationRefusal(root, cfg.name);
+  if (contamination.refused && !contaminationAllowed(process.argv)) {
+    console.error(`  REFUSED ${cfg.name}: ${contamination.reason}`);
+    return {
+      ...result,
+      status: "CONTAMINATED_WORKTREE",
+      contaminated_files: contamination.entries.map((entry) => entry.path),
+      head: contamination.head
+    };
+  }
+
   resetTree(root);
 
   // Fresh Drift state per repo: onboarding is part of what we measure.

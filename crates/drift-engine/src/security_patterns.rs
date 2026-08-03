@@ -567,6 +567,8 @@ mod tests {
             runtime_use: None,
             start_line: 4,
             end_line: 4,
+            start_column: 1,
+            end_column: 1,
         };
         let wrong_import_facts = vec![Fact {
             kind: FactKind::ImportUsed,
@@ -577,6 +579,8 @@ mod tests {
             runtime_use: None,
             start_line: 1,
             end_line: 1,
+            start_column: 1,
+            end_column: 1,
         }];
         assert!(
             accepted_response_serializer_for_call(
@@ -597,6 +601,8 @@ mod tests {
             runtime_use: None,
             start_line: 1,
             end_line: 1,
+            start_column: 1,
+            end_column: 1,
         }];
         let serializer = accepted_response_serializer_for_call(
             &call,

@@ -1233,6 +1233,14 @@ function scanStatusPayload(
     current_branch: currentBranch,
     latest_scan: latestScan,
     scan_fingerprint: latestScan ? scanFingerprint(latestScan, snapshots) : null,
+    /**
+     * EW-6 (DET-1): stored facts beside the manifest's emission count, in parity with the CLI.
+     *
+     * The two numbers coming from different code paths is what let a dropped fact go unnoticed, so
+     * both are published - and published on both surfaces, because an agent reading MCP and a human
+     * reading the CLI must be able to check the same claim.
+     */
+    stored_fact_count: latestScan ? storage.listFacts(latestScan.id).length : 0,
     audit_integrity: auditIntegrity,
     indexed_file_count: latestScan?.file_count ?? 0,
     source_change_count: sourceChangeCount,

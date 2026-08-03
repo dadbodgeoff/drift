@@ -142,15 +142,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
+        "caught": true,
+        "findings_count": 1,
         "exit": 0,
         "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -336,15 +337,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "apps/web/app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
+        "caught": true,
+        "findings_count": 1,
         "exit": 0,
         "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -539,15 +541,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "apps/web/app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
-        "exit": 0,
-        "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -742,15 +745,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "apps/web/app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
-        "exit": 0,
-        "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -945,15 +949,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
+        "caught": true,
+        "findings_count": 1,
         "exit": 0,
         "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -1130,15 +1135,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "apps/dashboard/src/app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
-        "exit": 0,
-        "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",
@@ -1324,15 +1330,16 @@
         "id": "S10-side-effect-import",
         "class": "catch",
         "route": "apps/dashboard/src/app/api/drift-evasion-s10/route.ts",
-        "caught": false,
-        "findings_count": 0,
-        "exit": 0,
-        "check_status": "pass",
-        "enforcement": null,
-        "attributed_files": [],
-        "outcome": "evaded",
-        "verdict": "KNOWN_EVASION",
-        "known_evasion": true
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
       },
       {
         "id": "S11-lookalike-negative",

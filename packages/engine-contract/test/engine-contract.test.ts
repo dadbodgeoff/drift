@@ -427,7 +427,135 @@ describe("engine contract schemas", () => {
         can_block: false,
         reasons: ["missing_capability:direct_data_access_check"]
       }]
-    })).toThrow(/blocking findings require complete capability coverage/);
+    })).toThrow(/blocking findings require a sound graph and no missing capabilities/);
+  });
+
+  /**
+   * EW-2. The contract used to demand `can_block && complete && !truncated` for any blocking
+   * finding, which made "any unresolved import anywhere in the run" a contract-level prohibition
+   * on blocking anything - the mechanism behind S1-01's diff-wide blast radius.
+   *
+   * A blocking finding now requires the graph to be sound and no capability to be missing.
+   * `can_block: false` alongside a block is the *expected* shape for "enforced the findings whose
+   * evidence was complete, could not resolve part of the diff", and the engine decides which is
+   * which per finding before this schema ever sees the payload.
+   */
+  it("accepts a blocking finding when the graph is sound but coverage is partial", () => {
+    expect(() => parseEngineCheckResult({
+      schema_version: "engine.check.result.v1",
+      repo_id: "repo_abc",
+      scan_id: "scan_check_abc",
+      engine_version: "0.1.0",
+      rule_engine_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      diff_mode: "changed-hunks",
+      findings: [{
+        id: "finding_abc",
+        fingerprint: "fingerprint_abc",
+        convention_id: "convention_no_direct_db",
+        rule_id: "api_route_no_direct_data_access",
+        title: "API route imports data access directly",
+        message: "app/api/users/route.ts imports prisma from @/lib/prisma directly.",
+        severity: "error",
+        enforcement_result: "block",
+        status_hint: "new",
+        diff_status: "new_in_diff",
+        evidence: [{ file_path: "app/api/users/route.ts" }],
+        related_node_ids: []
+      }],
+      diagnostics: [{
+        severity: "warning",
+        code: "unresolved_import",
+        message: "Could not resolve import @/lib/not-created-yet from app/api/other/route.ts.",
+        file_path: "app/api/other/route.ts",
+        import_source: "@/lib/not-created-yet"
+      }],
+      stats: {
+        files_seen: 2,
+        files_skipped: 0,
+        files_parsed: 2,
+        facts_emitted: 2,
+        graph_nodes: 2,
+        graph_edges: 2,
+        diagnostics_emitted: 1,
+        duration_ms: 2,
+        truncated: false,
+        capabilities: {
+          certified: ["syntax_facts", "direct_data_access_check"],
+          required: ["direct_data_access_check"],
+          missing: []
+        }
+      },
+      completeness: [{
+        scope: "repo",
+        // The whole-run verdict: this run did not see everything, and says so.
+        complete: false,
+        required_capabilities: ["direct_data_access_check"],
+        missing_capabilities: [],
+        truncated: true,
+        can_block: false,
+        // The graph itself is sound - no limit was breached, only an import went unresolved.
+        graph_intact: true,
+        reasons: ["unresolved_route_import:app/api/other/route.ts"]
+      }]
+    })).not.toThrow();
+  });
+
+  /**
+   * The other half: a limit breach compromises the graph itself, so nothing derived from it may
+   * block. This is the case `graph_intact` exists to keep distinguishable from the one above.
+   */
+  it("rejects a blocking finding when the graph itself is not intact", () => {
+    expect(() => parseEngineCheckResult({
+      schema_version: "engine.check.result.v1",
+      repo_id: "repo_abc",
+      scan_id: "scan_check_abc",
+      engine_version: "0.1.0",
+      rule_engine_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      diff_mode: "changed-hunks",
+      findings: [{
+        id: "finding_abc",
+        fingerprint: "fingerprint_abc",
+        convention_id: "convention_no_direct_db",
+        rule_id: "api_route_no_direct_data_access",
+        title: "API route imports data access directly",
+        message: "app/api/users/route.ts imports prisma from @/lib/prisma directly.",
+        severity: "error",
+        enforcement_result: "block",
+        status_hint: "new",
+        diff_status: "new_in_diff",
+        evidence: [{ file_path: "app/api/users/route.ts" }],
+        related_node_ids: []
+      }],
+      diagnostics: [],
+      stats: {
+        files_seen: 1,
+        files_skipped: 0,
+        files_parsed: 1,
+        facts_emitted: 1,
+        graph_nodes: 1,
+        graph_edges: 1,
+        diagnostics_emitted: 0,
+        duration_ms: 2,
+        truncated: true,
+        capabilities: {
+          certified: ["syntax_facts", "direct_data_access_check"],
+          required: ["direct_data_access_check"],
+          missing: []
+        }
+      },
+      completeness: [{
+        scope: "repo",
+        complete: false,
+        required_capabilities: ["direct_data_access_check"],
+        missing_capabilities: [],
+        truncated: true,
+        can_block: false,
+        graph_intact: false,
+        reasons: ["graph_edges_exceeded_limit: 900000 > 500000"]
+      }]
+    })).toThrow(/blocking findings require a sound graph and no missing capabilities/);
   });
 
   it("validates engine-owned candidate inference results without governance mutation state", () => {

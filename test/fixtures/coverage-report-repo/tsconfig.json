@@ -1,0 +1,1 @@
+{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["src/*"], "@acme/util": ["packages/util/src/index.ts"] } } }

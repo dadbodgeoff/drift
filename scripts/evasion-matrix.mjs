@@ -38,6 +38,7 @@ import { fileURLToPath } from "node:url";
 
 import { EVAL_REPOS } from "./eval-repos.mjs";
 import { shapeVerdict, unsafeShapeMoves, updateGate } from "./external-eval-predicate.mjs";
+import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
@@ -291,6 +292,20 @@ function evaluateRepo(cfg, baselineRow) {
   const root = join(REPOS_DIR, cfg.name);
   const result = { repo: cfg.name };
   if (!existsSync(root)) return { ...result, onboarded: false, error: "MISSING_REPO", shapes: [] };
+
+  // EW-7 (DET-2): refuse a contaminated worktree rather than measuring it. Before the reset,
+  // because the reset is what destroyed the evidence.
+  const contamination = contaminationRefusal(root, cfg.name);
+  if (contamination.refused && !contaminationAllowed(process.argv)) {
+    console.error(`  REFUSED ${cfg.name}: ${contamination.reason}`);
+    return {
+      ...result,
+      onboarded: false,
+      error: "CONTAMINATED_WORKTREE",
+      contaminated_files: contamination.entries.map((entry) => entry.path),
+      shapes: []
+    };
+  }
 
   resetTree(root);
   const home = mkdtempSync(join(tmpdir(), "drift-evasion-home-"));
