@@ -355,6 +355,7 @@ export const FactRecordSchema = z.object({
   name: z.string().min(1),
   value: z.string().optional(),
   imported_name: z.string().optional(),
+  runtime_use: z.string().min(1).optional(),
   start_line: z.number().int().positive(),
   end_line: z.number().int().positive(),
   source_span: SourceSpanSchema,

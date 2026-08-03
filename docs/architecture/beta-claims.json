@@ -62,10 +62,106 @@
         "EntrypointContract"
       ],
       "fixture": "scripts/run-beta-proof.mjs parser-gap quality proof plus test/e2e/fixture-matrix.test.ts realistic Next/Node fixtures"
+    },
+    "local_first_cli": {
+      "required_contracts": [],
+      "fixture": "test/e2e/installed-flow.test.ts proves the packed CLI onboards, scans and checks with no network call; packages/cli/test/cli.test.ts covers the command surface"
+    },
+    "sqlite_local_state": {
+      "required_contracts": [],
+      "fixture": "packages/storage/test/sqlite-storage.test.ts and packages/storage/test/migrations.test.ts pin the schema and its forward-only migration history"
+    },
+    "human_confirmed_governance": {
+      "required_contracts": [],
+      "fixture": "packages/cli/test/contract-field-enforcement.test.ts pins that every mutating action requires an explicit confirmation flag"
+    },
+    "read_only_mcp": {
+      "required_contracts": [],
+      "fixture": "packages/mcp/test/mcp.test.ts asserts the tools/list surface exposes no mutation tool"
     }
   },
   "claim_notes": {
     "automatic_convention_inference_for_any_data_layer": "Candidate inference recognises a data layer only when its import specifier contains prisma, database, db, or data-access (is_data_access_source in crates/drift-engine/src/candidate_command.rs). Repos naming theirs store/supabase/repository/models yield zero inferred candidates. Drift reports this explicitly and suggests the module found by tracing package.json dependencies through repo imports; the human declares it with --data-modules. Claimable capability is therefore 'bootstraps and enforces a declared layering contract with per-line evidence', not 'learns your conventions'. Lift when structural construction-site detection lands.",
     "security_boundary_proofs": "The security heuristics layer is gated behind --experimental-security for beta and its conventions are never auto-accepted. Its own audit (docs/architecture/security-heuristic-audit.md) found guard dominance is a line-number comparison, branch detection is line.contains(\"if\"), and unsupported_dynamic_control_flow() - the valve meant to degrade a proof when control flow is too dynamic - matches only Drift fixture strings, so it opens for test inputs and never for real dynamic dispatch. The findings are not worthless but cannot honestly be called proofs. Lift when the layer is rebuilt on AST analysis."
+  },
+  "enforcement_posture": {
+    "note": "EW-10. What a reader is actually getting. `enforced` claims can fail a build; `advisory` claims report and leave the decision to a human. The distinction is not cosmetic - a convention in warn mode produces findings and exit 0, and a reader who assumed otherwise would conclude Drift found nothing.",
+    "enforced": [
+      "accepted_contract_blocks_direct_data_access",
+      "typescript_api_route_layering"
+    ],
+    "advisory": [
+      "local_first_cli",
+      "sqlite_local_state",
+      "human_confirmed_governance",
+      "read_only_mcp",
+      "incremental_reuse"
+    ],
+    "single_convention_scope": "One convention family: api_route_no_direct_data_access, on TypeScript/JavaScript Next.js API routes (App Router and Pages). Nothing else is enforced. The data layer is recognised only when its import specifier contains prisma, database, db or data-access; any other naming must be declared with --data-modules. Enforcement mode is inferred from the direction of the evidence, so a repo where a majority of routes violate gets warn mode, not block.",
+    "measured_refusal_rate": {
+      "note": "How often Drift declines to answer about an edit that is not a violation. Eight ordinary edits per repo - a comment, a new layered route, a new helper, a helper plus its caller, an added local import, an appended export, two new routes in one diff, and a moved route - none of which breaks the data-access convention. A refusal (exit 3) on any of them is Drift failing to be useful about work it should understand completely. Derived from the harness baseline by scripts/sync-refusal-rate.mjs, never typed by hand.",
+      "source": "scripts/beta-bench.mjs",
+      "baseline": "scripts/beta-bench-baseline.json",
+      "measured_at": "2026-08-03",
+      "commit": "40dcf44c2316",
+      "refused": 0,
+      "total": 56,
+      "rate": 0,
+      "per_repo": {
+        "taxonomy": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 15,
+          "import_resolution_rate": 0.9777
+        },
+        "dub": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 640,
+          "import_resolution_rate": 0.9992
+        },
+        "formbricks": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 1004,
+          "import_resolution_rate": 0.9952
+        },
+        "calcom": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 1705,
+          "import_resolution_rate": 0.9613
+        },
+        "papermark": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 494,
+          "import_resolution_rate": 0.9856
+        },
+        "midday": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 613,
+          "import_resolution_rate": 0.9983
+        },
+        "openstatus": {
+          "refused": 0,
+          "total": 8,
+          "parser_gaps": 753,
+          "import_resolution_rate": 0.9851
+        }
+      }
+    }
+  },
+  "prose_claim_region_ends_at": "## First Five Minutes",
+  "prose_claims": {
+    "Drift stops an AI agent from writing code that violates conventions": "accepted_contract_blocks_direct_data_access",
+    "Drift enforces \\*\\*one\\*\\* convention family well": "typescript_api_route_layering",
+    "\\*\\*It does not\\*\\* review code generally": null,
+    "Drift bootstraps and enforces a \\*declared\\* layering contract": "accepted_contract_blocks_direct_data_access",
+    "the mode follows the evidence": "typescript_api_route_layering",
+    "formbricks \\(1 route of 83\\) blocks": "typescript_api_route_layering",
+    "Every check reports its own coverage": "typescript_api_route_layering",
+    "Where Drift cannot resolve something it says so": null
   }
 }

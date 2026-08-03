@@ -129,10 +129,7 @@ pub fn materialize_direct_data_access_findings(
         .map(|violation| RuleFinding {
             fingerprint: direct_data_access_fingerprint(&violation),
             title: "API route imports data access directly".to_string(),
-            message: format!(
-                "{} imports {} from {} directly; route modules should delegate through the accepted service/data-access layer.",
-                violation.file_path, violation.import_name, violation.import_source
-            ),
+            message: direct_data_access_message(&violation),
             severity: rule.severity,
             enforcement_result: enforcement_result_for(rule.enforcement_mode),
             convention_id: violation.convention_id,
@@ -191,6 +188,26 @@ pub fn is_forbidden_import(import_source: &str, forbidden_imports: &[String]) ->
                 .strip_prefix(forbidden.as_str())
                 .is_some_and(|rest| rest.starts_with('/'))
     })
+}
+
+/// The violation sentence.
+///
+/// S10: a bindingless `import "@/lib/prisma";` has no local name, so the general form ("X
+/// imports <name> from <source>") would read "imports (side-effect) from ...", naming an
+/// engine-internal sentinel as if it were the user's identifier. The side-effect form says
+/// what actually happened instead, which is also the more useful instruction: there is no
+/// symbol to move, the import itself has to go.
+fn direct_data_access_message(violation: &DirectDataAccessViolation) -> String {
+    if violation.import_name == crate::facts::SIDE_EFFECT_IMPORT_BINDING {
+        return format!(
+            "{} imports {} for its side effects, executing the data-access module directly; route modules should delegate through the accepted service/data-access layer.",
+            violation.file_path, violation.import_source
+        );
+    }
+    format!(
+        "{} imports {} from {} directly; route modules should delegate through the accepted service/data-access layer.",
+        violation.file_path, violation.import_name, violation.import_source
+    )
 }
 
 fn direct_data_access_fingerprint(violation: &DirectDataAccessViolation) -> String {

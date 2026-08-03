@@ -470,6 +470,7 @@ fn scan_file_with_reuse(
                 MAX_FILE_BYTES
             ),
             file_path: Some(normalize_path(file_path)),
+            import_source: None,
         });
         return Ok(None);
     }
@@ -490,6 +491,7 @@ fn scan_file_with_reuse(
             code: "unsupported_dynamic_middleware_matcher".to_string(),
             message: "unsupported_dynamic_middleware_matcher".to_string(),
             file_path: Some(normalized.clone()),
+            import_source: None,
         });
     }
     let mut facts = extract_typescript_facts(file_path, &source)?;
@@ -525,6 +527,7 @@ fn scan_files(
                     code: "file_unreadable".to_string(),
                     message: format!("file skipped: {error}"),
                     file_path: Some(normalize_path(file_path)),
+                    import_source: None,
                 });
                 result.files_skipped_unreadable += 1;
             }
@@ -621,6 +624,11 @@ fn add_middleware_coverage_facts(scanned: &mut [(ScannedFile, Vec<EngineFact>)])
                     runtime_use: None,
                     start_line: route_line,
                     end_line: route_line,
+                    // A synthesised relationship fact, not a source occurrence: it has a
+                    // line (the route declaration's) but no column, and inventing one
+                    // would claim a position in the file that nothing occupies.
+                    start_column: 0,
+                    end_column: 0,
                 });
             }
         }
@@ -643,6 +651,8 @@ fn middleware_fact_from_engine(fact: &EngineFact) -> Option<Fact> {
         runtime_use: None,
         start_line: fact.start_line,
         end_line: fact.end_line,
+        start_column: fact.start_column,
+        end_column: fact.end_column,
     })
 }
 
@@ -708,6 +718,7 @@ fn collect_indexable_files(repo_root: &Path) -> io::Result<FileDiscoveryResult> 
                     code: "unreadable_path".to_string(),
                     message: format!("Skipped a path that could not be read: {error}"),
                     file_path: None,
+                    import_source: None,
                 });
                 continue;
             }
@@ -737,6 +748,7 @@ fn collect_indexable_files(repo_root: &Path) -> io::Result<FileDiscoveryResult> 
                         error
                     ),
                     file_path: Some(normalize_path(relative)),
+                    import_source: None,
                 });
             }
             continue;
@@ -783,6 +795,8 @@ fn engine_fact(fact: Fact) -> EngineFact {
         runtime_use: fact.runtime_use,
         start_line: fact.start_line,
         end_line: fact.end_line,
+        start_column: fact.start_column,
+        end_column: fact.end_column,
     }
 }
 
@@ -1053,12 +1067,26 @@ fn graph_for_file(
                 };
                 let resolved_module = resolved.as_ref().map(|path| module_id(path));
                 let imported_name = fact.imported_name.as_deref().unwrap_or(&fact.name);
+                // S10: a bindingless side-effect import. It binds no symbol, so every
+                // member-level judgement below is vacuous for it - there is no symbol to
+                // resolve, no namespace to be conservative about, and no delegated service
+                // boundary to infer. What it does have is a module dependency, which is the
+                // only thing the direct-data-access rule needs.
+                let is_side_effect_import =
+                    fact.runtime_use.as_deref() == Some(drift_engine::RUNTIME_USE_SIDE_EFFECT);
                 let mut import_metadata = BTreeMap::from([
                     ("source".to_string(), json!(source)),
                     ("local_name".to_string(), json!(fact.name)),
                     ("imported_name".to_string(), json!(imported_name)),
                     ("file_path".to_string(), json!(fact.file_path)),
-                    ("import_kind".to_string(), json!("value")),
+                    (
+                        "import_kind".to_string(),
+                        json!(if is_side_effect_import {
+                            "side_effect"
+                        } else {
+                            "value"
+                        }),
+                    ),
                     ("resolution_status".to_string(), json!(resolution_status)),
                 ]);
                 if let Some(resolved) = &resolved {
@@ -1103,8 +1131,14 @@ fn graph_for_file(
                     // the fact instead of firing unconditionally.
                     let symbol_resolution =
                         resolve_import_symbol(imported_name, resolved, resolver);
-                    let runtime_by_construction =
-                        fact.runtime_use.as_deref() == Some(drift_engine::RUNTIME_USE_DYNAMIC);
+                    // Runtime by construction: `require()`, dynamic `import()` (S1-05) and the
+                    // bindingless side-effect import (S10) all execute the module outright.
+                    // Member-level conservatism has nothing to add about any of them.
+                    let runtime_by_construction = matches!(
+                        fact.runtime_use.as_deref(),
+                        Some(drift_engine::RUNTIME_USE_DYNAMIC)
+                            | Some(drift_engine::RUNTIME_USE_SIDE_EFFECT)
+                    );
                     let runtime_use_proven = fact.runtime_use.is_some();
                     if let Some(declaring_file) = &symbol_resolution.declaring_file {
                         let resolved_symbol = symbol_id(declaring_file, "function", imported_name);
@@ -1139,6 +1173,7 @@ fn graph_for_file(
                                 "Could not resolve imported symbol {imported_name} from {source} in {resolved}."
                             ),
                             file_path: Some(fact.file_path.clone()),
+                            import_source: Some(source.to_string()),
                         });
                     } else if imported_name == "*" && !runtime_use_proven {
                         // Emitted only when no runtime use is provable: the binding never
@@ -1153,6 +1188,7 @@ fn graph_for_file(
                                 fact.file_path
                             ),
                             file_path: Some(fact.file_path.clone()),
+                            import_source: Some(source.to_string()),
                         });
                     }
                     insert_edge(
@@ -1163,7 +1199,13 @@ fn graph_for_file(
                         vec![evidence_id.clone()],
                         BTreeMap::new(),
                     );
-                    if file_is_api_route
+                    // S10: service-boundary inference is symbol-based - a route delegates by
+                    // calling something it imported. A side-effect import imports nothing, so
+                    // it neither proves a delegation nor leaves one ambiguous; both branches
+                    // are skipped rather than reporting a parser gap that does not exist.
+                    if is_side_effect_import {
+                        // no service-boundary judgement available or needed
+                    } else if file_is_api_route
                         && !is_data_access_reference(resolved)
                         && resolved_import_symbol_name(imported_name, resolved, resolver).is_some()
                     {
@@ -1210,6 +1252,7 @@ fn graph_for_file(
                                 "Could not infer service boundary for route import {source} because {resolved} has no supported exported symbols."
                             ),
                             file_path: Some(fact.file_path.clone()),
+                            import_source: Some(source.to_string()),
                         });
                     }
                 } else if should_report_unresolved {
@@ -1221,6 +1264,7 @@ fn graph_for_file(
                             fact.file_path
                         ),
                         file_path: Some(fact.file_path.clone()),
+                        import_source: Some(source.to_string()),
                     });
                 }
             }
@@ -2262,6 +2306,7 @@ fn workspace_package_dirs(
                 "Workspace glob {glob} in {declared_in} is not supported by the resolver ({detail}); packages it names will not resolve."
             ),
             file_path: Some(declared_in.to_string()),
+            import_source: None,
         });
     };
 

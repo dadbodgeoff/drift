@@ -147,7 +147,7 @@ describe("golden fixture CLI lifecycle", () => {
         "governance_read_only": false,
         "next_command_count": 3,
         "repo_matches": true,
-        "schema_version": 28,
+        "schema_version": 30,
       }
     `);
 
@@ -166,7 +166,7 @@ describe("golden fixture CLI lifecycle", () => {
         "governance_read_only": false,
         "next_command_count": 2,
         "repo_matches": true,
-        "schema_version": 28,
+        "schema_version": 30,
         "write_intent": true,
       }
     `);
@@ -257,6 +257,7 @@ describe("golden fixture CLI lifecycle", () => {
           "scan_freshness",
           "audit_integrity",
           "backup_artifacts",
+          "import_coverage",
         ],
         "machine_contract_versions_schema": "drift.machine_contract_versions.v1",
         "response_schema": "drift.doctor.result.v1",

@@ -97,6 +97,8 @@ export const GraphDiagnosticSchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
   file_path: z.string().min(1).optional(),
+  /** The import specifier this diagnostic is about, when it is about one (EW-2 / EW-3). */
+  import_source: z.string().min(1).optional(),
   evidence_ids: z.array(z.string().min(1)).default([])
 });
 

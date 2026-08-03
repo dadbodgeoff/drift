@@ -290,3 +290,99 @@ export async function POST() { return Response.json(await prisma.user.findMany()
     assert_eq!(classified[0].status, FindingStatus::New);
     assert_eq!(unbaselined[0].status, FindingStatus::New);
 }
+
+// --- S10: the bindingless side-effect import ------------------------------------------------
+
+/// `import "@/lib/prisma";` binds nothing, so no `import_used` fact was emitted and the rule
+/// had nothing to match: a silent miss on every eval repo (O-3 matrix, `known_evasion: true`
+/// x7). A side-effect import executes the module, which IS a runtime dependency on the data
+/// layer, so it must produce a finding attributed to the route itself.
+#[test]
+fn flags_bindingless_side_effect_import_of_a_forbidden_module() {
+    let source = r#"
+import "@/lib/prisma";
+
+export async function GET() {
+  return new Response("ok");
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/users/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    let violations = detect_direct_data_access_imports(&facts, &rule);
+
+    assert_eq!(
+        violations.len(),
+        1,
+        "a side-effect import of the forbidden module is a runtime dependency on it"
+    );
+    assert_eq!(violations[0].file_path, "apps/web/app/api/users/route.ts");
+    assert_eq!(violations[0].import_source, "@/lib/prisma");
+    assert_eq!(violations[0].line, 2);
+
+    let findings = materialize_direct_data_access_findings(&facts, &rule);
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].enforcement_result, EnforcementResult::Block);
+}
+
+/// Negative control for the same change: stylesheet and asset side-effect imports are not
+/// module dependencies. They must stay entirely silent - a `.css` import can never be a data
+/// layer, and treating it as an unresolved module import would refuse real routes.
+#[test]
+fn does_not_flag_asset_side_effect_imports() {
+    let source = r#"
+import "./styles.css";
+import "../theme.scss";
+import "@/assets/logo.svg";
+
+export async function GET() {
+  return new Response("ok");
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/users/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/assets".to_string(), "./styles.css".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    assert!(
+        detect_direct_data_access_imports(&facts, &rule).is_empty(),
+        "asset side-effect imports must not become import_used facts at all"
+    );
+}
+
+/// Negative control: `import type` binds nothing at runtime either, but it is erased by the
+/// compiler. S10 must not widen into "every import declaration is a runtime use".
+#[test]
+fn does_not_flag_type_only_import_of_a_forbidden_module() {
+    let source = r#"
+import type { Prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const q: Prisma | null = null;
+  return Response.json({ q });
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/users/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    assert!(detect_direct_data_access_imports(&facts, &rule).is_empty());
+}

@@ -44,7 +44,12 @@ export interface WaivedFinding {
   waiver_id: string;
   convention_id: string;
   file_path: string;
-  symbol: string;
+  /**
+   * Absent for a bindingless side-effect import (S10), which has no symbol to name. The
+   * formatters already render `symbol` conditionally, so absence prints as nothing rather
+   * than as the engine's internal sentinel.
+   */
+  symbol?: string;
   import_source: string;
   line: number;
   reason: string;

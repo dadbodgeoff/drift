@@ -350,15 +350,30 @@ function engineFactRecord(input: ScanDataInput, fact: EngineScanResult["facts"][
     fact.start_line,
     fact.end_line,
     {
+      // EW-6 (DET-1): the engine's real columns, not 1.
+      //
+      // Hardcoding them made two occurrences on one line identical, and the fact id is built from
+      // this span - so the second one silently overwrote the first.
+      //
+      // A column of 0 means the engine had none to give: either a synthesised relationship fact
+      // (`middleware_protects_route` has a line but occupies no position in the file) or a fact
+      // reused from a manifest written before columns existed. `SourceSpan` describes a position in
+      // source, so it stays 1-based and such facts point at the start of their line - the previous
+      // behaviour, kept only where there is genuinely nothing better to say. Those facts have one
+      // occurrence per key, so the collapse this fixes cannot apply to them.
       source_span: {
         start_line: fact.start_line,
-        start_column: 1,
+        start_column: fact.start_column || 1,
         end_line: fact.end_line,
-        end_column: 1
+        end_column: fact.end_column || 1
       },
       ast_node_kind: null,
       extraction_method: rustExtractionMethodForKind(fact.kind),
       imported_name: fact.imported_name,
+      // EW-1: the engine's runtime-use proof must reach storage, because the scan-reuse
+      // manifest is built from stored facts. Dropped here, every reused file loses the
+      // proof and the engine re-imposes member-level symbol conservatism on it.
+      runtime_use: fact.runtime_use ?? undefined,
       extractor_version: "0.1.0",
       parser_version: "0.1.0",
       confidence: rustConfidenceForKind(fact.kind),

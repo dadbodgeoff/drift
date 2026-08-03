@@ -869,5 +869,34 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_check_runs_repo_completed
         ON check_runs(repo_id, completed_at);
     `
+  },
+  {
+    // EW-1. `runtime_use` is the proof carried on an `import_used` fact that the module is
+    // executed at runtime - `value_position`, `dynamic` (require/import(), S1-05) or
+    // `side_effect` (a bindingless `import "x"`, S10). Graph assembly suppresses member-level
+    // symbol conservatism when it is present.
+    //
+    // It was never persisted, so the scan-reuse manifest could not carry it, so every reused
+    // file lost the proof and the engine re-derived `unresolved_import_symbol` diagnostics
+    // that a fresh scan of the identical file does not produce - turning enforced violations
+    // into a refused check on the second run. Nullable with no default: absent means "no
+    // runtime use proven", which is exactly what pre-migration rows recorded.
+    id: "029_fact_runtime_use",
+    sql: `
+      ALTER TABLE facts ADD COLUMN runtime_use TEXT;
+    `
+  },
+  {
+    // EW-2/EW-3. The import specifier a diagnostic is about.
+    //
+    // EW-2 needs it to tell "the import this finding rests on is unresolved" from "some other
+    // import in the same file is unresolved" - the difference between uncertain evidence and
+    // adjacent uncertainty. EW-3's coverage report needs it to name the top offending specifiers,
+    // which is what turns "1,104 gaps" into a work list. Both had the alternative of parsing the
+    // specifier back out of the message prose; neither should be built on prose.
+    id: "030_graph_diagnostic_import_source",
+    sql: `
+      ALTER TABLE graph_diagnostics ADD COLUMN import_source TEXT;
+    `
   }
 ];

@@ -65,8 +65,14 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
         name: fact.name,
         value: fact.value,
         imported_name: fact.imported_name,
+        // EW-1: the runtime-use proof must survive the round trip into the check request, or the
+        // engine re-imposes member-level symbol conservatism on facts that had already escaped it.
+        runtime_use: fact.runtime_use,
         start_line: fact.start_line,
-        end_line: fact.end_line
+        end_line: fact.end_line,
+        // EW-6: and the columns, so two occurrences on one line stay two facts here too.
+        start_column: fact.source_span?.start_column ?? 0,
+        end_column: fact.source_span?.end_column ?? 0
       }))
     },
     contract: {

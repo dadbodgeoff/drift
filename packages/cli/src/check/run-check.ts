@@ -1,4 +1,5 @@
 import {
+  SIDE_EFFECT_IMPORT_BINDING,
   SecurityBoundaryProofSchema,
   authorizeContextExport,
   type CanonicalHelperReuseAgentContract,
@@ -23,6 +24,7 @@ import { auditEvent,preflightGovernance } from "../domain/governance.js";
 import { checkRunIdsFor,contractFingerprint,hashStable } from "../domain/identifiers.js";
 import { WaivedFinding } from "../domain/preflight.js";
 import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
+import { importCoverageReport } from "../domain/import-coverage.js";
 import { parserGapsFromDiagnostics } from "../domain/scan-status.js";
 import { currentMachineContractVersions } from "../domain/versions.js";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
@@ -59,6 +61,47 @@ import {
 import { enforcementResultFor,isActiveConvention,isForbiddenImport } from "./rule-evaluation.js";
 import { findContractWaiverForImport,isExceptedImport,isExceptedPath,waiverRequiresReapproval } from "./waivers.js";
 
+
+/**
+ * The symbol to publish in an evidence payload, given an import fact's local name.
+ *
+ * S10: a bindingless `import "@/lib/prisma";` binds nothing, and the engine records its local
+ * name as the `(side-effect)` sentinel so binding-keyed lookups have a key that cannot collide
+ * with a real identifier. That key is an implementation detail. Published as `symbol` it would
+ * be a name the user can neither find in their file nor search for, and `EvidenceRefSchema`
+ * makes `symbol` optional precisely so "there is no symbol" is expressible - so express it.
+ *
+ * Note the shape: absent, not empty string. `symbol` is `z.string().min(1)`, so a `?? ""`
+ * stand-in would fail validation instead of degrading quietly.
+ */
+function evidenceSymbol(name: string | undefined): string | undefined {
+  return name === undefined || name === SIDE_EFFECT_IMPORT_BINDING ? undefined : name;
+}
+
+/**
+ * How to name what a file imported, in prose.
+ *
+ * With a binding: "prisma from @/lib/prisma". Without one, naming the sentinel would be a lie,
+ * and there is nothing to name but the module itself.
+ */
+function importPhrase(name: string, source: string): string {
+  return name === SIDE_EFFECT_IMPORT_BINDING
+    ? `${source} for its side effects`
+    : `${name} from ${source}`;
+}
+
+/**
+ * The direct-data-access violation sentence. Kept identical to the engine's
+ * (`direct_data_access_message` in crates/drift-engine/src/rules.rs) so the fallback path and
+ * the engine path do not describe the same violation two ways.
+ */
+function directDataAccessMessage(filePath: string, name: string, source: string | undefined): string {
+  const specifier = source ?? "";
+  if (name === SIDE_EFFECT_IMPORT_BINDING) {
+    return `${filePath} imports ${specifier} for its side effects, executing the data-access module directly; route modules should delegate through the accepted service/data-access layer.`;
+  }
+  return `${filePath} imports ${name} from ${specifier} directly; route modules should delegate through the accepted service/data-access layer.`;
+}
 
 /**
  * S1-01: was enforcement silently weakened by incomplete coverage?
@@ -366,7 +409,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
               scanId: checkData.snapshots[0]?.scan_id ?? checkScanId,
               filePath,
               line: importUsed.start_line,
-              symbol: importUsed.name,
+              symbol: evidenceSymbol(importUsed.name),
               importSource: importUsed.value,
               fileHash: snapshotsByPath.get(filePath)?.content_hash ?? "",
               waiverId: waiver.id,
@@ -378,7 +421,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
             waiver_id: waiver.id,
             convention_id: convention.id,
             file_path: filePath,
-            symbol: importUsed.name,
+            symbol: evidenceSymbol(importUsed.name),
             import_source: importUsed.value,
             line: importUsed.start_line,
             reason: waiver.reason
@@ -408,7 +451,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           repo_contract_id: contract.id,
           fingerprint,
           title: "API route imports data access directly",
-          message: `${filePath} imports ${importUsed.name} from ${importUsed.value} directly; route modules should delegate through the accepted service/data-access layer.`,
+          message: directDataAccessMessage(filePath, importUsed.name, importUsed.value),
           severity: convention.severity,
           enforcement_result: enforcementResultFor(convention.enforcement_mode),
           status,
@@ -419,7 +462,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
             file_path: filePath,
             start_line: importUsed.start_line,
             end_line: importUsed.start_line,
-            symbol: importUsed.name,
+            symbol: evidenceSymbol(importUsed.name),
             import_source: importUsed.value,
             fact_ids: importUsed.fact_id ? [importUsed.fact_id] : [],
             scan_id: checkData.snapshots[0]?.scan_id ?? checkScanId,
@@ -599,6 +642,28 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     !isClosedFindingStatus(finding.status) &&
     finding.status !== "needs_review"
   ).length;
+  // EW-2. The coverage gaps in this diff, computed once and reported unconditionally.
+  //
+  // These used to be derived only when enforcement had been withheld, because the two were the
+  // same event: any gap zeroed every finding. They are now independent - the engine enforces
+  // findings whose own chain is certain and withholds the rest - so a run can block a violation
+  // and still have failed to see part of the diff. That state has to be reportable, or the
+  // honesty S1-01 bought is spent the moment a real block claims the exit code (2 beats 3, so a
+  // refusal never masks an established violation).
+  const coverageGapReasons = (checkData.diagnostics ?? [])
+    .filter((diagnostic) =>
+      [
+        "unresolved_import",
+        "unresolved_import_symbol",
+        "unsupported_namespace_import_symbol"
+      ].includes(diagnostic.code)
+    )
+    .map((diagnostic) => diagnostic.file_path)
+    .filter((filePath): filePath is string => Boolean(filePath))
+    .filter((filePath) => parsedDiff.files.some((file) => file.path === filePath))
+    .map((filePath) => `unresolved_route_import:${filePath}`)
+    .filter((reason, index, all) => all.indexOf(reason) === index);
+
   // S1-01: did incomplete coverage silently weaken enforcement?
   //
   // Uses the engine's own completeness, which collect-scan-data already carries - no protocol change.
@@ -620,7 +685,10 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const checkStatus: CheckRun["status"] = checkStatusFor({ blockingCount, enforcementDegraded });
 
   const fallbackStatus = fallbackStatusForCheck(checkData);
-  const capabilityCompleteness = capabilityCompletenessForCheck(checkData, { enforcementDegraded });
+  const capabilityCompleteness = capabilityCompletenessForCheck(checkData, {
+    enforcementDegraded,
+    coverageComplete: coverageGapReasons.length === 0
+  });
   const readiness = readinessForCheck({
     repoId,
     checkScanId,
@@ -667,6 +735,18 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       created_at: now
     });
   }
+  // EW-3: measured on the check's own scan, not a stored one, so it describes the run that
+  // produced this verdict. `IMPORT_RESOLVES_TO_MODULE` sources are the resolved imports; external
+  // packages resolve to nothing by design and are excluded from both sides of the ratio.
+  const importCoverage = importCoverageReport({
+    diagnostics: checkData.diagnostics ?? [],
+    resolvedLocalImports: new Set(
+      checkData.graph_edges
+        .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE")
+        .map((edge) => edge.from)
+    ).size
+  });
+
   const openNewCount = findings.filter((finding) => finding.status === "new").length;
   const outcome = checkOutcomeSummary(findings, {
     waivedFindingsCount,
@@ -689,25 +769,23 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       // S1-01: name the files whose coverage gap cost us enforcement. The engine's reasons already
       // carry the path (`unsupported_route_namespace_import:<path>`), so pass them through verbatim
       // rather than paraphrasing - a refusal a user cannot act on is barely better than a false pass.
+      // Why enforcement was withheld. Populated only when it actually was - a finding that
+      // blocked was not blocked "despite" these, it simply did not depend on them.
       blocked_reasons: enforcementDegraded
-        ? [
-            "enforcement_degraded_by_incomplete_coverage",
-            // Name the files whose unresolved imports cost the coverage, restricted to this diff.
-            // A refusal a user cannot act on is barely better than a false pass.
-            ...(checkData.diagnostics ?? [])
-              .filter((diagnostic) =>
-                [
-                  "unresolved_import",
-                  "unresolved_import_symbol",
-                  "unsupported_namespace_import_symbol"
-                ].includes(diagnostic.code)
-              )
-              .map((diagnostic) => diagnostic.file_path)
-              .filter((filePath): filePath is string => Boolean(filePath))
-              .filter((filePath) => parsedDiff.files.some((file) => file.path === filePath))
-              .map((filePath) => `unresolved_route_import:${filePath}`)
-          ]
+        ? ["enforcement_degraded_by_incomplete_coverage", ...coverageGapReasons]
         : [],
+      // EW-2: what Drift could not see, whether or not that cost anyone an enforcement. This is
+      // the explicit signal chosen over a distinct exit code, because the blocking exit code
+      // (2) has to keep winning and cannot carry a second meaning. Documented in
+      // docs/reference/enforcement.md.
+      partial_coverage: {
+        complete: coverageGapReasons.length === 0 && !enforcementDegraded,
+        reasons: coverageGapReasons
+      },
+      // EW-3: the coverage number travels with the verdict. A verdict read without it invites
+      // exactly the mistake open beta will produce most - a clean check on a repo shape Drift
+      // half-understands, taken as proof the repo is clean.
+      import_coverage: importCoverage,
       waived_findings_count: waivedFindingsCount,
       expired_findings_count: expiredFindingsCount,
       skipped_deleted_files: parsedDiff.deletedFiles,
@@ -799,7 +877,7 @@ function enforcementDemotionsForContract(
 
 function capabilityCompletenessForCheck(
   checkData: ScanData,
-  options?: { enforcementDegraded?: boolean }
+  options?: { enforcementDegraded?: boolean; coverageComplete?: boolean }
 ): {
   complete: boolean;
   missing_capabilities: string[];
@@ -815,10 +893,18 @@ function capabilityCompletenessForCheck(
     // incomplete coverage (the S1-01 refusal) cannot claim it could have blocked - that
     // optimistic answer is how the kill-switch payloads read `can_block: true` while the
     // engine had already demoted everything.
+    //
+    // EW-2: coverage is now a separate input, because withheld enforcement and incomplete
+    // coverage came apart. A check that enforced every finding it established while failing to
+    // resolve part of the diff must not answer this "yes" - it could block *those* findings,
+    // and has no idea what it did not see. Reading `enforcementDegraded` alone would flip this
+    // back to the optimistic answer the moment EW-2 stopped zeroing findings, which is the same
+    // defect as B-3 arriving by a different route.
     can_block:
       checkData.engineSource === "rust" &&
       !checkData.fallbackStatus.enforcement_degraded &&
-      !(options?.enforcementDegraded ?? false)
+      !(options?.enforcementDegraded ?? false) &&
+      (options?.coverageComplete ?? true)
   };
 }
 
@@ -921,7 +1007,8 @@ function waiverReapprovalFinding(input: {
   scanId: string;
   filePath: string;
   line: number;
-  symbol: string;
+  // Absent for a bindingless side-effect import (S10): nothing was bound.
+  symbol?: string;
   importSource: string;
   fileHash: string;
   waiverId: string;
@@ -1321,7 +1408,7 @@ function runImportBoundaryCheck(input: {
         repo_contract_id: input.contract.id,
         fingerprint,
         title: "Import boundary contract violated",
-        message: `${importUsed.file_path} imports ${importUsed.name} from ${importSource}, which is forbidden for ${contract.source_roles.join(", ")}.`,
+        message: `${importUsed.file_path} imports ${importPhrase(importUsed.name, importSource)}, which is forbidden for ${contract.source_roles.join(", ")}.`,
         severity: contract.enforcement === "blocking" ? "error" : "warning",
         enforcement_result: contract.enforcement === "blocking" ? "block" : "warn",
         status,
@@ -1332,7 +1419,7 @@ function runImportBoundaryCheck(input: {
           file_path: importUsed.file_path,
           start_line: importUsed.start_line,
           end_line: importUsed.end_line,
-          symbol: importUsed.name,
+          symbol: evidenceSymbol(importUsed.name),
           import_source: importSource,
           fact_ids: [importUsed.id],
           scan_id: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
@@ -1407,7 +1494,7 @@ function runFileRoleCheck(input: {
             filePath,
             startLine: importUsed.start_line,
             endLine: importUsed.end_line,
-            symbol: importUsed.name,
+            symbol: evidenceSymbol(importUsed.name),
             importSource,
             factIds: [importUsed.id],
             expectedLayer: role.role,
@@ -1826,7 +1913,8 @@ function agentContractFinding(input: {
   filePath: string;
   startLine: number;
   endLine: number;
-  symbol: string;
+  // Absent for a bindingless side-effect import (S10): nothing was bound.
+  symbol?: string;
   importSource?: string;
   factIds: string[];
   expectedLayer: string;
@@ -1838,7 +1926,10 @@ function agentContractFinding(input: {
     input.fingerprintKind,
     input.agentContractId,
     input.filePath,
-    input.symbol,
+    // The fingerprint keeps the sentinel. It is an identity, not a message: "this file, no
+    // binding, this specifier" is a stable and distinct thing to be, and substituting the
+    // empty string would collide with any other symbol-less shape added later.
+    input.symbol ?? SIDE_EFFECT_IMPORT_BINDING,
     input.importSource ?? input.actualLayer
   );
   const snapshot = input.snapshotsByPath.get(input.filePath);
@@ -2077,7 +2168,7 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
               scanId: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
               filePath,
               line: importUsed.start_line,
-              symbol: importUsed.name,
+              symbol: evidenceSymbol(importUsed.name),
               importSource: importUsed.value,
               fileHash: input.snapshotsByPath.get(filePath)?.content_hash ?? "",
               waiverId: waiver.id,
@@ -2091,7 +2182,7 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
               waiver_id: waiver.id,
               convention_id: convention.id,
               file_path: filePath,
-              symbol: importUsed.name,
+              symbol: evidenceSymbol(importUsed.name),
               import_source: importUsed.value,
               line: importUsed.start_line,
               reason: waiver.reason
@@ -2163,7 +2254,7 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
           file_path: evidence.file_path,
           start_line: evidence.start_line,
           end_line: evidence.end_line,
-          symbol: importUsed?.name,
+          symbol: evidenceSymbol(importUsed?.name),
           import_source: importUsed?.value,
           fact_ids: importUsed?.fact_id ? [importUsed.fact_id] : [],
           scan_id: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
@@ -2920,7 +3011,8 @@ export function runFullRepoCheck(
   const importFactReconciliationGaps: Array<{
     filePath: string;
     line: number;
-    symbol: string;
+    // Absent for a bindingless side-effect import (S10): nothing was bound.
+    symbol?: string;
     importSource: string;
   }> = [];
 
@@ -2998,7 +3090,7 @@ export function runFullRepoCheck(
               scanId: snapshot?.scan_id ?? checkId,
               filePath,
               line: importUsed.line,
-              symbol: importUsed.name,
+              symbol: evidenceSymbol(importUsed.name),
               importSource: importUsed.source,
               fileHash: snapshot?.content_hash ?? "",
               waiverId: waiver.id,
@@ -3020,7 +3112,7 @@ export function runFullRepoCheck(
           importFactReconciliationGaps.push({
             filePath,
             line: importUsed.line,
-            symbol: importUsed.name,
+            symbol: evidenceSymbol(importUsed.name),
             importSource: importUsed.source
           });
           continue;
@@ -3031,7 +3123,7 @@ export function runFullRepoCheck(
           convention_id: convention.id,
           fingerprint,
           title: "API route imports data access directly",
-          message: `${filePath} imports ${importUsed.name} from ${importUsed.source} directly; route modules should delegate through the accepted service/data-access layer.`,
+          message: directDataAccessMessage(filePath, importUsed.name, importUsed.source),
           severity: convention.severity,
           enforcement_result: enforcementResultFor(convention.enforcement_mode),
           status: "new",
@@ -3042,7 +3134,7 @@ export function runFullRepoCheck(
             file_path: filePath,
             start_line: importUsed.line,
             end_line: importUsed.end_line,
-            symbol: importUsed.name,
+            symbol: evidenceSymbol(importUsed.name),
             import_source: importUsed.source,
             fact_ids: [factId],
             scan_id: latestScan?.id ?? `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,

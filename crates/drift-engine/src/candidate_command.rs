@@ -305,6 +305,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             missing_capabilities: Vec::new(),
             truncated: false,
             can_block: false,
+            graph_intact: true,
             reasons: Vec::new(),
         }],
     }

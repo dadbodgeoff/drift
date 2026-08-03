@@ -213,6 +213,12 @@ export const EngineDiagnosticSchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
   file_path: z.string().min(1).optional(),
+  // EW-2: the import specifier this diagnostic is about, when it is about one. `file_path` alone
+  // cannot distinguish "the import this finding rests on is unresolved" from "some other import
+  // in the same file is unresolved", and the engine needs that distinction to decide enforcement
+  // per finding. It must be declared here or Zod strips it on the way into the check request -
+  // the engine emitted it and the CLI silently dropped it, which read as the guard not working.
+  import_source: z.string().min(1).optional(),
   evidence_id: z.string().min(1).optional()
 });
 
@@ -224,6 +230,10 @@ export const EngineCompletenessSchema = z.object({
   missing_capabilities: z.array(z.string().min(1)),
   truncated: z.boolean(),
   can_block: z.boolean(),
+  // EW-2: was the graph itself sound, as distinct from "did every import resolve"? Defaults to
+  // `true` so a payload from an engine that predates the distinction is read the way it meant:
+  // `can_block` alone carried the verdict there.
+  graph_intact: z.boolean().default(true),
   reasons: z.array(z.string())
 });
 
@@ -273,8 +283,19 @@ export const EngineFactSchema = z.object({
   name: z.string().min(1),
   value: z.string().optional(),
   imported_name: z.string().optional(),
+  // The engine's runtime-use proof for an `import_used` fact: `value_position`, `dynamic`
+  // (require/import(), runtime by construction) or `side_effect` (a bindingless `import "x"`).
+  // Optional because most fact kinds have none, and absent means "not proven" - the
+  // conservative reading.
+  runtime_use: z.string().min(1).optional(),
   start_line: z.number().int().positive(),
-  end_line: z.number().int().positive()
+  end_line: z.number().int().positive(),
+  // EW-6 (DET-1): 1-based columns, which are what keep two occurrences on one line two facts.
+  // Nonnegative rather than positive, and defaulted to 0, because a synthesised relationship fact
+  // has a line but occupies no position in the file - 0 says that honestly, where 1 would claim a
+  // location nothing is at.
+  start_column: z.number().int().nonnegative().default(0),
+  end_column: z.number().int().nonnegative().default(0)
 });
 
 export const EngineRepoContextSchema = z.object({
@@ -1206,17 +1227,32 @@ export const EngineCheckResultSchema = z.object({
     return;
   }
 
-  const hasCompleteBlockingCoverage = result.completeness.some((completeness) =>
-    completeness.can_block &&
-    completeness.complete &&
-    !completeness.truncated &&
+  // EW-2. What a blocking finding requires, restated.
+  //
+  // This used to demand `can_block && complete && !truncated` - the check-wide verdict - which
+  // made "any unresolved import anywhere" a contract-level prohibition on blocking anything.
+  // That is what turned S1-01's honest refusal into a kill switch with a diff-wide blast
+  // radius: one import written before its file existed suppressed every violation beside it.
+  //
+  // The requirement that actually matters is that the finding's evidence be sound, and evidence
+  // comes from the graph. So: the graph must be intact (no limit breach - a truncated graph or
+  // an exceeded fact ceiling invalidates everything derived from it), and no required capability
+  // may be missing. Whether some *other* import in the run resolved is a per-finding question,
+  // and the engine now answers it per finding: a finding whose own chain is uncertain arrives
+  // here as "none" and never reaches this rule.
+  //
+  // `can_block` is deliberately no longer consulted. It remains the honest whole-run verdict -
+  // a run with any gap did not see everything - and a check that blocks one finding while
+  // admitting it could not judge another is exactly the state this change exists to allow.
+  const hasSoundGraph = result.completeness.some((completeness) =>
+    completeness.graph_intact &&
     completeness.missing_capabilities.length === 0
   );
   const statsMissing = result.stats.capabilities?.missing ?? [];
-  if (!hasCompleteBlockingCoverage || statsMissing.length > 0) {
+  if (!hasSoundGraph || statsMissing.length > 0) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "blocking findings require complete capability coverage"
+      message: "blocking findings require a sound graph and no missing capabilities"
     });
   }
 });

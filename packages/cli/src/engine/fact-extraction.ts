@@ -100,6 +100,7 @@ export function factRecord(
     | "source_span"
     | "ast_node_kind"
     | "imported_name"
+    | "runtime_use"
     | "extraction_method"
     | "extractor_version"
     | "parser_version"
@@ -111,7 +112,20 @@ export function factRecord(
     | "last_seen_scan_id"
   >> = {}
 ): FactRecord {
-  const id = `fact_${hashStable(`${input.scanId}:${input.filePath}:${kind}:${name}:${value ?? ""}:${startLine}`).slice(0, 16)}`;
+  // EW-6 (DET-1): the column is part of a fact's identity.
+  //
+  // Without it, `db.query(); db.query();` on one line hashed to one id, and the storage layer's
+  // `ON CONFLICT(id) DO UPDATE` collapsed the two into a single row. The visible symptom was that
+  // the full-scan path (counting engine emissions) and the incremental path (counting stored rows)
+  // reported different fact counts; the real cost was that the second call was gone.
+  //
+  // Migration note: this changes every fact id. No migration is needed and none is provided,
+  // because a fact id is scoped to its scan (`input.scanId` is the first component) and is only
+  // ever compared within one - evidence `fact_ids` reference facts from the same scan, and nothing
+  // reads a fact id from a previous scan. Ids from existing scans stay valid for those scans; the
+  // next scan writes new ones, as it already did.
+  const startColumn = quality.source_span?.start_column ?? 1;
+  const id = `fact_${hashStable(`${input.scanId}:${input.filePath}:${kind}:${name}:${value ?? ""}:${startLine}:${startColumn}`).slice(0, 16)}`;
   return {
     id,
     repo_id: input.repoId,
@@ -121,6 +135,7 @@ export function factRecord(
     name,
     value,
     imported_name: quality.imported_name,
+    runtime_use: quality.runtime_use,
     start_line: startLine,
     end_line: endLine,
     source_span: quality.source_span ?? {

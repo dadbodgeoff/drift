@@ -67,6 +67,14 @@ pub struct EngineFact {
     pub runtime_use: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
+    /// EW-6 (DET-1): 1-based columns, so two occurrences on one line stay two facts through the
+    /// wire and into storage. `default` on deserialize because the scan-reuse manifest carries
+    /// facts written by an earlier engine; those load with column 0, which is distinguishable from
+    /// a real 1-based column and therefore honest about being absent.
+    #[serde(default)]
+    pub start_column: usize,
+    #[serde(default)]
+    pub end_column: usize,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -76,6 +84,16 @@ pub struct EngineDiagnostic {
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
+    /// EW-2: the import specifier this diagnostic is about, when it is about one.
+    ///
+    /// `file_path` alone cannot distinguish "the import this finding rests on is unresolved"
+    /// from "some other import in the same file is unresolved", and the difference decides
+    /// whether a finding's evidence is uncertain or merely adjacent to uncertainty. The
+    /// message carries the specifier in prose; parsing prose to make an enforcement decision
+    /// is not a contract. `default` on deserialize so older payloads stay loadable and
+    /// conservative.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub import_source: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -212,6 +230,22 @@ pub struct EngineCompleteness {
     pub missing_capabilities: Vec<String>,
     pub truncated: bool,
     pub can_block: bool,
+    /// EW-2: was the graph itself sound, as distinct from "did every import resolve"?
+    ///
+    /// `can_block` answers the check-wide question and stays the honest whole-run verdict: a
+    /// run with any coverage gap did not see everything. But a limit breach (truncated graph,
+    /// too many facts, symlinks followed) and one unresolved import are not the same kind of
+    /// problem. The first invalidates everything derived from the graph; the second is about
+    /// one import in one file, and the engine now decides per finding whether that import is
+    /// in the finding's own chain. This field is what lets a consumer tell the two apart -
+    /// without it, "a finding blocks while can_block is false" is indistinguishable from a
+    /// contract violation.
+    ///
+    /// Serialize-only, like the rest of this struct: the engine writes completeness, it never
+    /// reads it back. The consumer-side default lives in `EngineCompletenessSchema`, where
+    /// absent means `true` - a payload from an engine with no concept of import-scoped gaps,
+    /// whose `can_block` already carried the whole verdict.
+    pub graph_intact: bool,
     pub reasons: Vec<String>,
 }
 
@@ -340,8 +374,21 @@ pub struct CheckFact {
     pub value: Option<String>,
     #[serde(default)]
     pub imported_name: Option<String>,
+    /// EW-1: the runtime-use proof, carried into the check request.
+    ///
+    /// Dropped here, the check path re-derives member-level symbol conservatism for imports that had
+    /// already escaped it - the same defect the scan-reuse manifest had, on a different route in.
+    #[serde(default)]
+    pub runtime_use: Option<String>,
     pub start_line: usize,
     pub end_line: usize,
+    /// EW-6: the columns, so two occurrences on one line stay two facts on this path too.
+    /// `default` because a request from an older CLI carries none, and 0 says that rather than
+    /// claiming column 1.
+    #[serde(default)]
+    pub start_column: usize,
+    #[serde(default)]
+    pub end_column: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -684,6 +731,7 @@ pub fn repo_completeness(files_skipped_unreadable: usize) -> Vec<EngineCompleten
         // Findings that were produced remain trustworthy, so a partial scan can still
         // block. What it must not do is claim it saw everything.
         can_block: true,
+        graph_intact: true,
         reasons,
     }]
 }

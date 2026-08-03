@@ -17,13 +17,30 @@
  *                         repo, never hardcoded in the predicate, so every transitional
  *                         value is explicit and reviewable here.
  *
- * On the expectedExitCode values (S1-01 transitional): taxonomy, calcom, papermark and
- * midday expect 3 (refused), not 0 or 2. That is S1-01 working, not a regression - an
- * unresolved import on a route in the diff zeroes every finding's enforcement_result, and
- * the check now refuses (exit 3) instead of reporting that as a clean run. These flip when
- * S1-04 lands resolver coverage (nested tsconfig + workspace packages), which makes those
- * imports resolvable: block-mode repos to 2, warn-mode repos to 0. Do not "fix" a 3 here
- * by reverting S1-01.
+ * On the expectedExitCode values (S1-01 transitional, resolved by EW-2): every repo used to
+ * expect 3 (refused). That was S1-01 working, not a regression - an unresolved import on a
+ * route in the diff zeroed every finding's enforcement_result, and the check refused instead
+ * of reporting that as a clean run. This note said they would flip once resolver coverage made
+ * those imports resolvable. They flipped for a different and better reason.
+ *
+ * EW-2 narrowed the demotion from check-wide to per-finding: uncertainty about a finding's own
+ * dependency chain withholds that finding, and uncertainty elsewhere does not. The 3s were
+ * caused by the harness's own deliberately non-existent decoy imports
+ * (`@/lib/prisma-legacy`, `@formbricks/database/internal`, `@openstatus/db/internal`), which are
+ * genuinely unresolvable and always will be - that is what they are for. Their uncertainty is
+ * now scoped to the decoy's own route, so the injected violation is judged at the contract's
+ * mode on all seven repos:
+ *
+ *   block-mode (formbricks, calcom, midday, openstatus)  ->  2, injection_enforcement "block"
+ *   warn-mode  (taxonomy, dub, papermark)                ->  3, injection_enforcement "warn"
+ *
+ * The warn-mode repos still expect 3, and that is correct rather than leftover: a warn-mode
+ * violation contributes no blocking count, so nothing outranks the refusal - and the decoy
+ * route's own finding genuinely cannot be judged, which is what the refusal reports. The change
+ * on those repos is visible in `injection_enforcement`: "none" (the violation was suppressed)
+ * became "warn" (the violation was judged, at the mode the contract asks for).
+ *
+ * Do not "fix" a 3 here by reverting S1-01 or EW-2.
  */
 export const EVAL_REPOS = [
   {
@@ -85,7 +102,11 @@ export const EVAL_REPOS = [
     // drift-eval-subpath. This 3 is CORRECT fail-closed behaviour toward the decoy and
     // does not flip with E-5; it flips only if the oracle measures the main check
     // decoy-free (S1-03 follow-up).
-    expectedExitCode: 3
+    // EW-2: was 3. The subpath decoy (`@formbricks/database/internal`, deliberately
+    // non-existent) is still unresolvable and still withholds *its own* route's finding; the
+    // injected violation resolves cleanly and now blocks. Measured: injection_enforcement
+    // "none" -> "block", blocking_count 0 -> 1.
+    expectedExitCode: 2
   },
   {
     name: "calcom",
@@ -98,7 +119,8 @@ export const EVAL_REPOS = [
     expectForbiddenExact: ["@calcom/prisma"],
     genuineSubpath: "@calcom/prisma/selects",
     genuineSubpathSymbol: "safeAppSelect",
-    expectedExitCode: 3
+    // EW-2: was 3, for the same decoy-scoping reason as formbricks.
+    expectedExitCode: 2
   },
   {
     name: "papermark",
@@ -127,7 +149,8 @@ export const EVAL_REPOS = [
     whitelistIndependent: true,
     declaredDataModules: "@midday/supabase/server,@midday/supabase/cached-queries",
     expectDiscoveryWrapper: "packages/supabase/src/client/server.ts",
-    expectedExitCode: 3
+    // EW-2: was 3, for the same decoy-scoping reason as formbricks.
+    expectedExitCode: 2
   },
   {
     name: "openstatus",
@@ -148,6 +171,7 @@ export const EVAL_REPOS = [
     // through the `export *` barrel; E-5 measured that claim false: the injected route in
     // isolation exits 2 (block) and the sole blocked_reason names drift-eval-subpath.
     // Does not flip with E-5; flips only with a decoy-free main-check measurement.
-    expectedExitCode: 3
+    // EW-2: was 3, for the same decoy-scoping reason as formbricks.
+    expectedExitCode: 2
   }
 ];

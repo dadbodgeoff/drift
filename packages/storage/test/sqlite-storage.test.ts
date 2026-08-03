@@ -111,7 +111,9 @@ describe("SQLite Drift storage", () => {
       "025_security_boundary_proof_runs",
       "026_framework_entrypoints",
       "027_parser_gap_v2_metadata",
-      "028_check_runs_refused_status"
+      "028_check_runs_refused_status",
+      "029_fact_runtime_use",
+      "030_graph_diagnostic_import_source"
     ]);
     storage.close();
   });
@@ -185,7 +187,9 @@ describe("SQLite Drift storage", () => {
       "025_security_boundary_proof_runs",
       "026_framework_entrypoints",
       "027_parser_gap_v2_metadata",
-      "028_check_runs_refused_status"
+      "028_check_runs_refused_status",
+      "029_fact_runtime_use",
+      "030_graph_diagnostic_import_source"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();

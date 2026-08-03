@@ -12,6 +12,7 @@ import { engineProvenance,type EngineProvenance } from "../domain/engine-provena
 import { contractFingerprint,repoIdForRoot } from "../domain/identifiers.js";
 import { inspectRepoIdentity,SHALLOW_CLONE_REMEDIATION,type RepoIdentityInspection } from "../domain/repo-identity.js";
 import { detectPackageManager,detectWorkspace,isApiRoutePath } from "../domain/repo-paths.js";
+import { importCoverageDetail,importCoverageReport,type ImportCoverageReport } from "../domain/import-coverage.js";
 import { scanStatusPayload } from "../domain/scan-status.js";
 import { SUPPORTED_SQLITE_SCHEMA_VERSION,currentMachineContractVersions,doctorRuntime,doctorV1Scope,sqliteSchemaCompatibility } from "../domain/versions.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
@@ -58,6 +59,11 @@ export interface DoctorStateSummary {
   backup_count: number;
   backup_problem_count: number;
   backup_artifacts: DoctorBackupArtifactSummary[];
+  /**
+   * EW-3: what the resolver could not place, as a number with a breakdown. `null` before any scan
+   * exists - there is nothing measured to report, which is different from "everything resolved".
+   */
+  import_coverage: ImportCoverageReport | null;
   detail: string;
   error?: string;
 }
@@ -234,6 +240,26 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
         label: "Backups",
         status: stateSummary.backup_problem_count > 0 ? "warn" : "ok",
         detail: `${stateSummary.backup_count} tracked, ${stateSummary.backup_problem_count} problem${stateSummary.backup_problem_count === 1 ? "" : "s"}`
+      },
+      {
+        // EW-3. The number a stranger needs before trusting a verdict.
+        //
+        // `warn`, never `fail`: partial resolution is a limit on what Drift can say, not a reason
+        // to stop. The one exception is a report that does not reconcile with the stored gap
+        // count, which means the numbers themselves are untrustworthy - and unreliable numbers are
+        // worse than none, so that is a `fail`.
+        id: "import_coverage",
+        label: "Import coverage",
+        status: !stateSummary.import_coverage
+          ? "warn"
+          : !stateSummary.import_coverage.reconciles
+            ? "fail"
+            : stateSummary.import_coverage.parser_gap_count > 0
+              ? "warn"
+              : "ok",
+        detail: stateSummary.import_coverage
+          ? importCoverageDetail(stateSummary.import_coverage)
+          : "no scan yet"
       }
     );
   }
@@ -252,6 +278,10 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
     "",
     ...checks.map((check) => `${doctorSymbol(check.status)} ${check.label}: ${check.detail}`),
     "",
+    // EW-3: a known unsupported shape is named as a limitation with what to do about it, rather
+    // than folded into a generic warning count. This is the difference between a stranger
+    // concluding "Drift is broken on my repo" and "Drift does not support this one construct".
+    ...limitationLines(stateSummary.import_coverage),
     status === "fail"
       ? "Fix the failed check before running the first scan."
       : nextCommands.length === 1
@@ -278,6 +308,9 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
     engine: runtimeEngineProvenance(),
     v1_scope: v1Scope,
     state_summary: stateSummary,
+    // EW-3: hoisted out of state_summary because it is a headline, not a state detail - the
+    // resolution rate is the thing that decides whether a verdict from this repo means anything.
+    import_coverage: stateSummary.import_coverage,
     checks,
     next_command: nextCommand,
     next_commands: nextCommands
@@ -286,6 +319,29 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
   return {
     payload: parsed.flags.has("json") ? betaDoctorResponse(jsonPayload) : text
   };
+}
+
+/**
+ * The named limitations in a coverage report, as text lines. Empty when there are none, so the
+ * doctor output does not grow a section for repos that hit no limitation at all.
+ */
+function limitationLines(coverage: ImportCoverageReport | null): string[] {
+  const limited = (coverage?.by_code ?? []).filter((bucket) => bucket.limitation);
+  if (limited.length === 0) {
+    return [];
+  }
+  return [
+    "Known limitations on this repo:",
+    ...limited.flatMap((bucket) => [
+      `  ${bucket.code} (${bucket.count} occurrence${bucket.count === 1 ? "" : "s"}` +
+        `${bucket.by_directory[0] ? `, mostly ${bucket.by_directory[0].directory}/` : ""}):`,
+      `    ${bucket.limitation}`,
+      ...(bucket.top_specifiers.length > 0
+        ? [`    most affected: ${bucket.top_specifiers.map((entry) => `${entry.specifier} x${entry.count}`).join(", ")}`]
+        : [])
+    ]),
+    ""
+  ];
 }
 
 function runtimeEngineProvenance(): EngineProvenance {
@@ -321,6 +377,7 @@ export function inspectDoctorState(databasePath: string, repoId: string): Doctor
       backup_count: 0,
       backup_problem_count: 0,
       backup_artifacts: [],
+      import_coverage: null,
       detail: "not initialized"
     };
   }
@@ -343,6 +400,7 @@ export function inspectDoctorState(databasePath: string, repoId: string): Doctor
     const auditIntegrity = repoRegistered ? storage.verifyAuditChain(repoId) : null;
     const backupArtifacts = repoRegistered ? doctorBackupArtifacts(storage, repoId) : [];
     const backupProblemCount = backupArtifacts.filter((backup) => backup.problem).length;
+    const importCoverage = repoRegistered ? doctorImportCoverage(storage, repoId) : null;
     return {
       exists: true,
       compatible,
@@ -366,6 +424,7 @@ export function inspectDoctorState(databasePath: string, repoId: string): Doctor
       backup_count: backupArtifacts.length,
       backup_problem_count: backupProblemCount,
       backup_artifacts: backupArtifacts,
+      import_coverage: importCoverage,
       detail: doctorStateDetail({
         exists: true,
         compatible,
@@ -389,6 +448,7 @@ export function inspectDoctorState(databasePath: string, repoId: string): Doctor
         backup_count: backupArtifacts.length,
         backup_problem_count: backupProblemCount,
         backup_artifacts: backupArtifacts,
+        import_coverage: importCoverage,
         detail: ""
       })
     };
@@ -415,12 +475,52 @@ export function inspectDoctorState(databasePath: string, repoId: string): Doctor
       backup_count: 0,
       backup_problem_count: 0,
       backup_artifacts: [],
+      import_coverage: null,
       detail: "unreadable Drift database",
       error: error instanceof Error ? error.message : "unknown error"
     };
   } finally {
     storage?.close();
   }
+}
+
+/**
+ * EW-3: the coverage report for the most recent real scan.
+ *
+ * Reads the persisted graph diagnostics rather than rescanning, because doctor must be cheap and
+ * because the point is to report what the scan the user's contract rests on actually saw. Baseline
+ * scans are excluded for the same reason `scan_count` excludes them: they are a snapshot of
+ * pre-existing debt, not a measurement of the repo.
+ *
+ * `resolvedLocalImports` counts distinct import nodes carrying an `IMPORT_RESOLVES_TO_MODULE`
+ * edge. That is the only honest denominator available: total import declarations would include
+ * every `next/server` and `react`, which do not resolve to a repo file and never should, so a
+ * rate computed against them would report a coverage failure for correct behaviour.
+ */
+function doctorImportCoverage(
+  storage: SqliteDriftStorage,
+  repoId: string
+): ImportCoverageReport | null {
+  const scans = storage
+    .listScanManifests(repoId)
+    .filter((scan) => !scan.id.startsWith("scan_baseline_"));
+  const latest = scans[scans.length - 1];
+  if (!latest) {
+    return null;
+  }
+  const diagnostics = storage.listGraphDiagnostics(repoId, latest.id);
+  const resolvedLocalImports = new Set(
+    storage
+      .listGraphEdges(repoId, latest.id)
+      .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE")
+      .map((edge) => edge.from)
+  ).size;
+  const storedGapCount = storage.getScanCapabilityReport(repoId, latest.id)?.parser_gap_count;
+  return importCoverageReport({
+    diagnostics,
+    resolvedLocalImports,
+    ...(storedGapCount === undefined ? {} : { storedParserGapCount: storedGapCount })
+  });
 }
 
 export function doctorBackupArtifacts(storage: SqliteDriftStorage, repoId: string): DoctorBackupArtifactSummary[] {

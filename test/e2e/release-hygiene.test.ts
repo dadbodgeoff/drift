@@ -36,9 +36,16 @@ describe("release hygiene", () => {
       // F-5 (D-2): the matrix validator now fails closed by default; verify:ci runs on machines
       // that legitimately cannot build most engine targets, so it names the dev escape hatch
       // explicitly. The release workflow runs the fail-closed default.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && git diff --check",
+      // EW-4 added `pnpm eval:bench`: the ordinary-edit refusal rate and the parser-gap ratchet.
+      // Gaps rose 99 -> 1,104 on formbricks once before, unnoticed, because nothing watched the
+      // number - so the gate now fails on a rise and names the delta.
+      // EW-7 added `pnpm eval:determinism`: determinism is the marketed claim, and it was only ever
+      // measured by hand on two of the seven repos.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism && git diff --check",
     );
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
+    expect(manifest.scripts["eval:bench"]).toBe("node scripts/beta-bench.mjs");
+    expect(manifest.scripts["eval:determinism"]).toBe("node scripts/determinism.mjs");
   });
 
   it("keeps root ignores from hiding package source files", async () => {

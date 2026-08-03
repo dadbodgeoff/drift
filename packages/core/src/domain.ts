@@ -321,6 +321,23 @@ export interface SourceSpan {
   end_column: number;
 }
 
+/**
+ * The `runtime_use` values the engine emits on `import_used` facts. Mirrors the constants in
+ * `crates/drift-engine/src/facts.rs`; the engine owns the values, this names them once on the
+ * TypeScript side so consumers do not each spell the string inline.
+ */
+export const RUNTIME_USE_VALUE_POSITION = "value_position";
+export const RUNTIME_USE_DYNAMIC = "dynamic";
+export const RUNTIME_USE_SIDE_EFFECT = "side_effect";
+
+/**
+ * The local name the engine records for a bindingless `import "x"` (S10), which binds nothing.
+ * It is deliberately not a legal identifier so it can key binding lookups inside the engine
+ * without colliding with a real binding - which also means it must never reach a user-facing
+ * payload as if it were a symbol.
+ */
+export const SIDE_EFFECT_IMPORT_BINDING = "(side-effect)";
+
 export interface FactRecord {
   id: string;
   repo_id: string;
@@ -330,8 +347,26 @@ export interface FactRecord {
   name: string;
   value?: string;
   imported_name?: string;
+  /**
+   * Proof that the imported module is executed at runtime: `value_position`, `dynamic`
+   * (require/import(), runtime by construction) or `side_effect` (a bindingless `import "x"`).
+   * Absent means no runtime use was proven, which keeps member-level symbol conservatism in
+   * force. Persisted, because scan reuse hands these facts back to the engine and a dropped
+   * proof silently re-imposes that conservatism (EW-1).
+   */
+  runtime_use?: string;
   start_line: number;
   end_line: number;
+  /**
+   * The occurrence's position, columns included.
+   *
+   * EW-6 (DET-1): the columns used to be hardcoded to 1 while the engine had none to give, so two
+   * occurrences on one line were indistinguishable - and since the fact id is derived from
+   * (scan, file, kind, name, value, line, column), `ON CONFLICT(id) DO UPDATE` collapsed them into
+   * a single row. That is why the full-scan path (which counts engine emissions) and the
+   * incremental path (which counts stored rows) disagreed, and worse, why the second occurrence
+   * was genuinely lost rather than merely miscounted.
+   */
   source_span: SourceSpan;
   ast_node_kind: string | null;
   extraction_method: string;
