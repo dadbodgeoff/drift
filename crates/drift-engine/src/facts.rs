@@ -587,12 +587,20 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 });
                 continue;
             }
+            // EW-4: `<source> as <exported>` carries both names. The exported alias is what this
+            // module exports; `imported_name` is what must be resolved in the target module. Only
+            // recording the alias made a re-export of a default (or of any renamed symbol) look
+            // unresolvable in its source.
+            let (source_name, exported_name) = match identifier.split_once(" as ") {
+                Some((source, exported)) => (Some(source.to_string()), exported.to_string()),
+                None => (None, identifier.clone()),
+            };
             facts.push(Fact {
                 kind: FactKind::ImportUsed,
                 file_path: file_path.to_string(),
-                name: identifier.clone(),
+                name: exported_name.clone(),
                 value: Some(source_value.clone()),
-                imported_name: None,
+                imported_name: source_name.clone(),
                 runtime_use: None,
                 start_line,
                 end_line,
@@ -602,9 +610,9 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
             facts.push(Fact {
                 kind: FactKind::ReExportUsed,
                 file_path: file_path.to_string(),
-                name: identifier,
+                name: exported_name,
                 value: Some(source_value.clone()),
-                imported_name: None,
+                imported_name: source_name,
                 runtime_use: None,
                 start_line,
                 end_line,
@@ -836,8 +844,33 @@ fn reexport_value_identifiers(statement: &str) -> Vec<String> {
             if specifier.is_empty() || specifier.starts_with("type ") {
                 continue;
             }
-            if let Some((_, exported_name)) = specifier.split_once(" as ") {
-                push_import_identifier(&mut identifiers, exported_name);
+            if let Some((source_name, exported_name)) = specifier.split_once(" as ") {
+                // EW-4: keep BOTH names. The exported alias is what this module exports; the source
+                // name is what has to be resolved in the target module, and they are different
+                // things. Recording only the alias made `export { default as prisma } from "./m"`
+                // claim to import `prisma` from a module that exports only `default`, so the engine
+                // reported an unresolved symbol against a barrel that resolves perfectly - the shape
+                // every barrel over a default-only data layer is forced to use.
+                //
+                // Carried as a marker for the same reason `* as ns` is: this function returns names,
+                // and threading a pair through every caller to serve one shape would be worse than
+                // the marker the caller already knows how to split.
+                let source_name = source_name.trim();
+                let exported_name = exported_name.trim();
+                if !source_name.is_empty()
+                    && source_name != exported_name
+                    && (source_name == "default" || source_name.chars().all(is_identifier_char))
+                {
+                    // Pushed directly: `push_import_identifier` keeps only the first
+                    // whitespace-separated token, which would reduce the marker to its source name.
+                    if exported_name.chars().all(is_identifier_char) {
+                        identifiers.push(format!("{source_name} as {exported_name}"));
+                    } else {
+                        push_import_identifier(&mut identifiers, exported_name);
+                    }
+                } else {
+                    push_import_identifier(&mut identifiers, exported_name);
+                }
             } else {
                 push_import_identifier(&mut identifiers, specifier);
             }

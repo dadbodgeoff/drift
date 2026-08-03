@@ -115,3 +115,83 @@ fn a_type_only_default_export_is_not_a_runtime_symbol() {
         "a type-only default export creates no runtime symbol: {exports:?}"
     );
 }
+
+/// EW-4, the re-export hop. `export { default as prisma } from "./m"` re-exports the DEFAULT under a
+/// name, and the source name is `default`, not the alias.
+///
+/// Found while correcting the evasion matrix for papermark, whose data layer only default-exports.
+/// The barrel shapes S03-S05 have to re-export it in this form, and `reexport_value_identifiers`
+/// recorded only the alias - so the derived `import_used` fact claimed to import `prisma` from a
+/// module that exports only `default`, and the engine reported `unresolved_import_symbol` against a
+/// barrel that is in fact perfectly resolvable. A false gap, on the shape a default-only data layer
+/// forces every barrel over it to use.
+#[test]
+fn default_reexport_records_default_as_the_source_name() {
+    let facts = extract_typescript_facts(
+        "app/api/x/data.ts",
+        "export { default as prisma } from \"@/lib/prisma\";\n",
+    )
+    .expect("typescript facts");
+
+    let imported = facts
+        .iter()
+        .find(|fact| fact.kind == FactKind::ImportUsed)
+        .expect("a re-export makes the module an importer of its source");
+    assert_eq!(
+        imported.name, "prisma",
+        "the local/exported name is the alias: {facts:#?}"
+    );
+    assert_eq!(
+        imported.imported_name.as_deref(),
+        Some("default"),
+        "but the name resolved in the SOURCE module is `default` - resolving the alias there is what \
+         produced a false unresolved_import_symbol: {facts:#?}"
+    );
+
+    let reexport = facts
+        .iter()
+        .find(|fact| fact.kind == FactKind::ReExportUsed)
+        .expect("the re-export fact");
+    assert_eq!(reexport.name, "prisma");
+    assert_eq!(reexport.imported_name.as_deref(), Some("default"));
+}
+
+#[test]
+fn a_plain_named_reexport_still_records_no_separate_source_name() {
+    // The boundary: `export { prisma } from "./m"` re-exports the name it already has, so there is
+    // nothing to record and the previous behaviour must not change.
+    let facts = extract_typescript_facts(
+        "app/api/x/data.ts",
+        "export { prisma } from \"@/lib/prisma\";\n",
+    )
+    .expect("typescript facts");
+
+    let imported = facts
+        .iter()
+        .find(|fact| fact.kind == FactKind::ImportUsed)
+        .expect("import fact");
+    assert_eq!(imported.name, "prisma");
+    assert_eq!(imported.imported_name.as_deref(), None, "{facts:#?}");
+}
+
+#[test]
+fn a_renamed_named_reexport_records_the_source_name() {
+    // `export { prisma as db } from "./m"` exports `db` and resolves `prisma` in the source. Same
+    // property as the default case, and it was wrong in the same way.
+    let facts = extract_typescript_facts(
+        "app/api/x/data.ts",
+        "export { prisma as db } from \"@/lib/prisma\";\n",
+    )
+    .expect("typescript facts");
+
+    let imported = facts
+        .iter()
+        .find(|fact| fact.kind == FactKind::ImportUsed)
+        .expect("import fact");
+    assert_eq!(imported.name, "db", "{facts:#?}");
+    assert_eq!(
+        imported.imported_name.as_deref(),
+        Some("prisma"),
+        "{facts:#?}"
+    );
+}

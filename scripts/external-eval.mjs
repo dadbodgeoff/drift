@@ -25,6 +25,8 @@ import { fileURLToPath } from "node:url";
 
 import { mergeBaselineRows, repoVerdict, unsafeBaselineMoves, updateGate } from "./external-eval-predicate.mjs";
 import { EVAL_REPOS } from "./eval-repos.mjs";
+import { importOf } from "./data-layer-import.mjs";
+import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
@@ -115,7 +117,7 @@ function drift(cwd, extraEnv, ...a) {
  */
 function enforcementInIsolation(root, dbEnv, repoId, cfg, enforcementMode) {
   resetTree(root);
-  const badPath = writeRoute(root, cfg.routeDir, "drift-eval-enforce", cfg.dataModule, cfg.dataSymbol);
+  const badPath = writeRoute(root, cfg.routeDir, "drift-eval-enforce", cfg.dataModule, cfg.dataSymbol, cfg);
   git(root, "add", "-A");
   const run = drift(root, dbEnv, "check", "--diff", "HEAD", "--scope", "changed-hunks", "--repo", repoId, "--json");
   let verdict = null;
@@ -138,13 +140,19 @@ function ensureDir(dir) {
   return join(dir, "route.ts");
 }
 
-function writeRoute(root, relDir, sub, module, symbol) {
+/**
+ * Write an injected route.
+ *
+ * `cfg` decides whether the import is named or default: an injection that would not compile in the
+ * repo it is injected into cannot measure anything about that repo (see data-layer-import.mjs).
+ */
+function writeRoute(root, relDir, sub, module, symbol, cfg) {
   const dir = join(root, relDir, sub);
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, "route.ts"),
     `import { NextResponse } from "next/server";\n` +
-      `import { ${symbol} } from "${module}";\n\n` +
+      `${importOf(cfg, module, symbol)}\n\n` +
       `export async function GET() {\n` +
       `  return NextResponse.json({ ok: String(${symbol}) });\n` +
       `}\n`
@@ -285,13 +293,16 @@ function evaluateRepoAt(reposDir, cfg) {
   // Injection and clean control land in the same diff. No commit is needed: the tree is
   // already a pristine HEAD checkout, and `git diff HEAD` includes staged new files.
   // Committing here would permanently mutate the eval repos.
-  const badPath = writeRoute(root, cfg.routeDir, "drift-eval-bad", cfg.dataModule, cfg.dataSymbol);
+  const badPath = writeRoute(root, cfg.routeDir, "drift-eval-bad", cfg.dataModule, cfg.dataSymbol, cfg);
   const cleanPath = writeRoute(
     root,
     cfg.routeDir,
     "drift-eval-clean",
     cfg.cleanModule,
-    cfg.cleanSymbol
+    cfg.cleanSymbol,
+    // The clean control imports a *service* module, whose export style is its own; the data layer's
+    // import kind does not apply, so this stays the named form the clean modules actually use.
+    { ...cfg, dataImportKind: "named" }
   );
 
   // T03 negative controls. The suite proved detection but never restraint: a rule that
@@ -320,14 +331,16 @@ function evaluateRepoAt(reposDir, cfg) {
     cfg.routeDir,
     "drift-eval-lookalike",
     `${cfg.dataModule}-legacy`,
-    cfg.dataSymbol
+    cfg.dataSymbol,
+    cfg
   );
   const subpathPath = writeRoute(
     root,
     cfg.routeDir,
     "drift-eval-subpath",
     `${cfg.dataModule}/internal`,
-    cfg.dataSymbol
+    cfg.dataSymbol,
+    cfg
   );
 
   git(root, "add", "-A");

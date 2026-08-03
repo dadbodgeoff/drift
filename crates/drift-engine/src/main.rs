@@ -1308,20 +1308,28 @@ fn graph_for_file(
                             ("resolved_module_id".to_string(), json!(resolved_module)),
                         ]),
                     );
+                    // EW-4: resolve the SOURCE name, not the exported alias.
+                    //
+                    // `export { default as prisma } from "./m"` exports `prisma` and resolves
+                    // `default` in the target. Checking the alias there fails against every
+                    // default-only module - which is the shape a barrel over such a data layer is
+                    // forced into.
+                    let source_name = fact.imported_name.as_deref().unwrap_or(&fact.name);
                     if resolver
                         .exported_symbols
                         .get(&resolved)
-                        .is_some_and(|symbols| symbols.contains(&fact.name))
+                        .is_some_and(|symbols| symbols.contains(source_name))
                     {
                         insert_edge(
                             &mut edges,
                             "REEXPORT_RESOLVES_TO_SYMBOL",
                             &reexport_node,
-                            &symbol_id(&resolved, "function", &fact.name),
+                            &symbol_id(&resolved, "function", source_name),
                             vec![evidence_id],
                             BTreeMap::from([
                                 ("source".to_string(), json!(source)),
                                 ("exported_name".to_string(), json!(fact.name)),
+                                ("source_name".to_string(), json!(source_name)),
                                 ("resolved_file_path".to_string(), json!(resolved)),
                                 ("resolved_module_id".to_string(), json!(resolved_module)),
                             ]),

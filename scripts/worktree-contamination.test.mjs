@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -136,5 +137,39 @@ describe("worktree contamination", () => {
     expect(
       contaminationAllowed(["node", "scripts/external-eval.mjs", "--allow-contaminated"])
     ).toBe(true);
+  });
+
+  /**
+   * Every measurement harness must actually wire the guard up.
+   *
+   * This test exists because it was needed: the guard body was inserted into external-eval.mjs while
+   * its import was not, since that file imports a different symbol set from the predicate module than
+   * the others do and the patch matched nothing. `node --check` passes on that - the reference is only
+   * undefined at runtime - so the suite stayed green and `pnpm eval:external` crashed on its first
+   * real run with `contaminationRefusal is not defined`.
+   *
+   * These scripts execute on import, so they cannot be loaded in a test. Reading them is the cheap
+   * check that catches a call without its import.
+   */
+  it("is imported and called by every measurement harness", () => {
+    const scriptsDir = dirname(fileURLToPath(import.meta.url));
+    for (const harness of [
+      "external-eval.mjs",
+      "evasion-matrix.mjs",
+      "beta-bench.mjs",
+      "determinism.mjs"
+    ]) {
+      const source = readFileSync(resolve(scriptsDir, harness), "utf8");
+      expect(
+        source,
+        `${harness} must import the guard, not just call it - an undefined reference here only ` +
+          "surfaces on a real run, which is a 30-minute round trip"
+      ).toMatch(/import \{[^}]*contaminationRefusal[^}]*\} from "\.\/worktree-contamination\.mjs"/);
+      expect(source, `${harness} must actually call it`).toMatch(/contaminationRefusal\(/);
+      expect(
+        source,
+        `${harness} must honour the explicit escape hatch rather than refusing unconditionally`
+      ).toMatch(/contaminationAllowed\(/);
+    }
   });
 });

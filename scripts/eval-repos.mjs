@@ -11,6 +11,17 @@
  */
 /**
  * dataModule/dataSymbol   real data layer, used for the injected violation
+ * dataImportKind          how the repo's own routes import that module: "named" (the default) or
+ *                         "default". This is not cosmetic. papermark's lib/prisma.ts contains only
+ *                         `export default prisma;` and all 204 of its real routes write
+ *                         `import prisma from "@/lib/prisma"`, so the named form the harness used to
+ *                         inject named a symbol that does not exist and would not compile. It passed
+ *                         for years because the extractor recognised default exports only when they
+ *                         wrapped a declaration, so the module appeared to export nothing at all and
+ *                         symbol resolution was skipped entirely. EW-4 fixed that gap, the engine
+ *                         correctly reported the injected import as unresolved, and EW-2 correctly
+ *                         withheld a finding whose own import could not be placed. The regression
+ *                         was in the fixture, and it had been hiding behind the bug.
  * cleanModule/cleanSymbol properly layered import, used for the false-positive control
  * expectForbidden         entries that MUST appear in the learned forbidden_imports
  * expectedExitCode        the exit code the main check MUST produce (O-1). Recorded per
@@ -129,6 +140,8 @@ export const EVAL_REPOS = [
     dataSymbol: "prisma",
     cleanModule: "@/lib/utils",
     cleanSymbol: "cn",
+    // lib/prisma.ts default-exports and exports nothing named; every real route imports it this way.
+    dataImportKind: "default",
     expectForbidden: ["@/lib/prisma"],
     expectedExitCode: 3
   },
