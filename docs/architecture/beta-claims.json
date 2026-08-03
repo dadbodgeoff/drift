@@ -103,7 +103,7 @@
       "source": "scripts/beta-bench.mjs",
       "baseline": "scripts/beta-bench-baseline.json",
       "measured_at": "2026-08-03",
-      "commit": "1579003bafec",
+      "commit": "53bdd2fb",
       "refused": 0,
       "total": 56,
       "rate": 0,
@@ -117,37 +117,37 @@
         "dub": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 640,
+          "parser_gaps": 639,
           "import_resolution_rate": 0.9992
         },
         "formbricks": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 1004,
+          "parser_gaps": 999,
           "import_resolution_rate": 0.9952
         },
         "calcom": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 1705,
+          "parser_gaps": 1505,
           "import_resolution_rate": 0.9613
         },
         "papermark": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 494,
+          "parser_gaps": 493,
           "import_resolution_rate": 0.9856
         },
         "midday": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 613,
+          "parser_gaps": 581,
           "import_resolution_rate": 0.9983
         },
         "openstatus": {
           "refused": 0,
           "total": 8,
-          "parser_gaps": 753,
+          "parser_gaps": 740,
           "import_resolution_rate": 0.9851
         }
       }
@@ -156,7 +156,7 @@
       "note": "EW-7 (DET-2). Determinism is the marketed claim, and the published evidence covered taxonomy and papermark - neither of which is where the one observed flap happened. cal.com is, and it had never been measured. A run's digest covers what a user would notice change: exit code, check status, blocking count, partial-coverage flag, parser-gap count, and every finding's fingerprint, enforcement result, file, line and specifier. Ids and durations that vary by invocation by design are excluded, or the digest would differ every run and prove nothing.",
       "source": "scripts/determinism.mjs",
       "measured_at": "2026-08-03",
-      "commit": "1579003bafec",
+      "commit": "53bdd2fb",
       "runs_per_repo": 5,
       "contamination_guard": "scripts/worktree-contamination.mjs - a worktree with foreign changes is refused rather than measured, naming every injected file. Before this, 'it was harness contamination' and 'determinism is not what we claim' left identical evidence behind.",
       "per_repo": {
@@ -168,12 +168,12 @@
         "calcom": {
           "runs": 5,
           "distinct_results": 1,
-          "digest": "9f46437a2f0e618c"
+          "digest": "dadb600b6b9a2af7"
         },
         "papermark": {
           "runs": 5,
           "distinct_results": 1,
-          "digest": "4b1b8cf4aa32ebc1"
+          "digest": "f1ab19a78d5fe5d9"
         }
       },
       "not_yet_measured": [
@@ -181,7 +181,8 @@
         "formbricks",
         "midday",
         "openstatus"
-      ]
+      ],
+      "digest_stability_note": "A digest is stable across runs of one build, not across builds. cal.com and papermark changed digest when the renamed-re-export fix removed false unresolved-symbol diagnostics from their parser-gap counts, which the digest covers; taxonomy, which has no renamed re-exports, did not. That is the digest working. Comparing a digest against one recorded at a different commit is a category error, which is why the commit is recorded beside it."
     }
   },
   "prose_claim_region_ends_at": "## First Five Minutes",
