@@ -200,6 +200,15 @@ blocked items that need a decision, most consequential first, each with the reco
   a passing test suite does not mean the release binary the CLI invokes has your change. This bit
   twice: once against a stale `dist/`, once against a stale release engine that produced a
   plausible-but-wrong measurement (8.4% instead of 3.1%) plus three spurious parser gaps.
+- **No build of any kind while a gate battery or a measurement is running.** The rule above is about
+  a *stale* binary; this one is about a binary that changes underneath a run. `cargo test --release`
+  **rebuilds** `target/release/drift-engine` — the exact file `DRIFT_ENGINE_BIN` points at and the CLI
+  shells out to — so a test run, a mutation battery, or an absent-minded `cargo build` will swap the
+  engine mid-harness. The result is not an error; it is a plausible number measured against two
+  different engines. This cost the CV sprint two contaminated batteries and one false verifier finding
+  (a 6-member junk family on midday that did not survive a clean re-run). Kick the battery off, then
+  do work that touches no source: docs, logs, planning. If you must build, kill the battery and start
+  it again afterwards.
 
 **The eval harness**
 - Hermetic: temp `HOME` per repo, hard-resets the repo, creates no commits. Manual `drift` runs are

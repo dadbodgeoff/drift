@@ -49,11 +49,26 @@ if ! met; then
   report
 fi
 
-# Tier 3 - package caches. Re-downloaded on demand; costs network, not correctness.
+# Tier 3 - package caches. This tier IS a correctness risk, despite what it used to claim here.
+#
+# `pnpm store prune` is not a cache eviction: pnpm's node_modules are links into the global store, so
+# pruning it leaves every workspace package unresolvable. Recovery needs network, which is why this
+# tier used to be described as costing "network, not correctness" - but the tree is broken from the
+# prune until that reinstall happens, and the breakage does not look like a broken tree. `drift
+# --version` still answers, because it imports neither @drift/storage nor better-sqlite3, so the first
+# symptom is an eval run failing as though the engine were at fault. That cost a full run to
+# misdiagnose.
+#
+# Left in, because at this tier the alternative is failing to reclaim at all - but it announces the
+# reinstall it just made necessary rather than reporting a silent success.
 if ! met; then
   echo "tier 3: package caches"
   rm -rf "$HOME/.cargo/registry/cache" 2>/dev/null
-  command -v pnpm >/dev/null && pnpm store prune >/dev/null 2>&1
+  if command -v pnpm >/dev/null; then
+    pnpm store prune >/dev/null 2>&1
+    echo "  NOTE: pruned the pnpm store, which unlinks workspace packages."
+    echo "        Run 'pnpm install --recursive && pnpm build' before any CLI, test or eval run."
+  fi
   report
 fi
 
