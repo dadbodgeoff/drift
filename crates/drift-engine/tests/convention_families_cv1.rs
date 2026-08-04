@@ -507,3 +507,176 @@ fn a_name_nominated_symbol_that_never_wraps_does_not_seed_a_family() {
         "no symbol here wraps a handler, so there is no wrapper family to state: {payload:#?}"
     );
 }
+
+// ---------------------------------------------------------------------------------------------
+// Regression tests for the defects independent verification found in the first CV-1 commit.
+// Each of these was a CONFIRMED defect that the 12 tests above did not catch.
+// ---------------------------------------------------------------------------------------------
+
+/// The `nominated` filter on `AlreadyDetected` kinds had no test at all: deleting it left 12 of 12
+/// green while turning dub's 2-member rate-limit family into a 249-member one holding `capitalize`,
+/// `nanoid` and `uuid`. The comment called it "load-bearing, not a formality" and nothing checked.
+#[test]
+fn an_unnominated_symbol_never_joins_an_already_detected_family() {
+    let payload = run_infer_candidates(request_from_routes(&[
+        point_call("app/api/a/route.ts", "ratelimit", "@/lib/upstash"),
+        point_call("app/api/b/route.ts", "ratelimit", "@/lib/upstash"),
+        point_call("app/api/c/route.ts", "ratelimitOrThrow", "@/lib/upstash"),
+        point_call("app/api/d/route.ts", "ratelimitOrThrow", "@/lib/upstash"),
+        // Called in routes, resolves to the same module, nominates nothing. Every symbol a repo
+        // calls in a route reaches this point, so only nomination keeps them out.
+        point_call("app/api/e/route.ts", "capitalize", "@/lib/upstash"),
+        point_call("app/api/f/route.ts", "capitalize", "@/lib/upstash"),
+        point_call("app/api/g/route.ts", "nanoid", "@/lib/upstash"),
+        point_call("app/api/h/route.ts", "nanoid", "@/lib/upstash"),
+    ]));
+
+    let family = family_candidate(&payload, "api_route_requires_rate_limit")
+        .expect("a rate-limit family exists");
+    assert_eq!(
+        required_calls(family),
+        vec!["ratelimit", "ratelimitOrThrow"],
+        "membership of an already-detected family is exactly the positively detected symbols"
+    );
+}
+
+/// An `api_route_requires_auth_helper` family could contain zero auth helpers: a nominated point
+/// call established the module key, then non-nominated wrappers from a neighbouring module filled
+/// the family alone. `withErrorHandler` and `withLogging` read as auth because a `getSession` call
+/// next door voted for their package.
+#[test]
+fn a_family_cannot_be_seeded_by_a_symbol_that_is_not_itself_a_member() {
+    let payload = run_infer_candidates(request_from_routes(&[
+        // All from ONE module, so the module rule cannot be what saves this - only the requirement
+        // that a family's seed be a member of it can. `getSession` is nominated (it contains
+        // "session") but is a point call, so it is not a wrapper and not a member; the two wrappers
+        // beside it nominate nothing.
+        point_call("app/api/a/route.ts", "getSession", "@/lib/auth"),
+        point_call("app/api/b/route.ts", "getSession", "@/lib/auth"),
+        wrapper("app/api/c/route.ts", "withErrorHandler", "@/lib/auth"),
+        wrapper("app/api/d/route.ts", "withErrorHandler", "@/lib/auth"),
+        wrapper("app/api/e/route.ts", "withLogging", "@/lib/auth"),
+        wrapper("app/api/f/route.ts", "withLogging", "@/lib/auth"),
+    ]));
+
+    for candidate in candidates_of_kind(&payload, AUTH) {
+        let calls = required_calls(candidate);
+        assert!(
+            !calls.contains(&"withErrorHandler") && !calls.contains(&"withLogging"),
+            "an error handler and a logger are not auth helpers, and a nominated point call in \
+             their module must not make them one: {calls:?}"
+        );
+    }
+}
+
+/// Keying a module family on its first non-generic segment collapsed whole monorepo packages:
+/// `packages/api/src/auth` and `packages/api/src/middleware` both keyed on `api`.
+#[test]
+fn sibling_directories_in_one_package_are_not_one_family() {
+    let payload = run_infer_candidates(request_from_routes(&[
+        wrapper("app/api/a/route.ts", "withSession", "packages/api/src/auth"),
+        wrapper("app/api/b/route.ts", "withSession", "packages/api/src/auth"),
+        wrapper("app/api/c/route.ts", "withErrorHandler", "packages/api/src/middleware"),
+        wrapper("app/api/d/route.ts", "withErrorHandler", "packages/api/src/middleware"),
+    ]));
+
+    for candidate in candidates_of_kind(&payload, AUTH) {
+        assert!(
+            !required_calls(candidate).contains(&"withErrorHandler"),
+            "`api/auth` and `api/middleware` share a package, not a family: {:?}",
+            required_calls(candidate)
+        );
+    }
+}
+
+/// A module and its own submodule ARE one family - the prefix rule that makes the test above safe
+/// must not also split `@/lib/auth` from `@/lib/auth/session`.
+#[test]
+fn a_module_and_its_submodule_are_one_family() {
+    let payload = run_infer_candidates(request_from_routes(&[
+        wrapper("app/api/a/route.ts", "withSession", "@/lib/auth"),
+        wrapper("app/api/b/route.ts", "withSession", "@/lib/auth"),
+        wrapper("app/api/c/route.ts", "withWorkspace", "@/lib/auth/workspace"),
+        wrapper("app/api/d/route.ts", "withWorkspace", "@/lib/auth/workspace"),
+    ]));
+
+    let family = family_candidate(&payload, AUTH).expect("an auth family exists");
+    assert_eq!(required_calls(family), vec!["withSession", "withWorkspace"]);
+}
+
+/// Family formation depended on which occurrence of a symbol the scan visited first: a helper
+/// imported from two different specifiers produced a family in one fact order and none in the
+/// reverse.
+#[test]
+fn a_symbol_imported_from_two_modules_forms_the_same_family_either_way() {
+    let build = |reversed: bool| {
+        let mut routes = vec![
+            wrapper("app/api/a/route.ts", "withSession", "@/lib/auth"),
+            wrapper("app/api/b/route.ts", "withSession", "@/lib/auth"),
+            wrapper("app/api/c/route.ts", "withPartner", "@/lib/auth/partner"),
+            wrapper("app/api/d/route.ts", "withPartner", "@/lib/auth/partner"),
+            // The same symbol, once, through a foreign specifier. The majority must win.
+            wrapper("app/api/e/route.ts", "withPartner", "@/lib/billing/partner"),
+        ];
+        if reversed {
+            routes.reverse();
+        }
+        request_from_routes(&routes)
+    };
+
+    let forward = run_infer_candidates(build(false));
+    let reversed = run_infer_candidates(build(true));
+
+    let left = family_candidate(&forward, AUTH).expect("a family in forward order");
+    let right = family_candidate(&reversed, AUTH).expect("a family in reversed order");
+    assert_eq!(required_calls(left), required_calls(right));
+    assert_eq!(left["candidate_id"], right["candidate_id"]);
+}
+
+/// The helper id field name has to be the one the READER for that kind expects.
+/// `security_helpers_from_requires` takes `helper_id` with `?` inside a `filter_map`, so a family
+/// that emitted `rate_limit_id` carried no helpers at all - and an accepted convention with no
+/// helpers flags every route in scope, including the routes that call a member. Strictly worse than
+/// the per-symbol candidate it supersedes.
+#[test]
+fn family_helper_entries_use_the_field_name_their_reader_expects() {
+    let auth = run_infer_candidates(request_from_routes(&[
+        wrapper("app/api/a/route.ts", "withSession", "@/lib/auth"),
+        wrapper("app/api/b/route.ts", "withSession", "@/lib/auth"),
+        wrapper("app/api/c/route.ts", "withWorkspace", "@/lib/auth"),
+        wrapper("app/api/d/route.ts", "withWorkspace", "@/lib/auth"),
+    ]));
+    let helpers = family_candidate(&auth, AUTH).expect("auth family")["requires"]["auth_helpers"]
+        .as_array()
+        .expect("auth_helpers")
+        .clone();
+    for helper in &helpers {
+        assert!(
+            helper.get("guard_id").and_then(|id| id.as_str()).is_some(),
+            "accepted_auth_helpers_for_convention reads `guard_id`: {helper:#?}"
+        );
+    }
+
+    let rate_limit = run_infer_candidates(request_from_routes(&[
+        point_call("app/api/a/route.ts", "ratelimit", "@/lib/upstash"),
+        point_call("app/api/b/route.ts", "ratelimit", "@/lib/upstash"),
+        point_call("app/api/c/route.ts", "ratelimitOrThrow", "@/lib/upstash"),
+        point_call("app/api/d/route.ts", "ratelimitOrThrow", "@/lib/upstash"),
+    ]));
+    let helpers = family_candidate(&rate_limit, "api_route_requires_rate_limit")
+        .expect("rate-limit family")["requires"]["rate_limit_helpers"]
+        .as_array()
+        .expect("rate_limit_helpers")
+        .clone();
+    for helper in &helpers {
+        // Both are taken with `?`, so either one missing drops the helper silently.
+        assert!(
+            helper.get("helper_id").and_then(|id| id.as_str()).is_some(),
+            "security_helpers_from_requires reads `helper_id`: {helper:#?}"
+        );
+        assert!(
+            helper.get("module").and_then(|id| id.as_str()).is_some(),
+            "security_helpers_from_requires reads `module` with `?` too: {helper:#?}"
+        );
+    }
+}

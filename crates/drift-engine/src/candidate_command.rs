@@ -854,6 +854,13 @@ struct FamilySpec {
     /// candidate of the same kind emits, or an accepted family would carry no helpers at all.
     requires_key: &'static str,
     helper_id_prefix: &'static str,
+    /// The field name the *reader* for this kind expects the helper id under. Derived names do not
+    /// work here: `accepted_auth_helpers_for_convention` reads `guard_id`,
+    /// `insert_request_validator_value` reads `validator_id`, and `security_helpers_from_requires`
+    /// reads `helper_id` - and that last one takes it with `?` inside a `filter_map`, so a wrong key
+    /// does not degrade, it silently drops every helper and the accepted convention then flags every
+    /// route in scope including the ones that comply.
+    helper_id_key: &'static str,
     helper_module_key: &'static str,
     heuristic_id: &'static str,
     required_capabilities: &'static [&'static str],
@@ -913,6 +920,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         }],
         requires_key: "auth_helpers",
         helper_id_prefix: "auth",
+        helper_id_key: "guard_id",
         helper_module_key: "import",
         heuristic_id: "security-auth-helper-family-v1",
         required_capabilities: &["syntax_facts", "security_auth"],
@@ -931,6 +939,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         }],
         requires_key: "validators",
         helper_id_prefix: "validator",
+        helper_id_key: "validator_id",
         helper_module_key: "import",
         heuristic_id: "security-request-validation-family-v1",
         required_capabilities: &["syntax_facts", "request_validation"],
@@ -954,6 +963,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         ],
         requires_key: "rate_limit_helpers",
         helper_id_prefix: "rate_limit",
+        helper_id_key: "helper_id",
         helper_module_key: "module",
         heuristic_id: "security-rate-limit-family-v1",
         required_capabilities: &["syntax_facts", "rate_limit_facts"],
@@ -1035,7 +1045,9 @@ fn derive_convention_families(
                 };
                 inputs
                     .iter()
-                    .filter(|input| input.family_key == dominant && input.wraps_handler)
+                    .filter(|input| {
+                        family_keys_match(&input.family_key, &dominant) && input.wraps_handler
+                    })
                     .collect::<Vec<_>>()
             }
         };
@@ -1051,8 +1063,10 @@ fn derive_convention_families(
             .iter()
             .map(|member| member.symbol.clone())
             .collect::<Vec<_>>();
-        // Sorted, so the matcher fingerprint - and with it the candidate id - is stable across runs
-        // whatever order the facts arrived in.
+        // Members arrive ordered already, because `family_member_inputs` collects into a BTreeMap -
+        // that map, not this sort, is what actually makes the matcher fingerprint stable. The sort
+        // stays as a guard on that invariant rather than as its cause, so that a future change to
+        // the collection type cannot silently start churning candidate ids.
         let mut sorted_symbols = symbols.clone();
         sorted_symbols.sort();
 
@@ -1072,7 +1086,7 @@ fn derive_convention_families(
             .iter()
             .map(|member| {
                 json!({
-                    format!("{}_id", spec.helper_id_prefix):
+                    spec.helper_id_key:
                         format!("{}:{}", spec.helper_id_prefix, member.symbol),
                     "symbol": member.symbol,
                     spec.helper_module_key: member.module,
@@ -1120,8 +1134,16 @@ fn derive_convention_families(
                 spec.noun,
                 sorted_symbols.join(", ")
             ),
-            rationale:
-                "Aggregated interchangeable helpers resolving to one module into a single family.",
+            rationale: match spec.confirmation {
+                FamilyConfirmation::WrapsHandler => {
+                    "Aggregated helpers that resolve to one module and wrap their route handlers."
+                }
+                // No module test is applied to these kinds, and claiming one in the string a
+                // reviewer reads before accepting would be a lie about how the family was formed.
+                FamilyConfirmation::AlreadyDetected => {
+                    "Aggregated separately detected helpers of one kind into a single family."
+                }
+            },
             scope: route_scope.clone(),
             matcher,
             requires: Some(requires),
@@ -1185,12 +1207,13 @@ fn family_member_inputs<'a>(
 
     merged
         .into_iter()
-        // Two files is the same repetition threshold every per-symbol candidate site uses. A
-        // single call is not yet a convention, and letting singletons in is the cheapest way to
-        // over-aggregate.
+        // Two distinct FILES, where the per-symbol sites take two distinct facts - so a helper used
+        // twice inside one file gets a per-symbol candidate but not family membership. Deliberate and
+        // deliberately stricter: a family's coverage is counted in files, so a member that cannot
+        // move the file count is a member that only adds a name to the disjunction.
         .filter(|(_, (facts, _))| unique_fact_file_count(facts) >= 2)
         .filter_map(|(symbol, (facts, nominated))| {
-            let module = import_source_for_symbol(request, &facts[0].file_path, &symbol)?;
+            let module = dominant_import_source(request, &facts, &symbol)?;
             let family_key = module_family_key(&module);
             let wraps_handler = wrapping_file_count(request, &facts) >= 2;
             Some(FamilyMemberInput {
@@ -1213,7 +1236,15 @@ fn family_member_inputs<'a>(
 /// and wins, so the lookalike joins nothing. Ties break on the key so the choice is deterministic.
 fn dominant_family_key(inputs: &[FamilyMemberInput<'_>]) -> Option<String> {
     let mut scores: BTreeMap<&str, usize> = BTreeMap::new();
-    for input in inputs.iter().filter(|input| input.nominated) {
+    // Nominated AND wrapping. Nomination alone was not enough: a nominated point call could
+    // establish a module and then contribute nothing to the family it created, leaving an
+    // `api_route_requires_auth_helper` family whose members were all non-nominated wrappers from a
+    // neighbouring module - `withErrorHandler` and `withLogging` reading as auth because a
+    // `getSession` call next door voted for their package. The seed has to be a member.
+    for input in inputs
+        .iter()
+        .filter(|input| input.nominated && input.wraps_handler)
+    {
         *scores.entry(input.family_key.as_str()).or_insert(0) +=
             unique_fact_file_count(&input.facts);
     }
@@ -1225,6 +1256,33 @@ fn dominant_family_key(inputs: &[FamilyMemberInput<'_>]) -> Option<String> {
                 .then_with(|| right_key.cmp(left_key))
         })
         .map(|(key, _)| key.to_string())
+}
+
+/// The import specifier most of this symbol's calls resolve to, ties broken lexicographically.
+///
+/// Taking the first occurrence's specifier made family formation depend on fact order: a `withPartner`
+/// imported from `@/lib/auth/partner` in one route and `@/lib/billing/partner` in another produced a
+/// family in one traversal order and none in the reverse. "Resolved-module identity confirms" has to
+/// mean the symbol's actual module, not whichever file the scan happened to visit first.
+fn dominant_import_source(
+    request: &CandidateRequest,
+    facts: &[&CheckFact],
+    symbol: &str,
+) -> Option<String> {
+    let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+    for fact in facts {
+        if let Some(source) = import_source_for_symbol(request, &fact.file_path, symbol) {
+            *counts.entry(source).or_insert(0) += 1;
+        }
+    }
+    counts
+        .into_iter()
+        .max_by(|(left_key, left_count), (right_key, right_count)| {
+            left_count
+                .cmp(right_count)
+                .then_with(|| right_key.cmp(left_key))
+        })
+        .map(|(source, _)| source)
 }
 
 /// How many distinct files hold a call of this symbol whose source span strictly encloses that
@@ -1263,16 +1321,17 @@ fn wrapping_file_count(request: &CandidateRequest, facts: &[&CheckFact]) -> usiz
         .len()
 }
 
-/// The family key of a resolved import specifier: its first path segment that is not a generic
-/// container.
+/// The family key of a resolved import specifier: its non-generic path segments, joined.
 ///
-/// `@/lib/auth`, `@/lib/auth/session` and `apps/web/lib/auth/index` all key on `auth`, so they are
-/// one family. `@/lib/cache` keys on `cache` and `@/lib/blog` on `blog`, so neither ever merges
-/// with it.
+/// Container words are dropped, so `@/lib/auth`, `apps/web/lib/auth` and `server/auth` all key on
+/// `auth`, and `@/lib/cache` keys on `cache` and never merges with it. What remains is a *sequence*
+/// rather than a single segment, because a single segment collapses real monorepo layouts: keying on
+/// the first non-generic segment made `packages/api/src/auth` and `packages/api/src/middleware` both
+/// key on `api`, merging a repo's entire API package into one family. As sequences they are
+/// `api/auth` and `api/middleware`, which do not merge.
 ///
-/// Skipping the container words is the load-bearing part. Keying on the first segment outright
-/// would make `lib` the key for every `lib/*` module in the repo and collapse auth, cache and blog
-/// into one family - the exact over-aggregation this sprint's negative controls exist to catch.
+/// Clustering is by prefix, handled in `family_keys_match`, so `auth` and `auth/session` are one
+/// family - a module and its submodule - while `api/auth` and `api/middleware` are two.
 fn module_family_key(module: &str) -> String {
     const GENERIC_SEGMENTS: &[&str] = &[
         "", ".", "..", "@", "~", "src", "lib", "libs", "app", "apps", "web", "packages", "pkg",
@@ -1287,19 +1346,42 @@ fn module_family_key(module: &str) -> String {
         .unwrap_or(lower.as_str())
         .to_string();
 
-    for (index, segment) in trimmed.split('/').enumerate() {
-        if GENERIC_SEGMENTS.contains(&segment) {
-            continue;
-        }
-        // A leading `@scope` is a package scope or a path alias, never the family - `@upstash/ratelimit`
-        // is the `ratelimit` family, and `@/lib/auth` is the `auth` family.
-        if index == 0 && segment.starts_with('@') {
-            continue;
-        }
-        return segment.to_string();
+    let segments = trimmed
+        .split('/')
+        .enumerate()
+        .filter(|(index, segment)| {
+            // A leading `@scope` is a package scope or a path alias, never the family -
+            // `@upstash/ratelimit` is the `ratelimit` family and `@/lib/auth` is the `auth` family.
+            !(GENERIC_SEGMENTS.contains(segment) || (*index == 0 && segment.starts_with('@')))
+        })
+        .map(|(_, segment)| segment)
+        .collect::<Vec<_>>();
+
+    if segments.is_empty() {
+        return trimmed;
     }
-    trimmed
+    segments.join("/")
 }
+
+/// Whether two family keys name the same family: equal, or one a path-prefix of the other.
+///
+/// `auth` and `auth/session` are a module and its submodule and belong together. `api/auth` and
+/// `api/middleware` share only a container and do not. Prefix comparison is per segment, so `auth`
+/// does not match `authorization`.
+fn family_keys_match(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+    let (shorter, longer) = if left.len() < right.len() {
+        (left, right)
+    } else {
+        (right, left)
+    };
+    longer
+        .strip_prefix(shorter)
+        .is_some_and(|rest| rest.starts_with('/'))
+}
+
 
 struct SecurityCandidateInput<'a> {
     request: &'a CandidateRequest,
