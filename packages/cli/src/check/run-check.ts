@@ -14,7 +14,7 @@ import {
 } from "@drift/core";
 import { buildEntrypointFlowProof,buildReadiness, scoreHelperSimilarity } from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
-import { readFileSync } from "node:fs";
+import { existsSync,readFileSync } from "node:fs";
 import { join } from "node:path";
 import { conformingExemplars,migrationSentence } from "@drift/core";
 import { contractStaleness,contractStalenessWarnings } from "./contract-liveness.js";
@@ -230,7 +230,8 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const contractFingerprintValue = contractFingerprint(contract);
   const machineContractVersions = currentMachineContractVersions();
   const rawDiff = scope === "full" ? null : loadDiff(repo.root_path, parsed);
-  const parsedDiff = scope === "full"
+  // BB-9 reassigns this to drop files missing from the working tree, so it is `let`.
+  let parsedDiff = scope === "full"
     ? fullRepoDiff(repo.root_path)
     : parseUnifiedDiff(rawDiff ?? "");
   // BB-1: a check that examined nothing must not be indistinguishable from a clean check.
@@ -276,6 +277,62 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       }
     );
   }
+  // BB-9: a diff can name files that are not in the working tree.
+  //
+  // Reproduced at 30e2e036: a `--diff-file` patch naming an absent file produced
+  // `changed_file_count: 1`, `partial_coverage: {complete: true}`, zero findings, exit 0 - and never
+  // mentioned the file. This is BB-1's bug one level up: the scope is non-empty, nothing in it was
+  // examinable, and completeness is claimed anyway. Real shapes: CI applying a patch to the wrong
+  // checkout, a hook racing a branch switch, a stale patch file.
+  //
+  // Existence is tested on the filesystem rather than against the scan's file set on purpose. A file
+  // that is present but not indexable (a README in the diff) is not missing, and conflating the two
+  // would fire this on ordinary diffs.
+  //
+  // Deleted files are absent by definition and are excluded - they have their own skip path, and
+  // double-counting them as "missing" is the trap this had to avoid. Renamed-away old paths never enter
+  // `files` (a rename emits no hunks for them), so they need no exclusion.
+  const deletedFileSet = new Set(parsedDiff.deletedFiles);
+  const missingFromWorktree = scope === "full"
+    ? []
+    : parsedDiff.files
+        .map((file) => file.path)
+        .filter((filePath) => !deletedFileSet.has(filePath))
+        .filter((filePath) => !existsSync(join(repo.root_path, filePath)))
+        .sort();
+
+  if (missingFromWorktree.length > 0 && missingFromWorktree.length === parsedDiff.files.length) {
+    // Every named file is gone: there is nothing to examine and no verdict to give. A distinct cause
+    // code from `empty_diff_scope`, because the remediations differ - an empty diff means the range is
+    // wrong, this means the diff and the tree disagree about what exists.
+    throw new DriftError(
+      `Refusing to report a verdict: every file named by the diff is missing from the working tree (${missingFromWorktree.join(", ")}), so nothing could be examined.`,
+      {
+        code: "stale_diff_scope",
+        userAction:
+          "Regenerate the diff against this checkout, or check out the commit the diff was made against - the diff and the working tree disagree about which files exist.",
+        recoveryCommands: [
+          "git status --short",
+          "git diff --unified=0 <range> > <path>",
+          "drift check --scope full --repo <repo_id>"
+        ],
+        safeToRetry: true,
+        exitCode: CHECK_EXIT_REFUSED
+      }
+    );
+  }
+
+  if (missingFromWorktree.length > 0) {
+    // Some named files are gone. Proceed on the ones that are present - enforcement must not weaken
+    // because coverage degraded, so findings on examined files stay findings - but drop the absent ones
+    // from the examined set so the counts describe what was actually looked at.
+    const missing = new Set(missingFromWorktree);
+    parsedDiff = {
+      ...parsedDiff,
+      files: parsedDiff.files.filter((file) => !missing.has(file.path))
+    };
+  }
+
   const diffHash = rawDiff ? hashStable(rawDiff) : "full_scope";
   const baseline = storage.listBaselineViolations(repoId);
   const existingFindings = new Map(
@@ -370,7 +427,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
         expired_findings_count: expiredFindingsCount,
         skipped_deleted_files: parsedDiff.deletedFiles,
         engine_source: checkData.engineSource,
-        affected_scope: affectedScopeSummary(parsedDiff, scope),
+        affected_scope: affectedScopeSummary(parsedDiff, scope, missingFromWorktree),
         outcome: checkOutcomeSummary([], {
           waivedFindingsCount: 0,
           expiredFindingsCount,
@@ -870,8 +927,13 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       // (2) has to keep winning and cannot carry a second meaning. Documented in
       // docs/reference/enforcement.md.
       partial_coverage: {
-        complete: coverageGapReasons.length === 0 && !enforcementDegraded,
-        reasons: coverageGapReasons
+        // BB-9: a file the diff named and the tree does not have is a coverage gap by definition.
+        // Claiming `complete: true` over it is the silent-green this item exists to kill.
+        complete: coverageGapReasons.length === 0 && missingFromWorktree.length === 0 && !enforcementDegraded,
+        reasons: [
+          ...coverageGapReasons,
+          ...missingFromWorktree.map((filePath) => `changed_file_missing_from_worktree:${filePath}`)
+        ]
       },
       // EW-3: the coverage number travels with the verdict. A verdict read without it invites
       // exactly the mistake open beta will produce most - a clean check on a repo shape Drift
@@ -881,7 +943,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       expired_findings_count: expiredFindingsCount,
       skipped_deleted_files: parsedDiff.deletedFiles,
       engine_source: checkData.engineSource,
-      affected_scope: affectedScopeSummary(parsedDiff, scope),
+      affected_scope: affectedScopeSummary(parsedDiff, scope, missingFromWorktree),
       outcome,
       // BB-4: present only when something is actually dead, so its presence is the signal. An
       // always-present empty array would be one more field to skip.
@@ -2191,7 +2253,8 @@ function graphPathForFinding(
 
 function affectedScopeSummary(
   parsedDiff: ReturnType<typeof parseUnifiedDiff>,
-  scope: string
+  scope: string,
+  missingFiles: string[] = []
 ): {
   mode: string;
   changed_file_count: number;
@@ -2199,7 +2262,10 @@ function affectedScopeSummary(
   deleted_file_count: number;
   deleted_files: string[];
   renamed_file_count: number;
+  missing_file_count: number;
+  missing_files: string[];
 } {
+  const missingCount = missingFiles.length;
   return {
     mode: scope,
     changed_file_count: parsedDiff.files.length,
@@ -2207,7 +2273,10 @@ function affectedScopeSummary(
     deleted_file_count: parsedDiff.deletedFiles.length,
     deleted_files: parsedDiff.deletedFiles,
     // BB-1: so `Checked 0 files` can name a rename as its reason, the same way it names a deletion.
-    renamed_file_count: (parsedDiff.renamedFiles ?? []).length
+    renamed_file_count: (parsedDiff.renamedFiles ?? []).length,
+    // BB-9: files the diff named that the working tree does not have.
+    missing_file_count: missingCount,
+    missing_files: missingFiles
   };
 }
 

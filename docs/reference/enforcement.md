@@ -42,6 +42,27 @@ file skipped)`. Every check prints `Checked N files`, whatever N is.
 `--scope full` is exempt: a repo with no indexable files is a different statement, and `drift doctor`
 is the surface that reports it.
 
+### `stale_diff_scope`
+
+The diff and the working tree disagree about which files exist. When **every** file the diff names is
+missing, Drift refuses rather than reporting a pass:
+
+```
+$ drift check --diff-file stale.patch --repo <id>
+exit 3  error.code = stale_diff_scope
+```
+
+Distinct from `empty_diff_scope` on purpose: there the range is wrong, here the checkout is. Reached by
+CI applying a patch to the wrong checkout, a hook racing a branch switch, or a stale patch file.
+
+When only **some** named files are missing, the check proceeds on the ones that are present and says
+what it could not see — `partial_coverage.complete: false` with
+`changed_file_missing_from_worktree:<path>` per file, and `Checked N files (M files missing from working
+tree)`. Enforcement does not weaken: a violation on a file Drift *did* examine still blocks.
+
+Deleted and renamed-away paths are not "missing" — they have their own reporting, and conflating them
+would turn a legitimate deletion into a refusal.
+
 ### `contract_staleness`
 
 An accepted convention names a module. If that module is renamed and every import updated — an
