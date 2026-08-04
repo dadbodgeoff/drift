@@ -297,6 +297,8 @@ function readinessCapabilitySummary(payload: {
     parser_gap_kinds?: unknown;
     fallback_used?: unknown;
     enforcement_degraded?: unknown;
+    engine_resolution?: unknown;
+    engine_build_profile?: unknown;
   };
   security_capabilities?: unknown;
 }): {
@@ -315,7 +317,13 @@ function readinessCapabilitySummary(payload: {
           parser_gap_count: payload.capability_report.parser_gap_count,
           parser_gap_kinds: payload.capability_report.parser_gap_kinds,
           fallback_used: payload.capability_report.fallback_used,
-          enforcement_degraded: payload.capability_report.enforcement_degraded
+          enforcement_degraded: payload.capability_report.enforcement_degraded,
+          // BB-2: engine provenance is part of the parity surface. Left out, MCP could report a
+          // scan taken through a debug engine as indistinguishable from a release one - which is
+          // exactly the confusion the field exists to end, and exactly the gap the EW-6
+          // stored_fact_count parity failure taught us to close in the same commit.
+          engine_resolution: payload.capability_report.engine_resolution,
+          engine_build_profile: payload.capability_report.engine_build_profile
         }
       : null,
     security_capabilities: payload.security_capabilities
@@ -3795,7 +3803,7 @@ describe("read-only MCP handlers", () => {
         mcp_version: "0.1.0",
         core_version: "0.1.0",
         scanner_version: "0.1.0",
-supported_sqlite_schema_version: 30,
+supported_sqlite_schema_version: 31,
         storage_driver: "sqlite"
       },
       v1_scope: {

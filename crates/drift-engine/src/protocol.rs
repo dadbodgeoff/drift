@@ -7,8 +7,23 @@ pub const ENGINE_SCAN_RESULT_SCHEMA_VERSION: &str = "engine.scan.result.v1";
 pub const ENGINE_STREAM_EVENT_SCHEMA_VERSION: &str = "engine.stream.event.v1";
 pub const ENGINE_CHECK_RESULT_SCHEMA_VERSION: &str = "engine.check.result.v1";
 pub const ENGINE_CANDIDATES_RESULT_SCHEMA_VERSION: &str = "engine.candidates.result.v1";
+pub const ENGINE_VERSION_RESULT_SCHEMA_VERSION: &str = "engine.version.result.v1";
 
 pub const MAX_FILE_BYTES: u64 = 2_000_000;
+
+/// BB-2: the profile this binary was compiled with, reported in every handshake.
+///
+/// The engine is the only honest source for this. Callers used to infer it from the resolution
+/// path, which is wrong in both directions: a release binary can sit under `target/debug` and a
+/// `cargo run` fallback can be `--release`. `cfg!(debug_assertions)` is evaluated when *this*
+/// binary is compiled, so it describes the binary that is actually answering.
+pub fn engine_build_profile() -> &'static str {
+    if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
+    }
+}
 
 #[derive(Debug)]
 pub struct ScanRepoArgs {
@@ -31,6 +46,9 @@ pub struct ScanRepoOutput {
     pub repo_id: String,
     pub scan_id: String,
     pub engine_version: String,
+    /// BB-2: same field as the `scan_started` event carries, so the `--format json` path is not a
+    /// blind spot for provenance.
+    pub build_profile: &'static str,
     pub adapter_versions: BTreeMap<String, String>,
     pub file_snapshots: Vec<ScannedFile>,
     pub facts: Vec<EngineFact>,
@@ -596,6 +614,9 @@ pub enum ScanStreamEvent {
         repo_id: String,
         scan_id: String,
         engine_version: String,
+        /// BB-2: `"release"` or `"debug"`. A debug engine's timings are ~2.7x inflated, so every
+        /// consumer that records a measurement needs to be able to refuse one.
+        build_profile: &'static str,
     },
     #[serde(rename = "file_snapshot_batch")]
     FileSnapshotBatch {

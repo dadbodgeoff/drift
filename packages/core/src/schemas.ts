@@ -481,6 +481,13 @@ export const ScanCapabilityReportSchema = z.object({
   parser_gap_kinds: z.record(z.number().int().nonnegative()),
   fallback_used: z.boolean(),
   enforcement_degraded: z.boolean(),
+  // BB-2: engine provenance beyond "rust". Nullable, and null means unverified - a consumer that
+  // records a measurement must refuse rather than assume "release".
+  engine_resolution: z
+    .enum(["env_override", "packaged_optional_dependency", "workspace_cargo"])
+    .nullable()
+    .default(null),
+  engine_build_profile: z.enum(["release", "debug"]).nullable().default(null),
   created_at: z.string().datetime()
 });
 

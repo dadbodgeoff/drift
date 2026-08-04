@@ -29,6 +29,8 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { requireReleaseEngine } from "./engine-handshake.mjs";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
 const CLI = join(REPO_ROOT, "packages/cli/dist/main.js");
@@ -130,6 +132,11 @@ function evaluate(testCase) {
     rmSync(home, { recursive: true, force: true });
   }
 }
+
+// BB-2: this harness records `seconds` per case, so the same debug-engine refusal applies here as in
+// beta-bench. The ~50s prepare figure this script reports for dub is only meaningful about a release
+// engine.
+requireReleaseEngine(ENGINE);
 
 const results = CASES.filter((testCase) => !only || only.includes(testCase.repo)).map(evaluate);
 

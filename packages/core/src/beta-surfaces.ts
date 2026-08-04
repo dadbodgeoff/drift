@@ -32,6 +32,18 @@ export const BetaStartResponseSchema = z.object({
     database_path: z.string().min(1)
   }).passthrough(),
   accepted: z.unknown().optional(),
+  // BB-3: present whenever `accepted` is. Shaped rather than `unknown` because the whole point of
+  // the item is that these four facts cannot go missing again - a passthrough field that drops out
+  // silently would reproduce the bug at the schema layer.
+  acceptance: z.object({
+    convention_id: z.string().min(1),
+    convention_kind: z.string().min(1),
+    mode: z.enum(["off", "brief", "warn", "block"]),
+    severity: z.string().min(1),
+    baselined_count: z.number().int().nonnegative(),
+    blocks_new_violations: z.boolean(),
+    upgrade_command: z.string().min(1).nullable()
+  }).optional(),
   baselined_count: z.number().int().nonnegative(),
   machine_contract_versions: MachineVersionsShape,
   engine: z.unknown(),

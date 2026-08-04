@@ -1180,13 +1180,13 @@ export class SqliteDriftStorage {
           repo_id, scan_id, schema_version, engine_source, engine_version, scanner_version,
           adapter_versions_json, certified_capabilities_json, required_capabilities_json,
           missing_capabilities_json, completeness_json, parser_gap_count, parser_gap_kinds_json,
-          fallback_used, enforcement_degraded, created_at
+          fallback_used, enforcement_degraded, engine_resolution, engine_build_profile, created_at
         )
         VALUES (
           @repo_id, @scan_id, @schema_version, @engine_source, @engine_version, @scanner_version,
           @adapter_versions_json, @certified_capabilities_json, @required_capabilities_json,
           @missing_capabilities_json, @completeness_json, @parser_gap_count, @parser_gap_kinds_json,
-          @fallback_used, @enforcement_degraded, @created_at
+          @fallback_used, @enforcement_degraded, @engine_resolution, @engine_build_profile, @created_at
         )
         ON CONFLICT(repo_id, scan_id) DO UPDATE SET
           schema_version = excluded.schema_version,
@@ -1202,11 +1202,15 @@ export class SqliteDriftStorage {
           parser_gap_kinds_json = excluded.parser_gap_kinds_json,
           fallback_used = excluded.fallback_used,
           enforcement_degraded = excluded.enforcement_degraded,
+          engine_resolution = excluded.engine_resolution,
+          engine_build_profile = excluded.engine_build_profile,
           created_at = excluded.created_at
       `)
       .run({
         ...parsed,
         engine_version: parsed.engine_version ?? null,
+        engine_resolution: parsed.engine_resolution ?? null,
+        engine_build_profile: parsed.engine_build_profile ?? null,
         adapter_versions_json: stringifyJson(parsed.adapter_versions),
         certified_capabilities_json: stringifyJson(parsed.certified_capabilities),
         required_capabilities_json: stringifyJson(parsed.required_capabilities),
@@ -2781,7 +2785,9 @@ function scanCapabilityReportFromRow(row: unknown): ScanCapabilityReport {
     completeness: parseJsonArray(record.completeness_json),
     parser_gap_kinds: parseJsonObject(record.parser_gap_kinds_json),
     fallback_used: record.fallback_used === 1,
-    enforcement_degraded: record.enforcement_degraded === 1
+    enforcement_degraded: record.enforcement_degraded === 1,
+    engine_resolution: record.engine_resolution ?? null,
+    engine_build_profile: record.engine_build_profile ?? null
   });
 }
 
