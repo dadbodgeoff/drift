@@ -12,7 +12,7 @@ Seven items from `TDD-BETA-BLOCKERS.md`. Six implemented, one falsified. Per-ite
 |---|---|---|
 | BB-2 | DONE | Engine reports its own `build_profile`; resolution + profile recorded per scan (migration 031) and on MCP's capability report; one deduped stderr warning; benches refuse to record through a debug or unverifiable engine |
 | BB-3 | DONE | `--accept-defaults` names the mode, the baselined count, the consequence, and the upgrade command; `start --json` carries a shaped `acceptance` block |
-| BB-1 | DONE | Empty diff scope refuses with exit 3 / `empty_diff_scope`; deletion-only diffs still pass; every check prints `Checked N files` |
+| BB-1 | DONE | Empty diff scope refuses with exit 3 / `empty_diff_scope`; deletion-only **and pure-rename** diffs still pass; every check prints `Checked N files` |
 | BB-7 | **PREMISE FALSE** | The index already existed since migration 002 and is used. No index added; guard test pins the three that exist |
 | BB-5 | DONE | Conforming exemplars (migration 032) + migration sentence + rationale split, with the zero-open-findings invariant asserted on all 7 eval repos |
 | BB-6 | DONE | `guidance` view ≤32 KB; dub packet 901,730 → 376,889 bytes; parity with MCP proved by moving shared logic into `@drift/core` |
@@ -71,6 +71,20 @@ table costs write throughput on every scan and disk in a database already flagge
 scan and all five callers filter in memory. An order-matching index removes the measured TEMP B-TREE
 for ~14% (267 → 230 ms) but adds that fourth index; the honest fix is a per-file/per-kind query
 surface. Logged for the P-1 perf sprint, not beta.
+
+## Caught by a gate, not by review: BB-1 refused pure renames
+
+Worth recording because it is the sprint's best argument for running the benches rather than trusting
+the unit tests.
+
+BB-1 shipped with the deletion-only negative control the TDD named — and a `git mv` with unchanged
+content is the *second* case, which the TDD did not name. Git emits only `similarity index 100%` /
+`rename from` / `rename to` for it: no hunks, so it parses identically to an empty diff. BB-1 refused
+it, and `eval:bench` caught it as taxonomy's ordinary-edit refusal rate going 0/8 → 1/8.
+
+That metric matters more than its size suggests: refusal rate on edits that are *not* violations is
+the single largest determinant of a stranger's first session. Fixed in `d735ea20`; renames are now
+tracked and reported (`Checked 0 files (1 renamed file unchanged)`) rather than refused or hidden.
 
 ## Found while closing: the publish path shipped a debug engine
 
