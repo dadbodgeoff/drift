@@ -19,6 +19,26 @@ another. This is the surface CI and agents branch on, so it is specified rather 
 unavailable and the TypeScript fallback would be used, the stored scan is stale, no contract
 exists, or there is not enough disk for local state. A refusal is not a pass.
 
+### `empty_diff_scope`
+
+A refusal with its own cause code, because it is the one a CI pipeline reaches by accident. When the
+diff spec resolves to **no examinable files at all**, Drift refuses rather than reporting a pass:
+
+```
+$ drift check --diff HEAD --repo <id>     # on a clean tree
+exit 3  error.code = empty_diff_scope
+```
+
+Nothing was examined, so there is no verdict — and "nothing violated" and "nothing examined" must
+not share an exit code, or a hook wired with a wrong range is green forever.
+
+A diff containing **only deletions** is *not* this case. Deleting code is a legitimate change whose
+check scope is legitimately empty, so it passes with `0` and says so: `Checked 0 files (1 deleted
+file skipped)`. Every check prints `Checked N files`, whatever N is.
+
+`--scope full` is exempt: a repo with no indexable files is a different statement, and `drift doctor`
+is the surface that reports it.
+
 `2` outranks `3`. A check that established one violation and could not judge another returns `2`:
 a refusal must never mask a violation Drift did manage to prove.
 

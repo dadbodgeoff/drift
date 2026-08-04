@@ -26,6 +26,9 @@ export type DriftFailureCode =
   | "corrupt_database"
   | "permission_denied"
   | "shallow_clone"
+  // BB-1: the diff scope resolved to zero examinable files, so no verdict is available. Distinct
+  // from a clean pass, which is a verdict.
+  | "empty_diff_scope"
   | "cli_error";
 
 export interface DriftErrorOptions {
