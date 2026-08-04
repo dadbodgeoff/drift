@@ -29,6 +29,10 @@ export type DriftFailureCode =
   // BB-1: the diff scope resolved to zero examinable files, so no verdict is available. Distinct
   // from a clean pass, which is a verdict.
   | "empty_diff_scope"
+  // BB-9: the diff named files the working tree does not have, and every one of them was missing, so
+  // nothing could be examined. Distinct from `empty_diff_scope`: there the range is wrong, here the
+  // diff and the checkout disagree about what exists, and the remediations differ accordingly.
+  | "stale_diff_scope"
   | "cli_error";
 
 export interface DriftErrorOptions {

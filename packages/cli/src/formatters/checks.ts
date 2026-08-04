@@ -17,6 +17,7 @@ export function formatCheckText(payload: {
       changed_line_count: number;
       deleted_file_count: number;
       renamed_file_count?: number;
+      missing_file_count?: number;
     };
     outcome?: {
       blocking_reasons: Array<{ reason: string; count: number }>;
@@ -92,7 +93,12 @@ export function formatCheckText(payload: {
  */
 function checkedFilesLine(summary: {
   skipped_deleted_files: string[];
-  affected_scope?: { changed_file_count: number; deleted_file_count: number; renamed_file_count?: number };
+  affected_scope?: {
+    changed_file_count: number;
+    deleted_file_count: number;
+    renamed_file_count?: number;
+    missing_file_count?: number;
+  };
 }): string {
   if (!summary.affected_scope) {
     return "";
@@ -100,6 +106,7 @@ function checkedFilesLine(summary: {
   const checked = summary.affected_scope.changed_file_count;
   const deleted = summary.affected_scope.deleted_file_count;
   const renamed = summary.affected_scope.renamed_file_count ?? 0;
+  const missing = summary.affected_scope.missing_file_count ?? 0;
   const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
   // BB-1: name the reason a legitimate check examined nothing - a deletion or a pure rename. Both are
   // ordinary changes whose content scope is empty, and a bare `Checked 0 files` reads as a broken
@@ -108,7 +115,15 @@ function checkedFilesLine(summary: {
     ...(deleted > 0 ? [`${plural(deleted, "deleted file")} skipped`] : []),
     ...(renamed > 0 ? [`${plural(renamed, "renamed file")} unchanged`] : [])
   ];
-  const suffix = checked === 0 && reasons.length > 0 ? ` (${reasons.join(", ")})` : "";
+  // BB-9: a missing file is reported whether or not anything else was checked, because "I examined 3
+  // of the 4 files you named" is a different claim from "I examined 3 files", and only the first is
+  // true. The other reasons only matter when nothing was examined at all.
+  const missingClause = missing > 0 ? `${plural(missing, "file")} missing from working tree` : "";
+  const parts = [
+    ...(checked === 0 ? reasons : []),
+    ...(missingClause ? [missingClause] : [])
+  ];
+  const suffix = parts.length > 0 ? ` (${parts.join(", ")})` : "";
   return `Checked ${plural(checked, "file")}${suffix}`;
 }
 
