@@ -170,6 +170,45 @@ describe("BB-1 empty diff scope", () => {
     expect(result.stdout).toContain("Checked 0 files (1 deleted file skipped)");
   });
 
+  it("does NOT refuse a pure rename - the shape a refactor produces", async () => {
+    // The second negative control, and one the TDD did not name. `git mv` with unchanged content emits
+    // only `similarity index 100%` / `rename from` / `rename to` and no hunks at all, so it parses to
+    // no files and no deletions and looks exactly like an empty diff.
+    //
+    // Found by eval:bench rather than by reading: taxonomy's ordinary-edit refusal rate went 0/8 to
+    // 1/8 on E8-rename-a-new-route-directory. The refusal rate is the bench's headline metric because
+    // it is the single largest determinant of a stranger's first session, so a false refusal here is
+    // expensive in exactly the way BB-1 is meant to be cheap.
+    const { repoId, databasePath, repoRoot } = await onboardGitRepo();
+    await mkdir(join(repoRoot, "apps/web/app/api/moved"), { recursive: true });
+    git(repoRoot, "mv", "apps/web/app/api/status/route.ts", "apps/web/app/api/moved/route.ts");
+
+    const result = await runCli([
+      "--db", databasePath,
+      "check",
+      "--repo", repoId,
+      "--diff", "HEAD",
+      "--json"
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).check.status).toBe("pass");
+  });
+
+  it("says a rename is why it examined nothing", async () => {
+    const { repoId, databasePath, repoRoot } = await onboardGitRepo();
+    await mkdir(join(repoRoot, "apps/web/app/api/moved"), { recursive: true });
+    git(repoRoot, "mv", "apps/web/app/api/status/route.ts", "apps/web/app/api/moved/route.ts");
+
+    const result = await runCli([
+      "--db", databasePath, "check", "--repo", repoId, "--diff", "HEAD"
+    ]);
+
+    // Still visible that nothing was examined, and why - which is BB-1's whole point. Silence here
+    // would be the original bug wearing a different hat.
+    expect(result.stdout).toContain("Checked 0 files (1 renamed file unchanged)");
+  });
+
   it("refuses an entirely empty diff with exit 3 and a named cause", async () => {
     const { repoId, databasePath, dir } = await onboardRepo();
     const path = await diffFile(dir, "empty.diff", EMPTY_DIFF);

@@ -9,6 +9,18 @@ import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 export interface ParsedDiff {
   files: Array<{ path: string; changedLines: Set<number>; isAdded: boolean }>;
   deletedFiles: string[];
+  /**
+   * BB-1: files this diff moved, at their new paths.
+   *
+   * A pure `git mv` with unchanged content produces *only* rename metadata - `similarity index 100%`,
+   * `rename from`, `rename to` - and no `---`/`+++` headers or hunks at all. Without tracking it, such
+   * a diff parses to no files and no deletions, and the empty-scope refusal fires on an ordinary
+   * refactor. The bench caught exactly that: taxonomy's ordinary-edit refusal rate went 0/8 to 1/8 on
+   * `E8-rename-a-new-route-directory`.
+   *
+   * Optional so the synthetic diffs built elsewhere (full-repo scope, exemplar scope) need not care.
+   */
+  renamedFiles?: string[];
 }
 
 export function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
@@ -88,11 +100,18 @@ function isUnresolvableRevision(gitStderr: string): boolean {
 export function parseUnifiedDiff(input: string): ParsedDiff {
   const files: ParsedDiff["files"] = [];
   const deletedFiles = new Set<string>();
+  const renamedFiles = new Set<string>();
   let current: ParsedDiff["files"][number] | undefined;
   let oldPath: string | undefined;
   let newLine: number | undefined;
 
   for (const line of input.split(/\r?\n/)) {
+    // BB-1: rename metadata, which a 100%-similarity move emits *instead of* any hunk. Recorded so
+    // "this diff moved a file" is distinguishable from "this diff describes nothing".
+    if (line.startsWith("rename to ")) {
+      renamedFiles.add(normalizeDiffPath(line.slice("rename to ".length)) ?? line.slice("rename to ".length));
+      continue;
+    }
     if (line.startsWith("--- ")) {
       oldPath = normalizeDiffPath(line.slice(4));
       continue;
@@ -136,7 +155,11 @@ export function parseUnifiedDiff(input: string): ParsedDiff {
   if (current) {
     files.push(current);
   }
-  return { files, deletedFiles: [...deletedFiles].sort() };
+  return {
+    files,
+    deletedFiles: [...deletedFiles].sort(),
+    renamedFiles: [...renamedFiles].sort()
+  };
 }
 
 export function fullRepoDiff(repoRoot: string): ParsedDiff {
