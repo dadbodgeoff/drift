@@ -1,4 +1,5 @@
 import type { EvidenceRef,Finding,FindingDiffStatus,FindingStatus,Severity } from "@drift/core";
+import { isClosedFindingStatus as coreIsClosedFindingStatus } from "@drift/core";
 import { matchesGlob } from "./repo-paths.js";
 
 export function findingMatchesPath(finding: Finding, path: string): boolean {
@@ -13,7 +14,9 @@ export function isOpenPreflightFinding(finding: Finding): boolean {
 }
 
 export function isClosedFindingStatus(status: FindingStatus): boolean {
-  return ["fixed", "false_positive", "suppressed", "accepted_drift", "expired"].includes(status);
+  // BB-6: one list, in @drift/core, shared with the MCP packet. Two copies would let the surfaces
+  // disagree about which findings are violations, and so about which files may be exemplars.
+  return coreIsClosedFindingStatus(status);
 }
 
 export function preservedGovernanceStatus(finding: Finding | undefined): FindingStatus | undefined {

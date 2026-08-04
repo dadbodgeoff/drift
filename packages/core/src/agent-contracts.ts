@@ -141,6 +141,22 @@ export function createAgentPreflightPacket(input: CreateAgentPreflightPacketInpu
     }))
     .sort((a, b) => a.command.localeCompare(b.command));
 
+  // BB-6: the packet's single largest duplication, removed.
+  //
+  // Measured on dub: `selected_conventions` serialized to 187,369 bytes, of which the conventions'
+  // `evidence_refs` were 186,252 - all 397 findings, byte-for-byte the same 397 that the envelope
+  // already carries under `findings`. An agent pays tokens for both copies and the agent-usage trial
+  // shows it reads neither. The ids are kept, so nothing becomes unreachable: they resolve against
+  // the envelope's own findings list.
+  const conventionsWithoutEvidence = selectedConventions.map((convention) => {
+    const { evidence_refs: evidenceRefs, counterexample_refs: counterexampleRefs, ...rest } = convention;
+    return {
+      ...rest,
+      evidence_ref_ids: evidenceRefs.map((ref) => ref.id).sort(),
+      counterexample_ref_ids: (counterexampleRefs ?? []).map((ref) => ref.id).sort()
+    };
+  });
+
   const activeExceptions = selectedConventions.flatMap((convention) => convention.exceptions);
   const activeWaivers = waiversForSelection(input.repoContract.waivers, input.explicit_paths, input.changed_paths, input.file_roles);
 
@@ -151,7 +167,10 @@ export function createAgentPreflightPacket(input: CreateAgentPreflightPacketInpu
     stale: input.stale,
     task: input.task,
     selected_contracts: selectedContracts,
-    selected_conventions: selectedConventions,
+    // BB-6 (EW-3 shape): an empty list says why it is empty, so a bare `[]` can never return and be
+    // read as "this ran and found nothing" when it means "nothing was accepted".
+    selected_contracts_reason: selectedContracts.length === 0 ? "no_contracts_accepted" : null,
+    selected_conventions: conventionsWithoutEvidence,
     selected_helpers: selectedHelpers,
     placement_guidance: placementGuidance,
     import_boundaries: importBoundaries,

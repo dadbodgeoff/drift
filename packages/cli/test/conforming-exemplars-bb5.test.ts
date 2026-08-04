@@ -5,7 +5,7 @@ import {
   conformingExemplars,
   conventionRationale,
   migrationSentence
-} from "../src/domain/conforming-exemplars.js";
+} from "@drift/core";
 
 /**
  * BB-5. The empirically highest-leverage item in the beta set, and the reason is uncomfortable:

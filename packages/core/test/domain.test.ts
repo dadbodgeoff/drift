@@ -593,7 +593,9 @@ describe("core domain", () => {
       role_layer_proof: [],
       change_impact: changeImpact,
       test_intelligence: [],
-      parser_gaps: [],
+      // BB-6: the gap summary replaced 639 full records (358,538 bytes on dub, ~40% of the packet)
+      // that the only consumer they exist for dismissed as noise.
+      parser_gaps: { count: 0, by_code: [], full_list_command: "drift doctor --repo repo_abc --json" },
       required_checks: [],
       forbidden_actions: ["create_waiver", "modify_repo_contract"],
       context_policy: contextPolicy,

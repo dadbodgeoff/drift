@@ -399,6 +399,27 @@ function evaluateRepoAt(reposDir, cfg) {
     result.exemplars_emitted = emittedExemplars.length;
     result.exemplar_integrity = emittedExemplars.every((path) => !violatingPaths.has(path));
     result.exemplar_violators = emittedExemplars.filter((path) => violatingPaths.has(path)).sort();
+    // BB-6: the guidance view's byte budget, asserted on every suite repo rather than in a fixture.
+    // cal.com is the worst case (~2,500 parser gaps) and is exactly the repo a synthetic test would
+    // fail to represent. EW-8's lesson: only byte assertions force real fixes.
+    const prepared = drift(root, dbEnv, "prepare", "add an endpoint that lists items", "--repo", repoId, "--json");
+    if (prepared.ok) {
+      try {
+        const packet = JSON.parse(prepared.stdout);
+        result.guidance_bytes = Buffer.byteLength(JSON.stringify(packet.guidance ?? null), "utf8");
+        result.guidance_within_budget = packet.guidance ? result.guidance_bytes <= 32768 : false;
+        // A threshold, not a recorded byte count: the full envelope's size moves by tens of bytes
+        // between runs (ids and timestamps), so baselining the exact number would make the suite flap
+        // on noise. 500 KB is the BB-6 requirement; the exact figure is not the thing under test.
+        result.packet_within_envelope_budget =
+          Buffer.byteLength(prepared.stdout, "utf8") < 500_000;
+      } catch {
+        result.guidance_within_budget = false;
+      }
+    } else {
+      result.guidance_within_budget = false;
+      result.guidance_error = (prepared.stderr || "prepare failed").trim().split("\n").slice(-1)[0];
+    }
     result.injection_diff_status = onBad[0]?.diff_status ?? null;
     result.injection_enforcement = onBad[0]?.enforcement_result ?? null;
     result.injection_finding_status = onBad[0]?.status ?? null;
@@ -538,6 +559,7 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
       // BB-5: `n/N` - clean exemplars emitted out of exemplars emitted. A visible 0 total is the
       // signal that the feature stopped running, which a boolean pass would hide.
       ` exemplars=${(r.exemplars_emitted ?? 0) - (r.exemplar_violators?.length ?? 0)}/${r.exemplars_emitted ?? 0}` +
+      ` guidance=${r.guidance_bytes === undefined ? "?" : `${Math.round(r.guidance_bytes / 1024)}k`}` +
       (r.discovery_named_data_layer !== undefined
         ? ` f4gap=${r.inference_alone_found_data_layer === false && r.discovery_named_data_layer ? "y" : "n"}`
         : "") +

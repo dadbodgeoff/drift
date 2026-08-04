@@ -738,6 +738,16 @@ describe("read-only MCP handlers", () => {
     expect(mcpScanStatus.parser_gap_quality).toEqual(JSON.parse(cliScanStatus.stdout).parser_gap_quality);
     expect(mcpRepoMap.parser_gap_quality).toEqual(JSON.parse(cliRepoMap.stdout).parser_gap_quality);
     expect(mcpPreflight.parser_gap_quality).toEqual(JSON.parse(cliPreflight.stdout).parser_gap_quality);
+
+    // BB-6: the guidance view is the packet's headline surface, so it is part of the parity contract.
+    // Both surfaces build it from the same core builder over the same stored state; if that ever stops
+    // being true this is the assertion that says so, rather than an agent noticing that the CLI and
+    // the MCP server recommend different files.
+    const cliGuidance = JSON.parse(cliPreflight.stdout).guidance;
+    expect(cliGuidance).toBeTruthy();
+    expect(mcpPreflight.guidance).toEqual(cliGuidance);
+    // And the conventions block, which carries the BB-5 exemplars the guidance view embeds.
+    expect(mcpPreflight.conventions).toEqual(JSON.parse(cliPreflight.stdout).conventions);
   });
 
   it("reports parser gap summaries in scan status", async () => {
