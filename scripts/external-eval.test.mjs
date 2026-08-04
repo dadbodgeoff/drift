@@ -124,7 +124,12 @@ describe("repoVerdict", () => {
     clean_control_false_positive: false,
     fp_type_only_import: false,
     fp_lookalike_module: false,
-    catches_genuine_subpath: true
+    catches_genuine_subpath: true,
+    // BB-5/BB-6: measurements of new behaviour, asserted strictly `=== true` for the same reason
+    // enforcement_matches_mode is - an absent measurement must not read as agreement.
+    exemplar_integrity: true,
+    guidance_within_budget: true,
+    packet_within_envelope_budget: true
   });
 
   it("passes a fully healthy result", () => {
@@ -144,6 +149,25 @@ describe("repoVerdict", () => {
     const result = goodResult();
     delete result.enforcement_matches_mode;
     expect(repoVerdict(result, goodCfg()).status).toBe("FAIL");
+  });
+
+  it("fails when the exemplar-integrity measurement is absent rather than true", () => {
+    // BB-5: an exemplar that violates the convention it exemplifies is what produced the observed
+    // agent defection, so an unobserved measurement must fail rather than pass quietly.
+    const result = goodResult();
+    delete result.exemplar_integrity;
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("exemplar_integrity");
+  });
+
+  it("fails when the guidance budget was not measured", () => {
+    // BB-6: same reasoning. A packet whose headline view was never sized is not a packet known to be
+    // within budget.
+    const result = { ...goodResult(), guidance_within_budget: null };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("guidance_within_budget");
   });
 
   it("fails a check that found the violation but exited 0 when 2 was expected", () => {

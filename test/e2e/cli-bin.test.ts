@@ -21,7 +21,14 @@ async function runBuiltDrift(args: string[]) {
   return execFileAsync(process.execPath, [
     "packages/cli/dist/main.js",
     ...args
-  ]);
+  ], {
+    // BB-2: point at the release engine explicitly. Without it this resolved through the
+    // `cargo run` workspace fallback - a debug build - which is the confound BB-2 exists to expose,
+    // and which BB-2's own standing rule forbids in any harness. It surfaced here as the new stderr
+    // warning breaking `expect(result.stderr).toBe("")`: the assertion was right and the harness was
+    // measuring the wrong engine all along.
+    env: { ...process.env, DRIFT_ENGINE_BIN: resolve("target/release/drift-engine") }
+  });
 }
 
 afterEach(async () => {
@@ -52,7 +59,7 @@ describe("built drift CLI binary", () => {
     expect(payload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 30,
+supported_sqlite_schema_version: 32,
       storage_driver: "sqlite"
     });
     expect(payload.v1_scope).toMatchObject({
