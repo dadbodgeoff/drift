@@ -81,6 +81,9 @@ export function repoVerdict(result, cfg) {
   // BB-5: strictly `=== true`, following the enforcement_matches_mode lesson - `!== false` would
   // let an absent measurement read as agreement, which is how a silently-disabled property passes.
   assert("exemplar_integrity", result.exemplar_integrity === true);
+  // BB-6: strictly `=== true`, same reason - an absent measurement must not read as agreement.
+  assert("guidance_within_budget", result.guidance_within_budget === true);
+  assert("packet_within_envelope_budget", result.packet_within_envelope_budget === true);
   assert("engine_source_rust", result.engine_source === "rust");
   assert("no_fallback_used", result.fallback_used === false);
 

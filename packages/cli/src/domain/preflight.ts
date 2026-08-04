@@ -3,7 +3,7 @@ import { rankRelevantFiles } from "@drift/query";
 import { existsSync } from "node:fs";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { baselineSummary } from "./baselines.js";
-import { conformingExemplars,conventionRationale,migrationSentence } from "./conforming-exemplars.js";
+import { conformingExemplars,conventionRationale,migrationSentence } from "@drift/core";
 import { uniqueSorted,waiverStatus } from "./contract-materialization.js";
 import { isOpenPreflightFinding } from "./findings.js";
 import { isApiRoutePath,matchesGlob } from "./repo-paths.js";

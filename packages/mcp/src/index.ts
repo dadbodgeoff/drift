@@ -20,10 +20,17 @@ import type {
   ScanManifest,
   Severity
 } from "@drift/core";
+import type { ExemplarContext } from "@drift/core";
 import {
   AgentPreflightPacketV2Schema,
   FileRoleSchema,
   authorizeContextExport,
+  buildGuidanceView,
+  conformingExemplars,
+  conventionRationale,
+  exemplarContext,
+  isOpenFinding,
+  migrationSentence,
   canonicalScanStateJson,
   classifyFailure,
   createAgentEnvelopeV2,
@@ -299,6 +306,35 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         readiness
       });
       const contextPolicy = createContextPolicyMatrix(contract, policy);
+      // BB-5/BB-6: the same derivation the CLI uses, from the same stored state, so the two surfaces
+      // cannot disagree about which files conform.
+      const preflightExemplars = exemplarContext({
+        scanFiles: scanStatus.latest_scan
+          ? storage
+              .listFileSnapshots(requestedRepoId, scanStatus.latest_scan.id)
+              .map((snapshot) => snapshot.file_path)
+          : [],
+        roleByFile: new Map(
+          (scanStatus.latest_scan
+            ? storage.listFacts(scanStatus.latest_scan.id, { kind: "file_role_detected" })
+            : []
+          ).map((fact) => [fact.file_path, fact.name])
+        ),
+        openFindings: storage.listFindings(requestedRepoId).filter(isOpenFinding),
+        activeBaseline: storage
+          .listBaselineViolations(requestedRepoId)
+          .filter((entry) => entry.status === "active")
+      });
+      const preflightConventions = activeConventions.map((convention) =>
+        preflightConvention(convention, preflightExemplars)
+      );
+      const guidance = buildGuidanceView({
+        repoId: requestedRepoId,
+        conventions: preflightConventions,
+        relevantFiles,
+        requiredChecks,
+        parserGaps: allParserGaps
+      });
       const taskPreflightPacket = AgentPreflightPacketV2Schema.parse({
         schema_version: "drift.agent_preflight.v2",
         repo_id: requestedRepoId,
@@ -309,12 +345,18 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           route_flow_count: graphContext.route_flows.length,
           parser_gap_count: allParserGaps.length
         },
-        accepted_conventions: activeConventions.map(preflightConvention),
+        accepted_conventions: preflightConventions,
         relevant_files: relevantFiles,
         role_layer_proof: [],
         change_impact: changeImpact,
         test_intelligence: testSelection.test_intelligence,
-        parser_gaps: parserGaps,
+        // BB-6: the gap summary, identical to the CLI's - both read it off the shared guidance view
+        // rather than each computing one.
+        parser_gaps: {
+          count: allParserGaps.length,
+          by_code: guidance.parser_gaps.by_code,
+          full_list_command: guidance.parser_gaps.full_list_command
+        },
         required_checks: requiredChecks,
         forbidden_actions: taskModel.forbidden_actions,
         context_policy: contextPolicy,
@@ -325,6 +367,8 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       });
       return {
         response_schema: "drift.task.preflight.v1",
+        // BB-6: same field, same position, same builder as the CLI's prepare payload.
+        guidance,
         repo_id: requestedRepoId,
         task: requestedTask,
         target_path: requestedPath ?? null,
@@ -362,7 +406,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
           contract_ready: contractReady,
           candidate_count: candidateCount
         },
-        conventions: activeConventions.map(preflightConvention),
+        conventions: preflightConventions,
         audit_integrity: scanStatus.audit_integrity,
         scan_status: scanStatus,
         freshness_requirement: freshnessRequirement(Boolean(require_fresh), scanStatus),
@@ -371,6 +415,9 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         task_preflight_packet: taskPreflightPacket,
         change_impact: changeImpact,
         test_intelligence: testSelection.test_intelligence,
+        test_intelligence_reason: testSelection.test_intelligence.length === 0
+          ? "not_implemented_for_repo"
+          : null,
         agent_contract_packet: agentContractPacket,
         baseline,
         findings,
@@ -2552,7 +2599,13 @@ function prepareFinding(finding: Finding): {
   };
 }
 
-function preflightConvention(convention: AcceptedConvention): {
+function preflightConvention(
+  convention: AcceptedConvention,
+  // BB-5/BB-6: same optional context, same shared derivation, as the CLI's preparedConvention. The
+  // parity gate compares these entries across surfaces, so a field present on one and absent on the
+  // other is a failure rather than a cosmetic difference.
+  context?: ExemplarContext
+): {
   id: string;
   kind: AcceptedConvention["kind"];
   statement: string;
@@ -2563,7 +2616,16 @@ function preflightConvention(convention: AcceptedConvention): {
   matcher: AcceptedConvention["matcher"];
   exceptions: AcceptedConvention["exceptions"];
   agent_instruction: string;
+  conforming_examples: Array<{ file_path: string; role: string | null }>;
+  conforming_examples_reason: string | null;
+  rationale: { derivation: string; reason: string | null };
+  migration_sentence: string | null;
 } {
+  const exemplars = conformingExemplars({
+    scopeFiles: context?.scopeFilesFor(convention) ?? [],
+    violatingFiles: context?.violatingFilesFor(convention.id) ?? [],
+    roleByFile: context?.roleByFile
+  });
   return {
     id: convention.id,
     kind: convention.kind,
@@ -2574,7 +2636,14 @@ function preflightConvention(convention: AcceptedConvention): {
     scope: convention.scope,
     matcher: convention.matcher,
     exceptions: convention.exceptions,
-    agent_instruction: instructionForConvention(convention)
+    agent_instruction: instructionForConvention(convention),
+    conforming_examples: exemplars.conforming_examples,
+    conforming_examples_reason: exemplars.reason,
+    rationale: conventionRationale({
+      kind: convention.kind,
+      derivation: convention.rationale ?? convention.statement
+    }),
+    migration_sentence: migrationSentence(context?.baselineActiveCountFor(convention.id) ?? 0)
   };
 }
 

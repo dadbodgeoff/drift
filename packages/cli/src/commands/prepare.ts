@@ -20,6 +20,7 @@ import { requiredChecksFromGraphRisk } from "../domain/graph-risk-checks.js";
 import { preflightGovernance } from "../domain/governance.js";
 import { countDeniedFiles,preflightSummary,preparedConvention,relevantFilesForTask,requiredChecksForFiles,riskyAreasForFiles,waiversForFiles } from "../domain/preflight.js";
 import { conformingExemplarContext } from "../domain/conforming-exemplar-context.js";
+import { buildGuidanceView } from "@drift/core";
 import { repoContractOrDefault } from "../domain/repo-paths.js";
 import { assertFreshScanIfRequired,freshnessRequirement,scanStatusPayload } from "../domain/scan-status.js";
 import { formatPrepareText } from "../formatters/preflight.js";
@@ -169,6 +170,15 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     readiness
   });
   const contextPolicy = createContextPolicyMatrix(contract, policy);
+  // BB-6: the one view an agent can eat, built before the envelope so the envelope can reuse its
+  // parser-gap summary rather than computing a second, potentially disagreeing one.
+  const guidance = buildGuidanceView({
+    repoId,
+    conventions,
+    relevantFiles,
+    requiredChecks,
+    parserGaps: allParserGaps
+  });
   const taskPreflightPacket = AgentPreflightPacketV2Schema.parse({
     schema_version: "drift.agent_preflight.v2",
     repo_id: repoId,
@@ -184,7 +194,14 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     role_layer_proof: [],
     change_impact: changeImpact,
     test_intelligence: testSelection.test_intelligence,
-    parser_gaps: parserGaps,
+    // BB-6: the summary, not the records. Measured at 358,538 bytes / 639 records on dub - the
+    // single largest section of the packet, and one the agent-usage trial dismissed as noise. The
+    // records remain reachable through the command named in the summary.
+    parser_gaps: {
+      count: allParserGaps.length,
+      by_code: guidance.parser_gaps.by_code,
+      full_list_command: guidance.parser_gaps.full_list_command
+    },
     required_checks: requiredChecks,
     forbidden_actions: taskModel.forbidden_actions,
     context_policy: contextPolicy,
@@ -204,6 +221,9 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   };
   const payload = {
     response_schema: "drift.task.preflight.v1",
+    // BB-6: first field after the envelope identity, because ordering is the cheapest possible hint
+    // about what to read. The full envelope follows for audit.
+    guidance,
     repo_id: repoId,
     task,
     target_path: targetPath ?? null,
@@ -250,6 +270,11 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     task_preflight_packet: taskPreflightPacket,
     change_impact: changeImpact,
     test_intelligence: testSelection.test_intelligence,
+    // BB-6 (EW-3 shape): a bare `[]` cannot say whether test selection ran and found nothing or was
+    // never implemented for this repo, and the two call for opposite responses from a reader.
+    test_intelligence_reason: testSelection.test_intelligence.length === 0
+      ? "not_implemented_for_repo"
+      : null,
     agent_contract_packet: agentContractPacket,
     baseline,
     findings,

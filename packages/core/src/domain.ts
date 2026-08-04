@@ -1524,6 +1524,8 @@ export interface AgentPreflightPacket {
   stale: boolean;
   task: string;
   selected_contracts: unknown[];
+  /** BB-6: why `selected_contracts` is empty, when it is; `null` when it is not. */
+  selected_contracts_reason: string | null;
   selected_conventions: unknown[];
   selected_helpers: Array<{
     symbol: string;

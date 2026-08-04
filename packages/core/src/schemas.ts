@@ -1437,6 +1437,9 @@ export const AgentPreflightPacketSchema = z.object({
   stale: z.boolean(),
   task: z.string().min(1),
   selected_contracts: z.array(z.unknown()),
+  // BB-6: why `selected_contracts` is empty, when it is. Nullable rather than optional so the field
+  // is always present and a consumer never has to distinguish "absent" from "no reason".
+  selected_contracts_reason: z.string().min(1).nullable().default(null),
   selected_conventions: z.array(z.unknown()),
   selected_helpers: z.array(z.object({
     symbol: z.string().min(1),
@@ -1491,7 +1494,17 @@ export const AgentPreflightPacketV2Schema = z.object({
   role_layer_proof: z.array(z.unknown()),
   change_impact: ChangeImpactSchema,
   test_intelligence: z.array(TestIntelligenceSchema),
-  parser_gaps: z.array(ParserGapSchema),
+  // BB-6: the gap *summary*. The 639 full records this replaced were 358,538 bytes on dub, ~40% of
+  // the whole packet, and were dismissed as noise by the only consumer they exist for. `by_code` is
+  // capped at the top 3 kinds; the records stay reachable via `full_list_command`.
+  parser_gaps: z.object({
+    count: z.number().int().nonnegative(),
+    by_code: z.array(z.object({
+      code: z.string().min(1),
+      count: z.number().int().nonnegative()
+    })).max(3),
+    full_list_command: z.string().min(1)
+  }),
   required_checks: z.array(z.unknown()),
   forbidden_actions: z.array(z.string().min(1)),
   context_policy: ContextPolicyMatrixSchema,

@@ -1,10 +1,9 @@
-import { API_ROUTE_SCOPE_GLOBS,expandApiRouteScopeGlobs,type AcceptedConvention,type FindingDiffStatus } from "@drift/core";
+import { conventionScopeFiles,type AcceptedConvention,type FindingDiffStatus } from "@drift/core";
 import { execFileSync } from "node:child_process";
 import { existsSync,readFileSync,statSync } from "node:fs";
 import { ParsedArgs } from "../app/command-types.js";
 import { stringFlag } from "../args/flag-readers.js";
 import { isShallowRepository,SHALLOW_CLONE_REMEDIATION } from "../domain/repo-identity.js";
-import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 
 export interface ParsedDiff {
@@ -156,56 +155,16 @@ export function filesForConvention(
   convention: AcceptedConvention,
   scope: string
 ): string[] {
-  const diffFiles = diff.files.map((file) => file.path);
-  const isApiRouteConvention = appliesToApiRouteFiles(convention);
-  const pathGlobs = isApiRouteConvention
-    ? expandApiRouteScopeGlobs(convention.scope.path_globs)
-    : convention.scope.path_globs;
-
-  const scoped = diffFiles.filter((filePath) => {
-    if ((convention.scope.exclude_path_globs ?? []).some((glob) => matchesGlob(filePath, glob))) {
-      return false;
-    }
-
-    // For api-route conventions the engine's segment-based route detection is
-    // authoritative: it is what assigns `file_role_detected: api_route` and what
-    // candidate inference used to build this contract. Path globs are only ever an
-    // *additional* narrowing filter, never the thing that decides whether a route
-    // is a route. Previously the CLI re-derived route membership from globs alone,
-    // which silently disabled enforcement for repo-root `app/` and `pages/`
-    // layouts while inference still produced a correct contract.
-    if (isApiRouteConvention) {
-      if (!isApiRoutePath(filePath)) {
-        return false;
-      }
-      // Default scope globs are the auto-generated API_ROUTE_SCOPE_GLOBS set, which
-      // is fully redundant with the role check above. Only apply globs when the
-      // author narrowed the scope to something more specific.
-      if (isDefaultApiRouteScope(pathGlobs)) {
-        return true;
-      }
-    }
-
-    return pathGlobs.length === 0 || pathGlobs.some((glob) => matchesGlob(filePath, glob));
-  });
-
-  if (scope === "full") {
-    return scoped;
-  }
-  return scoped;
-}
-
-const DEFAULT_API_ROUTE_SCOPE = new Set(expandApiRouteScopeGlobs([...API_ROUTE_SCOPE_GLOBS]));
-
-function isDefaultApiRouteScope(pathGlobs: readonly string[]): boolean {
-  return pathGlobs.length > 0 && pathGlobs.every((glob) => DEFAULT_API_ROUTE_SCOPE.has(glob));
-}
-
-function appliesToApiRouteFiles(convention: AcceptedConvention): boolean {
-  return Boolean(
-    convention.scope.file_roles?.includes("api_route") ||
-    convention.matcher.applies_to_file_roles?.includes("api_route")
-  );
+  // BB-6: one scope implementation, in @drift/core, shared by the check path, the CLI packet and the
+  // MCP packet. A second one here is what F3 was: the CLI re-derived route membership from globs
+  // alone, which silently disabled enforcement for the default create-next-app layout while still
+  // reporting `can_block: true`. An exemplar drawn from outside the enforced scope would be the same
+  // bug wearing different clothes, and that is what made sharing this worth doing.
+  //
+  // `scope` is accepted and unused, as before: "changed-hunks" and "changed-files" differ in how
+  // findings are *attributed* (see diffStatusFor), not in which files are in the convention's scope.
+  void scope;
+  return conventionScopeFiles(diff.files.map((file) => file.path), convention);
 }
 
 export function diffStatusFor(
