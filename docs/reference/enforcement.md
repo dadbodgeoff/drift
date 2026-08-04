@@ -19,6 +19,9 @@ another. This is the surface CI and agents branch on, so it is specified rather 
 unavailable and the TypeScript fallback would be used, the stored scan is stale, no contract
 exists, or there is not enough disk for local state. A refusal is not a pass.
 
+`2` outranks `3`. A check that established one violation and could not judge another returns `2`:
+a refusal must never mask a violation Drift did manage to prove.
+
 ### `empty_diff_scope`
 
 A refusal with its own cause code, because it is the one a CI pipeline reaches by accident. When the
@@ -39,8 +42,27 @@ file skipped)`. Every check prints `Checked N files`, whatever N is.
 `--scope full` is exempt: a repo with no indexable files is a different statement, and `drift doctor`
 is the surface that reports it.
 
-`2` outranks `3`. A check that established one violation and could not judge another returns `2`:
-a refusal must never mask a violation Drift did manage to prove.
+### `contract_staleness`
+
+An accepted convention names a module. If that module is renamed and every import updated — an
+ordinary refactor — the convention matches nothing, forever, and the check keeps reporting `pass`.
+The gate is green because its trigger has been unplugged.
+
+Every check now measures, per forbidden specifier, whether the repo still contains anything it could
+match. When one is dead, `summary.contract_staleness` names it:
+
+```json
+{ "convention_id": "convention_abc", "specifier": "@/lib/prisma",
+  "resolved_modules": 0, "string_matches": 0, "remediation": "drift conventions list …" }
+```
+
+This does **not** change the exit code by itself: a removed data layer is a legitimate refactor, and
+refusing it would be a false positive on a repo that did nothing wrong. `--strict-contract` opts into
+exit 3 for CI users who would rather stop than run a gate that enforces nothing. A real block still
+outranks it — a refusal never masks a violation Drift did prove.
+
+A specifier that resolves but has no current violators is **not** stale. Absence of violations is
+success.
 
 ## Partial coverage
 

@@ -16,7 +16,8 @@ import { buildEntrypointFlowProof,buildReadiness, scoreHelperSimilarity } from "
 import type { SqliteDriftStorage } from "@drift/storage";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { conformingExemplars,migrationSentence } from "../domain/conforming-exemplars.js";
+import { conformingExemplars,migrationSentence } from "@drift/core";
+import { contractStaleness,contractStalenessWarnings } from "./contract-liveness.js";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { DriftError } from "../app/drift-error.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
@@ -668,6 +669,17 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
 
+  // BB-4: does each accepted convention's forbidden module still exist in this repo?
+  //
+  // Rename the data module and update its imports - an ordinary refactor - and the convention matches
+  // nothing forever, while the check keeps reporting `pass`. The gate reports green with its trigger
+  // unplugged, which is the enforcement-integrity class of bug the EW sprint spent itself on.
+  const staleness = contractStaleness({
+    checkData,
+    conventions: contract.conventions,
+    repoId
+  });
+
   // BB-5: attach conforming exemplars and the migration sentence here, after every check has
   // contributed its findings.
   //
@@ -862,6 +874,14 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       engine_source: checkData.engineSource,
       affected_scope: affectedScopeSummary(parsedDiff, scope),
       outcome,
+      // BB-4: present only when something is actually dead, so its presence is the signal. An
+      // always-present empty array would be one more field to skip.
+      ...(staleness.length > 0
+        ? {
+            contract_staleness: staleness,
+            contract_staleness_warnings: contractStalenessWarnings(staleness)
+          }
+        : {}),
       ...(enforcementDemotions.length > 0
         ? { enforcement_demotions: enforcementDemotions }
         : {})
@@ -882,7 +902,14 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     //   0 pass · 2 blocked · 3 refused (fail-closed) · 1 operational error
     // `2` is distinct from `1` so CI can tell "this diff violates the contract" from
     // "drift itself failed", and so a crash is never silently read as a clean run.
-    exitCode: checkExitCodeFor({ blockingCount, enforcementDegraded }),
+    // BB-4: a dead contract does not change the exit code by itself - a removed data layer is a
+    // legitimate refactor, and blocking it would be a false positive on a repo that did nothing
+    // wrong. `--strict-contract` opts into the fail-closed reading for CI users who would rather
+    // stop than run a gate whose trigger is unplugged. A real block still outranks it: the refusal
+    // must never mask a violation Drift did manage to prove.
+    exitCode: staleness.length > 0 && parsed.flags.has("strict-contract") && blockingCount === 0
+      ? CHECK_EXIT_REFUSED
+      : checkExitCodeFor({ blockingCount, enforcementDegraded }),
     payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
   };
 }
