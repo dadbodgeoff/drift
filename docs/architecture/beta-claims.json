@@ -78,6 +78,17 @@
     "read_only_mcp": {
       "required_contracts": [],
       "fixture": "packages/mcp/test/mcp.test.ts asserts the tools/list surface exposes no mutation tool"
+    },
+    "convention_family_aggregation": {
+      "required_contracts": [
+        "RuleContract"
+      ],
+      "fixture": "crates/drift-engine/tests/convention_families_cv1.rs - 18 tests, negative controls before recall",
+      "claim": "Per-symbol helper candidates of one kind are aggregated into a single family candidate whose matcher is a disjunction over its members and whose coverage is the union of files any member satisfies.",
+      "what_it_is_not": "Not a claim that a family member guards, dominates, or cannot be bypassed. Membership is presence-of-a-resolving-call plus, for the auth kind, a syntactic span-containment test that identifies the route's wrapper. No control flow is consulted at inference time.",
+      "false_positive_behavior": "A helper exported from the family's own module that is itself a higher-order function wrapping the handler will join the family even if its purpose is unrelated to the kind - a logging or error-handling wrapper living in the auth module is the shape. The wrapper test excludes point-call utilities (measured on dub: hashPassword, hashToken, getSession, validatePassword all excluded) but cannot distinguish two wrappers by intent. No eval repo currently exhibits it; dub's absence of such an export is luck, not design.",
+      "measured": "dub auth 0.0324 (best per-symbol) -> 0.5709 (family), members exactly withAdmin/withPartnerProfile/withPublishableKey/withSession/withWorkspace. dub rate limit 0.0385 -> 0.0526, members ratelimit/ratelimitOrThrow. papermark rate limit 0.0813, members checkRateLimit/ratelimit. No family on taxonomy, formbricks, calcom, midday, openstatus. No request-validation family anywhere: dub has zero request_validation_called facts.",
+      "quarantine_status": "The three family kinds remain behind --experimental-security. Promotion is blocked and the reason is recorded in docs/beta-run/CV-3-PROMOTION-BLOCKER.md: all three are ENFORCED by control-flow proofs, so they fail the promotion standard requiring presence-only matchers."
     }
   },
   "claim_notes": {
