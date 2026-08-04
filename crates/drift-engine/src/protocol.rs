@@ -467,6 +467,11 @@ pub struct EngineCandidate {
     pub counterexample_refs: Vec<EngineCandidateEvidenceRef>,
     pub reason_not_blocking: String,
     pub evidence_fingerprint: String,
+    /// CV-1: set on a per-symbol candidate that a family candidate now speaks for. Skipped when
+    /// absent so every candidate that has no family serialises exactly as it did before families
+    /// existed - the byte-for-byte no-change property CV-1's third negative control pins.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub superseded_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

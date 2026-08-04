@@ -1930,7 +1930,7 @@ export class SqliteDriftStorage {
           id, repo_id, scan_id, kind, statement, rationale, scope_json, matcher_json,
           requires_json, matcher_fingerprint, scope_fingerprint, graph_fingerprint,
           evidence_fingerprint, required_capabilities_json, reason_not_blocking,
-          suggested_severity, suggested_enforcement_mode, enforcement_capability,
+          superseded_by, suggested_severity, suggested_enforcement_mode, enforcement_capability,
           confidence_label, scoring_json, evidence_refs_json, counterexample_refs_json,
           status, created_at
         )
@@ -1938,7 +1938,7 @@ export class SqliteDriftStorage {
           @id, @repo_id, @scan_id, @kind, @statement, @rationale, @scope_json, @matcher_json,
           @requires_json, @matcher_fingerprint, @scope_fingerprint, @graph_fingerprint,
           @evidence_fingerprint, @required_capabilities_json, @reason_not_blocking,
-          @suggested_severity, @suggested_enforcement_mode, @enforcement_capability,
+          @superseded_by, @suggested_severity, @suggested_enforcement_mode, @enforcement_capability,
           @confidence_label, @scoring_json, @evidence_refs_json, @counterexample_refs_json,
           @status, @created_at
         )
@@ -1954,6 +1954,7 @@ export class SqliteDriftStorage {
           evidence_fingerprint = excluded.evidence_fingerprint,
           required_capabilities_json = excluded.required_capabilities_json,
           reason_not_blocking = excluded.reason_not_blocking,
+          superseded_by = excluded.superseded_by,
           suggested_severity = excluded.suggested_severity,
           suggested_enforcement_mode = excluded.suggested_enforcement_mode,
           enforcement_capability = excluded.enforcement_capability,
@@ -1982,6 +1983,7 @@ export class SqliteDriftStorage {
           ? stringifyJson(parsed.required_capabilities)
           : null,
         reason_not_blocking: parsed.reason_not_blocking ?? null,
+        superseded_by: parsed.superseded_by ?? null,
         scoring_json: stringifyJson(parsed.scoring),
         evidence_refs_json: stringifyJson(parsed.evidence_refs),
         counterexample_refs_json: stringifyJson(parsed.counterexample_refs)
@@ -3027,7 +3029,9 @@ function conventionCandidateFromRow(row: unknown): ConventionCandidate {
     required_capabilities: record.required_capabilities_json
       ? parseJsonArray(record.required_capabilities_json)
       : undefined,
-    reason_not_blocking: record.reason_not_blocking ?? undefined
+    reason_not_blocking: record.reason_not_blocking ?? undefined,
+    // CV-1: NULL means this candidate has no family, which is not the same as an empty string.
+    superseded_by: record.superseded_by ?? undefined
   });
 }
 

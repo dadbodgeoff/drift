@@ -923,5 +923,19 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       ALTER TABLE findings ADD COLUMN conforming_examples_json TEXT NOT NULL DEFAULT '[]';
     `
+  },
+  {
+    // CV-1. The family candidate that speaks for this per-symbol candidate.
+    //
+    // Inference emitted one candidate per helper symbol, so a repo using five interchangeable auth
+    // wrappers produced five candidates, each covering a fifth of the routes and none clearing the
+    // noise floor. The family candidate aggregates them; these rows stay, because they carry the
+    // per-member evidence that explains each membership, but a reviewer must be able to see that
+    // accepting one of them would accept a fragment of a convention. Nullable: a candidate with no
+    // family has none, and NULL is exactly that statement.
+    id: "033_convention_candidate_superseded_by",
+    sql: `
+      ALTER TABLE convention_candidates ADD COLUMN superseded_by TEXT;
+    `
   }
 ];

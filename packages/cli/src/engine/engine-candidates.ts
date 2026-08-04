@@ -72,6 +72,8 @@ export async function inferConventionCandidatesFromEngine(input: {
       evidence_fingerprint: candidate.evidence_fingerprint,
       required_capabilities: candidate.required_capabilities,
       reason_not_blocking: candidate.reason_not_blocking,
+      // CV-1: absent on the engine payload unless a family superseded this candidate.
+      superseded_by: candidate.superseded_by,
       status: "candidate",
       created_at: input.now
     })

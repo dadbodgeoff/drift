@@ -1117,6 +1117,11 @@ export interface ConventionCandidate {
   evidence_fingerprint?: string;
   required_capabilities?: string[];
   reason_not_blocking?: "candidate_not_accepted" | "candidate_incomplete" | "candidate_heuristic";
+  /**
+   * CV-1: the family candidate that now speaks for this per-symbol candidate. Absent when the
+   * candidate has no family, which is the ordinary case and is not the same as belonging to one.
+   */
+  superseded_by?: string;
   status: ConventionStatus;
   created_at: string;
 }
