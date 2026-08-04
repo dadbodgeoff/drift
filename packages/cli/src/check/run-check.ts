@@ -17,6 +17,7 @@ import type { SqliteDriftStorage } from "@drift/storage";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
+import { DriftError } from "../app/drift-error.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
 import { resolveRepoId } from "../args/repo-flags.js";
 import { isClosedFindingStatus,preservedGovernanceStatus,reviewFinding } from "../domain/findings.js";
@@ -49,6 +50,25 @@ export const CHECK_EXIT_PASS = 0;
 export const CHECK_EXIT_ERROR = 1;
 export const CHECK_EXIT_BLOCKED = 2;
 export const CHECK_EXIT_REFUSED = 3;
+
+/**
+ * BB-1: name the likely cause of an empty diff scope, to the same standard as the shallow-clone
+ * refusal at `diff.ts:48` - a refusal a user cannot act on is barely better than a false pass.
+ *
+ * Which causes are plausible depends on how the scope was specified, so the message is built from
+ * the flags rather than listing all of them every time.
+ */
+function emptyDiffScopeCauses(parsed: ParsedArgs): string {
+  const diffFile = stringFlag(parsed, "diff-file");
+  if (diffFile) {
+    return `The diff file ${diffFile} contains no changed files. Regenerate it (git diff --unified=0 > ${diffFile}), or use --scope full to check the whole repository.`;
+  }
+  const range = stringFlag(parsed, "diff");
+  if (range) {
+    return `The range ${range} produced no changed files: it may name one commit twice (git diff HEAD on a clean tree), reference a merged branch, or your changes may be unstaged - git diff --unified=0 ${range} shows exactly what Drift saw. For uncommitted working-tree changes use --diff-file, and to check the whole repository use --scope full.`;
+  }
+  return "No --diff range or --diff-file was resolvable to changed files. Pass --diff <range>, --diff-file <path>, or --scope full.";
+}
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { formatCheckText } from "../formatters/checks.js";
 import { fileContentHash } from "../io/file-hash.js";
@@ -211,6 +231,40 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const parsedDiff = scope === "full"
     ? fullRepoDiff(repo.root_path)
     : parseUnifiedDiff(rawDiff ?? "");
+  // BB-1: a check that examined nothing must not be indistinguishable from a clean check.
+  //
+  // Verified at b5c3c230: a clean tree with `--diff HEAD` returned `status: "pass"`, exit 0,
+  // `changed_file_count: 0`. The count was in both outputs, but the status and the exit code were
+  // byte-identical to a real pass - so a CI job or hook wired with a wrong diff spec is green
+  // forever, and nothing machine-readable separates "nothing violated" from "nothing examined".
+  // For a product whose exit-code contract is its brand, that was the missing fourth state.
+  //
+  // Refusal rather than warning, because a wrong `--diff` spec is a misconfiguration and not a
+  // verdict, and fail-closed is the house style. Thrown before the scan: there is nothing to scan,
+  // and a refusal that first spends 20s parsing the repo teaches users to distrust it.
+  //
+  // Deliberately scoped to diff-derived scopes. `--scope full` on a repo with no indexable files is
+  // a different statement ("this repo has nothing Drift understands"), which `drift doctor` already
+  // covers and which this refusal would mislabel as a bad diff range.
+  if (scope !== "full" && parsedDiff.files.length === 0 && parsedDiff.deletedFiles.length === 0) {
+    throw new DriftError(
+      `Refusing to report a verdict: the diff scope is empty, so no file was examined. ${emptyDiffScopeCauses(parsed)}`,
+      {
+        code: "empty_diff_scope",
+        userAction:
+          "Check the diff range names two different commits, that your changes are staged, or use --diff-file for uncommitted working-tree changes.",
+        recoveryCommands: [
+          "git diff --name-only <range>",
+          "drift check --diff-file <path> --repo <repo_id>",
+          "drift check --scope full --repo <repo_id>"
+        ],
+        safeToRetry: true,
+        // Same code as every other fail-closed refusal, so CI can keep one branch for
+        // "Drift declined to answer" rather than one per cause.
+        exitCode: CHECK_EXIT_REFUSED
+      }
+    );
+  }
   const diffHash = rawDiff ? hashStable(rawDiff) : "full_scope";
   const baseline = storage.listBaselineViolations(repoId);
   const existingFindings = new Map(

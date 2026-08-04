@@ -51,6 +51,13 @@ export function formatCheckText(payload: {
     `Blocking: ${payload.summary.blocking_count}`,
     `Waived: ${payload.summary.waived_findings_count ?? 0}`,
     `Expired: ${payload.summary.expired_findings_count ?? 0}`,
+    // BB-1: what was examined, on every run, in the vocabulary a reader checks first.
+    //
+    // `Affected: 0 files` was already printed, but a human scanning for "did this check anything"
+    // reads it as a property of the change, not of the check. `Checked N files` answers the question
+    // directly, and names the deleted-file case rather than leaving a bare 0 to be misread as a
+    // broken diff spec - deleting code is a legitimate change with a legitimately empty scope.
+    checkedFilesLine(payload.summary),
     payload.summary.affected_scope
       ? `Affected: ${payload.summary.affected_scope.changed_file_count} files, ${payload.summary.affected_scope.changed_line_count} changed lines`
       : "",
@@ -68,6 +75,29 @@ export function formatCheckText(payload: {
     ...securityBlocks(payload),
     ""
   ].join("\n");
+}
+
+/**
+ * BB-1: `Checked N files`, plus the reason when N is 0 for a legitimate reason.
+ *
+ * The count comes from `affected_scope`, which is the check's own record of what it looked at. When
+ * that is absent (older payloads) the line is omitted rather than guessed at - a fabricated count is
+ * worse than a missing one on a surface whose whole purpose is telling examined from unexamined.
+ */
+function checkedFilesLine(summary: {
+  skipped_deleted_files: string[];
+  affected_scope?: { changed_file_count: number; deleted_file_count: number };
+}): string {
+  if (!summary.affected_scope) {
+    return "";
+  }
+  const checked = summary.affected_scope.changed_file_count;
+  const deleted = summary.affected_scope.deleted_file_count;
+  const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+  const suffix = checked === 0 && deleted > 0
+    ? ` (${plural(deleted, "deleted file")} skipped)`
+    : "";
+  return `Checked ${plural(checked, "file")}${suffix}`;
 }
 
 function securityBlocks(payload: {
