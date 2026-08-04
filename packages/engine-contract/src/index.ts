@@ -254,6 +254,7 @@ export const EngineFactSchema = z.object({
     "data_operation_detected",
     "route_declared",
     "file_role_detected",
+    "route_flavor_detected",
     "test_declared",
     "auth_guard_called",
     "route_returns_response",

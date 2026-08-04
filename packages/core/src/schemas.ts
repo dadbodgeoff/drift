@@ -104,6 +104,8 @@ export const ConventionScopeSchema = z.object({
   exclude_path_globs: z.array(RepoRelativePatternSchema).optional()
 });
 
+export const RouteFlavorSchema = z.enum(["api_route", "cron_job", "webhook_handler"]);
+
 export const ConventionMatcherSchema = z.object({
   kind: ConventionKindSchema,
   forbidden_imports: z.array(z.string().min(1)).optional(),
@@ -112,6 +114,10 @@ export const ConventionMatcherSchema = z.object({
   required_calls: z.array(z.string().min(1)).optional(),
   allowed_delegate_imports: z.array(z.string().min(1)).optional(),
   applies_to_file_roles: z.array(FileRoleSchema).optional(),
+  // CV-2: which route flavours this convention is about. Flat, mirroring applies_to_file_roles above,
+  // because this matcher has no nested applies_to object and inventing one for a single field would
+  // give the same concept two shapes.
+  applies_to_route_flavors: z.array(RouteFlavorSchema).optional(),
   file_roles: z.array(FileRoleSchema).optional(),
   path_globs: z.array(RepoRelativePatternSchema).optional(),
   route_paths: z.array(z.string().min(1)).optional(),
@@ -308,6 +314,7 @@ export const FactKindSchema = z.enum([
   "data_operation_detected",
   "route_declared",
   "file_role_detected",
+  "route_flavor_detected",
   "test_declared",
   "auth_guard_called",
   "route_returns_response",

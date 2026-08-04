@@ -26,7 +26,7 @@ pub use diff::{
 };
 pub use facts::{
     Fact, FactExtractError, FactKind, RUNTIME_USE_DYNAMIC, RUNTIME_USE_SIDE_EFFECT,
-    RUNTIME_USE_VALUE_POSITION, SIDE_EFFECT_IMPORT_BINDING, extract_typescript_facts,
+    RUNTIME_USE_VALUE_POSITION, SIDE_EFFECT_IMPORT_BINDING, extract_typescript_facts, route_flavor,
 };
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,

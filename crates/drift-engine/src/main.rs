@@ -825,6 +825,7 @@ fn fact_kind(kind: FactKind) -> &'static str {
         FactKind::DataOperationDetected => "data_operation_detected",
         FactKind::RouteDeclared => "route_declared",
         FactKind::FileRoleDetected => "file_role_detected",
+        FactKind::RouteFlavorDetected => "route_flavor_detected",
         FactKind::TestDeclared => "test_declared",
         FactKind::AuthGuardCalled => "auth_guard_called",
         FactKind::RouteReturnsResponse => "route_returns_response",

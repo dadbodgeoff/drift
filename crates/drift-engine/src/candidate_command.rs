@@ -972,6 +972,37 @@ const FAMILY_SPECS: &[FamilySpec] = &[
     },
 ];
 
+/// CV-2: each route file's flavour, read from the `route_flavor_detected` fact the scan emits.
+///
+/// Read, not derived. The deriver matching globs of its own is the BB-11 divergence in a new place, and
+/// the classification already happened once at fact time. A file with no flavour fact - a repo scanned
+/// before this existed - reads as `api_route`, which is the unconditioned answer and keeps such a repo
+/// behaving exactly as it did.
+fn route_flavors_by_file(request: &CandidateRequest) -> BTreeMap<&str, &str> {
+    request
+        .scan
+        .facts
+        .iter()
+        .filter(|fact| fact.kind == "route_flavor_detected")
+        .map(|fact| (fact.file_path.as_str(), fact.name.as_str()))
+        .collect()
+}
+
+/// The denominator for one flavour: how many files in scope are of it.
+///
+/// This is what conditioning is for. dub's 494 route files are 358 app, 111 cron and 25 webhook, and a
+/// session family measured against all 494 is measured partly against routes it was never about.
+fn flavor_scope_file_count(
+    scope_files: &BTreeSet<&str>,
+    flavors: &BTreeMap<&str, &str>,
+    flavor: &str,
+) -> usize {
+    scope_files
+        .iter()
+        .filter(|file| flavors.get(**file).copied().unwrap_or("api_route") == flavor)
+        .count()
+}
+
 /// A candidate member of a family, before the module cluster decides whether it joins.
 struct FamilyMemberInput<'a> {
     symbol: String,
@@ -1020,6 +1051,7 @@ fn derive_convention_families(
         "file_roles": ["api_route"]
     });
 
+    let flavors = route_flavors_by_file(request);
     for spec in FAMILY_SPECS {
         let inputs = family_member_inputs(spec, request, api_route_files);
         let members = match spec.confirmation {
@@ -1059,129 +1091,270 @@ fn derive_convention_families(
             continue;
         }
 
-        let symbols = members
-            .iter()
-            .map(|member| member.symbol.clone())
-            .collect::<Vec<_>>();
-        // Members arrive ordered already, because `family_member_inputs` collects into a BTreeMap -
-        // that map, not this sort, is what actually makes the matcher fingerprint stable. The sort
-        // stays as a guard on that invariant rather than as its cause, so that a future change to
-        // the collection type cannot silently start churning candidate ids.
-        let mut sorted_symbols = symbols.clone();
-        sorted_symbols.sort();
-
-        let mut matcher = json!({
-            "kind": spec.kind,
-            "required_calls": sorted_symbols.clone(),
-            "applies_to_file_roles": ["api_route"]
-        });
-        if spec.kind == "api_route_requires_request_validation" {
-            // Mirrors the per-symbol validation candidate: only mutations are in scope.
-            matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
+        // CV-2: condition on route flavour.
+        //
+        // A member is assigned to a flavour by the flavour of the files it actually covers. dub's
+        // session wrappers cover app routes; a signature helper covers cron routes. Splitting here
+        // means each family is scored against the denominator it is actually about, and - the part
+        // that matters when one is accepted in block mode - a cron route is never in scope for the
+        // session family, so it cannot be flagged for missing a wrapper it was never meant to use.
+        //
+        // A flavour present in the repo but with no members of its own yields no family for that
+        // flavour, rather than an empty one. And when every member sits in one flavour and that is the
+        // only flavour in the repo, the family is emitted UNCONDITIONED - `applies_to_route_flavors`
+        // is omitted - so a repo with no cron paths gets exactly what it got before flavours existed.
+        // That is CV-2's red #2: conditioning must not manufacture flavours from noise.
+        let present_flavors = scope_flavors_present(api_route_files, &flavors);
+        let mut per_flavor: BTreeMap<&str, Vec<&FamilyMemberInput<'_>>> = BTreeMap::new();
+        for member in &members {
+            for flavor in member_flavors(member, &flavors) {
+                per_flavor.entry(flavor).or_default().push(member);
+            }
         }
 
-        // Per-member evidence, so `conventions show` can answer "why is this symbol in this
-        // family". `requires` is not fingerprinted, so counts here never destabilise the id.
-        let helpers = members
-            .iter()
-            .map(|member| {
-                json!({
-                    spec.helper_id_key:
-                        format!("{}:{}", spec.helper_id_prefix, member.symbol),
-                    "symbol": member.symbol,
-                    spec.helper_module_key: member.module,
-                    "evidence_file_count": unique_fact_file_count(&member.facts),
-                    "joined_by": if member.nominated { "name_and_module" } else { "module" }
-                })
-            })
-            .collect::<Vec<_>>();
-        let mut requires = json!({ spec.requires_key: helpers });
-        if spec.kind == "api_route_requires_auth_helper" {
-            requires["dominates"] = json!(["data_operation", "response"]);
-        }
-        if spec.kind == "api_route_requires_request_validation" {
-            requires["input_sources"] = json!(["body", "query", "params"]);
-            requires["sinks"] = json!(["data_operation", "response"]);
-            requires["schemas"] = json!([]);
-            requires["allow_throwing_parse"] = json!(true);
-            requires["allow_safe_parse_success_guard"] = json!(true);
-        }
-
-        // Union coverage: the count of distinct files satisfied by ANY member, which is the whole
-        // point of the aggregation.
-        let mut facts = members
-            .iter()
-            .flat_map(|member| member.facts.iter().copied())
-            .collect::<Vec<_>>();
-        facts.sort_by(|left, right| {
-            left.file_path
-                .cmp(&right.file_path)
-                .then(left.start_line.cmp(&right.start_line))
-                .then(left.name.cmp(&right.name))
-        });
-        facts.dedup_by(|left, right| {
-            left.file_path == right.file_path
-                && left.start_line == right.start_line
-                && left.name == right.name
-        });
-
-        let family = security_candidate_from_facts(SecurityCandidateInput {
-            request,
-            kind: spec.kind,
-            statement: format!(
-                "API routes appear to require one of {} {} helpers ({}).",
-                sorted_symbols.len(),
-                spec.noun,
-                sorted_symbols.join(", ")
-            ),
-            rationale: match spec.confirmation {
-                FamilyConfirmation::WrapsHandler => {
-                    "Aggregated helpers that resolve to one module and wrap their route handlers."
-                }
-                // No module test is applied to these kinds, and claiming one in the string a
-                // reviewer reads before accepting would be a lie about how the family was formed.
-                FamilyConfirmation::AlreadyDetected => {
-                    "Aggregated separately detected helpers of one kind into a single family."
-                }
-            },
-            scope: route_scope.clone(),
-            matcher,
-            requires: Some(requires),
-            suggested_severity: "warning",
-            enforcement_capability: "deterministic_check",
-            confidence_label: "medium",
-            facts,
-            scope_file_count,
-            file_hashes,
-            graph_fingerprint,
-            heuristic_id: spec.heuristic_id,
-            required_capabilities: spec.required_capabilities,
-        });
-
-        // The per-symbol candidates stay - they carry the per-member evidence - but they are no
-        // longer the thing to accept, and saying so is what stops a reviewer accepting five
-        // fragments of one convention.
-        let family_id = family.candidate_id.clone();
-        let member_set = symbols.iter().cloned().collect::<BTreeSet<_>>();
-        for candidate in candidates.iter_mut() {
-            if candidate.kind != spec.kind || candidate.candidate_id == family_id {
+        for (flavor, flavor_members) in per_flavor {
+            // Same threshold as the unconditioned family: one member is not a family.
+            if flavor_members.len() < 2 {
                 continue;
             }
-            let superseded = candidate.matcher["required_calls"]
-                .as_array()
-                .is_some_and(|calls| {
-                    !calls.is_empty()
-                        && calls.iter().all(|call| {
-                            call.as_str()
-                                .is_some_and(|call| member_set.contains(call))
-                        })
-                });
-            if superseded {
-                candidate.superseded_by = Some(family_id.clone());
-            }
+            let conditioned = present_flavors.len() > 1;
+            emit_family_candidate(FamilyEmitInput {
+                candidates,
+                request,
+                spec,
+                members: &flavor_members,
+                route_scope: &route_scope,
+                flavor: conditioned.then_some(flavor),
+                scope_file_count: if conditioned {
+                    flavor_scope_file_count(api_route_files, &flavors, flavor)
+                } else {
+                    scope_file_count
+                },
+                file_hashes,
+                graph_fingerprint,
+            });
         }
-        candidates.push(family);
     }
+}
+
+/// Which flavours actually appear among the repo's route files.
+///
+/// Used to decide whether to condition at all. One flavour means the repo has no cron or webhook
+/// routes, so the family is emitted unconditioned and behaves exactly as it did before flavours
+/// existed - CV-2's red #2, that conditioning must not manufacture flavours from noise.
+fn scope_flavors_present<'a>(
+    scope_files: &BTreeSet<&'a str>,
+    flavors: &BTreeMap<&'a str, &'a str>,
+) -> BTreeSet<&'static str> {
+    scope_files
+        .iter()
+        .map(|file| match flavors.get(*file).copied().unwrap_or("api_route") {
+            "cron_job" => "cron_job",
+            "webhook_handler" => "webhook_handler",
+            _ => "api_route",
+        })
+        .collect()
+}
+
+/// The flavours a member is evidenced in - the flavours of the files its calls actually appear in.
+///
+/// A helper used in both app and cron routes belongs to both families, which is correct: it is
+/// genuinely a member of each. Assignment follows the evidence rather than a guess about intent.
+fn member_flavors<'a>(
+    member: &FamilyMemberInput<'_>,
+    flavors: &BTreeMap<&'a str, &'a str>,
+) -> BTreeSet<&'static str> {
+    member
+        .facts
+        .iter()
+        .map(|fact| {
+            match flavors
+                .get(fact.file_path.as_str())
+                .copied()
+                .unwrap_or("api_route")
+            {
+                "cron_job" => "cron_job",
+                "webhook_handler" => "webhook_handler",
+                _ => "api_route",
+            }
+        })
+        .collect()
+}
+
+struct FamilyEmitInput<'a> {
+    candidates: &'a mut Vec<EngineCandidate>,
+    request: &'a CandidateRequest,
+    spec: &'a FamilySpec,
+    members: &'a [&'a FamilyMemberInput<'a>],
+    route_scope: &'a Value,
+    /// `None` emits an unconditioned family, omitting `applies_to_route_flavors` entirely.
+    flavor: Option<&'a str>,
+    scope_file_count: usize,
+    file_hashes: &'a BTreeMap<&'a str, &'a str>,
+    graph_fingerprint: &'a str,
+}
+
+/// Emit one family candidate and mark the per-symbol candidates it now speaks for.
+fn emit_family_candidate(input: FamilyEmitInput<'_>) {
+    let FamilyEmitInput {
+        candidates,
+        request,
+        spec,
+        members,
+        route_scope,
+        flavor,
+        scope_file_count,
+        file_hashes,
+        graph_fingerprint,
+    } = input;
+
+    let symbols = members
+        .iter()
+        .map(|member| member.symbol.clone())
+        .collect::<Vec<_>>();
+    // Members arrive ordered already, because `family_member_inputs` collects into a BTreeMap - that
+    // map, not this sort, is what actually makes the matcher fingerprint stable. The sort stays as a
+    // guard on that invariant rather than as its cause, so that a future change to the collection type
+    // cannot silently start churning candidate ids.
+    let mut sorted_symbols = symbols.clone();
+    sorted_symbols.sort();
+
+    let mut matcher = json!({
+        "kind": spec.kind,
+        "required_calls": sorted_symbols.clone(),
+        "applies_to_file_roles": ["api_route"]
+    });
+    if spec.kind == "api_route_requires_request_validation" {
+        // Mirrors the per-symbol validation candidate: only mutations are in scope.
+        matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
+    }
+    // CV-2: present only when the repo actually has more than one flavour, so an unconditioned repo's
+    // matcher - and therefore its fingerprint and candidate id - is byte-identical to before.
+    if let Some(flavor) = flavor {
+        matcher["applies_to_route_flavors"] = json!([flavor]);
+    }
+
+    // Per-member evidence, so `conventions show` can answer "why is this symbol in this family".
+    // `requires` is not fingerprinted, so counts here never destabilise the id.
+    let helpers = members
+        .iter()
+        .map(|member| {
+            json!({
+                spec.helper_id_key:
+                    format!("{}:{}", spec.helper_id_prefix, member.symbol),
+                "symbol": member.symbol,
+                spec.helper_module_key: member.module,
+                "evidence_file_count": unique_fact_file_count(&member.facts),
+                "joined_by": if member.nominated { "name_and_module" } else { "module" }
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut requires = json!({ spec.requires_key: helpers });
+    if spec.kind == "api_route_requires_auth_helper" {
+        requires["dominates"] = json!(["data_operation", "response"]);
+    }
+    if spec.kind == "api_route_requires_request_validation" {
+        requires["input_sources"] = json!(["body", "query", "params"]);
+        requires["sinks"] = json!(["data_operation", "response"]);
+        requires["schemas"] = json!([]);
+        requires["allow_throwing_parse"] = json!(true);
+        requires["allow_safe_parse_success_guard"] = json!(true);
+    }
+
+    // Union coverage: the count of distinct files satisfied by ANY member, which is the whole point of
+    // the aggregation. When conditioned, only the facts in this flavour count, or a flavour's coverage
+    // would be computed from evidence outside it.
+    let mut facts = members
+        .iter()
+        .flat_map(|member| member.facts.iter().copied())
+        .collect::<Vec<_>>();
+    if let Some(flavor) = flavor {
+        let flavors = route_flavors_by_file(request);
+        facts.retain(|fact| {
+            flavors
+                .get(fact.file_path.as_str())
+                .copied()
+                .unwrap_or("api_route")
+                == flavor
+        });
+    }
+    facts.sort_by(|left, right| {
+        left.file_path
+            .cmp(&right.file_path)
+            .then(left.start_line.cmp(&right.start_line))
+            .then(left.name.cmp(&right.name))
+    });
+    facts.dedup_by(|left, right| {
+        left.file_path == right.file_path
+            && left.start_line == right.start_line
+            && left.name == right.name
+    });
+
+    // Named in the statement whenever the family is conditioned, including the app-route case. A
+    // reviewer reading "one of 5 auth helpers" cannot otherwise tell that this family deliberately
+    // does not cover the repo's 112 cron routes.
+    let flavor_phrase = match flavor {
+        Some("cron_job") => " on cron routes",
+        Some("webhook_handler") => " on webhook routes",
+        Some(_) => " on application routes",
+        None => "",
+    };
+    let family = security_candidate_from_facts(SecurityCandidateInput {
+        request,
+        kind: spec.kind,
+        statement: format!(
+            "API routes appear to require one of {} {} helpers{} ({}).",
+            sorted_symbols.len(),
+            spec.noun,
+            flavor_phrase,
+            sorted_symbols.join(", ")
+        ),
+        rationale: match spec.confirmation {
+            FamilyConfirmation::WrapsHandler => {
+                "Aggregated helpers that resolve to one module and wrap their route handlers."
+            }
+            // No module test is applied to these kinds, and claiming one in the string a reviewer
+            // reads before accepting would be a lie about how the family was formed.
+            FamilyConfirmation::AlreadyDetected => {
+                "Aggregated separately detected helpers of one kind into a single family."
+            }
+        },
+        scope: route_scope.clone(),
+        matcher,
+        requires: Some(requires),
+        suggested_severity: "warning",
+        enforcement_capability: "deterministic_check",
+        confidence_label: "medium",
+        facts,
+        scope_file_count,
+        file_hashes,
+        graph_fingerprint,
+        heuristic_id: spec.heuristic_id,
+        required_capabilities: spec.required_capabilities,
+    });
+
+    // The per-symbol candidates stay - they carry the per-member evidence - but they are no longer the
+    // thing to accept, and saying so is what stops a reviewer accepting five fragments of one
+    // convention.
+    let family_id = family.candidate_id.clone();
+    let member_set = symbols.iter().cloned().collect::<BTreeSet<_>>();
+    for candidate in candidates.iter_mut() {
+        if candidate.kind != spec.kind || candidate.candidate_id == family_id {
+            continue;
+        }
+        let superseded = candidate.matcher["required_calls"]
+            .as_array()
+            .is_some_and(|calls| {
+                !calls.is_empty()
+                    && calls
+                        .iter()
+                        .all(|call| call.as_str().is_some_and(|call| member_set.contains(call)))
+            });
+        if superseded {
+            candidate.superseded_by = Some(family_id.clone());
+        }
+    }
+    candidates.push(family);
 }
 
 /// Every repeated helper call of one family's kind, with the module it resolves to.
@@ -1692,7 +1865,19 @@ fn is_auth_candidate_symbol(symbol: &str) -> bool {
             || matches!(
                 lower.as_str(),
                 "requireuser" | "getuser" | "getcurrentuser" | "currentuser"
-            ))
+            )
+            // CV-2: cron and webhook routes authenticate by verifying a request signature, not by
+            // holding a session, so none of the conditions above can nominate their guard. Without
+            // this, a repo's cron routes have no auth family available at all and the session family
+            // is the only one that could ever cover them - which is the miscount CV-2 exists to fix.
+            //
+            // Deliberately vendor-neutral. `verifyQstashSignature` is nominated because it verifies a
+            // signature, not because "qstash" appears here: compiling a specific vendor's vocabulary
+            // into the engine is what `withWorkspace` was removed for. Confirmation is unchanged -
+            // this only nominates, and a nominee still has to resolve to the family's module and wrap
+            // its handler before it joins anything.
+            || (lower.starts_with("verify")
+                && (lower.contains("signature") || lower.contains("hmac"))))
 }
 
 fn is_validation_candidate_symbol(symbol: &str) -> bool {

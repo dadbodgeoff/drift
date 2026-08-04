@@ -1,4 +1,4 @@
-import type { AcceptedConvention } from "./domain.js";
+import type { AcceptedConvention, RouteFlavor } from "./domain.js";
 import { matchesGlob } from "./globs.js";
 import { API_ROUTE_SCOPE_GLOBS, expandApiRouteScopeGlobs, isNextApiRoutePath } from "./next-routes.js";
 
@@ -35,6 +35,13 @@ export function conventionScopeFiles(files: string[], convention: AcceptedConven
       if (!isNextApiRoutePath(filePath)) {
         return false;
       }
+      // CV-2: a convention about session routes is not about cron routes. Absent or empty means the
+      // convention is unconditioned and every flavour is in scope - a repo with no cron paths must not
+      // have flavours manufactured for it.
+      const flavors = convention.matcher.applies_to_route_flavors ?? [];
+      if (flavors.length > 0 && !flavors.includes(routeFlavor(filePath))) {
+        return false;
+      }
       if (isDefaultApiRouteScope(pathGlobs)) {
         return true;
       }
@@ -56,4 +63,49 @@ export function appliesToApiRouteFiles(convention: AcceptedConvention): boolean 
     convention.scope.file_roles?.includes("api_route") ||
     convention.matcher.applies_to_file_roles?.includes("api_route")
   );
+}
+
+/**
+ * CV-2: which flavour of route a file is.
+ *
+ * dub uses a member of its auth-wrapper family on 358 of 494 route files. The other 136 are cron
+ * (111) and webhook (25) routes, which authenticate by signature rather than session. One global
+ * denominator either drags a session family's confidence down by counting routes it was never about,
+ * or - worse - accepts a session family that then flags every cron route as missing auth.
+ *
+ * This is the ONE path-to-flavour predicate on the TypeScript side, and it lives beside
+ * `conventionScopeFiles` because it is a scope decision. The engine classifies the same thing at fact
+ * time (it must: the candidate deriver cannot be given a glob engine of its own, which is the BB-11
+ * lesson), and the two are held together by the differential in
+ * packages/core/test/route-flavor-differential.test.ts rather than by sharing code, which is not
+ * available across the process boundary. If they disagree there, that test fails.
+ *
+ * Matching is per SEGMENT, never substring: `app/api/crontab-editor/route.ts` is an ordinary route
+ * that happens to start with "cron", and `app/api/webhooks-docs/route.ts` is not a webhook receiver.
+ * Substring matching here would be F4's mistake in a new place.
+ */
+const CRON_SEGMENTS = new Set(["cron", "crons", "jobs", "scheduled"]);
+const WEBHOOK_SEGMENTS = new Set(["webhook", "webhooks"]);
+
+export function routeFlavor(filePath: string): RouteFlavor {
+  // Only segments below the api boundary decide flavour. A repo mounted under `apps/cron-service/`
+  // does not make every route in it a cron job.
+  const segments = routeSegmentsBelowApi(filePath);
+  if (segments.some((segment) => CRON_SEGMENTS.has(segment))) {
+    return "cron_job";
+  }
+  if (segments.some((segment) => WEBHOOK_SEGMENTS.has(segment))) {
+    return "webhook_handler";
+  }
+  return "api_route";
+}
+
+function routeSegmentsBelowApi(filePath: string): string[] {
+  const segments = filePath.toLowerCase().split("/");
+  const apiIndex = segments.lastIndexOf("api");
+  const below = apiIndex === -1 ? segments : segments.slice(apiIndex + 1);
+  return below
+    // Next route groups - `(ee)`, `(admin)` - are organisational and carry no flavour.
+    .filter((segment) => !(segment.startsWith("(") && segment.endsWith(")")))
+    .map((segment) => segment.replace(/\.(ts|tsx|js|jsx)$/, ""));
 }
