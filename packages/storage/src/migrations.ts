@@ -898,5 +898,17 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       ALTER TABLE graph_diagnostics ADD COLUMN import_source TEXT;
     `
+  },
+  {
+    // BB-2. How the engine that produced this scan was resolved, and what profile it was built
+    // with. `engine_source: "rust"` was the only provenance recorded, and it is true of a
+    // `cargo run` debug engine whose timings are ~2.7x inflated - so a stored scan could not be
+    // told apart from one made by the binary a user installs. Both nullable: pre-migration rows
+    // genuinely do not know, and NULL must not be read as the good case.
+    id: "031_scan_capability_engine_provenance",
+    sql: `
+      ALTER TABLE scan_capability_reports ADD COLUMN engine_resolution TEXT;
+      ALTER TABLE scan_capability_reports ADD COLUMN engine_build_profile TEXT;
+    `
   }
 ];

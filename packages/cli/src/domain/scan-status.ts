@@ -946,6 +946,11 @@ function scanCapabilityReportForScan(input: {
     parser_gap_kinds: countBy(input.parserGaps.map((gap) => gap.kind)) as Record<string, number>,
     fallback_used: input.scanData.fallbackStatus.fallback_used,
     enforcement_degraded: input.scanData.fallbackStatus.enforcement_degraded,
+    // BB-2: recorded per scan so a stored measurement can be told apart from one taken through a
+    // debug `cargo run` engine. MCP's `capability_report` carries this surface verbatim, which is
+    // what gives get_scan_status and get_task_preflight parity without a second assembly site.
+    engine_resolution: input.scanData.fallbackStatus.engine_resolution,
+    engine_build_profile: input.scanData.fallbackStatus.engine_build_profile,
     created_at: input.createdAt
   };
 }

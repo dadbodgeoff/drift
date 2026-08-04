@@ -327,6 +327,9 @@ export const EngineScanResultSchema = z.object({
   repo_id: z.string().min(1),
   scan_id: z.string().min(1),
   engine_version: z.string().min(1),
+  // BB-2: optional because an engine built before this field existed is still a usable engine; a
+  // missing value means "unverified", which consumers must not read as "release".
+  build_profile: z.enum(["release", "debug"]).optional(),
   adapter_versions: z.record(z.string().min(1)),
   file_snapshots: z.array(EngineFileSnapshotSchema),
   facts: z.array(EngineFactSchema),
@@ -1277,7 +1280,10 @@ export const EngineStreamEventSchema = z.discriminatedUnion("event", [
     event: z.literal("scan_started"),
     repo_id: z.string().min(1).optional(),
     scan_id: z.string().min(1).optional(),
-    engine_version: z.string().min(1)
+    engine_version: z.string().min(1),
+    // BB-2: see EngineScanResultSchema - optional for engine-version tolerance, not because
+    // "unknown" is an acceptable state for a recorded measurement.
+    build_profile: z.enum(["release", "debug"]).optional()
   }),
   z.object({
     schema_version: z.literal(ENGINE_STREAM_EVENT_SCHEMA_VERSION),

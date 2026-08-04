@@ -8,6 +8,7 @@ import { runFullRepoCheck } from "../check/run-check.js";
 import { createBaselineForFindings } from "../domain/baselines.js";
 import { betaStartResponse } from "../domain/beta-surfaces.js";
 import { materializeRepoContract } from "../domain/contract-materialization.js";
+import { acceptanceDisclosure,acceptanceDisclosureLines } from "../domain/acceptance-disclosure.js";
 import { acceptDefaultCandidate,declaredDataModulesCandidate } from "../domain/convention-candidates.js";
 import { engineProvenance } from "../domain/engine-provenance.js";
 import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
@@ -141,6 +142,11 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   const baselinedCount = accepted
     ? createBaselineForFindings(storage, { now, actor }, result.repo.id, initialFindings).created_count
     : 0;
+  // BB-3: computed after the baseline exists, because the count is half of what the disclosure has
+  // to say - "397 baselined" is what makes "will NOT block" mean something other than "broken".
+  const acceptance = accepted
+    ? acceptanceDisclosure({ accepted, repoId: result.repo.id, baselinedCount })
+    : undefined;
   const nextCommands = contractReady
     ? [
         doctorCommand(result.repo.root_path, parsed),
@@ -166,6 +172,13 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
       engine_source: betaStartEngineSource(result.summary.engine_source)
     },
     accepted,
+    // BB-3: the four facts a user needs about what acceptance did - mode, severity, how many
+    // violations were baselined, and the command that upgrades a suggestion to a gate.
+    //
+    // Named `acceptance` rather than folded into `accepted`, because `accepted` is already the
+    // accepted-convention record on a schema-locked beta surface; adding `mode` beside its
+    // `enforcement_mode` would have created two spellings of one fact.
+    ...(acceptance ? { acceptance } : {}),
     baselined_count: baselinedCount,
     machine_contract_versions: currentMachineContractVersions(result.scan.adapter_versions),
     engine: engineProvenance(),
@@ -205,10 +218,11 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
     `Scanned ${result.summary.files_indexed} files.`,
     `Stored ${result.summary.facts_count} facts.`,
     `Found ${result.summary.candidates_count} convention candidate${result.summary.candidates_count === 1 ? "" : "s"}.`,
-    ...(accepted ? [
+    ...(accepted && acceptance ? [
       "",
-      "Accepted default convention.",
-      `Baselined ${baselinedCount} existing violation${baselinedCount === 1 ? "" : "s"}.`,
+      // BB-3: replaces "Accepted default convention." - a line that was identical for dub (warn,
+      // enforces nothing new by itself) and cal.com (block, exits 2).
+      ...acceptanceDisclosureLines(acceptance),
       "Ready for AI-assisted work."
     ] : []),
     "",

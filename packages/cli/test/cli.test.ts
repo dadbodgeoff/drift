@@ -590,7 +590,7 @@ describe("drift CLI convention review", () => {
     expect(payload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 30,
+supported_sqlite_schema_version: 31,
       storage_driver: "sqlite"
     });
     expect(payload.v1_scope).toMatchObject({
@@ -2415,8 +2415,15 @@ supported_sqlite_schema_version: 30,
     ]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Accepted default convention.");
-    expect(result.stdout).toContain("Baselined 1 existing violation.");
+    // BB-3: the acceptance line names what was decided. This fixture is the warn-shaped case -
+    // every file in scope violates, so `baseline_coverage_direction` reads the convention as an
+    // aspiration - and the old output said only "Accepted default convention.", identically to the
+    // block-shaped case.
+    expect(result.stdout).toContain('Accepted "api_route_no_direct_data_access" in WARN mode');
+    expect(result.stdout).toContain("1 existing violation baselined");
+    expect(result.stdout).toContain("new violations will be reported but will NOT block");
+    expect(result.stdout).toContain("To make this a gate: drift conventions accept");
+    expect(result.stdout).toContain("--mode block --confirm");
     expect(result.stdout).toContain("Ready for AI-assisted work.");
     expect(result.stdout).toContain("drift scan status");
     expect(result.stdout).toContain("drift backup create");
@@ -2902,7 +2909,7 @@ supported_sqlite_schema_version: 30,
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Drift doctor");
-    expect(result.stdout).toContain("Runtime: Drift CLI 0.1.0, SQLite schema 30");
+    expect(result.stdout).toContain("Runtime: Drift CLI 0.1.0, SQLite schema 31");
     expect(result.stdout).toContain("V1 scope: local-first CLI, TypeScript API route layering");
     expect(result.stdout).toContain("TS/JS files: 1 indexable file");
     expect(result.stdout).toContain("API routes: 1 API route file");
@@ -2983,7 +2990,7 @@ supported_sqlite_schema_version: 30,
       typescript_adapter_version: "0.1.0",
       rule_engine_version: "0.1.0",
       contract_schema_version: 1,
-supported_sqlite_schema_version: 30,
+supported_sqlite_schema_version: 31,
       storage_driver: "sqlite"
     });
     expect(payload.engine).toMatchObject({
@@ -3001,7 +3008,7 @@ supported_sqlite_schema_version: 30,
       deferred: ["desktop_ui", "cloud_sync", "python_adapter", "duplicate_helper_detection"]
     });
     expect(payload.state_summary).toMatchObject({
-supported_schema_version: 30
+supported_schema_version: 31
     });
     expect(payload.state_summary).toMatchObject({
       exists: true,
@@ -3343,7 +3350,7 @@ supported_schema_version: 30
       typescript_adapter_version: "0.1.0",
       rule_engine_version: "0.1.0",
       contract_schema_version: 1,
-supported_sqlite_schema_version: 30,
+supported_sqlite_schema_version: 31,
       storage_driver: "sqlite"
     });
     expect(payload.engine).toMatchObject({
@@ -3581,7 +3588,7 @@ supported_sqlite_schema_version: 30,
       machine_contract_versions: {
         schema_version: "drift.machine_contract_versions.v1",
         cli_version: "0.1.0",
-storage_schema_version: 30,
+storage_schema_version: 31,
         factgraph_schema_version: "factgraph.v2"
       }
     });
@@ -3671,7 +3678,7 @@ storage_schema_version: 30,
       blocking_count: 1,
       machine_contract_versions: expect.objectContaining({
         schema_version: "drift.machine_contract_versions.v1",
-storage_schema_version: 30
+storage_schema_version: 31
       })
     });
     expect(storage.listFindings("repo_abc")[0]?.title).toBe("API route imports data access directly");
@@ -7888,7 +7895,7 @@ storage_schema_version: 30
     expect(payload.summary).toMatchObject({
       write_intent: true,
       artifact_exists: true,
-schema_version: 30
+schema_version: 31
     });
     expect(payload.review_item).toMatchObject({
       id: payload.manifest.id,
@@ -7898,7 +7905,7 @@ schema_version: 30
     });
     expect(payload.manifest).toMatchObject({
       repo_id: "repo_abc",
-schema_version: 30,
+schema_version: 31,
       created_at: "2026-05-10T00:00:04.000Z"
     });
     expect(payload.manifest.backup_path).toContain(backupDir);
@@ -8123,7 +8130,7 @@ schema_version: 30,
         id: backup[0],
         repo_id: "repo_abc",
         repo_fingerprint: "repo-fp",
-schema_version: 30,
+schema_version: 31,
         source_database_path: databasePath,
         backup_path: `/tmp/${backup[0]}.sqlite`,
         checksum_sha256: "a".repeat(64),
@@ -8175,7 +8182,7 @@ schema_version: 30,
       id: "backup_valid",
       repo_id: "repo_abc",
       repo_fingerprint: "repo-fp",
-schema_version: 30,
+schema_version: 31,
       source_database_path: databasePath,
       backup_path: validPath,
       checksum_sha256: validChecksum,
@@ -8186,7 +8193,7 @@ schema_version: 30,
       id: "backup_missing",
       repo_id: "repo_abc",
       repo_fingerprint: "repo-fp",
-schema_version: 30,
+schema_version: 31,
       source_database_path: databasePath,
       backup_path: join(dir, "missing.sqlite"),
       checksum_sha256: "b".repeat(64),
@@ -8197,7 +8204,7 @@ schema_version: 30,
       id: "backup_mismatch",
       repo_id: "repo_abc",
       repo_fingerprint: "repo-fp",
-schema_version: 30,
+schema_version: 31,
       source_database_path: databasePath,
       backup_path: mismatchPath,
       checksum_sha256: mismatchChecksum,
@@ -8458,7 +8465,7 @@ schema_version: 30,
         surface: "artifact"
       },
       checksum_matches: true,
-schema_version: 30
+schema_version: 31
     });
     expect(JSON.parse(verified.stdout).summary).toMatchObject({
       valid: true,
@@ -8639,7 +8646,7 @@ schema_version: 30
       valid: false,
       repo_id: "repo_abc",
       schema_supported: false,
-schema_version: 30,
+schema_version: 31,
       unsupported_migrations: ["004_unknown_future_schema"]
     });
   });
@@ -8868,7 +8875,7 @@ schema_version: 30,
       repo_id: "repo_abc",
       backup_path: backupPath,
       restored_database_path: targetDatabasePath,
-schema_version: 30
+schema_version: 31
     });
     expect(payload.governance).toMatchObject({
       read_only: false,
@@ -8909,7 +8916,7 @@ schema_version: 30
         backup_path: backupPath,
         checksum_sha256: payload.restore.checksum_sha256,
         checksum_matches: true,
-schema_version: 30,
+schema_version: 31,
         graph_stale: payload.restore.graph_stale,
         requires_rescan: payload.restore.requires_rescan,
         staleness_reason: payload.restore.staleness_reason

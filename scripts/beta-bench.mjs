@@ -34,6 +34,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { EVAL_REPOS } from "./eval-repos.mjs";
+import { requireReleaseEngine } from "./engine-handshake.mjs";
 import { ratchetRegressions } from "./beta-bench-ratchet.mjs";
 import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
 
@@ -437,6 +438,11 @@ if (selected.length === 0) {
   console.error(`No evaluation repos matched --only ${only?.join(",")}`);
   process.exit(1);
 }
+
+// BB-2: before the first measured run, not after. This bench records timings into a committed
+// baseline, and the 2026-08-03 debug-engine confound proves the harness cannot be trusted to notice
+// on its own - a debug engine reports itself as a perfectly healthy `rust` engine.
+requireReleaseEngine(ENGINE);
 
 const rows = [];
 for (const cfg of selected) {

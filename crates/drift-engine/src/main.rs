@@ -92,7 +92,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", serde_json::to_string(&output)?);
             Ok(())
         }
-        _ => Err("usage: drift-engine scan-repo <repo-root> [--format json|jsonl] [--repo-id <id>] [--scan-id <id>] | check-repo | infer-candidates".into()),
+        // BB-2: a cheap handshake any harness can call before it records a measurement. Spawning
+        // `scan-repo` just to learn the build profile would cost the measurement it is protecting.
+        Some("version") => {
+            println!(
+                "{}",
+                serde_json::to_string(&json!({
+                    "schema_version": ENGINE_VERSION_RESULT_SCHEMA_VERSION,
+                    "engine_version": drift_engine::DRIFT_ENGINE_VERSION,
+                    "build_profile": engine_build_profile(),
+                }))?
+            );
+            Ok(())
+        }
+        _ => Err("usage: drift-engine scan-repo <repo-root> [--format json|jsonl] [--repo-id <id>] [--scan-id <id>] | check-repo | infer-candidates | version".into()),
     }
 }
 
@@ -197,6 +210,7 @@ fn scan_repo(
         repo_id,
         scan_id,
         engine_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
+        build_profile: engine_build_profile(),
         adapter_versions: adapter_versions(),
         file_snapshots: scanned_files,
         facts,
@@ -225,6 +239,7 @@ fn stream_scan_repo(
             repo_id: repo_id.clone(),
             scan_id: scan_id.clone(),
             engine_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
+            build_profile: engine_build_profile(),
         },
     )?;
 

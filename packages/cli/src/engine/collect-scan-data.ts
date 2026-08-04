@@ -10,7 +10,7 @@ import type { EngineDiagnostic,EngineScanResult,EngineStats,EngineStreamEvent } 
 import type { GraphEdge,GraphEvidence,GraphNode } from "@drift/factgraph";
 import { parseEngineScanResult,parseEngineStreamEvent,type EngineCompleteness} from "@drift/engine-contract";
 import { extractFactsFromFile,factRecord,fileSnapshotForFile } from "./fact-extraction.js";
-import { streamRustEngineLines } from "./rust-engine.js";
+import { type EngineBuildProfile, engineResolutionStatus, streamRustEngineLines } from "./rust-engine.js";
 import { walkIndexableFiles } from "./ts-fallback-scanner.js";
 
 export interface ScanData {
@@ -54,6 +54,20 @@ export interface ScanFallbackStatus {
   engine_error_message: string | null;
   degraded_capabilities: string[];
   enforcement_degraded: boolean;
+  /**
+   * BB-2: which of the three resolution routes produced the engine that answered.
+   *
+   * The discriminant existed on `RustEngineCommand` since the packaged-binary work and was
+   * propagated nowhere, so a `cargo run --quiet` debug engine reported itself as
+   * `engine_source: "rust", fallback_used: false` — true, and materially misleading, because the
+   * check it timed was ~2.7x slower than the product a user would install.
+   */
+  engine_resolution: "env_override" | "packaged_optional_dependency" | "workspace_cargo" | null;
+  /**
+   * BB-2: the profile the engine reports for itself. `null` means it could not be asked — never
+   * read that as "release".
+   */
+  engine_build_profile: EngineBuildProfile;
 }
 
 interface ScanDataInput {
@@ -106,7 +120,10 @@ export async function collectScanData(input: ScanDataInput): Promise<ScanData> {
       fallback_reason: "rust_engine_failed",
       engine_error_message: errorMessage,
       degraded_capabilities: ["graph", "graph_evidence", "deterministic_enforcement"],
-      enforcement_degraded: true
+      enforcement_degraded: true,
+      // BB-2: the TypeScript scanner is not the Rust engine, so neither field describes it.
+      engine_resolution: null,
+      engine_build_profile: null
     },
     diagnostics: [fallbackDiagnostic],
     graph_nodes: [],
@@ -157,7 +174,7 @@ export function scanDataFromEngineScanResult(value: unknown, input: ScanDataInpu
     facts: parsed.facts.map((fact) => engineFactRecord(input, fact)),
     snapshots: parsed.file_snapshots.map((file) => engineFileSnapshot(input, file)),
     engineSource: "rust",
-    fallbackStatus: rustFallbackStatus(),
+    fallbackStatus: rustFallbackStatus(parsed.build_profile ?? null),
     diagnostics: parsed.diagnostics,
     graph_nodes: [],
     graph_edges: [],
@@ -192,6 +209,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
   let stats: EngineStats | undefined;
   let completeness: EngineCompleteness[] | undefined;
   let engineVersion: string | undefined;
+  let buildProfile: EngineBuildProfile = null;
   let completed = false;
 
   for (const event of events) {
@@ -233,6 +251,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
         break;
       case "scan_started":
         engineVersion = event.engine_version;
+        buildProfile = event.build_profile ?? null;
         break;
       case "stats_delta":
         break;
@@ -248,7 +267,7 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
     facts: facts.map((fact) => engineFactRecord(input, fact)),
     snapshots: fileSnapshots.map((file) => engineFileSnapshot(input, file)),
     engineSource: "rust",
-    fallbackStatus: rustFallbackStatus(),
+    fallbackStatus: rustFallbackStatus(buildProfile),
     diagnostics,
     graph_nodes: graphNodes,
     graph_edges: graphEdges,
@@ -266,14 +285,20 @@ export function scanDataFromEngineStreamEvents(events: EngineStreamEvent[], inpu
   };
 }
 
-function rustFallbackStatus(): ScanFallbackStatus {
+function rustFallbackStatus(reportedBuildProfile?: EngineBuildProfile): ScanFallbackStatus {
+  const status = engineResolutionStatus();
   return {
     engine_source: "rust",
     fallback_used: false,
     fallback_reason: null,
     engine_error_message: null,
     degraded_capabilities: [],
-    enforcement_degraded: false
+    enforcement_degraded: false,
+    engine_resolution: status.resolution,
+    // BB-2: the scan's own `scan_started` handshake wins when we have it - it came from the process
+    // that produced these facts, where the separate `version` probe only describes the binary we
+    // would spawn now.
+    engine_build_profile: reportedBuildProfile ?? status.build_profile
   };
 }
 

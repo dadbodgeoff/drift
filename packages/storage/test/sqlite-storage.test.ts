@@ -113,7 +113,8 @@ describe("SQLite Drift storage", () => {
       "027_parser_gap_v2_metadata",
       "028_check_runs_refused_status",
       "029_fact_runtime_use",
-      "030_graph_diagnostic_import_source"
+      "030_graph_diagnostic_import_source",
+      "031_scan_capability_engine_provenance"
     ]);
     storage.close();
   });
@@ -189,7 +190,8 @@ describe("SQLite Drift storage", () => {
       "027_parser_gap_v2_metadata",
       "028_check_runs_refused_status",
       "029_fact_runtime_use",
-      "030_graph_diagnostic_import_source"
+      "030_graph_diagnostic_import_source",
+      "031_scan_capability_engine_provenance"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();
@@ -1139,6 +1141,10 @@ describe("SQLite Drift storage", () => {
       parser_gap_kinds: { unresolved_import: 1 },
       fallback_used: false,
       enforcement_degraded: false,
+      // BB-2: engine provenance round-trips, so a stored scan can be told apart from one taken
+      // through a debug `cargo run` engine after the fact.
+      engine_resolution: "env_override" as const,
+      engine_build_profile: "release" as const,
       created_at: "2026-05-25T00:00:00.000Z"
     };
     const storageWithReports = storage as typeof storage & {
