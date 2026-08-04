@@ -15,7 +15,15 @@ if (process.platform !== platform || process.arch !== arch) {
   throw new Error(`${process.env.npm_package_name ?? "Engine package"} can only be packed on ${platform}/${arch}.`);
 }
 
-execFileSync("cargo", ["build", "-p", "drift-engine"], {
+// BB-2 (found while closing the sprint): this hook runs on `pnpm pack` and `npm publish`, so what it
+// stages is what every user installs. It built and staged a **debug** engine - no `--release` - which
+// would have shipped an engine ~2.7x slower than the one every measurement in this repo was taken
+// against. The bench-side confound BB-2 exists to prevent, in the shipped product.
+//
+// `scripts/build-engine-artifacts.mjs` already built these correctly; the publish path used this
+// script instead, and the two disagreed silently. Kept in step with it deliberately: same
+// `--release --target <triple>` invocation, same output directory.
+execFileSync("cargo", ["build", "--release", "-p", "drift-engine", "--target", target], {
   cwd: repoRoot,
   stdio: "inherit"
 });
@@ -23,7 +31,7 @@ execFileSync("cargo", ["build", "-p", "drift-engine"], {
 execFileSync(process.execPath, [
   resolve(repoRoot, "scripts/stage-engine-package.mjs"),
   "--package-dir", packageRoot,
-  "--binary", resolve(repoRoot, "target/debug", binaryName),
+  "--binary", resolve(repoRoot, "target", target, "release", binaryName),
   "--target", target,
   "--platform", platform,
   "--arch", arch,
