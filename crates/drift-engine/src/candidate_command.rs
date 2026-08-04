@@ -176,6 +176,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             counterexample_refs,
             reason_not_blocking: "candidate_not_accepted".to_string(),
             evidence_fingerprint,
+            superseded_by: None,
         });
     }
 
@@ -253,6 +254,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             counterexample_refs,
             reason_not_blocking: "candidate_not_accepted".to_string(),
             evidence_fingerprint,
+            superseded_by: None,
         });
     }
 
@@ -824,7 +826,479 @@ fn security_candidates(
         }));
     }
 
+    // CV-1: the per-symbol candidates above fragment a repo's real convention across every helper
+    // name it uses. This derives the family candidates FROM them, so the per-member evidence is
+    // still there to explain each membership.
+    derive_convention_families(
+        &mut candidates,
+        request,
+        api_route_files,
+        scope_file_count,
+        file_hashes,
+        graph_fingerprint,
+    );
+
     candidates
+}
+
+/// One convention family: a kind whose members are interchangeable helpers drawn from one module.
+struct FamilySpec {
+    kind: &'static str,
+    /// Every fact kind that already produces a per-symbol candidate of this kind, each with the
+    /// nominator that site filters by. Both the dedicated fact kind (`rate_limit_guard_called`)
+    /// and the generic `symbol_called` path emit candidates today, so a family that read only one
+    /// of them would under-count its own members.
+    sources: &'static [FamilySource],
+    /// `requires` is the surface the check path reads accepted helpers from, and its key and
+    /// per-helper module field differ by kind. The family must mirror whatever the per-symbol
+    /// candidate of the same kind emits, or an accepted family would carry no helpers at all.
+    requires_key: &'static str,
+    helper_id_prefix: &'static str,
+    helper_module_key: &'static str,
+    heuristic_id: &'static str,
+    required_capabilities: &'static [&'static str],
+    noun: &'static str,
+    /// How a symbol earns membership once its module matches. Measured on dub, module identity
+    /// alone is nowhere near enough, so this is per-kind rather than one rule for all three.
+    confirmation: FamilyConfirmation,
+}
+
+/// What confirms that a same-module symbol really belongs to a family.
+///
+/// Measured on dub at `30e2e036`, module identity alone over-aggregates badly, because a real
+/// module exports heterogeneous symbols: `@/lib/auth` exports `withSession` and `withAdmin`, and
+/// also `hashPassword`, `hashToken` and `validatePassword`. Recruiting on the module produced a
+/// 9-member auth family containing three crypto utilities, and an 89-member "request validation"
+/// family containing `bulkDeleteLinks` and `addDomainToVercel`. An accepted family like that would
+/// count a route calling `hashPassword` as authenticated - a false negative in enforcement, which
+/// is exactly the theater this sprint exists not to re-ship.
+#[derive(PartialEq, Eq)]
+enum FamilyConfirmation {
+    /// The symbol's call must textually enclose the handler's work: its source span strictly
+    /// contains a response, data operation or request-input fact in the same file. That is what a
+    /// route wrapper *is* - `withSession(async (req) => { ...work... })` encloses its handler,
+    /// while `hashPassword(pw)` is a point call inside one.
+    ///
+    /// This is a syntactic containment test between two facts, NOT a dominance claim. It says "this
+    /// call is the wrapper of the handler", not "this guard runs before that sink on every path" -
+    /// the latter is the quarantined control-flow reasoning and nothing here computes it.
+    ///
+    /// Measured on dub this separates perfectly: withWorkspace 181 of 183 files, withAdmin 33 of
+    /// 33, withSession 16 of 17 - and getSession, hashPassword, hashToken, validatePassword all 0.
+    WrapsHandler,
+    /// The symbol was already positively detected by a dedicated fact kind, so nothing needs
+    /// confirming and nothing is recruited by module. Aggregation here is only the union of what
+    /// the extractor already identified - which is still one candidate instead of N, without the
+    /// recruitment that over-aggregated.
+    ///
+    /// Used where the helper is genuinely a point call inside the handler rather than a wrapper:
+    /// dub calls `await ratelimit(...)` in the body, so a wrapper test would empty the family and a
+    /// module test would fill it with everything the module exports.
+    AlreadyDetected,
+}
+
+struct FamilySource {
+    fact_kind: &'static str,
+    nominator: fn(&str) -> bool,
+}
+
+/// The three kinds this sprint aggregates. Each one's enforcement handler already exists and is
+/// reachable; what never arrived was a candidate whose coverage cleared the noise floor.
+const FAMILY_SPECS: &[FamilySpec] = &[
+    FamilySpec {
+        kind: "api_route_requires_auth_helper",
+        sources: &[FamilySource {
+            fact_kind: "symbol_called",
+            nominator: is_auth_candidate_symbol,
+        }],
+        requires_key: "auth_helpers",
+        helper_id_prefix: "auth",
+        helper_module_key: "import",
+        heuristic_id: "security-auth-helper-family-v1",
+        required_capabilities: &["syntax_facts", "security_auth"],
+        noun: "auth",
+        // dub's wrappers enclose their handlers; its crypto utilities do not.
+        confirmation: FamilyConfirmation::WrapsHandler,
+    },
+    FamilySpec {
+        kind: "api_route_requires_request_validation",
+        // Only the dedicated fact kind. Adding `symbol_called` here is what produced an 89-member
+        // family on dub: every symbol the dominant module exported joined, validators and bulk
+        // delete operations alike.
+        sources: &[FamilySource {
+            fact_kind: "request_validation_called",
+            nominator: always_candidate_symbol,
+        }],
+        requires_key: "validators",
+        helper_id_prefix: "validator",
+        helper_module_key: "import",
+        heuristic_id: "security-request-validation-family-v1",
+        required_capabilities: &["syntax_facts", "request_validation"],
+        noun: "request validation",
+        confirmation: FamilyConfirmation::AlreadyDetected,
+    },
+    FamilySpec {
+        kind: "api_route_requires_rate_limit",
+        sources: &[
+            FamilySource {
+                fact_kind: "rate_limit_guard_called",
+                nominator: always_candidate_symbol,
+            },
+            // A name-nominated rate limiter is a positive detection in its own right - the name
+            // predicate for this kind is narrow (`ratelimit`, `throttle`, `limiter`) rather than the
+            // broad substring logic auth uses, so it does not need module recruitment behind it.
+            FamilySource {
+                fact_kind: "symbol_called",
+                nominator: is_rate_limit_candidate_symbol,
+            },
+        ],
+        requires_key: "rate_limit_helpers",
+        helper_id_prefix: "rate_limit",
+        helper_module_key: "module",
+        heuristic_id: "security-rate-limit-family-v1",
+        required_capabilities: &["syntax_facts", "rate_limit_facts"],
+        noun: "rate limit",
+        confirmation: FamilyConfirmation::AlreadyDetected,
+    },
+];
+
+/// A candidate member of a family, before the module cluster decides whether it joins.
+struct FamilyMemberInput<'a> {
+    symbol: String,
+    facts: Vec<&'a CheckFact>,
+    module: String,
+    family_key: String,
+    /// True when a name predicate nominated this symbol, or a dedicated fact kind detected it
+    /// positively. Only nominated symbols can establish a family's module; the rest can only join
+    /// one that already exists.
+    nominated: bool,
+    /// True when this symbol's calls textually enclose the handler's work in at least two files -
+    /// the structural signature of a route wrapper. See `FamilyConfirmation::WrapsHandler`.
+    wraps_handler: bool,
+}
+
+/// CV-1: aggregate per-symbol candidates of one kind into a single family candidate whose matcher
+/// is a disjunction over its members and whose coverage is the union of the files they satisfy.
+///
+/// **Why.** dub uses a member of its auth-wrapper family on 341 of 488 routes (70%), but inference
+/// emitted one candidate per helper symbol, so the strongest single shard (`withSession`, 20 files)
+/// covered 3.9% of routes - under the 0.2 noise floor. The repo's strongest real convention was
+/// never hypothesised, while the enforcement handler for its kind sat reachable and unfed.
+///
+/// **Why this is not a new heuristic.** The family claim is presence-of-a-family-member: a call
+/// either resolves to the family's module or it does not, exactly as deterministic as the shipped
+/// data-access kind. No control flow is consulted here.
+///
+/// **Name-similarity nominates; resolved-module identity confirms.** This ordering is the whole
+/// safety property and it is the F4 lesson applied before the fact - substring matching nominated
+/// `isPrismaObj` once already. A symbol joins a family only because it resolves to the module a
+/// *nominated* seed resolves to, so the engine never encodes any repo's vocabulary: `withWorkspace`
+/// can join dub's auth family because it comes from the same module as `withSession`, not because
+/// the string "withWorkspace" appears anywhere in this source. That distinction is why
+/// `does_not_recognise_repo_specific_wrappers_as_auth_helpers` stays green - a fixture whose only
+/// symbol is `withWorkspace` has no nominated seed, so it forms no family.
+fn derive_convention_families(
+    candidates: &mut Vec<EngineCandidate>,
+    request: &CandidateRequest,
+    api_route_files: &BTreeSet<&str>,
+    scope_file_count: usize,
+    file_hashes: &BTreeMap<&str, &str>,
+    graph_fingerprint: &str,
+) {
+    let route_scope = json!({
+        "path_globs": ["**/app/api/**/route.ts", "**/app/api/**/route.tsx", "**/pages/api/**/*.ts"],
+        "file_roles": ["api_route"]
+    });
+
+    for spec in FAMILY_SPECS {
+        let inputs = family_member_inputs(spec, request, api_route_files);
+        let members = match spec.confirmation {
+            // Every member here was already positively detected - by a dedicated fact kind, or by a
+            // narrow name predicate - so the family is their union and nothing is recruited on
+            // module identity.
+            //
+            // The `nominated` filter is load-bearing, not a formality. `family_member_inputs`
+            // collects every symbol called in a route, because the `WrapsHandler` kinds need that
+            // wide net to find members their name predicate would miss. Taking all of it here
+            // produced a 249-member "rate limit" family on dub containing `capitalize`, `nanoid` and
+            // `uuid` - every symbol the repo calls in a route.
+            FamilyConfirmation::AlreadyDetected => inputs
+                .iter()
+                .filter(|input| input.nominated)
+                .collect::<Vec<_>>(),
+            // Module identity narrows the field; the wrapper test decides. Both are required: the
+            // module keeps a wrapper from an unrelated subsystem out, and the wrapper test keeps the
+            // module's own utilities out.
+            FamilyConfirmation::WrapsHandler => {
+                let Some(dominant) = dominant_family_key(&inputs) else {
+                    continue;
+                };
+                inputs
+                    .iter()
+                    .filter(|input| input.family_key == dominant && input.wraps_handler)
+                    .collect::<Vec<_>>()
+            }
+        };
+        // A one-member family is identical in effect to the per-symbol candidate that already
+        // exists, and emitting it would duplicate that candidate's matcher - and therefore its id.
+        // Nothing is added, so nothing is emitted: already-passing repos keep their exact candidate
+        // set, which is CV-1's third negative control.
+        if members.len() < 2 {
+            continue;
+        }
+
+        let symbols = members
+            .iter()
+            .map(|member| member.symbol.clone())
+            .collect::<Vec<_>>();
+        // Sorted, so the matcher fingerprint - and with it the candidate id - is stable across runs
+        // whatever order the facts arrived in.
+        let mut sorted_symbols = symbols.clone();
+        sorted_symbols.sort();
+
+        let mut matcher = json!({
+            "kind": spec.kind,
+            "required_calls": sorted_symbols.clone(),
+            "applies_to_file_roles": ["api_route"]
+        });
+        if spec.kind == "api_route_requires_request_validation" {
+            // Mirrors the per-symbol validation candidate: only mutations are in scope.
+            matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
+        }
+
+        // Per-member evidence, so `conventions show` can answer "why is this symbol in this
+        // family". `requires` is not fingerprinted, so counts here never destabilise the id.
+        let helpers = members
+            .iter()
+            .map(|member| {
+                json!({
+                    format!("{}_id", spec.helper_id_prefix):
+                        format!("{}:{}", spec.helper_id_prefix, member.symbol),
+                    "symbol": member.symbol,
+                    spec.helper_module_key: member.module,
+                    "evidence_file_count": unique_fact_file_count(&member.facts),
+                    "joined_by": if member.nominated { "name_and_module" } else { "module" }
+                })
+            })
+            .collect::<Vec<_>>();
+        let mut requires = json!({ spec.requires_key: helpers });
+        if spec.kind == "api_route_requires_auth_helper" {
+            requires["dominates"] = json!(["data_operation", "response"]);
+        }
+        if spec.kind == "api_route_requires_request_validation" {
+            requires["input_sources"] = json!(["body", "query", "params"]);
+            requires["sinks"] = json!(["data_operation", "response"]);
+            requires["schemas"] = json!([]);
+            requires["allow_throwing_parse"] = json!(true);
+            requires["allow_safe_parse_success_guard"] = json!(true);
+        }
+
+        // Union coverage: the count of distinct files satisfied by ANY member, which is the whole
+        // point of the aggregation.
+        let mut facts = members
+            .iter()
+            .flat_map(|member| member.facts.iter().copied())
+            .collect::<Vec<_>>();
+        facts.sort_by(|left, right| {
+            left.file_path
+                .cmp(&right.file_path)
+                .then(left.start_line.cmp(&right.start_line))
+                .then(left.name.cmp(&right.name))
+        });
+        facts.dedup_by(|left, right| {
+            left.file_path == right.file_path
+                && left.start_line == right.start_line
+                && left.name == right.name
+        });
+
+        let family = security_candidate_from_facts(SecurityCandidateInput {
+            request,
+            kind: spec.kind,
+            statement: format!(
+                "API routes appear to require one of {} {} helpers ({}).",
+                sorted_symbols.len(),
+                spec.noun,
+                sorted_symbols.join(", ")
+            ),
+            rationale:
+                "Aggregated interchangeable helpers resolving to one module into a single family.",
+            scope: route_scope.clone(),
+            matcher,
+            requires: Some(requires),
+            suggested_severity: "warning",
+            enforcement_capability: "deterministic_check",
+            confidence_label: "medium",
+            facts,
+            scope_file_count,
+            file_hashes,
+            graph_fingerprint,
+            heuristic_id: spec.heuristic_id,
+            required_capabilities: spec.required_capabilities,
+        });
+
+        // The per-symbol candidates stay - they carry the per-member evidence - but they are no
+        // longer the thing to accept, and saying so is what stops a reviewer accepting five
+        // fragments of one convention.
+        let family_id = family.candidate_id.clone();
+        let member_set = symbols.iter().cloned().collect::<BTreeSet<_>>();
+        for candidate in candidates.iter_mut() {
+            if candidate.kind != spec.kind || candidate.candidate_id == family_id {
+                continue;
+            }
+            let superseded = candidate.matcher["required_calls"]
+                .as_array()
+                .is_some_and(|calls| {
+                    !calls.is_empty()
+                        && calls.iter().all(|call| {
+                            call.as_str()
+                                .is_some_and(|call| member_set.contains(call))
+                        })
+                });
+            if superseded {
+                candidate.superseded_by = Some(family_id.clone());
+            }
+        }
+        candidates.push(family);
+    }
+}
+
+/// Every repeated helper call of one family's kind, with the module it resolves to.
+///
+/// A symbol whose import cannot be resolved is excluded: module identity is what confirms
+/// membership, so a symbol with no resolvable module has nothing to confirm it. Locally defined
+/// helpers land here, and excluding them is deliberate - a same-named local function is not the
+/// shared helper the family is about.
+fn family_member_inputs<'a>(
+    spec: &FamilySpec,
+    request: &'a CandidateRequest,
+    api_route_files: &BTreeSet<&str>,
+) -> Vec<FamilyMemberInput<'a>> {
+    let mut merged: BTreeMap<String, (Vec<&'a CheckFact>, bool)> = BTreeMap::new();
+    for source in spec.sources {
+        for (symbol, facts) in grouped_route_facts(request, api_route_files, source.fact_kind) {
+            let nominated = (source.nominator)(&symbol);
+            let entry = merged.entry(symbol).or_insert_with(|| (Vec::new(), false));
+            entry.0.extend(facts);
+            entry.1 = entry.1 || nominated;
+        }
+    }
+
+    merged
+        .into_iter()
+        // Two files is the same repetition threshold every per-symbol candidate site uses. A
+        // single call is not yet a convention, and letting singletons in is the cheapest way to
+        // over-aggregate.
+        .filter(|(_, (facts, _))| unique_fact_file_count(facts) >= 2)
+        .filter_map(|(symbol, (facts, nominated))| {
+            let module = import_source_for_symbol(request, &facts[0].file_path, &symbol)?;
+            let family_key = module_family_key(&module);
+            let wraps_handler = wrapping_file_count(request, &facts) >= 2;
+            Some(FamilyMemberInput {
+                symbol,
+                facts,
+                module,
+                family_key,
+                nominated,
+                wraps_handler,
+            })
+        })
+        .collect()
+}
+
+/// The module family a family's members must share, chosen as the nominated cluster covering the
+/// most files.
+///
+/// Only nominated symbols vote. That is what keeps a lookalike out: a helper named `withAuthorHat`
+/// resolving to `lib/blog/` nominates its own cluster, but `lib/auth/`'s cluster covers more files
+/// and wins, so the lookalike joins nothing. Ties break on the key so the choice is deterministic.
+fn dominant_family_key(inputs: &[FamilyMemberInput<'_>]) -> Option<String> {
+    let mut scores: BTreeMap<&str, usize> = BTreeMap::new();
+    for input in inputs.iter().filter(|input| input.nominated) {
+        *scores.entry(input.family_key.as_str()).or_insert(0) +=
+            unique_fact_file_count(&input.facts);
+    }
+    scores
+        .into_iter()
+        .max_by(|(left_key, left_score), (right_key, right_score)| {
+            left_score
+                .cmp(right_score)
+                .then_with(|| right_key.cmp(left_key))
+        })
+        .map(|(key, _)| key.to_string())
+}
+
+/// How many distinct files hold a call of this symbol whose source span strictly encloses that
+/// file's handler work - a response, a data operation, or a request-input read.
+///
+/// This is the structural signature of a route wrapper. `withSession(async (req) => { ... })` has a
+/// span covering everything it wraps, so the handler's own facts fall inside it; `hashPassword(pw)`
+/// is a point call and encloses nothing. Measured on dub: withWorkspace 181 of 183 files, withAdmin
+/// 33 of 33, and getSession, hashPassword, hashToken and validatePassword all zero.
+///
+/// Two files rather than one, matching the repetition threshold membership already uses - a single
+/// wrapped route is not yet evidence of a family.
+///
+/// This is a containment test between two syntactic spans. It is NOT the guard-dominance claim that
+/// stays quarantined: it says this call is the handler's wrapper, and says nothing about execution
+/// order, branch reachability, or whether the guard can be bypassed.
+fn wrapping_file_count(request: &CandidateRequest, facts: &[&CheckFact]) -> usize {
+    const HANDLER_WORK: &[&str] = &[
+        "route_returns_response",
+        "data_operation_detected",
+        "request_input_read",
+    ];
+    facts
+        .iter()
+        .filter(|fact| fact.end_line > fact.start_line)
+        .filter(|call| {
+            request.scan.facts.iter().any(|work| {
+                HANDLER_WORK.contains(&work.kind.as_str())
+                    && work.file_path == call.file_path
+                    && work.start_line > call.start_line
+                    && work.end_line <= call.end_line
+            })
+        })
+        .map(|fact| fact.file_path.as_str())
+        .collect::<BTreeSet<_>>()
+        .len()
+}
+
+/// The family key of a resolved import specifier: its first path segment that is not a generic
+/// container.
+///
+/// `@/lib/auth`, `@/lib/auth/session` and `apps/web/lib/auth/index` all key on `auth`, so they are
+/// one family. `@/lib/cache` keys on `cache` and `@/lib/blog` on `blog`, so neither ever merges
+/// with it.
+///
+/// Skipping the container words is the load-bearing part. Keying on the first segment outright
+/// would make `lib` the key for every `lib/*` module in the repo and collapse auth, cache and blog
+/// into one family - the exact over-aggregation this sprint's negative controls exist to catch.
+fn module_family_key(module: &str) -> String {
+    const GENERIC_SEGMENTS: &[&str] = &[
+        "", ".", "..", "@", "~", "src", "lib", "libs", "app", "apps", "web", "packages", "pkg",
+        "modules", "internal", "shared", "common", "utils", "util", "helpers", "index", "dist",
+        "server", "node_modules",
+    ];
+    let lower = module.trim().to_ascii_lowercase();
+    let trimmed = lower
+        .strip_suffix(".ts")
+        .or_else(|| lower.strip_suffix(".tsx"))
+        .or_else(|| lower.strip_suffix(".js"))
+        .unwrap_or(lower.as_str())
+        .to_string();
+
+    for (index, segment) in trimmed.split('/').enumerate() {
+        if GENERIC_SEGMENTS.contains(&segment) {
+            continue;
+        }
+        // A leading `@scope` is a package scope or a path alias, never the family - `@upstash/ratelimit`
+        // is the `ratelimit` family, and `@/lib/auth` is the `auth` family.
+        if index == 0 && segment.starts_with('@') {
+            continue;
+        }
+        return segment.to_string();
+    }
+    trimmed
 }
 
 struct SecurityCandidateInput<'a> {
@@ -931,6 +1405,7 @@ fn security_candidate_from_facts(input: SecurityCandidateInput<'_>) -> EngineCan
         counterexample_refs: Vec::new(),
         reason_not_blocking: "candidate_not_accepted".to_string(),
         evidence_fingerprint,
+        superseded_by: None,
     }
 }
 

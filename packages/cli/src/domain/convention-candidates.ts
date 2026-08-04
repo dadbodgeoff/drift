@@ -319,6 +319,7 @@ export function conventionCandidateReviewItem(candidate: ConventionCandidate): {
   first_evidence: Pick<EvidenceRef, "file_path" | "start_line" | "import_source" | "symbol"> | null;
   reason_not_blocking: ConventionCandidate["reason_not_blocking"] | null;
   evidence_fingerprint: string | null;
+  superseded_by: string | null;
 } {
   const firstEvidence = candidate.evidence_refs[0] ?? null;
   return {
@@ -340,6 +341,9 @@ export function conventionCandidateReviewItem(candidate: ConventionCandidate): {
     counterexample_ref_count: candidate.counterexample_refs.length,
     reason_not_blocking: candidate.reason_not_blocking ?? null,
     evidence_fingerprint: candidate.evidence_fingerprint ?? null,
+    // CV-1: accepting a superseded candidate accepts one fragment of a convention a family already
+    // states in full, so the review surface has to say which family that is.
+    superseded_by: candidate.superseded_by ?? null,
     first_evidence: firstEvidence
       ? {
           file_path: firstEvidence.file_path,

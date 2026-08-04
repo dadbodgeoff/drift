@@ -1133,6 +1133,9 @@ export const ConventionCandidateSchema = z.object({
     "candidate_incomplete",
     "candidate_heuristic"
   ]).optional(),
+  // CV-1: the id of the family candidate that now speaks for this per-symbol candidate. Present
+  // only on superseded candidates, so a repo with no families parses exactly as it did before.
+  superseded_by: z.string().min(1).optional(),
   status: ConventionStatusSchema,
   created_at: z.string().datetime()
 });

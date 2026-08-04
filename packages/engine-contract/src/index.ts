@@ -588,7 +588,13 @@ export const EngineCandidateSchema = z.object({
     "candidate_heuristic"
   ]),
   evidence_fingerprint: z.string().min(1),
-  supersedes_candidate_id: z.string().min(1).optional()
+  supersedes_candidate_id: z.string().min(1).optional(),
+  // CV-1: the family candidate that now speaks for this per-symbol candidate.
+  //
+  // Deliberately not `supersedes_candidate_id` above, which is dead - declared here, never emitted
+  // by the engine, never read by anything. It also points the wrong way and is singular: one family
+  // supersedes every member it aggregates, so the pointer belongs on the many side.
+  superseded_by: z.string().min(1).optional()
 });
 
 export const EngineFindingSchema = z.object({
