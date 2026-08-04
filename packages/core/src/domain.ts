@@ -86,6 +86,8 @@ export interface ConventionScope {
   exclude_path_globs?: string[];
 }
 
+export type RouteFlavor = "api_route" | "cron_job" | "webhook_handler";
+
 export interface ConventionMatcher {
   kind: ConventionKind;
   forbidden_imports?: string[];
@@ -94,6 +96,8 @@ export interface ConventionMatcher {
   required_calls?: string[];
   allowed_delegate_imports?: string[];
   applies_to_file_roles?: FileRole[];
+  /** CV-2: which route flavours this convention is about. Empty or absent means all of them. */
+  applies_to_route_flavors?: RouteFlavor[];
   file_roles?: FileRole[];
   path_globs?: string[];
   route_paths?: string[];
@@ -284,6 +288,7 @@ export type FactKind =
   | "data_operation_detected"
   | "route_declared"
   | "file_role_detected"
+  | "route_flavor_detected"
   | "test_declared"
   | "auth_guard_called"
   | "route_returns_response"

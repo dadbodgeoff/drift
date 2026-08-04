@@ -14,6 +14,7 @@ pub enum FactKind {
     DataOperationDetected,
     RouteDeclared,
     FileRoleDetected,
+    RouteFlavorDetected,
     TestDeclared,
     AuthGuardCalled,
     RouteReturnsResponse,
@@ -148,11 +149,31 @@ pub fn extract_typescript_facts(
     });
 
     let line_count = source.lines().count().max(1);
+    let mut is_api_route = false;
     for role in file_roles(&file_path) {
+        if role == "api_route" {
+            is_api_route = true;
+        }
         facts.push(Fact {
             kind: FactKind::FileRoleDetected,
             file_path: file_path.clone(),
             name: role.to_string(),
+            value: None,
+            imported_name: None,
+            runtime_use: None,
+            start_line: 1,
+            end_line: line_count,
+            start_column: 1,
+            end_column: 1,
+        });
+    }
+    // CV-2: the route's flavour, emitted only for files that are routes at all - a flavour fact on a
+    // component would be a classification of something that has no flavour.
+    if is_api_route {
+        facts.push(Fact {
+            kind: FactKind::RouteFlavorDetected,
+            file_path: file_path.clone(),
+            name: route_flavor(&file_path).to_string(),
             value: None,
             imported_name: None,
             runtime_use: None,
@@ -1089,6 +1110,58 @@ fn node_text(node: Node<'_>, source: &[u8]) -> Option<String> {
 
 fn unquote(value: String) -> String {
     value.trim_matches('"').trim_matches('\'').to_string()
+}
+
+/// CV-2: which flavour of route this file is, from its path segments below the api boundary.
+///
+/// dub's 494 route files are 358 app, 111 cron and 25 webhook. Cron and webhook routes authenticate by
+/// signature rather than session, so a session convention scored against one global denominator either
+/// has its confidence dragged down by routes it was never about or, accepted, flags every cron route as
+/// missing auth.
+///
+/// Emitted as a fact so the candidate deriver reads a classification instead of matching globs itself -
+/// the deriver getting its own glob engine is the BB-11 divergence in a new place. The TypeScript side
+/// has one predicate for this, `routeFlavor` in packages/core/src/convention-scope.ts, and the two are
+/// held together by a differential test rather than by shared code, which the process boundary does not
+/// allow. The names are the existing entrypoint-kind vocabulary rather than new strings.
+///
+/// Per SEGMENT, never substring: `app/api/crontab-editor/route.ts` is an ordinary route.
+pub fn route_flavor(file_path: &str) -> &'static str {
+    const CRON_SEGMENTS: &[&str] = &["cron", "crons", "jobs", "scheduled"];
+    const WEBHOOK_SEGMENTS: &[&str] = &["webhook", "webhooks"];
+
+    let lower = file_path.to_ascii_lowercase();
+    let all = lower.split('/').collect::<Vec<_>>();
+    // Only segments below the api boundary decide flavour: a repo mounted under `apps/cron-service/`
+    // does not make every route inside it a cron job.
+    let below = match all.iter().rposition(|segment| *segment == "api") {
+        Some(index) => &all[index + 1..],
+        None => &all[..],
+    };
+    let segments = below
+        .iter()
+        // Next route groups - `(ee)`, `(admin)` - are organisational and carry no flavour.
+        .filter(|segment| !(segment.starts_with('(') && segment.ends_with(')')))
+        .map(|segment| {
+            segment
+                .strip_suffix(".ts")
+                .or_else(|| segment.strip_suffix(".tsx"))
+                .or_else(|| segment.strip_suffix(".js"))
+                .or_else(|| segment.strip_suffix(".jsx"))
+                .unwrap_or(segment)
+        })
+        .collect::<Vec<_>>();
+
+    if segments.iter().any(|segment| CRON_SEGMENTS.contains(segment)) {
+        return "cron_job";
+    }
+    if segments
+        .iter()
+        .any(|segment| WEBHOOK_SEGMENTS.contains(segment))
+    {
+        return "webhook_handler";
+    }
+    "api_route"
 }
 
 fn file_roles(file_path: &str) -> Vec<&'static str> {

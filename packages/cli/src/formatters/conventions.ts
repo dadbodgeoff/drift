@@ -72,6 +72,12 @@ export function formatConventionCandidateText(payload: {
     `Confidence: ${candidate.confidence_label}`,
     `Scope: ${candidate.scope.path_globs.join(", ") || "none"}`,
     `File roles: ${candidate.scope.file_roles?.join(", ") || "none"}`,
+    // CV-2: which route flavours this convention is about. Printed only when it is conditioned,
+    // because "all of them" is the absence of a condition rather than a value - and a reviewer
+    // deciding whether to accept has to be able to see that a family excludes cron routes.
+    ...(candidate.matcher.applies_to_route_flavors?.length
+      ? [`Route flavors: ${candidate.matcher.applies_to_route_flavors.join(", ")}`]
+      : []),
     `Forbidden imports: ${candidate.matcher.forbidden_imports?.join(", ") || "none"}`,
     `Required calls: ${candidate.matcher.required_calls?.join(", ") || "none"}`,
     `Delegate imports: ${candidate.matcher.allowed_delegate_imports?.join(", ") || "none"}`,
