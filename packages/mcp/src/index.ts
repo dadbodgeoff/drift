@@ -39,6 +39,7 @@ import {
   createDriftCapabilities,
   expandApiRouteScopeGlobs,
   isNextApiRoutePath,
+  conventionScopeFiles,
   matchesPolicyGlob,
   nextApiRouteIdentity
 } from "@drift/core";
@@ -2157,7 +2158,16 @@ function relevantFileForPath(
   }
 
   for (const convention of contract.conventions) {
-    const inScope = apiCompatibleGlobs(convention.scope.path_globs).some((glob) => matchesPolicyGlob(filePath, glob));
+    // BB-11: the shared predicate, not a local glob decision.
+    //
+    // This was the last scope decision in the product still deciding for itself, and the differential
+    // in packages/mcp/test/scope-predicate-bb11.test.ts showed it disagreeing with core on exactly one
+    // input: it applied `path_globs` only and never consulted `exclude_path_globs`, so a file an author
+    // had explicitly excluded was still reported "in scope for <convention_id>" on this agent-facing
+    // surface, and inherited that convention's roles. Adjudicated as a bug rather than a policy,
+    // because `scopeMatchesFile` two hundred lines below already honours exclusions - one file
+    // disagreeing with itself.
+    const inScope = conventionScopeFiles([filePath], convention).length > 0;
     if (inScope) {
       reasons.add(`in scope for ${convention.id}`);
       for (const role of convention.scope.file_roles ?? []) {

@@ -2715,6 +2715,46 @@ describe("read-only MCP handlers", () => {
     expect(JSON.stringify(securityContext)).not.toContain("process.env");
   });
 
+  it("does not report an excluded file as in scope for a convention (BB-11)", async () => {
+    // BB-11, behaviourally. The differential in scope-predicate-bb11.test.ts compares predicates;
+    // this one goes through `get_task_preflight` -> `relevantFilesForTask` -> the scope decision at
+    // packages/mcp/src/index.ts:2160, so it fails if that seam reverts to deciding scope itself.
+    //
+    // The defect: :2160 applied `path_globs` only and never consulted `exclude_path_globs`, so a file
+    // an author had explicitly excluded was still labelled "in scope for <convention_id>" on this
+    // agent-facing surface, and inherited that convention's roles.
+    const databasePath = await seedMcpDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const contract = storage.getRepoContract("repo_abc")!;
+    const [convention] = contract.conventions;
+    storage.upsertAcceptedConvention("repo_abc", {
+      ...convention,
+      scope: { ...convention.scope, exclude_path_globs: ["**/api/users/**"] }
+    });
+    storage.upsertRepoContract({
+      ...contract,
+      conventions: [{
+        ...convention,
+        scope: { ...convention.scope, exclude_path_globs: ["**/api/users/**"] }
+      }]
+    });
+    storage.close();
+
+    const preflight = createReadOnlyMcpHandlers({ databasePath }).get_task_preflight({
+      repo_id: "repo_abc",
+      task: "change users api route",
+      path: "apps/web/app/api/users/route.ts"
+    }) as { relevant_files: Array<{ path: string; reasons: string[]; roles: string[] }> };
+
+    const excluded = preflight.relevant_files.find(
+      (file) => file.path === "apps/web/app/api/users/route.ts"
+    );
+    // It is still relevant - it is the requested path - but not because it is in this convention's
+    // scope, and it must not inherit the convention's roles through a scope claim it does not satisfy.
+    expect(excluded?.reasons ?? []).not.toContain(`in scope for ${convention.id}`);
+  });
+
   it("includes scan symbol identities in MCP change impact", async () => {
     const databasePath = await seedMcpDatabase();
     const storage = openDriftStorage({ databasePath });
@@ -3813,7 +3853,10 @@ describe("read-only MCP handlers", () => {
         mcp_version: "0.1.0",
         core_version: "0.1.0",
         scanner_version: "0.1.0",
-supported_sqlite_schema_version: 32,
+        // 33 since CV-1's migration 033_convention_candidate_superseded_by. This pin exists to make a
+        // schema change deliberate, so it moves with one - and CV-1 landed without running this suite,
+        // which is how it moved a commit later than the migration did.
+        supported_sqlite_schema_version: 33,
         storage_driver: "sqlite"
       },
       v1_scope: {

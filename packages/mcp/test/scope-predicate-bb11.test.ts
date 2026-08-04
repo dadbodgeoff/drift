@@ -15,8 +15,14 @@ import {
  * from May, on the `relevant_files` reasons/roles surface — still decides scope itself.
  *
  * BB-11 required running this differential *before* replacing that logic, and stopping if the two
- * disagreed, because then the divergence is a live policy bug rather than a refactor. **They disagree**,
- * so the replacement is not made here. What is committed instead is the evidence.
+ * disagreed, because then the divergence is a live policy bug rather than a refactor. They disagreed on
+ * exactly one input - `exclude_path_globs`, which `:2160` never consulted - and that was adjudicated as
+ * a bug rather than a policy, because `scopeMatchesFile` in the same file already honours exclusions.
+ *
+ * `:2160` now calls `conventionScopeFiles`. This file therefore flipped from pinning the divergence to
+ * pinning the agreement: the tricky-path table is now a regression test on the shared predicate, and
+ * the exclusion case asserts the two AGREE where it used to assert they differ. The behavioural
+ * regression test for the seam itself is in mcp.test.ts, for the reason given on `mcpInScope` below.
  *
  * The two glob primitives are not the problem: `matchesPolicyGlob` is already a thin alias for core's
  * `matchesGlob`, and `apiCompatibleGlobs` for `expandApiRouteScopeGlobs`. On every tricky path shape
@@ -47,8 +53,22 @@ const conventionWith = (scope: Partial<AcceptedConvention["scope"]>): AcceptedCo
     matcher: { kind: "forbidden_imports", forbidden_imports: ["@/lib/prisma"] }
   }) as unknown as AcceptedConvention;
 
-/** MCP's local decision, verbatim from packages/mcp/src/index.ts:2160. */
+/**
+ * What :2160 now calls. This is a MIRROR of the source, not the source itself - the seam is a private
+ * function - so nothing in this file can detect the source reverting to a local glob decision. An
+ * earlier version of this comment claimed it could; red-checking the revert proved it does not, because
+ * reverting the source leaves this mirror untouched.
+ *
+ * The behavioural guarantee therefore lives where it can actually fail: "does not report an excluded
+ * file as in scope for a convention (BB-11)" in mcp.test.ts drives `get_task_preflight` through the real
+ * seam, and goes red when the fix is reverted. What this file contributes is the predicate-level
+ * differential and the record of the adjudication.
+ */
 const mcpInScope = (convention: AcceptedConvention, filePath: string): boolean =>
+  conventionScopeFiles([filePath], convention).length > 0;
+
+/** The pre-fix local decision, retained so the defect it caused stays reproducible. */
+const legacyGlobOnlyInScope = (convention: AcceptedConvention, filePath: string): boolean =>
   expandApiRouteScopeGlobs(convention.scope.path_globs).some((glob) => matchesPolicyGlob(filePath, glob));
 
 const coreInScope = (convention: AcceptedConvention, filePath: string): boolean =>
@@ -107,21 +127,29 @@ describe("BB-11 scope predicate differential", () => {
     ]);
   });
 
-  it("DIVERGES on exclude_path_globs - reported, not fixed here", () => {
-    // KNOWN DEFECT, pinned deliberately. BB-11 says a disagreement is a product decision rather than a
-    // refactor, so the behaviour is left as found and recorded instead.
-    //
-    // When this is decided and fixed, this test will fail. That is the point: it should fail, and send
-    // whoever fixed it to docs/beta-run/SUMMARY-BB.md to strike the open question.
+  it("AGREES on exclude_path_globs - the divergence BB-11 found, now fixed", () => {
+    // This assertion is inverted from the one this file shipped with. It used to pin
+    // `mcpInScope === true` on an excluded path as a KNOWN DEFECT; the fix routes :2160 through the
+    // shared predicate, so both now exclude it.
     const convention = conventionWith({ exclude_path_globs: ["**/internal/**"] });
     const excluded = "app/api/internal/route.ts";
 
     expect(coreInScope(convention, excluded)).toBe(false);
-    // The bug: an explicitly excluded file is still labelled in-scope by the MCP surface.
-    expect(mcpInScope(convention, excluded)).toBe(true);
+    expect(mcpInScope(convention, excluded)).toBe(false);
 
-    // And the exclusion is honoured everywhere else in the same file, which is what makes this an
-    // inconsistency rather than a policy.
+    // The defect stays reproducible: the old glob-only decision still says the excluded file is in
+    // scope, so the divergence BB-11 measured is preserved as evidence rather than deleted. Note this
+    // does NOT detect a revert at :2160 - see the note on `mcpInScope` for where that is tested.
+    expect(legacyGlobOnlyInScope(convention, excluded)).toBe(true);
     expect(matchesPolicyGlob(excluded, "**/internal/**")).toBe(true);
+  });
+
+  it("still labels an unexcluded route in scope - the fix must not over-narrow", () => {
+    // The negative control for the fix: routing through core must not silently drop files that were
+    // correctly in scope before, which would quietly shrink the agent-facing relevant_files surface.
+    const convention = conventionWith({ exclude_path_globs: ["**/internal/**"] });
+
+    expect(mcpInScope(convention, "app/api/users/route.ts")).toBe(true);
+    expect(coreInScope(convention, "app/api/users/route.ts")).toBe(true);
   });
 });
