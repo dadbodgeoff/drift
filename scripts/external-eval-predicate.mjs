@@ -80,6 +80,20 @@ export function repoVerdict(result, cfg) {
   assert("catches_genuine_subpath", result.catches_genuine_subpath === true);
   // BB-5: strictly `=== true`, following the enforcement_matches_mode lesson - `!== false` would
   // let an absent measurement read as agreement, which is how a silently-disabled property passes.
+  // BB-8: cell liveness. A cell that reads 0 while a sibling machine-JSON field says there was
+  // something to count is either a product regression or a dead measurement, and both must stop the
+  // suite. This exists because the `baselined` cell died silently for a whole sprint: BB-3 reworded the
+  // sentence its regex depended on, `?? 0` supplied a plausible zero, and the baseline was updated to
+  // the corpse. Nothing failed, because nothing asserted the cell was still alive.
+  //
+  // `null` is explicitly not 0 here: it means acceptance did not happen, which is a legitimate state.
+  assert(
+    "baselined_cell_live",
+    result.baselined === null ||
+      result.baselined === undefined ||
+      result.baselined > 0 ||
+      !(result.findings_count > 0)
+  );
   assert("exemplar_integrity", result.exemplar_integrity === true);
   // BB-6: strictly `=== true`, same reason - an absent measurement must not read as agreement.
   assert("guidance_within_budget", result.guidance_within_budget === true);
