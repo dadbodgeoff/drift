@@ -248,7 +248,16 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   // Deliberately scoped to diff-derived scopes. `--scope full` on a repo with no indexable files is
   // a different statement ("this repo has nothing Drift understands"), which `drift doctor` already
   // covers and which this refusal would mislabel as a bad diff range.
-  if (scope !== "full" && parsedDiff.files.length === 0 && parsedDiff.deletedFiles.length === 0) {
+  if (
+    scope !== "full" &&
+    parsedDiff.files.length === 0 &&
+    parsedDiff.deletedFiles.length === 0 &&
+    // A pure rename emits only `rename from`/`rename to` and no hunks, so it lands here looking like
+    // an empty diff. It is an ordinary refactor with a legitimately empty *content* scope - the same
+    // shape as a deletion-only diff, and the bench measured the cost of getting it wrong directly:
+    // taxonomy's ordinary-edit refusal rate went 0/8 to 1/8 before this clause existed.
+    (parsedDiff.renamedFiles ?? []).length === 0
+  ) {
     throw new DriftError(
       `Refusing to report a verdict: the diff scope is empty, so no file was examined. ${emptyDiffScopeCauses(parsed)}`,
       {
@@ -2189,13 +2198,16 @@ function affectedScopeSummary(
   changed_line_count: number;
   deleted_file_count: number;
   deleted_files: string[];
+  renamed_file_count: number;
 } {
   return {
     mode: scope,
     changed_file_count: parsedDiff.files.length,
     changed_line_count: parsedDiff.files.reduce((total, file) => total + file.changedLines.size, 0),
     deleted_file_count: parsedDiff.deletedFiles.length,
-    deleted_files: parsedDiff.deletedFiles
+    deleted_files: parsedDiff.deletedFiles,
+    // BB-1: so `Checked 0 files` can name a rename as its reason, the same way it names a deletion.
+    renamed_file_count: (parsedDiff.renamedFiles ?? []).length
   };
 }
 
