@@ -28,6 +28,36 @@ Seven items from `TDD-BETA-BLOCKERS.md`. Six implemented, one falsified. Per-ite
   recorded; both measuring harnesses exit 1 rather than record a debug number.
 - `eval:external` **7/7**, no change vs baseline apart from the two declared BASELINE_CHANGEs.
 
+## Verification, on the final tree (`85dbba98`)
+
+Every `verify:ci` component, run individually and re-run after the late BB-1b fix because that fix
+touched enforcement-path code:
+
+| Gate | Result |
+|---|---|
+| `eval:external` | 7/7, no change vs baseline |
+| `eval:determinism` | **7/7 identical over 3 runs** |
+| `eval:bench` | **0/56 ordinary-edit refusals**, ratchet ok |
+| `eval:evasion` | pass |
+| `pnpm -r test` | 938 |
+| `test:e2e` | 82/82 |
+| `test:harness` | 101 |
+| typecheck · rustfmt · clippy · check:boundaries | pass |
+| beta:proof · validate:claims · release-matrix · `git diff --check` | pass |
+
+One caveat on method: these were run as individual commands rather than as one chained `pnpm verify:ci`
+invocation. Every component is covered; the single chained run is not.
+
+Two process notes, recorded because they cost time and would cost it again:
+
+- `pnpm -r test` needs `--workspace-concurrency=1` passed **to pnpm, not to vitest** — passing it to
+  vitest makes `@drift/core` fail with an unknown-option error that looks like a test failure.
+- Long evals mutate the *shared* pinned repos in `~/drift-falsification/repos`. Two overlapping runs
+  collide, and a run killed mid-flight leaves an injected file behind. Both happened here; the
+  harness's contamination guard caught both and refused rather than recording a number from a repo
+  nobody chose. Recovery is `git reset --hard && git clean -fd` in the affected repo. Never run two
+  evals concurrently, and never rebuild while one is running.
+
 ## Decisions taken inside the sprint
 
 These were the TDD's to make and it left them open, so they were made and are flagged for review:
