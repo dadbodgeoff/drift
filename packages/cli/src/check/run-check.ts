@@ -16,6 +16,7 @@ import { buildEntrypointFlowProof,buildReadiness, scoreHelperSimilarity } from "
 import type { SqliteDriftStorage } from "@drift/storage";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { conformingExemplars,migrationSentence } from "../domain/conforming-exemplars.js";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { DriftError } from "../app/drift-error.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
@@ -667,6 +668,21 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
 
+  // BB-5: attach conforming exemplars and the migration sentence here, after every check has
+  // contributed its findings.
+  //
+  // Placement is the load-bearing part. The integrity invariant - an exemplar never has an open
+  // finding against the convention it exemplifies - can only be evaluated once the full finding set
+  // exists. Computing exemplars inside each individual check would let a file be offered as an
+  // example by one check while a later check in the same run flags it.
+  attachConformingExemplars({
+    findings,
+    conventions: contract.conventions,
+    scanFiles: checkData.files,
+    facts: checkData.facts,
+    baseline,
+    scope
+  });
   attachFindingVersionBindings(findings, machineContractVersions);
   for (const finding of findings) {
     storage.upsertFinding(finding);
@@ -989,6 +1005,91 @@ function readinessForCheck(input: {
     required_capabilities: ["direct_data_access_check"],
     missing_capabilities: input.capabilityCompleteness.missing_capabilities
   });
+}
+
+/**
+ * BB-5: give every finding up to three files that obey the convention it broke, plus the sentence
+ * that explains why the baselined violations around them are not precedent.
+ *
+ * Trials on 2026-08-03: agents told a rule opened the neighbouring files, found those violate it
+ * too, and defected - one of them saying so in writing. The nearest files by path are the most
+ * likely to share the violation (dub's invite routes are exactly this shape), so "nearby" is the
+ * wrong selector on its own and the zero-open-findings filter is what makes the list safe to read.
+ */
+function attachConformingExemplars(input: {
+  findings: Finding[];
+  conventions: RepoContract["conventions"];
+  scanFiles: string[];
+  facts: FactRecord[];
+  baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>;
+  scope: string;
+}): void {
+  const conventionsById = new Map(input.conventions.map((convention) => [convention.id, convention]));
+  const roleByFile = new Map<string, string>();
+  for (const fact of input.facts) {
+    if (fact.kind === "file_role_detected") {
+      roleByFile.set(fact.file_path, fact.name);
+    }
+  }
+
+  // Every file the check's own scan saw, as a synthetic diff, so scope membership is decided by the
+  // same `filesForConvention` the enforcement path uses. A second scope implementation here would
+  // eventually disagree with the first, and the disagreement would show up as an exemplar that is
+  // not actually in scope.
+  const allFilesDiff = {
+    files: input.scanFiles.map((path) => ({ path, changedLines: new Set<number>(), isAdded: false })),
+    deletedFiles: []
+  };
+
+  const scopeFilesByConvention = new Map<string, string[]>();
+  const violatingByConvention = new Map<string, Set<string>>();
+
+  // A baselined violation is still a violation. Citing one as an exemplar is precisely the
+  // defection trigger observed in trial B1, so the baseline feeds this set rather than excusing it.
+  for (const entry of input.baseline) {
+    if (entry.status !== "active") {
+      continue;
+    }
+    const set = violatingByConvention.get(entry.convention_id) ?? new Set<string>();
+    set.add(entry.file_path);
+    violatingByConvention.set(entry.convention_id, set);
+  }
+  for (const finding of input.findings) {
+    const set = violatingByConvention.get(finding.convention_id) ?? new Set<string>();
+    for (const ref of finding.evidence_refs) {
+      set.add(ref.file_path);
+    }
+    violatingByConvention.set(finding.convention_id, set);
+  }
+
+  for (const finding of input.findings) {
+    const convention = conventionsById.get(finding.convention_id);
+    if (!convention) {
+      continue;
+    }
+    let scopeFiles = scopeFilesByConvention.get(convention.id);
+    if (!scopeFiles) {
+      scopeFiles = filesForConvention(allFilesDiff, convention, "full");
+      scopeFilesByConvention.set(convention.id, scopeFiles);
+    }
+    const result = conformingExemplars({
+      scopeFiles,
+      violatingFiles: violatingByConvention.get(convention.id) ?? new Set<string>(),
+      roleByFile,
+      referenceFile: finding.evidence_refs[0]?.file_path
+    });
+    if (result.conforming_examples.length > 0) {
+      finding.conforming_examples = result.conforming_examples;
+    }
+    const sentence = migrationSentence(
+      input.baseline.filter(
+        (entry) => entry.status === "active" && entry.convention_id === convention.id
+      ).length
+    );
+    if (sentence && !finding.message.includes(sentence)) {
+      finding.message = `${finding.message} ${sentence}`;
+    }
+  }
 }
 
 function attachFindingVersionBindings(

@@ -386,6 +386,19 @@ function evaluateRepoAt(reposDir, cfg) {
     // attributed to an intermediate barrel would still satisfy it (the papermark artifact).
     result.injected_route = badPath;
     result.injection_evidence_file = evidence?.file_path ?? null;
+    // BB-5: the exemplar integrity invariant, measured on every suite repo rather than only in
+    // fixtures. An exemplar that itself violates the convention it exemplifies is what produced the
+    // trial-B1 defection ("the preflight's claim doesn't hold up against the actual codebase"), so
+    // this is asserted, not recorded: a violation is a product defect, not a baseline movement.
+    const violatingPaths = new Set(
+      findings.flatMap((finding) => (finding.evidence_refs ?? []).map((ref) => ref.file_path))
+    );
+    const emittedExemplars = findings.flatMap((finding) =>
+      (finding.conforming_examples ?? []).map((example) => example.file_path)
+    );
+    result.exemplars_emitted = emittedExemplars.length;
+    result.exemplar_integrity = emittedExemplars.every((path) => !violatingPaths.has(path));
+    result.exemplar_violators = emittedExemplars.filter((path) => violatingPaths.has(path)).sort();
     result.injection_diff_status = onBad[0]?.diff_status ?? null;
     result.injection_enforcement = onBad[0]?.enforcement_result ?? null;
     result.injection_finding_status = onBad[0]?.status ?? null;
@@ -522,6 +535,9 @@ const results = REPOS.filter((cfg) => !only || only.includes(cfg.name)).map((cfg
       ` cleanFP=${r.clean_control_false_positive ? "YES" : "no"}` +
       ` neg=${r.fp_type_only_import === false && r.fp_lookalike_module === false ? "ok" : "FP"}` +
       ` subpath=${r.catches_genuine_subpath ? "y" : "n"}` +
+      // BB-5: `n/N` - clean exemplars emitted out of exemplars emitted. A visible 0 total is the
+      // signal that the feature stopped running, which a boolean pass would hide.
+      ` exemplars=${(r.exemplars_emitted ?? 0) - (r.exemplar_violators?.length ?? 0)}/${r.exemplars_emitted ?? 0}` +
       (r.discovery_named_data_layer !== undefined
         ? ` f4gap=${r.inference_alone_found_data_layer === false && r.discovery_named_data_layer ? "y" : "n"}`
         : "") +

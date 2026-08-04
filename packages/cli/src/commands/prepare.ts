@@ -19,6 +19,7 @@ import { graphPreflightContext } from "../domain/graph-preflight.js";
 import { requiredChecksFromGraphRisk } from "../domain/graph-risk-checks.js";
 import { preflightGovernance } from "../domain/governance.js";
 import { countDeniedFiles,preflightSummary,preparedConvention,relevantFilesForTask,requiredChecksForFiles,riskyAreasForFiles,waiversForFiles } from "../domain/preflight.js";
+import { conformingExemplarContext } from "../domain/conforming-exemplar-context.js";
 import { repoContractOrDefault } from "../domain/repo-paths.js";
 import { assertFreshScanIfRequired,freshnessRequirement,scanStatusPayload } from "../domain/scan-status.js";
 import { formatPrepareText } from "../formatters/preflight.js";
@@ -45,7 +46,20 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   const activeConventions = contract.conventions.filter((convention) =>
     isActiveConvention(convention, now)
   );
-  const conventions = activeConventions.map(preparedConvention);
+  // BB-5: the packet's convention entries carry files that actually conform to each convention.
+  //
+  // Built from the stored scan rather than a fresh walk, so the exemplars are files Drift has facts
+  // about - an exemplar it cannot vouch for is the thing this item exists to stop.
+  const exemplarContext = conformingExemplarContext(storage, repoId);
+  const conventions = activeConventions.map((convention) =>
+    preparedConvention(convention, {
+      scopeFiles: exemplarContext.scopeFilesFor(convention),
+      violatingFiles: exemplarContext.violatingFilesFor(convention.id),
+      roleByFile: exemplarContext.roleByFile,
+      baselineActiveCount: exemplarContext.baselineActiveCountFor(convention.id),
+      targetPath: targetPath ?? undefined
+    })
+  );
   const findings = storage
     .listFindings(repoId)
     .filter(isOpenPreflightFinding)

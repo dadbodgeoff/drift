@@ -78,6 +78,9 @@ export function repoVerdict(result, cfg) {
   assert("enforcement_matches_mode", result.enforcement_matches_mode === true);
   assert("no_lookalike_false_positive", result.fp_lookalike_module === false);
   assert("catches_genuine_subpath", result.catches_genuine_subpath === true);
+  // BB-5: strictly `=== true`, following the enforcement_matches_mode lesson - `!== false` would
+  // let an absent measurement read as agreement, which is how a silently-disabled property passes.
+  assert("exemplar_integrity", result.exemplar_integrity === true);
   assert("engine_source_rust", result.engine_source === "rust");
   assert("no_fallback_used", result.fallback_used === false);
 

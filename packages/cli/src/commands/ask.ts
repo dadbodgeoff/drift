@@ -7,6 +7,7 @@ import { isActiveConvention } from "../check/rule-evaluation.js";
 import { agentEnvelopeForScan } from "../domain/agent-envelope.js";
 import { preflightGovernance } from "../domain/governance.js";
 import { askSummary,conventionsForFiles,findingsForTopic,preparedConvention,relevantFilesForTask } from "../domain/preflight.js";
+import { conformingExemplarContext } from "../domain/conforming-exemplar-context.js";
 import { repoContractOrDefault } from "../domain/repo-paths.js";
 import { assertFreshScanIfRequired,freshnessRequirement,scanStatusPayload } from "../domain/scan-status.js";
 import { formatAskText } from "../formatters/preflight.js";
@@ -32,13 +33,24 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
   const activeConventions = contract.conventions.filter((convention) =>
     isActiveConvention(convention, now)
   );
+  const askExemplarContext = conformingExemplarContext(storage, repoId);
   const relevantFiles = relevantFilesForTask({
     repoRoot: repo.root_path,
     task: topic,
     contract: { ...contract, conventions: activeConventions },
     targetPath
   });
-  const conventions = conventionsForFiles(activeConventions, relevantFiles).map(preparedConvention);
+  const conventions = conventionsForFiles(activeConventions, relevantFiles).map((convention) =>
+    // Explicit lambda: a bare reference passes Array#map's index as the context argument,
+    // which the compiler caught when BB-5 gave preparedConvention a second parameter.
+    preparedConvention(convention, {
+      scopeFiles: askExemplarContext.scopeFilesFor(convention),
+      violatingFiles: askExemplarContext.violatingFilesFor(convention.id),
+      roleByFile: askExemplarContext.roleByFile,
+      baselineActiveCount: askExemplarContext.baselineActiveCountFor(convention.id),
+      targetPath: targetPath ?? undefined
+    })
+  );
   const findings = findingsForTopic(storage.listFindings(repoId), topic, relevantFiles)
     .map((finding) => ({
       id: finding.id,

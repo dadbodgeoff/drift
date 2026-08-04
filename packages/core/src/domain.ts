@@ -1227,6 +1227,12 @@ export interface Finding {
   actual_layer?: string;
   graph_path?: string[];
   suggested_fix?: string;
+  /**
+   * BB-5: files in scope that obey this convention, for a reader who would otherwise take the
+   * violating neighbours as precedent. Never contains a file with an open finding against this
+   * convention - that invariant is the item, not a detail of it.
+   */
+  conforming_examples?: Array<{ file_path: string; role: string | null }>;
   related_node_ids?: string[];
   confidence_label?: ConfidenceLabel | "heuristic";
   drift_category?: FindingDriftCategory;
