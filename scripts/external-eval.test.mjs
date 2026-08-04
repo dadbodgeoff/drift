@@ -129,7 +129,10 @@ describe("repoVerdict", () => {
     // enforcement_matches_mode is - an absent measurement must not read as agreement.
     exemplar_integrity: true,
     guidance_within_budget: true,
-    packet_within_envelope_budget: true
+    packet_within_envelope_budget: true,
+    // BB-8: the cell whose death this fixture would not have noticed.
+    baselined: 397,
+    findings_count: 2
   });
 
   it("passes a fully healthy result", () => {
@@ -149,6 +152,29 @@ describe("repoVerdict", () => {
     const result = goodResult();
     delete result.enforcement_matches_mode;
     expect(repoVerdict(result, goodCfg()).status).toBe("FAIL");
+  });
+
+  it("fails a repo reporting zero baselined alongside open findings", () => {
+    // BB-8's liveness assertion. This is the exact shape the dead cell produced on all seven repos:
+    // findings present, baselined 0, suite green. It is either a product regression (the decision-C
+    // baselining behaviour T121 protects) or a dead measurement, and both must stop the suite.
+    const result = { ...goodResult(), baselined: 0 };
+    const verdict = repoVerdict(result, goodCfg());
+    expect(verdict.status).toBe("FAIL");
+    expect(verdict.failures).toContain("baselined_cell_live");
+  });
+
+  it("allows zero baselined when the repo has no open findings", () => {
+    // Nothing to baseline is not a dead cell.
+    const result = { ...goodResult(), baselined: 0, findings_count: 0 };
+    expect(repoVerdict(result, goodCfg()).status).toBe("PASS");
+  });
+
+  it("allows null baselined - acceptance did not happen", () => {
+    // A run without --accept-defaults legitimately baselines nothing. `null` says so; `0` would be a
+    // claim about counting.
+    const result = { ...goodResult(), baselined: null };
+    expect(repoVerdict(result, goodCfg()).status).toBe("PASS");
   });
 
   it("fails when the exemplar-integrity measurement is absent rather than true", () => {
@@ -401,14 +427,27 @@ describe("updateGate", () => {
 });
 
 describe("baseline shape", () => {
-  it("excludes volatile counts from regression comparison", () => {
+  it("excludes environment-dependent counts from regression comparison", () => {
     const source = readFileSync(new URL("./external-eval.mjs", import.meta.url), "utf8");
-    // Counts move whenever an upstream repo changes; comparing them would produce
-    // failures that say nothing about Drift.
-    for (const field of ["files", "facts", "candidates", "baselined", "onboard_seconds"]) {
+    // Counts that move whenever an upstream repo or the engine's extraction changes; comparing them
+    // would produce failures that say nothing about Drift.
+    for (const field of ["files", "facts", "candidates", "onboard_seconds"]) {
       expect(source).toMatch(new RegExp(`"${field}"`));
     }
     expect(source).toContain("const VOLATILE");
+  });
+
+  it("gates `baselined` rather than treating it as volatile", () => {
+    // BB-8: this test previously asserted the opposite, and that assertion is the second half of why
+    // the dead cell went unnoticed. Being volatile, `baselined` collapsing 397 -> 0 on every repo was
+    // never printed as a "changed vs baseline" line, so the update that recorded the corpse looked like
+    // it touched only the three new exemplar fields.
+    //
+    // It is a deterministic product output on a pinned repo - the decision-C behaviour T121 protects -
+    // so a change in it is exactly what this suite exists to report.
+    const source = readFileSync(new URL("./external-eval.mjs", import.meta.url), "utf8");
+    const volatileBlock = source.slice(source.indexOf("const VOLATILE"), source.indexOf("]);", source.indexOf("const VOLATILE")));
+    expect(volatileBlock).not.toContain('"baselined"');
   });
 
   it("asserts every behavioural field the suite exists to protect", () => {
@@ -424,6 +463,9 @@ describe("baseline shape", () => {
       expect(row.injection_evidence_correct).toBe(true);
       expect(row.clean_control_false_positive).toBe(false);
       expect(row.fp_type_only_import).toBe(false);
+      // BB-8: every suite repo is in the suite because it has pre-existing violations, so every row
+      // must record a real baselined count. A committed 0 here means the cell died again.
+      expect(row.baselined).toBeGreaterThan(0);
       expect(row.fp_lookalike_module).toBe(false);
       expect(row.catches_genuine_subpath).toBe(true);
       // O-1: exit code asserted against a recorded per-repo expectation; enforcement

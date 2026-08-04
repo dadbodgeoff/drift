@@ -30,7 +30,7 @@
     "eval:bench:update": "node scripts/beta-bench.mjs --update",
     "eval:determinism": "node scripts/determinism.mjs",
     "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs",
+    "test:harness": "vitest run scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs",
     "eval:prepare": "node scripts/prepare-quality-eval.mjs"
   },
   "devDependencies": {

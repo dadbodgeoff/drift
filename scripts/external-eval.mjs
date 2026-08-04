@@ -27,6 +27,7 @@ import { mergeBaselineRows, repoVerdict, unsafeBaselineMoves, updateGate } from 
 import { EVAL_REPOS } from "./eval-repos.mjs";
 import { importOf } from "./data-layer-import.mjs";
 import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
+import { startCountsFrom } from "./external-eval-start.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
@@ -244,7 +245,19 @@ function evaluateRepoAt(reposDir, cfg) {
   }
 
   const started = Date.now();
-  const startArgs = ["start", "--repo-root", ".", "--accept-defaults"];
+  // BB-8: `--json`, because every count below used to be regexed out of `start`'s human output and one
+  // of them died silently when BB-3 rewrote the sentence.
+  //
+  // The old reader was `/Baselined (\d+) existing violation/`. BB-3's disclosure says
+  // "397 existing violations baselined - ...", reversed, so the regex matched nothing, `?? 0` supplied
+  // a plausible zero, and the baseline was then updated 397->0 on every repo under a "new fields"
+  // rationale. The product was baselining correctly the whole time; only the measurement was dead, and
+  // with it the ability of this suite to see a baselining regression - the decision-C behaviour T121
+  // exists to protect.
+  //
+  // Sentences are UX and will change again. `start --json` is schema-locked (BetaStartResponseSchema),
+  // so it is what a gate should read.
+  const startArgs = ["start", "--repo-root", ".", "--accept-defaults", "--json"];
   if (cfg.declaredDataModules) {
     startArgs.push("--data-modules", cfg.declaredDataModules);
   }
@@ -259,12 +272,24 @@ function evaluateRepoAt(reposDir, cfg) {
     return result;
   }
 
-  const repoId = start.stdout.match(/repos\/(repo_[a-f0-9]+)\//)?.[1] ?? null;
+  let startPayload;
+  try {
+    startPayload = JSON.parse(start.stdout);
+  } catch (error) {
+    // A start that exited 0 but produced unparseable JSON is a broken measurement, not a zero.
+    result.status = "ONBOARD_FAILED";
+    result.error = `start --json emitted unparseable output: ${error.message}`.slice(0, 300);
+    rmSync(home, { recursive: true, force: true });
+    return result;
+  }
+
+  const counts = startCountsFrom(startPayload);
+  const repoId = counts.repo_id;
   result.repo_id = repoId;
-  result.files = Number(start.stdout.match(/Scanned (\d+) files/)?.[1] ?? 0);
-  result.facts = Number(start.stdout.match(/Stored (\d+) facts/)?.[1] ?? 0);
-  result.candidates = Number(start.stdout.match(/Found (\d+) convention candidate/)?.[1] ?? 0);
-  result.baselined = Number(start.stdout.match(/Baselined (\d+) existing violation/)?.[1] ?? 0);
+  result.files = counts.files;
+  result.facts = counts.facts;
+  result.candidates = counts.candidates;
+  result.baselined = counts.baselined;
 
   const dbEnv = { ...repoEnv, DRIFT_DB: join(home, ".drift/repos", repoId ?? "", "drift.sqlite") };
 
@@ -463,13 +488,21 @@ function performanceCeiling(baselineSeconds) {
   return Math.max(30, Math.round((baselineSeconds ?? 0) * 3));
 }
 
+// Fields excluded from the baseline diff because they are environment-dependent rather than product
+// behaviour: wall-clock timing, a repo id derived from an absolute path, and the raw scan counts that
+// move with any engine extraction change.
+//
+// BB-8: `baselined` was in this set, and that is the second half of why the dead cell went unnoticed.
+// Being volatile, its 397->0 collapse was never printed as a "changed vs baseline" line - so the update
+// that recorded the corpse looked like it touched only the three new exemplar fields. It is a
+// deterministic product output on a pinned repo (the whole point of the decision-C behaviour T121
+// protects), so it belongs in the gate, not in the noise.
 const VOLATILE = new Set([
   "onboard_seconds",
   "repo_id",
   "files",
   "facts",
-  "candidates",
-  "baselined"
+  "candidates"
 ]);
 
 function diffResult(before, after) {
