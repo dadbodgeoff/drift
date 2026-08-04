@@ -73,5 +73,9 @@ export const BOOLEAN_FLAGS = new Set([
   "require-fresh",
   "reapprove-on-change",
   "strict",
+  // BB-4: exit 3 when an accepted convention's forbidden module no longer exists in the repo. Off by
+  // default, because a removed data layer is a legitimate refactor and blocking it would be a false
+  // positive; on for CI users who would rather fail than run a gate whose trigger is unplugged.
+  "strict-contract",
   "version"
 ]);

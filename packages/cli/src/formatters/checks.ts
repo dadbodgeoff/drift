@@ -30,6 +30,8 @@ export function formatCheckText(payload: {
       to: string;
       at: string;
     }>;
+    /** BB-4: one line per forbidden module the repo no longer contains. */
+    contract_staleness_warnings?: string[];
   };
   findings: Finding[];
   security_boundary_proofs?: SecurityBoundaryProof[];
@@ -64,6 +66,9 @@ export function formatCheckText(payload: {
     ...reasonLines("Block reasons", payload.summary.outcome?.blocking_reasons ?? []),
     ...reasonLines("Warn reasons", payload.summary.outcome?.warning_reasons ?? []),
     ...reasonLines("Non-blocking reasons", payload.summary.outcome?.non_blocking_reasons ?? []),
+    // BB-4: before the demotion lines, because "this rule enforces nothing" outranks "this rule
+    // enforces something weaker".
+    ...(payload.summary.contract_staleness_warnings ?? []),
     ...(payload.summary.enforcement_demotions ?? []).map(
       (demotion) =>
         `Enforcement demoted: ${demotion.convention_id} ${demotion.from} -> ${demotion.to} at ${demotion.at}`
