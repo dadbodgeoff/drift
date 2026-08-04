@@ -153,7 +153,7 @@ describe("installed Drift package flow", () => {
     expect(doctorPayload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 32,
+supported_sqlite_schema_version: 33,
       storage_driver: "sqlite"
     });
     expect(doctorPayload.engine).toMatchObject({
@@ -212,7 +212,7 @@ supported_sqlite_schema_version: 32,
     expect(versionPayload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 32,
+supported_sqlite_schema_version: 33,
       storage_driver: "sqlite"
     });
     expect(versionPayload.engine).toMatchObject({
@@ -1215,7 +1215,7 @@ supported_sqlite_schema_version: 32,
     expect(runtimePayload.runtime).toMatchObject({
       mcp_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 32,
+supported_sqlite_schema_version: 33,
       storage_driver: "sqlite"
     });
     expect(runtimePayload.governance).toMatchObject({
