@@ -3,6 +3,7 @@ import { rankRelevantFiles } from "@drift/query";
 import { existsSync } from "node:fs";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { baselineSummary } from "./baselines.js";
+import { conformingExemplars,conventionRationale,migrationSentence } from "./conforming-exemplars.js";
 import { uniqueSorted,waiverStatus } from "./contract-materialization.js";
 import { isOpenPreflightFinding } from "./findings.js";
 import { isApiRoutePath,matchesGlob } from "./repo-paths.js";
@@ -19,6 +20,23 @@ export interface PreparedConvention {
   matcher: AcceptedConvention["matcher"];
   exceptions: AcceptedConvention["exceptions"];
   agent_instruction: string;
+  /**
+   * BB-5: files in scope that obey this convention. Never a violator - see
+   * `domain/conforming-exemplars.ts` for why that invariant is the item rather than a nicety.
+   */
+  conforming_examples: Array<{ file_path: string; role: string | null }>;
+  /** BB-5: why an empty exemplar list is empty. Never a bare `[]` (the EW-3 shape). */
+  conforming_examples_reason: string | null;
+  /**
+   * BB-5: the AK-8 split. `derivation` is how Drift came to believe the repo holds this convention;
+   * `reason` is why the repo holds it, which is what a reader deciding whether to comply needs.
+   */
+  rationale: { derivation: string; reason: string | null };
+  /**
+   * BB-5: why the baselined violations around the exemplars are not precedent. Absent when there
+   * are none - boilerplate saying "0 are baselined" trains readers to skip the line.
+   */
+  migration_sentence: string | null;
 }
 
 export interface RelevantFile {
@@ -67,7 +85,24 @@ export interface PreflightSummaryInput {
   scanStatus: ReturnType<typeof scanStatusPayload>;
 }
 
-export function preparedConvention(convention: AcceptedConvention): PreparedConvention {
+export function preparedConvention(
+  convention: AcceptedConvention,
+  // BB-5: optional so every existing caller keeps working and gets the empty-with-reason shape
+  // rather than a missing field. A packet that silently omits the exemplars is the status quo.
+  context: {
+    scopeFiles?: string[];
+    violatingFiles?: Iterable<string>;
+    roleByFile?: Map<string, string>;
+    baselineActiveCount?: number;
+    targetPath?: string;
+  } = {}
+): PreparedConvention {
+  const exemplars = conformingExemplars({
+    scopeFiles: context.scopeFiles ?? [],
+    violatingFiles: context.violatingFiles ?? [],
+    roleByFile: context.roleByFile,
+    referenceFile: context.targetPath
+  });
   return {
     id: convention.id,
     kind: convention.kind,
@@ -78,7 +113,14 @@ export function preparedConvention(convention: AcceptedConvention): PreparedConv
     scope: convention.scope,
     matcher: convention.matcher,
     exceptions: convention.exceptions,
-    agent_instruction: instructionForConvention(convention)
+    agent_instruction: instructionForConvention(convention),
+    conforming_examples: exemplars.conforming_examples,
+    conforming_examples_reason: exemplars.reason,
+    rationale: conventionRationale({
+      kind: convention.kind,
+      derivation: convention.rationale ?? convention.statement
+    }),
+    migration_sentence: migrationSentence(context.baselineActiveCount ?? 0)
   };
 }
 

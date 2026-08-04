@@ -910,5 +910,18 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE scan_capability_reports ADD COLUMN engine_resolution TEXT;
       ALTER TABLE scan_capability_reports ADD COLUMN engine_build_profile TEXT;
     `
+  },
+  {
+    // BB-5. Files in scope that obey the convention this finding breaks.
+    //
+    // Agent trials on 2026-08-03 showed the failure this fixes: told a rule, an agent opened the
+    // cited neighbouring files, found they violate it too, and defected on the record. The examples
+    // have to be files that actually conform, and the selection has to be stored with the finding so
+    // the packet and the check cannot disagree about which files those are. Defaults to '[]' rather
+    // than NULL for pre-migration rows: none were computed, and none is what they had.
+    id: "032_finding_conforming_examples",
+    sql: `
+      ALTER TABLE findings ADD COLUMN conforming_examples_json TEXT NOT NULL DEFAULT '[]';
+    `
   }
 ];

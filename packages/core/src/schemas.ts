@@ -1238,6 +1238,12 @@ export const FindingSchema = z.object({
   actual_layer: z.string().min(1).optional(),
   graph_path: z.array(z.string().min(1)).optional(),
   suggested_fix: z.string().min(1).optional(),
+  // BB-5: up to 3 files in scope that obey this convention and have no open finding against it.
+  // Optional because most finding kinds do not carry them yet; never a violator, by invariant.
+  conforming_examples: z.array(z.object({
+    file_path: z.string().min(1),
+    role: z.string().min(1).nullable()
+  })).max(3).optional(),
   related_node_ids: z.array(z.string().min(1)).optional(),
   confidence_label: FindingConfidenceLabelSchema.optional(),
   drift_category: FindingDriftCategorySchema.optional(),

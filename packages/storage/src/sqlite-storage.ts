@@ -1841,14 +1841,16 @@ export class SqliteDriftStorage {
           id, repo_id, convention_id, fingerprint, title, message, severity,
           enforcement_result, status, diff_status, evidence_refs_json, check_id,
           repo_contract_id, expected_layer, actual_layer, graph_path_json,
-          suggested_fix, related_node_ids_json, created_by_engine_version,
+          suggested_fix, related_node_ids_json, conforming_examples_json,
+          created_by_engine_version,
           created_by_rule_engine_version, contract_schema_version, created_at
         )
         VALUES (
           @id, @repo_id, @convention_id, @fingerprint, @title, @message, @severity,
           @enforcement_result, @status, @diff_status, @evidence_refs_json, @check_id,
           @repo_contract_id, @expected_layer, @actual_layer, @graph_path_json,
-          @suggested_fix, @related_node_ids_json, @created_by_engine_version,
+          @suggested_fix, @related_node_ids_json, @conforming_examples_json,
+          @created_by_engine_version,
           @created_by_rule_engine_version, @contract_schema_version, @created_at
         )
         ON CONFLICT(repo_id, fingerprint) DO UPDATE SET
@@ -1866,6 +1868,7 @@ export class SqliteDriftStorage {
           graph_path_json = excluded.graph_path_json,
           suggested_fix = excluded.suggested_fix,
           related_node_ids_json = excluded.related_node_ids_json,
+          conforming_examples_json = excluded.conforming_examples_json,
           created_by_engine_version = excluded.created_by_engine_version,
           created_by_rule_engine_version = excluded.created_by_rule_engine_version,
           contract_schema_version = excluded.contract_schema_version
@@ -1879,6 +1882,7 @@ export class SqliteDriftStorage {
         actual_layer: parsed.actual_layer ?? null,
         graph_path_json: stringifyJson(parsed.graph_path ?? []),
         suggested_fix: parsed.suggested_fix ?? null,
+        conforming_examples_json: stringifyJson(parsed.conforming_examples ?? []),
         related_node_ids_json: stringifyJson(parsed.related_node_ids ?? []),
         created_by_engine_version: parsed.created_by_engine_version ?? null,
         created_by_rule_engine_version: parsed.created_by_rule_engine_version ?? null,
@@ -2694,6 +2698,11 @@ function findingFromRow(row: unknown): Finding {
     graph_path: parseJsonArray(record.graph_path_json ?? "[]"),
     suggested_fix: record.suggested_fix ?? undefined,
     related_node_ids: parseJsonArray(record.related_node_ids_json ?? "[]"),
+    // BB-5: an absent column reads as "this finding kind carries none", not as an empty set that
+    // was deliberately computed - which is why the field is optional rather than defaulted to [].
+    conforming_examples: record.conforming_examples_json
+      ? parseJsonArray(record.conforming_examples_json)
+      : undefined,
     created_by_engine_version: record.created_by_engine_version ?? undefined,
     created_by_rule_engine_version: record.created_by_rule_engine_version ?? undefined,
     contract_schema_version: record.contract_schema_version ?? undefined
