@@ -230,3 +230,75 @@ export function isPromotedPresenceConvention(convention: {
     convention.matcher?.enforcement_semantics === "presence"
   );
 }
+
+/**
+ * CV-5: the floor a presence family must clear to be auto-accepted by `--accept-defaults`.
+ *
+ * **Pre-registered** in docs/beta-run/CV-5-ACCEPTANCE-FLOOR.md, committed at 34a82807 - before this
+ * code and before the measurement - so "not fitted to dub" is checkable rather than asserted. Moving
+ * either constant requires saying why in the diff, and "so the family we wanted gets accepted" is not
+ * a why.
+ *
+ * Both floors are required, because each admits a different mistake on its own:
+ *
+ *   - **Coverage >= 0.6, read CONDITIONED** (within the family's own flavour scope). A convention most
+ *     of its scope already follows describes the codebase; one a minority follows proposes a migration
+ *     nobody agreed to. Same side of the line as the A5 coverage-direction gate. Conditioned rather
+ *     than global is load-bearing: dub's auth family is 0.5709 against all 494 route files and 0.7731
+ *     against the 357 application routes it is actually about, so the global figure would put a real
+ *     convention below the floor on the strength of 112 cron routes it was never about - CV-2's
+ *     miscount reappearing as an acceptance decision.
+ *   - **>= 20 distinct evidence files.** Coverage is a ratio and a ratio is loud on a small scope:
+ *     three of four routes is 0.75 from three examples, which is a coincidence with a good score
+ *     rather than a convention. Roughly an order of magnitude above the deriver's 2-file membership
+ *     threshold, so the two are not measuring the same thing twice.
+ *
+ * Clearing this floor changes what Drift REPORTS, never what it fails: auto-acceptance is always at
+ * warn, and block stays an explicit `--mode block` by the author.
+ */
+export const PRESENCE_AUTO_ACCEPT_MIN_COVERAGE = 0.6;
+export const PRESENCE_AUTO_ACCEPT_MIN_EVIDENCE_FILES = 20;
+
+export interface PresenceAutoAcceptDecision {
+  eligible: boolean;
+  coverage_ratio: number;
+  evidence_file_count: number;
+  /** Why it did not clear, for the disclosure to print. Null when it did. */
+  below_floor_reason: "coverage" | "evidence_files" | "both" | null;
+}
+
+/**
+ * Whether `--accept-defaults` should auto-accept this presence family, and if not, why not.
+ *
+ * Only promoted presence candidates are eligible at all. A guard-dominance candidate of the same kind
+ * is never auto-accepted at any coverage - it is quarantined, and coverage is not what disqualifies it.
+ */
+export function presenceAutoAcceptDecision(candidate: {
+  kind: string;
+  matcher?: { enforcement_semantics?: string };
+  scoring: { coverage_ratio: number };
+  evidence_refs: Array<{ file_path: string }>;
+}): PresenceAutoAcceptDecision {
+  const coverage = candidate.scoring.coverage_ratio;
+  const evidenceFiles = new Set(candidate.evidence_refs.map((ref) => ref.file_path)).size;
+  const decision: PresenceAutoAcceptDecision = {
+    eligible: false,
+    coverage_ratio: coverage,
+    evidence_file_count: evidenceFiles,
+    below_floor_reason: null
+  };
+  if (!isPromotedPresenceConvention(candidate)) {
+    // Not a floor question. Reported as ineligible with no below-floor reason, because saying
+    // "coverage too low" about a quarantined candidate would misdescribe why it was skipped.
+    return decision;
+  }
+  const coverageOk = coverage >= PRESENCE_AUTO_ACCEPT_MIN_COVERAGE;
+  const evidenceOk = evidenceFiles >= PRESENCE_AUTO_ACCEPT_MIN_EVIDENCE_FILES;
+  if (coverageOk && evidenceOk) {
+    return { ...decision, eligible: true };
+  }
+  return {
+    ...decision,
+    below_floor_reason: !coverageOk && !evidenceOk ? "both" : !coverageOk ? "coverage" : "evidence_files"
+  };
+}
