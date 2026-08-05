@@ -115,14 +115,38 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   const accepted = parsed.flags.has("accept-defaults") && candidate
     ? acceptDefaultCandidate(storage, { now, actor }, candidate)
     : undefined;
-  const acceptedPresenceFamilies = parsed.flags.has("accept-defaults")
+  // CV-5: auto-acceptance is implemented and measured, but gated behind `--accept-families` rather
+  // than default-on, because accepting a SECOND convention at onboarding surfaced three coupled
+  // requirements that are not yet met. Measured on dub with it enabled, the eval suite goes red:
+  //
+  //   - `exemplar_integrity: true -> false`. The BB-5 exemplar predicate picks files that conform to
+  //     the convention it is building guidance for, and a file conforming to data-access can violate
+  //     the auth family. An agent told "here is a conforming example" then opens a file that breaks
+  //     another accepted convention - the Q9/B1 defection shape, for real. CV-5's red #1 predicted
+  //     exactly this ("its integrity property now spans kinds") and the predicate has not been
+  //     extended yet.
+  //   - `clean_control_false_positive`, `fp_type_only_import`, `fp_lookalike_module` all flip true.
+  //     Those assertions are not convention-scoped: they read "any finding on the control route" as a
+  //     data-access false positive, and an auth finding on a route that genuinely calls no wrapper is
+  //     true rather than false. The harness has to attribute per convention.
+  //   - evasion `S09-type-only-decoy` and `S11-lookalike-negative` assert silence and now see the
+  //     auth family's true findings.
+  //
+  // None of those is a defect in the floor or in presence enforcement; they are the cost of a second
+  // accepted convention, which nothing in the product had ever produced before. The floor, its
+  // constants, its tests and the disclosure all stay - what waits is turning it on by default.
+  const autoAcceptFamilies =
+    parsed.flags.has("accept-defaults") && parsed.flags.has("accept-families");
+  const acceptedPresenceFamilies = autoAcceptFamilies
     ? presenceDecisions
         .filter((entry) => entry.decision.eligible)
         // Always warn, never block. Clearing the floor changes what Drift reports, not what it fails.
         .map((entry) => acceptDefaultCandidate(storage, { now, actor }, entry.candidate))
     : [];
+  // Reported either way: a family that exists and was not accepted is exactly what a silent
+  // onboarding would hide, and that half of the decision is safe to ship on by default.
   const deferredPresenceFamilies = parsed.flags.has("accept-defaults")
-    ? presenceDecisions.filter((entry) => !entry.decision.eligible)
+    ? presenceDecisions.filter((entry) => !autoAcceptFamilies || !entry.decision.eligible)
     : [];
   const defaultContract = parsed.flags.has("accept-defaults") && !accepted && acceptedPresenceFamilies.length === 0
     ? storage.transaction(() => {

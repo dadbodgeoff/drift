@@ -77,3 +77,35 @@ Superseding "dub onboarding: *Accepted 4 conventions* with per-kind modes":
 
 Corrected because the old number rested on a stale premise, not because it was inconvenient. The rule
 stands: record what is true, never tune the repo to the number.
+
+---
+
+## Post-measurement addendum, 2026-08-05: the floor is right, the default is not yet
+
+Implemented and measured as specified. On dub with auto-acceptance enabled: **accepted_count 2** -
+data-access and the auth family - with rate-limit deferred at 0.0728 coverage and 26 evidence files.
+Exactly the prediction above, including that rate-limit clears the evidence floor and fails only
+coverage.
+
+**But turning it on by default made the eval suite red**, so it now requires `--accept-families`.
+
+The failures are not in the floor or in presence enforcement. They are the cost of a *second accepted
+convention*, which nothing in the product had produced before:
+
+| Failure | Reading |
+|---|---|
+| `exemplar_integrity: true -> false` | **A real product defect.** `conformingExemplars` selects files conforming to the one convention it is describing; a file conforming to data-access can violate the auth family. An agent told "here is a conforming example" opens a file that breaks another accepted convention. CV-5's red #1 predicted this verbatim: *"extend the BB-5 exemplar predicate; its integrity property now spans kinds."* |
+| `clean_control_false_positive`, `fp_type_only_import`, `fp_lookalike_module` all flip true | **Harness, not product.** These read any finding on a control route as a data-access false positive. An auth finding on a route that genuinely calls no wrapper is *true*. The assertions have to attribute per convention. |
+| evasion `S09-type-only-decoy`, `S11-lookalike-negative` | Same shape: they assert silence and now see true auth findings. |
+
+`guidance_bytes` moved 5,501 → 6,555 with two accepted conventions, still far inside the 32,768
+budget, so the byte ceiling is not the constraint here.
+
+**What waits is the default, not the decision.** The constants, the predicate, its eleven tests, the
+disclosure and this pre-registration all stand. Order of work: extend the exemplar predicate across
+accepted conventions, then convention-scope the harness assertions, then flip the default and re-run
+the battery.
+
+Any statement that dub accepts 2 conventions is true **with `--accept-families`** and false without it,
+where it accepts 1 and defers both.
+
