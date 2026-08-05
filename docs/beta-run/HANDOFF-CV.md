@@ -163,3 +163,74 @@ found that, and it should be standard for any item claiming a red-check.
 
 Also: red-check each fix *separately*. My first F1 regression test passed under its own mutation
 because F2's fix already separated the modules involved, so it was silently testing F2.
+
+---
+
+# Addendum, 2026-08-05: CV-2 through CV-5, and the VP precondition
+
+Head at the close of this session is recorded in the final commit of the run; `git log --oneline -14`
+covers everything below. Nothing pushed.
+
+## What landed after the original handoff
+
+| Item | Status | Commit |
+|---|---|---|
+| Process items (PROTOCOL §8, reclaim tier 3) | DONE | `e63bcf33` |
+| BB-11 + 12 stale schema pins CV-1 left | DONE | `6f8a85d0` |
+| CV-2 | DONE | `88c96637` |
+| CV-3 (option B) | DONE | `c2325cdb` |
+| CV-4 shapes + precision/recall harness | DONE | `58e16c8c` |
+| CV-4b harness parameterized over kinds | DONE | this run |
+| CV-5 acceptance floor (pre-registered `34a82807`) | DONE | `bc179480` |
+| UQ-1 ticketed | DONE | `effea695` |
+| CV-5 baseline gap diagnosed | OPEN | `a75d73ec` |
+
+Measured: dub auth family **0.7731** coverage over its own 357-route flavour scope (from 0.0324
+per-symbol); **accepted_count 2** on dub, matching the pre-registration exactly; precision and recall
+**1.0000/1.0000** for auth, rate-limit and data-access, 50 compliant / 50 violating each.
+
+## The one thing blocking CV-5's close
+
+`docs/beta-run/CV-5-BASELINE-GAP.md`. `runFullRepoCheck` evaluates only
+`api_route_no_direct_data_access`, so an auto-accepted family's pre-existing violations are never
+baselined and the user's first check reports ~81 of them as new. Two candidate fixes are written up
+with a recommendation; shape B changes what seeds the baseline on all seven repos, so it needs a
+battery before and after and a mechanism explanation per the BB-8 rule.
+
+CV-5's other pieces, in order after that: the presence branch in `instructionForConvention`, per-kind
+`external-eval` columns with BB-8 cell-liveness from birth, and the guidance byte budget asserted 7/7
+rather than measured on dub only (dub is 6,783 of 32,768 with two accepted conventions).
+
+Red #1's exemplar requirement needs **no work** — see the correction below.
+
+## For the VP handoff specifically
+
+**Every prior-art citation in VP must distinguish a repo asset from a session artifact.** This sprint
+hit three stale premises, and the third was of a new kind:
+
+1. CV-2 — "the facts already distinguish cron routes." They did not; nothing emitted a flavour.
+2. CV-5 — "Accepted 4 conventions." Unreachable; dub emits zero `request_validation_called` facts.
+3. CV-4 — "the full 200-fixture precision/recall harness" with data-access at 1.000/1.000. The
+   **measurement was real** but it was a session artifact of the 2026-08-03 benchmark, not repo
+   infrastructure, so there was nothing to extend. This is the variant worth guarding against: the
+   citation was not false, it was mislabelled as an asset.
+
+The rule for VP: before an item depends on prior art, check that the artifact exists **in the repo**
+at the stated path. A number in a past session's scrollback, a bench write-up, or a commit message is
+not infrastructure, and an item that plans to "extend" one will discover that at implementation time.
+
+`scripts/presence-precision-recall.mjs` (`pnpm eval:presence`) is now the committed home for the
+per-kind precision/recall numbers, so that particular citation is an asset from here on.
+
+**UQ-1 gates any VP work that touches the quarantined tier.** `docs/architecture/security-heuristic-audit.md`
+carries it: the phase5 glob matcher no-ops on default create-next-app layouts, so no promotion decision
+for a phase5/phase6 kind may be made until it is fixed and re-measured on `taxonomy`.
+
+## A correction, because it was used to argue priority
+
+An earlier report in this session said the accepted auth family shipped guidance with **zero
+exemplars**, flagged as the Q9/B1 shape that made a trial agent defect. **That was a measurement
+error**: the reader used the key `exemplars` and the field is `conforming_examples`. Both accepted
+conventions on dub carry three, and `will_this_block` is present too (the same report looked for
+`will_block`). CV-5 red #1's exemplar requirement was already satisfied and needed no work; only the
+migration sentence is missing, and that is downstream of the baseline gap.
