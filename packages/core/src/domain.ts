@@ -98,6 +98,8 @@ export interface ConventionMatcher {
   applies_to_file_roles?: FileRole[];
   /** CV-2: which route flavours this convention is about. Empty or absent means all of them. */
   applies_to_route_flavors?: RouteFlavor[];
+  /** CV-3: `"presence"` selects presence-only enforcement. Absent means the kind's proof path. */
+  enforcement_semantics?: "presence";
   file_roles?: FileRole[];
   path_globs?: string[];
   route_paths?: string[];

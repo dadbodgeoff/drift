@@ -8,7 +8,9 @@
     "human_confirmed_governance",
     "read_only_mcp",
     "accepted_contract_blocks_direct_data_access",
-    "incremental_reuse"
+    "incremental_reuse",
+    "convention_family_aggregation",
+    "presence_only_family_enforcement"
   ],
   "blocked_claims": [
     "cloud_sync",
@@ -89,6 +91,22 @@
       "false_positive_behavior": "A helper exported from the family's own module that is itself a higher-order function wrapping the handler will join the family even if its purpose is unrelated to the kind - a logging or error-handling wrapper living in the auth module is the shape. The wrapper test excludes point-call utilities (measured on dub: hashPassword, hashToken, getSession, validatePassword all excluded) but cannot distinguish two wrappers by intent. No eval repo currently exhibits it; dub's absence of such an export is luck, not design.",
       "measured": "dub auth 0.0324 (best per-symbol) -> 0.5709 (family), members exactly withAdmin/withPartnerProfile/withPublishableKey/withSession/withWorkspace. dub rate limit 0.0385 -> 0.0526, members ratelimit/ratelimitOrThrow. papermark rate limit 0.0813, members checkRateLimit/ratelimit. No family on taxonomy, formbricks, calcom, midday, openstatus. No request-validation family anywhere: dub has zero request_validation_called facts.",
       "quarantine_status": "The three family kinds remain behind --experimental-security. Promotion is blocked and the reason is recorded in docs/beta-run/CV-3-PROMOTION-BLOCKER.md: all three are ENFORCED by control-flow proofs, so they fail the promotion standard requiring presence-only matchers."
+    },
+    "presence_only_family_enforcement": {
+      "required_contracts": [
+        "RuleContract",
+        "FindingContract"
+      ],
+      "fixture": "crates/drift-engine/tests/presence_enforcement_cv3.rs (13 tests) and packages/cli/test/presence-promotion-cv3.test.ts (7 tests)",
+      "claim": "Each HANDLER of an accepted convention's routes is checked for a call to one of the accepted members, resolved through its import rather than matched as a string. A route.ts exporting GET and POST is two endpoints and is judged as two.",
+      "promoted_kinds": [
+        "api_route_requires_auth_helper",
+        "api_route_requires_rate_limit",
+        "api_route_requires_request_validation"
+      ],
+      "what_it_is_not": "NOT a claim that the route is protected, that the helper runs before anything, or that it cannot be bypassed. The finding wording says so: 'this route does not call any accepted auth wrapper', never 'unprotected' and never 'missing auth'. Promotion is per candidate, not per kind: only a family candidate carrying enforcement_semantics: \"presence\" is promoted, and the per-symbol candidates of the same kinds remain behind --experimental-security because they are checked by build_auth_boundary_proof, which reasons about control flow.",
+      "false_positive_behavior": "FALSE NEGATIVES, by construction. Presence asks whether a handler calls an accepted member; it asks nothing about ORDER, REACHABILITY or BRANCHES. So all of these pass: a guard called after the sink it should protect; a guard called only in a catch block or another path that does not run on success; a guard on one side of an if/else while the sink is on the other. Every one of those is a control-flow question, and the tier that answers them is the guard-dominance proof (build_auth_boundary_proof: guard_dominates_straight_line_sinks, branch_bypass_reasons, callback_boundary_reasons), which stays quarantined per docs/architecture/security-heuristic-audit.md. Pinned as a documented non-catch in a_guard_called_after_the_sink_is_a_documented_non_catch, asserted silent rather than left implicit. NOT among the misses, since independent verification found and it was fixed: a route.ts where only one of several exported handlers is wrapped - that is now reported per handler, because judging the file as a whole let 'wrap the read, forget the write' report clean. FALSE POSITIVES: a route that legitimately has no auth - a health check, an OG image endpoint, a public webhook receiver - is reported as calling no wrapper. That is a true statement about the route and not a defect in it, and it is why auth families accept at warn and require an explicit upgrade to block. Resolution covers named imports (including renamed) and namespace imports (`import * as auth` then `auth.withSession`); a helper reached any other way - a deeper property chain, a value passed through a variable - would be reported despite being present.",
+      "enforcement_default": "warn. An auth family is accepted at warn regardless of coverage; block requires an explicit --mode block from the author. The first intentionally-public route in a repo must not be a false block."
     }
   },
   "claim_notes": {
@@ -106,9 +124,11 @@
       "sqlite_local_state",
       "human_confirmed_governance",
       "read_only_mcp",
-      "incremental_reuse"
+      "incremental_reuse",
+      "convention_family_aggregation",
+      "presence_only_family_enforcement"
     ],
-    "single_convention_scope": "One convention family: api_route_no_direct_data_access, on TypeScript/JavaScript Next.js API routes (App Router and Pages). Nothing else is enforced. The data layer is recognised only when its import specifier contains prisma, database, db or data-access; any other naming must be declared with --data-modules. Enforcement mode is inferred from the direction of the evidence, so a repo where a majority of routes violate gets warn mode, not block.",
+    "single_convention_scope": "Enforced by default: api_route_no_direct_data_access, on TypeScript/JavaScript Next.js API routes (App Router and Pages). Advisory by default: the three presence-only family kinds (auth helper, rate limit, request validation), which report at warn until an author upgrades them. The guard-dominance and dataflow versions of those same kinds remain behind --experimental-security and are not claimed at all.",
     "measured_refusal_rate": {
       "note": "How often Drift declines to answer about an edit that is not a violation. Eight ordinary edits per repo - a comment, a new layered route, a new helper, a helper plus its caller, an added local import, an appended export, two new routes in one diff, and a moved route - none of which breaks the data-access convention. A refusal (exit 3) on any of them is Drift failing to be useful about work it should understand completely. Derived from the harness baseline by scripts/sync-refusal-rate.mjs, never typed by hand.",
       "source": "scripts/beta-bench.mjs",
@@ -194,7 +214,8 @@
         "openstatus"
       ],
       "digest_stability_note": "A digest is stable across runs of one build, not across builds. cal.com and papermark changed digest when the renamed-re-export fix removed false unresolved-symbol diagnostics from their parser-gap counts, which the digest covers; taxonomy, which has no renamed re-exports, did not. That is the digest working. Comparing a digest against one recorded at a different commit is a category error, which is why the commit is recorded beside it."
-    }
+    },
+    "presence_family_note": "presence_only_family_enforcement is advisory because an auth family is accepted at warn by default: it produces findings and exits 0. Block is reachable, but only when the author passes --mode block explicitly, because a repo's first intentionally-public route - a health check, an OG image endpoint, a webhook receiver - would otherwise be a false block. Classing this as enforced would describe a product the reader does not get by default."
   },
   "prose_claim_region_ends_at": "## First Five Minutes",
   "prose_claims": {

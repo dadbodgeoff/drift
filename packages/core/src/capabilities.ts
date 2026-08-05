@@ -96,7 +96,17 @@ export function createDriftCapabilities(input: {
     mcp_mutation_tools: [],
     supported_wedge: {
       languages: ["typescript", "javascript"],
-      convention_kinds: ["api_route_no_direct_data_access"],
+      // CV-3: the layering wedge, plus the three kinds promoted for PRESENCE-only enforcement.
+      //
+      // Listing a kind here says Drift enforces it deterministically, and for these three that is
+      // true of the presence claim only - a family candidate carrying
+      // `enforcement_semantics: "presence"`. The guard-dominance candidates of the same kinds are
+      // still quarantined and are not what this line refers to. `beta-claims.json` carries the
+      // distinction, including what presence enforcement does not catch.
+      convention_kinds: [
+        "api_route_no_direct_data_access",
+        ...PRESENCE_PROMOTABLE_CONVENTION_KINDS
+      ],
       heuristic_convention_kinds: ["api_route_requires_service_delegation"],
       check_scopes: ["changed-hunks", "changed-files", "full"],
       storage: "sqlite",
@@ -118,7 +128,12 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
       "human_confirmed_governance",
       "read_only_mcp",
       "accepted_contract_blocks_direct_data_access",
-      "incremental_reuse"
+      "incremental_reuse",
+      // CV-1 / CV-3. Both are advisory in `enforcement_posture`: aggregation produces candidates
+      // rather than findings, and a promoted presence family is accepted at warn by default, so out
+      // of the box it reports and exits 0. Block is available only as an explicit upgrade.
+      "convention_family_aggregation",
+      "presence_only_family_enforcement"
     ],
     blocked_claims: [
       "cloud_sync",
@@ -177,4 +192,41 @@ export const EXPERIMENTAL_SECURITY_CONVENTION_KINDS = [
 
 export function isExperimentalSecurityKind(kind: string): boolean {
   return (EXPERIMENTAL_SECURITY_CONVENTION_KINDS as readonly string[]).includes(kind);
+}
+
+/**
+ * CV-3: the kinds a presence-only family may be promoted for.
+ *
+ * These three, and no others, because these three are the ones whose claim can be reduced to "the
+ * route calls an accepted helper". The rest of the quarantined set cannot: `cors_policy` compares a
+ * declared policy, `raw_sql` and `sensitive_response_fields` follow dataflow, and
+ * `session_object_must_come_from_trusted_helper` is about where a value came from. A presence version
+ * of any of those would not be a weaker claim, it would be a different one.
+ */
+export const PRESENCE_PROMOTABLE_CONVENTION_KINDS = [
+  "api_route_requires_auth_helper",
+  "api_route_requires_rate_limit",
+  "api_route_requires_request_validation"
+] as const;
+
+/**
+ * Whether this specific convention has left quarantine.
+ *
+ * Promotion is per CANDIDATE, not per kind, and that distinction is the whole design. The same kind
+ * produces both shapes: a family candidate carrying `enforcement_semantics: "presence"`, which is
+ * checked by asking whether the route calls a member, and the per-symbol candidates, which carry
+ * `requires.dominates` and are checked by `build_auth_boundary_proof` - guard dominance, branch-bypass
+ * and callback-boundary analysis. Removing the kind from the quarantine list would have surfaced both.
+ *
+ * So the presence family is visible by default and the dominance candidates of the same kind stay
+ * hidden behind `--experimental-security`, which is the honest split.
+ */
+export function isPromotedPresenceConvention(convention: {
+  kind: string;
+  matcher?: { enforcement_semantics?: string };
+}): boolean {
+  return (
+    (PRESENCE_PROMOTABLE_CONVENTION_KINDS as readonly string[]).includes(convention.kind) &&
+    convention.matcher?.enforcement_semantics === "presence"
+  );
 }
