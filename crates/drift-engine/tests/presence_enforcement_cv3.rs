@@ -609,3 +609,190 @@ fn run_check_repo(request: Value) -> Value {
     );
     serde_json::from_slice(&output.stdout).expect("json output")
 }
+
+// ---------------------------------------------------------------------------------------------
+// CV-4: the evasion shapes the plan names for a required-wrapper matcher.
+//
+// Presence resolves a call to an ACCEPTED SYMBOL NAME via the file's imports. It does not compare
+// module specifiers, which is what makes the barrel case below work - and what makes the
+// unrelated-module case a disclosed non-catch rather than a bug. Both directions are pinned, because
+// a reader who saw only the first would draw the wrong conclusion about how strong this tier is.
+// ---------------------------------------------------------------------------------------------
+
+#[test]
+fn a_wrapper_imported_through_a_barrel_satisfies_presence() {
+    // CV-4 shape 2. `export { withSession } from "@/lib/auth"` in a barrel, then the route imports
+    // from the barrel. Presence keys on the imported symbol, so the indirection is transparent - no
+    // chain-following needed, which is why this costs nothing here.
+    let repo_root = write_route(&[
+        r#"import { withSession } from "@/lib";"#,
+        "export const POST = withSession(async () => {",
+        "  return Response.json({ ok: true });",
+        "});",
+        "",
+    ]);
+    let payload = run(
+        &repo_root,
+        vec![
+            fact("file_role_detected", "api_route", 1, 4, None, None),
+            // The specifier is the barrel; the imported name is still the accepted symbol.
+            fact("import_used", "withSession", 1, 1, Some("@/lib"), Some("withSession")),
+            fact("route_declared", "POST", 2, 4, None, None),
+            fact("symbol_called", "withSession", 2, 4, None, None),
+            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+        ],
+        presence_convention(),
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a barrel re-export of an accepted wrapper still satisfies presence: {payload:#?}"
+    );
+}
+
+#[test]
+fn a_same_named_wrapper_from_an_unrelated_module_also_satisfies_presence() {
+    // PINNED DOCUMENTED NON-CATCH, and the price of the test above.
+    //
+    // Presence compares the imported SYMBOL, not the module it came from, so a `withSession` exported
+    // by some other package satisfies this convention. Verifying the module instead would break the
+    // barrel case, because a barrel's specifier is legitimately not the family's module, and following
+    // the chain to decide needs the import graph the presence path deliberately does not consult.
+    //
+    // Recorded in beta-claims.json under false_positive_behavior. Asserted here so it cannot change
+    // silently in either direction: if presence starts comparing modules, this test fails and whoever
+    // did it has to decide what happens to the barrel.
+    let repo_root = write_route(&[
+        r#"import { withSession } from "totally-unrelated-package";"#,
+        "export const POST = withSession(async () => {",
+        "  return Response.json({ ok: true });",
+        "});",
+        "",
+    ]);
+    let payload = run(
+        &repo_root,
+        vec![
+            fact("file_role_detected", "api_route", 1, 4, None, None),
+            fact(
+                "import_used",
+                "withSession",
+                1,
+                1,
+                Some("totally-unrelated-package"),
+                Some("withSession"),
+            ),
+            fact("route_declared", "POST", 2, 4, None, None),
+            fact("symbol_called", "withSession", 2, 4, None, None),
+            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+        ],
+        presence_convention(),
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "presence compares the imported symbol, not its module - disclosed, not fixed: {payload:#?}"
+    );
+}
+
+#[test]
+fn a_wrong_flavour_member_is_reported_and_the_message_names_what_was_expected() {
+    // CV-4 shape 3. A cron route wrapped in the SESSION family's member, checked against the cron
+    // family. The session wrapper is not a member of the cron family, so the route is reported - and
+    // the message has to name the helpers that would have satisfied it, or the reader cannot tell a
+    // wrong-wrapper route from an unwrapped one.
+    let repo_root = temp_repo();
+    let route = repo_root.join("app/api/cron/rollup/route.ts");
+    fs::create_dir_all(route.parent().expect("parent")).expect("mkdir");
+    fs::write(
+        &route,
+        "export const POST = withSession(async () => Response.json({ ok: true }));\n",
+    )
+    .expect("write");
+
+    let mut convention = presence_convention();
+    convention["matcher"]["required_calls"] = json!(["verifyQstashSignature"]);
+    convention["matcher"]["applies_to_route_flavors"] = json!(["cron_job"]);
+    convention["requires"] = json!({
+        "auth_helpers": [{
+            "guard_id": "auth:verifyQstashSignature",
+            "symbol": "verifyQstashSignature",
+            "import": "@/lib/cron"
+        }]
+    });
+
+    let cron_fact = |kind: &str, name: &str, start: usize, end: usize, value: Option<&str>, imported: Option<&str>| {
+        let mut out = json!({
+            "kind": kind,
+            "file_path": "app/api/cron/rollup/route.ts",
+            "name": name,
+            "start_line": start,
+            "end_line": end
+        });
+        if let Some(value) = value { out["value"] = json!(value); }
+        if let Some(imported) = imported { out["imported_name"] = json!(imported); }
+        out
+    };
+    let payload = run(
+        &repo_root,
+        vec![
+            cron_fact("file_role_detected", "api_route", 1, 1, None, None),
+            cron_fact("route_flavor_detected", "cron_job", 1, 1, None, None),
+            cron_fact("import_used", "withSession", 1, 1, Some("@/lib/auth"), Some("withSession")),
+            cron_fact("route_declared", "POST", 1, 1, None, None),
+            cron_fact("symbol_called", "withSession", 1, 1, None, None),
+            cron_fact("route_returns_response", "json", 1, 1, Some("Response"), None),
+        ],
+        convention,
+    );
+
+    let findings = payload["findings"].as_array().expect("findings");
+    assert_eq!(
+        findings.len(),
+        1,
+        "a session wrapper does not satisfy the cron family: {payload:#?}"
+    );
+    let message = findings[0]["message"].as_str().expect("message");
+    assert!(
+        message.contains("verifyQstashSignature"),
+        "the message must name the helper that would have satisfied this flavour: {message}"
+    );
+    // Still presence wording, even in the wrong-family case.
+    assert!(!message.to_lowercase().contains("unprotected"), "{message}");
+}
+
+#[test]
+fn a_test_file_calling_wrappers_is_not_a_route_and_stays_silent() {
+    // CV-4 negative control. A test file that exercises the wrappers is not an API route, and a
+    // convention scoped to api_route must not reach it. Scope comes from the role fact, so a file with
+    // no api_route role contributes no findings whatever it calls.
+    let repo_root = temp_repo();
+    let spec = repo_root.join("app/api/things/route.test.ts");
+    fs::create_dir_all(spec.parent().expect("parent")).expect("mkdir");
+    fs::write(&spec, "it(\"wraps\", () => { withSession(() => null); });\n").expect("write");
+
+    let test_fact = |kind: &str, name: &str| {
+        json!({
+            "kind": kind,
+            "file_path": "app/api/things/route.test.ts",
+            "name": name,
+            "start_line": 1,
+            "end_line": 1
+        })
+    };
+    let payload = run(
+        &repo_root,
+        vec![
+            // `test`, not `api_route`.
+            test_fact("file_role_detected", "test"),
+            test_fact("test_declared", "wraps"),
+            test_fact("symbol_called", "withSession"),
+        ],
+        presence_convention(),
+    );
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a test file is not a route: {payload:#?}"
+    );
+}
