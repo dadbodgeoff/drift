@@ -80,3 +80,67 @@ diff explained per repo.
 Either way the DoD is: on dub, `--accept-defaults` baselines the auth family's ~81 pre-existing
 violations, the first `drift check` afterwards reports **zero** new findings for that convention, and
 the family's `migration_sentence` is non-null.
+
+---
+
+## Status 2026-08-05, end of session: items 1 and 2 landed, item 3 (this document) NOT started
+
+Geoffrey's ordering was: (1) generalize the exemplar predicate, (2) convention-scope the harness,
+(3) unify the onboarding baseline pass, (4) flip the default, (5) the small pieces — with the fallback
+"if context runs short: land 1–3, leave the default gated, and hand off 4–5."
+
+**Landed: 1 and 2.** **Not landed: 3.** One item short of the fallback, stated plainly rather than
+rushed, because item 3 changes what seeds the baseline on all seven eval repos and needs a battery on
+either side of it. Starting that with no budget left to read the diff is how a seven-repo regression
+gets handed over as done.
+
+### What items 1 and 2 bought, measured
+
+With auto-acceptance temporarily forced default-on and items 1–2 in place, `eval:external` on all seven
+repos:
+
+```
+ok  taxonomy   cleanFP=no neg=ok exemplars=6/6   guidance=3k
+ok  dub        cleanFP=no neg=ok exemplars=21/21 guidance=6k
+ok  formbricks cleanFP=no neg=ok exemplars=6/6   guidance=4k
+ok  calcom     cleanFP=no neg=ok exemplars=6/6   guidance=4k
+ok  papermark  cleanFP=no neg=ok exemplars=6/6   guidance=4k
+ok  midday     cleanFP=no neg=ok exemplars=6/6   guidance=4k
+ok  openstatus cleanFP=no neg=ok exemplars=6/6   guidance=4k
+```
+
+Every one of the four assertions that failed before is green: `exemplar_integrity` holds at **21/21** on
+dub, and `clean_control_false_positive`, `fp_type_only_import` and `fp_lookalike_module` are all back to
+false. The evasion cells pass too.
+
+Three diffs vs baseline remain, and all three are the intended consequence of a second accepted
+convention rather than defects:
+
+| Cell | Movement | Mechanism |
+|---|---|---|
+| `findings_count` (dub) | 2 → 7 | The harness injects five routes (bad, clean, type-only, lookalike, subpath). All five call no auth wrapper, so the auth family reports five true findings on top of the two data-access ones. |
+| `exemplars_emitted` (dub) | 6 → 21 | More findings carry more exemplar sets. All 21 are integrity-clean, which is the point of item 1. |
+| `guidance_bytes` (dub) | 5,501 → 6,567 | A second accepted convention in the guidance view. Still far inside the 32,768 ceiling. |
+
+Those three are the `BASELINE_CHANGE` that item 4 has to record, with this table as its mechanism.
+
+### Item 3, unchanged and still approved
+
+Everything above the divider stands. The recommended shape is B — have onboarding run the same path
+`drift check --scope full` uses. `ParsedArgs` is only `{ positional, flags }`, so synthesizing one for
+`runCheck` is mechanically easy:
+
+```ts
+const checkParsed: ParsedArgs = {
+  positional: [],
+  flags: new Map<string, string | true>([["repo", repoId], ["scope", "full"], ["json", true], ["now", now]])
+};
+```
+
+The work is not the call, it is the consequences: `runCheck` writes a check run, emits audit events, and
+creates findings for **every** accepted kind, so `baselined` may move on all seven repos including for
+data-access. Per the BB-8 standing rule each movement must be explained by mechanism, not intent, which
+means a battery before and after and a per-repo diff read.
+
+**Item 3 lands before item 4.** An auto-accepted family that floods the user's first check is worse than
+no family, which is why the gate stays until this is done.

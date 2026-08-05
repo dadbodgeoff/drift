@@ -2633,7 +2633,9 @@ function preflightConvention(
 } {
   const exemplars = conformingExemplars({
     scopeFiles: context?.scopeFilesFor(convention) ?? [],
-    violatingFiles: context?.violatingFilesFor(convention.id) ?? [],
+    // CV-5: any accepted convention, not just this one. The MCP packet and the CLI packet must not
+    // disagree about what conforms, which is the EW-6 parity shape.
+    violatingFiles: context?.violatingFilesAnyConvention() ?? [],
     roleByFile: context?.roleByFile
   });
   return {
