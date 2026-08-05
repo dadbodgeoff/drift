@@ -1160,6 +1160,13 @@ function attachConformingExemplars(input: {
     violatingByConvention.set(finding.convention_id, set);
   }
 
+  const violatingFilesAnyConvention = new Set<string>();
+  for (const files of violatingByConvention.values()) {
+    for (const file of files) {
+      violatingFilesAnyConvention.add(file);
+    }
+  }
+
   for (const finding of input.findings) {
     const convention = conventionsById.get(finding.convention_id);
     if (!convention) {
@@ -1172,7 +1179,10 @@ function attachConformingExemplars(input: {
     }
     const result = conformingExemplars({
       scopeFiles,
-      violatingFiles: violatingByConvention.get(convention.id) ?? new Set<string>(),
+      // CV-5: every file violating ANY accepted convention. A file conforming to the convention this
+      // finding is about can violate a different accepted one, and offering it as an example sends an
+      // agent to open a file that breaks another rule - trial B1's defection trigger.
+      violatingFiles: violatingFilesAnyConvention,
       roleByFile,
       referenceFile: finding.evidence_refs[0]?.file_path
     });

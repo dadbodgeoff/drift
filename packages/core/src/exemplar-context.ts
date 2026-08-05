@@ -16,6 +16,22 @@ export interface ExemplarContext {
   roleByFile: Map<string, string>;
   scopeFilesFor(convention: AcceptedConvention): string[];
   violatingFilesFor(conventionId: string): Set<string>;
+  /**
+   * Every file violating ANY accepted convention.
+   *
+   * This is what "conforming" means from CV-5 on, and it is the correct generalization of BB-5's
+   * invariant rather than an extension of it. BB-5 asked whether a file conforms to the convention
+   * being described; with one accepted convention those were the same question. CV-5 made a repo able
+   * to accept more than one, and they came apart immediately: on dub a file conforming to
+   * `api_route_no_direct_data_access` can violate the auth family, and offering it as a conforming
+   * example sends an agent to open a file that breaks another accepted rule. That is the trial-B1
+   * defection trigger, which is the whole reason BB-5 exists - so the honest reading of its invariant
+   * was always "zero open findings", not "zero open findings of this kind".
+   *
+   * Baselined violations are included, for BB-5's original reason: a baselined violation is still a
+   * violation, and citing one as an exemplar is the same defection trigger with a different excuse.
+   */
+  violatingFilesAnyConvention(): Set<string>;
   baselineActiveCountFor(conventionId: string): number;
 }
 
@@ -48,6 +64,7 @@ export function exemplarContext(input: {
 
   // Scope membership is a glob pass over every scanned file, so memoize per convention.
   const scopeFileCache = new Map<string, string[]>();
+  let anyViolatorCache: Set<string> | undefined;
 
   return {
     roleByFile: input.roleByFile ?? new Map<string, string>(),
@@ -62,6 +79,17 @@ export function exemplarContext(input: {
     },
     violatingFilesFor(conventionId) {
       return violatingByConvention.get(conventionId) ?? new Set<string>();
+    },
+    violatingFilesAnyConvention() {
+      if (!anyViolatorCache) {
+        anyViolatorCache = new Set<string>();
+        for (const files of violatingByConvention.values()) {
+          for (const file of files) {
+            anyViolatorCache.add(file);
+          }
+        }
+      }
+      return anyViolatorCache;
     },
     baselineActiveCountFor(conventionId) {
       return input.activeBaseline.filter((entry) => entry.convention_id === conventionId).length;

@@ -45,7 +45,8 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
     // which the compiler caught when BB-5 gave preparedConvention a second parameter.
     preparedConvention(convention, {
       scopeFiles: askExemplarContext.scopeFilesFor(convention),
-      violatingFiles: askExemplarContext.violatingFilesFor(convention.id),
+      // CV-5: any accepted convention, not just this one - see violatingFilesAnyConvention.
+      violatingFiles: askExemplarContext.violatingFilesAnyConvention(),
       roleByFile: askExemplarContext.roleByFile,
       baselineActiveCount: askExemplarContext.baselineActiveCountFor(convention.id),
       targetPath: targetPath ?? undefined

@@ -55,7 +55,8 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   const conventions = activeConventions.map((convention) =>
     preparedConvention(convention, {
       scopeFiles: exemplarContext.scopeFilesFor(convention),
-      violatingFiles: exemplarContext.violatingFilesFor(convention.id),
+      // CV-5: any accepted convention, not just this one - see violatingFilesAnyConvention.
+      violatingFiles: exemplarContext.violatingFilesAnyConvention(),
       roleByFile: exemplarContext.roleByFile,
       baselineActiveCount: exemplarContext.baselineActiveCountFor(convention.id),
       targetPath: targetPath ?? undefined
