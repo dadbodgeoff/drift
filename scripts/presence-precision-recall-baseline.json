@@ -1,0 +1,49 @@
+[
+  {
+    "repo": "taxonomy",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  },
+  {
+    "repo": "dub",
+    "status": "MEASURED",
+    "family_formed": true,
+    "family_members": 5,
+    "family_flavors": [
+      "api_route"
+    ],
+    "wrapper_absent_fixtures": 50,
+    "wrapper_present_fixtures": 50,
+    "true_positives": 50,
+    "false_negatives": 0,
+    "false_positives": 0,
+    "false_positive_shapes": [],
+    "precision": 1,
+    "recall": 1
+  },
+  {
+    "repo": "formbricks",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  },
+  {
+    "repo": "calcom",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  },
+  {
+    "repo": "papermark",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  },
+  {
+    "repo": "midday",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  },
+  {
+    "repo": "openstatus",
+    "status": "NO_FAMILY",
+    "family_formed": false
+  }
+]
