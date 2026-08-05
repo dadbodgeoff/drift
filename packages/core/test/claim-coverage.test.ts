@@ -44,6 +44,20 @@ const CLAIM_EVIDENCE: Record<string, { file: string; token: string }> = {
   incremental_reuse: {
     file: "crates/drift-engine/tests/scan_reuse.rs",
     token: "refuses_reuse_from_a_different_engine_version"
+  },
+  // CV-1. The claim is that per-symbol candidates aggregate into one family with union coverage. The
+  // token is the control that would fail first if aggregation started over-reaching, which is the way
+  // this claim actually breaks - measured on dub, module identity alone put three crypto utilities
+  // into the auth family.
+  convention_family_aggregation: {
+    file: "crates/drift-engine/tests/convention_families_cv1.rs",
+    token: "a_utility_from_the_familys_own_module_does_not_join"
+  },
+  // CV-3. The claim is presence-only enforcement, and the thing that would make it dishonest is a
+  // finding that claims protection. That is what this token pins.
+  presence_only_family_enforcement: {
+    file: "crates/drift-engine/tests/presence_enforcement_cv3.rs",
+    token: "the_finding_claims_presence_and_never_protection"
   }
 };
 

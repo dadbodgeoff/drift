@@ -156,6 +156,37 @@ for (const claim of claims.allowed_claims ?? []) {
   }
 }
 
+// CV-3 (EW-10): a promoted convention kind must be backed by a ledger entry and an evidencing test.
+//
+// `supported_wedge.convention_kinds` is the machine-readable claim "Drift enforces this
+// deterministically". CV-3 promoted three kinds for presence-only enforcement, and the risk it was
+// written to prevent is precisely that a kind gets added to that list without the ledger stating what
+// the enforcement does NOT catch. So the promotion and the disclosure are checked together: every
+// promoted kind must be named by some claim_support entry's `promoted_kinds`, and that entry must
+// carry a `false_positive_behavior`.
+const promotedKinds = (runtimeCapabilities.supported_wedge.convention_kinds ?? [])
+  .filter((kind) => kind !== "api_route_no_direct_data_access");
+for (const kind of promotedKinds) {
+  const backing = Object.entries(claims.claim_support ?? {}).find(([, support]) =>
+    (support.promoted_kinds ?? []).includes(kind)
+  );
+  if (!backing) {
+    failures.push(
+      `convention kind ${kind} is promoted in supported_wedge.convention_kinds but no claim_support entry lists it in promoted_kinds`
+    );
+    continue;
+  }
+  const [claimName, support] = backing;
+  if (!support.false_positive_behavior) {
+    failures.push(
+      `claim_support.${claimName} promotes ${kind} but does not state its false_positive_behavior`
+    );
+  }
+  if (!support.fixture) {
+    failures.push(`claim_support.${claimName} promotes ${kind} but names no evidencing fixture`);
+  }
+}
+
 // EW-10: the ledger must state the posture, not just the capability.
 //
 // "Drift enforces X" and "Drift reports X and leaves it to you" are different products, and a

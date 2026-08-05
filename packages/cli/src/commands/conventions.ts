@@ -1,4 +1,4 @@
-import { authorizeContextExport,isExperimentalSecurityKind,type AcceptedConvention,type ConventionCandidate,type ConventionException,type ConventionScope,ConventionScopeSchema,type ConventionStatus,type RepoContract } from "@drift/core";
+import { authorizeContextExport,isExperimentalSecurityKind,isPromotedPresenceConvention,type AcceptedConvention,type ConventionCandidate,type ConventionException,type ConventionScope,ConventionScopeSchema,type ConventionStatus,type RepoContract } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,statSync } from "node:fs";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
@@ -79,13 +79,19 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
     (!status || candidate.status === status) &&
     (!kind || candidate.kind === kind) &&
     (!capability || candidate.enforcement_capability === capability) &&
-    (includeSecurity || !isExperimentalSecurityKind(candidate.kind))
+    // CV-3: hidden only when the kind is quarantined AND this candidate is not a promoted
+    // presence-only family. The per-symbol candidates of the same kinds carry no presence marker,
+    // are checked by the guard-dominance path, and stay hidden.
+    (includeSecurity ||
+      !isExperimentalSecurityKind(candidate.kind) ||
+      isPromotedPresenceConvention(candidate))
   );
   const hiddenSecurityCount = includeSecurity
     ? 0
     : allCandidates.filter(
         (candidate) =>
           isExperimentalSecurityKind(candidate.kind) &&
+          !isPromotedPresenceConvention(candidate) &&
           (!status || candidate.status === status)
       ).length;
   const belowFloor = matching.filter((candidate) => isBelowNoiseFloor(candidate));

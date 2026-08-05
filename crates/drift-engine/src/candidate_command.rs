@@ -1228,6 +1228,14 @@ fn emit_family_candidate(input: FamilyEmitInput<'_>) {
         // Mirrors the per-symbol validation candidate: only mutations are in scope.
         matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
     }
+    // CV-3: this candidate is enforced by PRESENCE - the route calls a member of the family, or it
+    // does not. It is the marker that promotes it out of quarantine, and it is what routes the check
+    // path away from the guard-dominance proof that the same kind's per-symbol candidates still use.
+    //
+    // Absent on those per-symbol candidates, deliberately: they carry `requires.dominates` and are
+    // evaluated by `build_auth_boundary_proof`, which reasons about control flow. They stay
+    // quarantined. Promotion here is per candidate, not per kind.
+    matcher["enforcement_semantics"] = json!("presence");
     // CV-2: present only when the repo actually has more than one flavour, so an unconditioned repo's
     // matcher - and therefore its fingerprint and candidate id - is byte-identical to before.
     if let Some(flavor) = flavor {

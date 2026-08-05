@@ -143,6 +143,26 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 enforcement_mode,
                 &allowed_delegate_imports,
             )
+        } else if is_presence_convention(&convention) {
+            // CV-3 (option B): presence-only enforcement, beside the proof path rather than replacing
+            // it.
+            //
+            // The capability list says what this actually does. It does NOT claim
+            // `control_flow_guard_dominance`, because it does not compute it - that is the whole
+            // difference between this path and the one below, and the reason this one can leave
+            // quarantine while that one cannot.
+            required_capabilities.extend([
+                "syntax_facts".to_string(),
+                "import_resolution".to_string(),
+            ]);
+            presence_findings(
+                &facts,
+                &parsed_diff,
+                diff_scope,
+                &convention,
+                severity,
+                enforcement_mode,
+            )
         } else if convention.kind == "api_route_requires_auth_helper" {
             required_capabilities.extend([
                 "security_facts".to_string(),
@@ -1634,6 +1654,295 @@ fn security_phase5_findings_and_proofs(
     }
 
     SecurityPhase5Evaluation { findings, proofs }
+}
+
+/// CV-3: is this convention enforced by presence rather than by a proof?
+///
+/// Per candidate, not per kind. The family candidates emit `enforcement_semantics: "presence"`; the
+/// per-symbol candidates of the same kinds do not, and they keep the guard-dominance path below and
+/// stay behind `--experimental-security`.
+fn is_presence_convention(convention: &crate::protocol::CheckConvention) -> bool {
+    convention.matcher.enforcement_semantics.as_deref() == Some("presence")
+}
+
+/// Presence-only enforcement: does this route call a member of the accepted family?
+///
+/// **What this claims, exactly.** That the route calls one of the accepted helpers, resolved through
+/// its import rather than matched as a string. Nothing else. It does not claim the helper runs before
+/// anything, that it cannot be bypassed on a branch, or that the route is protected.
+///
+/// **What it therefore misses, by construction.** A route that calls the wrapper and then routes a
+/// sink around it passes. Catching that is `build_auth_boundary_proof`'s job - guard dominance,
+/// branch-bypass and callback-boundary analysis - and that tier stays quarantined per
+/// docs/architecture/security-heuristic-audit.md. CV-4 pins this as a documented non-catch rather
+/// than leaving it implicit, and the ledger's `false_positive_behavior` states it.
+///
+/// The finding wording follows from that: "does not call any accepted <thing>", never "unprotected"
+/// and never "missing auth". A presence check that reported protection would be claiming the proof
+/// this path deliberately does not compute, which is the v1 pattern this sprint exists to not repeat.
+fn presence_findings(
+    facts: &[Fact],
+    parsed_diff: &ParsedDiff,
+    diff_scope: DiffScope,
+    convention: &crate::protocol::CheckConvention,
+    severity: Severity,
+    enforcement_mode: EnforcementMode,
+) -> Vec<PendingFinding> {
+    let accepted = presence_accepted_symbols(convention);
+    if accepted.is_empty() {
+        // No helpers means nothing to look for. Reporting every route as non-compliant here is the
+        // F3-class shape that made the rate-limit family strictly worse than what it superseded, so
+        // this refuses to produce findings instead.
+        return Vec::new();
+    }
+    let flavors = convention
+        .matcher
+        .applies_to_route_flavors
+        .clone()
+        .unwrap_or_default();
+    let mut findings = Vec::new();
+
+    for file_path in security_auth_files(facts, parsed_diff, diff_scope) {
+        if !presence_file_in_scope(convention, facts, &file_path, &flavors) {
+            continue;
+        }
+        // Per HANDLER, not per file.
+        //
+        // A Next.js `route.ts` exporting `GET` and `POST` is two independent HTTP endpoints. Asking
+        // the question file-wide let a file where only `GET` was wrapped pass entirely, so a route
+        // whose `POST` wrote to the database unguarded reported clean - and "wrap the read, forget the
+        // write" is the single most likely shape in a half-finished migration, which makes it the
+        // worst possible thing for this tier to miss.
+        //
+        // Each handler is satisfied by an accepted call whose source span INTERSECTS its own. Either
+        // nesting direction counts, because both occur: `export const POST = withSession(async () =>
+        // {...})` has the call enclosing the handler, while a call inside the handler body sits within
+        // it. Intersection is syntactic containment, not control flow - it says which handler a call
+        // belongs to, and nothing about whether it runs first.
+        let handlers = facts
+            .iter()
+            .filter(|fact| fact.kind == FactKind::RouteDeclared && fact.file_path == file_path)
+            .collect::<Vec<_>>();
+        let accepted_calls = facts
+            .iter()
+            .filter(|fact| {
+                fact.kind == FactKind::SymbolCalled
+                    && fact.file_path == file_path
+                    && presence_call_resolves_to_accepted(facts, &file_path, fact, &accepted)
+            })
+            .collect::<Vec<_>>();
+
+        // A route file with no handler fact at all is judged file-wide, because there is no handler to
+        // attribute anything to. Refusing to judge it would be a silent gap; judging it whole is the
+        // same answer the previous behaviour gave.
+        let unsatisfied: Vec<Option<&Fact>> = if handlers.is_empty() {
+            if accepted_calls.is_empty() {
+                vec![None]
+            } else {
+                Vec::new()
+            }
+        } else {
+            handlers
+                .iter()
+                .filter(|handler| {
+                    !accepted_calls.iter().any(|call| {
+                        call.start_line <= handler.end_line && handler.start_line <= call.end_line
+                    })
+                })
+                .map(|handler| Some(*handler))
+                .collect()
+        };
+
+        for handler in unsatisfied {
+        let missing_code = presence_missing_code(&convention.kind);
+        // The handler is part of the fingerprint, so two unguarded methods in one file are two
+        // findings rather than one that silently stands for both.
+        let finding_fingerprint = stable_hash(&format!(
+            "{}:{}:{}:{}",
+            convention.id,
+            file_path,
+            handler.map(|fact| fact.name.as_str()).unwrap_or("*"),
+            missing_code
+        ));
+        let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
+        let mut symbols = accepted.iter().cloned().collect::<Vec<_>>();
+        symbols.sort();
+        findings.push(PendingFinding {
+            fingerprint: finding_fingerprint,
+            convention_id: convention.id.clone(),
+            rule_id: convention.kind.clone(),
+            title: presence_finding_title(&convention.kind).to_string(),
+            // Presence, never protection. See this function's doc comment.
+            message: format!(
+                "{} does not call any accepted {} ({}). This checks only that one is called - it does not check that it guards the route's work.",
+                handler
+                    .map(|fact| format!("This route's {} handler", fact.name))
+                    .unwrap_or_else(|| "This route".to_string()),
+                presence_noun(&convention.kind),
+                symbols.join(", ")
+            ),
+            severity,
+            enforcement_result: enforcement_result_for_mode(enforcement_mode),
+            file_path: file_path.clone(),
+            import_name: "presence".to_string(),
+            import_source: missing_code.to_string(),
+            line: handler.map(|fact| fact.start_line).unwrap_or(1),
+            evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
+            legacy_fingerprints: Vec::new(),
+            related_node_ids: Vec::new(),
+        });
+        }
+    }
+
+    findings
+}
+
+/// The accepted symbols, from the matcher's disjunction and from `requires`, so a family accepted
+/// through either shape enforces.
+fn presence_accepted_symbols(
+    convention: &crate::protocol::CheckConvention,
+) -> std::collections::BTreeSet<String> {
+    let mut symbols = std::collections::BTreeSet::new();
+    for symbol in convention
+        .matcher
+        .required_calls
+        .as_ref()
+        .into_iter()
+        .flatten()
+    {
+        symbols.insert(symbol.clone());
+    }
+    if let Some(requires) = convention.requires.as_ref() {
+        for key in [
+            "auth_helpers",
+            "rate_limit_helpers",
+            "validators",
+        ] {
+            if let Some(entries) = requires.get(key).and_then(|value| value.as_array()) {
+                for entry in entries {
+                    if let Some(symbol) = entry.get("symbol").and_then(|value| value.as_str()) {
+                        symbols.insert(symbol.to_string());
+                    }
+                }
+            }
+        }
+    }
+    symbols
+}
+
+/// Whether a call resolves to one of the accepted symbols.
+///
+/// Resolution, never string equality. Three shapes, because those are the three ways a repo actually
+/// reaches a shared helper:
+///
+///   1. a named import, possibly renamed - `import { withSession as w }`, the E-5 shape. The local
+///      binding is `w`; what it resolves to is `withSession`.
+///   2. a namespace import - `import * as auth from "@/lib/auth"` then `auth.withSession(...)`. The
+///      call fact carries the property in `name` and the receiver in `value`, and the import fact
+///      binds the namespace with `imported_name: "*"`. Missing this shape reported a genuinely
+///      wrapped route as calling no wrapper, on a convention that is visible by default - a false
+///      positive on the promoted tier, which is worse than a missed detection here. The same rule
+///      already existed in `security_patterns.rs::schema_receiver_matches`; this mirrors it rather
+///      than inventing a second answer.
+///   3. neither - an unimported local of the same name resolves to nothing and does not satisfy.
+fn presence_call_resolves_to_accepted(
+    facts: &[Fact],
+    file_path: &str,
+    call: &Fact,
+    accepted: &std::collections::BTreeSet<String>,
+) -> bool {
+    // (1) the local binding is an import of an accepted symbol.
+    let named = facts.iter().any(|fact| {
+        fact.kind == FactKind::ImportUsed
+            && fact.file_path == file_path
+            && fact.name == call.name
+            && fact
+                .imported_name
+                .as_deref()
+                .is_some_and(|imported| accepted.contains(imported))
+    });
+    if named {
+        return true;
+    }
+    // (2) `<namespace>.<accepted>(...)`, where `<namespace>` is a namespace import in this file.
+    if !accepted.contains(&call.name) {
+        return false;
+    }
+    let Some(receiver) = call.value.as_deref() else {
+        return false;
+    };
+    // Only a direct property of the namespace: `auth.withSession` resolves, `auth.v2.withSession`
+    // does not, because the second hop is not something this fact can account for.
+    let namespace = receiver.split('.').next().unwrap_or(receiver);
+    namespace == receiver
+        && facts.iter().any(|fact| {
+            fact.kind == FactKind::ImportUsed
+                && fact.file_path == file_path
+                && fact.name == namespace
+                && fact.imported_name.as_deref() == Some("*")
+        })
+}
+
+/// Whether this route is in scope for a presence convention.
+///
+/// **Deliberately does not match path globs.** The caller has already applied the one scope predicate
+/// in the product - `conventionScopeFiles` in `@drift/core` - and passes only the facts of files it
+/// selected (`run-check.ts`: `facts.filter((fact) => fileSet.has(fact.file_path))`). Re-deciding scope
+/// here would be a second scope engine, which is the BB-11 lesson, and it would be a second scope
+/// engine that is WRONG: `path_glob_matches` reduces `**/app/api/**/route.ts` to a `starts_with` on
+/// the literal prefix `**/app/api`, so a root-level `app/api/x/route.ts` - the default
+/// create-next-app layout - matches nothing. That is F3's exact shape, still live in this matcher, and
+/// it is why the first end-to-end run of this path found zero findings on a repo whose routes were all
+/// violations. Recorded as a discovery; the phase5 paths that still use it are quarantined and are not
+/// changed here.
+///
+/// What remains is the flavour condition, which is not a scope glob and has no equivalent upstream.
+fn presence_file_in_scope(
+    convention: &crate::protocol::CheckConvention,
+    facts: &[Fact],
+    file_path: &str,
+    flavors: &[String],
+) -> bool {
+    let _ = convention;
+    // CV-2: a session family is not about cron routes. The flavour is read from the fact the scan
+    // emitted, never re-derived from the path here - one classification, made once.
+    if !flavors.is_empty() {
+        let flavor = facts
+            .iter()
+            .find(|fact| {
+                fact.kind == FactKind::RouteFlavorDetected && fact.file_path == file_path
+            })
+            .map(|fact| fact.name.clone())
+            .unwrap_or_else(|| "api_route".to_string());
+        if !flavors.contains(&flavor) {
+            return false;
+        }
+    }
+    true
+}
+
+fn presence_missing_code(kind: &str) -> &'static str {
+    match kind {
+        "api_route_requires_rate_limit" => "no_rate_limit_helper_called",
+        "api_route_requires_request_validation" => "no_request_validator_called",
+        _ => "no_auth_helper_called",
+    }
+}
+
+fn presence_finding_title(kind: &str) -> &'static str {
+    match kind {
+        "api_route_requires_rate_limit" => "API route calls no accepted rate-limit helper",
+        "api_route_requires_request_validation" => "API route calls no accepted request validator",
+        _ => "API route calls no accepted auth wrapper",
+    }
+}
+
+fn presence_noun(kind: &str) -> &'static str {
+    match kind {
+        "api_route_requires_rate_limit" => "rate-limit helper",
+        "api_route_requires_request_validation" => "request validator",
+        _ => "auth wrapper",
+    }
 }
 
 fn accepted_auth_helpers_for_convention(
@@ -3496,6 +3805,9 @@ fn fact_kind_from_str(kind: &str) -> Option<FactKind> {
         "data_operation_detected" => Some(FactKind::DataOperationDetected),
         "route_declared" => Some(FactKind::RouteDeclared),
         "file_role_detected" => Some(FactKind::FileRoleDetected),
+        // CV-2: without this the flavour fact is dropped on the check path, and a family conditioned
+        // to application routes would silently fall back to covering every flavour.
+        "route_flavor_detected" => Some(FactKind::RouteFlavorDetected),
         "test_declared" => Some(FactKind::TestDeclared),
         "auth_guard_called" => Some(FactKind::AuthGuardCalled),
         "route_returns_response" => Some(FactKind::RouteReturnsResponse),

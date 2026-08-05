@@ -118,6 +118,10 @@ export const ConventionMatcherSchema = z.object({
   // because this matcher has no nested applies_to object and inventing one for a single field would
   // give the same concept two shapes.
   applies_to_route_flavors: z.array(RouteFlavorSchema).optional(),
+  // CV-3: how this convention is enforced. "presence" means the matcher asks only whether a route
+  // calls an accepted helper; absent means the kind's existing proof path, which for the security
+  // kinds reasons about control flow and stays quarantined.
+  enforcement_semantics: z.enum(["presence"]).optional(),
   file_roles: z.array(FileRoleSchema).optional(),
   path_globs: z.array(RepoRelativePatternSchema).optional(),
   route_paths: z.array(z.string().min(1)).optional(),

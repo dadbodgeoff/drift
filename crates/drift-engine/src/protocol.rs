@@ -543,6 +543,14 @@ pub struct CheckMatcher {
     pub path_globs: Option<Vec<String>>,
     pub route_paths: Option<Vec<String>>,
     pub methods: Option<Vec<String>>,
+    /// CV-3: `Some("presence")` selects presence-only enforcement - the route calls an accepted
+    /// helper, or it does not. Absent selects the kind's existing proof path, which for the security
+    /// kinds reasons about control flow and stays quarantined.
+    #[serde(default)]
+    pub enforcement_semantics: Option<String>,
+    /// CV-2: the route flavours this convention is about. Absent or empty means all of them.
+    #[serde(default)]
+    pub applies_to_route_flavors: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
