@@ -42,7 +42,28 @@ export const BetaStartResponseSchema = z.object({
     severity: z.string().min(1),
     baselined_count: z.number().int().nonnegative(),
     blocks_new_violations: z.boolean(),
-    upgrade_command: z.string().min(1).nullable()
+    upgrade_command: z.string().min(1).nullable(),
+    // CV-5: a repo can onboard with more than one convention from this item on, so the count and the
+    // per-convention modes are shaped too. Same reasoning as BB-3's four fields: a reader deciding
+    // whether onboarding did what they expected needs the count, and a passthrough field that dropped
+    // out silently would reproduce BB-3's bug one item later.
+    accepted_count: z.number().int().nonnegative(),
+    also_accepted: z.array(z.object({
+      convention_id: z.string().min(1),
+      convention_kind: z.string().min(1),
+      mode: z.enum(["off", "brief", "warn", "block"]),
+      blocks_new_violations: z.boolean(),
+      upgrade_command: z.string().min(1)
+    })),
+    // Families that exist and were skipped. Shaped, because a silent skip is the failure this names.
+    deferred_candidates: z.array(z.object({
+      candidate_id: z.string().min(1),
+      convention_kind: z.string().min(1),
+      coverage_ratio: z.number(),
+      evidence_file_count: z.number().int().nonnegative(),
+      below_floor_reason: z.enum(["coverage", "evidence_files", "both"]).nullable(),
+      review_command: z.string().min(1)
+    }))
   }).optional(),
   baselined_count: z.number().int().nonnegative(),
   machine_contract_versions: MachineVersionsShape,

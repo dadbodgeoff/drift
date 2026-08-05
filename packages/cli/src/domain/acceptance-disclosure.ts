@@ -31,25 +31,81 @@ export interface AcceptanceDisclosure {
   blocks_new_violations: boolean;
   /** Present only in warn mode: the exact command that turns the suggestion into a gate. */
   upgrade_command: string | null;
+  /**
+   * CV-5: the other conventions acceptance decided about, because from this item on a repo can onboard
+   * with more than one. `accepted_count` is what the headline reports, and it is the number a reader
+   * uses to decide whether onboarding did what they expected.
+   */
+  accepted_count: number;
+  also_accepted: Array<{
+    convention_id: string;
+    convention_kind: string;
+    mode: AcceptedConvention["enforcement_mode"];
+    blocks_new_violations: boolean;
+    upgrade_command: string;
+  }>;
+  /**
+   * Families that did NOT clear the auto-acceptance floor. Left as candidates for a human, and named
+   * here with their coverage and the command to review them - a family that exists and was skipped is
+   * exactly the thing a silent onboarding would hide.
+   */
+  deferred_candidates: Array<{
+    candidate_id: string;
+    convention_kind: string;
+    coverage_ratio: number;
+    evidence_file_count: number;
+    below_floor_reason: "coverage" | "evidence_files" | "both" | null;
+    review_command: string;
+  }>;
 }
 
+export interface PresenceDeferral {
+  candidate_id: string;
+  convention_kind: string;
+  coverage_ratio: number;
+  evidence_file_count: number;
+  below_floor_reason: "coverage" | "evidence_files" | "both" | null;
+}
+
+const upgradeCommand = (conventionId: string, repoId: string) =>
+  `drift conventions accept ${conventionId} --repo ${repoId} --severity error --mode block --confirm`;
+
 export function acceptanceDisclosure(input: {
-  accepted: AcceptedConvention;
+  /** Absent when only presence families were accepted, which is possible from CV-5 on. */
+  accepted?: AcceptedConvention;
+  alsoAccepted?: AcceptedConvention[];
+  deferred?: PresenceDeferral[];
   repoId: string;
   baselinedCount: number;
 }): AcceptanceDisclosure {
-  const mode = input.accepted.enforcement_mode;
+  const alsoAccepted = input.alsoAccepted ?? [];
+  const deferred = input.deferred ?? [];
+  // The primary is the default convention when there is one, or the first accepted family when
+  // acceptance was families only. The headline has to describe something real either way.
+  const primary = input.accepted ?? alsoAccepted[0];
+  const rest = input.accepted ? alsoAccepted : alsoAccepted.slice(1);
+  const mode = primary.enforcement_mode;
   const blocks = mode === "block";
   return {
-    convention_id: input.accepted.id,
-    convention_kind: input.accepted.kind,
+    convention_id: primary.id,
+    convention_kind: primary.kind,
     mode,
-    severity: input.accepted.severity,
+    severity: primary.severity,
     baselined_count: input.baselinedCount,
     blocks_new_violations: blocks,
-    upgrade_command: blocks
-      ? null
-      : `drift conventions accept ${input.accepted.id} --repo ${input.repoId} --severity error --mode block --confirm`
+    upgrade_command: blocks ? null : upgradeCommand(primary.id, input.repoId),
+    accepted_count: (input.accepted ? 1 : 0) + alsoAccepted.length,
+    also_accepted: rest.map((convention) => ({
+      convention_id: convention.id,
+      convention_kind: convention.kind,
+      mode: convention.enforcement_mode,
+      blocks_new_violations: convention.enforcement_mode === "block",
+      upgrade_command: upgradeCommand(convention.id, input.repoId)
+    })),
+    deferred_candidates: deferred.map((entry) => ({
+      ...entry,
+      review_command: `drift conventions show ${entry.candidate_id} --repo ${input.repoId}`
+    }))
   };
 }
 
@@ -72,7 +128,35 @@ export function acceptanceDisclosureLines(disclosure: AcceptanceDisclosure): str
   // a user they accepted "WARN mode" when they accepted `brief` would be a new version of this bug.
   const modeWord = disclosure.mode.toUpperCase();
   const headline = `Accepted "${disclosure.convention_kind}" in ${modeWord} mode (${baselined}${consequence}).`;
-  return disclosure.upgrade_command
-    ? [headline, `To make this a gate: ${disclosure.upgrade_command}`]
-    : [headline];
+  const lines = [headline];
+  if (disclosure.upgrade_command) {
+    lines.push(`To make this a gate: ${disclosure.upgrade_command}`);
+  }
+  // CV-5: one line per additional convention rather than a combined summary. Four conventions in one
+  // sentence is a wall, and the mode is per-convention - the fact a reader most needs is which of them
+  // will actually fail a build.
+  for (const also of disclosure.also_accepted) {
+    const alsoConsequence = also.blocks_new_violations
+      ? "new violations exit 2"
+      : "reported, will NOT block";
+    lines.push(
+      `Also accepted "${also.convention_kind}" in ${also.mode.toUpperCase()} mode (${alsoConsequence}).`
+    );
+  }
+  // A family that exists and was skipped is the thing a silent onboarding would hide, so it is named
+  // with the number that decided it and the command to look at it.
+  for (const deferred of disclosure.deferred_candidates) {
+    const percent = `${Math.round(deferred.coverage_ratio * 1000) / 10}%`;
+    const why =
+      deferred.below_floor_reason === "evidence_files"
+        ? `${deferred.evidence_file_count} evidence files`
+        : deferred.below_floor_reason === "both"
+          ? `${percent} coverage, ${deferred.evidence_file_count} evidence files`
+          : `${percent} coverage`;
+    lines.push(
+      `1 candidate awaiting review: "${deferred.convention_kind}", ${why} — below the auto-accept floor. ` +
+        `Review: ${deferred.review_command}`
+    );
+  }
+  return lines;
 }

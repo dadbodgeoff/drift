@@ -1,4 +1,4 @@
-import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind } from "@drift/core";
+import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind,isPromotedPresenceConvention,presenceAutoAcceptDecision } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { doctorCommand } from "../args/doctor-commands.js";
@@ -98,12 +98,33 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   // it claims.
   const acceptableCandidates = parsed.flags.has("experimental-security")
     ? result.candidates
-    : result.candidates.filter((entry) => !isExperimentalSecurityKind(entry.kind));
-  const candidate = acceptableCandidates[0];
+    : result.candidates.filter(
+        (entry) =>
+          !isExperimentalSecurityKind(entry.kind) || isPromotedPresenceConvention(entry)
+      );
+  // The top non-presence candidate keeps the original behaviour: one default convention, chosen by
+  // rank. CV-5 adds presence families ALONGSIDE it, so a repo can onboard with more than one
+  // convention for the first time.
+  const candidate = acceptableCandidates.find((entry) => !isPromotedPresenceConvention(entry));
+  // CV-5: every presence family clearing the pre-registered floor, and the ones that do not so the
+  // disclosure can name them. A below-floor family is left as a candidate for a human - not rejected,
+  // not hidden, not downgraded.
+  const presenceDecisions = result.candidates
+    .filter((entry) => isPromotedPresenceConvention(entry))
+    .map((entry) => ({ candidate: entry, decision: presenceAutoAcceptDecision(entry) }));
   const accepted = parsed.flags.has("accept-defaults") && candidate
     ? acceptDefaultCandidate(storage, { now, actor }, candidate)
     : undefined;
-  const defaultContract = parsed.flags.has("accept-defaults") && !accepted
+  const acceptedPresenceFamilies = parsed.flags.has("accept-defaults")
+    ? presenceDecisions
+        .filter((entry) => entry.decision.eligible)
+        // Always warn, never block. Clearing the floor changes what Drift reports, not what it fails.
+        .map((entry) => acceptDefaultCandidate(storage, { now, actor }, entry.candidate))
+    : [];
+  const deferredPresenceFamilies = parsed.flags.has("accept-defaults")
+    ? presenceDecisions.filter((entry) => !entry.decision.eligible)
+    : [];
+  const defaultContract = parsed.flags.has("accept-defaults") && !accepted && acceptedPresenceFamilies.length === 0
     ? storage.transaction(() => {
         const contract = materializeRepoContract(storage, result.repo.id, contractIdForRepo(result.repo.id), now);
         storage.upsertRepoContract(contract);
@@ -144,8 +165,20 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
     : 0;
   // BB-3: computed after the baseline exists, because the count is half of what the disclosure has
   // to say - "397 baselined" is what makes "will NOT block" mean something other than "broken".
-  const acceptance = accepted
-    ? acceptanceDisclosure({ accepted, repoId: result.repo.id, baselinedCount })
+  const acceptance = accepted || acceptedPresenceFamilies.length > 0
+    ? acceptanceDisclosure({
+        accepted,
+        alsoAccepted: acceptedPresenceFamilies,
+        deferred: deferredPresenceFamilies.map((entry) => ({
+          candidate_id: entry.candidate.id,
+          convention_kind: entry.candidate.kind,
+          coverage_ratio: entry.decision.coverage_ratio,
+          evidence_file_count: entry.decision.evidence_file_count,
+          below_floor_reason: entry.decision.below_floor_reason
+        })),
+        repoId: result.repo.id,
+        baselinedCount
+      })
     : undefined;
   const nextCommands = contractReady
     ? [
