@@ -143,6 +143,35 @@ export function instructionForConvention(convention: AcceptedConvention): string
     ].filter(Boolean).join(" ");
   }
 
+  // CV-5: the presence kinds. Without this they fell through to the generic sentence below, which
+  // restates the convention and tells an agent nothing it can act on - and, worse, says nothing about
+  // what the check does NOT verify. The instruction is the one place the packet can be explicit that
+  // calling the helper is all that is checked, so an agent does not read a passing check as proof the
+  // route is protected.
+  if (convention.matcher.enforcement_semantics === "presence") {
+    const members = (convention.matcher.required_calls ?? []).join(", ");
+    const flavors = convention.matcher.applies_to_route_flavors ?? [];
+    const noun =
+      convention.kind === "api_route_requires_rate_limit"
+        ? "rate-limit helper"
+        : convention.kind === "api_route_requires_request_validation"
+          ? "request validator"
+          : "auth wrapper";
+    const scopeClause =
+      flavors.length > 0 && !flavors.includes("api_route")
+        ? ` This applies to ${flavors.join(" and ")} routes only.`
+        : flavors.length > 0
+          ? " This applies to application routes only, not cron or webhook routes."
+          : "";
+    return [
+      `When adding or editing an API route in scope, call one of the repo's accepted ${noun}s.`,
+      members ? `Accepted: ${members}.` : "",
+      scopeClause.trim(),
+      // Said plainly, because an agent that believes this proves protection will stop looking.
+      `Drift checks only that one of these is called - it does not verify that it guards the route's work.`
+    ].filter(Boolean).join(" ");
+  }
+
   return `${convention.statement} Follow its scope, matcher, and exceptions.`;
 }
 
