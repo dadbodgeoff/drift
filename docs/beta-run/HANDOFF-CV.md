@@ -234,3 +234,61 @@ error**: the reader used the key `exemplars` and the field is `conforming_exampl
 conventions on dub carry three, and `will_this_block` is present too (the same report looked for
 `will_block`). CV-5 red #1's exemplar requirement was already satisfied and needed no work; only the
 migration sentence is missing, and that is downstream of the baseline gap.
+
+---
+
+# Second addendum, 2026-08-06: CV-5 closed out
+
+CV-1 through CV-4 are DONE. CV-5 is DONE_PARTIAL with two named gaps, both performance or
+plumbing rather than correctness.
+
+## CV-5, item by item against Geoffrey's ordering
+
+| Item | Status | Commit |
+|---|---|---|
+| 1 — exemplar integrity spans kinds | DONE | `638f8e6d` |
+| 2 — convention-scope the harness | DONE | `e61ed626` |
+| 3 — seed baseline from the real check path | DONE, **conditional** | `a003ff22` |
+| 4 — flip auto-acceptance to default-on | **BLOCKED** | — |
+| 5 — the small pieces | DONE except per-kind eval columns | `71738620` |
+
+## What blocks item 4, precisely
+
+Item 3 works: dub with `--accept-families` baselines **484** (data-access 397 unchanged, auth
+family 87), and the first check afterwards is `pass` with all 484 `pre_existing` and **zero new**.
+The decision-C break is closed.
+
+But the unified pass is **4–9× slower at onboarding** — cal.com 30.7s → 115.9s against a 92s
+ceiling, papermark 8s → 73.3s against 30s. The duplication was cheap because it did less: the full
+check runs an engine pass per convention plus graph, exemplar and readiness work a baseline seed
+does not need.
+
+So item 3 is conditional — the unified pass runs only when a presence family was accepted. That
+keeps the default fast and green, but it means item 4's precondition ("an accepted family does not
+flood first check") holds only on the opt-in path. **Flipping the default would impose the 4–9×
+cost on every user and breach two ceilings.** Raising the ceilings to make it pass would be fitting
+the gate to the code.
+
+Item 4 therefore waits on one thing: making the full check fast enough to run unconditionally at
+onboarding. That is a performance item. When it lands, the `BASELINE_CHANGE` mechanism table is
+already written in `CV-5-BASELINE-GAP.md` — dub findings 2→7, exemplars 6→21, guidance 5,501→6,650,
+baselined 397→484.
+
+## Remaining work, complete list
+
+1. **Make the onboarding check fast enough to be unconditional**, then flip the default (item 4).
+2. **Per-kind eval columns with BB-8 cell-liveness** — the one piece of item 5 not addressed.
+3. **UQ-1** — `docs/architecture/security-heuristic-audit.md`. Gates any phase5/phase6 promotion.
+
+## A pattern worth carrying into VP
+
+Three times in this session, checking before building showed the work was already there or already
+fixed: the exemplar count (I had misread the field name), the 7/7 guidance byte assertion (BB-6 built
+it), and the migration sentence (item 3 fixed it downstream). **Two of those I had already reported
+to Geoffrey as defects**, and one of them was used to argue an item's priority.
+
+Combined with the three stale premises in the TDD itself, the rule for VP is the same in both
+directions: **verify the claim against a command's output before acting on it — whether the claim is
+that something is missing or that something exists.** A misread field name and a mislabelled session
+artifact produce the same wasted work.
+
