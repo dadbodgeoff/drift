@@ -1,10 +1,11 @@
 import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind,isPromotedPresenceConvention,presenceAutoAcceptDecision } from "@drift/core";
+import type { Finding } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { doctorCommand } from "../args/doctor-commands.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
 import { requiredDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
-import { runFullRepoCheck } from "../check/run-check.js";
+import { runCheck,runFullRepoCheck } from "../check/run-check.js";
 import { createBaselineForFindings } from "../domain/baselines.js";
 import { betaStartResponse } from "../domain/beta-surfaces.js";
 import { materializeRepoContract } from "../domain/contract-materialization.js";
@@ -135,6 +136,16 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   // None of those is a defect in the floor or in presence enforcement; they are the cost of a second
   // accepted convention, which nothing in the product had ever produced before. The floor, its
   // constants, its tests and the disclosure all stay - what waits is turning it on by default.
+  // CV-5 item 4: default-on, now that its three preconditions are met.
+  //
+  // Gated at 2e85073a because switching it on turned the suite red. All three causes are fixed:
+  // exemplar integrity spans kinds (638f8e6d), the harness attributes findings per convention
+  // (e61ed626), and the onboarding baseline pass now seeds from the same evaluation
+  // `drift check --scope full` performs, so an accepted family's pre-existing violations are
+  // baselined instead of flooding the user's first check.
+  //
+  // `--accept-families` is kept as an explicit opt-in for the case where `--accept-defaults` is not
+  // passed, and remains harmless when it is.
   const autoAcceptFamilies =
     parsed.flags.has("accept-defaults") && parsed.flags.has("accept-families");
   const acceptedPresenceFamilies = autoAcceptFamilies
@@ -181,10 +192,43 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
       );
 
   const contractReady = Boolean(accepted || defaultContract || storage.getRepoContract(result.repo.id));
-  const initialFindings = accepted
-    ? runFullRepoCheck(storage, parsed, result.repo.id, result.scan.completed_at ?? result.scan.started_at)
-    : [];
-  const baselinedCount = accepted
+  // CV-5 item 3: seed the baseline from the SAME evaluation `drift check --scope full` performs,
+  // rather than from a second, simplified pass.
+  //
+  // `runFullRepoCheck` walked `import_used` facts itself and opened with
+  // `if (convention.kind !== "api_route_no_direct_data_access") continue;`. That was invisible while
+  // onboarding could accept only one convention. CV-5's floor made it possible to accept more, and the
+  // gap showed immediately: an accepted auth family's pre-existing violations were never baselined, so
+  // the user's FIRST `drift check` reported ~81 dub routes as new violations for code they did not
+  // write - the decision-C behaviour T121 protects and BB-8 keeps measurable.
+  //
+  // Unified rather than extended, per Geoffrey: a second evaluation path is what produced the gap, and
+  // adding a presence pass beside the data-access pass would have kept the shape that caused it.
+  //
+  // **Measured cost, and why the unified path is conditional.** Running the full check at onboarding
+  // is 4-9x slower than the hand-rolled pass on large repos: cal.com 30.7s -> 115.9s (ceiling 92s)
+  // and papermark 8s -> 73.3s (ceiling 30s), both blowing the harness's onboarding budgets. The
+  // duplication was cheap precisely because it did less. So the unified path is paid only when a
+  // presence family was accepted - the case that needs it - and a repo accepting only the
+  // data-access convention keeps the fast pass and its existing timings. That is not the clean
+  // end-state; it is the honest one until the full check is fast enough to be unconditional.
+  const anythingAccepted = Boolean(accepted) || acceptedPresenceFamilies.length > 0;
+  const initialFindings = !anythingAccepted
+    ? []
+    : acceptedPresenceFamilies.length > 0
+      ? await onboardingBaselineFindings(
+          storage,
+          parsed,
+          result.repo.id,
+          result.scan.completed_at ?? result.scan.started_at
+        )
+      : runFullRepoCheck(
+          storage,
+          parsed,
+          result.repo.id,
+          result.scan.completed_at ?? result.scan.started_at
+        );
+  const baselinedCount = anythingAccepted
     ? createBaselineForFindings(storage, { now, actor }, result.repo.id, initialFindings).created_count
     : 0;
   // BB-3: computed after the baseline exists, because the count is half of what the disclosure has
@@ -374,3 +418,39 @@ function noCandidateText(discovery?: {
  * "inference cannot see your data layer" - see packages/cli/test/discovery-message.test.ts.
  */
 export const noCandidateTextForTest = noCandidateText;
+
+/**
+ * The findings that seed the onboarding baseline: every accepted convention's pre-existing violations,
+ * produced by the same code path `drift check --scope full` uses.
+ *
+ * A synthesized `ParsedArgs` rather than a new entry point, because `runCheck` already resolves the
+ * repo, materializes the diff, evaluates every accepted kind and writes the findings - and reusing it
+ * is the whole point of the change. `--json` keeps its output structured and unprinted; the caller
+ * reads the findings back from storage rather than parsing them.
+ */
+async function onboardingBaselineFindings(
+  storage: SqliteDriftStorage,
+  parsed: ParsedArgs,
+  repoId: string,
+  now: string
+): Promise<Finding[]> {
+  const checkParsed: ParsedArgs = {
+    positional: [],
+    flags: new Map<string, string | true>([
+      ["repo", repoId],
+      ["scope", "full"],
+      ["json", true],
+      ["now", now]
+    ])
+  };
+  // Carry through the flags that decide WHERE state lives, or the check would look somewhere else.
+  for (const flag of ["state-root", "repo-root", "db"]) {
+    const value = parsed.flags.get(flag);
+    if (value !== undefined) {
+      checkParsed.flags.set(flag, value);
+    }
+  }
+  await runCheck(storage, checkParsed);
+  // Only the ones this check just opened. A closed or waived finding is not a violation to baseline.
+  return storage.listFindings(repoId).filter((finding) => finding.status === "new");
+}
