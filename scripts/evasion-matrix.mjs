@@ -348,11 +348,18 @@ function evaluateRepo(cfg, baselineRow) {
     const dbEnv = { ...repoEnv, DRIFT_DB: join(home, ".drift/repos", repoId ?? "", "drift.sqlite") };
 
     const contractRun = drift(root, dbEnv, "contract", "show", "--repo", repoId, "--json");
+    // CV-5: every shape in this matrix is a statement about the DATA-ACCESS convention - the forbidden
+    // import reaches the route at runtime, or it does not. Once a repo can accept more than one
+    // convention, "a finding on the injected route" stops meaning "this shape was caught": the silent
+    // cells (S09 type-only decoy, S11 lookalike negative) inject routes that call no auth wrapper, so an
+    // accepted auth family reports them correctly and the cell would read `false_positive` for the
+    // product being right. Attribution, not location.
+    let dataConventionId = null;
     try {
       const conventions = JSON.parse(contractRun.stdout).contract.conventions;
-      result.enforcement_mode =
-        conventions.find((c) => c.kind === "api_route_no_direct_data_access")?.enforcement_mode ??
-        null;
+      const dataConvention = conventions.find((c) => c.kind === "api_route_no_direct_data_access");
+      dataConventionId = dataConvention?.id ?? null;
+      result.enforcement_mode = dataConvention?.enforcement_mode ?? null;
     } catch {
       result.enforcement_mode = null;
     }
@@ -411,9 +418,12 @@ function evaluateRepo(cfg, baselineRow) {
         } catch {
           payload = null;
         }
-        const findings = (payload?.findings ?? []).filter((finding) =>
-          (finding.evidence_refs ?? []).some((ref) => injectedPaths.includes(ref.file_path))
-        );
+        const findings = (payload?.findings ?? [])
+          // Null id keeps the old behaviour for an unreadable contract rather than silently passing.
+          .filter((finding) => dataConventionId === null || finding.convention_id === dataConventionId)
+          .filter((finding) =>
+            (finding.evidence_refs ?? []).some((ref) => injectedPaths.includes(ref.file_path))
+          );
         const blockedReasons = payload?.summary?.blocked_reasons ?? [];
         record = {
           id: shape.id,

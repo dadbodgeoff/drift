@@ -295,10 +295,17 @@ function evaluateRepoAt(reposDir, cfg) {
 
   const contractRun = drift(root, dbEnv, "contract", "show", "--repo", repoId, "--json");
   let forbidden = [];
+  // CV-5: the id of the convention these controls are ABOUT. Every false-positive assertion below is a
+  // statement about the data-access kind, and once a repo can accept more than one convention, "any
+  // finding on the control route" stops meaning "a data-access false positive". An auth finding on a
+  // route that genuinely calls no wrapper is TRUE, and scoring it as a false positive would make the
+  // harness fail for the product being right.
+  let dataConventionId = null;
   try {
     const conventions = JSON.parse(contractRun.stdout).contract.conventions;
     const dataConvention = conventions.find((c) => c.kind === "api_route_no_direct_data_access");
     forbidden = dataConvention?.matcher?.forbidden_imports ?? [];
+    dataConventionId = dataConvention?.id ?? null;
     result.enforcement_mode = dataConvention?.enforcement_mode ?? null;
   } catch {
     result.enforcement_mode = null;
@@ -398,8 +405,14 @@ function evaluateRepoAt(reposDir, cfg) {
 
     const hasPath = (finding, path) =>
       (finding.evidence_refs ?? []).some((ref) => ref.file_path === path);
-    const onBad = findings.filter((finding) => hasPath(finding, badPath));
-    const onClean = findings.filter((finding) => hasPath(finding, cleanPath));
+    // CV-5: attribution, not just location. A finding counts toward these controls only if it came from
+    // the data-access convention they are about. `dataConventionId === null` keeps the old behaviour for
+    // a repo whose contract could not be read, rather than silently passing everything.
+    const fromDataAccess = (finding) =>
+      dataConventionId === null || finding.convention_id === dataConventionId;
+    const dataFindings = findings.filter(fromDataAccess);
+    const onBad = dataFindings.filter((finding) => hasPath(finding, badPath));
+    const onClean = dataFindings.filter((finding) => hasPath(finding, cleanPath));
     const evidence = onBad[0]?.evidence_refs?.[0];
 
     result.injection_caught = onBad.length > 0;
@@ -460,9 +473,9 @@ function evaluateRepoAt(reposDir, cfg) {
     // harness suppressing the very thing it was trying to observe. Product behaviour is right.
     result.enforcement_matches_mode = enforcementInIsolation(root, dbEnv, repoId, cfg, result.enforcement_mode);
     result.clean_control_false_positive = onClean.length > 0;
-    result.fp_type_only_import = findings.some((f) => hasPath(f, typeOnlyPath));
-    result.fp_lookalike_module = findings.some((f) => hasPath(f, lookalikePath));
-    result.catches_genuine_subpath = findings.some((f) => hasPath(f, subpathPath));
+    result.fp_type_only_import = dataFindings.some((f) => hasPath(f, typeOnlyPath));
+    result.fp_lookalike_module = dataFindings.some((f) => hasPath(f, lookalikePath));
+    result.catches_genuine_subpath = dataFindings.some((f) => hasPath(f, subpathPath));
   } catch {
     result.check_status = "UNPARSEABLE";
   }
