@@ -16,8 +16,15 @@ Run the full gate before opening a PR:
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm verify:ci
+pnpm verify:full
 ```
+
+`verify:full` is `verify:ci` plus `verify:evals`. CI runs only `verify:ci`, because the eval battery
+needs the seven pinned evaluation repos cloned to `$DRIFT_EVAL_REPOS` (default
+`~/drift-falsification/repos`) and a release engine binary — neither exists on a hosted runner. If
+you do not have those repos, run `pnpm verify:ci` and say so in the PR; do not report `verify:full`
+as passing. `pnpm eval:determinism` fails on a repo it cannot find rather than skipping it, so a
+partial run has to be named explicitly with `--only`.
 
 For Rust-only changes, run:
 

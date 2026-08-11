@@ -320,7 +320,11 @@ The e2e suite packs and installs the workspace packages into a clean consumer pr
 Run the full gate:
 
 ```bash
-pnpm verify:ci
+pnpm verify:full
 ```
+
+`verify:full` is two gates. `pnpm verify:ci` is the half a hosted runner can execute and is what
+GitHub Actions runs on every PR. `pnpm verify:evals` is the external-repo battery — it requires the
+seven pinned evaluation repos cloned locally and is not run by CI.
 
 `pnpm verify:ci` includes `pnpm beta:proof`, which proves a fresh Rust scan, an accepted contract, a service-delegated route passing, a new direct data-access route blocking, evidence-complete findings, full schema-stable CLI/MCP parity, and audit hash-chain verification.
