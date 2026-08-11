@@ -1,7 +1,16 @@
-# CI integration — status: UNVERIFIED
+# CI integration
 
-`.github/workflows/drift-check.example.yml` is a reference workflow. It is named `.example.yml` so
-it does not run, and **no line of it has been executed on a Linux runner.**
+`.github/workflows/drift-check-self.yml` runs Drift against Drift's own pull requests. Until
+2026-08-11 that file was called `drift-check.example.yml` and this page claimed the `.example`
+infix stopped it from running. That was wrong — GitHub runs every `.yml` under
+`.github/workflows/`, and it had been failing at an `npm ci` step that could never have worked in
+this pnpm workspace. Treat the requirements below as verified on `ubuntu-latest` only from the
+first green run of that workflow onward.
+
+The self-check builds the engine from this workspace with `cargo build --release`, so it is not
+directly copyable into a consumer repository; there is still no published Linux engine binary (see
+`docs/architecture/engine-release.md`). The requirements below are what any consumer workflow has
+to satisfy.
 
 ## Requirement 1: `fetch-depth: 0`
 
