@@ -1,0 +1,99 @@
+# Drift check on pull requests — UNVERIFIED REFERENCE
+#
+# Named `.example.yml` so it does not run. Nothing here has been executed on a Linux runner, and it
+# should not be trusted until it has been. What is and is not verified is spelled out in
+# docs/ci-integration.md; the short version:
+#
+#   verified    the check semantics, exit codes, and that a committed contract imports into a second
+#               checkout at a different path — all on macOS arm64
+#   UNVERIFIED  every line of this file, plus Drift running on Linux at all
+#
+# It builds the engine from source with cargo rather than installing a published platform package.
+# That is slow — a few minutes — and it is the honest interim: there is no Linux engine binary yet
+# (see docs/architecture/engine-release.md), so an npm install would resolve
+# @drift/engine-linux-x64-gnu to an empty package and the CLI would refuse. Publishing an Action that
+# depends on a package containing no binary is the failure the release-matrix validator was fixed to
+# catch; this does not repeat it.
+
+name: Drift check (example, unverified)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: the check compares against the merge base, and a shallow clone has no base to
+      # compare to. Repo identity also reads the root commit, which a depth-1 clone does not have.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build the engine from source
+        run: cargo build --release -p drift-engine
+
+      - name: Install Drift
+        run: |
+          npm ci
+          npm run build
+
+      - name: Adopt the committed contract
+        env:
+          DRIFT_ENGINE_BIN: ${{ github.workspace }}/target/release/drift-engine
+        run: |
+          # Identity is derived from the git remote and root commit, so the contract committed by a
+          # developer imports here even though CI checks out to a path nobody shares. Before T120
+          # this step was impossible.
+          node packages/cli/dist/main.js start --repo-root . --accept-defaults --json
+          REPO_ID=$(ls "$HOME/.drift/repos" | head -1)
+          echo "DRIFT_REPO_ID=$REPO_ID" >> "$GITHUB_ENV"
+          echo "DRIFT_DB=$HOME/.drift/repos/$REPO_ID/drift.sqlite" >> "$GITHUB_ENV"
+          if [ -f drift.lock ]; then
+            node packages/cli/dist/main.js contract import drift.lock \
+              --repo "$REPO_ID" --confirm --json
+          fi
+
+      - name: Check the diff
+        env:
+          DRIFT_ENGINE_BIN: ${{ github.workspace }}/target/release/drift-engine
+        run: |
+          set +e
+          node packages/cli/dist/main.js check \
+            --db "$DRIFT_DB" \
+            --repo "$DRIFT_REPO_ID" \
+            --diff "origin/${{ github.base_ref }}...HEAD" \
+            --scope changed-hunks \
+            --json > drift-check.json
+          EXIT=$?
+          set -e
+          cat drift-check.json
+
+          # Exit codes are a contract (docs/reference/enforcement.md): 0 clean, 2 the diff violates
+          # the contract, 3 Drift refused to answer, 1 Drift itself failed.
+          #
+          # 3 is treated as a failure deliberately. It means no enforcement claim was made — a stale
+          # scan, a missing contract, an unavailable engine — and a guardrail that reports success
+          # when it could not check is worse than one that stops.
+          case "$EXIT" in
+            0) echo "Drift: no blocking violations" ;;
+            2) echo "::error::Drift found a new violation in this diff"; exit 1 ;;
+            3) echo "::error::Drift declined to check this diff (refusal, not a pass)"; exit 1 ;;
+            *) echo "::error::Drift failed to run"; exit 1 ;;
+          esac
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-check
+          path: drift-check.json

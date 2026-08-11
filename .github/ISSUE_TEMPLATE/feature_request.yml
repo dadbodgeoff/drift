@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a Drift improvement while keeping scope honest.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What agent or human workflow would this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: wedge
+    attributes:
+      label: V1 wedge fit
+      description: Explain whether this supports TypeScript/JavaScript API route layering, local-first policy, graph/query substrate, or should be deferred.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include expected CLI/MCP behavior and test coverage.
+    validations:
+      required: true

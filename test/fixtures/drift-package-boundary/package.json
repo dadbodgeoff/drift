@@ -1,0 +1,10 @@
+{
+  "name": "drift-package-boundary-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@drift/cli": "workspace:*",
+    "@drift/mcp": "workspace:*",
+    "@drift/query": "workspace:*"
+  }
+}

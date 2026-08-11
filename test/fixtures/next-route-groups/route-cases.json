@@ -1,0 +1,62 @@
+[
+  {
+    "name": "plain app api route",
+    "file_path": "app/api/users/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/api/users",
+    "dynamic_params": [],
+    "route_group_segments": [],
+    "ignored_segments": []
+  },
+  {
+    "name": "group before api",
+    "file_path": "app/(admin)/api/users/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/api/users",
+    "dynamic_params": [],
+    "route_group_segments": ["(admin)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "multiple groups before api with src app",
+    "file_path": "apps/web/src/app/(dashboard)/(tenant)/api/workspaces/[id]/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/api/workspaces/:id",
+    "dynamic_params": ["id"],
+    "route_group_segments": ["(dashboard)", "(tenant)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "group after api",
+    "file_path": "app/api/(internal)/users/[userId]/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/api/users/:userId",
+    "dynamic_params": ["userId"],
+    "route_group_segments": ["(internal)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "pages catch all",
+    "file_path": "src/pages/api/docs/[...slug].tsx",
+    "is_api_route": true,
+    "framework": "next_pages_api",
+    "route_path": "/api/docs/:slug*",
+    "dynamic_params": ["slug"],
+    "route_group_segments": [],
+    "ignored_segments": []
+  },
+  {
+    "name": "app non api route",
+    "file_path": "app/(marketing)/about/route.ts",
+    "is_api_route": false
+  },
+  {
+    "name": "non next api folder",
+    "file_path": "server/api/users/route.ts",
+    "is_api_route": false
+  }
+]

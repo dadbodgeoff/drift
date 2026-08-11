@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GraphQueryService > maps repo files from persisted FactGraph projections without reading raw facts > repoMap projection 1`] = `
+{
+  "files": [
+    {
+      "byte_size": 120,
+      "calls": [
+        "findMany",
+      ],
+      "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence_ids": [
+        "evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:1-1",
+        "evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:1-4",
+        "evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:3-3",
+        "evidence:typescript:app/api/users/route.ts:aaaaaaaaaaaa:4-4",
+      ],
+      "exported_symbols": [
+        "GET",
+      ],
+      "fact_count": 4,
+      "graph_node_ids": [
+        "callsite:app/api/users/route.ts:aaaaaaaaaaaa:findMany:4-4",
+        "file_role:api_route",
+        "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
+        "file:app/api/users/route.ts",
+        "import_decl:app/api/users/route.ts:aaaaaaaaaaaa:../../lib/db:db:1-1",
+        "module:app/api/users/route.ts",
+        "repo:repo_abc",
+        "symbol:app/api/users/route.ts:function:GET",
+      ],
+      "imports": [
+        "../../lib/db",
+      ],
+      "indexed": true,
+      "path": "app/api/users/route.ts",
+      "roles": [
+        "api_route",
+      ],
+    },
+    {
+      "byte_size": 80,
+      "calls": [],
+      "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "evidence_ids": [],
+      "exported_symbols": [],
+      "fact_count": 0,
+      "graph_node_ids": [
+        "file_version:app/lib/db.ts:bbbbbbbbbbbb",
+        "file:app/lib/db.ts",
+        "module:app/lib/db.ts",
+        "repo:repo_abc",
+      ],
+      "imports": [],
+      "indexed": true,
+      "path": "app/lib/db.ts",
+      "roles": [],
+    },
+  ],
+  "graph_summary": {
+    "edge_count": 13,
+    "evidence_count": 4,
+    "graph_backed": true,
+    "node_count": 11,
+  },
+  "repo_id": "repo_abc",
+  "scan_id": "scan_abc",
+}
+`;

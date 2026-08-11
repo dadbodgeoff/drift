@@ -1,0 +1,224 @@
+[
+  {
+    "repo": "taxonomy",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  },
+  {
+    "repo": "dub",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "MEASURED",
+        "convention_kind": "api_route_requires_auth_helper",
+        "members": 5,
+        "flavors": [
+          "api_route"
+        ],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "kind": "rate-limit",
+        "status": "MEASURED",
+        "convention_kind": "api_route_requires_rate_limit",
+        "members": 2,
+        "flavors": [
+          "api_route"
+        ],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  },
+  {
+    "repo": "formbricks",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  },
+  {
+    "repo": "calcom",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  },
+  {
+    "repo": "papermark",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "MEASURED",
+        "convention_kind": "api_route_requires_rate_limit",
+        "members": 2,
+        "flavors": [
+          "api_route"
+        ],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  },
+  {
+    "repo": "midday",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "data-access",
+        "status": "NO_CONVENTION"
+      }
+    ]
+  },
+  {
+    "repo": "openstatus",
+    "status": "OK",
+    "kinds": [
+      {
+        "kind": "auth",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "rate-limit",
+        "status": "NO_CONVENTION"
+      },
+      {
+        "kind": "data-access",
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ]
+  }
+]

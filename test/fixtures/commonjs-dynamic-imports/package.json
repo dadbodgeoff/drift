@@ -1,0 +1,5 @@
+{
+  "name": "commonjs-dynamic-imports-fixture",
+  "private": true,
+  "type": "module"
+}

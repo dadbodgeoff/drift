@@ -1,0 +1,1 @@
+{"name":"route-write-operation-fixture","private":true,"scripts":{"test":"vitest run"}}

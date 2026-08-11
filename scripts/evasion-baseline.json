@@ -1,0 +1,1394 @@
+[
+  {
+    "repo": "taxonomy",
+    "onboarded": true,
+    "enforcement_mode": "warn",
+    "resolved_target": "lib/db.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "verdict": "UNTESTABLE",
+        "note": "data module has no real subpath module to import"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "dub",
+    "onboarded": true,
+    "enforcement_mode": "warn",
+    "resolved_target": "apps/web/lib/prisma/index.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s12/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s12/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "apps/web/app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "formbricks",
+    "onboarded": true,
+    "enforcement_mode": "block",
+    "resolved_target": "packages/database/src/index.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s12/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s12/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "apps/web/app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "calcom",
+    "onboarded": true,
+    "enforcement_mode": "block",
+    "resolved_target": "packages/prisma/index.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s12/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s12/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "apps/web/app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:apps/web/app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "papermark",
+    "onboarded": true,
+    "enforcement_mode": "warn",
+    "resolved_target": "lib/prisma.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "verdict": "UNTESTABLE",
+        "note": "data module has no real subpath module to import"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "midday",
+    "onboarded": true,
+    "enforcement_mode": "block",
+    "resolved_target": null,
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "verdict": "UNTESTABLE",
+        "note": "specifier not resolvable to a file"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "verdict": "UNTESTABLE",
+        "note": "data module has no real subpath module to import"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:apps/dashboard/src/app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  },
+  {
+    "repo": "openstatus",
+    "onboarded": true,
+    "enforcement_mode": "block",
+    "resolved_target": "packages/db/src/index.ts",
+    "shapes": [
+      {
+        "id": "S01-control-canonical",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s01/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s01/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S02-relative-path",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s02/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s02/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S03-barrel-1hop",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s03/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s03/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S04-barrel-2hop",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s04/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s04/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S05-renamed-reexport",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s05/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s05/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S06-namespace-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s06/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s06/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S07-dynamic-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s07/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s07/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S08-require-call",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s08/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s08/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S09-type-only-decoy",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s09/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S10-side-effect-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s10/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s10/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S11-lookalike-negative",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s11/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S12-genuine-subpath",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s12/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s12/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S13-refusal-decoy",
+        "class": "refuse",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s13/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 3,
+        "check_status": "refused",
+        "enforcement": "none",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s13/route.ts"
+        ],
+        "refusal_names_decoy": true,
+        "blocked_reasons": [
+          "enforcement_degraded_by_incomplete_coverage",
+          "unresolved_route_import:apps/dashboard/src/app/api/drift-evasion-s13/route.ts"
+        ],
+        "outcome": "refused",
+        "verdict": "PASS"
+      }
+    ]
+  }
+]

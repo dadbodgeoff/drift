@@ -1,0 +1,4 @@
+{
+  "name": "@acme/dockerlib",
+  "main": "src/index.ts"
+}
