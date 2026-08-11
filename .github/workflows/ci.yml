@@ -31,7 +31,7 @@ jobs:
   verify:
     name: Verify
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -54,6 +54,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Four CLI test files point DRIFT_ENGINE_BIN at target/release/drift-engine and fail if it is
+      # absent. Nothing in the gate built it: `pnpm test:engine` is `cargo test`, which produces a
+      # debug binary. On a developer machine the release binary is always lying around from an eval
+      # run, so the dependency was invisible until a clean runner ran the suite for the first time.
+      # `pnpm verify` now builds it too; this step is here so a build failure is legible as a build
+      # failure rather than as a test failure, and it makes the one inside verify a no-op.
+      - name: Build the release engine
+        run: pnpm build:engine
 
       - name: Verify
         run: pnpm verify:ci
