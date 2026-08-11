@@ -1,3 +1,17 @@
+# What this gate does and does not cover.
+#
+# `verify:ci` is the subset of the battery a hosted runner can actually execute: build, typecheck,
+# unit and e2e tests, the harness meta-tests, engine fmt/clippy, boundary and release-matrix
+# validation, product claims, and the beta proof.
+#
+# It deliberately does NOT run the external-repo evals (`verify:evals`: eval:external, eval:evasion,
+# eval:bench, eval:determinism). Those need the seven pinned evaluation repos cloned to
+# $DRIFT_EVAL_REPOS and a release engine binary, neither of which exists on a hosted runner, and
+# they do not fit in the timeout. Listing them here did not make them run — it made a green CI badge
+# that had never once executed them.
+#
+# The evals are a LOCAL gate. `pnpm verify:full` is the full battery and is what any "verified"
+# claim in docs/ or the run ledger must cite, along with the machine and commit it was run on.
 name: CI
 
 on:
@@ -13,8 +27,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
 jobs:
   verify:
     name: Verify

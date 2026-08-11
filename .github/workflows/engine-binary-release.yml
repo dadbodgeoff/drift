@@ -28,8 +28,6 @@ env:
   NODE_VERSION: "22"
   PNPM_VERSION: "10.28.0"
 
-defaults:
-  run:
 jobs:
   preflight:
     name: Preflight
