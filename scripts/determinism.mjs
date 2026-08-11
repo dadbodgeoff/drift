@@ -204,7 +204,13 @@ for (const cfg of selected) {
   }
 }
 
-const failures = rows.filter((row) => row.status !== "DETERMINISTIC" && row.status !== "MISSING_REPO");
+// A repo that is not on this machine is a repo this run did not measure, so it is a failure and not
+// a footnote. Exempting MISSING_REPO meant `pnpm eval:determinism` on a checkout with no eval repos
+// cloned printed "0/7 repo(s) deterministic" and exited 0 — the harness reporting success for
+// having measured nothing, which is the failure mode the whole battery exists to catch. Running
+// against a subset is still supported; it just has to be said out loud with `--only`.
+// external-eval.mjs already fails this way (`status !== "PASS"`); this matches it.
+const failures = rows.filter((row) => row.status !== "DETERMINISTIC");
 console.log(
   `\n${rows.filter((row) => row.status === "DETERMINISTIC").length}/${rows.length} repo(s) deterministic over ${RUNS} runs`
 );

@@ -1,12 +1,15 @@
-# Drift check on pull requests — UNVERIFIED REFERENCE
+# Drift checking its own pull requests.
 #
-# Named `.example.yml` so it does not run. Nothing here has been executed on a Linux runner, and it
-# should not be trusted until it has been. What is and is not verified is spelled out in
-# docs/ci-integration.md; the short version:
+# This file used to open by claiming "named `.example.yml` so it does not run". That was false, and
+# it stayed false for as long as the claim sat here: GitHub runs every `.yml` under
+# `.github/workflows/` regardless of what the name says, and this one declares `on: pull_request`.
+# It ran on PR #101 and failed at `npm ci` — a repo-wide install command that has never been correct
+# here, because this is a pnpm workspace with no package-lock.json. A workflow believed to be inert
+# was the only workflow on the repo that GitHub could parse.
 #
-#   verified    the check semantics, exit codes, and that a committed contract imports into a second
-#               checkout at a different path — all on macOS arm64
-#   UNVERIFIED  every line of this file, plus Drift running on Linux at all
+# So it is treated as what it actually is: the dogfooding gate. It runs Drift against Drift's own
+# diff, and it is red when Drift is wrong. `docs/ci-integration.md` describes what a *consumer*
+# should copy; this file is not that, since it builds the engine from source out of this workspace.
 #
 # It builds the engine from source with cargo rather than installing a published platform package.
 # That is slow — a few minutes — and it is the honest interim: there is no Linux engine binary yet
@@ -15,7 +18,7 @@
 # depends on a package containing no binary is the failure the release-matrix validator was fixed to
 # catch; this does not repeat it.
 
-name: Drift check (example, unverified)
+name: Drift check (self)
 
 on:
   pull_request:
@@ -34,9 +37,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -45,8 +54,8 @@ jobs:
 
       - name: Install Drift
         run: |
-          npm ci
-          npm run build
+          pnpm install --frozen-lockfile
+          pnpm build
 
       - name: Adopt the committed contract
         env:
