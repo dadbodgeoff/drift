@@ -1,0 +1,548 @@
+[
+  {
+    "repo": "taxonomy",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 15,
+    "import_resolution_rate": 0.9777,
+    "fact_count_manifest": 1643,
+    "fact_count_stored": 1643,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "dub",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 639,
+    "import_resolution_rate": 0.9992,
+    "fact_count_manifest": 106626,
+    "fact_count_stored": 106626,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "formbricks",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 999,
+    "import_resolution_rate": 0.9952,
+    "fact_count_manifest": 158174,
+    "fact_count_stored": 158174,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "calcom",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 1505,
+    "import_resolution_rate": 0.9613,
+    "fact_count_manifest": 171915,
+    "fact_count_stored": 171915,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 1,
+        "coverage_complete": false
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 1,
+        "coverage_complete": false
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 1,
+        "coverage_complete": false
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "papermark",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 493,
+    "import_resolution_rate": 0.9856,
+    "fact_count_manifest": 51558,
+    "fact_count_stored": 51558,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "midday",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 581,
+    "import_resolution_rate": 0.9983,
+    "fact_count_manifest": 85869,
+    "fact_count_stored": 85869,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 2,
+        "coverage_complete": true
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 2,
+        "coverage_complete": true
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 2,
+        "coverage_complete": true
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  },
+  {
+    "repo": "openstatus",
+    "onboarded": true,
+    "error": null,
+    "parser_gap_count": 740,
+    "import_resolution_rate": 0.9851,
+    "fact_count_manifest": 90348,
+    "fact_count_stored": 90348,
+    "fact_counts_agree": true,
+    "refused": 0,
+    "applicable": 8,
+    "edits": [
+      {
+        "id": "E1-comment-only",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E2-new-layered-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E3-new-helper-module",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E4-route-uses-new-helper",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E5-add-local-import-to-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E6-early-return-in-existing-route",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": false
+      },
+      {
+        "id": "E7-two-new-routes-one-diff",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      },
+      {
+        "id": "E8-rename-a-new-route-directory",
+        "applicable": true,
+        "exit": 0,
+        "refused": false,
+        "findings_count": 0,
+        "coverage_complete": true
+      }
+    ]
+  }
+]

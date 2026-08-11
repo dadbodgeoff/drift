@@ -1,0 +1,22 @@
+[package]
+name = "drift-engine"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = "1.0.134"
+sha2 = "0.10.9"
+tree-sitter = "0.25.10"
+tree-sitter-typescript = "0.23.2"
+# Correct .gitignore semantics: nested ignore files and `!` negations, with per-directory
+# precedence. The hand-rolled matcher read only the repo-root file and dropped every `!` line, so
+# generated and vendored output inside a package was scanned and could produce findings in files a
+# user cannot fix. A first attempt used GitignoreBuilder directly and had to be reverted: it scopes
+# every pattern to the builder root, so a bare `app` in one package went repo-wide. WalkBuilder
+# applies per-directory precedence natively, which is the whole point of using it.
+ignore = "0.4"
+
+[dev-dependencies]
+tempfile = "3.14.0"

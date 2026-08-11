@@ -15,8 +15,6 @@ concurrency:
 
 defaults:
   run:
-    working-directory: drift v3
-
 jobs:
   verify:
     name: Verify
@@ -37,7 +35,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: drift v3/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable

@@ -1,13 +1,23 @@
-# Root-level ignores
-.DS_Store
 node_modules/
-.cortex/
-
-# Root-level local/generated artifacts. Real project source lives under drift v3/.
+dist/
+target/
+coverage/
 output/
 outputs/
-target/
-/packages/
+.drift/
+*.sqlite
+*.drift-backup.sqlite
+*.tgz
+packages/engine-*/bin/
+packages/engine-*/engine-manifest.json
+.DS_Store
+.env*
+!.env.example
 avatar-*.js
 avatar-overlay-page-*.js
 main-*.js
+
+# Engine binaries are build artifacts, produced per platform by CI.
+# scripts/build-engine-artifacts.mjs writes them; engine-manifest.json records the checksum
+# and is committed so the release job can verify what CI produced.
+packages/engine-*/bin/drift-engine

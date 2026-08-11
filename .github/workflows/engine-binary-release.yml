@@ -30,8 +30,6 @@ env:
 
 defaults:
   run:
-    working-directory: drift v3
-
 jobs:
   preflight:
     name: Preflight
@@ -76,7 +74,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: drift v3/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -174,7 +172,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: drift v3/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -227,7 +225,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drift-engine-${{ matrix.target }}
-          path: drift v3/.release/${{ matrix.target }}
+          path: .release/${{ matrix.target }}
           if-no-files-found: error
 
   assemble-checksums:
@@ -242,7 +240,7 @@ jobs:
       - name: Download engine artifacts
         uses: actions/download-artifact@v4
         with:
-          path: drift v3/.release/artifacts
+          path: .release/artifacts
 
       - name: Assemble checksums
         shell: bash
@@ -261,7 +259,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drift-engine-SHA256SUMS
-          path: drift v3/SHA256SUMS
+          path: SHA256SUMS
           if-no-files-found: error
 
   pack-npm-packages:
@@ -282,7 +280,7 @@ jobs:
         with:
           pattern: drift-engine-*
           merge-multiple: false
-          path: drift v3/.release/artifacts
+          path: .release/artifacts
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -294,7 +292,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: drift v3/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -345,7 +343,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drift-npm-tarballs
-          path: drift v3/.release/npm/*.tgz
+          path: .release/npm/*.tgz
           if-no-files-found: error
 
   registry-smoke:
@@ -364,7 +362,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: drift-npm-tarballs
-          path: drift v3/.release/npm
+          path: .release/npm
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -375,7 +373,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          RELEASE_ROOT="${GITHUB_WORKSPACE}/drift v3"
+          RELEASE_ROOT="${GITHUB_WORKSPACE}"
           TMP="$(mktemp -d)"
           cd "${TMP}"
           npm init -y >/dev/null
@@ -408,19 +406,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: drift-beta-preflight-proof
-          path: drift v3/.release/proof
+          path: .release/proof
 
       - name: Download checksum manifest
         uses: actions/download-artifact@v4
         with:
           name: drift-engine-SHA256SUMS
-          path: drift v3
+          path: .
 
       - name: Download npm tarballs
         uses: actions/download-artifact@v4
         with:
           name: drift-npm-tarballs
-          path: drift v3/.release/npm
+          path: .release/npm
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -432,7 +430,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: drift v3/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -447,7 +445,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drift-final-release-proof
-          path: drift v3/.release/final-release-proof.json
+          path: .release/final-release-proof.json
           if-no-files-found: error
 
   publish:
@@ -466,7 +464,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: drift-npm-tarballs
-          path: drift v3/.release/npm
+          path: .release/npm
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -514,13 +512,13 @@ jobs:
         with:
           pattern: drift-engine-*
           merge-multiple: true
-          path: drift v3/.release/assets
+          path: .release/assets
 
       - name: Download checksum manifest
         uses: actions/download-artifact@v4
         with:
           name: drift-engine-SHA256SUMS
-          path: drift v3/.release/assets
+          path: .release/assets
 
       - name: Create draft release
         env:

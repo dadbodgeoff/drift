@@ -1,0 +1,12 @@
+# Workspace declared ONLY here, never in package.json#workspaces — the formbricks/dub shape.
+packages:
+  - "packages/*"
+  - apps/* # unquoted entry with a trailing comment, as pnpm accepts
+
+# Unrelated top-level keys must not confuse the packages read (formbricks has allowBuilds,
+# openstatus has catalog/trustPolicy).
+allowBuilds:
+  "@prisma/engines": true
+  esbuild: true
+catalog:
+  react: 19.0.0
