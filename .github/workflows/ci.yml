@@ -34,8 +34,16 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # fetch-depth: 0 is not optional. `pnpm beta:proof` runs `drift start` against a fixture, and
+      # Drift refuses to derive repo identity in a shallow clone - a shallow clone's root commit is
+      # the fetch graft, not the repository's real first commit, so the identity would silently
+      # disagree with every full checkout. actions/checkout defaults to depth 1, so the proof exited
+      # 3 (refused) the first time this gate ran. The product's own documented CI requirement
+      # applies to the product's own CI.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

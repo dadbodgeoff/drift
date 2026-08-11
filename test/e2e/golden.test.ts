@@ -38,7 +38,7 @@ describe("golden fixture CLI lifecycle", () => {
           "api_route_requires_service_delegation",
         ],
         "engine_source": "rust",
-        "facts_count": 9,
+        "facts_count": 10,
         "files_indexed": 1,
       }
     `);
@@ -281,7 +281,7 @@ describe("golden realistic repo evidence", () => {
         ],
         "diagnostics_count": 0,
         "engine_source": "rust",
-        "facts_count": 17,
+        "facts_count": 18,
         "files_indexed": 3,
       }
     `);
@@ -292,7 +292,7 @@ describe("golden realistic repo evidence", () => {
         ],
         "diagnostics_count": 0,
         "engine_source": "rust",
-        "facts_count": 17,
+        "facts_count": 18,
         "files_indexed": 2,
       }
     `);
