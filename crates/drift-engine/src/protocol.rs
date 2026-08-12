@@ -739,22 +739,35 @@ pub fn engine_stats(
 ///
 /// `files_skipped_unreadable` is the count of files that could not be read or parsed
 /// during discovery. Any skipped file means syntax facts are incomplete for the repo.
-pub fn repo_completeness(files_skipped_unreadable: usize) -> Vec<EngineCompleteness> {
+pub fn repo_completeness(
+    files_skipped_unreadable: usize,
+    files_skipped_too_large: usize,
+) -> Vec<EngineCompleteness> {
     let required = vec![
         "file_discovery".to_string(),
         "syntax_facts".to_string(),
         "graph_stream".to_string(),
     ];
-    let complete = files_skipped_unreadable == 0;
+    let complete = files_skipped_unreadable == 0 && files_skipped_too_large == 0;
     let (missing_capabilities, reasons) = if complete {
         (Vec::new(), Vec::new())
     } else {
-        (
-            vec!["syntax_facts".to_string()],
-            vec![format!(
+        // Two reasons rather than one total, because they call for different responses: an
+        // unreadable file is usually a mistake worth fixing, an oversized one is usually a
+        // generated artifact worth excluding. A single "n files skipped" makes the reader go
+        // find out which.
+        let mut reasons = Vec::new();
+        if files_skipped_unreadable > 0 {
+            reasons.push(format!(
                 "{files_skipped_unreadable} file(s) could not be read or parsed and were skipped"
-            )],
-        )
+            ));
+        }
+        if files_skipped_too_large > 0 {
+            reasons.push(format!(
+                "{files_skipped_too_large} file(s) exceeded the {MAX_FILE_BYTES} byte scan limit and were skipped"
+            ));
+        }
+        (vec!["syntax_facts".to_string()], reasons)
     };
     vec![EngineCompleteness {
         scope: "repo".to_string(),
@@ -813,16 +826,38 @@ mod completeness_tests {
     /// or - had the abort been removed alone - a silent claim of full coverage.
     #[test]
     fn repo_completeness_reports_skipped_files() {
-        let clean = &repo_completeness(0)[0];
+        let clean = &repo_completeness(0, 0)[0];
         assert!(clean.complete);
         assert!(clean.missing_capabilities.is_empty());
         assert!(clean.reasons.is_empty());
 
-        let degraded = &repo_completeness(3)[0];
+        let degraded = &repo_completeness(3, 0)[0];
         assert!(!degraded.complete);
         assert_eq!(degraded.missing_capabilities, vec!["syntax_facts"]);
         assert_eq!(degraded.reasons.len(), 1);
         // Findings that were produced are still trustworthy, so blocking stays available.
         assert!(degraded.can_block);
+    }
+
+    /// An oversized file is a file the scan did not read, and it was counted nowhere.
+    ///
+    /// The oversize branch returns `Ok(None)`, which the caller matched with an empty arm, so a
+    /// skipped 2 MB route left this reporting `complete: true` - the exact overstatement the
+    /// unreadable counter above exists to prevent, arriving one branch over.
+    #[test]
+    fn repo_completeness_reports_files_skipped_for_size() {
+        let oversized = &repo_completeness(0, 2)[0];
+        assert!(!oversized.complete);
+        assert_eq!(oversized.missing_capabilities, vec!["syntax_facts"]);
+        assert_eq!(oversized.reasons.len(), 1);
+        assert!(oversized.reasons[0].contains("scan limit"));
+        assert!(oversized.can_block);
+
+        // Both kinds are named separately: unreadable is usually a mistake to fix, oversized is
+        // usually a generated artifact to exclude, and one merged count makes the reader go and
+        // find out which they have.
+        let both = &repo_completeness(1, 1)[0];
+        assert!(!both.complete);
+        assert_eq!(both.reasons.len(), 2);
     }
 }

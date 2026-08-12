@@ -32,6 +32,13 @@ struct ScanFilesResult {
     /// Files that could not be read or parsed. Surfaced in the scan summary so partial
     /// coverage is reported rather than silently presented as complete.
     files_skipped_unreadable: usize,
+    /// Files skipped for exceeding MAX_FILE_BYTES.
+    ///
+    /// These were counted nowhere. The oversize branch emits a `file_too_large` diagnostic and
+    /// returns `Ok(None)`, which landed in an empty match arm, so a skipped 2 MB route left the
+    /// scan reporting complete coverage - the same overstatement `files_skipped_unreadable` exists
+    /// to prevent, one branch over.
+    files_skipped_too_large: usize,
 }
 
 struct ReuseIndex {
@@ -220,7 +227,10 @@ fn scan_repo(
         framework_capabilities: framework_scan_data.capabilities,
         diagnostics,
         stats,
-        completeness: repo_completeness(scanned.files_skipped_unreadable),
+        completeness: repo_completeness(
+            scanned.files_skipped_unreadable,
+            scanned.files_skipped_too_large,
+        ),
     })
 }
 
@@ -408,7 +418,10 @@ fn stream_scan_repo(
         &ScanStreamEvent::ScanCompleted {
             schema_version: ENGINE_STREAM_EVENT_SCHEMA_VERSION,
             stats,
-            completeness: repo_completeness(scanned.files_skipped_unreadable),
+            completeness: repo_completeness(
+                scanned.files_skipped_unreadable,
+                scanned.files_skipped_too_large,
+            ),
         },
     )?;
     stdout.flush()?;
@@ -535,7 +548,10 @@ fn scan_files(
                 }
                 result.scanned.push((file, facts));
             }
-            Ok(None) => {}
+            // The only `Ok(None)` from scan_file_with_reuse is the oversize skip.
+            Ok(None) => {
+                result.files_skipped_too_large += 1;
+            }
             Err(error) => {
                 diagnostics.push(EngineDiagnostic {
                     severity: "warning".to_string(),

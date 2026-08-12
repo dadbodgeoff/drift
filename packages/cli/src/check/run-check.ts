@@ -823,7 +823,29 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     .filter((filePath): filePath is string => Boolean(filePath))
     .filter((filePath) => parsedDiff.files.some((file) => file.path === filePath))
     .map((filePath) => `unresolved_route_import:${filePath}`)
-    .filter((reason, index, all) => all.indexOf(reason) === index);
+    .filter((reason, index, all) => all.indexOf(reason) === index)
+    // A file the scan could not read is a coverage gap too, and it was the one kind that never
+    // reached this list.
+    //
+    // The scan already knows: `repo_completeness` counts skipped files and reports the repo scope
+    // as incomplete, and that verdict is persisted (graph_completeness holds `complete=0` with the
+    // reason). The check simply never read it, so a repo with a non-UTF-8 API route answered
+    // `partial_coverage: {complete: true, reasons: []}` and exit 0 - asserting it had seen a route
+    // it never opened. Measured on a two-route fixture before this line existed.
+    //
+    // This is a coverage gap and deliberately not an enforcement demotion: findings the scan did
+    // establish stay enforced and the exit code is unchanged, exactly as EW-2 separated the two.
+    // The check stops claiming completeness it does not have; it does not become a kill-switch.
+    //
+    // Note this is a different use of `checkData.completeness` than the one rejected at S1-01
+    // above. There it was proposed as a substitute for detecting check-time demotion, which it
+    // cannot see. Here it is being asked what it actually measures: what the scan managed to read.
+    .concat(
+      (checkData.completeness ?? [])
+        .filter((entry) => entry.scope === "repo" && !entry.complete)
+        .flatMap((entry) => entry.reasons ?? [])
+        .map((reason) => `scan_incomplete:${reason}`)
+    );
 
   // S1-01: did incomplete coverage silently weaken enforcement?
   //
