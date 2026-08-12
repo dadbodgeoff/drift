@@ -2040,7 +2040,7 @@ fn import_bases(from_file: &str, source: &str, resolver: &ResolverContext) -> Ve
             .filter(|entry| scope_contains(&entry.scope, from_file))
             .collect();
         // Nearest baseUrl's candidates first, for the same reason as alias precedence.
-        applicable.sort_by(|left, right| right.scope.len().cmp(&left.scope.len()));
+        applicable.sort_by_key(|entry| std::cmp::Reverse(entry.scope.len()));
         for entry in applicable {
             bases.push(join_repo_path(&entry.base_url, source));
         }
