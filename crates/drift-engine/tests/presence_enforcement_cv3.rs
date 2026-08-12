@@ -110,10 +110,24 @@ fn a_route_calling_a_family_member_is_silent() {
         &repo_root,
         vec![
             fact("file_role_detected", "api_route", 1, 4, None, None),
-            fact("import_used", "withWorkspace", 1, 1, Some("@/lib/auth"), Some("withWorkspace")),
+            fact(
+                "import_used",
+                "withWorkspace",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withWorkspace"),
+            ),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withWorkspace", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -140,10 +154,24 @@ fn a_renamed_import_still_satisfies_presence() {
         vec![
             fact("file_role_detected", "api_route", 1, 4, None, None),
             // The local binding is `w`; what it resolves to is `withSession`.
-            fact("import_used", "w", 1, 1, Some("@/lib/auth"), Some("withSession")),
+            fact(
+                "import_used",
+                "w",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withSession"),
+            ),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "w", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -172,7 +200,14 @@ fn a_same_named_local_function_does_not_satisfy_presence() {
             // No import_used fact: nothing resolves this call anywhere.
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withSession", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -199,7 +234,14 @@ fn a_convention_with_no_accepted_helpers_produces_no_findings() {
         vec![
             fact("file_role_detected", "api_route", 1, 1, None, None),
             fact("route_declared", "POST", 1, 1, None, None),
-            fact("route_returns_response", "json", 1, 1, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                1,
+                1,
+                Some("Response"),
+                None,
+            ),
         ],
         convention,
     );
@@ -225,7 +267,14 @@ fn the_finding_claims_presence_and_never_protection() {
         vec![
             fact("file_role_detected", "api_route", 1, 1, None, None),
             fact("route_declared", "POST", 1, 1, None, None),
-            fact("route_returns_response", "json", 1, 1, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                1,
+                1,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -297,13 +346,34 @@ fn a_guard_called_after_the_sink_is_a_documented_non_catch() {
         &repo_root,
         vec![
             fact("file_role_detected", "api_route", 1, 7, None, None),
-            fact("import_used", "withWorkspace", 1, 1, Some("@/lib/auth"), Some("withWorkspace")),
+            fact(
+                "import_used",
+                "withWorkspace",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withWorkspace"),
+            ),
             fact("import_used", "db", 2, 2, Some("@/lib/db"), Some("db")),
             fact("route_declared", "POST", 3, 7, None, None),
             // The sink runs first; the guard is called after it.
-            fact("data_operation_detected", "findMany", 4, 4, Some("db.thing"), Some("read:thing")),
+            fact(
+                "data_operation_detected",
+                "findMany",
+                4,
+                4,
+                Some("db.thing"),
+                Some("read:thing"),
+            ),
             fact("symbol_called", "withWorkspace", 5, 5, None, None),
-            fact("route_returns_response", "json", 6, 6, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                6,
+                6,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -341,19 +411,44 @@ fn only_the_unwrapped_handler_of_a_multi_handler_route_is_reported() {
         &repo_root,
         vec![
             fact("file_role_detected", "api_route", 1, 7, None, None),
-            fact("import_used", "withSession", 1, 1, Some("@/lib/auth"), Some("withSession")),
+            fact(
+                "import_used",
+                "withSession",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withSession"),
+            ),
             fact("import_used", "db", 2, 2, Some("@/lib/db"), Some("db")),
             fact("route_declared", "GET", 3, 3, None, None),
             fact("symbol_called", "withSession", 3, 3, None, None),
             fact("route_declared", "POST", 4, 7, None, None),
-            fact("data_operation_detected", "create", 5, 5, Some("db.thing"), Some("write:thing")),
-            fact("route_returns_response", "json", 6, 6, Some("Response"), None),
+            fact(
+                "data_operation_detected",
+                "create",
+                5,
+                5,
+                Some("db.thing"),
+                Some("write:thing"),
+            ),
+            fact(
+                "route_returns_response",
+                "json",
+                6,
+                6,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
 
     let findings = payload["findings"].as_array().expect("findings");
-    assert_eq!(findings.len(), 1, "exactly the unguarded handler: {payload:#?}");
+    assert_eq!(
+        findings.len(),
+        1,
+        "exactly the unguarded handler: {payload:#?}"
+    );
     assert!(
         findings[0]["message"]
             .as_str()
@@ -380,7 +475,14 @@ fn two_unwrapped_handlers_are_two_findings() {
             fact("file_role_detected", "api_route", 1, 2, None, None),
             fact("route_declared", "GET", 1, 1, None, None),
             fact("route_declared", "POST", 2, 2, None, None),
-            fact("route_returns_response", "json", 1, 1, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                1,
+                1,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -402,11 +504,25 @@ fn a_wrapper_enclosing_its_handler_satisfies_that_handler() {
         &repo_root,
         vec![
             fact("file_role_detected", "api_route", 1, 4, None, None),
-            fact("import_used", "withSession", 1, 1, Some("@/lib/auth"), Some("withSession")),
+            fact(
+                "import_used",
+                "withSession",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withSession"),
+            ),
             fact("route_declared", "POST", 2, 4, None, None),
             // The call spans the whole handler.
             fact("symbol_called", "withSession", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -437,7 +553,14 @@ fn a_namespace_import_satisfies_presence() {
             fact("import_used", "auth", 1, 1, Some("@/lib/auth"), Some("*")),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withSession", 2, 4, Some("auth"), None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -465,7 +588,14 @@ fn a_namespace_property_from_an_unimported_object_does_not_satisfy() {
             fact("file_role_detected", "api_route", 1, 4, None, None),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withSession", 2, 4, Some("helpers"), None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -505,12 +635,33 @@ fn a_convention_without_the_presence_marker_still_gets_the_dominance_proof() {
         &repo_root,
         vec![
             fact("file_role_detected", "api_route", 1, 7, None, None),
-            fact("import_used", "withWorkspace", 1, 1, Some("@/lib/auth"), Some("withWorkspace")),
+            fact(
+                "import_used",
+                "withWorkspace",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withWorkspace"),
+            ),
             fact("import_used", "db", 2, 2, Some("@/lib/db"), Some("db")),
             fact("symbol_called", "withWorkspace", 3, 3, None, None),
             fact("route_declared", "POST", 4, 7, None, None),
-            fact("data_operation_detected", "findMany", 5, 5, Some("db.thing"), Some("read:thing")),
-            fact("route_returns_response", "json", 6, 6, Some("Response"), None),
+            fact(
+                "data_operation_detected",
+                "findMany",
+                5,
+                5,
+                Some("db.thing"),
+                Some("read:thing"),
+            ),
+            fact(
+                "route_returns_response",
+                "json",
+                6,
+                6,
+                Some("Response"),
+                None,
+            ),
         ],
         convention,
     );
@@ -636,10 +787,24 @@ fn a_wrapper_imported_through_a_barrel_satisfies_presence() {
         vec![
             fact("file_role_detected", "api_route", 1, 4, None, None),
             // The specifier is the barrel; the imported name is still the accepted symbol.
-            fact("import_used", "withSession", 1, 1, Some("@/lib"), Some("withSession")),
+            fact(
+                "import_used",
+                "withSession",
+                1,
+                1,
+                Some("@/lib"),
+                Some("withSession"),
+            ),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withSession", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -683,7 +848,14 @@ fn a_same_named_wrapper_from_an_unrelated_module_also_satisfies_presence() {
             ),
             fact("route_declared", "POST", 2, 4, None, None),
             fact("symbol_called", "withSession", 2, 4, None, None),
-            fact("route_returns_response", "json", 3, 3, Some("Response"), None),
+            fact(
+                "route_returns_response",
+                "json",
+                3,
+                3,
+                Some("Response"),
+                None,
+            ),
         ],
         presence_convention(),
     );
@@ -720,7 +892,12 @@ fn a_wrong_flavour_member_is_reported_and_the_message_names_what_was_expected() 
         }]
     });
 
-    let cron_fact = |kind: &str, name: &str, start: usize, end: usize, value: Option<&str>, imported: Option<&str>| {
+    let cron_fact = |kind: &str,
+                     name: &str,
+                     start: usize,
+                     end: usize,
+                     value: Option<&str>,
+                     imported: Option<&str>| {
         let mut out = json!({
             "kind": kind,
             "file_path": "app/api/cron/rollup/route.ts",
@@ -728,8 +905,12 @@ fn a_wrong_flavour_member_is_reported_and_the_message_names_what_was_expected() 
             "start_line": start,
             "end_line": end
         });
-        if let Some(value) = value { out["value"] = json!(value); }
-        if let Some(imported) = imported { out["imported_name"] = json!(imported); }
+        if let Some(value) = value {
+            out["value"] = json!(value);
+        }
+        if let Some(imported) = imported {
+            out["imported_name"] = json!(imported);
+        }
         out
     };
     let payload = run(
@@ -737,10 +918,24 @@ fn a_wrong_flavour_member_is_reported_and_the_message_names_what_was_expected() 
         vec![
             cron_fact("file_role_detected", "api_route", 1, 1, None, None),
             cron_fact("route_flavor_detected", "cron_job", 1, 1, None, None),
-            cron_fact("import_used", "withSession", 1, 1, Some("@/lib/auth"), Some("withSession")),
+            cron_fact(
+                "import_used",
+                "withSession",
+                1,
+                1,
+                Some("@/lib/auth"),
+                Some("withSession"),
+            ),
             cron_fact("route_declared", "POST", 1, 1, None, None),
             cron_fact("symbol_called", "withSession", 1, 1, None, None),
-            cron_fact("route_returns_response", "json", 1, 1, Some("Response"), None),
+            cron_fact(
+                "route_returns_response",
+                "json",
+                1,
+                1,
+                Some("Response"),
+                None,
+            ),
         ],
         convention,
     );
@@ -768,7 +963,11 @@ fn a_test_file_calling_wrappers_is_not_a_route_and_stays_silent() {
     let repo_root = temp_repo();
     let spec = repo_root.join("app/api/things/route.test.ts");
     fs::create_dir_all(spec.parent().expect("parent")).expect("mkdir");
-    fs::write(&spec, "it(\"wraps\", () => { withSession(() => null); });\n").expect("write");
+    fs::write(
+        &spec,
+        "it(\"wraps\", () => { withSession(() => null); });\n",
+    )
+    .expect("write");
 
     let test_fact = |kind: &str, name: &str| {
         json!({
