@@ -1152,7 +1152,10 @@ pub fn route_flavor(file_path: &str) -> &'static str {
         })
         .collect::<Vec<_>>();
 
-    if segments.iter().any(|segment| CRON_SEGMENTS.contains(segment)) {
+    if segments
+        .iter()
+        .any(|segment| CRON_SEGMENTS.contains(segment))
+    {
         return "cron_job";
     }
     if segments
