@@ -151,10 +151,8 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             // `control_flow_guard_dominance`, because it does not compute it - that is the whole
             // difference between this path and the one below, and the reason this one can leave
             // quarantine while that one cannot.
-            required_capabilities.extend([
-                "syntax_facts".to_string(),
-                "import_resolution".to_string(),
-            ]);
+            required_capabilities
+                .extend(["syntax_facts".to_string(), "import_resolution".to_string()]);
             presence_findings(
                 &facts,
                 &parsed_diff,
@@ -1754,20 +1752,20 @@ fn presence_findings(
         };
 
         for handler in unsatisfied {
-        let missing_code = presence_missing_code(&convention.kind);
-        // The handler is part of the fingerprint, so two unguarded methods in one file are two
-        // findings rather than one that silently stands for both.
-        let finding_fingerprint = stable_hash(&format!(
-            "{}:{}:{}:{}",
-            convention.id,
-            file_path,
-            handler.map(|fact| fact.name.as_str()).unwrap_or("*"),
-            missing_code
-        ));
-        let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
-        let mut symbols = accepted.iter().cloned().collect::<Vec<_>>();
-        symbols.sort();
-        findings.push(PendingFinding {
+            let missing_code = presence_missing_code(&convention.kind);
+            // The handler is part of the fingerprint, so two unguarded methods in one file are two
+            // findings rather than one that silently stands for both.
+            let finding_fingerprint = stable_hash(&format!(
+                "{}:{}:{}:{}",
+                convention.id,
+                file_path,
+                handler.map(|fact| fact.name.as_str()).unwrap_or("*"),
+                missing_code
+            ));
+            let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
+            let mut symbols = accepted.iter().cloned().collect::<Vec<_>>();
+            symbols.sort();
+            findings.push(PendingFinding {
             fingerprint: finding_fingerprint,
             convention_id: convention.id.clone(),
             rule_id: convention.kind.clone(),
@@ -1813,11 +1811,7 @@ fn presence_accepted_symbols(
         symbols.insert(symbol.clone());
     }
     if let Some(requires) = convention.requires.as_ref() {
-        for key in [
-            "auth_helpers",
-            "rate_limit_helpers",
-            "validators",
-        ] {
+        for key in ["auth_helpers", "rate_limit_helpers", "validators"] {
             if let Some(entries) = requires.get(key).and_then(|value| value.as_array()) {
                 for entry in entries {
                     if let Some(symbol) = entry.get("symbol").and_then(|value| value.as_str()) {
@@ -1909,9 +1903,7 @@ fn presence_file_in_scope(
     if !flavors.is_empty() {
         let flavor = facts
             .iter()
-            .find(|fact| {
-                fact.kind == FactKind::RouteFlavorDetected && fact.file_path == file_path
-            })
+            .find(|fact| fact.kind == FactKind::RouteFlavorDetected && fact.file_path == file_path)
             .map(|fact| fact.name.clone())
             .unwrap_or_else(|| "api_route".to_string());
         if !flavors.contains(&flavor) {
