@@ -3617,12 +3617,31 @@ fn is_forbidden_graph_import(
         return true;
     }
     let import_source = string_metadata(import_node, "source").unwrap_or("");
-    forbidden_imports.iter().any(|forbidden| {
-        resolved_path == forbidden
-            || resolved_path.contains(forbidden)
-            || import_source == forbidden
-            || import_source.contains(forbidden)
-    })
+    if is_forbidden_import_source(import_source, forbidden_imports) {
+        return true;
+    }
+    forbidden_imports
+        .iter()
+        .any(|forbidden| path_is_forbidden_module(resolved_path, forbidden))
+}
+
+/// Does this resolved file path name the forbidden module?
+///
+/// A forbidden entry written as a path is usually extensionless - `src/lib/db` for the file
+/// `src/lib/db.ts`, or for `src/lib/db/index.ts` - so equality alone is not enough and the code
+/// here used a bare `contains` to bridge the gap. That let the entry match anything it was merely
+/// a prefix of: `src/lib/db` accepted `src/lib/db-legacy.ts` and `src/lib/dbutils.ts`, flagging
+/// routes that import neither the data layer nor anything that re-exports it.
+///
+/// The boundary is what distinguishes them. `src/lib/db` continues into the real module at `.` (an
+/// extension) or `/` (a directory), and into a lookalike at an ordinary name character. This is the
+/// same reasoning as `rules::is_forbidden_import`, which cannot simply be reused because a
+/// specifier must NOT break on `.`: `@/lib/db` and `@/lib/db.server` are different modules.
+fn path_is_forbidden_module(resolved_path: &str, forbidden: &str) -> bool {
+    resolved_path == forbidden
+        || resolved_path
+            .strip_prefix(forbidden)
+            .is_some_and(|rest| rest.starts_with('/') || rest.starts_with('.'))
 }
 
 fn forbidden_graph_import_target<'a>(
@@ -3664,7 +3683,7 @@ fn forbidden_graph_import_target<'a>(
             if forbidden_module_paths.contains(target_path)
                 || forbidden_imports
                     .iter()
-                    .any(|forbidden| target_path == forbidden || target_path.contains(forbidden))
+                    .any(|forbidden| path_is_forbidden_module(target_path, forbidden))
             {
                 return Some((edge.to.as_str(), target_path, next_chain));
             }
@@ -3674,10 +3693,21 @@ fn forbidden_graph_import_target<'a>(
     None
 }
 
+/// One predicate for "is this specifier a forbidden one", shared with the direct rule.
+///
+/// This used to be a second, laxer copy: `import_source.contains(forbidden)`. T100 fixed the
+/// direct rule's copy (`rules::is_forbidden_import`) to require a path-segment boundary and left
+/// this one alone, so the two disagreed - and the graph loop uses this one as a *skip*-filter, on
+/// the reasoning that a direct specifier match is the direct rule's job. `@/lib/db-legacy`
+/// substring-matched here and got skipped, while the direct rule correctly declined to match it,
+/// so a barrel re-exporting the real data layer was examined by neither path.
+///
+/// It is also the derivation filter for `forbidden_module_paths` a few lines up, where the same
+/// laxity ran the other way: a lookalike's resolved file was recorded as if it were the forbidden
+/// module, which is the false positive the comment there claims cannot happen. Both directions
+/// close by deleting the copy.
 fn is_forbidden_import_source(import_source: &str, forbidden_imports: &[String]) -> bool {
-    forbidden_imports
-        .iter()
-        .any(|forbidden| import_source == forbidden || import_source.contains(forbidden))
+    drift_engine::is_forbidden_import(import_source, forbidden_imports)
 }
 
 fn enforcement_result_for_mode(mode: EnforcementMode) -> drift_engine::EnforcementResult {
