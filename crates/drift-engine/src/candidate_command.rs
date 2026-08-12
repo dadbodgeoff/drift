@@ -1148,11 +1148,13 @@ fn scope_flavors_present<'a>(
 ) -> BTreeSet<&'static str> {
     scope_files
         .iter()
-        .map(|file| match flavors.get(*file).copied().unwrap_or("api_route") {
-            "cron_job" => "cron_job",
-            "webhook_handler" => "webhook_handler",
-            _ => "api_route",
-        })
+        .map(
+            |file| match flavors.get(*file).copied().unwrap_or("api_route") {
+                "cron_job" => "cron_job",
+                "webhook_handler" => "webhook_handler",
+                _ => "api_route",
+            },
+        )
         .collect()
 }
 
@@ -1515,9 +1517,30 @@ fn wrapping_file_count(request: &CandidateRequest, facts: &[&CheckFact]) -> usiz
 /// family - a module and its submodule - while `api/auth` and `api/middleware` are two.
 fn module_family_key(module: &str) -> String {
     const GENERIC_SEGMENTS: &[&str] = &[
-        "", ".", "..", "@", "~", "src", "lib", "libs", "app", "apps", "web", "packages", "pkg",
-        "modules", "internal", "shared", "common", "utils", "util", "helpers", "index", "dist",
-        "server", "node_modules",
+        "",
+        ".",
+        "..",
+        "@",
+        "~",
+        "src",
+        "lib",
+        "libs",
+        "app",
+        "apps",
+        "web",
+        "packages",
+        "pkg",
+        "modules",
+        "internal",
+        "shared",
+        "common",
+        "utils",
+        "util",
+        "helpers",
+        "index",
+        "dist",
+        "server",
+        "node_modules",
     ];
     let lower = module.trim().to_ascii_lowercase();
     let trimmed = lower
@@ -1562,7 +1585,6 @@ fn family_keys_match(left: &str, right: &str) -> bool {
         .strip_prefix(shorter)
         .is_some_and(|rest| rest.starts_with('/'))
 }
-
 
 struct SecurityCandidateInput<'a> {
     request: &'a CandidateRequest,

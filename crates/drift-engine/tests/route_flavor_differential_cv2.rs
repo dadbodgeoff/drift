@@ -34,12 +34,18 @@ const EXPECTED: &[(&str, &str)] = &[
     ("apps/cron/app/api/users/route.ts", "api_route"),
     ("apps/cron/app/api/cron/rollup/route.ts", "cron_job"),
     // Cron, including dub's real shape.
-    ("apps/web/app/(ee)/api/cron/aggregate-clicks/route.ts", "cron_job"),
+    (
+        "apps/web/app/(ee)/api/cron/aggregate-clicks/route.ts",
+        "cron_job",
+    ),
     ("app/api/cron/rollup/route.ts", "cron_job"),
     ("app/api/jobs/nightly/route.ts", "cron_job"),
     ("app/api/scheduled/digest/route.ts", "cron_job"),
     // Webhooks, including dub's real shape.
-    ("apps/web/app/(ee)/api/appsflyer/webhook/route.ts", "webhook_handler"),
+    (
+        "apps/web/app/(ee)/api/appsflyer/webhook/route.ts",
+        "webhook_handler",
+    ),
     ("app/api/webhooks/stripe/route.ts", "webhook_handler"),
     // Both signals: a scheduled job that replays webhooks is a job. Pinned so it cannot silently flip.
     ("app/api/cron/webhooks/replay/route.ts", "cron_job"),
@@ -63,9 +69,10 @@ fn engine_route_flavor_matches_the_core_predicate_table() {
 /// file and fails when a case here is missing from it, so the two cannot quietly drift apart.
 #[test]
 fn every_case_in_this_table_is_also_asserted_in_typescript() {
-    let ts_test = std::fs::read_to_string(
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../../packages/core/test/route-flavor-cv2.test.ts"),
-    )
+    let ts_test = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../packages/core/test/route-flavor-cv2.test.ts"
+    ))
     .expect("the core route-flavour test must exist - it is the other half of this differential");
 
     let missing = EXPECTED
@@ -112,8 +119,14 @@ fn scanning_a_route_emits_its_flavour_as_a_fact() {
         })
     };
 
-    assert_eq!(flavor_of("app/api/users/route.ts").as_deref(), Some("api_route"));
-    assert_eq!(flavor_of("app/api/cron/rollup/route.ts").as_deref(), Some("cron_job"));
+    assert_eq!(
+        flavor_of("app/api/users/route.ts").as_deref(),
+        Some("api_route")
+    );
+    assert_eq!(
+        flavor_of("app/api/cron/rollup/route.ts").as_deref(),
+        Some("cron_job")
+    );
     assert_eq!(
         flavor_of("app/api/webhooks/stripe/route.ts").as_deref(),
         Some("webhook_handler")
@@ -140,7 +153,10 @@ fn a_non_route_file_gets_no_flavour_fact() {
         .iter()
         .filter(|fact| fact["kind"] == "route_flavor_detected")
         .count();
-    assert_eq!(flavors, 0, "a library module is not a route and has no flavour");
+    assert_eq!(
+        flavors, 0,
+        "a library module is not a route and has no flavour"
+    );
 }
 
 fn scan_repo(repo_root: &std::path::Path) -> serde_json::Value {
@@ -281,10 +297,30 @@ fn a_repo_with_no_flavour_signal_yields_one_unconditioned_family() {
     // matcher fingerprint - and so the candidate id - of every family on every repo that has no cron
     // routes, churning accepted contracts for nothing.
     let payload = infer(request_from_routes(&[
-        Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/c/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/d/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
+        Route {
+            path: "app/api/a/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/b/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/c/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/d/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
     ]));
 
     let found = families(&payload, AUTH);
@@ -302,12 +338,42 @@ fn a_cron_route_is_not_in_scope_for_the_session_family() {
     // The session family must be conditioned to app routes, or - accepted in block mode - it flags
     // every cron route for missing a wrapper it was never meant to use.
     let payload = infer(request_from_routes(&[
-        Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/c/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/d/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/cron/e/route.ts", symbol: "verifyQstashSignature", module: "@/lib/cron", flavor: "cron_job" },
-        Route { path: "app/api/cron/f/route.ts", symbol: "verifyQstashSignature", module: "@/lib/cron", flavor: "cron_job" },
+        Route {
+            path: "app/api/a/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/b/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/c/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/d/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/cron/e/route.ts",
+            symbol: "verifyQstashSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/f/route.ts",
+            symbol: "verifyQstashSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
     ]));
 
     let session = families(&payload, AUTH)
@@ -332,12 +398,42 @@ fn each_flavour_is_scored_against_its_own_denominator() {
     // 2 of 2 app routes, not 2 of 6 files. Scored globally it would read 0.33 and look far weaker than
     // the convention actually is.
     let payload = infer(request_from_routes(&[
-        Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/cron/c/route.ts", symbol: "verifyQstashSignature", module: "@/lib/cron", flavor: "cron_job" },
-        Route { path: "app/api/cron/d/route.ts", symbol: "verifyQstashSignature", module: "@/lib/cron", flavor: "cron_job" },
-        Route { path: "app/api/cron/e/route.ts", symbol: "verifyHmacSignature", module: "@/lib/cron", flavor: "cron_job" },
-        Route { path: "app/api/cron/f/route.ts", symbol: "verifyHmacSignature", module: "@/lib/cron", flavor: "cron_job" },
+        Route {
+            path: "app/api/a/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/b/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/cron/c/route.ts",
+            symbol: "verifyQstashSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/d/route.ts",
+            symbol: "verifyQstashSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/e/route.ts",
+            symbol: "verifyHmacSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/f/route.ts",
+            symbol: "verifyHmacSignature",
+            module: "@/lib/cron",
+            flavor: "cron_job",
+        },
     ]));
 
     let cron = families(&payload, AUTH)
@@ -356,17 +452,49 @@ fn a_flavour_with_no_members_of_its_own_yields_no_family() {
     // Conditioning must not invent an empty family for a flavour the repo has but has no convention
     // for. Two cron routes with no shared helper produce no cron family - not one with zero members.
     let payload = infer(request_from_routes(&[
-        Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/c/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/d/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/cron/e/route.ts", symbol: "runRollup", module: "@/lib/jobs", flavor: "cron_job" },
-        Route { path: "app/api/cron/f/route.ts", symbol: "runDigest", module: "@/lib/jobs", flavor: "cron_job" },
+        Route {
+            path: "app/api/a/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/b/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/c/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/d/route.ts",
+            symbol: "withWorkspace",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/cron/e/route.ts",
+            symbol: "runRollup",
+            module: "@/lib/jobs",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/f/route.ts",
+            symbol: "runDigest",
+            module: "@/lib/jobs",
+            flavor: "cron_job",
+        },
     ]));
 
     let found = families(&payload, AUTH);
     assert!(
-        found.iter().all(|(_, flavor, _)| flavor.as_deref() != Some("cron_job")),
+        found
+            .iter()
+            .all(|(_, flavor, _)| flavor.as_deref() != Some("cron_job")),
         "no cron family should exist - neither cron helper repeats across two files: {found:?}"
     );
 }
@@ -376,12 +504,42 @@ fn a_helper_used_in_two_flavours_belongs_to_both_families() {
     // Assignment follows the evidence. A wrapper genuinely used on app and cron routes is a member of
     // each family, and pretending otherwise would understate one of them.
     let payload = infer(request_from_routes(&[
-        Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/c/route.ts", symbol: "withAudit", module: "@/lib/auth", flavor: "api_route" },
-        Route { path: "app/api/cron/d/route.ts", symbol: "withAudit", module: "@/lib/auth", flavor: "cron_job" },
-        Route { path: "app/api/cron/e/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "cron_job" },
-        Route { path: "app/api/cron/f/route.ts", symbol: "withAudit", module: "@/lib/auth", flavor: "cron_job" },
+        Route {
+            path: "app/api/a/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/b/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/c/route.ts",
+            symbol: "withAudit",
+            module: "@/lib/auth",
+            flavor: "api_route",
+        },
+        Route {
+            path: "app/api/cron/d/route.ts",
+            symbol: "withAudit",
+            module: "@/lib/auth",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/e/route.ts",
+            symbol: "withSession",
+            module: "@/lib/auth",
+            flavor: "cron_job",
+        },
+        Route {
+            path: "app/api/cron/f/route.ts",
+            symbol: "withAudit",
+            module: "@/lib/auth",
+            flavor: "cron_job",
+        },
     ]));
 
     let found = families(&payload, AUTH);
@@ -399,14 +557,54 @@ fn a_helper_used_in_two_flavours_belongs_to_both_families() {
 fn family_candidate_ids_stay_stable_across_runs_when_conditioned() {
     let build = || {
         request_from_routes(&[
-            Route { path: "app/api/a/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-            Route { path: "app/api/b/route.ts", symbol: "withSession", module: "@/lib/auth", flavor: "api_route" },
-            Route { path: "app/api/c/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-            Route { path: "app/api/d/route.ts", symbol: "withWorkspace", module: "@/lib/auth", flavor: "api_route" },
-            Route { path: "app/api/cron/e/route.ts", symbol: "verifyHmacSignature", module: "@/lib/cron", flavor: "cron_job" },
-            Route { path: "app/api/cron/f/route.ts", symbol: "verifyHmacSignature", module: "@/lib/cron", flavor: "cron_job" },
-            Route { path: "app/api/cron/g/route.ts", symbol: "verifyWebhookSignature", module: "@/lib/cron", flavor: "cron_job" },
-            Route { path: "app/api/cron/h/route.ts", symbol: "verifyWebhookSignature", module: "@/lib/cron", flavor: "cron_job" },
+            Route {
+                path: "app/api/a/route.ts",
+                symbol: "withSession",
+                module: "@/lib/auth",
+                flavor: "api_route",
+            },
+            Route {
+                path: "app/api/b/route.ts",
+                symbol: "withSession",
+                module: "@/lib/auth",
+                flavor: "api_route",
+            },
+            Route {
+                path: "app/api/c/route.ts",
+                symbol: "withWorkspace",
+                module: "@/lib/auth",
+                flavor: "api_route",
+            },
+            Route {
+                path: "app/api/d/route.ts",
+                symbol: "withWorkspace",
+                module: "@/lib/auth",
+                flavor: "api_route",
+            },
+            Route {
+                path: "app/api/cron/e/route.ts",
+                symbol: "verifyHmacSignature",
+                module: "@/lib/cron",
+                flavor: "cron_job",
+            },
+            Route {
+                path: "app/api/cron/f/route.ts",
+                symbol: "verifyHmacSignature",
+                module: "@/lib/cron",
+                flavor: "cron_job",
+            },
+            Route {
+                path: "app/api/cron/g/route.ts",
+                symbol: "verifyWebhookSignature",
+                module: "@/lib/cron",
+                flavor: "cron_job",
+            },
+            Route {
+                path: "app/api/cron/h/route.ts",
+                symbol: "verifyWebhookSignature",
+                module: "@/lib/cron",
+                flavor: "cron_job",
+            },
         ])
     };
     let ids = |payload: &Value| {

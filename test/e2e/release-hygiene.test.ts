@@ -19,7 +19,16 @@ describe("release hygiene", () => {
     expect(manifest.private).toBe(true);
     expect(manifest.packageManager).toBe("pnpm@10.28.0");
     expect(manifest.engines?.node).toBe(">=20.0.0");
-    expect(manifest.scripts.verify).toBe("pnpm build && pnpm typecheck && pnpm test && pnpm test:e2e");
+    // The release engine is a fixture of the test suite, not an optional convenience: four CLI
+    // test files point DRIFT_ENGINE_BIN at target/release/drift-engine and fail without it.
+    // Nothing built it, because `pnpm test:engine` is `cargo test` and that produces a debug
+    // binary. It went unnoticed for as long as it did because a developer machine always has one
+    // lying around from an eval run; the first clean runner to execute the suite failed ten tests
+    // on it. `pnpm verify` declares the dependency so a fresh clone can run the gate.
+    expect(manifest.scripts.verify).toBe(
+      "pnpm build:engine && pnpm build && pnpm typecheck && pnpm test && pnpm test:e2e"
+    );
+    expect(manifest.scripts["build:engine"]).toBe("cargo build --release -p drift-engine");
     expect(manifest.scripts["format:engine"]).toBe("cargo fmt --all");
     expect(manifest.scripts["format:engine:check"]).toBe("cargo fmt --all -- --check");
     expect(manifest.scripts["lint:engine"]).toBe("cargo clippy -p drift-engine --all-targets -- -D warnings");
@@ -41,8 +50,19 @@ describe("release hygiene", () => {
       // number - so the gate now fails on a rise and names the delta.
       // EW-7 added `pnpm eval:determinism`: determinism is the marketed claim, and it was only ever
       // measured by hand on two of the seven repos.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism && git diff --check",
+      //
+      // PR #102 took the four eval steps back out, and the reason matters. A hosted runner has none
+      // of the seven pinned evaluation repos and no release engine binary, and the battery does not
+      // fit in the job timeout - so from the moment CI existed, those four steps could not run
+      // there. Listing them did not execute them; it produced a gate that named an oracle it never
+      // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
+      // union that any "verified" claim has to cite.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
+    expect(manifest.scripts["verify:evals"]).toBe(
+      "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
+    );
+    expect(manifest.scripts["verify:full"]).toBe("pnpm verify:ci && pnpm verify:evals");
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
     expect(manifest.scripts["eval:bench"]).toBe("node scripts/beta-bench.mjs");
     expect(manifest.scripts["eval:determinism"]).toBe("node scripts/determinism.mjs");

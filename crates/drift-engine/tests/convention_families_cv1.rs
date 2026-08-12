@@ -41,12 +41,22 @@ struct Route<'a> {
 
 /// A wrapper call, spanning the handler it encloses.
 fn wrapper<'a>(path: &'a str, symbol: &'a str, module: &'a str) -> Route<'a> {
-    Route { path, symbol, module, wraps: true }
+    Route {
+        path,
+        symbol,
+        module,
+        wraps: true,
+    }
 }
 
 /// A point call inside a handler - an ordinary utility, not a wrapper.
 fn point_call<'a>(path: &'a str, symbol: &'a str, module: &'a str) -> Route<'a> {
-    Route { path, symbol, module, wraps: false }
+    Route {
+        path,
+        symbol,
+        module,
+        wraps: false,
+    }
 }
 
 /// Builds an `infer-candidates` request from a list of routes, each contributing the three facts a
@@ -139,11 +149,13 @@ fn candidates_of_kind<'a>(payload: &'a Value, kind: &str) -> Vec<&'a Value> {
 /// A family candidate is the one whose matcher names more than one required call. The per-symbol
 /// candidates it supersedes each name exactly one.
 fn family_candidate<'a>(payload: &'a Value, kind: &str) -> Option<&'a Value> {
-    candidates_of_kind(payload, kind).into_iter().find(|candidate| {
-        candidate["matcher"]["required_calls"]
-            .as_array()
-            .is_some_and(|calls| calls.len() > 1)
-    })
+    candidates_of_kind(payload, kind)
+        .into_iter()
+        .find(|candidate| {
+            candidate["matcher"]["required_calls"]
+                .as_array()
+                .is_some_and(|calls| calls.len() > 1)
+        })
 }
 
 fn required_calls(candidate: &Value) -> Vec<&str> {
@@ -230,7 +242,11 @@ fn a_single_helper_produces_no_family_candidate() {
          and therefore its id: {payload:#?}"
     );
     let per_symbol = candidates_of_kind(&payload, AUTH);
-    assert_eq!(per_symbol.len(), 1, "exactly the candidate today emits: {per_symbol:#?}");
+    assert_eq!(
+        per_symbol.len(),
+        1,
+        "exactly the candidate today emits: {per_symbol:#?}"
+    );
     assert!(
         per_symbol[0].get("superseded_by").is_none(),
         "with no family there is nothing to supersede, and the field must be absent rather than \
@@ -285,9 +301,15 @@ fn a_dub_shaped_repo_yields_one_family_with_union_coverage() {
     // from `is_auth_candidate_symbol` - it joins because it resolves where `withSession` resolves,
     // which is a fact about the repo rather than a string in the engine.
     let mut routes = Vec::new();
-    for (index, symbol) in ["withSession", "withWorkspace", "withAdmin", "withTeam", "withPartner"]
-        .into_iter()
-        .enumerate()
+    for (index, symbol) in [
+        "withSession",
+        "withWorkspace",
+        "withAdmin",
+        "withTeam",
+        "withPartner",
+    ]
+    .into_iter()
+    .enumerate()
     {
         for suffix in ["a", "b"] {
             routes.push(wrapper(
@@ -301,22 +323,36 @@ fn a_dub_shaped_repo_yields_one_family_with_union_coverage() {
 
     let family = family_candidate(&payload, AUTH).expect("an auth family exists");
     let calls = required_calls(family);
-    assert_eq!(calls.len(), 5, "every same-module wrapper is a member: {calls:?}");
+    assert_eq!(
+        calls.len(),
+        5,
+        "every same-module wrapper is a member: {calls:?}"
+    );
     assert_eq!(
         calls,
-        vec!["withAdmin", "withPartner", "withSession", "withTeam", "withWorkspace"],
+        vec![
+            "withAdmin",
+            "withPartner",
+            "withSession",
+            "withTeam",
+            "withWorkspace"
+        ],
         "members are sorted, so the matcher fingerprint and candidate id are stable"
     );
 
     // Union coverage: 10 of 10 route files, where the best single shard was 2.
-    let coverage = family["scoring"]["coverage_ratio"].as_f64().expect("coverage_ratio");
+    let coverage = family["scoring"]["coverage_ratio"]
+        .as_f64()
+        .expect("coverage_ratio");
     assert!(
         coverage > 0.99,
         "coverage is the union of files satisfied by any member, not one member's share: {coverage}"
     );
 
     // Per-member evidence, so `conventions show` can answer "why is withWorkspace in this family".
-    let helpers = family["requires"]["auth_helpers"].as_array().expect("auth_helpers");
+    let helpers = family["requires"]["auth_helpers"]
+        .as_array()
+        .expect("auth_helpers");
     assert_eq!(helpers.len(), 5);
     let workspace = helpers
         .iter()
@@ -421,13 +457,24 @@ fn rate_limit_helpers_from_one_module_aggregate_into_a_family() {
     let payload = run_infer_candidates(request_from_routes(&[
         wrapper("app/api/a/route.ts", "ratelimit", "@upstash/ratelimit"),
         wrapper("app/api/b/route.ts", "ratelimit", "@upstash/ratelimit"),
-        wrapper("app/api/c/route.ts", "throttleRequest", "@upstash/ratelimit"),
-        wrapper("app/api/d/route.ts", "throttleRequest", "@upstash/ratelimit"),
+        wrapper(
+            "app/api/c/route.ts",
+            "throttleRequest",
+            "@upstash/ratelimit",
+        ),
+        wrapper(
+            "app/api/d/route.ts",
+            "throttleRequest",
+            "@upstash/ratelimit",
+        ),
     ]));
 
     let family =
         family_candidate(&payload, "api_route_requires_rate_limit").expect("a rate-limit family");
-    assert_eq!(required_calls(&family.clone()), vec!["ratelimit", "throttleRequest"]);
+    assert_eq!(
+        required_calls(&family.clone()),
+        vec!["ratelimit", "throttleRequest"]
+    );
     // Rate limit's per-symbol candidate keys its helper module under `module`, not `import`, and a
     // family that used the other key would hand the check path helpers it cannot read.
     let helpers = family["requires"]["rate_limit_helpers"]
@@ -576,8 +623,16 @@ fn sibling_directories_in_one_package_are_not_one_family() {
     let payload = run_infer_candidates(request_from_routes(&[
         wrapper("app/api/a/route.ts", "withSession", "packages/api/src/auth"),
         wrapper("app/api/b/route.ts", "withSession", "packages/api/src/auth"),
-        wrapper("app/api/c/route.ts", "withErrorHandler", "packages/api/src/middleware"),
-        wrapper("app/api/d/route.ts", "withErrorHandler", "packages/api/src/middleware"),
+        wrapper(
+            "app/api/c/route.ts",
+            "withErrorHandler",
+            "packages/api/src/middleware",
+        ),
+        wrapper(
+            "app/api/d/route.ts",
+            "withErrorHandler",
+            "packages/api/src/middleware",
+        ),
     ]));
 
     for candidate in candidates_of_kind(&payload, AUTH) {
@@ -596,8 +651,16 @@ fn a_module_and_its_submodule_are_one_family() {
     let payload = run_infer_candidates(request_from_routes(&[
         wrapper("app/api/a/route.ts", "withSession", "@/lib/auth"),
         wrapper("app/api/b/route.ts", "withSession", "@/lib/auth"),
-        wrapper("app/api/c/route.ts", "withWorkspace", "@/lib/auth/workspace"),
-        wrapper("app/api/d/route.ts", "withWorkspace", "@/lib/auth/workspace"),
+        wrapper(
+            "app/api/c/route.ts",
+            "withWorkspace",
+            "@/lib/auth/workspace",
+        ),
+        wrapper(
+            "app/api/d/route.ts",
+            "withWorkspace",
+            "@/lib/auth/workspace",
+        ),
     ]));
 
     let family = family_candidate(&payload, AUTH).expect("an auth family exists");
