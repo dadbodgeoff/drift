@@ -172,11 +172,23 @@ export function enforcementDegradedByCompleteness(input: {
 export function checkExitCodeFor(input: {
   blockingCount: number;
   enforcementDegraded: boolean;
+  /**
+   * BB-4: `--strict-contract` and a contract whose trigger resolves to nothing.
+   *
+   * Required, not optional, and deliberately so. This term used to live at the return statement of
+   * `runCheck`, added to the exit code and to nothing else - which is how exit 3 came to sit beside
+   * `check.status: "pass"` again, the exact B-3 shape the two functions below were written to make
+   * impossible. A term a caller can forget to mention is a term that will diverge; making it
+   * mandatory means a new call site has to answer the question rather than omit it.
+   */
+  contractStaleRefusal: boolean;
 }): number {
   if (input.blockingCount > 0) {
     return CHECK_EXIT_BLOCKED;
   }
-  return input.enforcementDegraded ? CHECK_EXIT_REFUSED : CHECK_EXIT_PASS;
+  return input.enforcementDegraded || input.contractStaleRefusal
+    ? CHECK_EXIT_REFUSED
+    : CHECK_EXIT_PASS;
 }
 
 /**
@@ -190,6 +202,7 @@ export function checkExitCodeFor(input: {
 export function checkStatusFor(input: {
   blockingCount: number;
   enforcementDegraded: boolean;
+  contractStaleRefusal: boolean;
 }): "pass" | "fail" | "refused" {
   switch (checkExitCodeFor(input)) {
     case CHECK_EXIT_BLOCKED:
@@ -828,9 +841,22 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     }))
   });
 
+  // BB-4: a dead contract does not change the verdict by itself - a removed data layer is a
+  // legitimate refactor, and blocking it would be a false positive on a repo that did nothing
+  // wrong. `--strict-contract` opts into the fail-closed reading for CI users who would rather
+  // stop than run a gate whose trigger is unplugged.
+  //
+  // Decided here, once, above both consumers. It used to be decided at the return statement, which
+  // put it on the exit code and not on the status.
+  const contractStaleRefusal = staleness.length > 0 && parsed.flags.has("strict-contract");
+
   // E-1 (S1-02): status and exit code are one decision - a refused check records
   // "refused", never "pass" (B-3's contradiction, recorded on every eval baseline row).
-  const checkStatus: CheckRun["status"] = checkStatusFor({ blockingCount, enforcementDegraded });
+  const checkStatus: CheckRun["status"] = checkStatusFor({
+    blockingCount,
+    enforcementDegraded,
+    contractStaleRefusal
+  });
 
   const fallbackStatus = fallbackStatusForCheck(checkData);
   const capabilityCompleteness = capabilityCompletenessForCheck(checkData, {
@@ -973,14 +999,12 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     //   0 pass · 2 blocked · 3 refused (fail-closed) · 1 operational error
     // `2` is distinct from `1` so CI can tell "this diff violates the contract" from
     // "drift itself failed", and so a crash is never silently read as a clean run.
-    // BB-4: a dead contract does not change the exit code by itself - a removed data layer is a
-    // legitimate refactor, and blocking it would be a false positive on a repo that did nothing
-    // wrong. `--strict-contract` opts into the fail-closed reading for CI users who would rather
-    // stop than run a gate whose trigger is unplugged. A real block still outranks it: the refusal
-    // must never mask a violation Drift did manage to prove.
-    exitCode: staleness.length > 0 && parsed.flags.has("strict-contract") && blockingCount === 0
-      ? CHECK_EXIT_REFUSED
-      : checkExitCodeFor({ blockingCount, enforcementDegraded }),
+    // BB-4's `--strict-contract` refusal is `contractStaleRefusal`, decided above and handed to the
+    // status and to this exit code from the same variable. A real block still outranks it - the
+    // refusal must never mask a violation Drift did manage to prove - which `checkExitCodeFor`
+    // already guarantees by answering blockingCount first, so the explicit `blockingCount === 0`
+    // this expression used to carry is redundant rather than lost.
+    exitCode: checkExitCodeFor({ blockingCount, enforcementDegraded, contractStaleRefusal }),
     payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
   };
 }

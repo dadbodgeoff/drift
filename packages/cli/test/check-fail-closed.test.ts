@@ -71,20 +71,20 @@ describe("enforcementDegradedByCompleteness", () => {
 
 describe("checkExitCodeFor", () => {
   it("refuses rather than passing when enforcement was degraded", () => {
-    expect(checkExitCodeFor({ blockingCount: 0, enforcementDegraded: true })).toBe(
+    expect(checkExitCodeFor({ blockingCount: 0, enforcementDegraded: true, contractStaleRefusal: false })).toBe(
       CHECK_EXIT_REFUSED
     );
   });
 
   it("still blocks when something actually blocks", () => {
     // Degradation must not mask a real violation into a refusal.
-    expect(checkExitCodeFor({ blockingCount: 1, enforcementDegraded: true })).toBe(
+    expect(checkExitCodeFor({ blockingCount: 1, enforcementDegraded: true, contractStaleRefusal: false })).toBe(
       CHECK_EXIT_BLOCKED
     );
   });
 
   it("passes only when coverage was adequate and nothing blocked", () => {
-    expect(checkExitCodeFor({ blockingCount: 0, enforcementDegraded: false })).toBe(CHECK_EXIT_PASS);
+    expect(checkExitCodeFor({ blockingCount: 0, enforcementDegraded: false, contractStaleRefusal: false })).toBe(CHECK_EXIT_PASS);
   });
 });
 
@@ -96,25 +96,47 @@ describe("checkExitCodeFor", () => {
  */
 describe("checkStatusFor", () => {
   it("records refused when enforcement was degraded and nothing blocked", () => {
-    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: true })).toBe("refused");
+    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: true, contractStaleRefusal: false })).toBe("refused");
   });
 
   it("records fail when something actually blocks, even degraded", () => {
-    expect(checkStatusFor({ blockingCount: 1, enforcementDegraded: true })).toBe("fail");
+    expect(checkStatusFor({ blockingCount: 1, enforcementDegraded: true, contractStaleRefusal: false })).toBe("fail");
   });
 
   it("records pass only for a clean, fully-enforced check", () => {
-    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: false })).toBe("pass");
+    expect(checkStatusFor({ blockingCount: 0, enforcementDegraded: false, contractStaleRefusal: false })).toBe("pass");
   });
 
+  // This enumeration cannot fail, and it is worth being honest about why it is still here.
+  // `checkStatusFor` calls `checkExitCodeFor`, so agreement between them is a property of the
+  // implementation, not of the system. What it does buy is the third dimension: a new decision
+  // input has to be added here to compile, which is the reminder that both consumers exist.
+  //
+  // The divergence this suite is named for never lived in these two functions. It lived at the
+  // CALL SITE, where `runCheck` added the `--strict-contract` staleness term to the exit code and
+  // not to the status. That seam is guarded in contract-liveness-bb4.test.ts ("records the refusal
+  // in the payload, not only in the exit code"), which is the assertion that actually fails when
+  // the two answers part company.
   it("agrees with the exit code on every input", () => {
     for (const blockingCount of [0, 1, 5]) {
       for (const enforcementDegraded of [false, true]) {
-        const status = checkStatusFor({ blockingCount, enforcementDegraded });
-        const exit = checkExitCodeFor({ blockingCount, enforcementDegraded });
-        const expected = { [CHECK_EXIT_PASS]: "pass", [CHECK_EXIT_BLOCKED]: "fail", [CHECK_EXIT_REFUSED]: "refused" }[exit];
-        expect(status).toBe(expected);
+        for (const contractStaleRefusal of [false, true]) {
+          const input = { blockingCount, enforcementDegraded, contractStaleRefusal };
+          const exit = checkExitCodeFor(input);
+          const expected = { [CHECK_EXIT_PASS]: "pass", [CHECK_EXIT_BLOCKED]: "fail", [CHECK_EXIT_REFUSED]: "refused" }[exit];
+          expect(checkStatusFor(input)).toBe(expected);
+        }
       }
     }
+  });
+
+  it("refuses on a stale contract under --strict-contract, and still blocks over it", () => {
+    expect(
+      checkStatusFor({ blockingCount: 0, enforcementDegraded: false, contractStaleRefusal: true })
+    ).toBe("refused");
+    // A refusal must never mask a violation Drift did manage to prove.
+    expect(
+      checkStatusFor({ blockingCount: 1, enforcementDegraded: false, contractStaleRefusal: true })
+    ).toBe("fail");
   });
 });

@@ -228,6 +228,25 @@ describe("BB-4 contract liveness", () => {
       expect(JSON.parse(result.stdout).summary.contract_staleness).toHaveLength(1);
     });
 
+    // B-3, reopened by this very flag and closed again.
+    //
+    // The refusal was applied to the exit code at the return statement and nowhere else, so the
+    // payload still said "pass" while `$?` said 3. That is precisely the shape E-1 was written to
+    // make impossible, and the consumers Drift is built for - MCP, agents, CI steps parsing JSON -
+    // read the status, not the exit code. The test above asserted only the exit code, which is how
+    // a divergence in the half it did not look at survived.
+    it("records the refusal in the payload, not only in the exit code", async () => {
+      const { repoId, databasePath, repoRoot } = await fixture({ violatingRoutes: 1, cleanRoutes: 3 });
+      await renameDataLayer(repoRoot);
+      await runCli(["--db", databasePath, "scan", "--repo-root", repoRoot, "--json"]);
+
+      const result = await check(databasePath, repoId, "--strict-contract");
+      const payload = JSON.parse(result.stdout);
+
+      expect(result.exitCode).toBe(3);
+      expect(payload.check.status).toBe("refused");
+    });
+
     it("names the dead specifier in the human output too", async () => {
       const { repoId, databasePath, repoRoot } = await fixture({ violatingRoutes: 1, cleanRoutes: 3 });
       await renameDataLayer(repoRoot);
