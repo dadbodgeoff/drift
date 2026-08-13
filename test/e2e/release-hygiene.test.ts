@@ -68,6 +68,23 @@ describe("release hygiene", () => {
     expect(manifest.scripts["eval:determinism"]).toBe("node scripts/determinism.mjs");
   });
 
+  // Two copies of a version drift the same way two copies of a predicate do. dtolnay/rust-toolchain
+  // needs the version as a workflow input and rustup reads rust-toolchain.toml, so the duplication
+  // is forced - but it does not have to be unguarded. A floating `@stable` is what let a new clippy
+  // lint redden this gate with no change to the repository at all; a pin that silently disagrees
+  // with the developer pin would be the same defect wearing a pin's clothes.
+  it("pins one Rust toolchain, and CI agrees with the developer pin", async () => {
+    const manifest = await readFile("rust-toolchain.toml", "utf8");
+    const workflow = await readFile(".github/workflows/ci.yml", "utf8");
+
+    const pinned = manifest.match(/channel\s*=\s*"([^"]+)"/)?.[1];
+    expect(pinned, "rust-toolchain.toml must pin an exact channel, not a floating one").toMatch(
+      /^\d+\.\d+\.\d+$/
+    );
+    expect(workflow).not.toContain("dtolnay/rust-toolchain@stable");
+    expect(workflow).toContain(`toolchain: "${pinned}"`);
+  });
+
   it("keeps root ignores from hiding package source files", async () => {
     const rootIgnore = await readFile(".gitignore", "utf8");
 

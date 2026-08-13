@@ -46,8 +46,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      # Pinned, and stated here because dtolnay/rust-toolchain needs it as an input. It MUST match
+      # rust-toolchain.toml, which is what developer machines read - two copies of a version is the
+      # same drift hazard as two copies of a predicate, so release-hygiene.test.ts fails if they
+      # disagree. `@stable` used to float here, and a new clippy lint reddened this gate with no
+      # change to the repository at all.
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.97.0"
+          components: rustfmt, clippy
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

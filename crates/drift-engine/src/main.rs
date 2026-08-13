@@ -190,6 +190,7 @@ fn scan_repo(
     let framework_scan_data = collect_framework_scan_data(&repo_id, &scan_id, &scanned.scanned);
     resolver.exported_symbols = exported_symbols_by_file(&scanned.scanned);
     resolver.export_star_sources = export_star_sources_by_file(&scanned.scanned);
+    retain_scanned_snapshot_paths(&mut resolver, &scanned.scanned);
     for (file, file_facts) in scanned.scanned {
         let graph = graph_for_file(&repo_id, &scan_id, &file, &file_facts, &resolver);
         graph_node_count += graph.nodes.len();
@@ -300,6 +301,7 @@ fn stream_scan_repo(
     }
     resolver.exported_symbols = exported_symbols_by_file(&scanned.scanned);
     resolver.export_star_sources = export_star_sources_by_file(&scanned.scanned);
+    retain_scanned_snapshot_paths(&mut resolver, &scanned.scanned);
     if !framework_scan_data.adapters.is_empty() {
         write_event(
             &mut stdout,
@@ -919,6 +921,34 @@ struct JsTsResolutionConfig {
     aliases: BTreeMap<String, Vec<String>>,
     base_url: Option<String>,
     effective_base_url: String,
+}
+
+/// Resolve against what was read, not against what was found.
+///
+/// `snapshot_paths` is built from the *discovered* file list, before scanning, while the graph is
+/// built from the files that were actually scanned. Anything discovered but skipped - unreadable
+/// bytes, over MAX_FILE_BYTES - falls into the gap between those two sets, and the gap is silent in
+/// the worst possible way: `resolve_import` answers "yes, that is the module", no module node
+/// exists for it, so the IMPORT_RESOLVES_TO_MODULE edge is never created and no `unresolved_import`
+/// diagnostic is emitted either. The import simply evaporates.
+///
+/// Measured: a route importing `@/lib/secret`, whose file is non-UTF-8, produced
+/// `partial_coverage: {complete: true, reasons: []}` - while the same route importing a module that
+/// does not exist at all correctly produced `unresolved_route_import`. The honest case was the one
+/// that reported; the dangerous case was the one that stayed quiet, because `lib/secret.ts` could
+/// be the data layer and nothing would ever say Drift had not looked at it.
+///
+/// Narrowing the set here means those imports are simply unresolved, which they are, and the
+/// existing coverage-gap machinery reports them against the importing route - already scoped to the
+/// diff, already understood by every consumer. No new diagnostic kind, no second resolver.
+fn retain_scanned_snapshot_paths(resolver: &mut ResolverContext, scanned: &[ScannedFileFacts]) {
+    let scanned_paths = scanned
+        .iter()
+        .map(|(file, _)| file.file_path.clone())
+        .collect::<BTreeSet<String>>();
+    resolver
+        .snapshot_paths
+        .retain(|path| scanned_paths.contains(path));
 }
 
 fn graph_for_file(
