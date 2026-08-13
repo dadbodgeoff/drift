@@ -3086,7 +3086,9 @@ supported_schema_version: 33
     ]);
     const payload = JSON.parse(result.stdout);
 
-    expect(result.exitCode).toBe(0);
+    // A doctor run whose own status is "fail" must not exit 0. quickstart says "fix
+    // anything it marks fail first", and nothing could branch on that while this was 0.
+    expect(result.exitCode).toBe(1);
     expect(payload.status).toBe("fail");
     expect(payload.state_summary).toMatchObject({
       contract_ready: true,
@@ -3156,7 +3158,9 @@ supported_schema_version: 33
     ]);
     const payload = JSON.parse(result.stdout);
 
-    expect(result.exitCode).toBe(0);
+    // A doctor run whose own status is "fail" must not exit 0. quickstart says "fix
+    // anything it marks fail first", and nothing could branch on that while this was 0.
+    expect(result.exitCode).toBe(1);
     expect(payload.status).toBe("fail");
     expect(payload.state_summary.audit_integrity).toMatchObject({
       valid: false,
@@ -3182,7 +3186,9 @@ supported_schema_version: 33
     ]);
     const payload = JSON.parse(result.stdout);
 
-    expect(result.exitCode).toBe(0);
+    // A doctor run whose own status is "fail" must not exit 0. quickstart says "fix
+    // anything it marks fail first", and nothing could branch on that while this was 0.
+    expect(result.exitCode).toBe(1);
     expect(payload.status).toBe("fail");
     expect(payload.state_summary).toMatchObject({
       compatible: false,
@@ -3310,7 +3316,9 @@ supported_schema_version: 33
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // A doctor run whose own status is "fail" must not exit 0. quickstart says "fix
+    // anything it marks fail first", and nothing could branch on that while this was 0.
+    expect(result.exitCode).toBe(1);
     const payload = JSON.parse(result.stdout);
     expect(payload.status).toBe("fail");
     expect(payload.checks.find((check: { id: string }) => check.id === "repo_root")).toMatchObject({

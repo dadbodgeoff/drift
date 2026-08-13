@@ -96,12 +96,29 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       : `${repoRoot} does not exist`;
   const diskSpace = checkDiskSpace(databasePath, files.length);
   const headroom = checkHeadroom(files.length);
+  // Resolved once and used for both the checks list and the JSON payload, so the human output and
+  // the machine output cannot disagree about whether the engine is usable.
+  const engineProvenance = runtimeEngineProvenance();
   const checks: DoctorCheck[] = [
     {
       id: "repo_root",
       label: "Repo root",
       status: repoRootStatus,
       detail: repoRootDetail
+    },
+    {
+      // The engine is the one dependency without which nothing else in this list matters, and it
+      // had no entry here at all: the provenance went into the JSON payload only, so the human
+      // output printed no engine line and `doctor` recommended `drift start` on a machine where
+      // the very next command would die with `spawn cargo ENOENT`.
+      id: "engine",
+      label: "Rust engine",
+      status: engineProvenance.status === "available" ? "ok" : "fail",
+      detail:
+        engineProvenance.error ??
+        (engineProvenance.source === "workspace_cargo"
+          ? `will build from this source checkout with \`${engineProvenance.command}\``
+          : `${engineProvenance.source}${engineProvenance.path ? ` at ${engineProvenance.path}` : ""}`)
     },
     {
       id: "git",
@@ -305,7 +322,7 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
     },
     runtime,
     machine_contract_versions: machineContractVersions,
-    engine: runtimeEngineProvenance(),
+    engine: engineProvenance,
     v1_scope: v1Scope,
     state_summary: stateSummary,
     // EW-3: hoisted out of state_summary because it is a headline, not a state detail - the
@@ -317,7 +334,15 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
   };
 
   return {
-    payload: parsed.flags.has("json") ? betaDoctorResponse(jsonPayload) : text
+    payload: parsed.flags.has("json") ? betaDoctorResponse(jsonPayload) : text,
+    // `docs/quickstart.md` tells users to "fix anything it marks fail first", and nothing could
+    // act on that: `doctor` returned no exit code, `run-cli.ts` defaults to 0, and so a failing
+    // readiness check reported success. A setup step that cannot fail cannot gate anything, which
+    // is the same shape as a check that always passes.
+    //
+    // 1 rather than 2 or 3: this is Drift reporting that the environment is not usable, which is
+    // the operational-error bucket in the documented contract, not a verdict about the repo.
+    exitCode: status === "fail" ? 1 : 0
   };
 }
 
