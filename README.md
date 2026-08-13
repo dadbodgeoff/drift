@@ -3,15 +3,40 @@
 **Drift stops an AI agent from writing code that violates conventions your repo already
 follows.** It runs entirely on your machine.
 
+> **Beta install: build from source.** Nothing is published to npm yet — `npm install -g @drift/cli`
+> does not work, and the `driftdetect` package on npm is the unrelated v1 from January. Building
+> needs a Rust toolchain ([rustup](https://rustup.rs)) because the scan engine is Rust.
+
 ```bash
-npm install -g @drift/cli
-cd your-repo
-drift start --repo-root . --accept-defaults
-drift check --diff main...HEAD --scope changed-hunks
+git clone https://github.com/dadbodgeoff/drift.git && cd drift
+pnpm install --frozen-lockfile
+pnpm build && pnpm build:engine
+
+# There is no `drift` binary yet; the entry point is the built CLI.
+alias drift="node $PWD/packages/cli/dist/main.js"
+drift doctor --repo-root .          # fails loudly if the toolchain is missing
 ```
 
-An agent adds a route that queries the database directly, the way a hundred other routes in your
-repo do not. `drift check` exits `2` and names the file, the line, and the convention it broke.
+Then, in the repository you want to protect:
+
+```bash
+cd your-repo
+drift start --repo-root . --accept-defaults
+```
+
+`start` prints whether the convention it accepted will actually block, and the command to make it a
+gate if it will not. Now have an agent add a route that queries the database directly, the way a
+hundred other routes in your repo do not, and check the change:
+
+```bash
+drift check --diff HEAD~1...HEAD --scope changed-hunks
+```
+
+It names the file, the line, and the convention that was broken. In `block` mode it exits `2`.
+
+> `--diff main...HEAD` only works once your branch has commits that `main` does not. On a freshly
+> cloned repo you are *on* `main`, so that range is empty and Drift refuses rather than reporting a
+> pass it cannot support — exit `3`. That refusal is correct; give it a range with changes in it.
 
 ## Scope — read this before adopting
 

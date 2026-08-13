@@ -227,6 +227,9 @@
     "the mode follows the evidence": "typescript_api_route_layering",
     "formbricks \\(1 route of 83\\) blocks": "typescript_api_route_layering",
     "Every check reports its own coverage": "typescript_api_route_layering",
-    "Where Drift cannot resolve something it says so": null
+    "Where Drift cannot resolve something it says so": null,
+    "`start` prints whether the convention it accepted will actually block": "human_confirmed_governance",
+    "In `block` mode it exits `2`": "accepted_contract_blocks_direct_data_access",
+    "Drift refuses rather than reporting a": "accepted_contract_blocks_direct_data_access"
   }
 }
