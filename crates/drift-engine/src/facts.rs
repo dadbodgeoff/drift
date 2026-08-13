@@ -97,6 +97,10 @@ struct ImportBinding {
 pub enum FactExtractError {
     ParserLanguage(tree_sitter::LanguageError),
     ParseFailed,
+    /// The AST nests deeper than the fact walkers can descend without overflowing the stack.
+    TooDeep {
+        depth_limit: usize,
+    },
 }
 
 impl std::fmt::Display for FactExtractError {
@@ -106,6 +110,10 @@ impl std::fmt::Display for FactExtractError {
                 write!(formatter, "parser language error: {error}")
             }
             FactExtractError::ParseFailed => write!(formatter, "failed to parse TypeScript source"),
+            FactExtractError::TooDeep { depth_limit } => write!(
+                formatter,
+                "AST nests deeper than {depth_limit} levels, which the fact walkers cannot descend without overflowing the stack (typically a minified or generated bundle)"
+            ),
         }
     }
 }
@@ -181,6 +189,17 @@ pub fn extract_typescript_facts(
             end_line: line_count,
             start_column: 1,
             end_column: 1,
+        });
+    }
+
+    // Refuse before descending, not while descending. A file too deep to walk is a file this scan
+    // did not read, and the caller already has an honest place to put that: the Err arm records a
+    // skip and marks repo completeness incomplete. Truncating the walk instead would produce a
+    // file that looks scanned and silently contributes no facts - a false clean, which is strictly
+    // worse than the crash it would be replacing.
+    if exceeds_max_depth(root, MAX_AST_DEPTH) {
+        return Err(FactExtractError::TooDeep {
+            depth_limit: MAX_AST_DEPTH,
         });
     }
 
@@ -314,6 +333,48 @@ fn collect_type_context_identifiers(
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         collect_type_context_identifiers(child, source, type_uses);
+    }
+}
+
+/// How deep the fact walkers may descend.
+///
+/// `walk_node`, `collect_identifier_usage`, `collect_type_context_identifiers` and the runtime-use
+/// analysis all recurse once per AST child. tree-sitter *parses* iteratively, so it hands back a
+/// tree far deeper than these walkers can descend: a 129 KB `public/js/vendor.min.js` containing a
+/// single 20,000-term `+` chain aborted the whole scan with
+/// `fatal runtime error: stack overflow`, exit 1, no database written, and every rerun failing
+/// identically. `public/`, `static/` and `assets/` are not skipped and `.js` is indexed, so a
+/// vendored bundle is an ordinary thing for a repository to contain.
+///
+/// Measured crash thresholds were 15k (`+` chains, union types) and 20k (call chains, bracket
+/// nesting). 2,000 sits an order of magnitude below the nearest of those and two orders above any
+/// hand-written source - the deepest file in this repository's own test corpus is well under 200.
+const MAX_AST_DEPTH: usize = 2_000;
+
+/// Measure whether the tree is deeper than `limit`, iteratively.
+///
+/// Deliberately a cursor walk rather than a recursive one: a recursive depth check would overflow
+/// on exactly the inputs it exists to detect.
+fn exceeds_max_depth(root: Node<'_>, limit: usize) -> bool {
+    let mut cursor = root.walk();
+    let mut depth: usize = 0;
+    loop {
+        if depth > limit {
+            return true;
+        }
+        if cursor.goto_first_child() {
+            depth += 1;
+            continue;
+        }
+        loop {
+            if cursor.goto_next_sibling() {
+                break;
+            }
+            if !cursor.goto_parent() {
+                return false;
+            }
+            depth -= 1;
+        }
     }
 }
 
@@ -1313,4 +1374,48 @@ fn path_segments(file_path: &str) -> Vec<String> {
         .split('/')
         .map(|segment| segment.to_ascii_lowercase())
         .collect()
+}
+
+#[cfg(test)]
+mod ast_depth_tests {
+    use super::*;
+
+    /// A minified bundle must be refused, not crashed on.
+    ///
+    /// Reproduced before this guard existed: a 129 KB `public/js/vendor.min.js` holding one
+    /// 20,000-term `+` chain aborted the entire scan with `fatal runtime error: stack overflow`,
+    /// exit 1, no database written, and every rerun failing identically. `public/` is not skipped
+    /// and `.js` is indexed, so this is ordinary repository content.
+    #[test]
+    fn refuses_a_tree_too_deep_to_walk_instead_of_overflowing() {
+        let chain = (0..20_000)
+            .map(|index| format!("a{index}"))
+            .collect::<Vec<_>>()
+            .join("+");
+        let source = format!("var z={chain};\n");
+
+        let error = extract_typescript_facts("public/js/vendor.min.js", &source)
+            .expect_err("a 20,000-deep expression must be refused");
+
+        assert!(matches!(error, FactExtractError::TooDeep { .. }));
+        // The caller turns Err into a recorded skip plus incomplete repo completeness, so the
+        // message has to say what the reader should do about it.
+        assert!(error.to_string().contains("minified"));
+    }
+
+    /// The guard must not fire on real source, or it trades a crash for silent recall loss.
+    #[test]
+    fn ordinary_source_is_nowhere_near_the_depth_limit() {
+        let source = r#"
+            import { prisma } from "@/lib/prisma";
+            export async function GET() {
+              const rows = await prisma.user.findMany({ where: { active: true } });
+              return Response.json(rows.map((row) => ({ ...row, seen: true })));
+            }
+        "#;
+
+        let facts = extract_typescript_facts("app/api/users/route.ts", source)
+            .expect("ordinary source must parse");
+        assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed));
+    }
 }
