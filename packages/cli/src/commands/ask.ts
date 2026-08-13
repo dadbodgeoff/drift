@@ -49,7 +49,8 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
       violatingFiles: askExemplarContext.violatingFilesAnyConvention(),
       roleByFile: askExemplarContext.roleByFile,
       baselineActiveCount: askExemplarContext.baselineActiveCountFor(convention.id),
-      targetPath: targetPath ?? undefined
+      targetPath: targetPath ?? undefined,
+      importsByFile: askExemplarContext.importsByFile
     })
   );
   const findings = findingsForTopic(storage.listFindings(repoId), topic, relevantFiles)

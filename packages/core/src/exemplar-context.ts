@@ -33,6 +33,8 @@ export interface ExemplarContext {
    */
   violatingFilesAnyConvention(): Set<string>;
   baselineActiveCountFor(conventionId: string): number;
+  /** `import_used` fact values by file path, for verifying an exemplar rather than assuming it. */
+  importsByFile: Map<string, string[]>;
 }
 
 export function exemplarContext(input: {
@@ -44,6 +46,8 @@ export function exemplarContext(input: {
   openFindings: Array<Pick<Finding, "convention_id" | "evidence_refs">>;
   /** Active baseline entries only. */
   activeBaseline: Array<Pick<BaselineViolation, "convention_id" | "file_path">>;
+  /** `import_used` facts: file path -> the specifiers that file imports. */
+  importsByFile?: Map<string, string[]>;
 }): ExemplarContext {
   const violatingByConvention = new Map<string, Set<string>>();
   const addViolator = (conventionId: string, filePath: string) => {
@@ -68,6 +72,7 @@ export function exemplarContext(input: {
 
   return {
     roleByFile: input.roleByFile ?? new Map<string, string>(),
+    importsByFile: input.importsByFile ?? new Map<string, string[]>(),
     scopeFilesFor(convention) {
       const cached = scopeFileCache.get(convention.id);
       if (cached) {

@@ -324,7 +324,21 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         openFindings: storage.listFindings(requestedRepoId).filter(isOpenFinding),
         activeBaseline: storage
           .listBaselineViolations(requestedRepoId)
-          .filter((entry) => entry.status === "active")
+          .filter((entry) => entry.status === "active"),
+        // What each file imports, so an exemplar is proven rather than presumed. get_task_preflight
+        // never runs a check, so without this its violator set is only what some earlier check
+        // happened to record - empty on a repo where none ever ran.
+        importsByFile: (scanStatus.latest_scan
+          ? storage.listFacts(scanStatus.latest_scan.id, { kind: "import_used" })
+          : []
+        ).reduce((byFile, fact) => {
+          const sources = byFile.get(fact.file_path) ?? [];
+          if (fact.value) {
+            sources.push(fact.value);
+          }
+          byFile.set(fact.file_path, sources);
+          return byFile;
+        }, new Map<string, string[]>())
       });
       const preflightConventions = activeConventions.map((convention) =>
         preflightConvention(convention, preflightExemplars)
@@ -2636,7 +2650,11 @@ function preflightConvention(
     // CV-5: any accepted convention, not just this one. The MCP packet and the CLI packet must not
     // disagree about what conforms, which is the EW-6 parity shape.
     violatingFiles: context?.violatingFilesAnyConvention() ?? [],
-    roleByFile: context?.roleByFile
+    roleByFile: context?.roleByFile,
+    // Proven, not presumed - and this surface needs it most: get_task_preflight never runs a check,
+    // so an absent finding here means only that nothing has ever looked.
+    forbiddenImports: convention.matcher?.forbidden_imports ?? [],
+    importsByFile: context?.importsByFile
   });
   return {
     id: convention.id,
