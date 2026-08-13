@@ -1,6 +1,6 @@
 # Security Policy
 
-Drift is designed as a local-first repo intelligence tool. V1 scans local source, stores Drift state in local SQLite, and does not require cloud sync.
+Drift is designed as a local-first repo intelligence tool. It scans local source, stores Drift state in local SQLite, and does not require cloud sync.
 
 ## Reporting
 
@@ -12,7 +12,7 @@ Do not include private source code, secrets, tokens, customer data, `.env` conte
 
 - Drift backs up Drift state, not source code.
 - Agent-facing CLI and MCP surfaces should emit metadata, graph facts, evidence locations, policy decisions, and redaction metadata, not source snippets.
-- MCP tools are read-only in V1.
+- MCP tools are read-only.
 - Governance mutations require explicit human confirmation in CLI.
 - The Rust engine owns deterministic parser, graph, candidate, and check authority.
 

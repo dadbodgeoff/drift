@@ -1,17 +1,9 @@
-# What this gate does and does not cover.
-#
-# `verify:ci` is the subset of the battery a hosted runner can actually execute: build, typecheck,
-# unit and e2e tests, the harness meta-tests, engine fmt/clippy, boundary and release-matrix
-# validation, product claims, and the beta proof.
-#
-# It deliberately does NOT run the external-repo evals (`verify:evals`: eval:external, eval:evasion,
-# eval:bench, eval:determinism). Those need the seven pinned evaluation repos cloned to
-# $DRIFT_EVAL_REPOS and a release engine binary, neither of which exists on a hosted runner, and
-# they do not fit in the timeout. Listing them here did not make them run — it made a green CI badge
-# that had never once executed them.
-#
-# The evals are a LOCAL gate. `pnpm verify:full` is the full battery and is what any "verified"
-# claim in docs/ or the run ledger must cite, along with the machine and commit it was run on.
+# `verify:ci` covers build, typecheck, unit/e2e tests, engine fmt/clippy, boundary and
+# release-matrix validation, product claims, and the beta proof — everything a hosted runner can
+# execute. It does not run the external-repo evals (`verify:evals`): those need the seven pinned
+# evaluation repos cloned to $DRIFT_EVAL_REPOS plus a release engine binary, neither of which exist
+# on a hosted runner. Evals are a local gate — run `pnpm verify:full` before citing a "verified"
+# claim in docs/, and record the machine and commit it ran on.
 name: CI
 
 on:
@@ -34,12 +26,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # fetch-depth: 0 is not optional. `pnpm beta:proof` runs `drift start` against a fixture, and
-      # Drift refuses to derive repo identity in a shallow clone - a shallow clone's root commit is
-      # the fetch graft, not the repository's real first commit, so the identity would silently
-      # disagree with every full checkout. actions/checkout defaults to depth 1, so the proof exited
-      # 3 (refused) the first time this gate ran. The product's own documented CI requirement
-      # applies to the product's own CI.
+      # fetch-depth: 0 is required: `pnpm beta:proof` runs `drift start` against a fixture, and
+      # Drift refuses to derive repo identity from a shallow clone (its root commit is the fetch
+      # graft, not the repo's real first commit).
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -63,12 +52,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Four CLI test files point DRIFT_ENGINE_BIN at target/release/drift-engine and fail if it is
-      # absent. Nothing in the gate built it: `pnpm test:engine` is `cargo test`, which produces a
-      # debug binary. On a developer machine the release binary is always lying around from an eval
-      # run, so the dependency was invisible until a clean runner ran the suite for the first time.
-      # `pnpm verify` now builds it too; this step is here so a build failure is legible as a build
-      # failure rather than as a test failure, and it makes the one inside verify a no-op.
+      # Several CLI tests point DRIFT_ENGINE_BIN at target/release/drift-engine; `pnpm test:engine`
+      # (cargo test) only produces a debug binary, so the release build must happen explicitly here
+      # first — otherwise a missing binary surfaces as a test failure instead of a build failure.
       - name: Build the release engine
         run: pnpm build:engine
 

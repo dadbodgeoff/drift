@@ -1,6 +1,6 @@
 # Contributing
 
-Drift is a local-first repo intelligence guardrail. Keep changes aligned with the V1 wedge: TypeScript/JavaScript API/server-side layering conventions for AI-generated diffs.
+Drift is a local-first repo intelligence guardrail. Keep changes aligned with the core wedge: TypeScript/JavaScript API/server-side layering conventions for AI-generated diffs.
 
 ## Architecture Rules
 

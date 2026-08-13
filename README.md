@@ -248,9 +248,9 @@ TypeScript owns the CLI, MCP server, SQLite storage boundary, policy enforcement
 
 The product boundary is intentionally CLI-first. The desktop UI comes after the CLI review loop is stable.
 
-## V1 Support Matrix
+## Core Wedge Support Matrix
 
-| Surface | V1 status |
+| Surface | Status |
 | --- | --- |
 | TypeScript/JavaScript API route layering | Supported |
 | Local SQLite state | Supported |
@@ -262,9 +262,9 @@ The product boundary is intentionally CLI-first. The desktop UI comes after the 
 | Cloud sync | Deferred |
 | Duplicate helper detection | Deferred |
 
-Drift V1 does not mutate source code. It stores repo intelligence locally, guides humans and agents with evidence, and requires explicit human confirmation for governance changes.
+Drift does not mutate source code. It stores repo intelligence locally, guides humans and agents with evidence, and requires explicit human confirmation for governance changes.
 
-Use `drift capabilities --json` or MCP `get_capabilities` to discover the supported V1 command surface, no-approval agent tools, human-confirmed governance mutations, and deferred surfaces.
+Use `drift capabilities --json` or MCP `get_capabilities` to discover the supported command surface, no-approval agent tools, human-confirmed governance mutations, and deferred surfaces.
 
 ## Package Smoke
 
