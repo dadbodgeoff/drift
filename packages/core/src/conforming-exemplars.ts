@@ -29,7 +29,21 @@ export interface ConformingExemplar {
   role: string | null;
 }
 
-export type NoExemplarsReason = "no_conforming_examples" | "no_files_in_scope";
+export type NoExemplarsReason =
+  | "no_conforming_examples"
+  | "no_files_in_scope"
+  /** The convention forbids imports and the caller supplied no facts to verify against. */
+  | "unverified";
+
+/**
+ * Segment-boundary specifier match, matching the engine's `rules::is_forbidden_import`.
+ *
+ * `@/lib/db` must not match `@/lib/db-legacy`: a lookalike is a different module, and treating it
+ * as one produces a false positive here exactly as it did in the engine.
+ */
+function isForbiddenImportSource(source: string, forbidden: string): boolean {
+  return source === forbidden || (source.startsWith(forbidden) && source[forbidden.length] === "/");
+}
 
 export interface ConformingExemplarsResult {
   conforming_examples: ConformingExemplar[];
@@ -57,6 +71,19 @@ export interface ConformingExemplarsInput {
   /** The file being edited or flagged, if any - exemplars near it are more useful. */
   referenceFile?: string;
   limit?: number;
+  /**
+   * The convention's forbidden import specifiers, when it has any.
+   *
+   * Supplying these turns selection from "no finding says otherwise" into "the facts say this file
+   * complies". Absence of a finding only ever meant NOT EVALUATED, and the two came apart badly: a
+   * changed-hunks check records findings for the changed file only, while the candidate pool is the
+   * whole repo, so on dub 138 of 139 API routes were certified conforming and one of the three
+   * offered - `admin/ban/route.ts` - imported prisma at line 4 while the SAME payload cited it as
+   * violation evidence.
+   */
+  forbiddenImports?: string[];
+  /** `import_used` fact values by file path: what each file actually imports. */
+  importsByFile?: Map<string, string[]>;
 }
 
 export function conformingExemplars(input: ConformingExemplarsInput): ConformingExemplarsResult {
@@ -69,8 +96,27 @@ export function conformingExemplars(input: ConformingExemplarsInput): Conforming
   }
 
   const referenceRole = input.referenceFile ? roleByFile.get(input.referenceFile) ?? null : null;
+  // Fail closed when the convention forbids imports but nothing was supplied to check them against.
+  // Zero examples is a correct answer; a wrong example is not, and this module's whole purpose is
+  // that an agent can copy what it is handed.
+  const forbidden = input.forbiddenImports ?? [];
+  if (forbidden.length > 0 && !input.importsByFile) {
+    return { conforming_examples: [], reason: "unverified" };
+  }
+  const proves = (filePath: string): boolean => {
+    if (forbidden.length === 0) {
+      return true;
+    }
+    const imports = input.importsByFile?.get(filePath);
+    // No fact row for a file in scope means the scan has nothing to say about it. Unproven is not
+    // conforming.
+    if (!imports) {
+      return false;
+    }
+    return !imports.some((source) => forbidden.some((entry) => isForbiddenImportSource(source, entry)));
+  };
   const candidates = input.scopeFiles.filter(
-    (filePath) => !violating.has(filePath) && filePath !== input.referenceFile
+    (filePath) => !violating.has(filePath) && filePath !== input.referenceFile && proves(filePath)
   );
 
   if (candidates.length === 0) {

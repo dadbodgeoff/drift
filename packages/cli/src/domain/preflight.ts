@@ -95,13 +95,19 @@ export function preparedConvention(
     roleByFile?: Map<string, string>;
     baselineActiveCount?: number;
     targetPath?: string;
+    /** `import_used` values by file, so an exemplar is proven rather than presumed. */
+    importsByFile?: Map<string, string[]>;
   } = {}
 ): PreparedConvention {
   const exemplars = conformingExemplars({
     scopeFiles: context.scopeFiles ?? [],
     violatingFiles: context.violatingFiles ?? [],
     roleByFile: context.roleByFile,
-    referenceFile: context.targetPath
+    referenceFile: context.targetPath,
+    // Verified against facts, not inferred from a missing finding. prepare never runs a check, so
+    // its violator set is only whatever a previous check happened to record.
+    forbiddenImports: convention.matcher?.forbidden_imports ?? [],
+    importsByFile: context.importsByFile
   });
   return {
     id: convention.id,

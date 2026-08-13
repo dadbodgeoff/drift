@@ -242,6 +242,7 @@ describe("golden fixture CLI lifecycle", () => {
       {
         "check_ids": [
           "repo_root",
+          "engine",
           "git",
           "repo_identity",
           "package_manifest",

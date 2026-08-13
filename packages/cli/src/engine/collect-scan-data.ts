@@ -62,7 +62,7 @@ export interface ScanFallbackStatus {
    * `engine_source: "rust", fallback_used: false` — true, and materially misleading, because the
    * check it timed was ~2.7x slower than the product a user would install.
    */
-  engine_resolution: "env_override" | "packaged_optional_dependency" | "workspace_cargo" | null;
+  engine_resolution: "env_override" | "packaged_optional_dependency" | "workspace_release_binary" | "workspace_cargo" | null;
   /**
    * BB-2: the profile the engine reports for itself. `null` means it could not be asked — never
    * read that as "release".

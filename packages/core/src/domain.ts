@@ -489,7 +489,7 @@ export interface ScanCapabilityReport {
   fallback_used: boolean;
   enforcement_degraded: boolean;
   /** BB-2: which resolution route produced the engine. `null` means unverified, not "the good one". */
-  engine_resolution: "env_override" | "packaged_optional_dependency" | "workspace_cargo" | null;
+  engine_resolution: "env_override" | "packaged_optional_dependency" | "workspace_release_binary" | "workspace_cargo" | null;
   /** BB-2: the profile the engine reported for itself. `null` means it could not be asked. */
   engine_build_profile: "release" | "debug" | null;
   created_at: string;

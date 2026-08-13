@@ -1170,9 +1170,25 @@ function attachConformingExemplars(input: {
 }): void {
   const conventionsById = new Map(input.conventions.map((convention) => [convention.id, convention]));
   const roleByFile = new Map<string, string>();
+  // The same facts array already in hand, read for what it actually proves about each file. Before
+  // this it was consulted only for file_role_detected, while the import facts that decide whether a
+  // file complies sat unread beside it.
+  const importsByFile = new Map<string, string[]>();
   for (const fact of input.facts) {
     if (fact.kind === "file_role_detected") {
       roleByFile.set(fact.file_path, fact.name);
+    }
+    if (fact.kind === "import_used" && fact.value) {
+      const sources = importsByFile.get(fact.file_path) ?? [];
+      sources.push(fact.value);
+      importsByFile.set(fact.file_path, sources);
+    }
+  }
+  // A file in scope with no import facts at all still has to be provable, so seed an empty list for
+  // every scanned file: "scanned and imports nothing forbidden" is a proof, "never scanned" is not.
+  for (const filePath of input.scanFiles) {
+    if (!importsByFile.has(filePath)) {
+      importsByFile.set(filePath, []);
     }
   }
 
@@ -1230,7 +1246,14 @@ function attachConformingExemplars(input: {
       // agent to open a file that breaks another rule - trial B1's defection trigger.
       violatingFiles: violatingFilesAnyConvention,
       roleByFile,
-      referenceFile: finding.evidence_refs[0]?.file_path
+      referenceFile: finding.evidence_refs[0]?.file_path,
+      // The scope pool above is the WHOLE repo (hardcoded "full"), while violatingFiles comes from
+      // findings computed over the diff. On a changed-hunks run that is 1 file in and 139 out, so
+      // absence of a finding certified 138 unexamined routes as conforming. These two arguments are
+      // what make it a proof instead of an assumption - and the facts were already in hand here,
+      // used only for file_role_detected.
+      forbiddenImports: convention.matcher?.forbidden_imports ?? [],
+      importsByFile
     });
     if (result.conforming_examples.length > 0) {
       finding.conforming_examples = result.conforming_examples;

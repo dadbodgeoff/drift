@@ -107,13 +107,31 @@ describe("BB-2 engine provenance", () => {
     });
   });
 
-  it("names workspace_cargo resolution when DRIFT_ENGINE_BIN is unset inside the cargo workspace", async () => {
+  it("prefers the built release binary over cargo inside the cargo workspace", async () => {
     await withEnv({ DRIFT_ENGINE_BIN: undefined }, () => {
       // startDir inside this repo, which is the cargo workspace root - the fallback branch the
-      // 2026-08-03 confound came from.
+      // 2026-08-03 confound came from. This checkout has target/release/drift-engine built.
+      //
+      // Resolution used to go straight to `cargo run`, which builds and runs DEBUG, so
+      // `pnpm build:engine` had no effect on the CLI at all. Measured on dub: 76s through
+      // `cargo run` vs 26s on the release binary, on every command, silently.
       const status = engineResolutionStatus({ env: {}, startDir: join(REPO_ROOT, "packages/cli/src") });
+      expect(status.resolution).toBe("workspace_release_binary");
+    });
+  });
+
+  it("still falls back to cargo in a workspace that has not been built", async () => {
+    // A synthetic workspace with no target/release, so this branch is exercised deterministically
+    // rather than depending on whether the checkout happens to have run `pnpm build:engine`.
+    const dir = await mkdtemp(join(tmpdir(), "drift-unbuilt-workspace-"));
+    await mkdir(join(dir, "crates", "drift-engine"), { recursive: true });
+    await writeFile(join(dir, "Cargo.toml"), "[workspace]\nmembers = [\"crates/drift-engine\"]\n");
+
+    await withEnv({ DRIFT_ENGINE_BIN: undefined }, () => {
+      const status = engineResolutionStatus({ env: {}, startDir: join(dir, "crates", "drift-engine") });
       expect(status.resolution).toBe("workspace_cargo");
     });
+    await rm(dir, { recursive: true, force: true });
   });
 
   it("carries engine_resolution and engine_build_profile on a real scan's fallback_status", async () => {

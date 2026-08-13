@@ -59,7 +59,8 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
       violatingFiles: exemplarContext.violatingFilesAnyConvention(),
       roleByFile: exemplarContext.roleByFile,
       baselineActiveCount: exemplarContext.baselineActiveCountFor(convention.id),
-      targetPath: targetPath ?? undefined
+      targetPath: targetPath ?? undefined,
+      importsByFile: exemplarContext.importsByFile
     })
   );
   const findings = storage

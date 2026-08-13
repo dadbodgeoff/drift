@@ -4,6 +4,7 @@ import { existsSync,readFileSync,statSync } from "node:fs";
 import { ParsedArgs } from "../app/command-types.js";
 import { stringFlag } from "../args/flag-readers.js";
 import { isShallowRepository,SHALLOW_CLONE_REMEDIATION } from "../domain/repo-identity.js";
+import { GIT_MAX_BUFFER_BYTES,isBufferOverflow } from "../io/git.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 
 export interface ParsedDiff {
@@ -41,7 +42,8 @@ export function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
       return execFileSync("git", ["diff", "--unified=0", diffRange], {
         cwd: repoRoot,
         encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"]
+        stdio: ["ignore", "pipe", "pipe"],
+        maxBuffer: GIT_MAX_BUFFER_BYTES
       });
     } catch (error) {
       // X-2: this catch used to swallow git's stderr and diagnose every failure as "not a
@@ -49,6 +51,15 @@ export function loadDiff(repoRoot: string, parsed: ParsedArgs): string {
       // actions/checkout whose range crosses the shallow boundary. Distinguish the three
       // failures git actually produces here, and always carry git's own words.
       const gitStderr = stderrOf(error);
+      // Buffer overflow is not a git error and must not be diagnosed as one. ENOBUFS arrives with
+      // an EMPTY stderr, so every branch below - which all reason from git's own words - would
+      // reach the generic "check the range" message and blame a range that was correct. Named
+      // first because it is the only failure here that git never reported.
+      if (isBufferOverflow(error)) {
+        throw new Error(
+          `Unable to read git diff for range ${diffRange}: the diff is larger than Drift's ${Math.round(GIT_MAX_BUFFER_BYTES / (1024 * 1024))} MB read buffer. The range is not the problem. Narrow the range, or write the diff to a file and pass --diff-file <path>.`
+        );
+      }
       if (!isInsideGitWorktree(repoRoot)) {
         throw new Error(
           `Unable to read git diff for range ${diffRange}: ${repoRoot} is not a Git worktree. Run from a Git worktree or pass --diff-file <path>.`

@@ -1,9 +1,33 @@
 import { execFileSync } from "node:child_process";
 import { relative, resolve } from "node:path";
 
+/**
+ * How much git output we are willing to buffer.
+ *
+ * Node's `execFileSync` default is 1 MB, and exceeding it raises ENOBUFS with an EMPTY stderr -
+ * so a caller that diagnoses failures from git's own words gets nothing to work with and falls
+ * through to whatever its generic branch says. Measured: a 2.65 MB diff (60 generated files) made
+ * `drift check` report "git diff failed. Check the range" about a range that was perfectly valid.
+ * A lockfile, a generated types file, or a snapshot update crosses 1 MB routinely.
+ *
+ * One constant, exported, because the limit was already applied correctly at one call site and
+ * omitted at two others - which is exactly how the first one came to be right and the rest wrong.
+ */
+export const GIT_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
+
+/** True when a child-process failure is Node's output-buffer overflow rather than a git error. */
+export function isBufferOverflow(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === "ENOBUFS";
+}
+
 export function gitOutput(repoRoot: string, args: string[]): string {
   try {
-    return execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return execFileSync("git", args, {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: GIT_MAX_BUFFER_BYTES
+    }).trim();
   } catch {
     return "";
   }

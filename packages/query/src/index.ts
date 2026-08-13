@@ -1337,8 +1337,21 @@ function reachableDataOperations(
       left.file_path.localeCompare(right.file_path) ||
       (left.start_line ?? 0) - (right.start_line ?? 0) ||
       left.operation_node_id.localeCompare(right.operation_node_id)
-    );
+    )
+    // Every data operation reachable across a 50-module BFS, uncapped, was 112,557 bytes for TEN
+    // routes on dub - 11 KB per route, and 47% of the whole agent packet sat in this field and its
+    // sibling. The caller caps the number of ROUTES at 10, which capped a count whose unit cost was
+    // unbounded.
+    //
+    // Sorted first so the cap is deterministic (eval:determinism byte-compares this packet) and so
+    // what survives is the earliest operations in the earliest files rather than an arbitrary
+    // subset. An agent needs to see THAT a route reaches the data layer and where it starts; the
+    // fiftieth query in the same file adds bytes, not information.
+    .slice(0, MAX_REACHABLE_DATA_OPERATIONS);
 }
+
+/** Per-route cap on reported data operations. See the slice in getReachableDataAccess. */
+const MAX_REACHABLE_DATA_OPERATIONS = 12;
 
 function routeRiskReasons(operations: GraphReachableDataOperation[]): GraphRouteRiskReason[] {
   return operations

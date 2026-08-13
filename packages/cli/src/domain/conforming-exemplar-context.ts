@@ -20,9 +20,21 @@ export function conformingExemplarContext(
 ): ExemplarContext {
   const latestScan = latestIndexedScan(storage.listScanManifests(repoId));
   const roleByFile = new Map<string, string>();
+  // What each file imports, so an exemplar can be PROVEN to comply rather than merely lacking a
+  // finding. prepare/ask/MCP never run a check, so without this their violator set is whatever
+  // happens to be stored - and on a repo where no check has ever run, that is empty, which
+  // certified every file in scope as conforming.
+  const importsByFile = new Map<string, string[]>();
   if (latestScan) {
     for (const fact of storage.listFacts(latestScan.id, { kind: "file_role_detected" })) {
       roleByFile.set(fact.file_path, fact.name);
+    }
+    for (const fact of storage.listFacts(latestScan.id, { kind: "import_used" })) {
+      const sources = importsByFile.get(fact.file_path) ?? [];
+      if (fact.value) {
+        sources.push(fact.value);
+      }
+      importsByFile.set(fact.file_path, sources);
     }
   }
   return exemplarContext({
@@ -30,6 +42,7 @@ export function conformingExemplarContext(
       ? storage.listFileSnapshots(repoId, latestScan.id).map((snapshot) => snapshot.file_path)
       : [],
     roleByFile,
+    importsByFile,
     openFindings: storage.listFindings(repoId).filter(isOpenPreflightFinding),
     activeBaseline: storage.listBaselineViolations(repoId).filter((entry) => entry.status === "active")
   });
