@@ -711,7 +711,11 @@ export function handleMcpJsonRpcRequest(
         content: [
           {
             type: "text",
-            text: JSON.stringify(result, null, 2)
+            // Compact. Pretty-printing a machine surface inflated every dub payload 1.31-1.45x;
+            // on get_task_preflight that is roughly 120 KB of indentation in a response an agent
+            // pays for by the token. Nothing reads this by eye - the CLI keeps its human
+            // formatting, and `jq` reformats for anyone who wants it.
+            text: JSON.stringify(result)
           }
         ],
         isError: false
