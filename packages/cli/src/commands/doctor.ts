@@ -117,8 +117,10 @@ export function doctorRepo(parsed: ParsedArgs): CommandPayload {
       detail:
         engineProvenance.error ??
         (engineProvenance.source === "workspace_cargo"
-          ? `will build from this source checkout with \`${engineProvenance.command}\``
-          : `${engineProvenance.source}${engineProvenance.path ? ` at ${engineProvenance.path}` : ""}`)
+          ? `will build from this source checkout with \`${engineProvenance.command}\` (debug; run \`pnpm build:engine\` for a release engine)`
+          : engineProvenance.source === "workspace_release_binary"
+            ? `release binary built from this source checkout at ${engineProvenance.path}`
+            : `${engineProvenance.source}${engineProvenance.path ? ` at ${engineProvenance.path}` : ""}`)
     },
     {
       id: "git",

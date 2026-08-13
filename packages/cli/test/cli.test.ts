@@ -2995,10 +2995,13 @@ supported_sqlite_schema_version: 33,
     });
     expect(payload.engine).toMatchObject({
       status: "available",
-      source: "workspace_cargo",
       override_active: false,
       checksum_matches: null
     });
+    // Workspace-resolved, without pinning WHICH workspace mechanism. Pinning "workspace_cargo" made
+    // this depend on whether `pnpm build:engine` had been run in the checkout - resolution now
+    // prefers a built release binary over `cargo run`, and both are correct answers here.
+    expect(payload.engine.source).toMatch(/^workspace_/);
     expect(payload.v1_scope).toMatchObject({
       product_mode: "local_first_cli",
       primary_wedge: "typescript_api_route_layering",
@@ -3363,10 +3366,13 @@ supported_sqlite_schema_version: 33,
     });
     expect(payload.engine).toMatchObject({
       status: "available",
-      source: "workspace_cargo",
       override_active: false,
       checksum_matches: null
     });
+    // Workspace-resolved, without pinning WHICH workspace mechanism. Pinning "workspace_cargo" made
+    // this depend on whether `pnpm build:engine` had been run in the checkout - resolution now
+    // prefers a built release binary over `cargo run`, and both are correct answers here.
+    expect(payload.engine.source).toMatch(/^workspace_/);
     expect(payload.v1_scope).toMatchObject({
       product_mode: "local_first_cli",
       primary_wedge: "typescript_api_route_layering",

@@ -27,6 +27,7 @@ function commandExists(command: string | null): boolean {
 export type EngineProvenanceSource =
   | "env_override"
   | "packaged_optional_dependency"
+  | "workspace_release_binary"
   | "workspace_cargo"
   | "missing";
 

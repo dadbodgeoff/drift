@@ -50,14 +50,16 @@ describe("doctor reports whether the engine can actually run", () => {
     expect(payload.checks.some((check: { id: string }) => check.id === "engine")).toBe(true);
   });
 
-  it("fails, and exits non-zero, when the toolchain it would use is not installed", async () => {
+  it("fails, and exits non-zero, when nothing it could run is available", async () => {
     const { repoRoot, stateRoot } = await fixture();
     const originalPath = process.env.PATH;
     const originalOverride = process.env.DRIFT_ENGINE_BIN;
     try {
-      // Keep node reachable so the CLI itself still runs; remove everything else, so `cargo` —
-      // which a source checkout would build with — is genuinely absent.
-      delete process.env.DRIFT_ENGINE_BIN;
+      // Point the override at a path that does not exist. That is the failure mode still reachable
+      // without depending on whether this checkout has run `pnpm build:engine` - and it is the
+      // realistic one now that resolution prefers a built release binary: a user reaches an
+      // unusable engine only when neither a binary nor a toolchain is there.
+      process.env.DRIFT_ENGINE_BIN = join(stateRoot, "no-such-drift-engine");
       process.env.PATH = dirname(process.execPath);
 
       const result = await doctor(repoRoot, stateRoot);
@@ -66,10 +68,7 @@ describe("doctor reports whether the engine can actually run", () => {
 
       expect(engine.status).toBe("fail");
       expect(payload.engine.status).not.toBe("available");
-      // The remediation has to name the thing that is missing. On main the message never said
-      // "Rust" at all.
-      expect(engine.detail).toMatch(/rustup|Rust toolchain/i);
-      // quickstart says "fix anything it marks fail first" — unactionable while this was 0.
+      // quickstart says "fix anything it marks fail first" - unactionable while this was 0.
       expect(result.exitCode).toBe(1);
     } finally {
       process.env.PATH = originalPath;
