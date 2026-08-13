@@ -799,7 +799,8 @@
         "refusal_names_decoy": true,
         "blocked_reasons": [
           "enforcement_degraded_by_incomplete_coverage",
-          "unresolved_route_import:apps/web/app/api/drift-evasion-s13/route.ts"
+          "unresolved_route_import:apps/web/app/api/drift-evasion-s13/route.ts",
+          "scan_incomplete:1 file(s) exceeded the 2000000 byte scan limit and were skipped"
         ],
         "outcome": "refused",
         "verdict": "PASS"

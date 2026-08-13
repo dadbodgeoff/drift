@@ -32,7 +32,7 @@ pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
     DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,
     Severity, classify_findings_against_baseline, detect_direct_data_access_imports,
-    materialize_direct_data_access_findings,
+    is_forbidden_import, materialize_direct_data_access_findings,
 };
 pub use security_capabilities::{
     SecurityCapabilityStatus, SecurityScanCapability, security_capabilities,

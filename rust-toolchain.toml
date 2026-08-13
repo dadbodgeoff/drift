@@ -1,0 +1,18 @@
+# The toolchain is pinned, and bumped deliberately.
+#
+# CI used `dtolnay/rust-toolchain@stable`, which floats to whatever the newest stable is on the day
+# the job runs. That turned a new clippy lint into a red gate with no change to this repository:
+# `unnecessary_sort_by` fired on 1.97.0 at main.rs:2043 and did not exist on the 1.93.0 a developer
+# had locally, so the gate disagreed with every machine that could have caught it first.
+#
+# For a project whose claim is that the gate never moves without a reason, a gate that can move
+# without a reason is the wrong default. Pinning also closes the class rather than the instance:
+# local and CI now run the same compiler, so "works on my machine" cannot mean "a different
+# compiler agreed with me".
+#
+# Bumping is a normal change with a normal diff: raise the version here, run `pnpm verify:full`,
+# fix what the new lints find, and land it as its own commit. That is a deliberate act with a
+# review, which is what it should have been all along.
+[toolchain]
+channel = "1.97.0"
+components = ["rustfmt", "clippy"]

@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeSet,
     io::Write,
     process::{Command, Stdio},
 };
@@ -441,6 +442,273 @@ fn check_repo_flags_direct_data_access_hidden_behind_barrel_reexport() {
             .expect("related nodes")
             .iter()
             .any(|node| node == "module:src/db/client.ts")
+    );
+}
+
+/// A barrel whose specifier merely *starts with* a forbidden one must not buy immunity.
+///
+/// `is_forbidden_import_source` matched with a bare `contains`, and the graph loop uses it as a
+/// skip-filter: any import whose specifier substring-matched a forbidden entry was treated as
+/// "already handled by the direct rule" and skipped. `@/lib/db-legacy` contains `@/lib/db`, so it
+/// was skipped here - and the direct rule (`rules::is_forbidden_import`, segment-boundary since
+/// T100) correctly does not match it either. Neither path examined the import, so a barrel
+/// re-exporting the real data layer passed clean. Strictly worse than matching nothing at all,
+/// because the lookalike name is what earned the exemption.
+#[test]
+fn check_repo_flags_a_barrel_whose_specifier_is_a_prefix_of_a_forbidden_one() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/direct/route.ts", "file", "app/api/direct/route.ts", json!({ "path": "app/api/direct/route.ts" })),
+                graph_node("file:app/api/laundered/route.ts", "file", "app/api/laundered/route.ts", json!({ "path": "app/api/laundered/route.ts" })),
+                graph_node("file:src/db/client.ts", "file", "src/db/client.ts", json!({ "path": "src/db/client.ts" })),
+                graph_node("file:src/db-legacy/index.ts", "file", "src/db-legacy/index.ts", json!({ "path": "src/db-legacy/index.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("module:app/api/direct/route.ts", "module", "app/api/direct/route.ts", json!({ "file_path": "app/api/direct/route.ts" })),
+                graph_node("module:app/api/laundered/route.ts", "module", "app/api/laundered/route.ts", json!({ "file_path": "app/api/laundered/route.ts" })),
+                graph_node("module:src/db/client.ts", "module", "src/db/client.ts", json!({ "file_path": "src/db/client.ts" })),
+                graph_node("module:src/db-legacy/index.ts", "module", "src/db-legacy/index.ts", json!({ "file_path": "src/db-legacy/index.ts" })),
+                graph_node("import_decl:app/api/direct/route.ts:db", "import_decl", "db from @/lib/db", json!({
+                    "file_path": "app/api/direct/route.ts",
+                    "source": "@/lib/db",
+                    "local_name": "db"
+                })),
+                graph_node("import_decl:app/api/laundered/route.ts:db", "import_decl", "db from @/lib/db-legacy", json!({
+                    "file_path": "app/api/laundered/route.ts",
+                    "source": "@/lib/db-legacy",
+                    "local_name": "db"
+                })),
+                graph_node("file:app/api/innocent/route.ts", "file", "app/api/innocent/route.ts", json!({ "path": "app/api/innocent/route.ts" })),
+                graph_node("file:src/dbutils.ts", "file", "src/dbutils.ts", json!({ "path": "src/dbutils.ts" })),
+                graph_node("module:app/api/innocent/route.ts", "module", "app/api/innocent/route.ts", json!({ "file_path": "app/api/innocent/route.ts" })),
+                graph_node("module:src/dbutils.ts", "module", "src/dbutils.ts", json!({ "file_path": "src/dbutils.ts" })),
+                graph_node("import_decl:app/api/innocent/route.ts:dbutils", "import_decl", "dbutils from @/lib/dbutils", json!({
+                    "file_path": "app/api/innocent/route.ts",
+                    "source": "@/lib/dbutils",
+                    "local_name": "dbutils"
+                }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/direct/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:app/api/laundered/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/direct/route.ts", "module:app/api/direct/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/laundered/route.ts", "module:app/api/laundered/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/db/client.ts", "module:src/db/client.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/db-legacy/index.ts", "module:src/db-legacy/index.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/direct/route.ts:db", "module:app/api/direct/route.ts", "evidence_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/direct/route.ts:db", "module:src/db/client.ts", "evidence_import"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/laundered/route.ts:db", "module:app/api/laundered/route.ts", "evidence_laundered"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/laundered/route.ts:db", "module:src/db-legacy/index.ts", "evidence_laundered"),
+                graph_edge("MODULE_REEXPORTS_MODULE", "module:src/db-legacy/index.ts", "module:src/db/client.ts"),
+                graph_edge("FILE_HAS_ROLE", "file:app/api/innocent/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/innocent/route.ts", "module:app/api/innocent/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/dbutils.ts", "module:src/dbutils.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/innocent/route.ts:dbutils", "module:app/api/innocent/route.ts", "evidence_innocent"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/innocent/route.ts:dbutils", "module:src/dbutils.ts", "evidence_innocent")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/direct/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/direct/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import"],
+                "redaction_state": "none"
+            }, {
+                "id": "evidence_laundered",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/laundered/route.ts:bbbbbbbbbbbb",
+                "file_path": "app/api/laundered/route.ts",
+                "file_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import_laundered"],
+                "redaction_state": "none"
+            }, {
+                "id": "evidence_innocent",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/innocent/route.ts:cccccccccccc",
+                "file_path": "app/api/innocent/route.ts",
+                "file_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import_innocent"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_graph_db",
+                "kind": "api_route_no_direct_data_access",
+                "matcher": { "forbidden_imports": ["@/lib/db"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let findings = payload["findings"].as_array().expect("findings");
+    let flagged = findings
+        .iter()
+        .flat_map(|finding| finding["evidence"].as_array().expect("evidence"))
+        .filter_map(|evidence| evidence["file_path"].as_str())
+        .collect::<BTreeSet<_>>();
+
+    assert!(
+        flagged.contains("app/api/laundered/route.ts"),
+        "the barrel route escaped because its specifier is a prefix of the forbidden one: {payload:#?}"
+    );
+    assert!(
+        !flagged.contains("app/api/innocent/route.ts"),
+        "@/lib/dbutils re-exports nothing forbidden and must not be flagged for sharing a prefix: {payload:#?}"
+    );
+
+    // Attribution, not just the verdict. The barrel route is a violation because the chain ends at
+    // src/db/client.ts - the file the forbidden specifier actually resolves to - and a message
+    // naming src/db-legacy/index.ts instead would mean it was caught by substring luck rather than
+    // by following the re-export, and would send the reader to a file that is not the data layer.
+    let laundered = findings
+        .iter()
+        .find(|finding| {
+            finding["evidence"]
+                .as_array()
+                .expect("evidence")
+                .iter()
+                .any(|evidence| evidence["file_path"] == "app/api/laundered/route.ts")
+        })
+        .expect("a finding on the laundered route");
+    assert!(
+        laundered["related_node_ids"]
+            .as_array()
+            .expect("related nodes")
+            .iter()
+            .any(|node| node == "module:src/db/client.ts"),
+        "the finding must name the real data-access module it re-exports: {laundered:#?}"
+    );
+}
+
+/// The same prefix bug, in the other predicate: a forbidden entry written as a *path*.
+///
+/// Entries are usually extensionless (`src/lib/db` for `src/lib/db.ts`), so identity matching
+/// bridged the gap with `resolved_path.contains(forbidden)` - which also accepts every file the
+/// entry is merely a prefix of. `src/lib/dbutils.ts` is not the data layer and re-exports nothing
+/// from it, and it was flagged anyway.
+///
+/// Both directions are asserted here on purpose. Tightening this predicate is what a fix looks
+/// like AND what an over-correction looks like, and only the real module being still caught tells
+/// the two apart.
+#[test]
+fn check_repo_separates_a_path_shaped_forbidden_entry_from_files_it_merely_prefixes() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/real/route.ts", "file", "app/api/real/route.ts", json!({ "path": "app/api/real/route.ts" })),
+                graph_node("file:app/api/utils/route.ts", "file", "app/api/utils/route.ts", json!({ "path": "app/api/utils/route.ts" })),
+                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
+                graph_node("file:src/lib/dbutils.ts", "file", "src/lib/dbutils.ts", json!({ "path": "src/lib/dbutils.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("module:app/api/real/route.ts", "module", "app/api/real/route.ts", json!({ "file_path": "app/api/real/route.ts" })),
+                graph_node("module:app/api/utils/route.ts", "module", "app/api/utils/route.ts", json!({ "file_path": "app/api/utils/route.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" })),
+                graph_node("module:src/lib/dbutils.ts", "module", "src/lib/dbutils.ts", json!({ "file_path": "src/lib/dbutils.ts" })),
+                graph_node("import_decl:app/api/real/route.ts:db", "import_decl", "db from @/lib/db", json!({
+                    "file_path": "app/api/real/route.ts",
+                    "source": "@/lib/db",
+                    "local_name": "db"
+                })),
+                graph_node("import_decl:app/api/utils/route.ts:helpers", "import_decl", "helpers from @/lib/dbutils", json!({
+                    "file_path": "app/api/utils/route.ts",
+                    "source": "@/lib/dbutils",
+                    "local_name": "helpers"
+                }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/real/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:app/api/utils/route.ts", "file_role:api_route"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/real/route.ts", "module:app/api/real/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/utils/route.ts", "module:app/api/utils/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/dbutils.ts", "module:src/lib/dbutils.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/real/route.ts:db", "module:app/api/real/route.ts", "evidence_real"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/real/route.ts:db", "module:src/lib/db.ts", "evidence_real"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:app/api/utils/route.ts:helpers", "module:app/api/utils/route.ts", "evidence_utils"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:app/api/utils/route.ts:helpers", "module:src/lib/dbutils.ts", "evidence_utils")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_real",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/real/route.ts:aaaaaaaaaaaa",
+                "file_path": "app/api/real/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import_real"],
+                "redaction_state": "none"
+            }, {
+                "id": "evidence_utils",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:app/api/utils/route.ts:bbbbbbbbbbbb",
+                "file_path": "app/api/utils/route.ts",
+                "file_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_import_utils"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_graph_db",
+                "kind": "api_route_no_direct_data_access",
+                "matcher": { "forbidden_imports": ["src/lib/db"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+    let flagged = payload["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .flat_map(|finding| finding["evidence"].as_array().expect("evidence"))
+        .filter_map(|evidence| evidence["file_path"].as_str())
+        .collect::<BTreeSet<_>>();
+
+    assert!(
+        flagged.contains("app/api/real/route.ts"),
+        "src/lib/db is the declared data layer and src/lib/db.ts is the file it names: {payload:#?}"
+    );
+    assert!(
+        !flagged.contains("app/api/utils/route.ts"),
+        "src/lib/dbutils.ts only shares a prefix with the declared path: {payload:#?}"
     );
 }
 
