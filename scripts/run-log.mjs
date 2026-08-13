@@ -17,8 +17,9 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // DRIFT_RUN_DIR selects which run's plan and log this operates on. Run 2 lives in
-// docs/autonomous-run-2/ so run 1's log stays an immutable record rather than being appended to.
-const DIR = resolve(HERE, "..", process.env.DRIFT_RUN_DIR ?? "docs/autonomous-run");
+// docs/internal/autonomous-run-2/ so run 1's log stays an immutable record rather than being
+// appended to.
+const DIR = resolve(HERE, "..", process.env.DRIFT_RUN_DIR ?? "docs/internal/autonomous-run");
 const LOG = join(DIR, "log.jsonl");
 const SUMMARY = join(DIR, "SUMMARY.md");
 

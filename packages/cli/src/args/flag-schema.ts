@@ -59,7 +59,7 @@ export const VALUE_FLAGS = new Set([
 export const BOOLEAN_FLAGS = new Set([
   "accept-defaults",
   // CV-5: opt in to auto-accepting presence families that clear the floor. NOT default-on - see
-  // docs/beta-run/CV-5-BASELINE-GAP.md and the coupling note in start.ts.
+  // docs/internal/beta-run/CV-5-BASELINE-GAP.md and the coupling note in start.ts.
   "accept-families",
   "all",
   "allow-full-file-content",

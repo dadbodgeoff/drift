@@ -26,7 +26,7 @@
  *
  * **What it does not claim.** These fixtures are synthetic and enumerate the shapes the matcher says it
  * handles, so a high score says the matcher does what it says on those shapes - not that the tier
- * catches unprotected routes. The presence residuals are in docs/architecture/beta-claims.json (a guard
+ * catches unprotected routes. The presence residuals are in docs/internal/architecture/beta-claims.json (a guard
  * called after its sink passes; a same-named symbol from an unrelated module passes) and are excluded
  * from the fixture sets on purpose: scoring a documented non-catch as a failure would make this number
  * mean something it does not.

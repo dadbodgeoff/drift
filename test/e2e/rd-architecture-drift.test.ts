@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("R&D architecture drift guard", () => {
   it("keeps the graph-backed engine work aligned with the planning docs", async () => {
     const factGraphPlan = await readFile("docs/architecture/factgraph-adapter-boundary.md", "utf8");
-    const frontierRequirements = await readFile("docs/architecture/frontier-engineering-requirements.md", "utf8");
+    const frontierRequirements = await readFile("docs/internal/architecture/frontier-engineering-requirements.md", "utf8");
     const graphQueryPlan = await readFile("docs/architecture/graph-query-api.md", "utf8");
     const factGraphPackage = await readFile("packages/factgraph/src/index.ts", "utf8");
     const queryPackage = await readFile("packages/query/src/index.ts", "utf8");

@@ -8,7 +8,7 @@ import {
 /**
  * CV-5: the auto-acceptance floor for presence families.
  *
- * Pre-registered in docs/beta-run/CV-5-ACCEPTANCE-FLOOR.md and committed at 34a82807 - before the
+ * Pre-registered in docs/internal/beta-run/CV-5-ACCEPTANCE-FLOOR.md and committed at 34a82807 - before the
  * implementation and before the measurement. These tests pin the constants themselves, so moving
  * either one is a visible decision rather than a quiet retune.
  *

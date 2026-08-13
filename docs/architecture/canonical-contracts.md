@@ -148,7 +148,7 @@ Required invariants:
 
 Implemented production boundary:
 
-- `docs/architecture/beta-claims.json` is the machine-readable claims manifest.
+- `docs/internal/architecture/beta-claims.json` is the machine-readable claims manifest.
 - `scripts/validate-product-claims.mjs` validates allowed and blocked claims and is part of `pnpm verify:ci`.
 
 Beta status: `canonical-beta`.
@@ -946,7 +946,7 @@ Required invariants:
 Current evidence:
 
 - Capabilities output is real and narrow.
-- `docs/architecture/beta-claims.json` is the machine-readable production claims manifest.
+- `docs/internal/architecture/beta-claims.json` is the machine-readable production claims manifest.
 - `scripts/validate-product-claims.mjs` blocks explicit overclaims for cloud sync, mutation-capable MCP, broad language support, and unsupported incremental scan performance claims.
 - `pnpm verify:ci` runs `pnpm validate:claims`.
 

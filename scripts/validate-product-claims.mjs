@@ -23,7 +23,7 @@ const repoRoot = process.cwd();
  */
 const { EVAL_REPOS } = await import(pathToFileURL(join(repoRoot, "scripts", "eval-repos.mjs")).href);
 const evalRepoNames = EVAL_REPOS.map((repo) => repo.name);
-const claimsPath = join(repoRoot, "docs", "architecture", "beta-claims.json");
+const claimsPath = join(repoRoot, "docs", "internal", "architecture", "beta-claims.json");
 const claims = JSON.parse(readFileSync(claimsPath, "utf8"));
 const {
   createDriftCapabilities,
@@ -291,6 +291,7 @@ if (!posture) {
 const docsToCheck = [
   "README.md",
   ...docsUnder(join("docs", "architecture")),
+  ...docsUnder(join("docs", "internal")),
   ...docsUnder(join("docs", "dogfood")),
   ...docsUnder("docs").filter((docPath) =>
     /(^|\/)(.*spec.*|.*release.*|.*inventory.*)\.md$/i.test(docPath)

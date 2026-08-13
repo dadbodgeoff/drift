@@ -152,7 +152,7 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
       "convention_learning",
       // The security layer is gated behind --experimental-security. Its "proofs" are line-order
       // comparisons, and the valve that should degrade them on dynamic control flow only matches
-      // Drift's own fixture strings. See docs/architecture/security-heuristic-audit.md.
+      // Drift's own fixture strings. See docs/internal/architecture/security-heuristic-audit.md.
       "security_boundary_proofs",
       "auth_dominance_analysis"
     ]
@@ -163,7 +163,7 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
  * Convention kinds produced by the security heuristics layer.
  *
  * Gated behind `--experimental-security` for beta. The layer's own audit (T07,
- * docs/architecture/security-heuristic-audit.md) confirmed that guard "dominance" is a
+ * docs/internal/architecture/security-heuristic-audit.md) confirmed that guard "dominance" is a
  * line-number comparison, branch detection is `line.contains("if")`, and - most consequentially -
  * `unsupported_dynamic_control_flow()`, the valve that is supposed to degrade the proof when
  * control flow is too dynamic to reason about, matches only Drift's own fixture strings. It opens
@@ -234,7 +234,7 @@ export function isPromotedPresenceConvention(convention: {
 /**
  * CV-5: the floor a presence family must clear to be auto-accepted by `--accept-defaults`.
  *
- * **Pre-registered** in docs/beta-run/CV-5-ACCEPTANCE-FLOOR.md, committed at 34a82807 - before this
+ * **Pre-registered** in docs/internal/beta-run/CV-5-ACCEPTANCE-FLOOR.md, committed at 34a82807 - before this
  * code and before the measurement - so "not fitted to dub" is checkable rather than asserted. Moving
  * either constant requires saying why in the diff, and "so the family we wanted gets accepted" is not
  * a why.

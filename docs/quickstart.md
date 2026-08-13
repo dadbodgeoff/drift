@@ -91,4 +91,4 @@ thing to run. [reference/errors.md](./reference/errors.md) lists every code.
 It enforces **one** convention kind well — API routes not importing data-access clients directly,
 in TypeScript and JavaScript. It does not review code generally, support other languages, or
 modify your source. The security heuristics are behind `--experimental-security` and are not
-proofs; see [architecture/security-heuristic-audit.md](./architecture/security-heuristic-audit.md).
+proofs; see [architecture/security-heuristic-audit.md](../internal/architecture/security-heuristic-audit.md).

@@ -71,7 +71,7 @@ function runValidator(dir) {
 }
 
 function editLedger(dir, mutate) {
-  const path = join(dir, "docs/architecture/beta-claims.json");
+  const path = join(dir, "docs/internal/architecture/beta-claims.json");
   const ledger = JSON.parse(readFileSync(path, "utf8"));
   mutate(ledger);
   writeFileSync(path, `${JSON.stringify(ledger, null, 2)}\n`);

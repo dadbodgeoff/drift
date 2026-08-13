@@ -122,7 +122,7 @@ export function listConventionCandidates(storage: SqliteDriftStorage, parsed: Pa
     experimental_security: {
       hidden_count: hiddenSecurityCount,
       included: includeSecurity,
-      reason: "security heuristics are experimental; see docs/architecture/security-heuristic-audit.md",
+      reason: "security heuristics are experimental; see docs/internal/architecture/security-heuristic-audit.md",
       reveal_command: `drift conventions list --repo ${repoId} --experimental-security`
     },
     review_items: candidates.map(conventionCandidateReviewItem),

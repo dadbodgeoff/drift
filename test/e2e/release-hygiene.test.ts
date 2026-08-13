@@ -456,7 +456,7 @@ describe("release hygiene", () => {
       cwd: process.cwd(),
       encoding: "utf8"
     });
-    const claims = JSON.parse(await readFile(join("docs", "architecture", "beta-claims.json"), "utf8"));
+    const claims = JSON.parse(await readFile(join("docs", "internal", "architecture", "beta-claims.json"), "utf8"));
 
     expect(output).toContain("Validated Drift production claims manifest");
     expect(output).toContain("runtime capabilities");
@@ -546,7 +546,7 @@ describe("release hygiene", () => {
   });
 
   it("keeps the beta intelligence gate honest about supported and deferred scope", async () => {
-    const gate = await readFile("docs/architecture/beta-intelligence-gate.md", "utf8");
+    const gate = await readFile("docs/internal/architecture/beta-intelligence-gate.md", "utf8");
 
     for (const expected of [
       "Drift is a local-first TypeScript/JavaScript repo intelligence guardrail",

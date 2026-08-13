@@ -88,5 +88,5 @@ instead of buffering the whole payload.
 
 ## Reproducing
 
-The synthetic repository generator is in the T42 entry of `docs/autonomous-run/log.jsonl`.
+The synthetic repository generator is in the T42 entry of `docs/internal/autonomous-run/log.jsonl`.
 Onboarding it costs ~230 MB of state, so run `./scripts/reclaim-disk.sh` afterwards.

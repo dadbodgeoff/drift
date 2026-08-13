@@ -33,7 +33,7 @@ The data layer is recognised when its import specifier contains `prisma`, `datab
 learn conventions in general, and the claims manifest blocks that claim explicitly.
 
 Security heuristics exist behind `--experimental-security` and are **not** proofs. Their own audit
-is in [docs/architecture/security-heuristic-audit.md](docs/architecture/security-heuristic-audit.md).
+is in [docs/internal/architecture/security-heuristic-audit.md](docs/internal/architecture/security-heuristic-audit.md).
 
 ## What it does on real repositories
 
@@ -79,7 +79,8 @@ formbricks (1 route of 83) blocks. dub (~323 of 494) warns.
 - [Concepts](docs/concepts.md) — facts → contract → baseline → check
 - [Agent integration](docs/agent-integration.md) — MCP, hooks, CI
 - [Enforcement reference](docs/reference/enforcement.md) — exit codes and JSON contract
-- [Claims](docs/architecture/beta-claims.json) — every claim, and what is deliberately blocked
+- [Claims](docs/internal/architecture/beta-claims.json) — every claim, and what is deliberately blocked
+- [History](docs/HISTORY.md) — why Drift has been rebuilt three times, and what changed each time
 
 ## First Five Minutes
 

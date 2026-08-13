@@ -98,7 +98,7 @@ describe("every allowed claim is backed by evidence", () => {
 
   it("keeps the JSON manifest in step with the code manifest", () => {
     const onDisk = JSON.parse(
-      readFileSync(join(REPO_ROOT, "docs/architecture/beta-claims.json"), "utf8")
+      readFileSync(join(REPO_ROOT, "docs/internal/architecture/beta-claims.json"), "utf8")
     ) as { allowed_claims: string[]; blocked_claims: string[] };
     expect([...onDisk.allowed_claims].sort()).toEqual([...manifest.allowed_claims].sort());
     expect([...onDisk.blocked_claims].sort()).toEqual([...manifest.blocked_claims].sort());

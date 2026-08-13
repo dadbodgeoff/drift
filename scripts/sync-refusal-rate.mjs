@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
 const BASELINE = join(HERE, "beta-bench-baseline.json");
-const CLAIMS = join(REPO_ROOT, "docs/architecture/beta-claims.json");
+const CLAIMS = join(REPO_ROOT, "docs/internal/architecture/beta-claims.json");
 
 const [shaArg, dateArg] = process.argv.slice(2);
 const sha =
