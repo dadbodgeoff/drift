@@ -483,18 +483,18 @@ describe("release hygiene", () => {
     );
   });
 
-  it("documents the V1 support matrix and deferred surfaces without overpromising", async () => {
+  it("documents the core wedge support matrix and deferred surfaces without overpromising", async () => {
     const readme = await readFile("README.md", "utf8");
 
     for (const expected of [
-      "## V1 Support Matrix",
-      "| Surface | V1 status |",
+      "## Core Wedge Support Matrix",
+      "| Surface | Status |",
       "| TypeScript/JavaScript API route layering | Supported |",
       "| Python adapter | Deferred |",
       "| Desktop UI | Deferred |",
       "| Cloud sync | Deferred |",
       "| Duplicate helper detection | Deferred |",
-      "Drift V1 does not mutate source code.",
+      "Drift does not mutate source code.",
       "drift capabilities --json",
       "contract_fingerprint",
       "scan_fingerprint",
