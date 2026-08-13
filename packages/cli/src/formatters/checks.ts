@@ -76,6 +76,7 @@ export function formatCheckText(payload: {
         `Enforcement demoted: ${demotion.convention_id} ${demotion.from} -> ${demotion.to} at ${demotion.at}`
     ),
     `Skipped deleted files: ${payload.summary.skipped_deleted_files.length}`,
+    ...nonBlockingDisclosure(payload),
     "",
     "Findings:",
     ...rows.map((row) => `  ${row}`),
@@ -225,4 +226,37 @@ export function formatChecksText(payload: {
     ...safeCommands,
     ""
   ].join("\n");
+}
+
+/**
+ * Say, at the moment of the verdict, that this run cannot fail a build.
+ *
+ * `drift start` already discloses it well — "in WARN mode (… new violations will be reported but
+ * will NOT block)" plus the exact upgrade command. But that is said once, at onboarding, possibly
+ * days before anyone reads a check. The check itself printed `Findings: 1 / Blocking: 0` and exited
+ * 0, and nothing there connected the two: a reader scanning CI output sees a green step and a
+ * finding, and has to already know that warn mode is why.
+ *
+ * Only when there is something to say: findings exist and none of them blocks. A clean run stays
+ * clean, and a run that blocks does not need telling.
+ */
+function nonBlockingDisclosure(payload: { summary: { repo_id: string; blocking_count: number }; findings: Finding[] }): string[] {
+  if (payload.findings.length === 0 || payload.summary.blocking_count > 0) {
+    return [];
+  }
+  const conventionIds = [...new Set(payload.findings.map((finding) => finding.convention_id))].filter(
+    Boolean
+  );
+  if (conventionIds.length === 0) {
+    return [];
+  }
+  const lines = [
+    `Not blocking: ${payload.findings.length} finding${payload.findings.length === 1 ? "" : "s"} reported, 0 blocking - this run exits 0 and will not fail CI.`
+  ];
+  for (const conventionId of conventionIds.slice(0, 3)) {
+    lines.push(
+      `  To make it a gate: drift conventions accept ${conventionId} --repo ${payload.summary.repo_id} --severity error --mode block --confirm`
+    );
+  }
+  return lines;
 }

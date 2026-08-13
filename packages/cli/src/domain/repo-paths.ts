@@ -64,11 +64,32 @@ export function requiredRepo(storage: SqliteDriftStorage, repoId: string): RepoR
 }
 
 export function requiredCandidate(storage: SqliteDriftStorage, id: string): ConventionCandidate {
-  const candidate = storage.getConventionCandidate(id);
+  const candidate = storage.getConventionCandidate(id) ?? storage.getConventionCandidate(candidateIdFor(id));
   if (!candidate) {
-    throw new Error(`Convention candidate not found: ${id}`);
+    throw new Error(
+      `Convention candidate not found: ${id}. Run \`drift conventions list --status candidate\` to see the ids this repo has.`
+    );
   }
   return candidate;
+}
+
+/**
+ * Accept an accepted-convention id wherever a candidate id is expected.
+ *
+ * The two share a content hash and differ only in prefix, and the id a user is holding is almost
+ * always the `convention_` one - it is what `drift start` prints. Worse, the acceptance disclosure
+ * builds its "To make this a gate" command from exactly that id, so the single remediation Drift
+ * hands a user for a warn-mode convention was:
+ *
+ *   drift conventions accept convention_<hash> --mode block --confirm
+ *   Convention candidate not found: convention_<hash>
+ *
+ * Telling someone precisely what to run and handing them a command that errors is worse than not
+ * offering one. Rather than rewriting the id at each printing site - there are several, and the
+ * next one added would get it wrong again - the lookup accepts both forms.
+ */
+function candidateIdFor(id: string): string {
+  return id.startsWith("convention_") ? `candidate_${id.slice("convention_".length)}` : id;
 }
 
 export function ensureDatabasePath(databasePath: string): void {
