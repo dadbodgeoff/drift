@@ -29,12 +29,33 @@ export function resolveDatabasePath(parsed: ParsedArgs): string | undefined {
     return explicit;
   }
 
-  if (
-    ["init", "scan", "start"].includes(parsed.positional[0] ?? "") ||
-    parsed.flags.has("repo-root") ||
-    parsed.flags.has("state-root")
-  ) {
-    return defaultDatabasePath(resolveRepoRoot(parsed), parsed);
+  // `check` and `prepare` join the list, because the documented quickstart runs them.
+  //
+  // Run the README verbatim: `drift start --repo-root . --accept-defaults` succeeds and writes
+  // state, and the very next documented command,
+  // `drift check --diff main...HEAD --scope changed-hunks`, answers
+  // `Missing --db <path> or DRIFT_DB. Run drift --help.` and exits 1 — while the database it needs
+  // is sitting exactly where this function would have looked. `prepare` failed the same way, with
+  // `missing_database`, on the quickstart's "give an agent context" step.
+  //
+  // Deliberately these two rather than every command. Defaulting universally makes a command like
+  // `contract show --repo <id>` resolve to whatever state happens to exist for the current
+  // directory, which turns a well-formed `missing_database` failure — carrying a user action and
+  // recovery commands — into a generic `cli_error` about an unknown repo. Measured: that is
+  // exactly what happened, and failure-codes.test.ts caught it.
+  //
+  // Only the state-writing commands create the directory; the two readers added here derive the
+  // path without bringing it into existence.
+  const command = parsed.positional[0] ?? "";
+  const writesState = ["init", "scan", "start"].includes(command);
+  if (writesState || parsed.flags.has("repo-root") || parsed.flags.has("state-root")) {
+    return defaultDatabasePath(resolveRepoRoot(parsed), parsed, { createDir: writesState });
+  }
+  if (["check", "prepare"].includes(command)) {
+    const candidate = defaultDatabasePath(resolveRepoRoot(parsed), parsed, { createDir: false });
+    // Offer it only when it is really there, so an un-onboarded repo still reports
+    // `missing_database` and names `drift start` rather than failing on the filesystem.
+    return existsSync(candidate) ? candidate : undefined;
   }
 
   return undefined;
