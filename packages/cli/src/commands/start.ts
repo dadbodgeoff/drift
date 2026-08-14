@@ -5,7 +5,7 @@ import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { doctorCommand } from "../args/doctor-commands.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
 import { requiredDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
-import { runCheck,runFullRepoCheck } from "../check/run-check.js";
+import { runCheck } from "../check/run-check.js";
 import { createBaselineForFindings } from "../domain/baselines.js";
 import { betaStartResponse } from "../domain/beta-surfaces.js";
 import { materializeRepoContract } from "../domain/contract-materialization.js";
@@ -224,29 +224,22 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   // Unified rather than extended, per Geoffrey: a second evaluation path is what produced the gap, and
   // adding a presence pass beside the data-access pass would have kept the shape that caused it.
   //
-  // **Measured cost, and why the unified path is conditional.** Running the full check at onboarding
-  // is 4-9x slower than the hand-rolled pass on large repos: cal.com 30.7s -> 115.9s (ceiling 92s)
-  // and papermark 8s -> 73.3s (ceiling 30s), both blowing the harness's onboarding budgets. The
-  // duplication was cheap precisely because it did less. So the unified path is paid only when a
-  // presence family was accepted - the case that needs it - and a repo accepting only the
-  // data-access convention keeps the fast pass and its existing timings. That is not the clean
-  // end-state; it is the honest one until the full check is fast enough to be unconditional.
+  // CV-5 item 4: now unconditional. The unified path was previously paid only when a presence family
+  // was accepted, because running the full check at onboarding cost cal.com 30.7s -> 115.9s (ceiling
+  // 92s) and papermark 8s -> 73.3s (ceiling 30s). That cost was not inherent: `check --scope full`
+  // rebuilt two whole-graph indexes once per import inside its hot loop, which hoisting removed
+  // (run-check.ts, `graphIndexFor`) - dub's full check went 367.4s -> 9.6s. With the precondition
+  // that comment named now met, the fast pass has no remaining justification and `runFullRepoCheck`
+  // is deleted rather than left as a second path that can drift again.
   const anythingAccepted = Boolean(accepted) || acceptedPresenceFamilies.length > 0;
-  const initialFindings = !anythingAccepted
-    ? []
-    : acceptedPresenceFamilies.length > 0
-      ? await onboardingBaselineFindings(
-          storage,
-          parsed,
-          result.repo.id,
-          result.scan.completed_at ?? result.scan.started_at
-        )
-      : runFullRepoCheck(
-          storage,
-          parsed,
-          result.repo.id,
-          result.scan.completed_at ?? result.scan.started_at
-        );
+  const initialFindings = anythingAccepted
+    ? await onboardingBaselineFindings(
+        storage,
+        parsed,
+        result.repo.id,
+        result.scan.completed_at ?? result.scan.started_at
+      )
+    : [];
   const baselineResult = anythingAccepted
     ? createBaselineForFindings(storage, { now, actor }, result.repo.id, initialFindings)
     : { created_count: 0, created_by_convention: {} as Record<string, number> };

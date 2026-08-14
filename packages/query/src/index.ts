@@ -151,6 +151,28 @@ export interface GraphRepoMap {
   };
 }
 
+/**
+ * A repo-map file as emitted to a caller.
+ *
+ * `graph_node_ids` and `evidence_ids` are omitted. Measured on dub they are 17.85 MB of the
+ * 22.5 MB `files` array - 66% of the whole 27 MB document - and nothing reads either field back
+ * off an emitted repo map. They are built once (see `buildRepoMapFiles`) and never consumed:
+ * internal graph traversal uses the `evidence_ids` on graph NODES and EDGES, a different field on
+ * a different object, and `getFindingEvidence` takes `evidence_ids` as a caller-supplied argument
+ * sourced from a finding's `evidence_refs`.
+ *
+ * Shared rather than applied at each call site, because the CLI and MCP assemble the rest of this
+ * document independently and have already been found disagreeing once (BB-5/BB-6).
+ */
+export type RepoMapFilePayload = Omit<RepoMapFile, "graph_node_ids" | "evidence_ids">;
+
+export function repoMapFileForPayload(file: RepoMapFile): RepoMapFilePayload {
+  const { graph_node_ids, evidence_ids, ...payload } = file;
+  void graph_node_ids;
+  void evidence_ids;
+  return payload;
+}
+
 export interface RepoMapFile extends GraphRepoMapFile {
   convention_ids: string[];
   risky_area_ids: string[];
@@ -825,7 +847,7 @@ export function buildRepoMapReadModel(input: {
     filtered_files: filteredFiles,
     listed_files: listedFiles,
     summary: repoMapSummary(allFiles, filteredFiles, listedFiles),
-    impact_summary: repoMapImpactSummary(listedFiles),
+    impact_summary: repoMapImpactSummary(filteredFiles),
     pagination: repoMapPagination(filteredFiles.length, listedFiles.length, input.limit, offset),
     topology: buildRepoTopology({
       repo_id: input.repoId ?? input.contract.repo_id,
@@ -914,6 +936,18 @@ export function paginateRepoMapFiles(files: RepoMapFile[], limit: number | undef
     : files.slice(offset, offset + limit);
 }
 
+/**
+ * Aggregates describe the FILTERED set, not the returned page.
+ *
+ * These were computed from `listedFiles`, so `--limit 25` on dub reported
+ * `convention_coverage_count: 493 -> 0`, `risky_file_count: 493 -> 0` and
+ * `open_finding_count: 397 -> 0` while `indexed_file_count` still read 4091, and the human
+ * formatter printed them as bare repo-level lines. Nothing marked them page-scoped, so a caller
+ * that paginated got numbers that looked repo-wide and were not.
+ *
+ * Pagination is a transport concern: `listed_file_count` and `pagination` describe the window,
+ * `filtered_file_count` sizes the set these aggregates summarise.
+ */
 export function repoMapImpactSummary(files: RepoMapFile[]): RepoMapImpactSummary {
   return {
     convention_coverage_count: files.filter((file) => file.convention_ids.length > 0).length,
@@ -928,7 +962,7 @@ export function repoMapSummary(
   listedFiles: RepoMapFile[]
 ): RepoMapSummary {
   const roleCounts: Record<string, number> = {};
-  for (const file of listedFiles) {
+  for (const file of filteredFiles) {
     for (const role of file.roles) {
       roleCounts[role] = (roleCounts[role] ?? 0) + 1;
     }
@@ -938,9 +972,9 @@ export function repoMapSummary(
     filtered_file_count: filteredFiles.length,
     listed_file_count: listedFiles.length,
     role_counts: roleCounts,
-    import_count: listedFiles.reduce((count, file) => count + file.imports.length, 0),
-    export_count: listedFiles.reduce((count, file) => count + file.exported_symbols.length, 0),
-    call_count: listedFiles.reduce((count, file) => count + file.calls.length, 0)
+    import_count: filteredFiles.reduce((count, file) => count + file.imports.length, 0),
+    export_count: filteredFiles.reduce((count, file) => count + file.exported_symbols.length, 0),
+    call_count: filteredFiles.reduce((count, file) => count + file.calls.length, 0)
   };
 }
 

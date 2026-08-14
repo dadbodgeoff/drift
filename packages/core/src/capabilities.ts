@@ -195,6 +195,34 @@ export function isExperimentalSecurityKind(kind: string): boolean {
 }
 
 /**
+ * Kinds `ConventionKindSchema` accepts that no evaluator implements.
+ *
+ * Established by searching both evaluators for every declared kind: the engine-owned
+ * `crates/drift-engine/src/check_command.rs` and the CLI-owned
+ * `packages/cli/src/check/run-check.ts`. These three appear in neither, so a contract declaring one
+ * produces no finding on any repo, ever, and nothing reports that - `check` returns a clean pass.
+ * "Accepted and silently enforcing nothing" is the one thing Drift must not let a user believe, so
+ * acceptance refuses them instead of storing an inert rule.
+ *
+ * Note this is NOT the same as experimental: `middleware_must_cover_routes` is in
+ * EXPERIMENTAL_SECURITY_CONVENTION_KINDS above, which gates default-on behaviour, not whether an
+ * implementation exists. Nor is it "no TypeScript evaluator" -
+ * `api_route_requires_service_delegation` has none but IS evaluated by the engine, so it is absent
+ * from this list.
+ *
+ * Deleting a kind from here is the LAST step of implementing it, not the first.
+ */
+export const UNIMPLEMENTED_CONVENTION_KINDS = [
+  "middleware_must_cover_routes",
+  "test_expected_for_changed_module",
+  "custom_briefing"
+] as const;
+
+export function hasConventionEvaluator(kind: string): boolean {
+  return !(UNIMPLEMENTED_CONVENTION_KINDS as readonly string[]).includes(kind);
+}
+
+/**
  * CV-3: the kinds a presence-only family may be promoted for.
  *
  * These three, and no others, because these three are the ones whose claim can be reduced to "the

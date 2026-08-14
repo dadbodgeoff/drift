@@ -193,6 +193,7 @@ export function importFactsForFile(facts: FactRecord[], filePath: string): Array
   name: string;
   value: string;
   start_line: number;
+  end_line: FactRecord["end_line"];
 }> {
   return facts
     .filter((fact) => fact.kind === "import_used" && fact.file_path === filePath && fact.value)
@@ -200,7 +201,10 @@ export function importFactsForFile(facts: FactRecord[], filePath: string): Array
       fact_id: fact.id,
       name: fact.name,
       value: fact.value as string,
-      start_line: fact.start_line
+      start_line: fact.start_line,
+      // Carried so a multiline import keeps its real span: this projection is what check builds a
+      // finding's evidence ref from, and dropping it flattened `import {\n x \n} from "y"` to one line.
+      end_line: fact.end_line
     }));
 }
 

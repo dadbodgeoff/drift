@@ -71,7 +71,6 @@ function emptyDiffScopeCauses(parsed: ParsedArgs): string {
   }
   return "No --diff range or --diff-file was resolvable to changed files. Pass --diff <range>, --diff-file <path>, or --scope full.";
 }
-import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { formatCheckText } from "../formatters/checks.js";
 import { fileContentHash } from "../io/file-hash.js";
 import { diffStatusFor,filesForConvention,fullRepoDiff,loadDiff,parseUnifiedDiff } from "./diff.js";
@@ -2620,7 +2619,13 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
           kind: "violation",
           file_path: evidence.file_path,
           start_line: evidence.start_line,
-          end_line: evidence.end_line,
+          // The engine reports a violation at a single line (`end_line: finding.line`,
+          // check_command.rs:336), which flattens a multiline import to its first line. The
+          // import fact carries the real span and is already the source of truth for the symbol,
+          // source and fact id below, so prefer it here too. Surfaced when onboarding stopped
+          // using its own baseline pass, which read the fact directly and got 1-3 where this
+          // path got 1-1.
+          end_line: importUsed?.end_line ?? evidence.end_line,
           symbol: evidenceSymbol(importUsed?.name),
           import_source: importUsed?.value,
           fact_ids: importUsed?.fact_id ? [importUsed.fact_id] : [],
@@ -3110,6 +3115,108 @@ function graphForEngineCheck(
   };
 }
 
+/**
+ * Loop-invariant graph lookups, built once per ScanData.
+ *
+ * `graphImportResolvesToForbidden` and `exceptionContextForImport` are called once per import per
+ * in-scope file (:2510, :2517). Each used to rebuild, on every call, a Map over every evidence row
+ * and a Map over every node, then scan all nodes linearly to find one import. On dub that is 4,239
+ * calls against a 112,773-node / 205,019-edge graph - measured at 55.8ms and 36.2ms per call, 359s
+ * of a 367s `check --scope full`. Cost is `imports_in_scope x graph_size`, so it is quadratic in
+ * repo size at fixed route density: openstatus (2,185 files, 37 in scope) ran 3x faster than
+ * papermark (1,346 files, 283 in scope) despite a 78% larger graph.
+ *
+ * `forbiddenModuleFiles_` was already hoisted per convention at its other call site (:2575); this
+ * gives the same treatment to the rest.
+ *
+ * Keyed on ScanData identity. The arrays indexed here are read-only for the lifetime of a check -
+ * `graphForEngineCheck` derives new arrays with `.filter()` rather than mutating in place.
+ */
+interface GraphIndex {
+  nodesById: Map<string, ScanData["graph_nodes"][number]>;
+  /** First node per key, matching the `.find()` this replaced. */
+  importNodeByKey: Map<string, ScanData["graph_nodes"][number]>;
+  resolvedModuleEdgesByFrom: Map<string, ScanData["graph_edges"]>;
+  resolvedSymbolEdgesByFrom: Map<string, ScanData["graph_edges"]>;
+  endpointNodesByFile: Map<string, ScanData["graph_nodes"]>;
+  dataOperationNodesByFile: Map<string, ScanData["graph_nodes"]>;
+  reexportTargets: Map<string, string[]>;
+  /** Forbidden specifiers joined by NUL -> the files they resolve to. */
+  forbiddenModuleFilesByKey: Map<string, Set<string>>;
+}
+
+const graphIndexes = new WeakMap<ScanData, GraphIndex>();
+
+function graphIndexFor(checkData: ScanData): GraphIndex {
+  const cached = graphIndexes.get(checkData);
+  if (cached) {
+    return cached;
+  }
+
+  const evidenceById = new Map(checkData.graph_evidence.map((evidence) => [evidence.id, evidence]));
+  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
+  const importNodeByKey = new Map<string, ScanData["graph_nodes"][number]>();
+  const endpointNodesByFile = new Map<string, ScanData["graph_nodes"]>();
+  const dataOperationNodesByFile = new Map<string, ScanData["graph_nodes"]>();
+
+  for (const node of checkData.graph_nodes) {
+    if (node.kind === "import_decl") {
+      const key = importNodeGraphKey(node, evidenceById);
+      // First wins: `.find()` returned the earliest match in array order.
+      if (key !== undefined && !importNodeByKey.has(key)) {
+        importNodeByKey.set(key, node);
+      }
+      continue;
+    }
+    if (node.kind !== "endpoint" && node.kind !== "data_operation") {
+      continue;
+    }
+    const nodeFilePath = stringMetadata(node.metadata, "file_path");
+    if (!nodeFilePath) {
+      continue;
+    }
+    const byFile = node.kind === "endpoint" ? endpointNodesByFile : dataOperationNodesByFile;
+    const existing = byFile.get(nodeFilePath);
+    if (existing) {
+      existing.push(node);
+    } else {
+      byFile.set(nodeFilePath, [node]);
+    }
+  }
+
+  const resolvedModuleEdgesByFrom = new Map<string, ScanData["graph_edges"]>();
+  const resolvedSymbolEdgesByFrom = new Map<string, ScanData["graph_edges"]>();
+  for (const edge of checkData.graph_edges) {
+    const byFrom = edge.kind === "IMPORT_RESOLVES_TO_MODULE"
+      ? resolvedModuleEdgesByFrom
+      : edge.kind === "IMPORT_RESOLVES_TO_SYMBOL"
+        ? resolvedSymbolEdgesByFrom
+        : undefined;
+    if (!byFrom) {
+      continue;
+    }
+    const existing = byFrom.get(edge.from);
+    if (existing) {
+      existing.push(edge);
+    } else {
+      byFrom.set(edge.from, [edge]);
+    }
+  }
+
+  const index: GraphIndex = {
+    nodesById,
+    importNodeByKey,
+    resolvedModuleEdgesByFrom,
+    resolvedSymbolEdgesByFrom,
+    endpointNodesByFile,
+    dataOperationNodesByFile,
+    reexportTargets: moduleReexportTargets(checkData),
+    forbiddenModuleFilesByKey: new Map()
+  };
+  graphIndexes.set(checkData, index);
+  return index;
+}
+
 function graphImportResolvesToForbidden(
   checkData: ScanData,
   filePath: string,
@@ -3119,12 +3226,9 @@ function graphImportResolvesToForbidden(
   if (forbiddenImports.length === 0) {
     return false;
   }
-  const evidenceById = new Map(checkData.graph_evidence.map((evidence) => [evidence.id, evidence]));
-  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
-  const importKey = importFactGraphKey(filePath, importUsed);
-  const importNode = checkData.graph_nodes.find((node) =>
-    node.kind === "import_decl" && importNodeGraphKey(node, evidenceById) === importKey
-  );
+  const { nodesById, importNodeByKey, resolvedModuleEdgesByFrom, reexportTargets } =
+    graphIndexFor(checkData);
+  const importNode = importNodeByKey.get(importFactGraphKey(filePath, importUsed));
   if (!importNode) {
     return false;
   }
@@ -3140,10 +3244,8 @@ function graphImportResolvesToForbidden(
   // The repository tells us what a specifier means: wherever any file imports a forbidden
   // specifier and the resolver placed that edge, the target is the file it names.
   const forbiddenFiles = forbiddenModuleFiles_(checkData, forbiddenImports);
-  const reexportTargets = moduleReexportTargets(checkData);
 
-  return checkData.graph_edges
-    .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE" && edge.from === importNode.id)
+  return (resolvedModuleEdgesByFrom.get(importNode.id) ?? [])
     .some((edge) => {
       const resolved = nodesById.get(edge.to);
       const resolvedPath = resolved ? stringMetadata(resolved.metadata, "file_path") : undefined;
@@ -3174,8 +3276,16 @@ function graphImportResolvesToForbidden(
  * here, which is what keeps the T03 negative control green.
  */
 function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
+  const index = graphIndexFor(checkData);
+  // Memoised per specifier set: called once per import via graphImportResolvesToForbidden, and
+  // again per convention at :2575, always with the same forbidden list within one convention.
+  const cacheKey = forbiddenImports.join("\0");
+  const cached = index.forbiddenModuleFilesByKey.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
   const files = new Set<string>();
-  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
+  const { nodesById } = index;
   for (const edge of checkData.graph_edges) {
     if (edge.kind !== "IMPORT_RESOLVES_TO_MODULE") {
       continue;
@@ -3191,6 +3301,7 @@ function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]):
       files.add(targetPath);
     }
   }
+  index.forbiddenModuleFilesByKey.set(cacheKey, files);
   return files;
 }
 
@@ -3245,30 +3356,27 @@ function exceptionContextForImport(
   dataStores: string[];
   operationKinds: string[];
 } {
-  const evidenceById = new Map(checkData.graph_evidence.map((evidence) => [evidence.id, evidence]));
-  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
-  const importKey = importFactGraphKey(filePath, importUsed);
-  const importNode = checkData.graph_nodes.find((node) =>
-    node.kind === "import_decl" && importNodeGraphKey(node, evidenceById) === importKey
-  );
-  const endpointNodes = checkData.graph_nodes.filter((node) =>
-    node.kind === "endpoint" && stringMetadata(node.metadata, "file_path") === filePath
-  );
-  const dataOperationNodes = checkData.graph_nodes.filter((node) =>
-    node.kind === "data_operation" &&
-    stringMetadata(node.metadata, "file_path") === filePath &&
+  const {
+    nodesById,
+    importNodeByKey,
+    resolvedModuleEdgesByFrom,
+    resolvedSymbolEdgesByFrom,
+    endpointNodesByFile,
+    dataOperationNodesByFile
+  } = graphIndexFor(checkData);
+  const importNode = importNodeByKey.get(importFactGraphKey(filePath, importUsed));
+  const endpointNodes = endpointNodesByFile.get(filePath) ?? [];
+  const dataOperationNodes = (dataOperationNodesByFile.get(filePath) ?? []).filter((node) =>
     stringMetadata(node.metadata, "receiver_root") === importUsed.name
   );
   const resolvedModules = importNode
-    ? checkData.graph_edges
-        .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_MODULE" && edge.from === importNode.id)
+    ? (resolvedModuleEdgesByFrom.get(importNode.id) ?? [])
         .map((edge) => nodesById.get(edge.to))
         .flatMap((node) => node ? [stringMetadata(node.metadata, "file_path")] : [])
         .filter((value): value is string => typeof value === "string")
     : [];
   const resolvedSymbols = importNode
-    ? checkData.graph_edges
-        .filter((edge) => edge.kind === "IMPORT_RESOLVES_TO_SYMBOL" && edge.from === importNode.id)
+    ? (resolvedSymbolEdgesByFrom.get(importNode.id) ?? [])
         .map((edge) => nodesById.get(edge.to)?.label)
         .filter((value): value is string => typeof value === "string")
     : [];
@@ -3362,186 +3470,6 @@ export function expireFindingsForExpiredConventions(
     expiredCount += 1;
   }
   return expiredCount;
-}
-
-export function runFullRepoCheck(
-  storage: SqliteDriftStorage,
-  parsed: ParsedArgs,
-  repoId: string,
-  now: string
-): Finding[] {
-  const repo = storage.getRepo(repoId);
-  if (!repo) {
-    return [];
-  }
-  const checkId = `check_full_${hashStable(`${repoId}:${now}`).slice(0, 16)}`;
-
-  // Bindings we detected but could not reconcile against an engine import fact.
-  // Collected rather than thrown so a single unparseable file degrades that file
-  // instead of aborting onboarding. See the reconciliation site below.
-  const importFactReconciliationGaps: Array<{
-    filePath: string;
-    line: number;
-    // Absent for a bindingless side-effect import (S10): nothing was bound.
-    symbol?: string;
-    importSource: string;
-  }> = [];
-
-  const files = walkIndexableFiles(repo.root_path).filter(isApiRoutePath);
-  const diff = {
-    // Full-repo baseline sweep over files that already exist: nothing here is added.
-    files: files.map((path) => ({ path, changedLines: new Set<number>(), isAdded: false })),
-    deletedFiles: []
-  };
-  const contract = storage.getRepoContract(repoId);
-  if (!contract) {
-    return [];
-  }
-  const latestScan = storage.listScanManifests(repoId).find((scan) => scan.status === "completed");
-  const snapshotsByPath = new Map(
-    latestScan
-      ? storage.listFileSnapshots(repoId, latestScan.id).map((snapshot) => [snapshot.file_path, snapshot])
-      : []
-  );
-  // Engine import facts, grouped by file. This is the authoritative set: the engine decides
-  // what counts as a value import, including dropping bindings used only in type positions.
-  //
-  // Baseline materialization used to re-derive imports from source with the CLI's own regex
-  // and then look the results up here by evidence key. Any disagreement between the two
-  // parsers produced a finding with no fact behind it - originally a crash (F2), later a
-  // reported parser gap (A3.3). Reading the facts directly removes the possibility: there is
-  // one parser, and it is the engine's.
-  const importFactsByFile = new Map<string, FactRecord[]>();
-  if (latestScan) {
-    for (const fact of storage.listFacts(latestScan.id, { kind: "import_used" })) {
-      importFactsByFile.set(fact.file_path, [...(importFactsByFile.get(fact.file_path) ?? []), fact]);
-    }
-  }
-
-  const findings: Finding[] = [];
-  for (const convention of contract.conventions) {
-    if (convention.kind !== "api_route_no_direct_data_access") {
-      continue;
-    }
-
-    for (const filePath of filesForConvention(diff, convention, "full")) {
-      if (isExceptedPath(filePath, convention, now)) {
-        continue;
-      }
-      for (const fact of importFactsByFile.get(filePath) ?? []) {
-        const importUsed = {
-          name: fact.name,
-          source: String(fact.value ?? ""),
-          line: fact.start_line,
-          end_line: fact.end_line
-        };
-        if (!importUsed.source) {
-          continue;
-        }
-        if (!isForbiddenImport(importUsed.source, convention.matcher.forbidden_imports ?? [])) {
-          continue;
-        }
-        if (isExceptedImport(filePath, importUsed.name, importUsed.source, convention, now)) {
-          continue;
-        }
-        const snapshot = snapshotsByPath.get(filePath);
-        const waiver = findContractWaiverForImport(filePath, importUsed.name, importUsed.source, contract, now);
-        if (waiver) {
-          const staleWaiver = waiverRequiresReapproval(
-            waiver,
-            filePath,
-            snapshot?.content_hash
-          );
-          if (staleWaiver) {
-            findings.push(waiverReapprovalFinding({
-              repoId,
-              repoContractId: contract.id,
-              conventionId: convention.id,
-              checkId,
-              scanId: snapshot?.scan_id ?? checkId,
-              filePath,
-              line: importUsed.line,
-              symbol: evidenceSymbol(importUsed.name),
-              importSource: importUsed.source,
-              fileHash: snapshot?.content_hash ?? "",
-              waiverId: waiver.id,
-              now
-            }));
-          } else {
-            continue;
-          }
-        }
-
-        const fingerprint = findingFingerprint(convention.id, filePath, importUsed.name, importUsed.source);
-        const factId: string | undefined = fact.id;
-        if (!factId) {
-          // A binding we detected has no corresponding engine fact, which means the two
-          // import parsers disagree about this file. That is a parser gap in one file,
-          // not grounds for aborting the whole run: throwing here left repos with no
-          // database at all and no way to onboard. Record it and skip the binding so the
-          // divergence is visible and attributable instead of fatal.
-          importFactReconciliationGaps.push({
-            filePath,
-            line: importUsed.line,
-            symbol: evidenceSymbol(importUsed.name),
-            importSource: importUsed.source
-          });
-          continue;
-        }
-        const finding: Finding = {
-          id: `finding_${fingerprint.slice(0, 16)}`,
-          repo_id: repoId,
-          convention_id: convention.id,
-          fingerprint,
-          title: "API route imports data access directly",
-          message: directDataAccessMessage(filePath, importUsed.name, importUsed.source),
-          severity: convention.severity,
-          enforcement_result: enforcementResultFor(convention.enforcement_mode),
-          status: "new",
-          diff_status: "touched_existing",
-          evidence_refs: [{
-            id: `evidence_${fingerprint.slice(0, 16)}`,
-            kind: "violation",
-            file_path: filePath,
-            start_line: importUsed.line,
-            end_line: importUsed.end_line,
-            symbol: evidenceSymbol(importUsed.name),
-            import_source: importUsed.source,
-            fact_ids: [factId],
-            scan_id: latestScan?.id ?? `scan_check_${hashStable(`${repoId}:${now}`).slice(0, 16)}`,
-            file_hash: snapshot?.content_hash ?? fileContentHash(join(repo.root_path, filePath)),
-            redaction_state: "none"
-          }],
-          created_at: now
-        };
-        storage.upsertFinding(finding);
-        findings.push(finding);
-      }
-    }
-  }
-
-  if (importFactReconciliationGaps.length > 0) {
-    const affectedFiles = [...new Set(importFactReconciliationGaps.map((gap) => gap.filePath))];
-    process.stderr.write(
-      `drift: ${importFactReconciliationGaps.length} import binding(s) across ${affectedFiles.length} file(s) ` +
-        `could not be reconciled against engine facts and were skipped during baseline materialization. ` +
-        `Enforcement for those bindings is degraded. Report at ` +
-        `https://github.com/dadbodgeoff/drift/issues with the paths below.\n` +
-        importFactReconciliationGaps
-          .slice(0, 20)
-          .map((gap) => `  ${gap.filePath}:${gap.line} ${gap.symbol} from ${gap.importSource}\n`)
-          .join("") +
-        (importFactReconciliationGaps.length > 20
-          ? `  ... and ${importFactReconciliationGaps.length - 20} more\n`
-          : "")
-    );
-  }
-
-  return findings;
-}
-
-function importFactEvidenceKey(filePath: string, line: number, name: string, source: string): string {
-  return `${filePath}\0${line}\0${name}\0${source}`;
 }
 
 export function checkNextCommands(

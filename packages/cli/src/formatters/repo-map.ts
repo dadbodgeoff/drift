@@ -1,6 +1,5 @@
 import type { FileRole } from "@drift/core";
-import type { ParserGapQuality } from "@drift/query";
-import { RepoMapFile } from "../domain/repo-map.js";
+import type { ParserGapQuality,RepoMapFilePayload } from "@drift/query";
 import { formatCounts } from "./findings.js";
 
 export function formatRepoMapText(payload: {
@@ -23,7 +22,7 @@ export function formatRepoMapText(payload: {
     next_offset: number | null;
   };
   parser_gap_quality?: ParserGapQuality;
-  files: RepoMapFile[];
+  files: RepoMapFilePayload[];
   next_commands: string[];
 }): string {
   const parserGapLines = payload.parser_gap_quality && payload.parser_gap_quality.total_count > 0
@@ -45,10 +44,12 @@ export function formatRepoMapText(payload: {
     `Page: offset ${payload.pagination.offset}, returned ${payload.pagination.returned_count}, next offset ${payload.pagination.next_offset ?? "none"}`,
     `Filter role: ${payload.filters.role ?? "all"}`,
     `Filter path: ${payload.filters.path ?? "all"}`,
-    `Roles: ${formatCounts(payload.summary.role_counts)}`,
-    `Imports: ${payload.summary.import_count}`,
-    `Exports: ${payload.summary.export_count}`,
-    `Calls: ${payload.summary.call_count}`,
+    // Scoped labels: these describe the filtered set, not the page printed below. Unlabelled, they
+    // sat under "Files: 25 of 4091" and read as repo-wide numbers.
+    `Roles (filtered): ${formatCounts(payload.summary.role_counts)}`,
+    `Imports (filtered): ${payload.summary.import_count}`,
+    `Exports (filtered): ${payload.summary.export_count}`,
+    `Calls (filtered): ${payload.summary.call_count}`,
     ...parserGapLines,
     "",
     "Files:",

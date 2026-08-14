@@ -6457,7 +6457,10 @@ storage_schema_version: 33
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(result.exitCode).toBe(3);
     expect(result.stderr).toContain("Scan is stale for repo_abc.");
     expect(result.stderr).toContain("drift scan --repo-root");
     expect(result.stderr).toContain("omit --require-fresh");
@@ -6475,7 +6478,10 @@ storage_schema_version: 33
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(result.exitCode).toBe(3);
     expect(result.stderr).toContain("Scan is stale for repo_abc.");
     expect(result.stderr).toContain("drift scan --repo-root");
     expect(result.stderr).toContain("omit --require-fresh");
@@ -9842,7 +9848,10 @@ schema_version: 33,
       "--json"
     ]);
 
-    expect(prepared.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(prepared.exitCode).toBe(3);
     expect(prepared.stderr).toContain("Scan is stale for repo_abc.");
     expect(prepared.stderr).toContain("drift scan --repo-root");
     expect(prepared.stderr).toContain("omit --require-fresh");
@@ -10447,7 +10456,10 @@ schema_version: 33,
       "--json"
     ]);
 
-    expect(asked.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(asked.exitCode).toBe(3);
     expect(asked.stderr).toContain("Scan is stale for repo_abc.");
     expect(asked.stderr).toContain("drift scan --repo-root");
     expect(asked.stderr).toContain("omit --require-fresh");
@@ -10792,7 +10804,10 @@ schema_version: 33,
       "--json"
     ]);
 
-    expect(mapped.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(mapped.exitCode).toBe(3);
     expect(mapped.stderr).toContain("Scan is stale for repo_abc.");
     expect(mapped.stderr).toContain("drift scan --repo-root");
     expect(mapped.stderr).toContain("omit --require-fresh");
@@ -11862,7 +11877,10 @@ schema_version: 33,
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(1);
+    // stale_scan is a fail-closed refusal, not an operational error: docs/reference/errors.md
+    // lists it with the other refusal codes at exit 3. This asserted 1 because
+    // assertFreshScanIfRequired threw a plain Error instead of a DriftError.
+    expect(result.exitCode).toBe(3);
     expect(result.stderr).toContain("Scan is stale for repo_abc.");
     expect(result.stderr).toContain("drift scan --repo-root");
     expect(result.stderr).toContain("omit --require-fresh");

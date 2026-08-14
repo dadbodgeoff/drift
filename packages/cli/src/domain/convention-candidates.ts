@@ -1,4 +1,4 @@
-import { API_ROUTE_SCOPE_GLOBS,DRIFT_CONTRACT_SCHEMA_VERSION,type AcceptedConvention,type ConventionCandidate,type ConventionStatus,type EnforcementMode,type EvidenceRef,type FactRecord,type RejectedInference,type RepoContract,type Severity } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS,DRIFT_CONTRACT_SCHEMA_VERSION,hasConventionEvaluator,type AcceptedConvention,type ConventionCandidate,type ConventionStatus,type EnforcementMode,type EvidenceRef,type FactRecord,type RejectedInference,type RepoContract,type Severity } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { join } from "node:path";
 import { fileLooksLikeDataAccess,resolveImportTarget } from "../engine/import-resolution.js";
@@ -45,6 +45,13 @@ export function acceptConventionCandidate(
   const mode = input.mode ?? candidate.suggested_enforcement_mode;
   if (mode === "block" && candidate.enforcement_capability !== "deterministic_check") {
     throw new Error("Only deterministic conventions can use --mode block. Use --mode warn, brief, or off for heuristic/briefing conventions.");
+  }
+  // Refuse rather than store a rule nothing evaluates: an accepted convention with no evaluator
+  // produces no finding on any repo and reports a clean pass, which reads as "checked, and fine".
+  if (!hasConventionEvaluator(candidate.kind)) {
+    throw new Error(
+      `Convention kind ${candidate.kind} has no evaluator, so accepting it would enforce nothing while reporting a pass. It cannot be accepted until one is implemented.`
+    );
   }
   if (input.dryRun && input.confirmed) {
     throw new Error("Use either --dry-run or --confirm, not both.");
