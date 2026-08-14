@@ -11,7 +11,8 @@ import {
   repoMapOpenFindingIds,
   repoMapRiskyAreaIds,
   type CanonicalFactRouteInput,
-  type RepoMapFile
+  type RepoMapFile,
+  repoMapFileForPayload
 } from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { agentEnvelopeForScan } from "./agent-envelope.js";
@@ -186,7 +187,11 @@ export function repoMapPayload(
       surface: options.surface,
       policy,
       scanStatus,
-      requireFresh: Boolean(options.requireFresh)
+      requireFresh: Boolean(options.requireFresh),
+      // Same value the payload's `redactions` reports. The envelope builds its own redactions and
+      // defaulted this to false, so a paginated map claimed `safe_to_edit` in the envelope while
+      // `redactions.context_truncated` said true one key away.
+      contextTruncated: readModel.pagination.has_more
     }),
     policy,
     readiness,
@@ -212,13 +217,15 @@ export function repoMapPayload(
     routes: phase8Security.routes,
     framework_entrypoints: frameworkEntryPoints,
     freshness_requirement: freshnessRequirement(Boolean(options.requireFresh), scanStatus),
-    files: readModel.listed_files,
+    files: readModel.listed_files.map(repoMapFileForPayload),
     redactions: {
       denied_globs: contract.context_egress.denied_globs,
       snippets_included: false,
       source_content_included: false,
       graph_context_included: Boolean(graphMap),
-      context_truncated: false
+      // Derived, not asserted: a paginated map is a subset, and `has_more` already says so. Claiming
+      // `false` here told the envelope to report `safe_to_edit` for a response that omits files.
+      context_truncated: readModel.pagination.has_more
     },
     next_commands: [
       `drift prepare "task" --repo ${repoId} --json`,

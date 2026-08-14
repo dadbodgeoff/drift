@@ -1186,8 +1186,20 @@ export function assertFreshScanIfRequired(
   if (!required || !scanStatus.stale) {
     return;
   }
-  throw new Error(
-    `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit --require-fresh to inspect stale context.`
+  // A stale scan under --require-fresh is a fail-closed refusal, which the exit-code contract
+  // (run-check.ts) codes 3. This threw a plain Error, so `prepare`, `ask`, `policy`, `findings` and
+  // `repo map` all exited 1 - the code reserved for "drift itself broke" - for a refusal Drift made
+  // deliberately and correctly. A caller distinguishing the two got the wrong answer.
+  throw new DriftError(
+    `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit --require-fresh to inspect stale context.`,
+    {
+      code: "stale_scan",
+      userAction: `Run ${scanStatus.next_command}, or omit --require-fresh to inspect stale context.`,
+      recoveryCommands: scanStatus.next_command ? [scanStatus.next_command] : [],
+      // docs/reference/errors.md already lists stale_scan as retryable after a rescan.
+      safeToRetry: true,
+      exitCode: 3
+    }
   );
 }
 

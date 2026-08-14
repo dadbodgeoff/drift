@@ -84,7 +84,9 @@ import {
   selectRelevantTests,
   type ChangeImpactRouteFlow,
   type DriftReadinessSurface,
-  type RepoMapFile,rankRelevantFiles} from "@drift/query";
+  type RepoMapFile,rankRelevantFiles,
+  repoMapFileForPayload
+} from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -1732,7 +1734,9 @@ function repoMapPayload(
       surface: options.surface,
       policy,
       scanStatus,
-      requireFresh: Boolean(options.requireFresh)
+      requireFresh: Boolean(options.requireFresh),
+      // Same value the payload's `redactions` reports - see the CLI repo-map payload.
+      contextTruncated: readModel.pagination.has_more
     }),
     policy,
     readiness,
@@ -1761,13 +1765,14 @@ function repoMapPayload(
     proof_freshness: phase8Security.proof_freshness,
     framework_entrypoints: frameworkEntryPoints,
     freshness_requirement: freshnessRequirement(Boolean(options.requireFresh), scanStatus),
-    files: readModel.listed_files,
+    files: readModel.listed_files.map(repoMapFileForPayload),
     redactions: {
       denied_globs: contract.context_egress.denied_globs,
       snippets_included: false,
       source_content_included: false,
       graph_context_included: Boolean(graphMap),
-      context_truncated: false
+      // Derived, not asserted - see the CLI repo-map payload for the same reasoning.
+      context_truncated: readModel.pagination.has_more
     },
     next_commands: [
       `drift prepare "task" --repo ${repoId} --json`,
@@ -2728,6 +2733,7 @@ function mcpAgentEnvelope(input: {
   scanStatus: ReturnType<typeof scanStatusPayload>;
   requireFresh: boolean;
   diagnostics?: string[];
+  contextTruncated?: boolean;
 }) {
   return createAgentEnvelopeV2({
     surface: input.surface,
@@ -2739,7 +2745,7 @@ function mcpAgentEnvelope(input: {
     },
     redactions: {
       snippets_included: false,
-      context_truncated: false
+      context_truncated: Boolean(input.contextTruncated)
     },
     diagnostics: input.diagnostics
   });

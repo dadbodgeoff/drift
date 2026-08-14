@@ -1,4 +1,4 @@
-import { authorizeContextExport,DRIFT_CONTRACT_SCHEMA_VERSION,type RepoContract,RepoContractSchema } from "@drift/core";
+import { authorizeContextExport,DRIFT_CONTRACT_SCHEMA_VERSION,hasConventionEvaluator,type RepoContract,RepoContractSchema } from "@drift/core";
 import { buildRepoContractReadModel } from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,mkdirSync,statSync,writeFileSync } from "node:fs";
@@ -226,6 +226,12 @@ export function importContractDryRun(
     !riskyAreaIdsUnique ? "duplicate_risky_area_ids" : undefined,
     !deniedGlobsUnique ? "duplicate_denied_globs" : undefined,
     !rejectedInferencesUnique ? "duplicate_rejected_inferences" : undefined,
+    // A hand-authored contract is the other way a kind with no evaluator reaches storage, where it
+    // would enforce nothing and still report a clean pass. Reported here rather than thrown at
+    // write time so `--dry-run` names it too, which is when someone is asking whether it is valid.
+    contract.conventions.some((convention) => !hasConventionEvaluator(convention.kind))
+      ? "convention_kind_has_no_evaluator"
+      : undefined,
     ...contractValidationReasons(contract)
   ].filter((reason): reason is string => Boolean(reason));
   const compatibility = {
