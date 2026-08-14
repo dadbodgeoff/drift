@@ -5,6 +5,7 @@ import { optionalAuditActionFlag,optionalIsoTimestampFlag,optionalNonEmptyFlag,o
 import { resolveRepoId } from "../args/repo-flags.js";
 import { auditListNextCommands,auditListSummary,auditVerifyNextCommands,auditVerifySummary } from "../domain/audit-review.js";
 import { preflightGovernance } from "../domain/governance.js";
+import { safeVerifyAuditChain } from "../domain/scan-status.js";
 import { orderAuditEventsForReview,paginateAuditEvents,paginationSummary } from "../domain/pagination.js";
 import { repoContractOrDefault,requiredRepo } from "../domain/repo-paths.js";
 import { formatAuditListText,formatAuditVerifyText } from "../formatters/audit.js";
@@ -38,7 +39,7 @@ export function listAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): Comm
     .filter((event) => !until || event.created_at <= until);
   const orderedEvents = orderAuditEventsForReview(filteredEvents);
   const events = paginateAuditEvents(orderedEvents, limit, offset);
-  const verification = storage.verifyAuditChain(repoId);
+  const verification = safeVerifyAuditChain(storage, repoId);
   const payload = {
     response_schema: "drift.audit.status.v1",
     repo_id: repoId,
@@ -78,7 +79,7 @@ export function verifyAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   if (!policy.allowed) {
     throw new Error(`Policy denied audit output: ${policy.reason}`);
   }
-  const verification = storage.verifyAuditChain(repoId, { strict: parsed.flags.has("strict") });
+  const verification = safeVerifyAuditChain(storage, repoId, { strict: parsed.flags.has("strict") });
   const payload = {
     response_schema: "drift.audit.status.v1",
     repo_id: repoId,
@@ -91,6 +92,11 @@ export function verifyAudit(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   };
 
   return {
-    payload: parsed.flags.has("json") ? payload : formatAuditVerifyText(payload)
+    payload: parsed.flags.has("json") ? payload : formatAuditVerifyText(payload),
+    // T-08: a broken chain fails the process. Exit 2 is "Drift detected a violation" - the same
+    // meaning it already carries for a diff that breaks the contract - as distinct from 1 (Drift
+    // itself failed) and 3 (Drift refused to judge). Exiting 0 here meant any CI step running
+    // `drift audit verify` passed while the log was provably forged.
+    exitCode: verification.valid ? 0 : 2
   };
 }

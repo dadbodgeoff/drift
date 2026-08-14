@@ -1132,6 +1132,14 @@ export const ConventionCandidateSchema = z.object({
   enforcement_capability: EnforcementCapabilitySchema,
   confidence_label: z.enum(["low", "medium", "high"]),
   scoring: ConventionScoreSchema,
+  /**
+   * T-23: whether the author declared this convention or Drift inferred it.
+   *
+   * Optional and derivable — `conventionProvenance()` reads it back from `scoring.heuristic_id`,
+   * which already round-trips through storage. Declared here so the field survives a schema parse
+   * on the in-memory path rather than being silently stripped.
+   */
+  provenance: z.enum(["declared", "inferred"]).optional(),
   evidence_refs: z.array(EvidenceRefSchema),
   counterexample_refs: z.array(EvidenceRefSchema),
   matcher_fingerprint: z.string().min(1).optional(),

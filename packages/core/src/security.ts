@@ -55,6 +55,9 @@ export const SecurityMissingProofCodeSchema = z.enum([
   "unsupported_dynamic_control_flow",
   "route_binding_unresolved",
   "handler_unresolved"
+  ,// T-17: a code this build does not recognise, normalized at the engine parse boundary.
+  // Never readable as "proof satisfied" - not knowing why a proof failed is a refusal.
+  "unknown_reason_code"
 ]);
 
 export const SecurityParserGapCodeSchema = z.enum([

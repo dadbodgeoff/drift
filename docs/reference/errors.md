@@ -32,15 +32,17 @@ Every failure appears in `--json` output as:
 | `disk_full` | Space ran out **during** an operation. State may be incomplete. | yes | Free space and rerun. Was previously a raw SQLite string. |
 | `corrupt_database` | The local database is unreadable. | **no** | Restore a backup (`drift backup list`), or delete the repo's state directory to rebuild from a scan. |
 | `permission_denied` | A required path cannot be read or written. | no | Check ownership of the repo and of the state directory. |
+| `empty_contract` | The repo has a contract but it accepts no conventions and carries no other enforceable rules, so a check would evaluate the diff against an empty ruleset. Refuses rather than reporting a pass. | yes | Accept a convention, or declare your data layer with `--data-modules` at onboarding. |
+| `engine_payload_too_large` | The repo produced more scan data than onboarding can re-serialize to infer conventions. Measured before anything is written, and **no database is left behind**. | **no** | Onboard a smaller subtree with `--repo-root`. The limit is a current-release constraint, not a property of the repo. |
 | `cli_error` | Anything not matched above — usually bad arguments. | no | Read the diagnostic; `drift --help`. |
 
 ## Refusals are not errors
 
-Three of these are **refusals**: Drift declines to answer rather than answering wrongly.
-`stale_scan`, `missing_contract`, `missing_engine` and `insufficient_disk` all mean "no
-enforcement claim is being made", and `drift check` exits **3** for them — distinct from **1**
-(Drift itself failed) and **2** (the diff violates the contract). See
-[enforcement.md](./enforcement.md).
+Several of these are **refusals**: Drift declines to answer rather than answering wrongly.
+`stale_scan`, `missing_contract`, `missing_engine`, `insufficient_disk`, `empty_contract` and
+`engine_payload_too_large` all mean "no enforcement claim is being made", and Drift exits **3**
+for them — distinct from **1** (Drift itself failed) and **2** (the diff violates the contract).
+See [enforcement.md](./enforcement.md).
 
 A refusal is never a pass. That distinction is the point: a guardrail that returns success when it
 could not inspect anything is worse than one that stops.

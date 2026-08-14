@@ -62,11 +62,16 @@ async function fixture(options: { unreadableAt: string; route: string }): Promis
   git(repoRoot, "add", "-A");
   git(repoRoot, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "init");
 
+  // T-07: `check` now refuses an empty contract, and these fixtures are too small for inference
+  // to propose anything (one route). Declaring the data layer gives them a real enforceable
+  // convention, which is also the realistic shape - coverage gaps matter to a repo that is
+  // actually being enforced, not to one with nothing accepted.
   const started = await runCli([
     "start",
     "--repo-root", repoRoot,
     "--state-root", stateRoot,
     "--accept-defaults",
+    "--data-modules", "@/lib/secret",
     "--json"
   ]);
   const repoId = JSON.parse(started.stdout).repo.id as string;

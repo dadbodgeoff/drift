@@ -259,12 +259,86 @@ export function isPromotedPresenceConvention(convention: {
 export const PRESENCE_AUTO_ACCEPT_MIN_COVERAGE = 0.6;
 export const PRESENCE_AUTO_ACCEPT_MIN_EVIDENCE_FILES = 20;
 
+/**
+ * T-12: whether this convention can ever be a gate.
+ *
+ * Acceptance already refuses `--mode block` for anything but `deterministic_check`
+ * (`convention-candidates.ts`), and that refusal was the only place the rule existed. So
+ * `--accept-defaults` would auto-accept a `heuristic_check` candidate at warn and then print
+ * "To make this a gate: drift conventions accept ... --mode block --confirm", which exits 1.
+ *
+ * Measured on a repo that fully complies with its own convention - every route delegating, zero
+ * violations - where the ONLY candidate is `api_route_requires_service_delegation`
+ * (`heuristic_check`). The best-behaved repo got a convention that cannot block and an upgrade
+ * instruction the tool rejects.
+ *
+ * One predicate, so the auto-accept filter and the printed command agree with the preflight.
+ */
+export function canEverBlock(candidate: { enforcement_capability?: string }): boolean {
+  return candidate.enforcement_capability === "deterministic_check";
+}
+
+/**
+ * T-23: whether a convention came from the author or from inference.
+ *
+ * Derived from the scoring heuristic rather than stored in its own column. `heuristic_id` already
+ * distinguishes the two (`declared-data-modules-v1` vs the inference heuristics), already lives
+ * inside `scoring_json`, and therefore already survives a round trip through storage - where a new
+ * column would have needed a migration to say something the database can already answer.
+ *
+ * It matters to the disclosure: "declared by author" and "inferred from 326 files" are different
+ * claims, and presenting a declaration as an inference overstates what Drift worked out.
+ */
+export function conventionProvenance(candidate: {
+  scoring?: { heuristic_id?: string };
+}): "declared" | "inferred" {
+  return candidate.scoring?.heuristic_id?.startsWith("declared-") ? "declared" : "inferred";
+}
+
 export interface PresenceAutoAcceptDecision {
   eligible: boolean;
   coverage_ratio: number;
   evidence_file_count: number;
   /** Why it did not clear, for the disclosure to print. Null when it did. */
   below_floor_reason: "coverage" | "evidence_files" | "both" | null;
+}
+
+/**
+ * T-04: why a presence family was left as a candidate instead of accepted.
+ *
+ * There are two unrelated causes and the disclosure used to print one sentence for both, so a
+ * family that cleared every floor was told it had failed them. Measured on dub: coverage 0.774
+ * against a floor of 0.6, 365 evidence refs against a floor of 20 - eligible on both counts, and
+ * reported as "below the auto-accept floor" because `--accept-families` was not passed.
+ *
+ * The distinction is the whole point: one is fixed by a flag, the others by the repo changing.
+ */
+export type PresenceDeferralReason =
+  | "families_flag_not_set"
+  | "below_coverage_floor"
+  | "below_evidence_floor"
+  | "below_both";
+
+/**
+ * The reason a deferred family was deferred.
+ *
+ * Eligibility is asked first, because "it qualified and the flag was off" is true regardless of
+ * how comfortably it qualified - and it is the only one of the four the user fixes with a flag.
+ */
+export function presenceDeferralReason(
+  decision: Pick<PresenceAutoAcceptDecision, "eligible" | "below_floor_reason">
+): PresenceDeferralReason {
+  if (decision.eligible) {
+    return "families_flag_not_set";
+  }
+  switch (decision.below_floor_reason) {
+    case "coverage":
+      return "below_coverage_floor";
+    case "evidence_files":
+      return "below_evidence_floor";
+    default:
+      return "below_both";
+  }
 }
 
 /**

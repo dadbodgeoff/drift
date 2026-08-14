@@ -616,6 +616,17 @@ pub struct CheckEvidence {
     pub start_line: usize,
     pub end_line: usize,
     pub evidence_id: String,
+    /// T-03: the symbol this finding is about, when the finding is about one.
+    ///
+    /// Presence is enforced per handler - `GET` and `POST` in one `route.ts` are two endpoints and
+    /// two findings - but the handler name reached the CLI only inside the message prose, so every
+    /// presence finding arrived with a null symbol and two handlers in one file were
+    /// indistinguishable by anything structured. T-06 keys per-handler baseline identity on this.
+    ///
+    /// Omitted rather than sent as null when there is none, so a finding that is genuinely about a
+    /// whole file does not claim a symbol it does not have.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

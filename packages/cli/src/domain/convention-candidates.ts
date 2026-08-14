@@ -457,7 +457,17 @@ export function declaredDataModulesCandidate(input: {
       fact.value &&
       matchesDeclared(fact.value)
   );
-  if (dataImports.length === 0) {
+  // T-23: a declaration with no violations yet is still a convention.
+  //
+  // This used to return `undefined` when no route imported the declared module directly, so
+  // `--data-modules` only produced a convention on a repo that was ALREADY violating it - and a
+  // repo that had done everything right had no path to enforcement at all, because inference has
+  // nothing to learn from either. The author naming their data layer IS the evidence; requiring
+  // corroborating violations inverts what the flag is for.
+  //
+  // Routes are still required, because a convention scoped to API routes needs a scope to apply
+  // to. Zero routes means there is nothing to say anything about.
+  if (apiRouteFiles.size === 0) {
     return undefined;
   }
 
@@ -513,6 +523,7 @@ export function declaredDataModulesCandidate(input: {
       baselineScopeFiles === 0 || baselineViolationRatio > 0.5 ? "warn" : "block",
     enforcement_capability: "deterministic_check",
     confidence_label: "high",
+    provenance: "declared" as const,
     scoring: {
       supporting_examples_count: dataImports.length,
       counterexamples_count: 0,

@@ -92,9 +92,24 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Some("infer-candidates") => {
-            let mut input = String::new();
-            io::stdin().read_to_string(&mut input)?;
-            let request: CandidateRequest = serde_json::from_str(&input)?;
+            // T-02: `--request-file <path>` reads the request from a file instead of stdin.
+            //
+            // The request carries the whole graph and every fact, and building it as one JS string
+            // on the CLI side cost 105,024,113 chars on papermark against a MAX_STRING_LENGTH of
+            // 536,870,888 - which is what made repo size a cliff. Handed a path, the CLI can write
+            // it in pieces and nothing has to hold all of it.
+            //
+            // Same shape as `scan-repo --reuse-manifest`, which already passes bulk data by path.
+            // Stdin stays supported: it is the smaller path, and older callers still use it.
+            let args: Vec<String> = args.collect();
+            let request: CandidateRequest = match request_file_arg(&args)? {
+                Some(path) => serde_json::from_str(&fs::read_to_string(&path)?)?,
+                None => {
+                    let mut input = String::new();
+                    io::stdin().read_to_string(&mut input)?;
+                    serde_json::from_str(&input)?
+                }
+            };
             let output = infer_candidates(request);
             println!("{}", serde_json::to_string(&output)?);
             Ok(())
@@ -114,6 +129,29 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         _ => Err("usage: drift-engine scan-repo <repo-root> [--format json|jsonl] [--repo-id <id>] [--scan-id <id>] | check-repo | infer-candidates | version".into()),
     }
+}
+
+/// The value of `--request-file`, when `infer-candidates` was given one.
+///
+/// An unknown flag is an error rather than something to skip past: a caller that misspells the
+/// only way to pass a large request would otherwise fall through to reading an empty stdin and get
+/// a confusing parse failure instead of being told what it typed wrong.
+fn request_file_arg(args: &[String]) -> Result<Option<PathBuf>, Box<dyn std::error::Error>> {
+    let mut index = 0;
+    let mut path = None;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--request-file" => {
+                index += 1;
+                path = Some(PathBuf::from(
+                    args.get(index).ok_or("missing value for --request-file")?,
+                ));
+            }
+            flag => return Err(format!("unknown infer-candidates option: {flag}").into()),
+        }
+        index += 1;
+    }
+    Ok(path)
 }
 
 fn parse_scan_repo_args(args: Vec<String>) -> Result<ScanRepoArgs, Box<dyn std::error::Error>> {

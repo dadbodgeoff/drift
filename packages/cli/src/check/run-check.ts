@@ -26,7 +26,7 @@ import { isClosedFindingStatus,preservedGovernanceStatus,reviewFinding } from ".
 import { auditEvent,preflightGovernance } from "../domain/governance.js";
 import { checkRunIdsFor,contractFingerprint,hashStable } from "../domain/identifiers.js";
 import { WaivedFinding } from "../domain/preflight.js";
-import { isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
+import { assertEnforceableContract,isApiRoutePath,matchesGlob } from "../domain/repo-paths.js";
 import { importCoverageReport } from "../domain/import-coverage.js";
 import { parserGapsFromDiagnostics } from "../domain/scan-status.js";
 import { currentMachineContractVersions } from "../domain/versions.js";
@@ -224,6 +224,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   if (!contract) {
     throw new Error(`No repo contract exists for ${repoId}.`);
   }
+  assertEnforceableContract(storage, repoId, contract);
   const policy = authorizeContextExport(contract, "cli-check");
   if (!policy.allowed) {
     throw new Error(`Policy denied check output: ${policy.reason}`);
@@ -572,11 +573,11 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           importUsed.name,
           importUsed.value
         );
-        const status = baseline.some((entry) =>
-          entry.status === "active" &&
-          entry.convention_id === convention.id &&
-          entry.finding_fingerprint === fingerprint
-        ) ? "pre_existing" : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
+        // T-06: one shared predicate, so this path matches legacy fingerprints exactly as the
+        // engine's does.
+        const status = isBaselinedFinding(baseline, convention.id, fingerprint)
+          ? "pre_existing"
+          : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
         const snapshot = snapshotsByPath.get(filePath);
         const finding: Finding = {
           id: `finding_${fingerprint.slice(0, 16)}`,
@@ -1447,11 +1448,10 @@ function runCanonicalHelperReuseCheck(input: {
           exactDuplicate ? exported.name : `${exported.name}:fuzzy:${similarity?.score ?? 0}`
         );
         const snapshot = input.snapshotsByPath.get(exported.file_path);
-        const status = input.baseline.some((entry) =>
-          entry.status === "active" &&
-          entry.convention_id === contract.id &&
-          entry.finding_fingerprint === fingerprint
-        ) ? "pre_existing" : preservedGovernanceStatus(input.existingFindings.get(fingerprint)) ?? "new";
+        // T-06: shared predicate, as above.
+        const status = isBaselinedFinding(input.baseline, contract.id, fingerprint)
+          ? "pre_existing"
+          : preservedGovernanceStatus(input.existingFindings.get(fingerprint)) ?? "new";
         findings.push({
           id: `finding_${fingerprint.slice(0, 16)}`,
           repo_id: input.repoId,
@@ -2306,17 +2306,42 @@ function agentContractFinding(input: {
   };
 }
 
+/**
+ * T-06: whether an active baseline row grandfathers this finding, current or legacy fingerprint.
+ *
+ * The engine has always matched legacy fingerprints as well as current ones
+ * (`check_command.rs`), which is how a fingerprint formula can change without un-baselining what
+ * it identifies. The TypeScript path had three hand-copied match expressions and no legacy
+ * concept at all, so the two halves of the product disagreed about what "already baselined"
+ * means - and the next change to a TypeScript-side formula would have silently un-grandfathered
+ * every finding that path owns, with no test able to see it.
+ *
+ * One predicate, used by all three, so the halves cannot drift apart again.
+ */
+export function isBaselinedFinding(
+  baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>,
+  conventionId: string,
+  fingerprint: string,
+  legacyFingerprints: string[] = []
+): boolean {
+  const candidates = new Set([fingerprint, ...legacyFingerprints]);
+  return baseline.some((entry) =>
+    entry.status === "active" &&
+    entry.convention_id === conventionId &&
+    candidates.has(entry.finding_fingerprint)
+  );
+}
+
 function findingStatusForAgentContract(
   baseline: ReturnType<SqliteDriftStorage["listBaselineViolations"]>,
   existingFindings: Map<string, Finding>,
   contractId: string,
-  fingerprint: string
+  fingerprint: string,
+  legacyFingerprints: string[] = []
 ): Finding["status"] {
-  return baseline.some((entry) =>
-    entry.status === "active" &&
-    entry.convention_id === contractId &&
-    entry.finding_fingerprint === fingerprint
-  ) ? "pre_existing" : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
+  return isBaselinedFinding(baseline, contractId, fingerprint, legacyFingerprints)
+    ? "pre_existing"
+    : preservedGovernanceStatus(existingFindings.get(fingerprint)) ?? "new";
 }
 
 function graphPathForFinding(
@@ -2786,6 +2811,10 @@ async function runEngineOwnedAuthCheck(input: {
           file_path: evidence.file_path,
           start_line: evidenceStartLine,
           end_line: evidenceEndLine,
+          // T-03: the symbol the engine says this finding is about - the handler name, for kinds
+          // enforced per handler. Spread rather than assigned so a finding with no symbol keeps
+          // the key absent instead of gaining an explicit null.
+          ...(evidence.symbol ? { symbol: evidence.symbol } : {}),
           fact_ids: evidenceFacts,
           scan_id: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
           file_hash: snapshot?.content_hash ?? "",

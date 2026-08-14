@@ -1,4 +1,4 @@
-import type { FactRecord, FileSnapshot } from "@drift/core";
+import { streamJson, type FactRecord, type FileSnapshot } from "@drift/core";
 import { createHash } from "node:crypto";
 import { dirname, join, normalize } from "node:path";
 import { z } from "zod";
@@ -464,7 +464,7 @@ export function buildFactGraphArtifact(input: BuildFactGraphInput): FactGraphArt
       diagnostic_count: input.diagnostics?.length ?? 0
     }
   });
-  const graph_hash = sha256(JSON.stringify(graph));
+  const graph_hash = sha256Streamed(graph);
 
   return FactGraphArtifactSchema.parse({
     id: `graph_${input.repo.scan_id}`,
@@ -523,7 +523,7 @@ export function buildFactGraphArtifactFromParts(input: BuildFactGraphFromPartsIn
       diagnostic_count: input.diagnostics?.length ?? 0
     }
   });
-  const graph_hash = sha256(JSON.stringify(graph));
+  const graph_hash = sha256Streamed(graph);
 
   return FactGraphArtifactSchema.parse({
     id: `graph_${input.repo.scan_id}`,
@@ -674,6 +674,24 @@ function slug(value: string): string {
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+/**
+ * T-02: `sha256(JSON.stringify(graph))` without the string in the middle.
+ *
+ * Measured on papermark, that string was 97,230,007 chars - a whole second copy of the graph,
+ * held only to be hashed and dropped, and bounded by MAX_STRING_LENGTH like everything else that
+ * scaled with repo size.
+ *
+ * The digest is byte-identical by construction: `streamJson` emits exactly what `JSON.stringify`
+ * would have, and sha256 does not care whether it arrives in one update or ten million. That
+ * matters more than the memory - `graph_hash` is persisted, compared across scans, and covered by
+ * the determinism digests, so a different answer here would read as every repo's graph changing.
+ */
+function sha256Streamed(value: unknown): string {
+  const hash = createHash("sha256");
+  streamJson(value, (chunk) => hash.update(chunk));
+  return hash.digest("hex");
 }
 
 function byId<T extends { id: string }>(left: T, right: T): number {

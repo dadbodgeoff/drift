@@ -41,6 +41,10 @@ export const BetaStartResponseSchema = z.object({
     mode: z.enum(["off", "brief", "warn", "block"]),
     severity: z.string().min(1),
     baselined_count: z.number().int().nonnegative(),
+    // T-05: per-kind breakdown of the total above. This object has no `.passthrough()`, so an
+    // undeclared field is dropped - which is how the payload would keep only the total that
+    // credited one convention with another convention's violations.
+    baselined_by_kind: z.record(z.number().int().nonnegative()),
     blocks_new_violations: z.boolean(),
     upgrade_command: z.string().min(1).nullable(),
     // CV-5: a repo can onboard with more than one convention from this item on, so the count and the
@@ -53,7 +57,9 @@ export const BetaStartResponseSchema = z.object({
       convention_kind: z.string().min(1),
       mode: z.enum(["off", "brief", "warn", "block"]),
       blocks_new_violations: z.boolean(),
-      upgrade_command: z.string().min(1)
+      // T-12: null for a convention that can never take `--mode block`, rather than a command
+      // the acceptance preflight rejects.
+      upgrade_command: z.string().min(1).nullable()
     })),
     // Families that exist and were skipped. Shaped, because a silent skip is the failure this names.
     deferred_candidates: z.array(z.object({
@@ -62,6 +68,15 @@ export const BetaStartResponseSchema = z.object({
       coverage_ratio: z.number(),
       evidence_file_count: z.number().int().nonnegative(),
       below_floor_reason: z.enum(["coverage", "evidence_files", "both"]).nullable(),
+      // T-04: which of the four causes deferred this family. Declared here or Zod strips it on the
+      // way out, and the payload silently loses the field that distinguishes "the flag was off"
+      // from "it missed a floor" - the exact confusion this item exists to remove.
+      deferred_reason: z.enum([
+        "families_flag_not_set",
+        "below_coverage_floor",
+        "below_evidence_floor",
+        "below_both"
+      ]),
       review_command: z.string().min(1)
     }))
   }).optional(),

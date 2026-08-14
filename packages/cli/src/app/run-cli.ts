@@ -1,4 +1,5 @@
 import { openDriftStorage } from "@drift/storage";
+import { existsSync,rmSync } from "node:fs";
 import { isDriftError } from "./drift-error.js";
 import { operationalFailureFor } from "./failure-classification.js";
 import { createAgentEnvelopeV2 } from "@drift/core";
@@ -17,6 +18,10 @@ import { runCommand } from "./router.js";
 
 export async function runCli(argv: string[]): Promise<CliResult> {
   const wantsJson = argv.includes("--json");
+  // T-01: what this invocation brought into existence, so a refusal that learned nothing can
+  // leave the filesystem as it found it. Captured out here because the decision is made in the
+  // catch, after `storage.close()` has run.
+  let createdDatabasePath: string | undefined;
   try {
     const parsed = parseArgs(argv);
     if (isVersionRequest(parsed)) {
@@ -82,6 +87,10 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     }
     ensureDatabasePath(databasePath);
 
+    // Before the open, which is what creates the file.
+    if (!existsSync(databasePath)) {
+      createdDatabasePath = databasePath;
+    }
     const storage = openDriftStorage({ databasePath });
     // F-3b: WAL recovery that discarded commit records is a data-loss signal SQLite itself
     // never reports. It is a warning, not a failure - the recovered state is consistent - so
@@ -104,6 +113,9 @@ export async function runCli(argv: string[]): Promise<CliResult> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CLI error.";
+    if (isDriftError(error) && error.discardsCreatedState && createdDatabasePath) {
+      discardCreatedDatabase(createdDatabasePath);
+    }
     const failure = operationalFailureFor(error, message);
     // A DriftError may declare its own exit code: 3 marks a fail-closed refusal (e.g. the
     // shallow-clone identity refusal, X-1), which CI must be able to tell from a plain error.
@@ -144,6 +156,18 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       stdout: "",
       stderr: `${message}\n`
     };
+  }
+}
+
+/**
+ * Remove a database this invocation created, and the WAL sidecars SQLite creates beside it.
+ *
+ * `force` throughout: this runs on an error path, and a cleanup that throws would replace the
+ * refusal the user needs to read with an unrelated filesystem error.
+ */
+function discardCreatedDatabase(databasePath: string): void {
+  for (const path of [databasePath, `${databasePath}-wal`, `${databasePath}-shm`]) {
+    rmSync(path, { force: true });
   }
 }
 

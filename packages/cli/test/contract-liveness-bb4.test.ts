@@ -89,12 +89,36 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
   ]);
   expect(started.exitCode).toBe(0);
   const payload = JSON.parse(started.stdout);
-  expect(payload.accepted).toBeTruthy();
+  const repoId = payload.repo.id;
+  const databasePath = payload.state.database_path;
+
+  // T-12: `--accept-defaults` no longer auto-accepts a convention that can never block, so a repo
+  // with zero violating routes onboards with nothing accepted - the only candidate it produces is
+  // `api_route_requires_service_delegation` (heuristic_check). This suite is about staleness
+  // detection and needs A contract, not a particular kind, so it accepts the top candidate
+  // explicitly. Accepting by hand is still allowed; only the automatic path was narrowed.
+  let accepted = payload.accepted;
+  if (!accepted) {
+    const listed = JSON.parse(
+      (await runCli([
+        "--db", databasePath, "conventions", "list", "--repo", repoId,
+        "--include-low-confidence", "--json"
+      ])).stdout
+    );
+    const candidate = listed.candidates[0];
+    expect(candidate, "no candidate to accept for the liveness fixture").toBeTruthy();
+    const result = await runCli([
+      "--db", databasePath, "conventions", "accept", candidate.id, "--repo", repoId,
+      "--mode", "warn", "--severity", "warning", "--confirm", "--json"
+    ]);
+    expect(result.exitCode, result.stdout).toBe(0);
+    accepted = JSON.parse(result.stdout).accepted;
+  }
   return {
-    repoId: payload.repo.id,
-    databasePath: payload.state.database_path,
+    repoId,
+    databasePath,
     repoRoot,
-    conventionId: payload.accepted.id
+    conventionId: accepted.id
   };
 }
 
