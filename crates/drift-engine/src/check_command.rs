@@ -125,6 +125,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                     import_source: finding.import_source,
                     line: finding.line,
                     evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
+                    symbol: PendingFinding::no_symbol(),
                     legacy_fingerprints: Vec::new(),
                     related_node_ids: Vec::new(),
                 })
@@ -337,6 +338,10 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                         .get(&finding.fingerprint)
                         .map(|pending| pending.evidence_id.clone())
                         .unwrap_or_else(|| format!("evidence_{}", &finding.fingerprint[..16])),
+                    // T-03: carried from the producer, so the CLI can store it on the evidence ref.
+                    symbol: pending_by_fingerprint
+                        .get(&finding.fingerprint)
+                        .and_then(|pending| pending.symbol.clone()),
                 }],
                 related_node_ids: pending_by_fingerprint
                     .get(&finding.fingerprint)
@@ -577,8 +582,20 @@ struct PendingFinding {
     import_source: String,
     line: usize,
     evidence_id: String,
+    /// T-03: the symbol the finding is about, carried through to the evidence the CLI stores.
+    ///
+    /// `None` where the finding is about a file rather than a symbol within it. Defaulted for
+    /// every producer that has no symbol to name, so adding it did not require inventing one.
+    symbol: Option<String>,
     legacy_fingerprints: Vec<String>,
     related_node_ids: Vec<String>,
+}
+
+impl PendingFinding {
+    /// The symbol slot, empty. Producers that name a symbol set it explicitly.
+    fn no_symbol() -> Option<String> {
+        None
+    }
 }
 
 impl From<PendingFinding> for drift_engine::RuleFinding {
@@ -772,6 +789,10 @@ fn graph_direct_data_access_findings(
             import_source: import_source.to_string(),
             line,
             evidence_id,
+            // Left unset deliberately. Data-access findings already carry a symbol by another
+            // route, and this path is per FILE import rather than per handler - T-03 is scoped to
+            // the presence kinds, whose symbol was missing entirely.
+            symbol: PendingFinding::no_symbol(),
             legacy_fingerprints,
             related_node_ids,
         });
@@ -855,10 +876,23 @@ fn security_auth_findings_and_proofs(
                 .first()
                 .cloned()
                 .unwrap_or_else(|| "missing_auth_guard".to_string());
+            // T-06: the line is NOT part of the identity. Measured end to end: inserting one
+            // comment line above an unchanged handler moved it from line 3 to line 4, changed the
+            // fingerprint, and turned a grandfathered violation back into a new one - 13
+            // pre_existing became 12 pre_existing and 1 new, with no change to the handler itself.
+            //
+            // The line-bearing value is emitted as a legacy fingerprint so a baseline written by an
+            // older version still matches. That covers every file whose lines have not moved since
+            // it was baselined, which is the case a stored baseline is in by definition unless the
+            // file was edited first.
             let finding_fingerprint = stable_hash(&format!(
+                "{}:{}:{}",
+                convention.id, route_proof.route_id, missing_code
+            ));
+            let legacy_fingerprints = vec![stable_hash(&format!(
                 "{}:{}:{}:{}",
                 convention.id, route_proof.route_id, missing_code, sink_line
-            ));
+            ))];
             let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
             proofs.push(route_security_proof_json(
                 &route_proof,
@@ -880,7 +914,8 @@ fn security_auth_findings_and_proofs(
                     import_source: missing_code,
                     line: sink_line,
                     evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
-                    legacy_fingerprints: Vec::new(),
+                    symbol: PendingFinding::no_symbol(),
+                    legacy_fingerprints,
                     related_node_ids: Vec::new(),
                 });
             }
@@ -958,10 +993,14 @@ fn security_request_validation_findings_and_proofs(
             .unwrap_or_else(|| (format!("route:{file_path}:unknown"), "unknown".to_string()));
         let missing_code = request_validation_missing_code(&proof);
         let finding_line = request_validation_finding_line(&proof).unwrap_or(1);
-        let finding_fingerprint = stable_hash(&format!(
+        // T-06: identity excludes the line; the line-bearing value stays as a legacy fingerprint
+        // so baselines written before this change still match. See the auth-proof site above.
+        let finding_fingerprint =
+            stable_hash(&format!("{}:{}:{}", convention.id, route_id, missing_code));
+        let legacy_fingerprints = vec![stable_hash(&format!(
             "{}:{}:{}:{}",
             convention.id, route_id, missing_code, finding_line
-        ));
+        ))];
         let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
         proofs.push(request_validation_proof_json(
             &proof,
@@ -986,7 +1025,8 @@ fn security_request_validation_findings_and_proofs(
                 import_source: missing_code,
                 line: finding_line,
                 evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
-                legacy_fingerprints: Vec::new(),
+                symbol: PendingFinding::no_symbol(),
+                legacy_fingerprints,
                 related_node_ids: Vec::new(),
             });
         }
@@ -1070,10 +1110,17 @@ fn security_phase6_findings_and_proofs(
             }
             let missing_code = phase6_missing_code(&proof, &convention.kind);
             let finding_line = phase6_finding_line(&proof);
+            // T-06: identity excludes the line; the line-bearing value stays as a legacy
+            // fingerprint so baselines written before this change still match. See the auth-proof
+            // site above for the measurement that motivated this.
             let finding_fingerprint = stable_hash(&format!(
+                "{}:{}:{}",
+                convention.id, proof.route_id, missing_code
+            ));
+            let legacy_fingerprints = vec![stable_hash(&format!(
                 "{}:{}:{}:{}",
                 convention.id, proof.route_id, missing_code, finding_line
-            ));
+            ))];
             let finding_id = format!("finding_{}", &finding_fingerprint[..16]);
             proofs.push(phase6_proof_to_json(
                 &proof,
@@ -1098,7 +1145,8 @@ fn security_phase6_findings_and_proofs(
                     import_source: missing_code,
                     line: finding_line,
                     evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
-                    legacy_fingerprints: Vec::new(),
+                    symbol: PendingFinding::no_symbol(),
+                    legacy_fingerprints,
                     related_node_ids: Vec::new(),
                 });
             }
@@ -1504,6 +1552,7 @@ fn security_phase4_findings_and_proofs(
                 import_source: missing_code,
                 line: finding_line,
                 evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
+                symbol: PendingFinding::no_symbol(),
                 legacy_fingerprints: Vec::new(),
                 related_node_ids: Vec::new(),
             });
@@ -1644,6 +1693,7 @@ fn security_phase5_findings_and_proofs(
                     import_source: missing_code,
                     line: finding_line,
                     evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
+                    symbol: PendingFinding::no_symbol(),
                     legacy_fingerprints: Vec::new(),
                     related_node_ids: Vec::new(),
                 });
@@ -1786,6 +1836,12 @@ fn presence_findings(
             import_source: missing_code.to_string(),
             line: handler.map(|fact| fact.start_line).unwrap_or(1),
             evidence_id: format!("evidence_{}", &finding_id["finding_".len()..]),
+            // T-03: the handler this finding is about, in a field rather than only in the prose.
+            //
+            // `None` for a route file with no handler fact, which is judged file-wide above - there
+            // is genuinely no symbol to name there, and inventing a sentinel would make a file-wide
+            // finding look like a per-handler one.
+            symbol: handler.map(|fact| fact.name.clone()),
             legacy_fingerprints: Vec::new(),
             related_node_ids: Vec::new(),
         });
@@ -3558,6 +3614,7 @@ fn graph_service_delegation_findings(
             import_source: (*data_file).to_string(),
             line,
             evidence_id,
+            symbol: PendingFinding::no_symbol(),
             legacy_fingerprints: Vec::new(),
             related_node_ids: vec![edge.from.clone(), edge.to.clone()],
         });

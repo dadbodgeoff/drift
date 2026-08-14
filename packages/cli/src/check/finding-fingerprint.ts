@@ -26,9 +26,11 @@ export function baselineScanManifest(input: {
   };
 }
 
-export function inferFilePathFromMessage(message: string): string {
-  return message.split(" imports ")[0] || "unknown";
-}
+// T-06 removed `inferFilePathFromMessage`. It split a finding's message on the literal
+// " imports " to recover a path - a substring present only in the data-access message, so every
+// other kind stored its own prose in the `file_path` column and `baseline status --json` served
+// those sentences to agents. Both call sites now read `evidence_refs[0].file_path`, which the
+// finding has carried all along.
 
 export function findingFingerprint(
   conventionId: string,

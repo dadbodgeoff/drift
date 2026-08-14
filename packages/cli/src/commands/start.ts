@@ -1,4 +1,4 @@
-import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind,isPromotedPresenceConvention,presenceAutoAcceptDecision } from "@drift/core";
+import { BETA_START_RESPONSE_SCHEMA,isExperimentalSecurityKind,isPromotedPresenceConvention,presenceAutoAcceptDecision,presenceDeferralReason,canEverBlock,conventionProvenance } from "@drift/core";
 import type { Finding } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
@@ -97,12 +97,24 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   // candidate, and on several real repos an auth-helper candidate ranks first, which would have
   // meant onboarding silently enabled a heuristic layer whose own audit says it cannot prove what
   // it claims.
-  const acceptableCandidates = parsed.flags.has("experimental-security")
+  const acceptableCandidates = (parsed.flags.has("experimental-security")
     ? result.candidates
     : result.candidates.filter(
         (entry) =>
           !isExperimentalSecurityKind(entry.kind) || isPromotedPresenceConvention(entry)
-      );
+      )
+  )
+    // T-12: never auto-accept a convention that cannot enforce.
+    //
+    // A `heuristic_check` kind can never take `--mode block`, so accepting one by default
+    // installs something shaped like a gate that can never become one - and the disclosure then
+    // printed an upgrade command that exits 1. Measured on a fully-conforming repo, where
+    // `api_route_requires_service_delegation` is the ONLY candidate: onboarding reported an
+    // accepted convention, and the single instruction offered for arming it was rejected.
+    //
+    // Presence families are exempt: they are deliberately warn-only (CV-3) and say so, rather
+    // than claiming a promotion path they do not have.
+    .filter((entry) => canEverBlock(entry) || isPromotedPresenceConvention(entry));
   // The top non-presence candidate keeps the original behaviour: one default convention, chosen by
   // rank. CV-5 adds presence families ALONGSIDE it, so a repo can onboard with more than one
   // convention for the first time.
@@ -191,7 +203,14 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           .map((fact) => ({ file_path: fact.file_path, value: fact.value, name: fact.name }))
       );
 
-  const contractReady = Boolean(accepted || defaultContract || storage.getRepoContract(result.repo.id));
+  // T-07: ready means ENFORCEABLE, not "a row exists".
+  //
+  // A contract row is written even when nothing is accepted, so this reported `true` on a repo
+  // where `check` enforces nothing - and the human output said "Drift is ready for this repo."
+  // above a contract with zero conventions. Readiness now asks whether anything would actually be
+  // checked.
+  const contractReady =
+    (storage.getRepoContract(result.repo.id)?.conventions.length ?? 0) > 0;
   // CV-5 item 3: seed the baseline from the SAME evaluation `drift check --scope full` performs,
   // rather than from a second, simplified pass.
   //
@@ -228,9 +247,10 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           result.repo.id,
           result.scan.completed_at ?? result.scan.started_at
         );
-  const baselinedCount = anythingAccepted
-    ? createBaselineForFindings(storage, { now, actor }, result.repo.id, initialFindings).created_count
-    : 0;
+  const baselineResult = anythingAccepted
+    ? createBaselineForFindings(storage, { now, actor }, result.repo.id, initialFindings)
+    : { created_count: 0, created_by_convention: {} as Record<string, number> };
+  const baselinedCount = baselineResult.created_count;
   // BB-3: computed after the baseline exists, because the count is half of what the disclosure has
   // to say - "397 baselined" is what makes "will NOT block" mean something other than "broken".
   const acceptance = accepted || acceptedPresenceFamilies.length > 0
@@ -242,10 +262,17 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           convention_kind: entry.candidate.kind,
           coverage_ratio: entry.decision.coverage_ratio,
           evidence_file_count: entry.decision.evidence_file_count,
-          below_floor_reason: entry.decision.below_floor_reason
+          below_floor_reason: entry.decision.below_floor_reason,
+          // T-04: an eligible family reaching the deferred list means only one thing - acceptance
+          // was gated on the flag. Everything else in this list genuinely missed a floor.
+          deferred_reason: presenceDeferralReason(entry.decision)
         })),
         repoId: result.repo.id,
-        baselinedCount
+        baselinedCount,
+        baselinedByConvention: baselineResult.created_by_convention,
+        // T-12: presence families are warn-only by design (CV-3), so no promotion command is
+        // offered for them. Everything else auto-accepted is deterministic by the filter above.
+        nonBlockableConventionIds: acceptedPresenceFamilies.map((entry) => entry.id)
       })
     : undefined;
   const nextCommands = contractReady
@@ -272,6 +299,12 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
       ...result.summary,
       engine_source: betaStartEngineSource(result.summary.engine_source)
     },
+    // T-23: every candidate says where it came from. Derived from the scoring heuristic rather
+    // than stored, so it is correct for candidates read back from an earlier scan too.
+    candidates: result.candidates.map((entry) => ({
+      ...entry,
+      provenance: conventionProvenance(entry)
+    })),
     accepted,
     // BB-3: the four facts a user needs about what acceptance did - mode, severity, how many
     // violations were baselined, and the command that upgrades a suggestion to a gate.
@@ -314,7 +347,14 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
     next_commands: nextCommands
   };
   const text = [
-    "Drift is ready for this repo.",
+    contractReady
+      ? "Drift is ready for this repo."
+      : // T-07: say the consequence. `check` refuses on an empty contract, and a user who is told
+        // "ready" will not go looking for why their pipeline exits 3.
+        // No exit code named on purpose: an empty contract refuses with `empty_contract` and no
+        // contract at all refuses with `missing_contract`, and both reach here.
+        "Drift scanned this repo but accepted no conventions, so `drift check` will refuse " +
+        "until one is accepted.",
     "",
     `Scanned ${result.summary.files_indexed} files.`,
     `Stored ${result.summary.facts_count} facts.`,

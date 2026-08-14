@@ -7,12 +7,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
+import { ENGINE_PAYLOAD_MAX_BYTES,enginePayloadExceedsCeiling,enginePayloadMegabytes } from "../engine/engine-payload-limits.js";
+import { DriftError } from "../app/drift-error.js";
 import { checkDiskSpace } from "./disk-space.js";
 import { inferConventionCandidatesFromEngine } from "../engine/engine-candidates.js";
 import { buildFactGraphArtifact } from "../engine/fact-graph.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { fileContentHash } from "../io/file-hash.js";
 import { gitOutput,workingTreeChangedFiles } from "../io/git.js";
+import { writeJsonFileStreamed } from "../io/write-json-stream.js";
 import { filterRejectedConventionCandidates,inferConventionCandidates } from "./convention-candidates.js";
 import { auditEvent,preflightGovernance } from "./governance.js";
 import { hashStable,scanFingerprint } from "./identifiers.js";
@@ -96,6 +99,7 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       repoRoot,
       reuseManifestPath: reuseManifest?.path
     });
+    assertEnginePayloadWithinCeiling(scanData.enginePayloadBytes, repoRoot);
     const inferredCandidates = scanData.engineSource === "rust"
       ? await inferConventionCandidatesFromEngine({
           repoId: repo.id,
@@ -364,6 +368,43 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
   }
 }
 
+/**
+ * T-01: refuse a repo whose engine payload cannot survive the trip back to the engine.
+ *
+ * Placed immediately before `inferConventionCandidatesFromEngine`, which is the throw site:
+ * it re-serializes the entire graph and fact set into one `JSON.stringify`, at 6.8-7.8x the
+ * engine payload, against a `MAX_STRING_LENGTH` of 536,870,888. Above the ceiling that string
+ * cannot be built, and the only question is whether the user is told that or handed
+ * `Invalid string length` and a partial database.
+ *
+ * Nothing has been written to the database at this point, and the refusal marks itself as
+ * discarding state this invocation created, so a fresh onboarding leaves nothing behind.
+ */
+function assertEnginePayloadWithinCeiling(payloadBytes: number | undefined, repoRoot: string): void {
+  if (payloadBytes === undefined || !enginePayloadExceedsCeiling(payloadBytes)) {
+    return;
+  }
+  const measured = enginePayloadMegabytes(payloadBytes);
+  const ceiling = enginePayloadMegabytes(ENGINE_PAYLOAD_MAX_BYTES);
+  throw new DriftError(
+    `Drift engine payload for ${repoRoot} is ${measured} MB, above the ${ceiling} MB this release supports. ` +
+      "Onboarding re-serializes the whole graph to infer conventions, and above this size that " +
+      "exceeds Node's maximum string length - so Drift refuses rather than failing partway through " +
+      "and leaving unusable state. This repo is larger than the supported envelope; nothing is " +
+      "claimed about it.",
+    {
+      code: "engine_payload_too_large",
+      userAction:
+        "Onboard a smaller subtree with --repo-root, or track the size limit's removal before retrying this repo.",
+      recoveryCommands: [`drift start --repo-root ${repoRoot}/<subdirectory> --accept-defaults --json`],
+      // The same invocation on the same tree produces the same measurement.
+      safeToRetry: false,
+      exitCode: 3,
+      discardsCreatedState: true
+    }
+  );
+}
+
 function readTsconfigPathAliases(repoRoot: string): Record<string, string[]> {
   const tsconfigPath = join(repoRoot, "tsconfig.json");
   if (!existsSync(tsconfigPath) || !statSync(tsconfigPath).isFile()) {
@@ -412,7 +453,10 @@ export function createScanReuseManifest(input: {
   const facts = input.storage.listFacts(input.previousScan.id);
   const dir = mkdtempSync(join(tmpdir(), "drift-reuse-"));
   const path = join(dir, "reuse-manifest.json");
-  writeFileSync(path, JSON.stringify({
+  // T-02: streamed rather than stringified. This grows with the PREVIOUS scan's facts, so it was
+  // 10,793,116 chars on a papermark rescan and scales the same way the graph does. It appears only
+  // on the reuse path, which is why the T-02 plan's site list does not mention it.
+  writeJsonFileStreamed(path, {
     schema_version: "engine.reuse_manifest.v1",
     previous_scan_id: input.previousScan.id,
     // The engine that produced these facts. The engine refuses to reuse facts written by a
@@ -446,7 +490,7 @@ export function createScanReuseManifest(input: {
       start_column: fact.source_span?.start_column ?? 1,
       end_column: fact.source_span?.end_column ?? 1
     }))
-  }), "utf8");
+  });
   return { path, dir, blocked_reasons: [] };
 }
 
@@ -1077,7 +1121,44 @@ export function scanStatusNextCommands(repoId: string, repoRoot: string, stale: 
 }
 
 export function auditIntegritySummary(storage: SqliteDriftStorage, repoId: string): AuditChainVerification {
-  return storage.verifyAuditChain(repoId);
+  return safeVerifyAuditChain(storage, repoId);
+}
+
+/**
+ * T-08: verify the audit chain without letting malformed rows escape as a crash.
+ *
+ * `verifyAuditChain` parses each row, so a row whose `action` is outside the enum throws a raw Zod
+ * error. Measured: that exits 1 with an unparseable stack trace, while the tampers the hash chain
+ * is actually designed to catch - an edited field, a deleted event - returned `valid: false` and
+ * exited 0. Detection was silent and malformed data was loud, which is exactly backwards.
+ *
+ * A row that does not satisfy the schema did not get there by accident. It is reported as a
+ * verification failure with reason `schema_invalid`, so every kind of tampering produces the same
+ * shape of answer and the caller decides the exit code once.
+ *
+ * Shared by `audit verify`, `audit list` and `scan status`, all of which read this chain and all of
+ * which would otherwise crash on the same row.
+ */
+export function safeVerifyAuditChain(
+  storage: SqliteDriftStorage,
+  repoId: string,
+  options: { strict?: boolean } = {}
+): AuditChainVerification {
+  try {
+    return storage.verifyAuditChain(repoId, options);
+  } catch {
+    return {
+      repo_id: repoId,
+      valid: false,
+      strict: Boolean(options.strict),
+      event_count: 0,
+      verified_count: 0,
+      head_sequence: 0,
+      head_event_hash: null,
+      broken_at_event_id: null,
+      reasons: ["schema_invalid"]
+    };
+  }
 }
 
 export function freshnessRequirement(

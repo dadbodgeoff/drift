@@ -3,7 +3,7 @@ import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { actorFlag,requiredFlag,requiredNonEmptyFlag,stringFlag } from "../args/flag-readers.js";
 import { resolveRepoId } from "../args/repo-flags.js";
-import { baselineScanManifest,inferFilePathFromMessage } from "../check/finding-fingerprint.js";
+import { baselineScanManifest } from "../check/finding-fingerprint.js";
 import { baselineClearNextCommands,baselineCreateNextCommands,baselineReviewItems,baselineRowsSummary,baselineStatusNextCommands,baselineViolationKey,isBaselineEligibleFinding } from "../domain/baselines.js";
 import { auditEvent,mutationGovernance,preflightGovernance } from "../domain/governance.js";
 import { sanitizeAuditId } from "../domain/identifiers.js";
@@ -78,7 +78,15 @@ export function createBaseline(storage: SqliteDriftStorage, parsed: ParsedArgs):
         repo_id: repoId,
         convention_id: finding.convention_id,
         finding_fingerprint: finding.fingerprint,
-        file_path: finding.evidence_refs[0]?.file_path ?? inferFilePathFromMessage(finding.message),
+        // T-06: evidence only. The prose fallback that used to sit here produced a sentence for
+        // every kind whose message does not contain " imports ".
+        //
+        // `unknown` rather than a guess when a stored finding carries no evidence at all. This
+        // command baselines whatever is already in the database, including rows written by older
+        // versions, so it cannot assume evidence the way onboarding can - and a marker that is
+        // obviously not a path is the honest answer. Onboarding throws instead, because there a
+        // missing evidence ref is a live defect rather than old data.
+        file_path: finding.evidence_refs[0]?.file_path ?? "unknown",
         first_seen_scan_id: scanId,
         first_seen_commit: from,
         status: "active",

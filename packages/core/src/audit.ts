@@ -6,7 +6,12 @@ export type AuditChainFailureReason =
   | "event_hash_missing"
   | "event_hash_mismatch"
   | "sequence_missing"
-  | "sequence_gap";
+  | "sequence_gap"
+  // T-08: a stored event that does not satisfy the audit schema. Tampering, not a Drift bug - a
+  // row whose `action` is outside the enum did not get there by accident. Reported as a
+  // verification failure so every kind of tampering answers in the same shape, instead of
+  // escaping as a raw parse error that exits 1 and reads like a crash.
+  | "schema_invalid";
 
 export interface AuditChainVerification {
   repo_id: string;

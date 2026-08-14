@@ -1278,10 +1278,13 @@ supported_sqlite_schema_version: 33,
     const payload = JSON.parse(result.stdout);
     expect(payload.candidates).toEqual([]);
     expect(payload.accepted).toBeUndefined();
+    // T-07: zero candidates and nothing accepted is NOT "ready". A contract row exists, but it
+    // enforces nothing, and `check` now refuses against it - so reporting readiness here was the
+    // same false all-clear this test's own fixture is designed to avoid producing.
     expect(payload.onboarding).toMatchObject({
-      status: "ready",
+      status: "needs_more_signal",
       accepted_default: false,
-      contract_ready: true,
+      contract_ready: false,
       candidate_count: 0
     });
 
@@ -1340,13 +1343,11 @@ supported_sqlite_schema_version: 33,
       policy: { allowed: true, surface: "artifact" },
       manifest: { repo_id: payload.repo.id }
     });
-    expect(checked.exitCode).toBe(0);
-    expect(JSON.parse(checked.stdout)).toMatchObject({
-      summary: {
-        findings_count: 0,
-        blocking_count: 0
-      }
-    });
+    // T-07: this contract's own `convention_count` is 0, asserted above. A clean pass here was
+    // indistinguishable from a repo that was actually checked - the exact false all-clear the
+    // item exists to remove. It refuses now, and says what would populate the contract.
+    expect(checked.exitCode).toBe(3);
+    expect(JSON.parse(checked.stdout).error.code).toBe("empty_contract");
   });
 
   it("reports scan status and marks the graph stale after file changes", async () => {
@@ -2337,7 +2338,10 @@ supported_sqlite_schema_version: 33,
     ]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Drift is ready for this repo.");
+    // T-07: this runs WITHOUT --accept-defaults, so nothing is accepted and `check` would refuse.
+    // "Drift is ready for this repo." was the summary either way; readiness now means enforceable.
+    expect(result.stdout).toContain("accepted no conventions");
+    expect(result.stdout).toContain("will refuse");
     expect(result.stdout).toContain("drift conventions list");
     expect(result.stdout).toContain("drift check --diff main...HEAD");
   });

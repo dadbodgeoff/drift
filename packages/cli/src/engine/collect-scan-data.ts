@@ -39,6 +39,15 @@ export interface ScanData {
    */
   completeness?: EngineCompleteness[];
   /**
+   * T-01: bytes the engine actually streamed to this process, when the engine produced the scan.
+   *
+   * The number the ingest gate reads. It is measured here rather than derived from the collected
+   * objects because it is the input to the multiplier that bounds `infer-candidates` - the JSON the
+   * CLI sends BACK - and only the stream knows its own size. `undefined` on the TypeScript fallback
+   * path, where no engine ran and there is nothing to bound.
+   */
+  enginePayloadBytes?: number;
+  /**
    * Version of the engine binary that produced this scan, taken from the `scan_started`
    * event. Persisted per scan so incremental reuse can refuse facts written by a different
    * engine: reuse is otherwise keyed only on file content, which assumes a file always yields
@@ -150,6 +159,9 @@ export async function collectScanData(input: ScanDataInput): Promise<ScanData> {
 
 export async function collectScanDataFromRust(input: ScanDataInput): Promise<ScanData> {
   const events: EngineStreamEvent[] = [];
+  // T-01: the stream's own size, accumulated as it arrives. Newline included, because the
+  // separator is part of what the engine wrote.
+  let payloadBytes = 0;
   await streamRustEngineLines([
     "scan-repo",
     input.repoRoot,
@@ -161,10 +173,11 @@ export async function collectScanDataFromRust(input: ScanDataInput): Promise<Sca
     input.scanId,
     ...(input.reuseManifestPath ? ["--reuse-manifest", input.reuseManifestPath] : [])
   ], (line) => {
+    payloadBytes += Buffer.byteLength(line, "utf8") + 1;
     events.push(parseEngineStreamLine(line, events.length));
   });
 
-  return scanDataFromEngineStreamEvents(events, input);
+  return { ...scanDataFromEngineStreamEvents(events, input), enginePayloadBytes: payloadBytes };
 }
 
 export function scanDataFromEngineScanResult(value: unknown, input: ScanDataInput): ScanData {

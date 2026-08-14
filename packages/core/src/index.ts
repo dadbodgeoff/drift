@@ -16,6 +16,7 @@ export * from "./exemplar-context.js";
 export * from "./guidance-view.js";
 export * from "./globs.js";
 export * from "./ids.js";
+export * from "./json-stream.js";
 export * from "./next-routes.js";
 export * from "./policy.js";
 export * from "./scans.js";

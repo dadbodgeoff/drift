@@ -1116,6 +1116,8 @@ export interface ConventionCandidate {
   enforcement_capability: EnforcementCapability;
   confidence_label: "low" | "medium" | "high";
   scoring: ConventionScore;
+  /** T-23: whether the author declared this convention or Drift inferred it. Derived via `conventionProvenance()`. */
+  provenance?: "declared" | "inferred";
   evidence_refs: EvidenceRef[];
   counterexample_refs: EvidenceRef[];
   matcher_fingerprint?: string;

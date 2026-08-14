@@ -33,6 +33,13 @@ export type DriftFailureCode =
   // nothing could be examined. Distinct from `empty_diff_scope`: there the range is wrong, here the
   // diff and the checkout disagree about what exists, and the remediations differ accordingly.
   | "stale_diff_scope"
+  // T-01: the engine streamed more data than onboarding can re-serialize into the
+  // `infer-candidates` request. A refusal, not a crash: the repo is outside the supported
+  // envelope, and nothing is claimed about it.
+  | "engine_payload_too_large"
+  // T-07: a contract exists but accepts nothing, so there is nothing to enforce. A refusal, not a
+  // pass: reporting a clean run here is indistinguishable from a repo that was actually checked.
+  | "empty_contract"
   | "cli_error";
 
 export interface DriftErrorOptions {
@@ -49,6 +56,16 @@ export interface DriftErrorOptions {
    * so CI and agents can tell "this is broken" from "this refused to guess".
    */
   exitCode?: number;
+  /**
+   * T-01: this failure learned nothing, so a database this invocation brought into existence
+   * should not survive it.
+   *
+   * Set only where that is true. A partial database is worse than no database: `drift start` on
+   * lobe-chat left a 495,616-byte file behind and every later command exited 1 against it, with
+   * nothing in the output connecting the second failure to the first. A database that already
+   * existed is never removed - it holds state this invocation did not create.
+   */
+  discardsCreatedState?: boolean;
 }
 
 export class DriftError extends Error {
@@ -57,6 +74,7 @@ export class DriftError extends Error {
   readonly recoveryCommands: string[];
   readonly safeToRetry: boolean;
   readonly exitCode: number;
+  readonly discardsCreatedState: boolean;
 
   constructor(message: string, options: DriftErrorOptions) {
     super(message);
@@ -66,6 +84,7 @@ export class DriftError extends Error {
     this.recoveryCommands = options.recoveryCommands ?? [];
     this.safeToRetry = options.safeToRetry ?? true;
     this.exitCode = options.exitCode ?? 1;
+    this.discardsCreatedState = options.discardsCreatedState ?? false;
   }
 }
 

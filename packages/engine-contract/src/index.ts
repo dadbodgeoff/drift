@@ -502,10 +502,17 @@ export const EngineCheckRequestSchema = z.object({
 });
 
 export const EngineEvidenceRefSchema = z.object({
+  // T-03: a violation is always about a place, so a file path is required rather than optional.
   file_path: z.string().min(1),
   start_line: z.number().int().positive().optional(),
   end_line: z.number().int().positive().optional(),
-  evidence_id: z.string().min(1).optional()
+  evidence_id: z.string().min(1).optional(),
+  // T-03: the symbol the finding is about, for kinds enforced per symbol rather than per file.
+  //
+  // Must be declared here or Zod strips it on the way in - the engine would emit the handler name
+  // and the CLI would silently store a finding with no symbol, which is indistinguishable from the
+  // bug this fixes. Optional because file-wide findings genuinely have no symbol to name.
+  symbol: z.string().min(1).optional()
 });
 
 export const EngineCandidateEvidenceRefSchema = z.object({
@@ -613,7 +620,26 @@ export const EngineFindingSchema = z.object({
   related_node_ids: z.array(z.string())
 });
 
-const EngineSecurityMissingProofCodeSchema = z.enum([
+/**
+ * T-17: the codes this build knows, as a closed list PLUS an escape hatch below.
+ *
+ * The engine and the TypeScript schemas each carry their own copy of this vocabulary, and they
+ * drift. Measured: accepting `requires_request_validation` on dub made `check --scope full` exit 1
+ * with "Invalid enum value ... received 'unsupported_request_input_spread'" - and because the
+ * whole engine result failed to parse, it took the WORKING data-access convention down with it.
+ * A vocabulary mismatch became a total loss of enforcement.
+ *
+ * A static diff of the two lists today still shows codes the engine can emit and this enum does
+ * not name: `unsupported_request_input_spread`, `unsupported_request_input_destructure`,
+ * `unsupported_destructuring_or_spread`, `unsupported_session_nested_destructure`.
+ *
+ * Enumerating them is necessary but not sufficient - the next engine change reintroduces the same
+ * class of failure. `EngineSecurityMissingProofCode` below keeps the known list for exhaustive
+ * handling while accepting an unknown code as an opaque string, so an unrecognized code degrades
+ * the convention that produced it instead of the entire run. Never to a pass: an unknown code
+ * means Drift does not understand why the proof failed, which is a refusal.
+ */
+const EngineSecurityKnownMissingProofCodeSchema = z.enum([
   "missing_auth_guard",
   "auth_guard_not_dominating_sink",
   "middleware_not_covering_route",
@@ -645,7 +671,26 @@ const EngineSecurityMissingProofCodeSchema = z.enum([
   "unsupported_dynamic_control_flow",
   "route_binding_unresolved",
   "handler_unresolved"
+  ,"unknown_reason_code"
 ]);
+
+/**
+ * A known code, or any other non-empty string. Unknown codes survive parsing so the surrounding
+ * result still loads; the check layer maps them to a per-convention refusal.
+ */
+const EngineSecurityMissingProofCodeSchema = z.preprocess(
+  (value) =>
+    typeof value === "string" && !EngineSecurityKnownMissingProofCodeSchema.safeParse(value).success
+      ? "unknown_reason_code"
+      : value,
+  EngineSecurityKnownMissingProofCodeSchema
+);
+
+/** True when this build recognises the code and can explain what it means. */
+export function isKnownEngineMissingProofCode(code: string): boolean {
+  return EngineSecurityKnownMissingProofCodeSchema.safeParse(code).success;
+}
+
 
 const EngineSecurityContractKindSchema = z.enum([
   "api_route_requires_auth_helper",
@@ -1384,6 +1429,7 @@ export function parseEngineStreamEvent(value: unknown): EngineStreamEvent {
 export function parseEngineCheckResult(value: unknown): EngineCheckResult {
   return parseWithMessage(EngineCheckResultSchema, value, "Invalid Drift engine check result");
 }
+
 
 export function parseEngineCandidatesResult(value: unknown): EngineCandidatesResult {
   return parseWithMessage(EngineCandidatesResultSchema, value, "Invalid Drift engine candidates result");

@@ -1,6 +1,6 @@
 import type { Finding } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
-import { baselineScanManifest,inferFilePathFromMessage } from "../check/finding-fingerprint.js";
+import { baselineScanManifest } from "../check/finding-fingerprint.js";
 import { auditEvent } from "./governance.js";
 import { sanitizeAuditId } from "./identifiers.js";
 
@@ -13,9 +13,9 @@ export function createBaselineForFindings(
   options: { now: string; actor: string },
   repoId: string,
   findings: Finding[]
-): { created_count: number } {
+): { created_count: number; created_by_convention: Record<string, number> } {
   if (findings.length === 0) {
-    return { created_count: 0 };
+    return { created_count: 0, created_by_convention: {} };
   }
 
   const now = options.now;
@@ -29,6 +29,11 @@ export function createBaselineForFindings(
   }));
 
   let createdCount = 0;
+  // T-05: counted per convention as the rows are written, rather than re-derived afterwards.
+  // The total alone cannot answer the question a user actually has - how much of THIS convention
+  // is grandfathered - and deriving it later would have to repeat the eligibility and dedupe
+  // rules this loop applies, which is how the two numbers drift apart.
+  const createdByConvention: Record<string, number> = {};
   const existingBaselines = new Set(storage
     .listBaselineViolations(repoId)
     .map((row) => baselineViolationKey(row.convention_id, row.finding_fingerprint)));
@@ -42,12 +47,30 @@ export function createBaselineForFindings(
       continue;
     }
 
+    // T-06: the file from the finding's own evidence, never inferred from its prose.
+    //
+    // The previous `inferFilePathFromMessage` split the message on the literal " imports ", which
+    // occurs in the data-access message and no other kind's - so every other kind stored a
+    // SENTENCE in the path column. Measured on dub: the auth family's 87 rows collapsed to 5
+    // distinct values, each a sentence, and `baseline status --json` served them to agents as
+    // `file_path`.
+    //
+    // Thrown rather than defaulted when evidence is missing. A finding with no evidence cannot say
+    // what file it is about, and quietly writing a placeholder is how the prose got there in the
+    // first place - a loud failure at onboarding is recoverable, a corrupted baseline is not.
+    const filePath = finding.evidence_refs[0]?.file_path;
+    if (!filePath) {
+      throw new Error(
+        `Cannot baseline finding ${finding.id} (${finding.convention_id}): it carries no evidence file path.`
+      );
+    }
+
     storage.upsertBaselineViolation({
       id: `baseline_${finding.fingerprint.slice(0, 16)}`,
       repo_id: repoId,
       convention_id: finding.convention_id,
       finding_fingerprint: finding.fingerprint,
-      file_path: inferFilePathFromMessage(finding.message),
+      file_path: filePath,
       first_seen_scan_id: scanId,
       first_seen_commit: "initial-scan",
       status: "active",
@@ -55,6 +78,7 @@ export function createBaselineForFindings(
     });
     existingBaselines.add(baselineKey);
     createdCount += 1;
+    createdByConvention[finding.convention_id] = (createdByConvention[finding.convention_id] ?? 0) + 1;
   }
 
   storage.appendAuditEvent(auditEvent({
@@ -64,11 +88,15 @@ export function createBaselineForFindings(
     action: "baseline_created",
     targetType: "baseline",
     targetId: scanId,
-    metadata: { from: "initial-scan", created_count: createdCount },
+    metadata: {
+      from: "initial-scan",
+      created_count: createdCount,
+      created_by_convention: createdByConvention
+    },
     createdAt: now
   }));
 
-  return { created_count: createdCount };
+  return { created_count: createdCount, created_by_convention: createdByConvention };
 }
 
 export function baselineSummary(storage: SqliteDriftStorage, repoId: string): {

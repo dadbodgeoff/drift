@@ -277,3 +277,59 @@ export function isRepoRelativePolicyPattern(value: string): boolean {
     !value.startsWith("\\") &&
     !value.split(/[\\/]+/).includes("..");
 }
+
+/**
+ * T-07: refuse a check against a contract that accepts nothing.
+ *
+ * `requiredRepoContract` throws only when the contract ROW is missing, and `start` writes a row
+ * even when it accepts zero conventions - so a repo with an empty contract produced output
+ * indistinguishable from a genuinely enforced clean run. Measured on a fully-conforming repo:
+ * `contract_ready: true`, one pending candidate, zero accepted conventions, and a check over a
+ * newly added violating route returning exit 0 with no findings and no error.
+ *
+ * Exit 3, because this is a refusal rather than a failure: Drift is declining to claim anything,
+ * which CI must be able to tell apart from "the diff is clean".
+ *
+ * Deliberately NOT folded into `requiredRepoContract`. Inspecting an empty contract is legitimate -
+ * `contract show` and `conventions list` are how a user finds out it is empty and fixes it - so
+ * only the enforcement path refuses.
+ */
+export function assertEnforceableContract(
+  storage: SqliteDriftStorage,
+  repoId: string,
+  contract: RepoContract
+): void {
+  // "Enforceable" is not "has conventions". A contract can carry agent contracts, a layer
+  // architecture, file-role and entrypoint-flow rules, or required checks with zero accepted
+  // conventions, and those all produce findings - the fast gate caught this refusing ten tests
+  // whose contracts enforce exactly that way. Refuse only when NOTHING would be evaluated.
+  const enforceable =
+    contract.conventions.length +
+    (contract.agent_contracts?.length ?? 0) +
+    contract.required_checks.length +
+    (contract.layer_architecture ? 1 : 0) +
+    (contract.active_convention_rule_ids?.length ?? 0) +
+    (contract.active_semantic_capability_ids?.length ?? 0);
+  if (enforceable > 0) {
+    return;
+  }
+  const pending = storage.listConventionCandidates(repoId)
+    .filter((candidate) => candidate.status === "candidate").length;
+  throw new DriftError(
+    `The contract for ${repoId} enforces nothing: it accepts no conventions and carries no other ` +
+      "enforceable rules, so this check would examine the diff against an empty ruleset. " +
+      `${pending} candidate${pending === 1 ? "" : "s"} awaiting review. Reporting a pass here would be ` +
+      "indistinguishable from a repo that was actually checked, so Drift refuses instead.",
+    {
+      code: "empty_contract",
+      userAction:
+        "Accept a convention, or declare your data layer with --data-modules at onboarding, then rerun.",
+      recoveryCommands: [
+        `drift conventions list --repo ${repoId} --status candidate --json`,
+        `drift conventions accept <candidate-id> --repo ${repoId} --confirm`
+      ],
+      safeToRetry: false,
+      exitCode: 3
+    }
+  );
+}
