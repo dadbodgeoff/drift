@@ -33,6 +33,7 @@ describe("release hygiene", () => {
     expect(manifest.scripts["format:engine:check"]).toBe("cargo fmt --all -- --check");
     expect(manifest.scripts["lint:engine"]).toBe("cargo clippy -p drift-engine --all-targets -- -D warnings");
     expect(manifest.scripts["check:boundaries"]).toBe("node packages/cli/scripts/check-boundaries.mjs");
+    expect(manifest.scripts["check:storage-lifecycle"]).toBe("node scripts/storage-lifecycle.mjs");
     expect(manifest.scripts["validate:release-matrix"]).toBe("node scripts/validate-engine-release-matrix.mjs");
     expect(manifest.scripts["validate:claims"]).toBe("node scripts/validate-product-claims.mjs");
     expect(manifest.scripts["beta:proof"]).toBe("node scripts/run-beta-proof.mjs");
@@ -50,6 +51,10 @@ describe("release hygiene", () => {
       // number - so the gate now fails on a rise and names the delta.
       // EW-7 added `pnpm eval:determinism`: determinism is the marketed claim, and it was only ever
       // measured by hand on two of the seven repos.
+      // This change adds `pnpm check:storage-lifecycle`: a migration-backed table whose writer has
+      // no production caller is never populated, while readers merge an always-empty array into
+      // agent output. Two separate architecture audits each found a different subset of that class
+      // and both missed a third, so it is now a gate rather than a periodic review.
       //
       // PR #102 took the four eval steps back out, and the reason matters. A hosted runner has none
       // of the seven pinned evaluation repos and no release engine binary, and the battery does not
@@ -57,7 +62,7 @@ describe("release hygiene", () => {
       // there. Listing them did not execute them; it produced a gate that named an oracle it never
       // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
       // union that any "verified" claim has to cite.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
     expect(manifest.scripts["verify:evals"]).toBe(
       "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
