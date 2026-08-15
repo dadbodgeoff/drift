@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { FactKindSchema } from "@drift/core";
+import { MIGRATIONS } from "@drift/storage";
 import {
   CHECK_EXIT_BLOCKED,
   CHECK_EXIT_ERROR,
@@ -70,6 +72,30 @@ describe("frozen contracts", () => {
         "service"
       )
     ).toBe("6781cc5e1c94fdff24b89c6d57e587c27dc38c097a140d9097b25dfe5b0bb0da");
+  });
+
+
+  /**
+   * The fact vocabulary and the migration list move together.
+   *
+   * `facts.kind` is plain TEXT with no CHECK, so SQLite stores any value - but `factFromRow` parses
+   * every row through `FactRecordSchema`, whose `kind` is a closed enum. A database written by a
+   * build that knows a newer kind is therefore UNREADABLE by one that does not: not a degraded
+   * read, a throw on every `listFacts` for that scan.
+   *
+   * The only thing that stops that is the migration gate - `assertSupportedLocalDatabase` refuses a
+   * database with more migrations than the build knows. So a vocabulary addition MUST be
+   * accompanied by a migration, even one that changes no columns. Measured before that gate
+   * existed: a database holding 1,572 rows of a new kind still reported exactly the 33 migrations
+   * the older build supported, so the gate passed and the failure surfaced later as a Zod error.
+   *
+   * Nothing else ties these together, so this test does. If it fails because you added a fact kind,
+   * add a migration alongside it; if it fails because you added a migration, update both counts.
+   */
+  it("pins the fact vocabulary to the migration count", () => {
+    expect(FactKindSchema.options).toHaveLength(36);
+    expect(MIGRATIONS).toHaveLength(34);
+    expect(FactKindSchema.options).toContain("data_model_declared");
   });
 
   /**

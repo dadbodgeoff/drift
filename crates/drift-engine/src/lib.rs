@@ -3,6 +3,7 @@ pub const DRIFT_ENGINE_VERSION: &str = "0.1.0";
 mod diff;
 mod facts;
 pub mod next_routes;
+mod prisma;
 mod rules;
 mod security_capabilities;
 mod security_control_flow;
@@ -28,6 +29,7 @@ pub use facts::{
     Fact, FactExtractError, FactKind, RUNTIME_USE_DYNAMIC, RUNTIME_USE_SIDE_EFFECT,
     RUNTIME_USE_VALUE_POSITION, SIDE_EFFECT_IMPORT_BINDING, extract_typescript_facts, route_flavor,
 };
+pub use prisma::{PrismaFact, PrismaFactKind, extract_prisma_facts};
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
     DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,

@@ -641,6 +641,13 @@ pub enum ScanStreamEvent {
         /// BB-2: `"release"` or `"debug"`. A debug engine's timings are ~2.7x inflated, so every
         /// consumer that records a measurement needs to be able to refuse one.
         build_profile: &'static str,
+        /// Every fact kind this engine can emit, sorted.
+        ///
+        /// Declared here so the CLI can refuse an incompatible pairing before ingesting anything,
+        /// rather than throwing on the first record of an unknown kind partway through the stream.
+        /// Neither `engine_version` nor `schema_version` moves when the vocabulary changes, so
+        /// neither can detect a stale binary; this can.
+        fact_kinds: Vec<String>,
     },
     #[serde(rename = "file_snapshot_batch")]
     FileSnapshotBatch {

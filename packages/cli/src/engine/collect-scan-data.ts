@@ -1,3 +1,5 @@
+import { FactKindSchema } from "@drift/core";
+import { DriftError } from "../app/drift-error.js";
 import type {
   FactRecord,
   FileSnapshot,
@@ -174,7 +176,14 @@ export async function collectScanDataFromRust(input: ScanDataInput): Promise<Sca
     ...(input.reuseManifestPath ? ["--reuse-manifest", input.reuseManifestPath] : [])
   ], (line) => {
     payloadBytes += Buffer.byteLength(line, "utf8") + 1;
-    events.push(parseEngineStreamLine(line, events.length));
+    const event = parseEngineStreamLine(line, events.length);
+    // Checked as the handshake arrives, not after the stream is collected. The events array is
+    // parsed to completion before it is interpreted, so a check further down would run only after
+    // the very record it exists to pre-empt had already thrown.
+    if (event.event === "scan_started") {
+      assertEngineVocabularyUnderstood(event.fact_kinds);
+    }
+    events.push(event);
   });
 
   return { ...scanDataFromEngineStreamEvents(events, input), enginePayloadBytes: payloadBytes };
@@ -322,6 +331,54 @@ function parseEngineStreamOutput(output: string): EngineStreamEvent[] {
     .map(parseEngineStreamLine);
 }
 
+/**
+ * Refuse an engine that can emit fact kinds this CLI does not understand.
+ *
+ * Checked at `scan_started`, before a single fact is ingested. Previously the mismatch surfaced on
+ * the FIRST RECORD of an unknown kind - measured at line 16 of a real stream - as
+ * `Invalid Drift engine stream event`, naming a Zod enum rather than the actual cause, after the
+ * scan had already done work. One unrecognised record aborts the whole scan, so the failure was
+ * both late and disproportionate.
+ *
+ * The comparison is the vocabulary rather than a version, because versions do not move when the
+ * vocabulary changes: engine and CLI both report `0.1.0` and `engine.stream.event.v1` across a
+ * vocabulary change - measured. Only the kind list distinguishes a stale binary from a current one.
+ *
+ * Reachable in a source checkout, which is the documented install path: `resolveRustEngineCommand`
+ * prefers `target/release/drift-engine` if it exists, with no freshness check, so a developer who
+ * builds the engine and then pulls new TypeScript gets a silently stale pairing. A packaged install
+ * cannot skew - the engine is a version-pinned optional dependency whose checksum is verified - and
+ * `DRIFT_ENGINE_BIN` validates only that the path is executable.
+ *
+ * Absent `fact_kinds` (an older engine) is not an error: it cannot emit a kind this CLI lacks,
+ * because this CLI is the newer side of that pairing.
+ */
+function assertEngineVocabularyUnderstood(engineFactKinds: string[] | undefined): void {
+  if (!engineFactKinds) {
+    return;
+  }
+  const known = new Set<string>(FactKindSchema.options);
+  const unknown = engineFactKinds.filter((kind) => !known.has(kind)).sort();
+  if (unknown.length === 0) {
+    return;
+  }
+  throw new DriftError(
+    `Drift engine and CLI disagree about facts: the engine can emit ${unknown.length} kind(s) this ` +
+      `CLI does not understand (${unknown.join(", ")}). Refusing before ingesting anything, because ` +
+      "this pairing would otherwise fail partway through the scan and leave a scan half done.",
+    {
+      code: "engine_vocabulary_mismatch",
+      userAction:
+        "The engine binary is newer than this CLI. Rebuild it with `pnpm build:engine`, or unset DRIFT_ENGINE_BIN if it points at another checkout's binary.",
+      recoveryCommands: ["pnpm build:engine", "drift doctor --json"],
+      // The same pairing produces the same refusal; rebuilding is what changes it.
+      safeToRetry: false,
+      exitCode: 3,
+      discardsCreatedState: true
+    }
+  );
+}
+
 function parseEngineStreamLine(line: string, index: number): EngineStreamEvent {
   try {
     return parseEngineStreamEvent(JSON.parse(line) as unknown);
@@ -424,6 +481,19 @@ function engineFactRecord(input: ScanDataInput, fact: EngineScanResult["facts"][
   );
 }
 
+/**
+ * Facts read from a schema declaration rather than from TypeScript source.
+ *
+ * The four `*ForKind` helpers below default to describing the TypeScript grammar, so a fact kind
+ * added without touching them ships labelled `rust_typescript_parser` / `ast` / `confidence: 1` -
+ * wrong on every count, and silently so: nothing typechecks or tests these defaults.
+ */
+function isDataModelKind(kind: FactRecord["kind"]): boolean {
+  return kind === "data_model_declared" ||
+    kind === "data_model_field_declared" ||
+    kind === "data_model_relation_declared";
+}
+
 function rustExtractionMethodForKind(kind: FactRecord["kind"]): string {
   if (kind === "file_detected") {
     return "rust_filesystem_scanner";
@@ -434,12 +504,24 @@ function rustExtractionMethodForKind(kind: FactRecord["kind"]): string {
   if (kind === "route_declared") {
     return "next_app_router_parser";
   }
+  // Schema facts do not come from the TypeScript grammar and must not claim to. Mislabelling
+  // provenance is not cosmetic here: `extraction_method` is what tells a reader which parser to
+  // distrust when a fact turns out wrong.
+  if (isDataModelKind(kind)) {
+    return "rust_prisma_schema_parser";
+  }
   return "rust_typescript_parser";
 }
 
 function rustEvidenceLevelForKind(kind: FactRecord["kind"]): FactRecord["evidence_level"] {
   if (kind === "file_detected" || kind === "file_role_detected") {
     return "path";
+  }
+  // `text`, not `ast`: the schema reader is line-oriented, so claiming AST-level evidence would
+  // overstate it. Not a new enum member either - every closed kind enum added is another value an
+  // older build cannot read back (`factFromRow` parses through Zod), and `text` is already true.
+  if (isDataModelKind(kind)) {
+    return "text";
   }
   return "ast";
 }

@@ -136,7 +136,11 @@ export async function runScanRepo(storage: SqliteDriftStorage, input: ScanRepoIn
       },
       rule_engine_version: DRIFT_RULE_ENGINE_VERSION,
       status: "completed",
-      file_count: scanData.files.length,
+      // Files whose CONTENTS were read, not files recorded. Declaration files are snapshotted for
+      // their path and hash without being parsed (`indexed: false`), and counting them here would
+      // report "scanned 3 files" for a scan that examined 2 - the same overstatement BB-1's
+      // "Checked N files" exists to prevent, one layer up.
+      file_count: scanData.snapshots.filter((snapshot) => snapshot.indexed).length,
       fact_count: scanData.facts.length,
       finding_count: 0,
       started_at: now,

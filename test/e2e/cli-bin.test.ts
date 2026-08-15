@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
+import { EXPECTED_SQLITE_SCHEMA_VERSION } from "./expected-versions.js";
 
 const execFileAsync = promisify(execFile);
 const tempDirs: string[] = [];
@@ -59,7 +60,7 @@ describe("built drift CLI binary", () => {
     expect(payload.runtime).toMatchObject({
       cli_version: "0.1.0",
       core_version: "0.1.0",
-supported_sqlite_schema_version: 33,
+supported_sqlite_schema_version: EXPECTED_SQLITE_SCHEMA_VERSION,
       storage_driver: "sqlite"
     });
     expect(payload.v1_scope).toMatchObject({

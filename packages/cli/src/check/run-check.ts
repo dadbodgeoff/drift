@@ -380,6 +380,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     cleanupScanReuseManifest(reuseManifest);
   }
   const snapshotsByPath = new Map(checkData.snapshots.map((snapshot) => [snapshot.file_path, snapshot]));
+  const unindexedContractTargets = unindexedAgentContractTargets(contract, parsedDiff, snapshotsByPath);
   if (checkData.fallbackStatus.fallback_used) {
     const fallbackStatus = fallbackStatusForCheck(checkData);
     const capabilityCompleteness = capabilityCompletenessForCheck(checkData);
@@ -977,10 +978,14 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       partial_coverage: {
         // BB-9: a file the diff named and the tree does not have is a coverage gap by definition.
         // Claiming `complete: true` over it is the silent-green this item exists to kill.
-        complete: coverageGapReasons.length === 0 && missingFromWorktree.length === 0 && !enforcementDegraded,
+        complete: coverageGapReasons.length === 0 && missingFromWorktree.length === 0 &&
+          unindexedContractTargets.length === 0 && !enforcementDegraded,
         reasons: [
           ...coverageGapReasons,
-          ...missingFromWorktree.map((filePath) => `changed_file_missing_from_worktree:${filePath}`)
+          ...missingFromWorktree.map((filePath) => `changed_file_missing_from_worktree:${filePath}`),
+          // Same class as the line above: a file a rule named that Drift could not read. The rule
+          // did not pass on it, it never ran on it.
+          ...unindexedContractTargets.map((filePath) => `contract_target_not_indexed:${filePath}`)
         ]
       },
       // EW-3: the coverage number travels with the verdict. A verdict read without it invites
@@ -1770,6 +1775,48 @@ function runImportBoundaryCheck(input: {
   return findings;
 }
 
+/**
+ * Changed files an agent contract claims to govern that the scan never indexed.
+ *
+ * Deliberately NOT "every non-TypeScript file in the diff". A README or a lockfile in a diff is
+ * not a coverage gap - Drift never claimed to check it, and reporting one per diff would make the
+ * signal worthless. The gap is narrower and real: a rule that *names* a file Drift cannot read.
+ * The agent-contract evaluators glob the parsed diff, which carries no extension filter, so
+ * `prisma/*.prisma` selects a file with no facts and no content hash. Evaluating it would answer
+ * "does it export X" and "does it import Y" from absence, which reads as a violation rather than
+ * as ignorance; skipping it silently reports a clean pass over a rule that ran on nothing.
+ *
+ * So the files are skipped by the evaluators and named here, and `partial_coverage` goes false.
+ */
+function unindexedAgentContractTargets(
+  contract: RepoContract,
+  parsedDiff: ReturnType<typeof parseUnifiedDiff>,
+  snapshotsByPath: Map<string, ScanData["snapshots"][number]>
+): string[] {
+  const changedFiles = parsedDiff.files.map((file) => file.path);
+  // Unindexed covers both "no snapshot at all" and "snapshotted but not parsed" (a declaration
+  // file). Both mean the same thing to a rule: Drift has no facts about this file.
+  const unindexed = changedFiles.filter((filePath) => snapshotsByPath.get(filePath)?.indexed !== true);
+  if (unindexed.length === 0) {
+    return [];
+  }
+  const globs: string[] = [];
+  for (const agentContract of contract.agent_contracts ?? []) {
+    if (agentContract.kind === "file_role") {
+      globs.push(...agentContract.roles.flatMap((role) => role.path_globs));
+    }
+    if (agentContract.kind === "required_change_checks") {
+      globs.push(...agentContract.rules.flatMap((rule) => rule.applies_to.path_globs ?? []));
+    }
+  }
+  if (globs.length === 0) {
+    return [];
+  }
+  return unindexed
+    .filter((filePath) => globs.some((glob) => matchesGlob(filePath, glob)))
+    .sort();
+}
+
 function runFileRoleCheck(input: {
   repoId: string;
   contract: RepoContract;
@@ -1792,8 +1839,17 @@ function runFileRoleCheck(input: {
     }
 
     for (const role of contract.roles) {
+      // Scoped off the parsed diff, which carries no extension filter, so a glob like
+      // `prisma/*.prisma` selects files the scan never indexed. Those are dropped here and
+      // reported as a coverage gap by the caller rather than evaluated: with no facts and no
+      // content hash, every question this rule asks ("does it export X", "does it import Y")
+      // would be answered from absence, which reads as a violation rather than as ignorance.
       const files = [...changedFiles].filter((filePath) =>
-        role.path_globs.some((glob) => matchesGlob(filePath, glob))
+        role.path_globs.some((glob) => matchesGlob(filePath, glob)) &&
+        // `indexed`, not merely present. A declaration file is snapshotted for its hash and path
+        // without being parsed, so it has a snapshot and no facts - evaluating it would answer
+        // "does it export X" from absence and report a violation where Drift simply has not read.
+        input.snapshotsByPath.get(filePath)?.indexed === true
       );
       for (const filePath of files) {
         const imports = input.checkData.facts.filter((fact) =>
@@ -2094,7 +2150,13 @@ function runRequiredCheckProofCheck(input: {
           input.contractFingerprintValue,
           input.diffHash
         );
-        const firstFile = [...changedFiles].sort()[0] ?? input.checkData.snapshots[0]?.file_path ?? "required-checks";
+        // This finding is about a missing command proof, not about a file - the path is only a
+        // place to anchor evidence. Prefer an indexed changed file so the evidence carries a real
+        // content hash: the alphabetically-first changed file may be one the scan never indexed
+        // (a lockfile, a schema), which has no hash to attach.
+        const firstFile = [...changedFiles].sort().find((file) => input.snapshotsByPath.has(file))
+          ?? input.checkData.snapshots[0]?.file_path
+          ?? "required-checks";
         const firstChangedLine = [...(input.parsedDiff.files.find((file) => file.path === firstFile)
           ?.changedLines ?? [])].sort((left, right) => left - right)[0];
         const fileFact = fileDetectedFact(input.checkData.facts, firstFile);
@@ -2264,6 +2326,29 @@ function agentContractFinding(input: {
     input.importSource ?? input.actualLayer
   );
   const snapshot = input.snapshotsByPath.get(input.filePath);
+  // Fail closed rather than emit a finding Drift cannot substantiate.
+  //
+  // `file_hash` fell back to `""` here, which `EvidenceRefSchema` rejects (min(1)) at
+  // `upsertFinding`. The throw surfaced as a raw Zod trace and exit 1, killing the whole check -
+  // including conventions that had evaluated cleanly. It is reachable from any agent contract
+  // whose `path_globs` match a file the scan does not index, which today means any non-TypeScript
+  // path: the evaluators glob the parsed diff, which carries no extension filter.
+  //
+  // Callers are expected to skip unindexed files before reaching here; this is the backstop that
+  // keeps a missed guard a legible refusal instead of a crash.
+  if (!snapshot?.content_hash) {
+    throw new DriftError(
+      `Refusing to report a finding for ${input.filePath}: it is named by agent contract ${input.agentContractId} but carries no indexed scan snapshot, so Drift has no content hash to attach as evidence.`,
+      {
+        code: "unindexed_contract_target",
+        userAction:
+          "Narrow the contract's path_globs to files Drift indexes, or wait for support for this file type. Drift indexes TypeScript and JavaScript sources.",
+        recoveryCommands: ["drift contract show --repo <repo_id> --json"],
+        safeToRetry: false,
+        exitCode: CHECK_EXIT_REFUSED
+      }
+    );
+  }
   const status = findingStatusForAgentContract(
     input.baseline,
     input.existingFindings,
@@ -2293,7 +2378,7 @@ function agentContractFinding(input: {
       import_source: input.importSource,
       fact_ids: input.factIds,
       scan_id: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
-      file_hash: snapshot?.content_hash ?? "",
+      file_hash: snapshot.content_hash,
       redaction_state: "none"
     }],
     expected_layer: input.expectedLayer,

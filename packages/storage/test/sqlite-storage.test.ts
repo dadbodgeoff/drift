@@ -116,7 +116,8 @@ describe("SQLite Drift storage", () => {
       "030_graph_diagnostic_import_source",
       "031_scan_capability_engine_provenance",
       "032_finding_conforming_examples",
-      "033_convention_candidate_superseded_by"
+      "033_convention_candidate_superseded_by",
+      "034_declaration_fact_kinds"
     ]);
     storage.close();
   });
@@ -195,7 +196,8 @@ describe("SQLite Drift storage", () => {
       "030_graph_diagnostic_import_source",
       "031_scan_capability_engine_provenance",
       "032_finding_conforming_examples",
-      "033_convention_candidate_superseded_by"
+      "033_convention_candidate_superseded_by",
+      "034_declaration_fact_kinds"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();

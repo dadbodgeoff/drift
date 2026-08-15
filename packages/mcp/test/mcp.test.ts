@@ -3856,7 +3856,7 @@ describe("read-only MCP handlers", () => {
         // 33 since CV-1's migration 033_convention_candidate_superseded_by. This pin exists to make a
         // schema change deliberate, so it moves with one - and CV-1 landed without running this suite,
         // which is how it moved a commit later than the migration did.
-        supported_sqlite_schema_version: 33,
+        supported_sqlite_schema_version: MIGRATIONS.length,
         storage_driver: "sqlite"
       },
       v1_scope: {

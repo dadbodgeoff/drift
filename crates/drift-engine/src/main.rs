@@ -14,8 +14,9 @@ mod protocol;
 use candidate_command::infer_candidates;
 use check_command::check_repo;
 use drift_engine::{
-    Fact, FactKind, dynamic_middleware_matcher_line, extract_security_facts,
-    extract_typescript_facts, should_index_path, static_middleware_coverage,
+    Fact, FactKind, PrismaFactKind, dynamic_middleware_matcher_line, extract_prisma_facts,
+    extract_security_facts, extract_typescript_facts, should_index_path,
+    static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
 use protocol::*;
@@ -289,6 +290,7 @@ fn stream_scan_repo(
             scan_id: scan_id.clone(),
             engine_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             build_profile: engine_build_profile(),
+            fact_kinds: emittable_fact_kind_names(),
         },
     )?;
 
@@ -543,6 +545,43 @@ fn scan_file_with_reuse(
         return Ok(None);
     }
     let normalized = normalize_path(file_path);
+    // A declaration file goes to its own reader and never to the TypeScript extractor below - see
+    // `is_declaration_path`. `indexed` is true only once a reader for the format actually ran, so
+    // a format Drift records but cannot yet parse stays honestly marked as unread.
+    if is_declaration_path(file_path) {
+        let file = ScannedFile {
+            file_path: normalized.clone(),
+            content_hash: hash_file(&absolute_path)?,
+            byte_size: metadata.len(),
+            indexed: true,
+        };
+        if let Some(reused_facts) = reusable_facts_for_file(&file, reuse) {
+            return Ok(Some((file, reused_facts, true)));
+        }
+        let source = fs::read_to_string(&absolute_path)?;
+        let facts = extract_prisma_facts(&source)
+            .into_iter()
+            .map(|fact| {
+                engine_fact(Fact {
+                    kind: match fact.kind {
+                        PrismaFactKind::ModelDeclared => FactKind::DataModelDeclared,
+                        PrismaFactKind::FieldDeclared => FactKind::DataModelFieldDeclared,
+                        PrismaFactKind::RelationDeclared => FactKind::DataModelRelationDeclared,
+                    },
+                    file_path: normalized.clone(),
+                    name: fact.name,
+                    value: fact.value,
+                    imported_name: None,
+                    runtime_use: None,
+                    start_line: fact.start_line,
+                    end_line: fact.end_line,
+                    start_column: fact.start_column,
+                    end_column: fact.start_column,
+                })
+            })
+            .collect();
+        return Ok(Some((file, facts, false)));
+    }
     let file = ScannedFile {
         file_path: normalized.clone(),
         content_hash: hash_file(&absolute_path)?,
@@ -824,7 +863,7 @@ fn collect_indexable_files(repo_root: &Path) -> io::Result<FileDiscoveryResult> 
             }
             continue;
         }
-        if file_type.is_file() && is_typescript_path(path) {
+        if file_type.is_file() && (is_typescript_path(path) || is_declaration_path(path)) {
             result.files.push(relative.to_path_buf());
         }
     }
@@ -835,6 +874,35 @@ fn is_typescript_path(path: &Path) -> bool {
     matches!(
         path.extension().and_then(|extension| extension.to_str()),
         Some("ts" | "tsx" | "js" | "jsx" | "mts" | "cts" | "mjs" | "cjs")
+    )
+}
+
+/// Files that DECLARE structure rather than implement it: hashed and located, contents not parsed.
+///
+/// These get a `file_snapshots` row with `indexed: false`, which is the whole of their treatment
+/// here. Two reasons that matters:
+///
+/// 1. Evidence is hard-coupled to the snapshot. `GraphEvidenceSchema` requires a `file_path` AND a
+///    `file_hash`, and `EvidenceRefSchema.file_hash` is `min(1)`, so nothing - no finding, no
+///    evidence ref - can attach to a file with no snapshot. Snapshotting is therefore the
+///    prerequisite for every later step, and is worth landing on its own.
+/// 2. They must NOT reach `extract_typescript_facts`. tree-sitter does not reject foreign input:
+///    handed a Prisma schema it builds an ERROR-node tree and emits plausible-looking facts rather
+///    than failing. Junk facts are worse than no facts, so the parse is skipped entirely until a
+///    real grammar exists for the format.
+///
+/// `indexed: false` is what keeps consumers honest in the meantime - a rule must not evaluate a
+/// file Drift has not read, because every question it asks ("does it export X") would be answered
+/// from absence, which reads as a violation rather than as ignorance.
+///
+/// Scoped to Prisma on measured evidence: 5 of 7 corpus repos carry `.prisma` (315 models, 657
+/// typed relations), and 90% of dub's model names already appear in indexed TypeScript, so the
+/// facts have something to join to. `.sql` is deliberately excluded - 1,011 files corpus-wide and
+/// ~99% of them generated migration journals, i.e. derived output that would flood the index.
+fn is_declaration_path(path: &Path) -> bool {
+    matches!(
+        path.extension().and_then(|extension| extension.to_str()),
+        Some("prisma")
     )
 }
 
@@ -869,6 +937,121 @@ fn engine_fact(fact: Fact) -> EngineFact {
         start_column: fact.start_column,
         end_column: fact.end_column,
     }
+}
+
+/// Every fact kind this engine can emit, declared to the CLI at `scan_started`.
+///
+/// The CLI refuses the stream up front if it does not recognise all of them. Without this, a CLI
+/// paired with an engine that knows a newer kind failed on the FIRST RECORD OF THAT KIND - line 16
+/// of the stream, with `Invalid Drift engine stream event`, naming a Zod enum rather than the
+/// actual problem, and aborting a scan already partly done.
+///
+/// A version comparison would not have caught it. Both sides report engine_version `0.1.0` and
+/// `engine.stream.event.v1`, and neither moves when the vocabulary changes - measured. Only the
+/// vocabulary itself distinguishes a stale binary from a current one, so the vocabulary is what
+/// gets compared.
+///
+/// This list is the reason `fact_kind` below is exhaustive: adding a variant without adding it here
+/// trips `every_fact_kind_is_declared`.
+const EMITTABLE_FACT_KINDS: &[FactKind] = &[
+    FactKind::FileDetected,
+    FactKind::ImportUsed,
+    FactKind::ReExportUsed,
+    FactKind::ExportedSymbol,
+    FactKind::SymbolCalled,
+    FactKind::DataOperationDetected,
+    FactKind::RouteDeclared,
+    FactKind::FileRoleDetected,
+    FactKind::RouteFlavorDetected,
+    FactKind::TestDeclared,
+    FactKind::AuthGuardCalled,
+    FactKind::RouteReturnsResponse,
+    FactKind::CallbackBoundaryDetected,
+    FactKind::MiddlewareDeclared,
+    FactKind::MiddlewareMatcherDeclared,
+    FactKind::MiddlewareProtectsRoute,
+    FactKind::RequestInputRead,
+    FactKind::SessionRead,
+    FactKind::TenantSource,
+    FactKind::TenantGuardCalled,
+    FactKind::AuthorizationGuardCalled,
+    FactKind::RequestValidationCalled,
+    FactKind::ValidatedInputUsed,
+    FactKind::OutboundRequestCalled,
+    FactKind::RawSqlCalled,
+    FactKind::ParameterizedSqlUsed,
+    FactKind::CsrfGuardCalled,
+    FactKind::RateLimitGuardCalled,
+    FactKind::CorsPolicyDeclared,
+    FactKind::SensitiveFieldDeclared,
+    FactKind::ResponseEmitsField,
+    FactKind::SerializerCalled,
+    FactKind::SecretRead,
+    FactKind::DataModelDeclared,
+    FactKind::DataModelFieldDeclared,
+    FactKind::DataModelRelationDeclared,
+];
+
+#[cfg(test)]
+mod emittable_fact_kind_tests {
+    use super::{EMITTABLE_FACT_KINDS, emittable_fact_kind_names, fact_kind};
+    use drift_engine::FactKind;
+
+    /// The declared list must cover every variant of `FactKind`.
+    ///
+    /// A variant missing from `EMITTABLE_FACT_KINDS` would be emitted by the engine and absent from
+    /// the handshake, which is precisely the case the handshake exists to catch - the CLI would
+    /// accept the pairing and then throw on the first record of that kind, mid-stream.
+    ///
+    /// Rust cannot enumerate an enum's variants, so this pins the count. Adding a variant without
+    /// declaring it here fails this test rather than shipping a silent gap.
+    #[test]
+    fn every_fact_kind_is_declared() {
+        assert_eq!(
+            EMITTABLE_FACT_KINDS.len(),
+            36,
+            "a FactKind variant was added or removed - update EMITTABLE_FACT_KINDS to match"
+        );
+    }
+
+    #[test]
+    fn declared_kinds_are_unique_sorted_and_named() {
+        let names = emittable_fact_kind_names();
+        assert_eq!(names.len(), EMITTABLE_FACT_KINDS.len());
+        let mut sorted = names.clone();
+        sorted.sort();
+        assert_eq!(
+            names, sorted,
+            "handshake list must be sorted for stable comparison"
+        );
+        let unique: std::collections::BTreeSet<_> = names.iter().collect();
+        assert_eq!(
+            unique.len(),
+            names.len(),
+            "two variants map to the same wire string"
+        );
+    }
+
+    #[test]
+    fn the_new_declaration_kinds_are_declared() {
+        let names = emittable_fact_kind_names();
+        for kind in [
+            FactKind::DataModelDeclared,
+            FactKind::DataModelFieldDeclared,
+            FactKind::DataModelRelationDeclared,
+        ] {
+            assert!(names.contains(&fact_kind(kind).to_string()));
+        }
+    }
+}
+
+fn emittable_fact_kind_names() -> Vec<String> {
+    let mut names: Vec<String> = EMITTABLE_FACT_KINDS
+        .iter()
+        .map(|kind| fact_kind(*kind).to_string())
+        .collect();
+    names.sort();
+    names
 }
 
 fn fact_kind(kind: FactKind) -> &'static str {
@@ -906,6 +1089,9 @@ fn fact_kind(kind: FactKind) -> &'static str {
         FactKind::ResponseEmitsField => "response_emits_field",
         FactKind::SerializerCalled => "serializer_called",
         FactKind::SecretRead => "secret_read",
+        FactKind::DataModelDeclared => "data_model_declared",
+        FactKind::DataModelFieldDeclared => "data_model_field_declared",
+        FactKind::DataModelRelationDeclared => "data_model_relation_declared",
     }
 }
 
@@ -1611,7 +1797,7 @@ fn graph_for_file(
                 if let Some((store_name, operation_kind)) =
                     data_operation_parts(receiver, fact.imported_name.as_deref())
                 {
-                    let data_store_node = data_store_id(receiver_root(receiver), store_name);
+                    let data_store_node = data_store_id(store_name);
                     let data_operation_node = data_operation_id(
                         &fact.file_path,
                         &file.content_hash,
@@ -1627,11 +1813,15 @@ fn graph_for_file(
                         store_name,
                         true,
                         vec![evidence_id.clone()],
-                        BTreeMap::from([
-                            ("receiver_root".to_string(), json!(receiver_root(receiver))),
-                            ("store_name".to_string(), json!(store_name)),
-                            ("file_path".to_string(), json!(fact.file_path)),
-                        ]),
+                        // Only `store_name`, which is the one key true of a merged node.
+                        //
+                        // `receiver_root` is gone with the id that embedded it, and `file_path` had
+                        // to go with it: a table is reached from many files, and this key held
+                        // whichever per-file batch merged last - `data_store:prisma:link` carried
+                        // 143 evidence ids across 207 edges while reporting a single arbitrary call
+                        // site as its `file_path`. The evidence ids are the honest answer to "where
+                        // is this touched", and they accumulate correctly across batches.
+                        BTreeMap::from([("store_name".to_string(), json!(store_name))]),
                     );
                     insert_node(
                         &mut nodes,
@@ -1667,6 +1857,48 @@ fn graph_for_file(
                         ]),
                     );
                 }
+            }
+            "data_model_declared" => {
+                // A declared table, grounding the same node usage infers.
+                //
+                // `data_store` nodes are otherwise built purely from call sites: `prisma.link.x()`
+                // implies a `link` store. That infers tables from evidence of use, which is both
+                // incomplete (a declared-but-unused table has no node) and imprecise - on calcom it
+                // invented stores called `nullable()`, `array()` and `unwrap()`, because
+                // `is_data_access_reference` matches "prisma" against the import SOURCE and calcom
+                // imports Zod helpers from `@calcom/prisma/zod-utils`, so `schema.nullable().parse()`
+                // read as a data operation. Measured: the declared set separates all 10 such false
+                // positives from all 68 real tables, with no false negatives.
+                //
+                // Deliberately NOT a new node or edge kind. Both kind enums are closed and
+                // fail-closed - an unknown kind aborts the whole scan transaction at
+                // `GraphNodeSchema.parse` - whereas node metadata is an open record that accepts
+                // new keys with no schema change. Reusing `data_store` with the same id also means
+                // the existing merge does the reconciliation for free: `mergeGraphNodesById` unions
+                // evidence ids across batches, so a table that is both declared and used ends up
+                // with one node carrying both. Same shape as `file` and `file_role:*` nodes, which
+                // already have two producers each.
+                //
+                // The accessor form is the join key: Prisma declares `model Link`, the client
+                // exposes `prisma.link`, so the id is built from the decapitalised name.
+                let accessor = accessor_name(&fact.name);
+                insert_node(
+                    &mut nodes,
+                    data_store_id(&accessor),
+                    "data_store",
+                    &accessor,
+                    true,
+                    vec![evidence_id.clone()],
+                    // Keys disjoint from the usage side's `store_name`, because scalar metadata is
+                    // last-writer-wins across batches. Nothing multi-valued belongs here either:
+                    // the merge spreads objects and would replace an array rather than union it.
+                    BTreeMap::from([
+                        ("store_name".to_string(), json!(accessor)),
+                        ("declared".to_string(), json!(true)),
+                        ("declared_model".to_string(), json!(fact.name)),
+                        ("declared_in".to_string(), json!(fact.file_path)),
+                    ]),
+                );
             }
             _ => {}
         }
@@ -1831,8 +2063,57 @@ fn reexport_id(
     )
 }
 
-fn data_store_id(receiver_root: &str, store_name: &str) -> String {
-    format!("data_store:{receiver_root}:{store_name}")
+/// `Link` -> `link`, `YearInReview` -> `yearInReview`: a Prisma model name as the client exposes it.
+///
+/// This is the join key between what a schema declares and what code calls. Only the first
+/// character changes; Prisma preserves the rest of the model name on the client accessor.
+#[cfg(test)]
+mod accessor_name_tests {
+    use super::accessor_name;
+
+    /// The join key between a declared model and the client accessor code calls.
+    #[test]
+    fn decapitalises_only_the_first_character() {
+        assert_eq!(accessor_name("Link"), "link");
+        assert_eq!(accessor_name("YearInReview"), "yearInReview");
+        // Prisma keeps the rest of the name verbatim, including embedded capitals and underscores.
+        assert_eq!(accessor_name("jackson_store"), "jackson_store");
+        assert_eq!(accessor_name("OAuthApp"), "oAuthApp");
+        assert_eq!(accessor_name(""), "");
+    }
+}
+
+fn accessor_name(model_name: &str) -> String {
+    let mut characters = model_name.chars();
+    match characters.next() {
+        Some(first) => first.to_lowercase().collect::<String>() + characters.as_str(),
+        None => String::new(),
+    }
+}
+
+/// A logical table, identified by the table alone.
+///
+/// The id used to be namespaced by the JavaScript client variable
+/// (`data_store:{receiver_root}:{store_name}`), which is neither necessary nor sufficient:
+///
+/// - Not necessary. On dub the three "clients" are one database. `prismaOld` is a literal alias -
+///   `import { prisma, prisma as prismaOld }` - and the second datasource it appears to name exists
+///   only inside a block comment; `DATABASE_URL_OLD` occurs exactly once in the repo, on that
+///   commented line. All ten `data_store:prismaOld:*` nodes were duplicates of a `prisma` node.
+/// - Not sufficient. On calcom two genuinely different datasources (postgres and sqlite) are BOTH
+///   reached through a variable named `prisma`, so the qualified id already merged two databases
+///   into one node. Dropping the qualifier forfeits no separation that existed.
+///
+/// Measured on dub: 87 nodes for 71 distinct tables before, 71 after, with all 2,119
+/// `DATA_OPERATION_*` edges preserved - a merge cannot collapse edges, because an edge id embeds
+/// its endpoints and one data_operation has exactly one receiver.
+///
+/// The client variable is NOT lost: `receiver_root` stays on the `data_operation` node, which is
+/// where it is real and where waiver scoping reads it (`run-check.ts`, dataStores filtering).
+/// Distinguishing two databases properly would require the datasource behind the resolved client
+/// import, which the schema reader deliberately does not extract.
+fn data_store_id(store_name: &str) -> String {
+    format!("data_store:{store_name}")
 }
 
 fn endpoint_id(file_path: &str, method: &str, route_pattern: &str) -> String {

@@ -9,7 +9,8 @@ import { requiredDatabasePath,resolveRepoId } from "../args/repo-flags.js";
 import { assertUniqueImportedConventionIds,contractImportConfirmCommand,contractSummary,contractWaiverListNextCommands,contractWaiverNextCommands,contractWaiverShowNextCommands,hasUniqueActiveWaiverSelectors,hasUniqueAgentPermissions,hasUniqueCommands,hasUniqueConventionExceptionIds,hasUniqueIds,summarizeImportedConventions,waiverListSummary,waiverMatchesPath,waiverReviewItem,waiverSelectorKey } from "../domain/contract-materialization.js";
 import { auditEvent,mutationGovernance,preflightGovernance } from "../domain/governance.js";
 import { contractFingerprint,contractWaiverId,hashStable } from "../domain/identifiers.js";
-import { requiredRepo,requiredRepoContract } from "../domain/repo-paths.js";
+import { matchesGlob,requiredRepo,requiredRepoContract } from "../domain/repo-paths.js";
+import { latestIndexedScan } from "../domain/scan-status.js";
 import { formatContractExportText,formatContractShowText,formatContractValidationText,formatContractWaiverListText,formatContractWaiverRemoveText,formatContractWaiverShowText,formatContractWaiverText } from "../formatters/contract.js";
 import { fileContentHash } from "../io/file-hash.js";
 import { parseContractFile } from "../io/json-file.js";
@@ -140,6 +141,55 @@ export function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs):
   };
 }
 
+/**
+ * Agent-contract `path_globs` that match nothing the latest scan indexed.
+ *
+ * A rule naming files Drift cannot read is not enforceable, and accepting it silently is the
+ * failure this guards. The evaluators glob the parsed diff, which has no extension filter, so a
+ * glob like `prisma/*.prisma` selects a file with no facts and no content hash. Before this, such
+ * a contract imported reporting `Valid: true, compatible`, then produced an uncaught Zod error on
+ * `evidence_refs[0].file_hash` at `drift check --scope changed-files` - discarding every
+ * convention that had already evaluated cleanly - while reporting a clean pass at `--scope full`.
+ * Same rule, crash or silent no-op depending only on the scope flag.
+ *
+ * Returns empty when there is no completed scan or nothing indexed: with nothing to compare
+ * against, "matches nothing" would reject every contract imported before a first scan, which is a
+ * legitimate order of operations. Unverifiable is not the same as wrong.
+ */
+function agentContractGlobsMatchingNothingIndexed(
+  storage: SqliteDriftStorage,
+  repoId: string,
+  contract: RepoContract
+): string[] {
+  const globs: string[] = [];
+  for (const agentContract of contract.agent_contracts ?? []) {
+    if (agentContract.kind === "file_role") {
+      globs.push(...agentContract.roles.flatMap((role) => role.path_globs));
+    }
+    if (agentContract.kind === "required_change_checks") {
+      globs.push(...agentContract.rules.flatMap((rule) => rule.applies_to.path_globs ?? []));
+    }
+  }
+  if (globs.length === 0) {
+    return [];
+  }
+  const scan = latestIndexedScan(storage.listScanManifests(repoId));
+  if (!scan) {
+    return [];
+  }
+  // Only parsed files count. A declaration file is snapshotted without being read, so a rule that
+  // globs one still cannot be enforced - the contract must be refused just as if it named nothing.
+  const indexed = storage.listFileSnapshots(repoId, scan.id)
+    .filter((snapshot) => snapshot.indexed)
+    .map((snapshot) => snapshot.file_path);
+  if (indexed.length === 0) {
+    return [];
+  }
+  return [...new Set(globs)]
+    .filter((glob) => !indexed.some((filePath) => matchesGlob(filePath, glob)))
+    .sort();
+}
+
 export function importContractDryRun(
   storage: SqliteDriftStorage,
   parsed: ParsedArgs,
@@ -197,6 +247,11 @@ export function importContractDryRun(
   const rejectedInferencesUnique = hasUniqueIds(
     contract.rejected_inferences.map((inference) => inference.candidate_id)
   );
+  const unenforceableAgentGlobs = agentContractGlobsMatchingNothingIndexed(
+    storage,
+    expectedRepoId,
+    contract
+  );
   const compatibilityReasons = [
     !repo ? "target_repo_missing" : undefined,
     // T120: a repo_id difference alone no longer blocks an import.
@@ -232,6 +287,7 @@ export function importContractDryRun(
     contract.conventions.some((convention) => !hasConventionEvaluator(convention.kind))
       ? "convention_kind_has_no_evaluator"
       : undefined,
+    unenforceableAgentGlobs.length > 0 ? "agent_contract_target_not_indexed" : undefined,
     ...contractValidationReasons(contract)
   ].filter((reason): reason is string => Boolean(reason));
   const compatibility = {

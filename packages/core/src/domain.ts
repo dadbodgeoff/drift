@@ -314,7 +314,11 @@ export type FactKind =
   | "sensitive_field_declared"
   | "response_emits_field"
   | "serializer_called"
-  | "secret_read";
+  | "secret_read"
+  // Declared in a schema file rather than inferred from a call site.
+  | "data_model_declared"
+  | "data_model_field_declared"
+  | "data_model_relation_declared";
 
 export type FactEvidenceLevel = "path" | "text" | "ast" | "graph" | "heuristic";
 export type FactResolutionStatus = "resolved" | "unresolved" | "partial" | "unsupported";

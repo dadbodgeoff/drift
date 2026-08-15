@@ -39,6 +39,13 @@ pub enum FactKind {
     ResponseEmitsField,
     SerializerCalled,
     SecretRead,
+    /// Declared in a schema file rather than inferred from a call site. `data_store` graph nodes
+    /// are built today from TypeScript usage alone (`prisma.link.findMany()` implies a `link`
+    /// store); these say what the repository actually declares, which is the difference between
+    /// "some code calls this" and "this table exists".
+    DataModelDeclared,
+    DataModelFieldDeclared,
+    DataModelRelationDeclared,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1020,10 +1027,39 @@ fn callable_parts(node: Node<'_>, source: &[u8]) -> Option<(String, Option<Strin
     }
 }
 
+#[cfg(test)]
+mod data_operation_shape_tests {
+    use super::data_operation_shape;
+
+    #[test]
+    fn a_receiver_broken_across_lines_names_the_same_store() {
+        let inline = data_operation_shape("prisma.commission", "findMany").expect("shape");
+        let wrapped =
+            data_operation_shape("prisma.commission\n            ", "findMany").expect("shape");
+        assert_eq!(inline.0, "commission");
+        // Without the trim these were two different stores, and therefore two graph nodes.
+        assert_eq!(inline.0, wrapped.0);
+    }
+
+    #[test]
+    fn a_whitespace_only_segment_is_not_a_store() {
+        assert!(data_operation_shape("prisma.   ", "findMany").is_none());
+    }
+}
+
 fn data_operation_shape(receiver: &str, operation_name: &str) -> Option<(String, &'static str)> {
     let mut parts = receiver.split('.');
     let _root = parts.next()?;
-    let store_name = parts.next()?;
+    // Trimmed because the receiver is raw source text, and a chained call broken across lines
+    // carries the newline and indentation into the segment:
+    //
+    //     prisma.commission
+    //         .findMany(...)
+    //
+    // yielded a store named "commission\n            ", which became its own `data_store` node id.
+    // Measured on dub: 96 nodes for 77 distinct stores, so ~9% of the set were whitespace shards of
+    // a table that already had a node.
+    let store_name = parts.next()?.trim();
     if store_name.is_empty() {
         return None;
     }
