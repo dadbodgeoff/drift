@@ -1518,4 +1518,5 @@ function sorted(values: Iterable<string>): string[] {
 function unique(values: string[]): string[] {
   return sorted(new Set(values));
 }
-export { MAX_RELEVANT_FILES, rankRelevantFiles, relevanceScore, type RankableFile } from "./relevance.js";
+export { MAX_RELEVANT_FILES, rankRelevantFiles, relevanceScore, relevantFileForPath, relevantFilesForTask, tokenizeTask, type RankableFile } from "./relevance.js";
+export { isDeclarationPath, isIndexableFilePath, isTypescriptPath, shouldSkipPath, walkIndexableFiles } from "./repo-files.js";
