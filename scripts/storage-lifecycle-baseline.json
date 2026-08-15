@@ -1,0 +1,73 @@
+{
+  "what_this_is": "Storage methods that reach a migration-backed table and have no production caller. Honest current truth, not an allowlist of things that are fine. Each entry is a known gap, recorded so the class cannot grow silently and so fixing one forces removing its entry. Enforced by scripts/storage-lifecycle.mjs.",
+  "severity": {
+    "writer_orphan": "The table is never populated in production. Every read of it is empty, and any surface reporting on it is reporting on nothing.",
+    "reader_orphan": "The table IS populated and nothing in production reads it. Dead read API and storage cost, not a false signal."
+  },
+  "measured_at": {
+    "commit": "f058c310",
+    "repo": "dub",
+    "note": "Row counts below came from a real onboarding scan of ~/drift-falsification/repos/dub, which is what distinguishes a writer orphan (table empty) from a reader orphan (table populated, unread)."
+  },
+  "known_orphans": [
+    {
+      "method": "upsertParserGapV2",
+      "table": "parser_gaps",
+      "kind": "writer_orphan",
+      "rows_on_dub": 639,
+      "reason": "The V2 arm has only test callers, so no V2 row is ever written; the 639 rows are all V1. Four agent surfaces (prepare, repo map, and two MCP tools) do `[...parserGaps, ...parserGapV2]` against a permanently empty array. Either give V2 a real writer or delete the arm - the merge currently advertises a capability that produces nothing."
+    },
+    {
+      "method": "upsertSecurityBoundaryProofs",
+      "table": "security_boundary_proofs",
+      "kind": "writer_orphan",
+      "rows_on_dub": 0,
+      "reason": "Measured 0 rows after a full dub onboarding. Note the sibling `upsertSecurityBoundaryProofRuns` IS called in production (run-check.ts), so the runs path is live while this one is not; the two are easy to confuse when reading the security read-model code."
+    },
+    {
+      "method": "upsertSymbolIdentities",
+      "table": "symbol_identities",
+      "kind": "writer_orphan",
+      "rows_on_dub": 0,
+      "reason": "Measured 0 rows on dub. Found by this check rather than by either architecture audit, both of which missed it - which is the argument for the check existing."
+    },
+    {
+      "method": "getScanManifest",
+      "table": "scan_manifests",
+      "kind": "reader_orphan",
+      "reason": "Production reads scan manifests through listScanManifests instead. Single-manifest lookup is used only by tests."
+    },
+    {
+      "method": "listCheckRuns",
+      "table": "check_runs",
+      "kind": "reader_orphan",
+      "reason": "check_runs is written on every check as a provenance log and never read back to skip or explain work. The log is write-only by design today; this entry records that the read API is unused rather than that the table is."
+    },
+    {
+      "method": "listFrameworkAdapters",
+      "table": "framework_adapters",
+      "kind": "reader_orphan",
+      "reason": "One adapter row per scan on dub. Read models rebuild adapter information from normalized entrypoints rather than from this table."
+    },
+    {
+      "method": "listGraphCompleteness",
+      "table": "graph_completeness",
+      "kind": "reader_orphan",
+      "reason": "Populated per scan; completeness reaches consumers through the scan payload rather than by querying this table."
+    },
+    {
+      "method": "listModuleDependents",
+      "table": "module_dependents",
+      "kind": "reader_orphan",
+      "rows_on_dub": 15311,
+      "reason": "15,311 rows written per dub scan and never queried in production. Dependents are traversed from graph edges instead."
+    },
+    {
+      "method": "listSymbolOccurrences",
+      "table": "symbol_occurrences",
+      "kind": "reader_orphan",
+      "rows_on_dub": 41905,
+      "reason": "41,905 rows written per dub scan and never queried in production - the single largest unread table. Together with module_dependents this is roughly 57,000 rows per scan with no consumer."
+    }
+  ]
+}
