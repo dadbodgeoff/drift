@@ -3905,6 +3905,12 @@ fn fact_kind_from_str(kind: &str) -> Option<FactKind> {
         "response_emits_field" => Some(FactKind::ResponseEmitsField),
         "serializer_called" => Some(FactKind::SerializerCalled),
         "secret_read" => Some(FactKind::SecretRead),
+        "data_model_declared" => Some(FactKind::DataModelDeclared),
+        "data_model_field_declared" => Some(FactKind::DataModelFieldDeclared),
+        "data_model_relation_declared" => Some(FactKind::DataModelRelationDeclared),
+        // Anything unmapped is dropped by the `filter_map` at the call site, silently. That is the
+        // failure mode this arm exists to avoid for the kinds above: a fact that survives the scan,
+        // the schema and storage, and then vanishes on its way into the rule evaluator.
         _ => None,
     }
 }

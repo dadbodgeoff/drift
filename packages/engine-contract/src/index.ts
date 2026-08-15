@@ -278,7 +278,10 @@ export const EngineFactSchema = z.object({
     "sensitive_field_declared",
     "response_emits_field",
     "serializer_called",
-    "secret_read"
+    "secret_read",
+    "data_model_declared",
+    "data_model_field_declared",
+    "data_model_relation_declared"
   ]),
   file_path: z.string().min(1),
   name: z.string().min(1),
@@ -1335,7 +1338,10 @@ export const EngineStreamEventSchema = z.discriminatedUnion("event", [
     engine_version: z.string().min(1),
     // BB-2: see EngineScanResultSchema - optional for engine-version tolerance, not because
     // "unknown" is an acceptable state for a recorded measurement.
-    build_profile: z.enum(["release", "debug"]).optional()
+    build_profile: z.enum(["release", "debug"]).optional(),
+    // Every fact kind the engine can emit. Optional so a newer CLI can still read an older
+    // engine's stream and say so plainly, rather than failing to parse the handshake itself.
+    fact_kinds: z.array(z.string().min(1)).optional()
   }),
   z.object({
     schema_version: z.literal(ENGINE_STREAM_EVENT_SCHEMA_VERSION),

@@ -379,11 +379,17 @@ export async function GET() {
         }),
         "missing callsite-to-import alias edge: {edges:#?}"
     );
+    // The store is identified by the table, not by the client variable that reached it. The client
+    // variable stays on the `data_operation` node below, which is where it is real - two variables
+    // pointing at one table are one table, and on the corpus the qualifier both invented duplicates
+    // (an aliased client) and failed to separate two genuinely different databases.
     assert!(
         nodes.iter().any(|node| {
             node["kind"] == "data_store"
                 && node["label"] == "user"
-                && node["metadata"]["receiver_root"] == "db"
+                && node["id"] == "data_store:user"
+                && node["metadata"]["store_name"] == "user"
+                && node["metadata"]["receiver_root"].is_null()
         }),
         "missing data store node for db.user: {nodes:#?}"
     );
@@ -405,7 +411,7 @@ export async function GET() {
                     .is_some_and(|from| from.contains("findMany"))
                 && edge["to"]
                     .as_str()
-                    .is_some_and(|to| to.contains("data_store:db:user"))
+                    .is_some_and(|to| to == "data_store:user")
         }),
         "missing data operation read edge: {edges:#?}"
     );

@@ -14,7 +14,7 @@ export function walkIndexableFiles(repoRoot: string): string[] {
 
       if (entry.isDirectory()) {
         visit(absolutePath);
-      } else if (entry.isFile() && isTypescriptPath(entry.name)) {
+      } else if (entry.isFile() && isIndexableFilePath(entry.name)) {
         files.push(relativePath);
       }
     }
@@ -38,6 +38,25 @@ export function shouldSkipPath(name: string): boolean {
 
 export function isTypescriptPath(filePath: string): boolean {
   return /\.[cm]?[jt]sx?$/.test(filePath);
+}
+
+/**
+ * Files that DECLARE structure rather than implement it. Mirrors `is_declaration_path` in
+ * crates/drift-engine/src/main.rs - the engine is authoritative, this keeps the CLI-side walker
+ * from disagreeing with it about which files exist.
+ *
+ * These are snapshotted for their path and content hash and are NOT parsed, so they carry no
+ * facts. Anything deciding whether a rule can be evaluated must read `snapshot.indexed` rather
+ * than test the extension: presence in this list means Drift knows the file is there, not that it
+ * knows what is in it.
+ */
+export function isDeclarationPath(filePath: string): boolean {
+  return /\.prisma$/.test(filePath);
+}
+
+/** Every file the scan records, parsed or not. */
+export function isIndexableFilePath(filePath: string): boolean {
+  return isTypescriptPath(filePath) || isDeclarationPath(filePath);
 }
 
 function readGitignorePatterns(repoRoot: string): string[] {

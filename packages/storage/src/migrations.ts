@@ -937,5 +937,27 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       ALTER TABLE convention_candidates ADD COLUMN superseded_by TEXT;
     `
+  },
+  {
+    // Declaration-file fact kinds (`data_model_declared` and siblings) enter the vocabulary here.
+    //
+    // No column changes, and it still has to be a migration. `facts.kind` is plain TEXT with no
+    // CHECK, so SQLite accepts any value - but `factFromRow` parses every row through
+    // `FactRecordSchema`, whose `kind` is a closed z.enum. A database written by a build that knows
+    // these kinds is therefore UNREADABLE by a build that does not: not a degraded read, a throw on
+    // every `listFacts` for that scan.
+    //
+    // Nothing detected that. `assertSupportedLocalDatabase` compares applied-migration count and
+    // ids, and a vocabulary change moved neither - measured on dub, where a database holding 1,572
+    // rows of the new kinds still reported exactly the 33 migrations the older build supports, so
+    // the gate passed and the failure surfaced later as a Zod error.
+    //
+    // Bumping the count is the whole point: an older build now refuses this database up front, with
+    // a message naming the version, instead of opening it and failing on read. Any future change to
+    // the fact, node, or edge vocabulary needs the same treatment for the same reason.
+    id: "034_declaration_fact_kinds",
+    sql: `
+      SELECT 1;
+    `
   }
 ];

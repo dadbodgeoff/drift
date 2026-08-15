@@ -40,6 +40,13 @@ export type DriftFailureCode =
   // T-07: a contract exists but accepts nothing, so there is nothing to enforce. A refusal, not a
   // pass: reporting a clean run here is indistinguishable from a repo that was actually checked.
   | "empty_contract"
+  // An agent contract's path_globs named a file the scan does not index, so a finding about it
+  // would carry no content hash. Previously this surfaced as an uncaught Zod error on
+  // `evidence_refs[0].file_hash` and exit 1, discarding every convention that had already passed.
+  | "unindexed_contract_target"
+  // The engine can emit fact kinds this CLI does not understand, so the pairing would fail partway
+  // through the scan. Detected at the `scan_started` handshake, before anything is ingested.
+  | "engine_vocabulary_mismatch"
   | "cli_error";
 
 export interface DriftErrorOptions {
