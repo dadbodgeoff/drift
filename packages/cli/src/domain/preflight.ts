@@ -255,98 +255,15 @@ export function preflightSummary(input: PreflightSummaryInput): {
   };
 }
 
-export function relevantFilesForTask(input: {
-  repoRoot: string;
-  task: string;
-  contract: RepoContract;
-  targetPath?: string;
-}): RelevantFile[] {
-  if (!existsSync(input.repoRoot)) {
-    return input.targetPath
-      ? [relevantFileForPath(input.targetPath, tokenizeTask(input.task), input.contract, "requested path")].filter(
-          (file): file is RelevantFile => Boolean(file)
-        )
-      : [];
-  }
-
-  const tokens = tokenizeTask(input.task);
-  const deniedGlobs = input.contract.context_egress.denied_globs;
-  const files = walkIndexableFiles(input.repoRoot)
-    .filter((filePath) => !deniedGlobs.some((glob) => matchesGlob(filePath, glob)))
-    .map((filePath) => relevantFileForPath(filePath, tokens, input.contract))
-    .filter((file): file is RelevantFile => Boolean(file));
-  if (
-    input.targetPath &&
-    !deniedGlobs.some((glob) => matchesGlob(input.targetPath!, glob)) &&
-    !files.some((file) => file.path === input.targetPath)
-  ) {
-    const targetFile = relevantFileForPath(input.targetPath, tokens, input.contract, "requested path");
-    if (targetFile) {
-      files.unshift(targetFile);
-    }
-  } else if (input.targetPath) {
-    const existing = files.find((file) => file.path === input.targetPath);
-    if (existing && !existing.reasons.includes("requested path")) {
-      existing.reasons = uniqueSorted([...existing.reasons, "requested path"]);
-    }
-  }
-
-  // Rank before truncating.
-  //
-  // This previously returned `files.slice(0, 25)` in filesystem-walk order, so the cap was
-  // exhausted by whichever files happened to sort first - and "in scope for this convention"
-  // matches every API route in the repository, so it always had thousands of candidates.
-  //
-  // Measured on dub with "add an endpoint that lists workspace invites": 24 of the 25 returned
-  // files were arbitrary routes matched only by convention scope, none matched "invite", and
-  // apps/web/app/api/workspaces/[idOrSlug]/invites/route.ts - the one file someone doing that
-  // task must see - never appeared, because the walk reached app/(ee)/api/admin/* first. The
-  // context claim rests on this function, so ordering it by relevance is the whole point.
-  return rankRelevantFiles(files);
-}
-
-
-export function relevantFileForPath(
-  filePath: string,
-  tokens: Set<string>,
-  contract: RepoContract,
-  forcedReason?: string
-): RelevantFile | undefined {
-  const reasons = new Set<string>();
-  const roles = new Set<string>();
-  if (forcedReason) {
-    reasons.add(forcedReason);
-  }
-  if (isApiRoutePath(filePath)) {
-    roles.add("api_route");
-  }
-
-  for (const token of tokens) {
-    if (filePath.toLowerCase().includes(token)) {
-      reasons.add(`task token: ${token}`);
-    }
-  }
-
-  for (const convention of contract.conventions) {
-    const inScope = apiCompatibleGlobs(convention.scope.path_globs).some((glob) => matchesGlob(filePath, glob));
-    if (inScope) {
-      reasons.add(`in scope for ${convention.id}`);
-      for (const role of convention.scope.file_roles ?? []) {
-        roles.add(role);
-      }
-    }
-  }
-
-  if (reasons.size === 0) {
-    return undefined;
-  }
-
-  return {
-    path: filePath,
-    roles: [...roles].sort(),
-    reasons: [...reasons].sort()
-  };
-}
+/**
+ * Re-exported from `@drift/query`, which owns the one implementation.
+ *
+ * The CLI and MCP each had their own, and they diverged three ways: the in-scope predicate (the
+ * CLI tested globs while `check` enforces with `conventionScopeFiles`), `.gitignore` handling, and
+ * declaration files. Kept as a named export here so the CLI's own call sites are unaffected.
+ */
+export { relevantFileForPath, relevantFilesForTask, tokenizeTask } from "@drift/query";
+import { tokenizeTask } from "@drift/query";
 
 export function riskyAreasForFiles(
   contract: RepoContract,
@@ -452,16 +369,6 @@ export function rolesForPath(filePath: string): string[] {
 
 function apiCompatibleGlobs(globs: string[]): string[] {
   return expandApiRouteScopeGlobs(globs);
-}
-
-export function tokenizeTask(task: string): Set<string> {
-  return new Set(
-    task
-      .toLowerCase()
-      .split(/[^a-z0-9_/-]+/)
-      .map((token) => token.trim())
-      .filter((token) => token.length >= 3)
-  );
 }
 
 export function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {

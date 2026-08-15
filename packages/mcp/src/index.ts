@@ -84,8 +84,11 @@ import {
   selectRelevantTests,
   type ChangeImpactRouteFlow,
   type DriftReadinessSurface,
-  type RepoMapFile,rankRelevantFiles,
-  repoMapFileForPayload
+  type RepoMapFile,
+  rankRelevantFiles,
+  relevantFilesForTask,
+  repoMapFileForPayload,
+  walkIndexableFiles
 } from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
@@ -2044,38 +2047,7 @@ function isResolverInputPath(filePath: string): boolean {
     /^tsconfig(?:\.[^.]+)?\.json$/.test(fileName);
 }
 
-function walkIndexableFiles(repoRoot: string): string[] {
-  const files: string[] = [];
-  const visit = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (shouldSkipPath(entry.name)) {
-        continue;
-      }
 
-      const absolutePath = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        visit(absolutePath);
-      } else if (entry.isFile() && isTypescriptPath(entry.name)) {
-        files.push(relative(repoRoot, absolutePath).replaceAll("\\", "/"));
-      }
-    }
-  };
-  visit(repoRoot);
-  return files.sort();
-}
-
-function shouldSkipPath(name: string): boolean {
-  return [
-    ".git",
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    ".next",
-    "target",
-    "vendor"
-  ].includes(name);
-}
 
 function isTypescriptPath(filePath: string): boolean {
   return /\.[cm]?[jt]sx?$/.test(filePath);
@@ -2116,98 +2088,7 @@ function baselineSummary(storage: ReturnType<typeof openDriftStorage>, repoId: s
   };
 }
 
-function relevantFilesForTask(input: {
-  repoRoot: string;
-  task: string;
-  contract: RepoContract;
-  targetPath?: string;
-}): RelevantFile[] {
-  const tokens = tokenizeTask(input.task);
-  const deniedGlobs = input.contract.context_egress.denied_globs;
-  if (!existsSync(input.repoRoot)) {
-    return input.targetPath
-      ? [relevantFileForPath(input.targetPath, tokens, input.contract, "requested path")].filter(
-          (file): file is RelevantFile => Boolean(file)
-        )
-      : [];
-  }
-  const files = walkIndexableFiles(input.repoRoot)
-    .filter((filePath) => !deniedGlobs.some((glob) => matchesPolicyGlob(filePath, glob)))
-    .map((filePath) => relevantFileForPath(filePath, tokens, input.contract))
-    .filter((file): file is RelevantFile => Boolean(file));
-  // Deliberately NOT truncated here. This surface used to cut to 25 during the walk, so the cap
-  // was spent on whichever files sorted first and ranking downstream could not recover the ones
-  // already discarded. rankRelevantFiles below scores the full candidate set, then truncates.
-  if (
-    input.targetPath &&
-    !deniedGlobs.some((glob) => matchesPolicyGlob(input.targetPath!, glob)) &&
-    !files.some((file) => file.path === input.targetPath)
-  ) {
-    const targetFile = relevantFileForPath(input.targetPath, tokens, input.contract, "requested path");
-    if (targetFile) {
-      files.unshift(targetFile);
-    }
-  } else if (input.targetPath) {
-    const existing = files.find((file) => file.path === input.targetPath);
-    if (existing && !existing.reasons.includes("requested path")) {
-      existing.reasons = uniqueSorted([...existing.reasons, "requested path"]);
-    }
-  }
-  // Shared with `drift prepare`. This surface previously had its own `files.slice(0, 25)` in
-  // filesystem-walk order, so when T46 added relevance ranking to the CLI, the MCP tool that
-  // agents actually call kept returning arbitrary files. Same divergence class as B3/T12.
-  return rankRelevantFiles(files);
-}
 
-function relevantFileForPath(
-  filePath: string,
-  tokens: Set<string>,
-  contract: RepoContract,
-  forcedReason?: string
-): RelevantFile | undefined {
-  const reasons = new Set<string>();
-  const roles = new Set<string>();
-  if (forcedReason) {
-    reasons.add(forcedReason);
-  }
-  if (isApiRoutePath(filePath)) {
-    roles.add("api_route");
-  }
-
-  for (const token of tokens) {
-    if (filePath.toLowerCase().includes(token)) {
-      reasons.add(`task token: ${token}`);
-    }
-  }
-
-  for (const convention of contract.conventions) {
-    // BB-11: the shared predicate, not a local glob decision.
-    //
-    // This was the last scope decision in the product still deciding for itself, and the differential
-    // in packages/mcp/test/scope-predicate-bb11.test.ts showed it disagreeing with core on exactly one
-    // input: it applied `path_globs` only and never consulted `exclude_path_globs`, so a file an author
-    // had explicitly excluded was still reported "in scope for <convention_id>" on this agent-facing
-    // surface, and inherited that convention's roles. Adjudicated as a bug rather than a policy,
-    // because `scopeMatchesFile` two hundred lines below already honours exclusions - one file
-    // disagreeing with itself.
-    const inScope = conventionScopeFiles([filePath], convention).length > 0;
-    if (inScope) {
-      reasons.add(`in scope for ${convention.id}`);
-      for (const role of convention.scope.file_roles ?? []) {
-        roles.add(role);
-      }
-    }
-  }
-
-  if (reasons.size === 0) {
-    return undefined;
-  }
-  return {
-    path: filePath,
-    roles: [...roles].sort(),
-    reasons: [...reasons].sort()
-  };
-}
 
 function riskyAreasForFiles(
   contract: RepoContract,
@@ -2708,15 +2589,6 @@ function instructionForConvention(convention: AcceptedConvention): string {
   return `${convention.statement} Follow its scope, matcher, and exceptions.`;
 }
 
-function tokenizeTask(task: string): Set<string> {
-  return new Set(
-    task
-      .toLowerCase()
-      .split(/[^a-z0-9_/-]+/)
-      .map((token) => token.trim())
-      .filter((token) => token.length >= 3)
-  );
-}
 
 function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {
   if (deniedGlobs.length === 0 || !existsSync(repoRoot)) {
