@@ -376,11 +376,46 @@ fn is_data_access_source(source: &str) -> bool {
     {
         return false;
     }
-    contains_data_layer_token(&lower, "prisma")
-        || contains_data_layer_token(&lower, "database")
-        || lower.contains("/db")
-        || lower.ends_with("db")
-        || lower.contains("data-access")
+    // D4. `db` and `data-access` were bare substring tests while `prisma` and `database` were
+    // already boundary-aware — which is exactly why `lib/prismatic` behaved and `lib/dbg`,
+    // `lib/imdb` and `lib/no-data-access-here` did not. All four now test the extension-stripped
+    // string, so `db.ts` matches because the module is *named* `db`, not because the path happens
+    // to contain `/db`.
+    contains_data_layer_token(without_extension, "prisma")
+        || contains_data_layer_token(without_extension, "database")
+        || data_layer_token_names_segment(without_extension, "db")
+        || data_layer_token_names_segment(without_extension, "data-access")
+}
+
+/// True when a data-layer token *names* a path segment rather than appearing inside one.
+///
+/// Stricter than `contains_data_layer_token`, and it has to be, because `data-access` contains a
+/// hyphen: `-` is not alphanumeric, so `no-data-access-here` clears the plain boundary test on
+/// both sides while plainly not being a data-access module. `legacy-data-access-notes.ts` is the
+/// same shape. Requiring the token to sit at the start or the end of its segment separates the
+/// modules a name heuristic should claim — `lib/data-access/orders`, `my-db`, `db-client`, where
+/// the token is the segment or its head or tail — from the ones where it is an interior fragment
+/// of a longer phrase.
+///
+/// Kept to `db` and `data-access` deliberately. `prisma` and `database` are not reported as
+/// producing false positives and stay on the looser matcher; widening this rule to them would
+/// narrow matching on inputs no defect asks about, and any recall change there belongs to a
+/// measurement, not to this fix.
+fn data_layer_token_names_segment(haystack: &str, token: &str) -> bool {
+    haystack.split('/').any(|segment| {
+        if segment == token {
+            return true;
+        }
+        let starts_segment = segment
+            .strip_prefix(token)
+            .and_then(|rest| rest.chars().next())
+            .is_some_and(|character| !character.is_ascii_alphanumeric());
+        let ends_segment = segment
+            .strip_suffix(token)
+            .and_then(|rest| rest.chars().next_back())
+            .is_some_and(|character| !character.is_ascii_alphanumeric());
+        starts_segment || ends_segment
+    })
 }
 
 fn is_next_app_tree_path(file_path: &str) -> bool {
@@ -2560,5 +2595,87 @@ mod coverage_direction_tests {
         assert_eq!(suggested_mode_for_coverage(10, 10), "warn");
         // A degenerate scope cannot justify blocking.
         assert_eq!(suggested_mode_for_coverage(0, 0), "warn");
+    }
+}
+
+#[cfg(test)]
+mod data_layer_token_boundary_tests {
+    use super::is_data_access_source;
+
+    /// D4 (TDD §5.4). The full boundary matrix, both extension forms.
+    ///
+    /// `is_data_access_source` matched `db` and `data-access` as bare substrings, so `lib/dbg` (a
+    /// console logger) matched via `contains("/db")` and `lib/imdb` (a movie-API client) via
+    /// `ends_with("db")`. `data-access` had the identical bug and the audit did not report it:
+    /// `lib/no-data-access-here` matched a module whose name says it does no data access.
+    ///
+    /// The extension column is the part an earlier draft left unsettled. The token tests used to
+    /// run on the string *with* the extension, so `lib/db.ts` matched via the `/db` path-separator
+    /// branch and never via the name — right answer, wrong reason, and it meant `lib/my-db.ts`
+    /// depended on which branch happened to fire. They now run on the extension-stripped string.
+    #[test]
+    fn data_layer_tokens_match_at_segment_boundaries_only() {
+        let matches = [
+            // Genuine data layers.
+            "lib/db",
+            "lib/db.ts",
+            "db/client",
+            "db/client.ts",
+            "my-db",
+            "my-db.ts",
+            "db.ts",
+            "lib/data-access/orders",
+            "lib/data-access/orders.ts",
+            // A hyphenated compound whose head is the token still names the module.
+            "lib/db-client.ts",
+            // Untouched by D4, asserted so the change is visibly scoped.
+            "lib/prisma.ts",
+            "@calcom/prisma",
+            "lib/database.ts",
+        ];
+        for source in matches {
+            assert!(
+                is_data_access_source(source),
+                "{source} is a data layer and must match"
+            );
+        }
+
+        let non_matches = [
+            // `db` inside a longer identifier, on each side and both.
+            "lib/dbg",
+            "lib/dbg.ts",
+            "lib/imdb",
+            "lib/imdb.ts",
+            "lib/appdb",
+            "lib/appdb.ts",
+            "lib/dbx",
+            "lib/dbx.ts",
+            // `data-access` as an interior fragment of a hyphenated phrase. The audit missed
+            // this one entirely; a `db`-only fix leaves both of these matching.
+            "lib/no-data-access-here",
+            "lib/no-data-access-here.ts",
+            "legacy-data-access-notes.ts",
+            // Already correct at baseline — `prisma` was the one token routed through the
+            // boundary matcher, which is why only it behaved.
+            "lib/prismatic.ts",
+            "@calcom/lib/isPrismaObj",
+            "lib/utils.ts",
+        ];
+        for source in non_matches {
+            assert!(
+                !is_data_access_source(source),
+                "{source} is not a data layer and must not match"
+            );
+        }
+    }
+
+    /// Accepted trade-off, asserted rather than left to a comment: a module genuinely named
+    /// `appdb` stops matching the *name* heuristic. Such modules typically also match via content
+    /// or the `database` token, and a miss surfaces as a candidate gap — visible — rather than a
+    /// false block, which is harmful.
+    #[test]
+    fn a_module_genuinely_named_appdb_is_an_accepted_miss() {
+        assert!(!is_data_access_source("lib/appdb.ts"));
+        assert!(is_data_access_source("lib/appdb/database.ts"));
     }
 }
