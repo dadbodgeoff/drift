@@ -1,0 +1,6 @@
+pages/api/route-data-access.ts imports loadOrders from ../../lib/data-access/orders directly; route modules should delegate through the accepted service/data-access layer.
+pages/api/route-database.ts imports connect from ../../lib/database directly; route modules should delegate through the accepted service/data-access layer.
+pages/api/route-db.ts imports rawQuery from ../../lib/db directly; route modules should delegate through the accepted service/data-access layer.
+pages/api/route-dbg.ts imports dbg from ../../lib/dbg directly; route modules should delegate through the accepted service/data-access layer.
+pages/api/route-imdb.ts imports fetchMovie from ../../lib/imdb directly; route modules should delegate through the accepted service/data-access layer.
+pages/api/route-prisma.ts imports prismaClient from ../../lib/prisma directly; route modules should delegate through the accepted service/data-access layer.

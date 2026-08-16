@@ -1,0 +1,4 @@
+API route imports data access directly|app/api/posts/[postId]/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer.|error
+API route imports data access directly|app/api/posts/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer.|error
+API route imports data access directly|app/api/users/[userId]/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer.|error
+API route imports data access directly|app/api/webhooks/stripe/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer.|error

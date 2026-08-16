@@ -1,0 +1,633 @@
+{
+  "response_schema": "drift.check.result.v1",
+  "check": {
+    "id": "check_d85015d921639ce4",
+    "repo_id": "repo_ea43ac15d90e51cb",
+    "repo_contract_id": "contract_ea43ac15d90e51cb",
+    "contract_fingerprint": "6769c570c8ce39ce9ceca5c769fbaf250cc21d225a07e938160bd5b2d3849579",
+    "scope": "full",
+    "status": "pass",
+    "scan_status": {
+      "mode": "check_time_collection",
+      "stored_scan_required": false,
+      "stale": false,
+      "scan_id": "scan_check_e3d968ff8e104ec0"
+    },
+    "fallback_status": {
+      "engine_source": "rust",
+      "fallback_used": false,
+      "fallback_reason": null,
+      "engine_error_message": null,
+      "degraded_capabilities": [],
+      "enforcement_degraded": false,
+      "engine_resolution": "env_override",
+      "engine_build_profile": "release"
+    },
+    "capability_completeness": {
+      "complete": true,
+      "missing_capabilities": [],
+      "can_block": false
+    },
+    "machine_contract_versions": {
+      "schema_version": "drift.machine_contract_versions.v1",
+      "cli_version": "0.1.0",
+      "core_version": "0.1.0",
+      "storage_schema_version": 34,
+      "contract_schema_version": 1,
+      "engine_contract_versions": {
+        "scan_request": "engine.scan.request.v1",
+        "scan_result": "engine.scan.result.v1",
+        "check_request": "engine.check.request.v1",
+        "check_result": "engine.check.result.v1",
+        "candidates_result": "engine.candidates.result.v1",
+        "stream_event": "engine.stream.event.v1"
+      },
+      "factgraph_schema_version": "factgraph.v2",
+      "scanner_version": "0.1.0",
+      "rule_engine_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0"
+      }
+    }
+  },
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_ea43ac15d90e51cb",
+    "scan_id": "scan_check_e3d968ff8e104ec0",
+    "surface": "check",
+    "graph_available": true,
+    "graph_complete": false,
+    "parser_gap_count": 15,
+    "parser_gaps_by_kind": {
+      "unresolved_import": 7,
+      "unresolved_symbol": 8
+    },
+    "confidence": 0.6,
+    "decision": "refuse",
+    "reasons": [
+      "graph_incomplete",
+      "parser_gaps_present"
+    ],
+    "required_capabilities": [
+      "direct_data_access_check"
+    ],
+    "missing_capabilities": []
+  },
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 34,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0"
+    }
+  },
+  "policy": {
+    "allowed": true,
+    "surface": "cli-check",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "audit_integrity": {
+    "repo_id": "repo_ea43ac15d90e51cb",
+    "valid": true,
+    "event_count": 4,
+    "verified_count": 4,
+    "head_event_hash": "caee49cbc94f8d95bcd6021057b6aed895589c238449c9f4c3a829fa90178406",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "summary": {
+    "repo_id": "repo_ea43ac15d90e51cb",
+    "scope": "full",
+    "findings_count": 5,
+    "blocking_count": 0,
+    "blocked_reasons": [],
+    "partial_coverage": {
+      "complete": false,
+      "reasons": [
+        "unresolved_route_import:app/(docs)/docs/[[...slug]]/page.tsx",
+        "unresolved_route_import:app/(docs)/guides/[...slug]/page.tsx",
+        "unresolved_route_import:app/(docs)/guides/page.tsx",
+        "unresolved_route_import:app/(marketing)/[...slug]/page.tsx",
+        "unresolved_route_import:app/(marketing)/blog/[...slug]/page.tsx",
+        "unresolved_route_import:app/(marketing)/blog/page.tsx",
+        "unresolved_route_import:components/billing-form.tsx",
+        "unresolved_route_import:components/editor.tsx",
+        "unresolved_route_import:components/post-create-button.tsx",
+        "unresolved_route_import:components/post-operations.tsx",
+        "unresolved_route_import:components/search.tsx",
+        "unresolved_route_import:components/ui/toaster.tsx",
+        "unresolved_route_import:components/user-auth-form.tsx",
+        "unresolved_route_import:components/user-name-form.tsx"
+      ]
+    },
+    "import_coverage": {
+      "schema_version": "drift.import_coverage.v1",
+      "resolved_local_imports": 308,
+      "unresolved_local_imports": 7,
+      "local_import_resolution_rate": 0.9778,
+      "diagnostic_count": 15,
+      "parser_gap_count": 15,
+      "reconciles": true,
+      "by_code": [
+        {
+          "code": "unresolved_import_symbol",
+          "count": 8,
+          "counts_as_parser_gap": true,
+          "limitation": null,
+          "by_directory": [
+            {
+              "directory": "components",
+              "count": 8
+            }
+          ],
+          "top_specifiers": [
+            {
+              "specifier": "@/components/ui/use-toast",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "code": "unresolved_import",
+          "count": 7,
+          "counts_as_parser_gap": true,
+          "limitation": null,
+          "by_directory": [
+            {
+              "directory": "app",
+              "count": 7
+            }
+          ],
+          "top_specifiers": [
+            {
+              "specifier": "contentlayer/generated",
+              "count": 7
+            }
+          ]
+        }
+      ]
+    },
+    "waived_findings_count": 0,
+    "expired_findings_count": 0,
+    "skipped_deleted_files": [],
+    "engine_source": "rust",
+    "affected_scope": {
+      "mode": "full",
+      "changed_file_count": 133,
+      "changed_line_count": 0,
+      "deleted_file_count": 0,
+      "deleted_files": [],
+      "renamed_file_count": 0,
+      "missing_file_count": 0,
+      "missing_files": []
+    },
+    "outcome": {
+      "status_counts": {
+        "new": 1,
+        "pre_existing": 4
+      },
+      "diff_status_counts": {
+        "touched_existing": 5
+      },
+      "enforcement_counts": {
+        "warn": 5
+      },
+      "blocking_reasons": [],
+      "warning_reasons": [],
+      "non_blocking_reasons": [
+        {
+          "reason": "pre_existing_baseline",
+          "count": 4
+        },
+        {
+          "reason": "touched_existing_not_new_hunk",
+          "count": 1
+        },
+        {
+          "reason": "full_scope_reports_existing_violations_without_blocking",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "review_items": [
+    {
+      "id": "finding_58502649f922401e",
+      "convention_id": "convention_e47056ca91458d54",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "app/api/comments/route.ts",
+        "start_line": 1,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_925cc12166dc54c0",
+      "convention_id": "convention_e47056ca91458d54",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "app/api/posts/[postId]/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_587b7eb6c9eaae3d",
+      "convention_id": "convention_e47056ca91458d54",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "app/api/posts/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_c4b5181cbf671102",
+      "convention_id": "convention_e47056ca91458d54",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "app/api/users/[userId]/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_5c8de454a2d142f6",
+      "convention_id": "convention_e47056ca91458d54",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "app/api/webhooks/stripe/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    }
+  ],
+  "waived_findings": [],
+  "security_boundary_proofs": [],
+  "next_commands": [
+    "drift findings list --repo repo_ea43ac15d90e51cb --status new --json",
+    "drift prepare \"task\" --repo repo_ea43ac15d90e51cb --json",
+    "drift baseline create --repo repo_ea43ac15d90e51cb --from main --confirm --json"
+  ],
+  "findings": [
+    {
+      "id": "finding_58502649f922401e",
+      "repo_id": "repo_ea43ac15d90e51cb",
+      "convention_id": "convention_e47056ca91458d54",
+      "check_id": "check_d85015d921639ce4",
+      "repo_contract_id": "contract_ea43ac15d90e51cb",
+      "fingerprint": "58502649f922401eba5ef3f118b87919899cfd158d28ef435f5c78c86f398345",
+      "title": "API route imports data access directly",
+      "message": "app/api/comments/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer. 4 existing violations are baselined and do not block; new code is held to this rule.",
+      "severity": "error",
+      "enforcement_result": "warn",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_58502649f922401e",
+          "kind": "violation",
+          "file_path": "app/api/comments/route.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact_561c9e8db93eece1"
+          ],
+          "scan_id": "scan_check_e3d968ff8e104ec0",
+          "file_hash": "ff81e33dec2b30e32a9a80681c8591029c4ba9c359d18e54629abfd3d0f5c249",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "service",
+      "actual_layer": "data_access",
+      "graph_path": [
+        "app/api/comments/route.ts",
+        "@/lib/db"
+      ],
+      "suggested_fix": "Move data access behind a service layer before returning from the route.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:21:50.296Z",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    },
+    {
+      "id": "finding_925cc12166dc54c0",
+      "repo_id": "repo_ea43ac15d90e51cb",
+      "convention_id": "convention_e47056ca91458d54",
+      "check_id": "check_d85015d921639ce4",
+      "repo_contract_id": "contract_ea43ac15d90e51cb",
+      "fingerprint": "925cc12166dc54c079e82328d9b8c21ff4f76e7331459dc92ef069d1dd64972d",
+      "title": "API route imports data access directly",
+      "message": "app/api/posts/[postId]/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer. 4 existing violations are baselined and do not block; new code is held to this rule.",
+      "severity": "error",
+      "enforcement_result": "warn",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_925cc12166dc54c0",
+          "kind": "violation",
+          "file_path": "app/api/posts/[postId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact_d348afe86f49acb2"
+          ],
+          "scan_id": "scan_check_e3d968ff8e104ec0",
+          "file_hash": "0793f8b58bd592378756a6763caf791d336d3232a13ad157dfa56b14f5e1a2e3",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "service",
+      "actual_layer": "data_access",
+      "graph_path": [
+        "app/api/posts/[postId]/route.ts",
+        "@/lib/db"
+      ],
+      "suggested_fix": "Move data access behind a service layer before returning from the route.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:21:50.296Z",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    },
+    {
+      "id": "finding_587b7eb6c9eaae3d",
+      "repo_id": "repo_ea43ac15d90e51cb",
+      "convention_id": "convention_e47056ca91458d54",
+      "check_id": "check_d85015d921639ce4",
+      "repo_contract_id": "contract_ea43ac15d90e51cb",
+      "fingerprint": "587b7eb6c9eaae3dcf97c3a9545320d343019244f723a4f13052561e87fdabaf",
+      "title": "API route imports data access directly",
+      "message": "app/api/posts/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer. 4 existing violations are baselined and do not block; new code is held to this rule.",
+      "severity": "error",
+      "enforcement_result": "warn",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_587b7eb6c9eaae3d",
+          "kind": "violation",
+          "file_path": "app/api/posts/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact_01ec6722e2850be4"
+          ],
+          "scan_id": "scan_check_e3d968ff8e104ec0",
+          "file_hash": "31f98edf51e763bfcd3f119a82593536f8895d54320aebcbdc1212502f798edf",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "service",
+      "actual_layer": "data_access",
+      "graph_path": [
+        "app/api/posts/route.ts",
+        "@/lib/db"
+      ],
+      "suggested_fix": "Move data access behind a service layer before returning from the route.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:21:50.296Z",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    },
+    {
+      "id": "finding_c4b5181cbf671102",
+      "repo_id": "repo_ea43ac15d90e51cb",
+      "convention_id": "convention_e47056ca91458d54",
+      "check_id": "check_d85015d921639ce4",
+      "repo_contract_id": "contract_ea43ac15d90e51cb",
+      "fingerprint": "c4b5181cbf671102e1650a740f3bf9dfa97b64a2260bc9e52207de7d6ac915e3",
+      "title": "API route imports data access directly",
+      "message": "app/api/users/[userId]/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer. 4 existing violations are baselined and do not block; new code is held to this rule.",
+      "severity": "error",
+      "enforcement_result": "warn",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_c4b5181cbf671102",
+          "kind": "violation",
+          "file_path": "app/api/users/[userId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact_ef8a7a95da0deee9"
+          ],
+          "scan_id": "scan_check_e3d968ff8e104ec0",
+          "file_hash": "f52e75f34ff2a296b4c92a757d3cdb461e64e1504f68eefdcd63f19b725fa471",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "service",
+      "actual_layer": "data_access",
+      "graph_path": [
+        "app/api/users/[userId]/route.ts",
+        "@/lib/db"
+      ],
+      "suggested_fix": "Move data access behind a service layer before returning from the route.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:21:50.296Z",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    },
+    {
+      "id": "finding_5c8de454a2d142f6",
+      "repo_id": "repo_ea43ac15d90e51cb",
+      "convention_id": "convention_e47056ca91458d54",
+      "check_id": "check_d85015d921639ce4",
+      "repo_contract_id": "contract_ea43ac15d90e51cb",
+      "fingerprint": "5c8de454a2d142f63e58340a4b7e371d177a4eae18b680500427b5ee18d975e7",
+      "title": "API route imports data access directly",
+      "message": "app/api/webhooks/stripe/route.ts imports db from @/lib/db directly; route modules should delegate through the accepted service/data-access layer. 4 existing violations are baselined and do not block; new code is held to this rule.",
+      "severity": "error",
+      "enforcement_result": "warn",
+      "status": "pre_existing",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_5c8de454a2d142f6",
+          "kind": "violation",
+          "file_path": "app/api/webhooks/stripe/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact_c500eae8c8064ee0"
+          ],
+          "scan_id": "scan_check_e3d968ff8e104ec0",
+          "file_hash": "c6984f90fdd2aeac6edb262f7dbead6502566fdeb563901168890b846226edd6",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "service",
+      "actual_layer": "data_access",
+      "graph_path": [
+        "app/api/webhooks/stripe/route.ts",
+        "@/lib/db"
+      ],
+      "suggested_fix": "Move data access behind a service layer before returning from the route.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:21:50.296Z",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    }
+  ]
+}

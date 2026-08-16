@@ -1,0 +1,187 @@
+{
+  "response_schema": "drift.check.result.v1",
+  "check": {
+    "id": "check_8d2ac55d7951dae0",
+    "repo_id": "repo_85e39efa7a3da55a",
+    "repo_contract_id": "contract_85e39efa7a3da55a",
+    "contract_fingerprint": "0262954478db3b272265d31ce45e7198b2be6b7a0e3cb4a5d2cf33841c8bf214",
+    "scope": "full",
+    "status": "pass",
+    "scan_status": {
+      "mode": "check_time_collection",
+      "stored_scan_required": false,
+      "stale": false,
+      "scan_id": "scan_check_5f2154830e219ff9"
+    },
+    "fallback_status": {
+      "engine_source": "rust",
+      "fallback_used": false,
+      "fallback_reason": null,
+      "engine_error_message": null,
+      "degraded_capabilities": [],
+      "enforcement_degraded": false,
+      "engine_resolution": "env_override",
+      "engine_build_profile": "release"
+    },
+    "capability_completeness": {
+      "complete": true,
+      "missing_capabilities": [],
+      "can_block": true
+    },
+    "machine_contract_versions": {
+      "schema_version": "drift.machine_contract_versions.v1",
+      "cli_version": "0.1.0",
+      "core_version": "0.1.0",
+      "storage_schema_version": 34,
+      "contract_schema_version": 1,
+      "engine_contract_versions": {
+        "scan_request": "engine.scan.request.v1",
+        "scan_result": "engine.scan.result.v1",
+        "check_request": "engine.check.request.v1",
+        "check_result": "engine.check.result.v1",
+        "candidates_result": "engine.candidates.result.v1",
+        "stream_event": "engine.stream.event.v1"
+      },
+      "factgraph_schema_version": "factgraph.v2",
+      "scanner_version": "0.1.0",
+      "rule_engine_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0"
+      }
+    }
+  },
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_85e39efa7a3da55a",
+    "scan_id": "scan_check_5f2154830e219ff9",
+    "surface": "check",
+    "graph_available": true,
+    "graph_complete": true,
+    "parser_gap_count": 0,
+    "parser_gaps_by_kind": {},
+    "confidence": 1,
+    "decision": "blocking_allowed",
+    "reasons": [],
+    "required_capabilities": [
+      "direct_data_access_check"
+    ],
+    "missing_capabilities": []
+  },
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 34,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0"
+    }
+  },
+  "policy": {
+    "allowed": true,
+    "surface": "cli-check",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "audit_integrity": {
+    "repo_id": "repo_85e39efa7a3da55a",
+    "valid": true,
+    "event_count": 3,
+    "verified_count": 3,
+    "head_event_hash": "5d2b781bf3308b0b68e795b0940dbb2e1783ecfb282dae553aa26472585329f4",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "summary": {
+    "repo_id": "repo_85e39efa7a3da55a",
+    "scope": "full",
+    "findings_count": 0,
+    "blocking_count": 0,
+    "blocked_reasons": [],
+    "partial_coverage": {
+      "complete": true,
+      "reasons": []
+    },
+    "import_coverage": {
+      "schema_version": "drift.import_coverage.v1",
+      "resolved_local_imports": 0,
+      "unresolved_local_imports": 0,
+      "local_import_resolution_rate": null,
+      "diagnostic_count": 0,
+      "parser_gap_count": 0,
+      "reconciles": true,
+      "by_code": []
+    },
+    "waived_findings_count": 0,
+    "expired_findings_count": 0,
+    "skipped_deleted_files": [],
+    "engine_source": "rust",
+    "affected_scope": {
+      "mode": "full",
+      "changed_file_count": 2,
+      "changed_line_count": 0,
+      "deleted_file_count": 0,
+      "deleted_files": [],
+      "renamed_file_count": 0,
+      "missing_file_count": 0,
+      "missing_files": []
+    },
+    "outcome": {
+      "status_counts": {},
+      "diff_status_counts": {},
+      "enforcement_counts": {},
+      "blocking_reasons": [],
+      "warning_reasons": [],
+      "non_blocking_reasons": []
+    }
+  },
+  "review_items": [],
+  "waived_findings": [],
+  "security_boundary_proofs": [],
+  "next_commands": [
+    "drift findings list --repo repo_85e39efa7a3da55a --json",
+    "drift prepare \"task\" --repo repo_85e39efa7a3da55a --json"
+  ],
+  "findings": []
+}
