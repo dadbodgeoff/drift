@@ -55,18 +55,55 @@ fn grouped_next_api_route_gets_api_route_role() {
     );
 }
 
+/// D-H2. This test used to assert the opposite, and asserting the opposite is what kept 27 real
+/// handlers out of every role-scoped convention: `app/(marketing)/about/route.ts` is an HTTP route
+/// handler serving `/about`, and Next.js does not care that no folder above it is called `api`.
+///
+/// The role name stays `api_route`. It is the existing vocabulary for "HTTP route handler" and is
+/// what conventions, scope predicates and evidence are keyed on; renaming it would be a much larger
+/// change than the one this fixes, and would say nothing new.
 #[test]
-fn grouped_non_api_app_route_does_not_get_api_route_role() {
-    let source = r#"export default function Page() { return null; }"#;
-    let facts = extract_typescript_facts("apps/web/app/(marketing)/about/route.ts", source)
-        .expect("typescript facts");
+fn app_route_outside_an_api_folder_still_gets_the_route_role() {
+    let source = r#"export async function GET() { return Response.json({ ok: true }); }"#;
+    for path in [
+        "apps/web/app/(marketing)/about/route.ts",
+        // dub's real shape: no auth wrapper, imports prisma directly, previously invisible.
+        "apps/web/app/wellknown/[domain]/[file]/route.ts",
+        // formbricks' and openstatus's real shapes.
+        "apps/web/app/.well-known/openid-configuration/[[...issuer]]/route.ts",
+        "apps/status-page/src/app/(status-page)/[domain]/(public)/feed/[type]/route.ts",
+        "app/route.ts",
+    ] {
+        let facts = extract_typescript_facts(path, source).expect("typescript facts");
+        assert!(
+            facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::FileRoleDetected && fact.name == "api_route"),
+            "{path} is a Next route handler and must carry the route role: {facts:#?}"
+        );
+    }
+}
 
-    assert!(
-        !facts
-            .iter()
-            .any(|fact| fact.kind == FactKind::FileRoleDetected && fact.name == "api_route"),
-        "non-api route was mislabeled: {facts:#?}"
-    );
+/// The widening has a boundary, and it is the `app` ancestor. Without one, a file called `route.ts`
+/// is an ordinary module - an Express router, or one of formbricks' 28 `modules/**/route.ts`
+/// re-export targets, which are imported BY app routes and are not routes themselves.
+#[test]
+fn a_route_file_outside_an_app_tree_is_not_a_route() {
+    let source = r#"export async function GET() { return Response.json({ ok: true }); }"#;
+    for path in [
+        "server/api/users/route.ts",
+        "apps/web/modules/api/v2/management/webhooks/route.ts",
+        // Not named `route`, so not a handler however it sits.
+        "apps/web/app/api/users/helper.ts",
+    ] {
+        let facts = extract_typescript_facts(path, source).expect("typescript facts");
+        assert!(
+            !facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::FileRoleDetected && fact.name == "api_route"),
+            "{path} is not a Next route handler: {facts:#?}"
+        );
+    }
 }
 
 #[test]

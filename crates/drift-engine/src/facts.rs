@@ -1229,9 +1229,18 @@ pub fn route_flavor(file_path: &str) -> &'static str {
 
     let lower = file_path.to_ascii_lowercase();
     let all = lower.split('/').collect::<Vec<_>>();
-    // Only segments below the api boundary decide flavour: a repo mounted under `apps/cron-service/`
+    // Only segments below the route root decide flavour: a repo mounted under `apps/cron-service/`
     // does not make every route inside it a cron job.
-    let below = match all.iter().rposition(|segment| *segment == "api") {
+    //
+    // D-H2 made the `None` arm reachable for real paths, and it was wrong: it fell back to the WHOLE
+    // path, so `apps/cron/app/wellknown/route.ts` - a route handler in a repo whose app directory is
+    // called `cron` - would have been classified `cron_job` and dropped out of the session family's
+    // denominator. `app` is the route root when there is no `api` below it, so it is the boundary.
+    let route_root = all
+        .iter()
+        .rposition(|segment| *segment == "api")
+        .or_else(|| all.iter().rposition(|segment| *segment == "app"));
+    let below = match route_root {
         Some(index) => &all[index + 1..],
         None => &all[..],
     };

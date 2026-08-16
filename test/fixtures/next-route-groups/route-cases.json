@@ -50,13 +50,88 @@
     "ignored_segments": []
   },
   {
-    "name": "app non api route",
+    "name": "D-H2 app route outside any api folder is still a route handler",
     "file_path": "app/(marketing)/about/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/about",
+    "dynamic_params": [],
+    "route_group_segments": ["(marketing)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 dub wellknown - no auth wrapper, imports prisma directly, previously invisible",
+    "file_path": "apps/web/app/wellknown/[domain]/[file]/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/wellknown/:domain/:file",
+    "dynamic_params": ["domain", "file"],
+    "route_group_segments": [],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 dub invoices - a .tsx route handler inside a route group",
+    "file_path": "apps/web/app/(ee)/app.dub.co/invoices/[invoiceId]/route.tsx",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/app.dub.co/invoices/:invoiceId",
+    "dynamic_params": ["invoiceId"],
+    "route_group_segments": ["(ee)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 formbricks optional catch-all under a dotted well-known folder",
+    "file_path": "apps/web/app/.well-known/openid-configuration/[[...issuer]]/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/.well-known/openid-configuration/:issuer*",
+    "dynamic_params": ["issuer"],
+    "route_group_segments": [],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 openstatus status-page feed nested under two route groups",
+    "file_path": "apps/status-page/src/app/(status-page)/[domain]/[locale]/(public)/feed/[type]/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/:domain/:locale/feed/:type",
+    "dynamic_params": ["domain", "locale", "type"],
+    "route_group_segments": ["(status-page)", "(public)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 api below real url segments - the whole path below app is the url, not the part from api onwards",
+    "file_path": "apps/web/src/app/(landing)/play/checker/api/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/play/checker/api",
+    "dynamic_params": [],
+    "route_group_segments": ["(landing)"],
+    "ignored_segments": []
+  },
+  {
+    "name": "D-H2 app root route handler serves /",
+    "file_path": "app/route.ts",
+    "is_api_route": true,
+    "framework": "next_app_route",
+    "route_path": "/",
+    "dynamic_params": [],
+    "route_group_segments": [],
+    "ignored_segments": []
+  },
+  {
+    "name": "an app segment is still required - this is an express module",
+    "file_path": "server/api/users/route.ts",
     "is_api_route": false
   },
   {
-    "name": "non next api folder",
-    "file_path": "server/api/users/route.ts",
+    "name": "formbricks re-export target outside the app tree is not itself a route",
+    "file_path": "apps/web/modules/api/v2/management/webhooks/route.ts",
+    "is_api_route": false
+  },
+  {
+    "name": "the file must be named route - a helper beside one is not a handler",
+    "file_path": "app/api/users/helper.ts",
     "is_api_route": false
   }
 ]
