@@ -1,7 +1,7 @@
 [
   {
     "repo": "taxonomy",
-    "onboard_seconds": 0.6,
+    "onboard_seconds": 0.7,
     "onboarded": true,
     "repo_id": "repo_11b231f73583e336",
     "files": 132,
@@ -31,13 +31,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 3072,
     "guidance_within_budget": true,
-    "packet_bytes": 81510,
+    "packet_bytes": 81355,
     "packet_largest_sections": [
       "graph_context:21856",
-      "scan_status:7611",
+      "scan_status:7641",
       "task_preflight_packet:7419"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "warn",
     "injection_finding_status": "new",
@@ -50,7 +51,7 @@
   },
   {
     "repo": "dub",
-    "onboard_seconds": 33.4,
+    "onboard_seconds": 34.6,
     "onboarded": true,
     "repo_id": "repo_9a75a9b284d85c79",
     "files": 4128,
@@ -82,13 +83,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 5350,
     "guidance_within_budget": true,
-    "packet_bytes": 270193,
+    "packet_bytes": 270038,
     "packet_largest_sections": [
       "findings:90039",
       "graph_context:38104",
-      "semantic_coverage:19979"
+      "semantic_coverage:19820"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "warn",
     "injection_finding_status": "new",
@@ -101,7 +103,7 @@
   },
   {
     "repo": "formbricks",
-    "onboard_seconds": 33.1,
+    "onboard_seconds": 32,
     "onboarded": true,
     "repo_id": "repo_bd38209bef6ebfe5",
     "files": 2872,
@@ -132,13 +134,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 4415,
     "guidance_within_budget": true,
-    "packet_bytes": 88760,
+    "packet_bytes": 88605,
     "packet_largest_sections": [
       "graph_context:16416",
       "task_preflight_packet:10201",
-      "semantic_coverage:8939"
+      "scan_status:8837"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "block",
     "injection_finding_status": "new",
@@ -151,7 +154,7 @@
   },
   {
     "repo": "calcom",
-    "onboard_seconds": 37.2,
+    "onboard_seconds": 36.9,
     "onboarded": true,
     "repo_id": "repo_5bd515cfd633da52",
     "files": 5066,
@@ -181,13 +184,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 3833,
     "guidance_within_budget": true,
-    "packet_bytes": 133945,
+    "packet_bytes": 133790,
     "packet_largest_sections": [
-      "semantic_coverage:35090",
+      "semantic_coverage:34931",
       "graph_context:24724",
       "findings:9205"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "block",
     "injection_finding_status": "new",
@@ -231,13 +235,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 3815,
     "guidance_within_budget": true,
-    "packet_bytes": 226611,
+    "packet_bytes": 226456,
     "packet_largest_sections": [
       "findings:59575",
       "graph_context:50725",
-      "semantic_coverage:11279"
+      "semantic_coverage:11120"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "warn",
     "injection_finding_status": "new",
@@ -253,7 +258,7 @@
     "inference_alone_found_data_layer": false,
     "discovery_named_data_layer": true,
     "discovery_reason": "no_data_access_candidate_inferred_but_data_layer_found",
-    "onboard_seconds": 16.9,
+    "onboard_seconds": 17.4,
     "onboarded": true,
     "repo_id": "repo_cc9a5c6bb0c30dc4",
     "files": 2037,
@@ -284,13 +289,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 4267,
     "guidance_within_budget": true,
-    "packet_bytes": 112534,
+    "packet_bytes": 112379,
     "packet_largest_sections": [
       "graph_context:22154",
-      "semantic_coverage:15629",
+      "semantic_coverage:15470",
       "task_preflight_packet:11405"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "block",
     "injection_finding_status": "new",
@@ -303,7 +309,7 @@
   },
   {
     "repo": "openstatus",
-    "onboard_seconds": 17.7,
+    "onboard_seconds": 22.7,
     "onboarded": true,
     "repo_id": "repo_c1e4d99fcacbd550",
     "files": 2185,
@@ -335,13 +341,14 @@
     "exemplar_violators": [],
     "guidance_bytes": 4596,
     "guidance_within_budget": true,
-    "packet_bytes": 197760,
+    "packet_bytes": 197605,
     "packet_largest_sections": [
       "graph_context:52746",
       "task_preflight_packet:24211",
-      "semantic_coverage:19739"
+      "semantic_coverage:19580"
     ],
     "packet_within_envelope_budget": true,
+    "packet_budget_band": "under_60pct",
     "injection_diff_status": "new_in_diff",
     "injection_enforcement": "block",
     "injection_finding_status": "new",

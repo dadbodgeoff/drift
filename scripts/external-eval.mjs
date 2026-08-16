@@ -23,7 +23,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { mergeBaselineRows, repoVerdict, unsafeBaselineMoves, updateGate } from "./external-eval-predicate.mjs";
+import { envelopeBudgetBand, mergeBaselineRows, PACKET_ENVELOPE_BUDGET, repoVerdict, unsafeBaselineMoves, updateGate } from "./external-eval-predicate.mjs";
 import { EVAL_REPOS } from "./eval-repos.mjs";
 import { importOf } from "./data-layer-import.mjs";
 import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
@@ -459,7 +459,11 @@ function evaluateRepoAt(reposDir, cfg) {
           .sort((left, right) => right[1] - left[1])
           .slice(0, 3)
           .map(([key, bytes]) => `${key}:${bytes}`);
-        result.packet_within_envelope_budget = result.packet_bytes < 500_000;
+        result.packet_within_envelope_budget = result.packet_bytes < PACKET_ENVELOPE_BUDGET;
+        // W0: the band IS compared (it is deliberately absent from VOLATILE). The boolean above
+        // only moves once the budget is already blown; this moves at 60%, while there is still
+        // room to act. See envelopeBudgetBand for why a band rather than the raw byte count.
+        result.packet_budget_band = envelopeBudgetBand(result.packet_bytes);
       } catch (error) {
         result.guidance_within_budget = false;
         result.guidance_parse_error = String(error.message).slice(0, 200);
