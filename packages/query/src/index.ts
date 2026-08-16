@@ -29,7 +29,7 @@ export { classifyAgentTask } from "./task-intent.js";
 export { evaluateRoleEdge } from "./role-ontology.js";
 export { scoreHelperSimilarity } from "./helper-similarity.js";
 export { buildRepoTopology } from "./repo-topology.js";
-export { buildParserGapSummary, buildReadiness, buildStoredScanReadiness } from "./readiness.js";
+export { buildParserGapSection, buildParserGapSummary, buildReadiness, buildStoredScanReadiness } from "./readiness.js";
 export { buildParserGapQuality } from "./parser-gap-quality.js";
 export { buildSemanticCoverage, buildSemanticCoverageFromCapabilityReport } from "./semantic-coverage.js";
 export { buildCanonicalRouteReadModel } from "./canonical-routes.js";

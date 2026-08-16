@@ -62,8 +62,15 @@ describe("release hygiene", () => {
       // there. Listing them did not execute them; it produced a gate that named an oracle it never
       // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
       // union that any "verified" claim has to cite.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      // W1 added `pnpm check:storage-invariants`; W3 added `pnpm check:error-contract`. This
+      // assertion pins the whole string on purpose - a gate silently dropped from verify:ci is
+      // indistinguishable from one that never existed - so adding a gate has to land here too.
+      // Both workstreams forgot, and this stayed red on main until a later one noticed: the
+      // package suites and the harness were run before merge, `test:e2e` was not.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
+    expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
+    expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");
     expect(manifest.scripts["verify:evals"]).toBe(
       "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
     );

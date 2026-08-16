@@ -88,8 +88,7 @@ import {
   rankRelevantFiles,
   relevantFilesForTask,
   repoMapFileForPayload,
-  walkIndexableFiles
-} from "@drift/query";
+  walkIndexableFiles,buildParserGapSection} from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -1329,7 +1328,7 @@ function scanStatusPayload(
     stale,
     invalidation_reasons: invalidationReasons,
     changes,
-    parser_gaps: parserGapSummary(allParserGaps),
+    parser_gaps: buildParserGapSection(allParserGaps),
     parser_gap_quality: buildParserGapQuality({
       repo_id: repoId,
       scan_id: latestScan?.id ?? null,
@@ -1395,22 +1394,6 @@ function readinessForStoredScan(
   });
 }
 
-function parserGapSummary(gaps: Array<ParserGap | ParserGapV2>): {
-  total_count: number;
-  by_kind: Record<ParserGapKind, number>;
-  confidence_impact: Record<ParserGapConfidenceImpact, number>;
-  by_capability: Record<string, number>;
-  by_contract_kind: Record<string, number>;
-} {
-  const summary = buildParserGapSummary(gaps);
-  return {
-    total_count: summary.total_count,
-    by_kind: summary.by_kind as Record<ParserGapKind, number>,
-    confidence_impact: summary.confidence_impact as Record<ParserGapConfidenceImpact, number>,
-    by_capability: summary.by_capability,
-    by_contract_kind: summary.by_contract_kind
-  };
-}
 
 function scanStatusSummary(options: {
   latestScanId: string | null;
