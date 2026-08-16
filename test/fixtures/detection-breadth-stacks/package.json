@@ -1,0 +1,10 @@
+{
+  "name": "detection-breadth-stacks",
+  "private": true,
+  "dependencies": {
+    "drizzle-orm": "*",
+    "express": "*",
+    "kysely": "*",
+    "pg": "*"
+  }
+}

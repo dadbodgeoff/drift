@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/web/*"],
+      "@stacks/drizzle": ["./packages/drizzle/src/index.ts"],
+      "@stacks/kysely": ["./packages/kysely/src/index.ts"],
+      "@stacks/store": ["./packages/store/src/index.ts"]
+    }
+  }
+}
