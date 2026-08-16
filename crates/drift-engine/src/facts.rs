@@ -711,6 +711,51 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         }
     }
 
+    // D3 (ground-truth remediation §5.3): the LOCAL export-specifier form, `export { x };`.
+    //
+    // The re-export block above is gated on a `source` child - the `from` clause. A local
+    // `export { internalHelper };` has no source child, no declaration child, and is not a default
+    // export, so it fell through all four arms of this function and emitted nothing at all. It was
+    // the audit's sole recall miss: the symbol is exported and importable, and the engine could not
+    // see it.
+    //
+    // Deliberately NOT emitted here: `ReExportUsed` (and its `ImportUsed` partner). Those two are
+    // what `export_star_sources_by_file` (main.rs:2192) and the `MODULE_REEXPORTS_MODULE` edge read.
+    // A local export names no source module, so emitting them would invent a module dependency that
+    // does not exist. The re-export block above is the only place they belong.
+    if node.child_by_field_name("source").is_none()
+        && let Some(statement) = statement.as_deref()
+    {
+        let start_line = node.start_position().row + 1;
+        let end_line = node.end_position().row + 1;
+        let start_column = node.start_position().column + 1;
+        let end_column = node.end_position().column + 1;
+        for (exported_name, local_name) in local_export_specifiers(statement) {
+            facts.push(Fact {
+                kind: FactKind::ExportedSymbol,
+                file_path: file_path.to_string(),
+                name: exported_name,
+                value: None,
+                // `export { helper as renamedHelper }` exports `renamedHelper`; `helper` is the
+                // local binding. Follows EW-4's established convention for the re-export case
+                // (name = exported alias, imported_name = the other name) rather than putting the
+                // alias in `value`, which means "the module specifier" / "the local binding of a
+                // default" everywhere else in this module.
+                //
+                // ASYMMETRY worth stating, because the field means something different here: in a
+                // re-export, `imported_name` is the name to resolve in the TARGET module. A local
+                // export has no target module, so it records the local binding declared in THIS
+                // file. Same field, same "the other name" role, different resolution scope.
+                imported_name: local_name,
+                runtime_use: None,
+                start_line,
+                end_line,
+                start_column,
+                end_column,
+            });
+        }
+    }
+
     // EW-4: `export default <expression>;` where the expression is not a declaration.
     //
     // `export default prisma;` has no declaration child - the identifier was declared on an
@@ -975,6 +1020,63 @@ fn reexport_value_identifiers(statement: &str) -> Vec<String> {
     identifiers.sort();
     identifiers.dedup();
     identifiers
+}
+
+/// D3: the specifiers of a LOCAL `export { a, b as c };` - one with no `from` clause.
+///
+/// Returns `(exported_name, local_name)`, where `local_name` is `Some` only when the specifier
+/// renames. Callers must have established that the statement has no `source` child; this function
+/// only recognises the shape.
+///
+/// Type-only specifiers are skipped, matching `reexport_value_identifiers` and
+/// `import_value_bindings`: `exported_symbol` models runtime symbols, and `export type { T }` /
+/// `export { type T }` are erased.
+fn local_export_specifiers(statement: &str) -> Vec<(String, Option<String>)> {
+    let Some(clause) = statement.trim().strip_prefix("export") else {
+        return Vec::new();
+    };
+    let clause = clause.trim_start();
+    // Only the specifier-list form. Everything else that reaches here - `export const x = {}`,
+    // `export default { retries: 3 }`, `export function f() {}` - is a declaration handled below,
+    // and several of those contain braces, so the test has to be on how the clause OPENS.
+    if clause.starts_with("type") {
+        return Vec::new();
+    }
+    let Some(rest) = clause.strip_prefix('{') else {
+        return Vec::new();
+    };
+    let Some(end) = rest.find('}') else {
+        return Vec::new();
+    };
+
+    let mut specifiers = Vec::new();
+    for specifier in rest[..end].split(',') {
+        let specifier = specifier.trim();
+        if specifier.is_empty() || specifier.starts_with("type ") {
+            continue;
+        }
+        let (local_name, exported_name) = match specifier.split_once(" as ") {
+            Some((local, exported)) => (Some(local.trim()), exported.trim()),
+            None => (None, specifier),
+        };
+        if exported_name.is_empty() || !exported_name.chars().all(is_identifier_char) {
+            continue;
+        }
+        if local_name
+            .is_some_and(|local| local.is_empty() || !local.chars().all(is_identifier_char))
+        {
+            continue;
+        }
+        specifiers.push((
+            exported_name.to_string(),
+            local_name
+                .filter(|local| *local != exported_name)
+                .map(ToOwned::to_owned),
+        ));
+    }
+    specifiers.sort();
+    specifiers.dedup();
+    specifiers
 }
 
 fn push_import_identifier(identifiers: &mut Vec<String>, value: &str) {

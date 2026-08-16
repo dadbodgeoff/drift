@@ -127,9 +127,9 @@ describe("D3 — a local `export { name }` is an exported symbol", () => {
     ).toContain("internalHelper");
 
     expect(rows).toEqual([
-      { name: "Widget", value: null, file_path: "lib/util.ts", imported_name: null },
       { name: "addOne", value: null, file_path: "lib/util.ts", imported_name: null },
-      { name: "internalHelper", value: null, file_path: "lib/util.ts", imported_name: null }
+      { name: "internalHelper", value: null, file_path: "lib/util.ts", imported_name: null },
+      { name: "Widget", value: null, file_path: "lib/util.ts", imported_name: null }
     ]);
   });
 
