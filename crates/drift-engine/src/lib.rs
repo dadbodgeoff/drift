@@ -1,5 +1,6 @@
 pub const DRIFT_ENGINE_VERSION: &str = "0.1.0";
 
+mod data_access;
 mod diff;
 mod facts;
 pub mod next_routes;
@@ -21,6 +22,7 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
+pub use data_access::{contains_data_layer_token, is_data_access_source};
 pub use diff::{
     DiffClassifiedFinding, DiffFile, DiffScope, DiffStatus, ParsedDiff,
     classify_findings_against_diff, parse_unified_diff,
