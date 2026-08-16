@@ -253,17 +253,36 @@ pub fn accepted_response_serializer_for_call<'a>(
     })
 }
 
+/// Every `source` value an accepted sensitive-response field may carry. These are **provenance**:
+/// where the claim "this field is sensitive" came from, not where it is in a lifecycle.
+///
+/// - `contract` — hand-authored in a repo contract.
+/// - `schema`   — the user wrote a `driftSensitive` marker on the field.
+/// - `candidate`— the name heuristic guessed it, and no human has reviewed the guess.
+/// - `accepted_inference` — a heuristic guess a human signed off on by running
+///   `drift conventions accept`. Stamped at the accept path
+///   (`packages/cli/src/domain/convention-candidates.ts`).
+///
+/// This list is the only place that decides which values parse. Adding a value anywhere else
+/// without adding it here silently drops the field — the trap that made D1's first proposed fix
+/// a complete no-op, because it promoted `source` to a value this allowlist rejected and nothing
+/// reported an error. `sensitive_response_field_rejections` exists so that can never be silent
+/// again.
+pub const SENSITIVE_FIELD_SOURCES: &[&str] =
+    &["contract", "schema", "candidate", "accepted_inference"];
+
+/// Every `classification` an accepted sensitive-response field may carry.
+pub const SENSITIVE_FIELD_CLASSIFICATIONS: &[&str] =
+    &["pii", "credential", "token", "tenant_secret", "internal"];
+
 fn accepted_sensitive_response_field(value: &Value) -> Option<AcceptedSensitiveResponseField> {
     let field_path = value.get("field_path")?.as_str()?.to_string();
     let classification = value.get("classification")?.as_str()?.to_string();
-    if !matches!(
-        classification.as_str(),
-        "pii" | "credential" | "token" | "tenant_secret" | "internal"
-    ) {
+    if !SENSITIVE_FIELD_CLASSIFICATIONS.contains(&classification.as_str()) {
         return None;
     }
     let source = value.get("source")?.as_str()?.to_string();
-    if !matches!(source.as_str(), "contract" | "schema" | "candidate") {
+    if !SENSITIVE_FIELD_SOURCES.contains(&source.as_str()) {
         return None;
     }
     Some(AcceptedSensitiveResponseField {
@@ -271,6 +290,61 @@ fn accepted_sensitive_response_field(value: &Value) -> Option<AcceptedSensitiveR
         classification,
         source,
     })
+}
+
+/// Names every `sensitive_response_fields` entry `accepted_sensitive_response_field` refused to
+/// parse, and why (TDD §5.1.4).
+///
+/// Both allowlists above fail **closed and silent**: an unreadable entry is dropped by
+/// `filter_map` and the accepted convention goes on reporting a clean pass over a field it is not
+/// checking. That silence is the reason D1 could have survived its own fix — a `source` value the
+/// allowlist rejected would have produced exactly the pre-fix behaviour, with nothing said. This
+/// function is the counterpart that makes the drop loud; `check_command` turns each entry into an
+/// engine diagnostic.
+pub fn sensitive_response_field_rejections(requires: &Value) -> Vec<String> {
+    let Some(entries) = requires
+        .get("sensitive_response_fields")
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+
+    entries
+        .iter()
+        .enumerate()
+        .filter_map(|(index, entry)| {
+            if accepted_sensitive_response_field(entry).is_some() {
+                return None;
+            }
+            let label = entry
+                .get("field_path")
+                .and_then(Value::as_str)
+                .map(|field_path| format!("field {field_path}"))
+                .unwrap_or_else(|| format!("entry {index}"));
+            let reason = match (
+                entry.get("field_path").and_then(Value::as_str),
+                entry.get("classification").and_then(Value::as_str),
+                entry.get("source").and_then(Value::as_str),
+            ) {
+                (None, _, _) => "missing field_path".to_string(),
+                (_, None, _) => "missing classification".to_string(),
+                (_, Some(classification), _)
+                    if !SENSITIVE_FIELD_CLASSIFICATIONS.contains(&classification) =>
+                {
+                    format!(
+                        "unknown classification {classification:?} (expected one of {})",
+                        SENSITIVE_FIELD_CLASSIFICATIONS.join(", ")
+                    )
+                }
+                (_, _, None) => "missing source".to_string(),
+                (_, _, Some(source)) => format!(
+                    "unknown source {source:?} (expected one of {})",
+                    SENSITIVE_FIELD_SOURCES.join(", ")
+                ),
+            };
+            Some(format!("{label}: {reason}"))
+        })
+        .collect()
 }
 
 fn accepted_response_serializer(value: &Value) -> Option<AcceptedResponseSerializer> {

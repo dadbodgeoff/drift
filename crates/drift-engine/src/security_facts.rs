@@ -786,6 +786,19 @@ fn response_emits_field_fact(
     }
 }
 
+/// The text of a call's first argument, brackets balanced.
+///
+/// **Fourth dead-path component of D1, and not one the audit named.** The `)`-at-depth-0 arm used
+/// to end with `.split(',').next()`, which is a depth-blind split applied *after* the depth
+/// tracking has already done its job. A top-level comma cannot reach that arm — it returns from
+/// the `,`-at-depth-0 arm first — so every comma still present is inside braces and belongs to the
+/// argument. Splitting on it truncated `res.json({ id, email, password })` to `{ id`, so a
+/// response literal emitted a `response_emits_field` fact for its **first field only** and every
+/// later field was invisible to the leak proof.
+///
+/// That is why `pages/api/route-leak.ts` proved clean even with correct provenance and a scope
+/// that matched: `password` is the third key. The single-key fixtures the phase-5 tests use
+/// (`Response.json({ user: { email } })`) have no top-level comma, so none of them could see it.
 fn call_argument_text<'a>(line: &'a str, call_name: &str) -> Option<&'a str> {
     let marker = format!("{call_name}(");
     let after_marker = line.split(&marker).nth(1)?;
@@ -793,7 +806,7 @@ fn call_argument_text<'a>(line: &'a str, call_name: &str) -> Option<&'a str> {
     for (index, character) in after_marker.char_indices() {
         match character {
             '(' | '{' | '[' => depth += 1,
-            ')' if depth == 0 => return Some(after_marker[..index].split(',').next()?.trim()),
+            ')' if depth == 0 => return Some(after_marker[..index].trim()),
             ')' | '}' | ']' => depth -= 1,
             ',' if depth == 0 => return Some(after_marker[..index].trim()),
             _ => {}
@@ -2046,4 +2059,53 @@ fn header_literal(lines: &[&str], header: &str) -> Option<(usize, String)> {
         let value = after_quote.split_once(quote)?.0.trim();
         (!value.is_empty()).then(|| (index + 1, value.to_string()))
     })
+}
+
+#[cfg(test)]
+mod response_argument_tests {
+    use super::{call_argument_text, object_field_entries};
+
+    /// The comma-truncation fix (TDD §5.1, discovered during D1).
+    ///
+    /// The `)`-at-depth-0 arm used to end with `.split(',').next()` — a depth-BLIND split
+    /// applied after the depth tracking had already done its job. A top-level comma can never
+    /// reach that arm, because the `,`-at-depth-0 arm returns first; so every comma still
+    /// present is inside braces and belongs to the argument. Splitting on it truncated the
+    /// literal at its first key.
+    #[test]
+    fn a_multi_key_response_literal_is_not_truncated_at_its_first_comma() {
+        let line = "  res.json({ id: user.id, email: user.email, password: user.password });";
+        let argument = call_argument_text(line, "json").expect("argument");
+        assert_eq!(
+            argument,
+            "{ id: user.id, email: user.email, password: user.password }"
+        );
+
+        let fields = object_field_entries(argument)
+            .into_iter()
+            .map(|entry| entry.field_path)
+            .collect::<Vec<_>>();
+        // Before the fix this was `["id"]`, so a route leaking `password` as its third key
+        // proved clean: the leak proof never saw a `response_emits_field` fact for it.
+        assert_eq!(fields, vec!["id", "email", "password"]);
+    }
+
+    /// The shapes that already worked, pinned so the fix is visibly a widening. Every phase-5
+    /// fixture in the repo uses the single-key form, which is why none of them could see this.
+    #[test]
+    fn single_argument_and_multi_argument_calls_are_unchanged() {
+        assert_eq!(
+            call_argument_text("  return Response.json({ user: { email } });", "json"),
+            Some("{ user: { email } }")
+        );
+        // A genuine top-level comma still ends the first argument.
+        assert_eq!(
+            call_argument_text("  res.status(200).json(payload, extra);", "json"),
+            Some("payload")
+        );
+        assert_eq!(
+            call_argument_text("  res.json(serializePublicUser(user));", "json"),
+            Some("serializePublicUser(user)")
+        );
+    }
 }
