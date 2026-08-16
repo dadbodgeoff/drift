@@ -22,7 +22,7 @@
     "validate:claims": "node scripts/validate-product-claims.mjs",
     "beta:proof": "node scripts/run-beta-proof.mjs",
     "release:proof": "node scripts/generate-release-proof.mjs",
-    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     "verify:evals": "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism",
     "verify:full": "pnpm verify:ci && pnpm verify:evals",
     "eval:external": "node scripts/external-eval.mjs",
@@ -33,11 +33,13 @@
     "eval:bench:update": "node scripts/beta-bench.mjs --update",
     "eval:determinism": "node scripts/determinism.mjs",
     "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs scripts/storage-lifecycle.test.mjs",
+    "test:harness": "vitest run scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs scripts/storage-lifecycle.test.mjs scripts/storage-invariants.test.mjs scripts/error-contract.test.mjs",
     "eval:prepare": "node scripts/prepare-quality-eval.mjs",
     "eval:presence": "node scripts/presence-precision-recall.mjs",
     "eval:presence:update": "node scripts/presence-precision-recall.mjs --update",
-    "check:storage-lifecycle": "node scripts/storage-lifecycle.mjs"
+    "check:storage-lifecycle": "node scripts/storage-lifecycle.mjs",
+    "check:storage-invariants": "node scripts/storage-invariants.mjs",
+    "check:error-contract": "node scripts/error-contract.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

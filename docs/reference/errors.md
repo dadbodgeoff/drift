@@ -34,15 +34,32 @@ Every failure appears in `--json` output as:
 | `permission_denied` | A required path cannot be read or written. | no | Check ownership of the repo and of the state directory. |
 | `empty_contract` | The repo has a contract but it accepts no conventions and carries no other enforceable rules, so a check would evaluate the diff against an empty ruleset. Refuses rather than reporting a pass. | yes | Accept a convention, or declare your data layer with `--data-modules` at onboarding. |
 | `engine_payload_too_large` | The repo produced more scan data than onboarding can re-serialize to infer conventions. Measured before anything is written, and **no database is left behind**. | **no** | Onboard a smaller subtree with `--repo-root`. The limit is a current-release constraint, not a property of the repo. |
+| `insufficient_memory` | Not enough memory to hold the scan for this repo. | yes | Close other processes, or onboard a smaller subtree with `--repo-root`. |
+| `disk_io_error` | The filesystem rejected a read or write. | yes | Check the device and the permissions on the state directory. |
+| `shallow_clone` | The checkout has no history to compare against, so repo identity and diffs cannot be established. | yes | `git fetch --unshallow`. |
+| `empty_diff_scope` | The diff range resolved to zero examinable files, so there is no verdict to give. Distinct from a clean pass, which is a verdict. | yes | Widen `--scope`, or check the `--diff` range. |
+| `stale_diff_scope` | The diff named files the working tree does not have, and every one was missing — the diff and the checkout disagree about what exists. | yes | Rebase, or re-resolve the diff range against this checkout. |
+| `unindexed_contract_target` | A contract rule's `path_globs` name files the scan does not index, so a finding about them would carry no content hash. | no | Narrow the globs to files Drift indexes. |
+| `engine_vocabulary_mismatch` | The engine advertises fact kinds this CLI does not understand, so pairing them would fail partway through the scan. Detected at the handshake, before anything is ingested. | no | Match the engine and CLI versions; `drift doctor --json`. |
 | `cli_error` | Anything not matched above — usually bad arguments. | no | Read the diagnostic; `drift --help`. |
 
 ## Refusals are not errors
 
-Several of these are **refusals**: Drift declines to answer rather than answering wrongly.
-`stale_scan`, `missing_contract`, `missing_engine`, `insufficient_disk`, `empty_contract` and
-`engine_payload_too_large` all mean "no enforcement claim is being made", and Drift exits **3**
-for them — distinct from **1** (Drift itself failed) and **2** (the diff violates the contract).
-See [enforcement.md](./enforcement.md).
+Several of these are **refusals**: Drift declines to answer rather than answering wrongly. They
+mean "no enforcement claim is being made", and Drift exits **3** for them — distinct from **1**
+(Drift itself failed) and **2** (the diff violates the contract). See
+[enforcement.md](./enforcement.md).
+
+The refusals are `stale_scan`, `missing_contract`, `missing_engine`, `insufficient_disk`,
+`insufficient_memory`, `shallow_clone`, `empty_diff_scope`, `stale_diff_scope`, `empty_contract`,
+`engine_payload_too_large`, `unindexed_contract_target` and `engine_vocabulary_mismatch`.
+Everything else exits 1.
+
+This page is not the source of truth, deliberately: it used to be, and it drifted. The exit code
+and `error.type` for every code live in `FAILURE_CONTRACT` in
+`packages/cli/src/app/drift-error.ts`, and `scripts/error-contract.mjs` fails CI when this document
+and that table disagree, in either direction. Before that gate existed, three codes documented here
+as exit-3 refusals exited 1, and the repo's own tests had frozen the wrong behaviour.
 
 A refusal is never a pass. That distinction is the point: a guardrail that returns success when it
 could not inspect anything is worse than one that stops.

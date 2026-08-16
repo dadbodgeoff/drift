@@ -9883,7 +9883,11 @@ schema_version: MIGRATIONS.length,
     ]);
     const payload = JSON.parse(result.stdout);
 
-    expect(result.exitCode).toBe(1);
+    // W3/D-E1: this asserted exitCode 1 directly above code "missing_contract", while
+    // docs/reference/errors.md documents it as an exit-3 refusal. The docs and the tests
+    // disagreed, and the tests won silently. The exit code now follows the failure code rather
+    // than the throw site, so there is one place for the two to agree and a gate that checks it.
+    expect(result.exitCode).toBe(3);
     expect(payload.error).toMatchObject({
       type: "refusal",
       code: "missing_contract"

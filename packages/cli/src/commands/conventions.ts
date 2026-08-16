@@ -7,7 +7,7 @@ import { assertCandidateRepoMatchesParsed,resolveRepoId } from "../args/repo-fla
 import { contractSummary,materializeRepoContract } from "../domain/contract-materialization.js";
 import { acceptConventionCandidate,conventionCandidateEditNextCommands,conventionCandidateListNextCommands,conventionCandidateReviewItem,conventionCandidateShowNextCommands,conventionCandidateSummary,exceptionNextCommands,rejectedConventionNextCommands,rejectedInferenceForCandidate } from "../domain/convention-candidates.js";
 import { auditEvent,mutationGovernance,preflightGovernance } from "../domain/governance.js";
-import { exceptionIdForConvention,hashStable } from "../domain/identifiers.js";
+import { conventionIdForCandidate,exceptionIdForConvention,hashStable } from "../domain/identifiers.js";
 import { orderConventionCandidatesForReview,paginateConventionCandidates,paginationSummary } from "../domain/pagination.js";
 import { isRepoRelativePolicyPattern,requiredCandidate,requiredRepo,requiredRepoContract } from "../domain/repo-paths.js";
 import { formatConventionCandidateText,formatConventionCandidatesText } from "../formatters/conventions.js";
@@ -251,9 +251,18 @@ export function rejectCandidate(
 
   const contractId = storage.getRepoContract(candidate.repo_id)?.id ?? `contract_${candidate.repo_id}`;
   storage.transaction(() => {
-    storage.upsertConventionCandidate(rejected);
-    const existingContract = storage.getRepoContract(candidate.repo_id) ??
-      materializeRepoContract(storage, candidate.repo_id, contractId, now);
+    storage.upsertConventionCandidate(rejected, { decidedByHuman: true });
+    // Rejecting something already accepted has to withdraw the derived convention too. Without
+    // this the candidate flipped to "rejected" while `accepted_conventions` kept the row and the
+    // contract kept enforcing it - the same id rejected and blocking at once (D-CL1).
+    const withdrew = storage.deleteAcceptedConvention(
+      candidate.repo_id,
+      conventionIdForCandidate(candidate.id)
+    ) > 0;
+    const existingContract = withdrew
+      ? materializeRepoContract(storage, candidate.repo_id, contractId, now)
+      : storage.getRepoContract(candidate.repo_id) ??
+        materializeRepoContract(storage, candidate.repo_id, contractId, now);
     const rejection = rejectedInferenceForCandidate(candidate, {
       reason,
       rejectedBy: actor,

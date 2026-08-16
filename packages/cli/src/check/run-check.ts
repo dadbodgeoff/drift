@@ -181,7 +181,13 @@ export function checkExitCodeFor(input: {
    * mandatory means a new call site has to answer the question rather than omit it.
    */
   contractStaleRefusal: boolean;
-}): number {
+  // The return type is the narrow union rather than `number` on purpose. `checkStatusFor` switches
+  // on this value, and while it was typed `number` its `default:` arm swallowed anything that was
+  // not 2 or 3 - so CHECK_EXIT_ERROR would have been reported as `status: "pass"`, an operational
+  // failure labelled a clean run (D-C2). Naming the three verdicts this function can produce makes
+  // that arm unreachable by construction, and makes adding a fourth a compile error rather than a
+  // silent pass.
+}): typeof CHECK_EXIT_PASS | typeof CHECK_EXIT_BLOCKED | typeof CHECK_EXIT_REFUSED {
   if (input.blockingCount > 0) {
     return CHECK_EXIT_BLOCKED;
   }
@@ -203,13 +209,22 @@ export function checkStatusFor(input: {
   enforcementDegraded: boolean;
   contractStaleRefusal: boolean;
 }): "pass" | "fail" | "refused" {
-  switch (checkExitCodeFor(input)) {
+  const exitCode = checkExitCodeFor(input);
+  switch (exitCode) {
     case CHECK_EXIT_BLOCKED:
       return "fail";
     case CHECK_EXIT_REFUSED:
       return "refused";
-    default:
+    case CHECK_EXIT_PASS:
       return "pass";
+    default: {
+      // Unreachable while checkExitCodeFor returns its three-verdict union, and typed so the
+      // compiler agrees: `never` here fails the build the moment a fourth code is added without a
+      // status to go with it. The previous `default: return "pass"` would have accepted it and
+      // called it a clean run.
+      const unreachable: never = exitCode;
+      throw new Error(`Unmapped check exit code: ${String(unreachable)}`);
+    }
   }
 }
 
@@ -286,7 +301,6 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
         safeToRetry: true,
         // Same code as every other fail-closed refusal, so CI can keep one branch for
         // "Drift declined to answer" rather than one per cause.
-        exitCode: CHECK_EXIT_REFUSED
       }
     );
   }
@@ -330,7 +344,6 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           "drift check --scope full --repo <repo_id>"
         ],
         safeToRetry: true,
-        exitCode: CHECK_EXIT_REFUSED
       }
     );
   }
@@ -465,6 +478,11 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     return {
       // Refusal, not a violation and not a crash: the engine could not be used, so no
       // enforcement claim can be made. Fail closed with its own code.
+      //
+      // This is a CommandPayload exit code, not a DriftError option - `check` returns its verdict
+      // rather than throwing it, so nothing about the failure-code table applies here and this
+      // line has to stay. Dropping it made an engine-unavailable refusal exit 0, which is the
+      // precise failure the surrounding comment exists to prevent.
       exitCode: CHECK_EXIT_REFUSED,
       payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
     };
@@ -2345,7 +2363,6 @@ function agentContractFinding(input: {
           "Narrow the contract's path_globs to files Drift indexes, or wait for support for this file type. Drift indexes TypeScript and JavaScript sources.",
         recoveryCommands: ["drift contract show --repo <repo_id> --json"],
         safeToRetry: false,
-        exitCode: CHECK_EXIT_REFUSED
       }
     );
   }

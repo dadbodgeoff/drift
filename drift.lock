@@ -1,0 +1,50 @@
+{
+  "id": "contract_fb8b2c71551c0da0",
+  "repo_id": "repo_fb8b2c71551c0da0",
+  "contract_schema_version": 1,
+  "repo_fingerprint": "3b71f9f0b7ab78a9",
+  "created_at": "2026-08-16T01:05:53.833Z",
+  "updated_at": "2026-08-16T01:05:53.833Z",
+  "conventions": [],
+  "rejected_inferences": [],
+  "waivers": [],
+  "risky_areas": [],
+  "agent_contracts": [
+    {
+      "kind": "import_boundary",
+      "id": "drift_mcp_must_not_import_cli",
+      "version": 1,
+      "source_roles": [
+        "mcp_module"
+      ],
+      "forbidden_imports": [
+        "@drift/cli"
+      ],
+      "enforcement": "blocking"
+    }
+  ],
+  "safe_commands": [
+    {
+      "command": "pnpm test",
+      "reason": "Run the repo test script after AI-assisted changes.",
+      "requires_explicit_run": true
+    }
+  ],
+  "required_checks": [],
+  "context_egress": {
+    "default_mode": "local_only",
+    "denied_globs": [
+      "**/.env",
+      "**/.env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/*.crt",
+      "**/*.p12",
+      "**/id_rsa",
+      "**/id_ed25519"
+    ],
+    "max_snippet_chars": 1200,
+    "allow_full_file_content": false
+  },
+  "agent_permissions": []
+}

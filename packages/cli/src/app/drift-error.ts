@@ -49,6 +49,83 @@ export type DriftFailureCode =
   | "engine_vocabulary_mismatch"
   | "cli_error";
 
+/**
+ * What each code means for the process exit code and for `error.type` in JSON.
+ *
+ * One table, because the per-throw-site alternative was tried and failed. `exitCode` used to be an
+ * option on every throw defaulting to 1, so a refusal exited 3 only when whoever wrote the throw
+ * remembered to say so. Three did not: `missing_contract` and `insufficient_disk` omitted it, and
+ * `missing_engine` was never constructed as a DriftError at all - so all three exited 1 while
+ * docs/reference/errors.md documented them as exit-3 refusals. The repo's own suite had already
+ * frozen the wrong behaviour (cli.test.ts asserts exitCode 1 directly above code:
+ * "missing_contract"), so the docs and the tests disagreed and the tests won silently.
+ *
+ * A refusal means no enforcement claim was made - Drift declining to answer rather than answering
+ * wrongly - and exits 3. An error means Drift itself failed, and exits 1. Exit 2 is deliberately
+ * absent: it belongs to `check` finding a violation, which is a verdict, not a failure.
+ */
+export const FAILURE_CONTRACT: Record<
+  DriftFailureCode,
+  { exitCode: 1 | 3; type: "refusal" | "error" }
+> = {
+  // Refusals: nothing was claimed about the code under inspection.
+  stale_scan: { exitCode: 3, type: "refusal" },
+  missing_contract: { exitCode: 3, type: "refusal" },
+  missing_engine: { exitCode: 3, type: "refusal" },
+  insufficient_disk: { exitCode: 3, type: "refusal" },
+  insufficient_memory: { exitCode: 3, type: "refusal" },
+  shallow_clone: { exitCode: 3, type: "refusal" },
+  empty_diff_scope: { exitCode: 3, type: "refusal" },
+  stale_diff_scope: { exitCode: 3, type: "refusal" },
+  empty_contract: { exitCode: 3, type: "refusal" },
+  engine_payload_too_large: { exitCode: 3, type: "refusal" },
+  unindexed_contract_target: { exitCode: 3, type: "refusal" },
+  engine_vocabulary_mismatch: { exitCode: 3, type: "refusal" },
+
+  // Errors: Drift itself failed, and the operator has something to fix.
+  unsupported_database: { exitCode: 1, type: "error" },
+  missing_database: { exitCode: 1, type: "error" },
+  disk_full: { exitCode: 1, type: "error" },
+  disk_io_error: { exitCode: 1, type: "error" },
+  corrupt_database: { exitCode: 1, type: "error" },
+  permission_denied: { exitCode: 1, type: "error" },
+  cli_error: { exitCode: 1, type: "error" }
+};
+
+/**
+ * Whether a string is a code this build knows.
+ *
+ * The shared classifier in @drift/core types its result as `string`, so this is the one place the
+ * widening is undone. An unknown code is a bug rather than a state to absorb quietly, but the
+ * error path is the wrong place to throw a second error, so callers fall back to `cli_error` -
+ * which is what an unclassified failure has always meant.
+ */
+export function isDriftFailureCode(value: string): value is DriftFailureCode {
+  return Object.hasOwn(FAILURE_CONTRACT, value);
+}
+
+/** Narrow a classifier code, falling back to the catch-all rather than throwing inside a handler. */
+export function asDriftFailureCode(value: string): DriftFailureCode {
+  return isDriftFailureCode(value) ? value : "cli_error";
+}
+
+/** The exit code this failure carries. A property of the code, never of the throw site. */
+export function exitCodeForFailure(code: DriftFailureCode): 1 | 3 {
+  return FAILURE_CONTRACT[code].exitCode;
+}
+
+/**
+ * The `error.type` this failure reports.
+ *
+ * Was the hardcoded literal "refusal" for every JSON error, including plain usage errors: `drift
+ * frobnicate --json` exits 1 with code `cli_error` and still called itself a refusal. The field
+ * carried no information, so a consumer had to read the exit code or the failure code instead -
+ * the opposite of what a typed discriminator is for.
+ */
+export function errorTypeForFailure(code: DriftFailureCode): "refusal" | "error" {
+  return FAILURE_CONTRACT[code].type;
+}
+
 export interface DriftErrorOptions {
   code: DriftFailureCode;
   /** What the operator should do about it, in one sentence. */
@@ -57,12 +134,6 @@ export interface DriftErrorOptions {
   recoveryCommands?: string[];
   /** Whether the same invocation could succeed unchanged. */
   safeToRetry?: boolean;
-  /**
-   * Process exit code. Defaults to 1 (an error). A fail-closed refusal - Drift declining to
-   * claim anything rather than reporting something wrong - exits 3, matching CHECK_EXIT_REFUSED,
-   * so CI and agents can tell "this is broken" from "this refused to guess".
-   */
-  exitCode?: number;
   /**
    * T-01: this failure learned nothing, so a database this invocation brought into existence
    * should not survive it.
@@ -90,11 +161,30 @@ export class DriftError extends Error {
     this.userAction = options.userAction;
     this.recoveryCommands = options.recoveryCommands ?? [];
     this.safeToRetry = options.safeToRetry ?? true;
-    this.exitCode = options.exitCode ?? 1;
+    this.exitCode = exitCodeForFailure(options.code);
     this.discardsCreatedState = options.discardsCreatedState ?? false;
   }
 }
 
 export function isDriftError(value: unknown): value is DriftError {
   return value instanceof DriftError;
+}
+
+/**
+ * A bad invocation: wrong flags, wrong paths, wrong combination.
+ *
+ * Worth a helper because the classifier's prose fallback is greedy and a usage message often reads
+ * like a domain failure. "Contract export output already exists" contains both "contract" and
+ * "exist", which is exactly the fallback's `missing_contract` test, so a bad `--output` path was
+ * being reported as a missing contract. That cost nothing while every code exited 1; once the exit
+ * code follows the code, it made a typo look like a fail-closed refusal. Saying `cli_error` at the
+ * throw site skips the guessing entirely.
+ */
+export function usageError(message: string, recoveryCommands: string[] = ["drift --help"]): DriftError {
+  return new DriftError(message, {
+    code: "cli_error",
+    userAction: "Read the diagnostic message and rerun with corrected inputs.",
+    recoveryCommands,
+    safeToRetry: false
+  });
 }

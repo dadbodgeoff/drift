@@ -373,7 +373,6 @@ function assertEngineVocabularyUnderstood(engineFactKinds: string[] | undefined)
       recoveryCommands: ["pnpm build:engine", "drift doctor --json"],
       // The same pairing produces the same refusal; rebuilding is what changes it.
       safeToRetry: false,
-      exitCode: 3,
       discardsCreatedState: true
     }
   );
