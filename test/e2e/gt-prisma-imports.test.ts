@@ -234,7 +234,43 @@ describe("D5.2 — invocation evidence", () => {
     ).not.toMatch(/could not be classified/);
   }, 180000);
 
-  it("leaves exactly the seven routes with invocation or ambiguity evidence", async () => {
+  // --- The import SHAPES. Every D5.2 route above is a named specifier, and that gap is what let
+  // --- a routing defect firing on all four of these ship: the classifier proved inertness from
+  // --- the ABSENCE of a recognised invocation rather than from the PRESENCE of a terminal read,
+  // --- so any binding form it did not model fell to the suppress branch. Measured cost when it
+  // --- shipped: 39 evaded shapes across 7 repos and 50 new false negatives on openstatus.
+  it("retains the canonical direct import bound to a local and discarded", async () => {
+    const findings = await prismaImportFindings();
+
+    expect(
+      forRoute(findings, "route-canonical-direct.ts").length,
+      "D5.2 REGRESSION: `const __h = prismaClient; void __h;` is the body every evasion catch " +
+        "cell uses to mark an injected import as used. Binding the entire data-access surface to " +
+        "a local and discarding it proves only that this expression did not call it — it is NOT " +
+        "the terminal member read that licenses suppression. Classifying it Inert is what turned " +
+        "S01-control-canonical into `evaded` on all seven eval repos."
+    ).toBe(1);
+  }, 180000);
+
+  it("retains a namespace, a dynamic-import and a require binding that reach the datastore", async () => {
+    const findings = await prismaImportFindings();
+
+    for (const [route, shape] of [
+      ["route-namespace-import.ts", "S06 `import * as store` then `store.prismaClient.user.findMany()`"],
+      ["route-dynamic-import.ts", "S07 `const store = await import(...)` then a member call"],
+      ["route-require-call.ts", "S08 `const store = require(...)` then a member call"]
+    ] as const) {
+      expect(
+        forRoute(findings, route).length,
+        `D5.2 REGRESSION: ${shape} genuinely reaches the datastore and must stay flagged. A ` +
+          "binding form the classifier does not recognise is UNCLASSIFIABLE, not INERT — " +
+          "absence of understanding is not absence of evidence, and routing it to the suppress " +
+          `branch is a silent unenforced datastore access. Got:\n${render(forRoute(findings, route))}`
+      ).toBe(1);
+    }
+  }, 180000);
+
+  it("leaves exactly the eleven routes with invocation or ambiguity evidence", async () => {
     const findings = await prismaImportFindings();
     const flagged = [
       ...new Set(findings.map((finding) => finding.file_path ?? "(no path)"))
@@ -243,23 +279,27 @@ describe("D5.2 — invocation evidence", () => {
     expect(
       flagged,
       `D5 DEFECT: after grouping and invocation evidence the fixture's flagged routes should be ` +
-        `exactly the five with proven invocation and the two with unresolvable use. Got:\n${render(findings)}`
+        `exactly those with proven invocation and those with unresolvable use. Got:\n${render(findings)}`
     ).toEqual([
       "pages/api/route-aliased-invocation.ts",
+      "pages/api/route-canonical-direct.ts",
+      "pages/api/route-dynamic-import.ts",
       "pages/api/route-dynamic-member.ts",
       "pages/api/route-escaping-read.ts",
       "pages/api/route-multi-specifier.ts",
+      "pages/api/route-namespace-import.ts",
       "pages/api/route-new-client.ts",
       "pages/api/route-reassignment.ts",
+      "pages/api/route-require-call.ts",
       "pages/api/route-tagged-template-sql.ts"
     ]);
 
-    // Seven routes, eight findings: the tagged-template route imports from two different
+    // Eleven routes, twelve findings: the tagged-template route imports from two different
     // forbidden modules, which is two import statements and therefore two findings.
     expect(
       findings.length,
       `D5 DEFECT: one finding per offending import statement.\n${render(findings)}`
-    ).toBe(8);
+    ).toBe(12);
   }, 180000);
 });
 

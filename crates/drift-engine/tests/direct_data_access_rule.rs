@@ -1,9 +1,9 @@
 use drift_engine::{
     BaselineStatus, BaselineViolation, DirectDataAccessRule, EnforcementMode, EnforcementResult,
-    FindingStatus, Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_REFERENCE_ESCAPES,
-    classify_findings_against_baseline, classify_specifier_use, detect_direct_data_access_imports,
-    extract_typescript_facts, materialize_direct_data_access_findings,
-    materialize_direct_data_access_findings_with_sources,
+    FindingStatus, Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_NO_USE_FOUND,
+    UNRESOLVED_REFERENCE_ESCAPES, UNRESOLVED_SOURCE_UNPARSED, classify_findings_against_baseline,
+    classify_specifier_use, detect_direct_data_access_imports, extract_typescript_facts,
+    materialize_direct_data_access_findings, materialize_direct_data_access_findings_with_sources,
 };
 
 #[test]
@@ -641,16 +641,112 @@ export async function GET() { return Response.json(await countLinks(prisma)); }
     );
 }
 
-/// An import nothing uses is absence, not ambiguity.
+/// Binding the whole data-access surface to a local and discarding it is NOT proof of inertness.
+///
+/// `const __h = <binding>; void __h;` is the body every `evasion-matrix.mjs` catch cell uses to
+/// mark an injected import as used. D5.2 classified it `Inert` and suppressed the finding, which
+/// turned S01/S06/S07/S08/S12/S13 from `warned`/`blocked` into `evaded` on all seven eval repos.
+///
+/// The routing defect was in `classify_value_consumption`: its `unary_expression` and comparison
+/// arms returned a hardcoded `Inert` instead of `terminal`, discarding the `is_member_read`
+/// asymmetry that is the classifier's entire licence to suppress. A member READ of a generated
+/// enum is one value and proving it inert proves something; the bare binding is the whole
+/// datastore handle and `void`-ing it proves only that this one expression did not call it.
 #[test]
-fn an_unused_binding_is_inert() {
+fn a_bound_then_discarded_binding_is_unresolved_rather_than_inert() {
+    for import_line in [
+        r#"import { prisma } from "@/lib/prisma";"#,
+        r#"import prisma from "@/lib/prisma";"#,
+    ] {
+        let source = format!(
+            "{import_line}\nexport async function GET() {{\n  const __h = prisma; void __h;\n  return new Response(\"ok\");\n}}\n"
+        );
+        assert_eq!(
+            classify_specifier_use(ROUTE, &source, "prisma"),
+            SpecifierUse::Unresolved(UNRESOLVED_REFERENCE_ESCAPES),
+            "bound-then-discarded must retain, for {import_line}"
+        );
+    }
+}
+
+/// The same, for the three import shapes whose binding form is not a named specifier.
+///
+/// Every D5.2 case the original fixture exercised was a named specifier, which is why a defect
+/// that fires on all of them went unmeasured. S06 binds a namespace object, S07 binds the result
+/// of a dynamic `import()`, S08 binds the result of `require()` - all three reach the datastore
+/// and all three must stay flagged.
+#[test]
+fn namespace_dynamic_and_require_bindings_are_not_suppressed() {
+    let cases = [
+        (
+            "S06-namespace-import",
+            "import * as __ns from \"@/lib/prisma\";\nexport async function GET() {\n  const __h = __ns; void __h;\n  return new Response(\"ok\");\n}\n",
+            "__ns",
+        ),
+        (
+            "S07-dynamic-import",
+            "export async function GET() {\n  const __m = await import(\"@/lib/prisma\"); void __m;\n  return new Response(\"ok\");\n}\n",
+            "__m",
+        ),
+        (
+            "S08-require-call",
+            "declare const require: (id: string) => unknown;\nexport async function GET() {\n  const __m = require(\"@/lib/prisma\"); void __m;\n  return new Response(\"ok\");\n}\n",
+            "__m",
+        ),
+    ];
+    for (id, source, binding) in cases {
+        assert_ne!(
+            classify_specifier_use(ROUTE, source, binding),
+            SpecifierUse::Inert,
+            "{id} must not be suppressed"
+        );
+    }
+}
+
+/// An import whose binding this classifier cannot find is AMBIGUITY, not absence.
+///
+/// This test asserted `Inert` and was wrong, in the direction that fails open. "No occurrence
+/// of the binding" and "no reachable use of the binding" are not the same claim: the first is
+/// what the classifier observed, the second is what suppression requires, and only evidence the
+/// classifier actually read can carry it from one to the other.
+///
+/// The corpus says so plainly. papermark's
+/// `pages/api/teams/[teamId]/datarooms/[id]/users/index.ts` has a live
+/// `import prisma from "@/lib/prisma"` whose every use is commented out. Zero occurrences, and
+/// the module is still executed at import and is still an unenforced datastore dependency -
+/// one of §7's 229 `@/lib/prisma` findings that must not move.
+#[test]
+fn a_binding_with_no_findable_use_is_unresolved_rather_than_inert() {
     let source = r#"
 import { ItemType } from "@prisma/client";
 export async function GET() { return Response.json({ ok: true }); }
 "#;
     assert_eq!(
         classify_specifier_use(ROUTE, source, "ItemType"),
-        SpecifierUse::Inert
+        SpecifierUse::Unresolved(UNRESOLVED_NO_USE_FOUND)
+    );
+}
+
+/// A file tree-sitter could not fully parse cannot license suppression.
+///
+/// `Parser::parse` returning `Some` is not proof the source was understood - the grammar
+/// recovers by wrapping what it did not understand in an ERROR node, and identifiers inside it
+/// stop being reachable as `identifier` nodes. Occurrences then go missing rather than
+/// misclassify, which lands on the suppress branch, failing open on exactly the files the
+/// parser understood least.
+#[test]
+fn a_file_that_did_not_fully_parse_is_unresolved_rather_than_inert() {
+    let source = r#"
+import { ItemType } from "@prisma/client";
+export async function GET() {
+  const kind = ItemType.FOLDER;
+  this is not valid typescript @@@ ###
+  return Response.json({ kind });
+}
+"#;
+    assert_eq!(
+        classify_specifier_use(ROUTE, source, "ItemType"),
+        SpecifierUse::Unresolved(UNRESOLVED_SOURCE_UNPARSED)
     );
 }
 
