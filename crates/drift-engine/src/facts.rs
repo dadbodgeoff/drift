@@ -711,13 +711,57 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         }
     }
 
+    // D3 (ground-truth remediation §5.3): the LOCAL export-specifier form, `export { x };`.
+    //
+    // The re-export block above is gated on a `source` child - the `from` clause. A local
+    // `export { internalHelper };` has no source child, no declaration child, and is not a default
+    // export, so it fell through all four arms of this function and emitted nothing at all. It was
+    // the audit's sole recall miss: the symbol is exported and importable, and the engine could not
+    // see it.
+    //
+    // Deliberately NOT emitted here: `ReExportUsed` (and its `ImportUsed` partner). Those two are
+    // what `export_star_sources_by_file` (main.rs:2192) and the `MODULE_REEXPORTS_MODULE` edge read.
+    // A local export names no source module, so emitting them would invent a module dependency that
+    // does not exist. The re-export block above is the only place they belong.
+    if node.child_by_field_name("source").is_none()
+        && let Some(statement) = statement.as_deref()
+    {
+        let start_line = node.start_position().row + 1;
+        let end_line = node.end_position().row + 1;
+        let start_column = node.start_position().column + 1;
+        let end_column = node.end_position().column + 1;
+        for (exported_name, local_name) in local_export_specifiers(statement) {
+            facts.push(Fact {
+                kind: FactKind::ExportedSymbol,
+                file_path: file_path.to_string(),
+                name: exported_name,
+                value: None,
+                // `export { helper as renamedHelper }` exports `renamedHelper`; `helper` is the
+                // local binding. Follows EW-4's established convention for the re-export case
+                // (name = exported alias, imported_name = the other name) rather than putting the
+                // alias in `value`, which means "the module specifier" / "the local binding of a
+                // default" everywhere else in this module.
+                //
+                // ASYMMETRY worth stating, because the field means something different here: in a
+                // re-export, `imported_name` is the name to resolve in the TARGET module. A local
+                // export has no target module, so it records the local binding declared in THIS
+                // file. Same field, same "the other name" role, different resolution scope.
+                imported_name: local_name,
+                runtime_use: None,
+                start_line,
+                end_line,
+                start_column,
+                end_column,
+            });
+        }
+    }
+
     // EW-4: `export default <expression>;` where the expression is not a declaration.
     //
-    // The declaration branch below handles `export default function f() {}` and friends. It cannot
-    // see `export default prisma;` - the identifier was declared on an earlier line, so this
-    // statement has no declaration child and `first_named_declaration_identifier` returns None,
-    // skipping the whole branch. The module then reports no `default` export, and every
-    // `import x from "./m"` against it raises `unresolved_import_symbol`.
+    // `export default prisma;` has no declaration child - the identifier was declared on an
+    // earlier line, so `first_named_declaration_identifier` returns None. Before EW-4 the module
+    // reported no `default` export at all, and every `import x from "./m"` against it raised
+    // `unresolved_import_symbol`.
     //
     // Measured on cal.com: 242 such diagnostics against `packages/prisma/index.ts`, whose line 112
     // is exactly `export default prisma;`. Because that is the *data layer*, every route importing
@@ -728,19 +772,36 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
     // export a module does not have would turn a missing-symbol gap into a wrong answer. Type-only
     // default exports (`export type { X as default }`) are erased and are excluded, matching how
     // every other type-only export is treated here.
-    if statement
+    //
+    // D2 (ground-truth remediation §5.2): ONE declaration produces ONE fact.
+    //
+    // This branch used to be gated on the statement having no declaration child, and the branch
+    // below emitted a second `(name = <local identifier>, value = None)` fact for the declaration
+    // form. That second fact was wrong. `export default function handler()` does not create a
+    // named export `handler` - nothing can write `import { handler } from "./orders"` - and
+    // `exported_symbols_by_file` (main.rs:2174) keys purely on `fact.name`, so the engine resolved
+    // that import against a module exporting no such name. A false resolution, not a duplicate.
+    //
+    // Canonical model: `name = "default"` (what importers actually bind), `value = <local
+    // identifier or None>` (metadata for following the default back to what it names). The gate is
+    // gone, so `export default function f() {}`, `export default class C {}`, `export default
+    // prisma;` and `export default () => 1` are all one fact of the same shape.
+    let default_export_local_name = first_named_declaration_identifier(node, source)
+        .or_else(|| default_export_identifier(node, source));
+    let is_runtime_default_export = statement
         .as_deref()
-        .is_some_and(is_runtime_default_export_statement)
-        && first_named_declaration_identifier(node, source).is_none()
-    {
+        .is_some_and(is_runtime_default_export_statement);
+
+    if is_runtime_default_export {
         facts.push(Fact {
             kind: FactKind::ExportedSymbol,
             file_path: file_path.to_string(),
             name: "default".to_string(),
-            // The local binding when there is one (`export default prisma`), so consumers can
-            // follow the default back to what it names. Absent for an anonymous expression, where
-            // there is nothing to follow - `default` is the whole of what the module exports.
-            value: default_export_identifier(node, source),
+            // The local binding when there is one (`export default prisma`, `export default
+            // function handler()`), so consumers can follow the default back to what it names.
+            // Absent for an anonymous expression, where there is nothing to follow - `default` is
+            // the whole of what the module exports.
+            value: default_export_local_name,
             imported_name: None,
             runtime_use: None,
             start_line: node.start_position().row + 1,
@@ -755,22 +816,24 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         let end_line = node.end_position().row + 1;
         let start_column = node.start_position().column + 1;
         let end_column = node.end_position().column + 1;
-        facts.push(Fact {
-            kind: FactKind::ExportedSymbol,
-            file_path: file_path.to_string(),
-            name: name.clone(),
-            value: None,
-            imported_name: None,
-            runtime_use: None,
-            start_line,
-            end_line,
-            start_column,
-            end_column,
-        });
+        // D2: only a NAMED export declares a symbol under its own identifier. The default form's
+        // fact was emitted above, under the name importers actually bind.
+        if !is_runtime_default_export {
+            facts.push(Fact {
+                kind: FactKind::ExportedSymbol,
+                file_path: file_path.to_string(),
+                name: name.clone(),
+                value: None,
+                imported_name: None,
+                runtime_use: None,
+                start_line,
+                end_line,
+                start_column,
+                end_column,
+            });
+        }
 
-        let is_default_export = statement
-            .as_deref()
-            .is_some_and(|value| value.trim_start().starts_with("export default"));
+        let is_default_export = is_runtime_default_export;
 
         // In a Next.js pages/api module the request handler is the *default* export.
         // Named exports are not handlers: `export const config = { api: { bodyParser:
@@ -813,20 +876,9 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 end_column,
             });
         }
-        if is_default_export {
-            facts.push(Fact {
-                kind: FactKind::ExportedSymbol,
-                file_path: file_path.to_string(),
-                name: "default".to_string(),
-                value: Some(name),
-                imported_name: None,
-                runtime_use: None,
-                start_line,
-                end_line,
-                start_column,
-                end_column,
-            });
-        }
+        // D2: the `default` fact for this declaration was emitted above, once, with `name` as its
+        // `value`. It used to be emitted a second time from here, alongside the bare-identifier
+        // fact - the pair the canonical model replaces.
     }
 }
 
@@ -968,6 +1020,63 @@ fn reexport_value_identifiers(statement: &str) -> Vec<String> {
     identifiers.sort();
     identifiers.dedup();
     identifiers
+}
+
+/// D3: the specifiers of a LOCAL `export { a, b as c };` - one with no `from` clause.
+///
+/// Returns `(exported_name, local_name)`, where `local_name` is `Some` only when the specifier
+/// renames. Callers must have established that the statement has no `source` child; this function
+/// only recognises the shape.
+///
+/// Type-only specifiers are skipped, matching `reexport_value_identifiers` and
+/// `import_value_bindings`: `exported_symbol` models runtime symbols, and `export type { T }` /
+/// `export { type T }` are erased.
+fn local_export_specifiers(statement: &str) -> Vec<(String, Option<String>)> {
+    let Some(clause) = statement.trim().strip_prefix("export") else {
+        return Vec::new();
+    };
+    let clause = clause.trim_start();
+    // Only the specifier-list form. Everything else that reaches here - `export const x = {}`,
+    // `export default { retries: 3 }`, `export function f() {}` - is a declaration handled below,
+    // and several of those contain braces, so the test has to be on how the clause OPENS.
+    if clause.starts_with("type") {
+        return Vec::new();
+    }
+    let Some(rest) = clause.strip_prefix('{') else {
+        return Vec::new();
+    };
+    let Some(end) = rest.find('}') else {
+        return Vec::new();
+    };
+
+    let mut specifiers = Vec::new();
+    for specifier in rest[..end].split(',') {
+        let specifier = specifier.trim();
+        if specifier.is_empty() || specifier.starts_with("type ") {
+            continue;
+        }
+        let (local_name, exported_name) = match specifier.split_once(" as ") {
+            Some((local, exported)) => (Some(local.trim()), exported.trim()),
+            None => (None, specifier),
+        };
+        if exported_name.is_empty() || !exported_name.chars().all(is_identifier_char) {
+            continue;
+        }
+        if local_name
+            .is_some_and(|local| local.is_empty() || !local.chars().all(is_identifier_char))
+        {
+            continue;
+        }
+        specifiers.push((
+            exported_name.to_string(),
+            local_name
+                .filter(|local| *local != exported_name)
+                .map(ToOwned::to_owned),
+        ));
+    }
+    specifiers.sort();
+    specifiers.dedup();
+    specifiers
 }
 
 fn push_import_identifier(identifiers: &mut Vec<String>, value: &str) {

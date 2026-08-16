@@ -154,6 +154,61 @@ Production gaps:
 - Heuristic convention kinds must not block until upgraded and proven.
 - Broad contract kinds require durable fixture directories and missing-evidence tests.
 
+## The `exported_symbol` Fact Model
+
+Date of this section: 2026-08-16. Written during the ground-truth audit remediation (D2/D3,
+`docs/tdd-ground-truth-remediation.md` §5.2–§5.3). It records rules that are enforced by tests, so
+that the next consumer does not have to re-derive them from the extractor.
+
+**`exported_symbol` models RUNTIME symbols only.** A type-only export is erased at runtime and
+produces no fact. `export interface WidgetShape {}`, `export type { T }` and the inline
+`export { type T, v }` specifier are all silent; only `v` in the last one emits.
+
+This is not an oversight, and it is not a decision made by the remediation — it is existing
+behaviour, established by `first_named_declaration_identifier` matching only function, generator,
+class, lexical and variable declarations, and by the `type` skips in the export-specifier parsers.
+It is written down here because the audit's recall denominator depends on it: `WidgetShape` is
+correctly absent from the emitted facts and was correctly excluded from the audit's seven runtime
+declarations.
+
+**A future consumer that needs type exports gets a distinct `exported_type` kind.** Widening
+`exported_symbol` to carry types would make every consumer that reads it — import resolution
+(`main.rs:1446`), the `REEXPORT_RESOLVES_TO_SYMBOL` edge (`main.rs:1605`), the
+`resolve_import_symbol` walk (`main.rs:2253`) — silently start resolving imports against symbols
+that do not exist at runtime.
+
+Field meanings, which differ by shape:
+
+| Shape | `name` | `value` | `imported_name` |
+|---|---|---|---|
+| `export function f() {}` | `f` | ∅ | ∅ |
+| `export default function handler() {}` | `default` | `handler` | ∅ |
+| `export default class Widget {}` | `default` | `Widget` | ∅ |
+| `export default prisma;` | `default` | `prisma` | ∅ |
+| `export default () => 1` | `default` | ∅ | ∅ |
+| `export { internalHelper };` | `internalHelper` | ∅ | ∅ |
+| `export { helper as renamed };` | `renamed` | ∅ | `helper` |
+| `export { x } from "./y"` | — no `exported_symbol`; `import_used` + `re_export_used` | | |
+| `export interface T {}` / `export type { T }` | — no fact | | |
+
+Two rules the table encodes:
+
+- **One declaration produces one fact (D2).** A default-exported declaration exports `default` and
+  nothing else. It does *not* additionally export its local identifier: nothing can write
+  `import { handler } from "./orders"` against `export default function handler()`, and
+  `exported_symbols_by_file` (`main.rs:2174`) keys purely on `fact.name`, so a second fact under
+  the local name made exactly that import resolve. The local identifier is metadata, carried in
+  `value`.
+- **`imported_name` is "the other name", and its resolution scope depends on the shape (D3).** For a
+  re-export it is the name to resolve in the *target* module (EW-4). For a local
+  `export { a as b }` there is no target module, so it names a binding declared in the *same* file.
+  The alias does not go in `value`: that field means the module specifier, or the local binding of a
+  default, everywhere else in the extractor.
+
+A local `export { x };` must never emit `re_export_used`. That fact kind feeds
+`export_star_sources_by_file` (`main.rs:2192`) and the `MODULE_REEXPORTS_MODULE` edge; emitting it
+for a local export would claim a module dependency that does not exist.
+
 ## Current Parser Gaps and Confidence Impact
 
 Live dogfood scan:

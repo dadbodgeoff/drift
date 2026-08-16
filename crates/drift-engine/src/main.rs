@@ -1705,15 +1705,24 @@ fn graph_for_file(
                         BTreeMap::new(),
                     );
                 }
+                // D2 follow-up: target the symbol node that EXISTS.
+                //
+                // This used to be `fact.value.unwrap_or(fact.name)`. For a Next pages/api route
+                // that is the handler's local identifier (`handler`), and a
+                // `symbol:<file>:function:handler` node existed only because a default-exported
+                // declaration also emitted a second exported-symbol fact under its local name.
+                // D2 removed that fact - correctly, since no importer can bind it - which left
+                // this edge pointing at a node id that names nothing.
+                //
+                // `fact.name` is `default` for such a route, which is exactly the symbol node the
+                // canonical `(default, value = handler)` fact produces. It is also already what
+                // packages/factgraph/src/index.ts:410 emits for this edge, so the Rust and TS
+                // graph builders agreed on every other shape and disagreed only on this one.
                 insert_edge(
                     &mut edges,
                     "ROUTE_HANDLED_BY_SYMBOL",
                     &route_node,
-                    &symbol_id(
-                        &fact.file_path,
-                        "function",
-                        fact.value.as_deref().unwrap_or(&fact.name),
-                    ),
+                    &symbol_id(&fact.file_path, "function", &fact.name),
                     vec![evidence_id],
                     BTreeMap::new(),
                 );

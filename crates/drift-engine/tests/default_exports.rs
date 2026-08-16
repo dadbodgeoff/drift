@@ -46,23 +46,51 @@ fn default_export_of_a_bare_identifier_is_an_exported_symbol() {
     );
 }
 
+// D2 (ground-truth remediation §5.2). This test previously asserted that `export default function
+// handler()` produces BOTH `(handler, None)` and `(default, Some("handler"))`. The first of those
+// is wrong: a default-exported declaration creates no named export under its own identifier, and
+// `exported_symbols_by_file` (main.rs:2174) keys purely on `fact.name`, so `import { handler } from
+// "./orders"` resolved against a module that exports no such name.
+//
+// EW-4's actual subject was the bare-identifier form above (`export default prisma;`), which this
+// change leaves untouched - that test still passes verbatim. What EW-4 needed was for `default` to
+// be exported at all; it did not need a second fact under the local name.
 #[test]
-fn default_export_of_a_declaration_still_works() {
-    // The shape that always worked. Pinned so the fix does not move it.
+fn default_export_of_a_declaration_exports_default_and_only_default() {
     let source = "export default function handler() { return 1; }\n";
 
     let exports = exported_names(source);
 
-    assert!(
-        exports.iter().any(|(name, _)| name == "handler"),
+    assert_eq!(
+        exports,
+        vec![("default".to_string(), Some("handler".to_string()))],
+        "one declaration, one fact: `default` is what importers bind and `handler` is the local \
+         binding it names. A second `(handler, None)` fact would claim a named export the module \
+         does not have: {exports:?}"
+    );
+}
+
+#[test]
+fn a_default_exported_class_is_canonicalised_the_same_way() {
+    // The declaration forms must not disagree with each other. Before D2 the anonymous form
+    // produced one fact and the declaration forms produced two, so which shape you wrote decided
+    // whether the module also claimed a named export.
+    let exports = exported_names("export default class Widget { build() { return 1; } }\n");
+
+    assert_eq!(
+        exports,
+        vec![("default".to_string(), Some("Widget".to_string()))],
         "{exports:?}"
     );
-    assert!(
-        exports
-            .iter()
-            .any(|(name, value)| name == "default" && value.as_deref() == Some("handler")),
-        "{exports:?}"
-    );
+}
+
+#[test]
+fn a_named_function_export_still_exports_its_own_name() {
+    // The boundary in the other direction: dropping the local-name fact must apply only to the
+    // default form. `export function handler()` genuinely does export `handler`.
+    let exports = exported_names("export function handler() { return 1; }\n");
+
+    assert_eq!(exports, vec![("handler".to_string(), None)], "{exports:?}");
 }
 
 #[test]
