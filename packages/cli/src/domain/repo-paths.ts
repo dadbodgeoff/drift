@@ -6,7 +6,7 @@ import {
   type RepoRecord
 } from "@drift/core";
 import type { SqliteDriftStorage } from "@drift/storage";
-import { DriftError } from "../app/drift-error.js";
+import { DriftError,usageError } from "../app/drift-error.js";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync,lstatSync,mkdirSync,readdirSync,readFileSync,statSync } from "node:fs";
@@ -99,9 +99,17 @@ export function ensureDatabasePath(databasePath: string): void {
   mkdirSync(dirname(databasePath), { recursive: true });
 }
 
+/**
+ * W3: a mistyped `--repo-root` is a usage error, and has to say so before the engine is spawned.
+ *
+ * Only `init` called this, so `scan` and `start` handed a nonexistent path straight to the engine
+ * and surfaced "Drift Rust engine failed with exit code 1. No such file or directory (os error 2)".
+ * The classifier then read "engine failed" and reported `missing_engine` - a documented exit-3
+ * refusal - for what is a typo, with a message blaming a component that was working fine.
+ */
 export function assertRepoRootDirectory(repoRoot: string): void {
   if (!existsSync(repoRoot) || !statSync(repoRoot).isDirectory()) {
-    throw new Error(`--repo-root must be a directory: ${repoRoot}`);
+    throw usageError(`--repo-root must be a directory: ${repoRoot}`);
   }
 }
 
@@ -328,8 +336,7 @@ export function assertEnforceableContract(
         `drift conventions list --repo ${repoId} --status candidate --json`,
         `drift conventions accept <candidate-id> --repo ${repoId} --confirm`
       ],
-      safeToRetry: false,
-      exitCode: 3
+      safeToRetry: false
     }
   );
 }

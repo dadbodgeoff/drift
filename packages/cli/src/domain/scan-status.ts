@@ -403,7 +403,6 @@ function assertEnginePayloadWithinCeiling(payloadBytes: number | undefined, repo
       recoveryCommands: [`drift start --repo-root ${repoRoot}/<subdirectory> --accept-defaults --json`],
       // The same invocation on the same tree produces the same measurement.
       safeToRetry: false,
-      exitCode: 3,
       discardsCreatedState: true
     }
   );
@@ -1201,8 +1200,7 @@ export function assertFreshScanIfRequired(
       userAction: `Run ${scanStatus.next_command}, or omit --require-fresh to inspect stale context.`,
       recoveryCommands: scanStatus.next_command ? [scanStatus.next_command] : [],
       // docs/reference/errors.md already lists stale_scan as retryable after a rescan.
-      safeToRetry: true,
-      exitCode: 3
+      safeToRetry: true
     }
   );
 }

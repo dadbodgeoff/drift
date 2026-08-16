@@ -105,7 +105,14 @@ export function classifyFailureMessage(message: string): ClassifiedFailure {
       recovery_commands: ["rustup default stable", "drift doctor --repo-root . --json"]
     };
   }
-  if (message.includes("DRIFT_ENGINE_BIN") || message.includes("Rust engine")) {
+  // W3: "missing" means the binary could not be found or trusted, per docs/reference/errors.md.
+  // An engine that started and exited non-zero is a different event, and matching bare "Rust
+  // engine" conflated them: `drift scan --repo-root <typo>` produced "Drift Rust engine failed
+  // with exit code 1. No such file or directory", which was reported as a missing engine. Harmless
+  // while every code exited 1; once the exit code follows the code, that mistyped path started
+  // claiming to be a fail-closed refusal, blaming a component that was working correctly.
+  const engineRanAndFailed = /engine failed with exit code/i.test(message);
+  if (!engineRanAndFailed && (message.includes("DRIFT_ENGINE_BIN") || message.includes("Rust engine"))) {
     return {
       code: "missing_engine",
       safe_to_retry: true,

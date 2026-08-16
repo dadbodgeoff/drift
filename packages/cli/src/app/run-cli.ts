@@ -1,6 +1,6 @@
 import { openDriftStorage } from "@drift/storage";
 import { existsSync,rmSync } from "node:fs";
-import { isDriftError } from "./drift-error.js";
+import { asDriftFailureCode,errorTypeForFailure,exitCodeForFailure,isDriftError } from "./drift-error.js";
 import { operationalFailureFor } from "./failure-classification.js";
 import { createAgentEnvelopeV2 } from "@drift/core";
 import { unknownCommandError,validateCommandShape } from "../args/command-shape.js";
@@ -117,9 +117,12 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       discardCreatedDatabase(createdDatabasePath);
     }
     const failure = operationalFailureFor(error, message);
-    // A DriftError may declare its own exit code: 3 marks a fail-closed refusal (e.g. the
-    // shallow-clone identity refusal, X-1), which CI must be able to tell from a plain error.
-    const exitCode = isDriftError(error) ? error.exitCode : 1;
+    // The exit code follows the failure code, not the throw site, so a refusal exits 3 whether it
+    // arrived as a DriftError or was classified from message text by the fallback. That symmetry
+    // is the point: `missing_engine` is only ever produced by the fallback, which is precisely why
+    // it exited 1 while the docs called it an exit-3 refusal.
+    const failureCode = asDriftFailureCode(failure.code);
+    const exitCode = exitCodeForFailure(failureCode);
     if (wantsJson) {
       const staleRefusal = failure.code === "stale_scan";
       return {
@@ -127,7 +130,9 @@ export async function runCli(argv: string[]): Promise<CliResult> {
         stdout: `${JSON.stringify({
           error: {
             message,
-            type: "refusal",
+            // Derived, not the literal "refusal" every error used to claim regardless of whether
+            // anything was refused.
+            type: errorTypeForFailure(failureCode),
             code: failure.code
           },
           failure,

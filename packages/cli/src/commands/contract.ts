@@ -4,6 +4,7 @@ import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,mkdirSync,statSync,writeFileSync } from "node:fs";
 import { dirname,extname,join } from "node:path";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
+import { usageError } from "../app/drift-error.js";
 import { actorFlag,optionalChecksumFlag,optionalIsoTimestampFlag,optionalNonEmptyFlag,optionalRepoRelativeFlag,optionalWaiverStatusFlag,rejectAmbiguousDryRunConfirm,requiredNonEmptyFlag,stringFlag } from "../args/flag-readers.js";
 import { requiredDatabasePath,resolveRepoId } from "../args/repo-flags.js";
 import { assertUniqueImportedConventionIds,contractImportConfirmCommand,contractSummary,contractWaiverListNextCommands,contractWaiverNextCommands,contractWaiverShowNextCommands,hasUniqueActiveWaiverSelectors,hasUniqueAgentPermissions,hasUniqueCommands,hasUniqueConventionExceptionIds,hasUniqueIds,summarizeImportedConventions,waiverListSummary,waiverMatchesPath,waiverReviewItem,waiverSelectorKey } from "../domain/contract-materialization.js";
@@ -88,8 +89,13 @@ export function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const contract_fingerprint = contractFingerprint(contract);
   const exportedContractJson = `${JSON.stringify(contract, null, 2)}\n`;
   if (outputPath) {
+    // W3: these are usage errors and must carry `cli_error`, not fall through to the classifier's
+    // prose fallback. That fallback maps any message containing both "contract" and "exist" to
+    // `missing_contract` - so "Contract export output already exists" was being reported as a
+    // missing contract. It was invisible while both codes exited 1; once the exit code follows the
+    // code, a bad --output path started claiming to be a fail-closed refusal.
     if (existsSync(outputPath) && statSync(outputPath).isDirectory()) {
-      throw new Error("Contract export output must be a file path.");
+      throw usageError("Contract export output must be a file path.");
     }
     // T122: `.lock` alongside `.json`, so a contract can be committed as `drift.lock`.
     //
@@ -98,10 +104,10 @@ export function exportContract(storage: SqliteDriftStorage, parsed: ParsedArgs):
     // that framing is the point of E3. Still a closed set rather than any extension, so a typo'd
     // path fails loudly instead of writing a contract somewhere unexpected.
     if (![".json", ".lock"].includes(extname(outputPath))) {
-      throw new Error("Contract export output must end with .json or .lock.");
+      throw usageError("Contract export output must end with .json or .lock.");
     }
     if (existsSync(outputPath) && !parsed.flags.has("force")) {
-      throw new Error("Contract export output already exists. Pass --force to overwrite it.");
+      throw usageError("Contract export output already exists. Pass --force to overwrite it.");
     }
     mkdirSync(dirname(outputPath), { recursive: true });
     writeFileSync(outputPath, exportedContractJson);

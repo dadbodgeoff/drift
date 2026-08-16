@@ -9,6 +9,7 @@ import {
 } from "@drift/engine-contract";
 import { FACTGRAPH_SCHEMA_VERSION } from "@drift/factgraph";
 import { MIGRATIONS } from "@drift/storage";
+import { DriftError } from "../app/drift-error.js";
 import { engineProvenance } from "./engine-provenance.js";
 import { preflightGovernance } from "./governance.js";
 
@@ -130,9 +131,27 @@ export function doctorV1Scope(): {
   };
 }
 
+/**
+ * D-E4: this guard runs before and after `migrate()` on every ordinary command, so it - not
+ * `migrate()` - is what a database written by a newer Drift actually hits. It threw a plain Error
+ * whose text matched none of the classifier's `unsupported_database` substrings, so the everyday
+ * "open a database from a newer build" case the docs describe produced the catch-all `cli_error`,
+ * and `unsupported_database` was reachable only through `restore` - the one caller that migrates
+ * without this guard. Throwing the code directly removes the prose-matching step entirely.
+ */
+function unsupportedDatabase(message: string): DriftError {
+  return new DriftError(message, {
+    code: "unsupported_database",
+    userAction:
+      "Upgrade Drift to a build that knows this schema, or point --db at a database this build wrote.",
+    recoveryCommands: ["drift doctor --json"],
+    safeToRetry: false
+  });
+}
+
 export function assertSupportedLocalDatabase(appliedMigrations: string[]): void {
   if (appliedMigrations.length > SUPPORTED_SQLITE_SCHEMA_VERSION) {
-    throw new Error(
+    throw unsupportedDatabase(
       `Unsupported Drift database migration count ${appliedMigrations.length}. ` +
         `This Drift build supports ${SUPPORTED_SQLITE_SCHEMA_VERSION}.`
     );
@@ -140,7 +159,7 @@ export function assertSupportedLocalDatabase(appliedMigrations: string[]): void 
   const known = new Set(MIGRATIONS.map((migration) => migration.id));
   const unknown = appliedMigrations.filter((migration) => !known.has(migration));
   if (unknown.length > 0) {
-    throw new Error(`Unsupported Drift database migration: ${unknown.join(", ")}.`);
+    throw unsupportedDatabase(`Unsupported Drift database migration: ${unknown.join(", ")}.`);
   }
 }
 
