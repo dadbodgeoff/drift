@@ -33,10 +33,11 @@ pub use prisma::{PrismaFact, PrismaFactKind, extract_prisma_facts};
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
     DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,
-    Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_REFERENCE_ESCAPES,
-    UNRESOLVED_SOURCE_UNAVAILABLE, UNRESOLVED_SOURCE_UNPARSED, classify_findings_against_baseline,
-    classify_specifier_use, detect_direct_data_access_imports, is_forbidden_import,
-    materialize_direct_data_access_findings, materialize_direct_data_access_findings_with_sources,
+    Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_NO_USE_FOUND,
+    UNRESOLVED_REFERENCE_ESCAPES, UNRESOLVED_SOURCE_UNAVAILABLE, UNRESOLVED_SOURCE_UNPARSED,
+    classify_findings_against_baseline, classify_specifier_use, detect_direct_data_access_imports,
+    is_forbidden_import, materialize_direct_data_access_findings,
+    materialize_direct_data_access_findings_with_sources,
 };
 pub use security_capabilities::{
     SecurityCapabilityStatus, SecurityScanCapability, security_capabilities,

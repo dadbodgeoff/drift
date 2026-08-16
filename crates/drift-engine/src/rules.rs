@@ -443,6 +443,12 @@ pub const UNRESOLVED_DYNAMIC_MEMBER: &str = "dynamic_member_access";
 /// The binding leaves this module (argument, return, object property, …) without being called
 /// here, so what happens to it is decided somewhere this rule is not looking.
 pub const UNRESOLVED_REFERENCE_ESCAPES: &str = "reference_escapes";
+/// The file parsed, but no value-position occurrence of the binding was found in it.
+///
+/// This is a disagreement between the fact extractor (which saw the import) and this classifier
+/// (which cannot see the use), not evidence of inertness — so it retains. See the fall-through
+/// in [`classify_specifier_use`].
+pub const UNRESOLVED_NO_USE_FOUND: &str = "no_use_found";
 
 const INVOCATION_DIRECT_CALL: &str = "direct_call";
 const INVOCATION_MEMBER_CALL: &str = "member_call";
@@ -492,6 +498,19 @@ pub fn classify_specifier_use(file_path: &str, source: &str, binding: &str) -> S
     let mut tainted: BTreeSet<String> = BTreeSet::from([binding.to_string()]);
     let mut invocation: Option<&'static str> = None;
     let mut unresolved: Option<&'static str> = None;
+    // Occurrences this classifier actually read and proved terminal. Suppression is licensed by
+    // this count being non-zero, never by the mere absence of an invocation - see below.
+    let mut inert_evidence: usize = 0;
+
+    // A tree with ERROR nodes parsed, but not all of it. `Parser::parse` returning `Some` is not
+    // proof the file was understood: tree-sitter recovers from a syntax it does not know by
+    // wrapping the region in an ERROR node, and identifiers inside that region are not reliably
+    // reachable as `identifier` nodes. Occurrences therefore go MISSING rather than misclassify,
+    // which lands on the suppress branch - failing open on exactly the files the parser
+    // understood least.
+    if root.has_error() {
+        unresolved.get_or_insert(UNRESOLVED_SOURCE_UNPARSED);
+    }
 
     for _ in 0..ALIAS_ROUNDS {
         let before = tainted.len();
@@ -513,7 +532,7 @@ pub fn classify_specifier_use(file_path: &str, source: &str, binding: &str) -> S
                 SpecifierUse::Unresolved(reason) => {
                     unresolved.get_or_insert(reason);
                 }
-                SpecifierUse::Inert => {}
+                SpecifierUse::Inert => inert_evidence += 1,
             }
         }
         tainted.extend(discovered);
@@ -530,6 +549,17 @@ pub fn classify_specifier_use(file_path: &str, source: &str, binding: &str) -> S
     }
     if let Some(reason) = unresolved {
         return SpecifierUse::Unresolved(reason);
+    }
+    // Suppression requires POSITIVE PROOF of inertness, and the proof is at least one
+    // value-position occurrence this classifier read and found terminal.
+    //
+    // Falling through to `Inert` on zero occurrences was the third failure-open path. Reaching
+    // here having seen nothing does not mean the specifier is inert; it means the fact extractor
+    // and this classifier disagree that the binding is even present - a different parse, a
+    // binding form `tainted_occurrences` does not model, a path that resolved to the wrong file.
+    // Every one of those is absence of UNDERSTANDING, and §5.5 routes that to the retain branch.
+    if inert_evidence == 0 {
+        return SpecifierUse::Unresolved(UNRESOLVED_NO_USE_FOUND);
     }
     SpecifierUse::Inert
 }
@@ -691,10 +721,20 @@ fn classify_value_consumption(
             | "satisfies_expression"
             | "type_assertion"
             | "ternary_expression" => current = parent,
-            // A comparison consumes the value and produces a boolean. Nothing survives it that
-            // could be invoked, whichever side the binding is on.
-            "binary_expression" if is_comparison(parent, source) => return SpecifierUse::Inert,
-            "unary_expression" => return SpecifierUse::Inert,
+            // A comparison or a unary operator consumes the value and produces a boolean (or
+            // `undefined`, for `void`). Nothing survives it that could be invoked.
+            //
+            // This returns `terminal`, NOT a hardcoded `Inert`, and that distinction is the D5.2
+            // regression fix. `is_member_read` is the whole basis on which this classifier is
+            // entitled to suppress: a member READ of a generated enum (`ItemType.FOLDER`) is one
+            // value and proving it inert is proving something real. The bare binding is the
+            // entire data-access surface, and consuming it here proves only that THIS expression
+            // does not call it - not that the import is inert. Hardcoding `Inert` in these two
+            // arms discarded that asymmetry, and it is what made `const __h = prisma; void __h;`
+            // - the canonical shape every evasion cell uses to mark a binding as used - classify
+            // inert and suppress a genuine violation on all seven eval repos.
+            "binary_expression" if is_comparison(parent, source) => return terminal,
+            "unary_expression" => return terminal,
             // Anything else binary (`prisma ?? fallback`, `prisma || legacy`) passes a value
             // through, so keep walking rather than declaring it consumed.
             "binary_expression" => current = parent,
