@@ -240,7 +240,12 @@ export class SqliteDriftStorage {
       this.applyAuditSequenceMigration();
       return;
     }
-    if (migration.id === "023_parser_gap_v2_metadata") {
+    // The id here was "023_parser_gap_v2_metadata", which no migration has ever had - 023 is
+    // 023_security_boundary_proofs - so this branch never ran and 027's raw ALTER TABLE went
+    // through the generic path instead (D-ST3). The raw form is not idempotent: ADD COLUMN throws
+    // on a second application. It survived only because a migration is recorded after it applies,
+    // so it never got a second one. This routes it back to the guarded version it was written for.
+    if (migration.id === "027_parser_gap_v2_metadata") {
       this.applyParserGapV2Migration();
       return;
     }
@@ -262,10 +267,10 @@ export class SqliteDriftStorage {
       );
     `);
 
-    if (!this.auditEventsColumnExists("previous_event_hash")) {
+    if (!this.tableHasColumn("audit_events", "previous_event_hash")) {
       this.db.exec("ALTER TABLE audit_events ADD COLUMN previous_event_hash TEXT;");
     }
-    if (!this.auditEventsColumnExists("event_hash")) {
+    if (!this.tableHasColumn("audit_events", "event_hash")) {
       this.db.exec("ALTER TABLE audit_events ADD COLUMN event_hash TEXT;");
     }
 
@@ -289,7 +294,7 @@ export class SqliteDriftStorage {
       );
     `);
 
-    if (!this.auditEventsColumnExists("sequence")) {
+    if (!this.tableHasColumn("audit_events", "sequence")) {
       this.db.exec("ALTER TABLE audit_events ADD COLUMN sequence INTEGER;");
     }
 
@@ -317,12 +322,6 @@ export class SqliteDriftStorage {
     `);
   }
 
-  private auditEventsColumnExists(columnName: string): boolean {
-    return this.db
-      .prepare("PRAGMA table_info(audit_events)")
-      .all()
-      .some((row) => rowValue<string>(row, "name") === columnName);
-  }
 
   private applyParserGapV2Migration(): void {
     this.db.exec(`
@@ -349,7 +348,7 @@ export class SqliteDriftStorage {
       ["affected_contract_kinds_json", "TEXT NOT NULL DEFAULT '[]'"],
       ["suggested_action", "TEXT"]
     ] as const) {
-      if (!this.parserGapsColumnExists(column)) {
+      if (!this.tableHasColumn("parser_gaps", column)) {
         this.db.exec(`ALTER TABLE parser_gaps ADD COLUMN ${column} ${definition};`);
       }
     }
@@ -359,12 +358,6 @@ export class SqliteDriftStorage {
     `);
   }
 
-  private parserGapsColumnExists(columnName: string): boolean {
-    return this.db
-      .prepare("PRAGMA table_info(parser_gaps)")
-      .all()
-      .some((row) => rowValue<string>(row, "name") === columnName);
-  }
 
   getAppliedMigrations(): string[] {
     const table = this.db
@@ -520,23 +513,58 @@ export class SqliteDriftStorage {
     );
     const retained = new Set(ordered.slice(0, keep).map((scan) => scan.id));
 
-    const referenced = (table: string, column = "scan_id") => {
-      try {
-        for (const row of this.db
-          .prepare(`SELECT DISTINCT ${column} AS id FROM ${table} WHERE repo_id = ?`)
-          .all(repoId) as Array<{ id: string | null }>) {
-          if (row.id) {
-            retained.add(row.id);
-          }
+    const retain = (rows: Array<{ id: string | null }>) => {
+      for (const row of rows) {
+        if (row.id) {
+          retained.add(row.id);
         }
-      } catch {
-        /* table absent in this schema version */
       }
     };
+
+    /**
+     * Retain every scan named by `table.column`.
+     *
+     * A table absent from this schema version is a legitimate skip. A table that is present but
+     * lacks the column is not: it means this retention rule stopped holding silently, which is the
+     * exact failure this function exists to prevent. `referenced("findings")` sat in a bare
+     * `catch {}` here and threw on every single call for the lifetime of the table, so the rule its
+     * comment described - scans referenced by a finding survive - was never once enforced (D-ST1).
+     */
+    const referenced = (table: string, column = "scan_id") => {
+      if (!this.tableExists(table)) {
+        return;
+      }
+      if (!this.tableHasColumn(table, column)) {
+        throw new Error(
+          `Scan retention is misconfigured: ${table}.${column} does not exist, so scans referenced by ${table} would be pruned. Fix the retention rule or the schema.`
+        );
+      }
+      retain(
+        this.db
+          .prepare(`SELECT DISTINCT ${column} AS id FROM ${table} WHERE repo_id = ?`)
+          .all(repoId) as Array<{ id: string | null }>
+      );
+    };
+
     // Anything a human or a governance decision points at must survive.
-    referenced("findings");
     referenced("baseline_violations", "first_seen_scan_id");
     referenced("check_runs");
+
+    // Findings carry no scan_id of their own - they reach a scan only through the check run that
+    // produced them. Spelling that join out keeps the guarantee structural: it holds because this
+    // query says so, not because `check_runs` above happens to enumerate a superset today.
+    if (this.tableExists("findings") && this.tableExists("check_runs")) {
+      retain(
+        this.db
+          .prepare(`
+            SELECT DISTINCT check_runs.scan_id AS id
+            FROM findings
+            JOIN check_runs ON check_runs.id = findings.check_id
+            WHERE findings.repo_id = ?
+          `)
+          .all(repoId) as Array<{ id: string | null }>
+      );
+    }
 
     // Keep the newest scan's immediate predecessor, and only that.
     //
@@ -750,6 +778,22 @@ export class SqliteDriftStorage {
     };
   }
 
+  /** Column names of `table`, empty when the table is absent from this schema version. */
+  private columnsOf(table: string): Set<string> {
+    const columns = this.db.prepare(`PRAGMA table_info("${table}")`).all() as Array<{
+      name: string;
+    }>;
+    return new Set(columns.map((column) => column.name));
+  }
+
+  private tableExists(table: string): boolean {
+    return this.columnsOf(table).size > 0;
+  }
+
+  private tableHasColumn(table: string, column: string): boolean {
+    return this.columnsOf(table).has(column);
+  }
+
   /** Tables keyed by scan_id, read from the live schema rather than hardcoded. */
   private tablesWithScanId(): string[] {
     const tables = this.db
@@ -758,10 +802,7 @@ export class SqliteDriftStorage {
     return tables
       .map((row) => row.name)
       .filter((name) => {
-        const columns = this.db.prepare(`PRAGMA table_info("${name}")`).all() as Array<{
-          name: string;
-        }>;
-        const names = new Set(columns.map((column) => column.name));
+        const names = this.columnsOf(name);
         return names.has("scan_id") && names.has("repo_id");
       });
   }
@@ -1922,7 +1963,24 @@ export class SqliteDriftStorage {
       .map((row) => BaselineViolationSchema.parse(row));
   }
 
-  upsertConventionCandidate(candidate: ConventionCandidate): void {
+  /**
+   * Write a candidate, from either of two callers that must not be confused.
+   *
+   * A *rescan* re-proposes candidates it inferred again; a *human decision* accepts or rejects one
+   * deliberately. Both land here, and the sticky-rejected clause below exists to stop the first from
+   * reviving a rejection made by the second. Until `decidedByHuman` existed there was no way for the
+   * SQL to tell them apart, so `drift conventions accept` on a previously-rejected id wrote nothing
+   * and still reported success (D-CL1).
+   *
+   * `scan_id` refreshes on every write. Candidate ids are content-derived and therefore stable
+   * across scans, so without this a re-proposed candidate keeps the scan id of whichever scan first
+   * inserted it, and `pruneSupersededScans` deletes it out from under the live contract once that
+   * scan ages out - which made every third `drift start --accept-defaults` fail (D-ST2).
+   */
+  upsertConventionCandidate(
+    candidate: ConventionCandidate,
+    options: { decidedByHuman?: boolean } = {}
+  ): void {
     const parsed = ConventionCandidateSchema.parse(candidate);
     this.db
       .prepare(`
@@ -1943,6 +2001,7 @@ export class SqliteDriftStorage {
           @status, @created_at
         )
         ON CONFLICT(id) DO UPDATE SET
+          scan_id = excluded.scan_id,
           statement = excluded.statement,
           rationale = excluded.rationale,
           scope_json = excluded.scope_json,
@@ -1963,7 +2022,8 @@ export class SqliteDriftStorage {
           evidence_refs_json = excluded.evidence_refs_json,
           counterexample_refs_json = excluded.counterexample_refs_json,
           status = CASE
-            WHEN convention_candidates.status = 'rejected'
+            WHEN @decided_by_human = 0
+              AND convention_candidates.status = 'rejected'
               AND COALESCE(convention_candidates.evidence_fingerprint, '') = COALESCE(excluded.evidence_fingerprint, '')
             THEN convention_candidates.status
             ELSE excluded.status
@@ -1971,6 +2031,7 @@ export class SqliteDriftStorage {
       `)
       .run({
         ...parsed,
+        decided_by_human: options.decidedByHuman ? 1 : 0,
         rationale: parsed.rationale ?? null,
         scope_json: stringifyJson(parsed.scope),
         matcher_json: stringifyJson(parsed.matcher),
@@ -2063,6 +2124,20 @@ export class SqliteDriftStorage {
       .prepare("SELECT * FROM accepted_conventions WHERE repo_id = ? ORDER BY accepted_at, id")
       .all(repoId)
       .map(acceptedConventionFromRow);
+  }
+
+  /**
+   * Withdraw one accepted convention.
+   *
+   * Rejecting a candidate that was previously accepted has to remove the derived row as well as
+   * flipping the candidate's status, or the contract keeps enforcing a rule the human just rejected
+   * - `drift conventions reject` reported success while `drift contract show` still listed it
+   * (D-CL1). Returns the number of rows removed so the caller can report whether anything changed.
+   */
+  deleteAcceptedConvention(repoId: string, conventionId: string): number {
+    return this.db
+      .prepare("DELETE FROM accepted_conventions WHERE repo_id = ? AND id = ?")
+      .run(repoId, conventionId).changes;
   }
 
   deleteAcceptedConventionsExcept(repoId: string, conventionIds: string[]): number {

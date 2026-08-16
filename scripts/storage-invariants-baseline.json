@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "Upserts on a scan-scoped table whose ON CONFLICT DO UPDATE does not refresh scan_id.",
+    "An entry here is a claim that the conflict cannot fire from a LATER scan, so there is no stale",
+    "scan_id to carry forward. That is a claim about how the conflict key is built, which the static",
+    "check cannot decide for itself - hence the baseline rather than a rule.",
+    "Adding an entry requires the reason. Fixing one requires removing it: the check fails on a",
+    "stale entry too, so this file cannot keep claiming a gap that no longer exists."
+  ],
+  "stale_scan_id_upserts": [
+    {
+      "table": "required_check_executions",
+      "conflict_target": "execution_id",
+      "reason": "execution_id hashes repo_id, command and startedAt (checks-run.ts:43). The timestamp makes every execution a new row, so a later scan never rewrites an earlier one. If that id ever becomes content-derived the way candidate ids are, this becomes D-ST2 and the entry must go."
+    },
+    {
+      "table": "security_boundary_proof_runs",
+      "conflict_target": "check_id, proof_id",
+      "reason": "check_id identifies one check run and a new check run gets a new id, so the pair cannot be rewritten by a later scan."
+    }
+  ]
+}

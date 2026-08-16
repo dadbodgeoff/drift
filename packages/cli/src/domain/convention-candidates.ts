@@ -120,9 +120,20 @@ export function acceptConventionCandidate(
 
   const contract = storage.transaction(() => {
     storage.upsertAcceptedConvention(candidate.repo_id, convention);
-    storage.upsertConventionCandidate({ ...candidate, status: "accepted" });
+    // `decidedByHuman` is what separates this from a rescan re-proposing the same id. Without it
+    // the sticky-rejected clause in the upsert silently discarded the new status, and accept
+    // returned changed: true over a row that still read "rejected" (D-CL1).
+    storage.upsertConventionCandidate({ ...candidate, status: "accepted" }, { decidedByHuman: true });
     const materializedContract = materializeRepoContract(storage, candidate.repo_id, contractId, now);
-    storage.upsertRepoContract(materializedContract);
+    // Accepting withdraws any standing rejection of the same candidate. Leaving it in place let a
+    // repo hold one id as rejected and actively enforced at the same time, with `conventions
+    // accepted` and `candidates show` each reporting a different truth.
+    storage.upsertRepoContract({
+      ...materializedContract,
+      rejected_inferences: materializedContract.rejected_inferences.filter(
+        (entry) => entry.candidate_id !== candidate.id
+      )
+    });
     storage.appendAuditEvent(auditEvent({
       id: `audit_event_accept_${candidate.id}_${now}`,
       repoId: candidate.repo_id,
