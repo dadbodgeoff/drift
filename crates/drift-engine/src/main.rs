@@ -16,8 +16,7 @@ use check_command::check_repo;
 use drift_engine::{
     Fact, FactExtractError, FactKind, GraphEdgeKind, GraphNodeKind, PrismaFactKind, ScanCapability,
     dynamic_middleware_matcher_line, extract_prisma_facts, extract_security_facts,
-    extract_typescript_facts, extract_typescript_facts_with_report, should_index_path,
-    static_middleware_coverage,
+    extract_typescript_facts_with_report, should_index_path, static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
 use protocol::*;
