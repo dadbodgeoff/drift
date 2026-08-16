@@ -103,6 +103,97 @@ export async function POST(request: Request, { params }: { params: { projectId: 
 }
 
 #[test]
+fn classifies_outbound_request_url_sources_without_leaking_raw_urls() {
+    let source = r#"
+export async function POST(request: Request) {
+  const body = await request.json();
+  const target = request.nextUrl.searchParams.get("target");
+  await fetch("https://api.example.test/static");
+  await fetch(target);
+  await fetch(request.nextUrl.searchParams.get("next"));
+  await fetch(`${body.callbackUrl}/hook`);
+}
+"#;
+
+    let facts =
+        extract_security_facts("app/api/proxy/route.ts", source, &[]).expect("security facts");
+    let outbound = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::OutboundRequestCalled)
+        .collect::<Vec<_>>();
+
+    assert!(
+        outbound.iter().any(|fact| {
+            fact.start_line == 5
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"url_source\":\"constant\"")
+                        && !value.contains("https://api.example.test")
+                })
+        }),
+        "missing constant outbound URL classification: {facts:#?}"
+    );
+    assert!(
+        outbound.iter().any(|fact| {
+            fact.start_line == 6
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"url_source\":\"request_input\"")
+                        && value.contains("\"url_var\":\"target\"")
+                })
+        }),
+        "missing request-input variable outbound URL classification: {facts:#?}"
+    );
+    assert!(
+        outbound.iter().any(|fact| {
+            fact.start_line == 7
+                && fact
+                    .value
+                    .as_deref()
+                    .is_some_and(|value| value.contains("\"url_source\":\"request_input\""))
+        }),
+        "missing inline request-input outbound URL classification: {facts:#?}"
+    );
+    assert!(
+        outbound.iter().any(|fact| {
+            fact.start_line == 8
+                && fact
+                    .value
+                    .as_deref()
+                    .is_some_and(|value| value.contains("\"url_source\":\"request_input\""))
+        }),
+        "missing template request-input outbound URL classification: {facts:#?}"
+    );
+}
+
+#[test]
+fn extracts_parse_request_body_as_request_input_read() {
+    let source = r#"
+import { parseRequestBody } from "@/lib/api/utils";
+
+export const POST = withWorkspace(async ({ req }) => {
+  const body = await parseRequestBody(req);
+  return Response.json({ body });
+});
+"#;
+
+    let facts =
+        extract_security_facts("app/api/oauth/apps/route.ts", source, &[]).expect("security facts");
+
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::RequestInputRead
+                && fact.name == "body"
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"source\":\"body\"")
+                        && value.contains("\"variable\":\"body\"")
+                        && value.contains("\"route_id\":\"route:app/api/oauth/apps/route.ts:POST\"")
+                })
+                && fact.start_line == 5),
+        "missing parseRequestBody request input fact: {facts:#?}"
+    );
+}
+
+#[test]
 fn security_phase5_secret_read_ignores_unknown_public_config_unless_explicitly_accepted() {
     let source = r#"
 export async function GET() {
@@ -326,6 +417,127 @@ export async function POST(request: Request) {
                 && fact.start_line == 10),
         "missing accepted helper alias validation fact: {facts:#?}"
     );
+}
+
+#[test]
+fn extracts_schema_parse_async_for_parse_request_body() {
+    let source = r#"
+import { parseRequestBody } from "@/lib/api/utils";
+import { createOAuthAppSchema } from "@/lib/zod/schemas/oauth";
+
+export const POST = withWorkspace(async ({ req }) => {
+  const input = await createOAuthAppSchema.parseAsync(await parseRequestBody(req));
+  return Response.json({ input });
+});
+"#;
+
+    let validators = vec![AcceptedRequestValidator {
+        validator_id: "schema_create_oauth_app".to_string(),
+        symbol: "createOAuthAppSchema".to_string(),
+        kind: RequestValidatorKind::Schema,
+        behavior: RequestValidatorBehavior::ReturnsParsed,
+    }];
+    let facts = extract_security_facts_with_validation(
+        "app/api/oauth/apps/route.ts",
+        source,
+        &[],
+        &validators,
+    )
+    .expect("security facts");
+
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::RequestInputRead
+                && fact.name == "input"
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"source\":\"body\"")
+                        && value.contains("\"variable\":\"input\"")
+                })),
+        "missing inline parseRequestBody input fact: {facts:#?}"
+    );
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::RequestValidationCalled
+                && fact.name == "parseAsync"
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"schema_symbol\":\"createOAuthAppSchema\"")
+                        && value.contains("\"input_var\":\"input\"")
+                        && value.contains("\"result_var\":\"input\"")
+                })
+                && fact.start_line == 6),
+        "missing parseAsync request validation fact: {facts:#?}"
+    );
+}
+
+#[test]
+fn extracts_multiline_destructured_schema_parse_async_for_parse_request_body() {
+    let source = r#"
+import { parseRequestBody } from "@/lib/api/utils";
+import { createOAuthAppSchema } from "@/lib/zod/schemas/oauth";
+
+export const POST = withWorkspace(async ({ req }) => {
+  const {
+    name,
+    slug,
+  } = await createOAuthAppSchema.parseAsync(await parseRequestBody(req));
+  await prisma.integration.create({ data: { name, slug } });
+  return Response.json({ name, slug });
+});
+"#;
+
+    let validators = vec![AcceptedRequestValidator {
+        validator_id: "schema_create_oauth_app".to_string(),
+        symbol: "createOAuthAppSchema".to_string(),
+        kind: RequestValidatorKind::Schema,
+        behavior: RequestValidatorBehavior::ReturnsParsed,
+    }];
+    let facts = extract_security_facts_with_validation(
+        "app/api/oauth/apps/route.ts",
+        source,
+        &[],
+        &validators,
+    )
+    .expect("security facts");
+
+    for field in ["name", "slug"] {
+        assert!(
+            facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::RequestInputRead
+                    && fact.name == field
+                    && fact.value.as_deref().is_some_and(|value| {
+                        value.contains("\"source\":\"body\"")
+                            && value.contains(&format!("\"variable\":\"{field}\""))
+                    })),
+            "missing destructured parseRequestBody input fact for {field}: {facts:#?}"
+        );
+        assert!(
+            facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::RequestValidationCalled
+                    && fact.name == "parseAsync"
+                    && fact.value.as_deref().is_some_and(|value| {
+                        value.contains("\"schema_symbol\":\"createOAuthAppSchema\"")
+                            && value.contains(&format!("\"input_var\":\"{field}\""))
+                            && value.contains(&format!("\"result_var\":\"{field}\""))
+                    })
+                    && fact.start_line == 9),
+            "missing destructured parseAsync request validation fact for {field}: {facts:#?}"
+        );
+        assert!(
+            facts
+                .iter()
+                .any(|fact| fact.kind == FactKind::ValidatedInputUsed
+                    && fact.name == field
+                    && fact.value.as_deref().is_some_and(|value| {
+                        value.contains(&format!("\"source_input_var\":\"{field}\""))
+                            && value.contains(&format!("\"validated_var\":\"{field}\""))
+                    })),
+            "missing destructured validated use fact for {field}: {facts:#?}"
+        );
+    }
 }
 
 #[test]
@@ -776,6 +988,53 @@ export async function GET(request: Request, { params }: { params: { projectId: s
                     || value.contains("\"roles\":[\"admin\"]") && fact.name != "requireRole"
             })),
         "inline role comparison must not emit accepted authorization proof: {facts:#?}"
+    );
+}
+
+#[test]
+fn extracts_authorization_from_wrapper_required_permissions_and_roles() {
+    let source = r#"
+import { withWorkspace } from "@/lib/auth";
+import { db } from "@/server/db";
+
+export const POST = withWorkspace(
+  async ({ session }) => {
+    await db.project.create({ data: { name: "x" } });
+    return Response.json({});
+  },
+  {
+    requiredPermissions: ["oauth_apps.write", "project:create"],
+    requiredRoles: ["owner"]
+  }
+);
+"#;
+    let mut policy = accepted_phase4_policy();
+    policy
+        .authorization_helpers
+        .push(AcceptedAuthorizationHelper {
+            guard_id: "authorization_with_workspace".to_string(),
+            symbol: "withWorkspace".to_string(),
+            import_source: Some("@/lib/auth".to_string()),
+            kind: AuthorizationHelperKind::Policy,
+            behavior: AuthorizationHelperBehavior::Throws,
+        });
+
+    let facts =
+        extract_security_facts_with_policy("app/api/oauth/apps/route.ts", source, &policy, &[])
+            .expect("security facts");
+
+    assert!(
+        facts.iter().any(|fact| {
+            fact.kind == FactKind::AuthorizationGuardCalled
+                && fact.name == "withWorkspace"
+                && fact.value.as_deref().is_some_and(|value| {
+                    value.contains("\"guard_id\":\"authorization_with_workspace\"")
+                        && value
+                            .contains("\"permissions\":[\"oauth_apps.write\",\"project:create\"]")
+                        && value.contains("\"roles\":[\"owner\"]")
+                })
+        }),
+        "missing wrapper authorization guard fact: {facts:#?}"
     );
 }
 

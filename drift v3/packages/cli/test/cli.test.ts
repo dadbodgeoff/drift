@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -2147,6 +2147,53 @@ describe("drift CLI convention review", () => {
     expect(result.stdout).toContain("Drift is ready for this repo.");
     expect(result.stdout).toContain("drift conventions list");
     expect(result.stdout).toContain("drift check --diff main...HEAD");
+  });
+
+  it.skipIf(process.platform === "win32")("starts when an upstream repo contains a broken symlink", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "drift-start-broken-symlink-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "export async function GET() {",
+        "  return Response.json({ ok: true });",
+        "}",
+        ""
+      ].join("\n")
+    );
+    const eeDir = join(repoRoot, "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)");
+    await mkdir(eeDir, { recursive: true });
+    await symlink("../../../../(ee)/LICENSE.md", join(eeDir, "LICENSE.md"));
+
+    const result = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--now", "2026-05-10T00:00:25.000Z",
+      "--json"
+    ]);
+
+    expect(result.exitCode, result.stderr).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.summary).toMatchObject({
+      files_indexed: 1,
+      files_skipped: 1,
+      diagnostics_count: 1,
+      engine_source: "rust"
+    });
+    const storage = openDriftStorage({ databasePath: payload.state.database_path });
+    storage.migrate();
+    expect(storage.listParserGaps(payload.repo.id, payload.scan.id)).toMatchObject([
+      {
+        kind: "partial_parse",
+        file_path: "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/LICENSE.md",
+        confidence_impact: "blocks_enforcement"
+      }
+    ]);
+    storage.close();
   });
 
   it("starts onboarding with accept-defaults, materializes contract, and baselines existing violations", async () => {
@@ -10450,6 +10497,210 @@ describe("drift CLI convention review", () => {
         })
       })
     ]));
+  });
+
+  it("reports proof-safe security architecture audit without leaking raw fact values", async () => {
+    const databasePath = await seedDatabase();
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    storage.upsertScanManifest({
+      id: "scan_security_audit",
+      repo_id: "repo_abc",
+      branch: "main",
+      commit: "abc123",
+      dirty: false,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0" },
+      rule_engine_version: "0.1.0",
+      status: "completed",
+      file_count: 2,
+      fact_count: 8,
+      finding_count: 0,
+      started_at: "2026-05-27T00:00:00.000Z",
+      completed_at: "2026-05-27T00:00:01.000Z"
+    });
+    storage.upsertFacts([
+      {
+        id: "fact_security_audit_role",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "file_role_detected",
+        file_path: "apps/web/app/api/apps/route.ts",
+        name: "api_route",
+        start_line: 1,
+        end_line: 1,
+        ...factQuality("scan_security_audit")
+      },
+      {
+        id: "fact_security_audit_auth",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "symbol_called",
+        file_path: "apps/web/app/api/apps/route.ts",
+        name: "withWorkspace",
+        start_line: 4,
+        end_line: 4,
+        ...factQuality("scan_security_audit")
+      },
+      {
+        id: "fact_security_audit_parser",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "symbol_called",
+        file_path: "apps/web/app/api/apps/route.ts",
+        name: "parseRequestBody",
+        start_line: 8,
+        end_line: 8,
+        ...factQuality("scan_security_audit")
+      },
+      {
+        id: "fact_security_audit_validator",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "symbol_called",
+        file_path: "apps/web/app/api/apps/route.ts",
+        name: "parseAsync",
+        value: "createOAuthAppSchema",
+        start_line: 8,
+        end_line: 8,
+        ...factQuality("scan_security_audit")
+      },
+      {
+        id: "fact_security_audit_rate_error",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "symbol_called",
+        file_path: "apps/web/app/api/public/route.ts",
+        name: "exceededLimitError",
+        start_line: 9,
+        end_line: 9,
+        ...factQuality("scan_security_audit")
+      },
+      {
+        id: "fact_security_audit_ssrf",
+        repo_id: "repo_abc",
+        scan_id: "scan_security_audit",
+        kind: "outbound_request_called",
+        file_path: "apps/web/app/api/import/route.ts",
+        name: "fetch",
+        value: JSON.stringify({
+          url_source: "request_input",
+          url_var: "url",
+          raw_url: "https://token@example.com"
+        }),
+        start_line: 12,
+        end_line: 12,
+        ...factQuality("scan_security_audit")
+      }
+    ]);
+    storage.upsertConventionCandidate({
+      id: "candidate_security_audit_body_parser",
+      repo_id: "repo_abc",
+      scan_id: "scan_security_audit",
+      kind: "api_route_requires_request_validation",
+      statement: "Uses parseRequestBody.",
+      scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+      matcher: {
+        kind: "api_route_requires_request_validation",
+        required_calls: ["parseRequestBody"]
+      },
+      requires: { validators: [{ symbol: "parseRequestBody" }] },
+      suggested_severity: "warning",
+      suggested_enforcement_mode: "warn",
+      enforcement_capability: "deterministic_check",
+      confidence_label: "medium",
+      scoring: {
+        supporting_examples_count: 2,
+        counterexamples_count: 0,
+        scope_files_count: 3,
+        coverage_ratio: 0.67,
+        heuristic_id: "test-security-audit"
+      },
+      evidence_refs: [],
+      counterexample_refs: [],
+      matcher_fingerprint: "security-audit-body-parser",
+      scope_fingerprint: "security-audit-scope",
+      graph_fingerprint: "security-audit-graph",
+      evidence_fingerprint: "security-audit-evidence",
+      required_capabilities: ["syntax_facts", "request_validation"],
+      reason_not_blocking: "candidate_not_accepted",
+      status: "candidate",
+      created_at: "2026-05-27T00:00:02.000Z"
+    });
+    storage.upsertAcceptedConvention("repo_abc", {
+      id: "convention_security_audit_auth",
+      contract_id: "contract_security_audit",
+      kind: "api_route_requires_auth_helper",
+      statement: "Use withWorkspace.",
+      scope: { path_globs: ["apps/web/app/api/**/route.ts"], file_roles: ["api_route"] },
+      matcher: {
+        kind: "api_route_requires_auth_helper",
+        required_calls: ["withWorkspace"]
+      },
+      requires: { auth_helpers: [{ symbol: "withWorkspace" }] },
+      severity: "warning",
+      enforcement_mode: "warn",
+      enforcement_capability: "deterministic_check",
+      exceptions: [],
+      evidence_refs: [],
+      counterexample_refs: [],
+      accepted_by: "test",
+      accepted_at: "2026-05-27T00:00:03.000Z",
+      updated_at: "2026-05-27T00:00:03.000Z"
+    });
+    storage.close();
+
+    const jsonResult = await runCli([
+      "--db", databasePath,
+      "security", "audit",
+      "--repo", "repo_abc",
+      "--json"
+    ]);
+    const textResult = await runCli([
+      "--db", databasePath,
+      "security", "audit",
+      "--repo", "repo_abc"
+    ]);
+
+    expect(jsonResult.stderr).toBe("");
+    expect(jsonResult.exitCode).toBe(0);
+    const payload = JSON.parse(jsonResult.stdout);
+    expect(payload.response_schema).toBe("drift.security.audit.v1");
+    expect(payload.areas.auth_boundary.patterns[0]).toMatchObject({
+      pattern: "withWorkspace",
+      accepted: true,
+      candidate_only: false
+    });
+    expect(payload.areas.request_validation.patterns).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        pattern: "parseRequestBody",
+        semantic_role: "body_parser",
+        proof_truth: "candidate_only"
+      }),
+      expect.objectContaining({
+        pattern: "createOAuthAppSchema.parseAsync",
+        semantic_role: "validator"
+      })
+    ]));
+    expect(payload.areas.rate_limit.patterns).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        pattern: "exceededLimitError",
+        semantic_role: "error_helper"
+      })
+    ]));
+    expect(payload.areas.ssrf.patterns[0]).toMatchObject({
+      pattern: "request_input"
+    });
+    expect(jsonResult.stdout).not.toContain("https://token@example.com");
+    expect(jsonResult.stdout).not.toContain("raw_url");
+    expect(textResult.exitCode).toBe(0);
+    expect(textResult.stdout).toContain("Drift security audit");
+    expect(textResult.stdout).toContain("Candidate-only patterns: 2");
+    expect(textResult.stdout).toContain("Priority signals:");
+    expect(textResult.stdout).toContain("Signal/noise ratio:");
+    expect(textResult.stdout).not.toContain("parseRequestBody priority:");
+    expect(textResult.stdout).not.toContain("exceededLimitError priority:");
+    expect(textResult.stdout).not.toContain("https://token@example.com");
   });
 
   it("repo map reports route middleware coverage summary", async () => {

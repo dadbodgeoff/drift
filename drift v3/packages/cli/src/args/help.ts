@@ -144,6 +144,21 @@ export function helpText(parsed: ParsedArgs): string {
     ].join("\n");
   }
 
+  if (parsed.positional[0] === "security") {
+    return [
+      "Audit repo security architecture",
+      "",
+      "Usage:",
+      "  drift --db <path> security audit --repo <repo_id> --json",
+      "",
+      "What security audit returns:",
+      "  proof-safe inventory of observed security patterns across auth, middleware, data access, request validation, session trust, authorization, tenant scope, response safety, SSRF, SQL, CORS, CSRF, and rate limits.",
+      "  candidate-only patterns are labeled as inventory and never treated as blocking proof.",
+      "  output includes file paths and line numbers, not source snippets or raw fact values.",
+      ""
+    ].join("\n");
+  }
+
   if (parsed.positional[0] === "checks") {
     return [
       "List repo checks and safe commands",

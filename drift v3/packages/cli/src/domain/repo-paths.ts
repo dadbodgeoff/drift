@@ -2,7 +2,7 @@ import { DRIFT_CONTRACT_SCHEMA_VERSION,type ConventionCandidate,type RepoContrac
 import type { SqliteDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync,mkdirSync,readdirSync,readFileSync,statSync } from "node:fs";
+import { existsSync,lstatSync,mkdirSync,readdirSync,readFileSync,statSync } from "node:fs";
 import { dirname,join,relative } from "node:path";
 import { hashStable,repoIdForRoot } from "./identifiers.js";
 
@@ -180,7 +180,15 @@ function collectResolverInputs(repoRoot: string, current: string, results: strin
       continue;
     }
     const absolutePath = join(current, entry);
-    const stats = statSync(absolutePath);
+    let stats;
+    try {
+      stats = lstatSync(absolutePath);
+    } catch {
+      continue;
+    }
+    if (stats.isSymbolicLink()) {
+      continue;
+    }
     if (stats.isDirectory()) {
       collectResolverInputs(repoRoot, absolutePath, results);
       continue;

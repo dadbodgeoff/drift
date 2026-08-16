@@ -722,16 +722,27 @@ fn has_sink_in_range(facts: &[Fact], range: std::ops::Range<usize>) -> bool {
 }
 
 fn line_is_inside_callback(lines: &[&str], line_number: usize) -> bool {
+    let target_index = line_number.saturating_sub(1);
     lines
         .iter()
-        .take(line_number.saturating_sub(1))
-        .rev()
-        .take_while(|line| !line.contains("export "))
-        .any(|line| {
+        .enumerate()
+        .take(target_index)
+        .filter(|(_, line)| {
             (line.contains("=>") && line.contains('{'))
                 || line.contains(".then(")
                 || line.contains(".catch(")
                 || line.contains(".forEach(")
                 || line.contains(".map(")
+        })
+        .any(|(callback_index, _)| open_brace_depth_until(lines, callback_index, target_index) > 0)
+}
+
+fn open_brace_depth_until(lines: &[&str], start_index: usize, end_index: usize) -> i32 {
+    lines
+        .iter()
+        .take(end_index)
+        .skip(start_index)
+        .fold(0_i32, |depth, line| {
+            depth + line.matches('{').count() as i32 - line.matches('}').count() as i32
         })
 }

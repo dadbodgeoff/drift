@@ -286,6 +286,14 @@ fn is_data_access_source(source: &str) -> bool {
         || lower.contains("data-access")
 }
 
+fn is_next_app_tree_path(file_path: &str) -> bool {
+    file_path.split('/').any(|part| part == "app")
+}
+
+fn is_data_access_module_path(file_path: &str) -> bool {
+    !is_next_app_tree_path(file_path) && is_data_access_source(file_path)
+}
+
 fn security_candidates(
     request: &CandidateRequest,
     api_route_files: &BTreeSet<&str>,
@@ -385,7 +393,8 @@ fn security_candidates(
         let matcher = json!({
             "kind": "api_route_requires_request_validation",
             "applies_to_file_roles": ["api_route"],
-            "methods": ["POST", "PUT", "PATCH", "DELETE"]
+            "methods": ["POST", "PUT", "PATCH", "DELETE"],
+            "required_calls": [symbol]
         });
         let requires = json!({
             "input_sources": ["body", "query", "params"],
@@ -876,7 +885,8 @@ fn push_request_validation_candidates(input: RequestValidationCandidateInput<'_>
         let matcher = json!({
             "kind": "api_route_requires_request_validation",
             "applies_to_file_roles": ["api_route"],
-            "methods": ["POST", "PUT", "PATCH", "DELETE"]
+            "methods": ["POST", "PUT", "PATCH", "DELETE"],
+            "required_calls": [symbol]
         });
         let requires = json!({
             "input_sources": ["body", "query", "params"],
@@ -988,27 +998,37 @@ fn grouped_route_facts<'a>(
 
 fn is_auth_candidate_symbol(symbol: &str) -> bool {
     let lower = symbol.to_ascii_lowercase();
+    if is_lifecycle_event_like_symbol(&lower) {
+        return false;
+    }
     !is_serializer_candidate_symbol(symbol)
-        && (lower.contains("auth")
+        && ((lower.contains("auth")
+            && (lower.starts_with("require")
+                || lower.starts_with("with")
+                || lower.starts_with("get")
+                || lower.contains("authenticate")
+                || lower.contains("authguard")))
             || lower.contains("session")
             || lower.contains("login")
             || matches!(
                 lower.as_str(),
-                "requireuser" | "getuser" | "getcurrentuser" | "currentuser"
+                "requireuser" | "getuser" | "getcurrentuser" | "currentuser" | "withworkspace"
             ))
 }
 
 fn is_validation_candidate_symbol(symbol: &str) -> bool {
     let lower = symbol.to_ascii_lowercase();
-    lower.contains("validate")
-        || lower.contains("validator")
-        || lower == "parsebody"
-        || lower == "parseinput"
-        || lower == "safeparse"
+    if lower.starts_with("revalidate") || lower.contains("permission") || lower.contains("role") {
+        return false;
+    }
+    lower.starts_with("validate") || lower.contains("validator") || lower == "safeparse"
 }
 
 fn is_authorization_candidate_symbol(symbol: &str) -> bool {
     let lower = symbol.to_ascii_lowercase();
+    if is_lifecycle_event_like_symbol(&lower) {
+        return false;
+    }
     lower.contains("authorize")
         || lower.contains("permission")
         || lower.contains("requirepermission")
@@ -1018,7 +1038,17 @@ fn is_authorization_candidate_symbol(symbol: &str) -> bool {
 
 fn is_tenant_candidate_symbol(symbol: &str) -> bool {
     let lower = symbol.to_ascii_lowercase();
-    lower.contains("tenant") || lower.contains("scopeproject") || lower.contains("scopeorg")
+    if lower.starts_with("throwif") {
+        return false;
+    }
+    (lower.contains("tenant")
+        && (lower.contains("scope")
+            || lower.contains("guard")
+            || lower.contains("filter")
+            || lower.contains("where")
+            || lower.starts_with("require")))
+        || lower.contains("scopeproject")
+        || lower.contains("scopeorg")
 }
 
 fn is_serializer_candidate_symbol(symbol: &str) -> bool {
@@ -1035,10 +1065,23 @@ fn is_csrf_candidate_symbol(symbol: &str) -> bool {
 
 fn is_rate_limit_candidate_symbol(symbol: &str) -> bool {
     let lower = symbol.to_ascii_lowercase();
+    if lower.contains("error") || lower.contains("exceeded") {
+        return false;
+    }
     lower.contains("ratelimit")
         || lower.contains("rate_limit")
         || lower.contains("throttle")
         || lower.contains("limiter")
+}
+
+fn is_lifecycle_event_like_symbol(lower: &str) -> bool {
+    lower.ends_with("authorized")
+        || lower.ends_with("deauthorized")
+        || lower.ends_with("completed")
+        || lower.ends_with("created")
+        || lower.ends_with("updated")
+        || lower.ends_with("deleted")
+        || lower.ends_with("failed")
 }
 
 fn is_ssrf_candidate_symbol(symbol: &str) -> bool {
@@ -1136,10 +1179,14 @@ fn data_access_files<'a>(
     request: &'a CandidateRequest,
     service_files: &BTreeSet<&str>,
 ) -> BTreeSet<&'a str> {
-    let mut files = role_files(request, "data_access_module");
+    let mut files = role_files(request, "data_access_module")
+        .into_iter()
+        .filter(|file_path| is_data_access_module_path(file_path))
+        .collect::<BTreeSet<_>>();
     for fact in &request.scan.facts {
         if fact.kind == "import_used"
             && !service_files.contains(fact.file_path.as_str())
+            && !is_next_app_tree_path(&fact.file_path)
             && fact.value.as_deref().is_some_and(is_data_access_source)
         {
             files.insert(fact.file_path.as_str());
@@ -1198,6 +1245,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .collect::<BTreeSet<_>>();
     let data_modules = graph_role_files(request, "data_access_module")
         .into_iter()
+        .filter(|file_path| is_data_access_module_path(file_path))
         .filter_map(|file_path| module_by_file.get(file_path.as_str()).copied())
         .collect::<BTreeSet<_>>();
     let import_owner_module = request

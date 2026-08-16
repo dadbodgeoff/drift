@@ -75,6 +75,8 @@ fn extract_security_facts_with_policy_and_phase5(
     let normalized_file_path = file_path.as_ref().to_string_lossy().replace('\\', "/");
     let facts = extract_typescript_facts(file_path, source)?;
     let source_lines: Vec<&str> = source.lines().collect();
+    let request_input_facts =
+        request_input_read_facts(&normalized_file_path, &facts, &source_lines);
     let mut security_facts = Vec::new();
     for fact in facts
         .iter()
@@ -189,33 +191,35 @@ fn extract_security_facts_with_policy_and_phase5(
         if let Some(validator) =
             accepted_request_validator_for_call(fact, &facts, accepted_validators)
             && let Some(line) = source_lines.get(fact.start_line.saturating_sub(1))
-            && let Some(input_var) = call_first_argument(line, &fact.name)
         {
             let route_id = format!("route:{}:{route}", fact.file_path);
-            let result_var = assigned_variable(line);
             let schema_symbol =
                 (validator.kind == RequestValidatorKind::Schema).then(|| validator.symbol.clone());
-            security_facts.push(Fact {
-                kind: FactKind::RequestValidationCalled,
-                file_path: fact.file_path.clone(),
-                name: fact.name.clone(),
-                value: Some(
-                    json!({
-                        "validator_id": validator.validator_id,
-                        "route_id": route_id,
-                        "validator_symbol": validator.symbol,
-                        "schema_symbol": schema_symbol,
-                        "input_var": input_var,
-                        "result_var": result_var,
-                        "behavior": validator.behavior.as_str(),
-                        "kind": validator.kind.as_str(),
-                    })
-                    .to_string(),
-                ),
-                imported_name: Some(validator.symbol.clone()),
-                start_line: fact.start_line,
-                end_line: fact.end_line,
-            });
+            for (input_var, result_var) in
+                validation_input_bindings(&source_lines, fact.start_line, line, &fact.name)
+            {
+                security_facts.push(Fact {
+                    kind: FactKind::RequestValidationCalled,
+                    file_path: fact.file_path.clone(),
+                    name: fact.name.clone(),
+                    value: Some(
+                        json!({
+                            "validator_id": validator.validator_id,
+                            "route_id": route_id,
+                            "validator_symbol": validator.symbol,
+                            "schema_symbol": schema_symbol,
+                            "input_var": input_var,
+                            "result_var": result_var,
+                            "behavior": validator.behavior.as_str(),
+                            "kind": validator.kind.as_str(),
+                        })
+                        .to_string(),
+                    ),
+                    imported_name: Some(validator.symbol.clone()),
+                    start_line: fact.start_line,
+                    end_line: fact.end_line,
+                });
+            }
         }
         if let Some(phase5) = accepted_phase5
             && let Some(serializer) =
@@ -255,20 +259,23 @@ fn extract_security_facts_with_policy_and_phase5(
             }
             let route_id = format!("route:{}:{route}", fact.file_path);
             let arguments = call_arguments(line, &fact.name);
+            let call_text = call_text_from_line(&source_lines, fact.start_line);
             let subject_var = arguments.first().cloned();
             let resource_var = arguments.get(1).and_then(|argument| {
                 (!is_quoted_literal(argument)).then(|| argument.trim().to_string())
             });
-            let roles = if helper.kind == crate::security_patterns::AuthorizationHelperKind::Role {
-                arguments
-                    .iter()
-                    .skip(1)
-                    .filter_map(|argument| unquoted_literal(argument))
-                    .collect::<Vec<_>>()
-            } else {
-                Vec::new()
-            };
-            let permissions =
+            let mut roles =
+                if helper.kind == crate::security_patterns::AuthorizationHelperKind::Role {
+                    arguments
+                        .iter()
+                        .skip(1)
+                        .filter_map(|argument| unquoted_literal(argument))
+                        .collect::<Vec<_>>()
+                } else {
+                    Vec::new()
+                };
+            roles.extend(string_array_property(&call_text, "requiredRoles"));
+            let mut permissions =
                 if helper.kind == crate::security_patterns::AuthorizationHelperKind::Policy {
                     arguments
                         .iter()
@@ -278,6 +285,7 @@ fn extract_security_facts_with_policy_and_phase5(
                 } else {
                     Vec::new()
                 };
+            permissions.extend(string_array_property(&call_text, "requiredPermissions"));
             security_facts.push(Fact {
                 kind: FactKind::AuthorizationGuardCalled,
                 file_path: fact.file_path.clone(),
@@ -328,7 +336,7 @@ fn extract_security_facts_with_policy_and_phase5(
                 .copied()
                 .unwrap_or_default();
             let url_var = call_first_argument(line, &fact.name);
-            let url_source = outbound_url_source(line, url_var.as_deref(), &security_facts);
+            let url_source = outbound_url_source(line, url_var.as_deref(), &request_input_facts);
             security_facts.push(Fact {
                 kind: FactKind::OutboundRequestCalled,
                 file_path: fact.file_path.clone(),
@@ -348,11 +356,7 @@ fn extract_security_facts_with_policy_and_phase5(
             });
         }
     }
-    security_facts.extend(request_input_read_facts(
-        &normalized_file_path,
-        &facts,
-        &source_lines,
-    ));
+    security_facts.extend(request_input_facts);
     security_facts.extend(raw_sql_facts(&normalized_file_path, &facts, &source_lines));
     security_facts.extend(cors_policy_facts(
         &normalized_file_path,
@@ -986,6 +990,32 @@ fn call_first_argument(line: &str, call_name: &str) -> Option<String> {
     (!argument.is_empty() && argument.chars().all(is_identifier_char)).then(|| argument.to_string())
 }
 
+fn validation_input_variable(line: &str, call_name: &str) -> Option<String> {
+    call_first_argument(line, call_name).or_else(|| {
+        line.contains("parseRequestBody(")
+            .then(|| assigned_variable(line))
+            .flatten()
+    })
+}
+
+fn validation_input_bindings(
+    lines: &[&str],
+    line_number: usize,
+    line: &str,
+    call_name: &str,
+) -> Vec<(String, Option<String>)> {
+    if let Some(input_var) = validation_input_variable(line, call_name) {
+        return vec![(input_var, assigned_variable(line))];
+    }
+    if !line.contains("parseRequestBody(") {
+        return Vec::new();
+    }
+    destructured_assignment_variables(lines, line_number)
+        .into_iter()
+        .map(|variable| (variable.clone(), Some(variable)))
+        .collect()
+}
+
 fn call_arguments(line: &str, call_name: &str) -> Vec<String> {
     let marker = format!("{call_name}(");
     let Some(after_marker) = line.split(&marker).nth(1) else {
@@ -1000,6 +1030,44 @@ fn call_arguments(line: &str, call_name: &str) -> Vec<String> {
         .filter(|argument| !argument.is_empty())
         .map(str::to_string)
         .collect()
+}
+
+fn call_text_from_line(lines: &[&str], line_number: usize) -> String {
+    let mut text = String::new();
+    let mut depth = 0i32;
+    for line in lines.iter().skip(line_number.saturating_sub(1)).take(40) {
+        if !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(line);
+        for character in line.chars() {
+            if character == '(' {
+                depth += 1;
+            } else if character == ')' {
+                depth -= 1;
+            }
+        }
+        if !text.is_empty() && depth <= 0 && line.contains(')') {
+            break;
+        }
+    }
+    text
+}
+
+fn string_array_property(text: &str, property: &str) -> Vec<String> {
+    let Some(after_property) = text.split(property).nth(1) else {
+        return Vec::new();
+    };
+    let Some(after_open) = after_property.split_once('[').map(|(_, after)| after) else {
+        return Vec::new();
+    };
+    let Some(array_text) = after_open.split_once(']').map(|(array, _)| array) else {
+        return Vec::new();
+    };
+    array_text
+        .split(',')
+        .filter_map(unquoted_literal)
+        .collect::<Vec<_>>()
 }
 
 fn is_quoted_literal(argument: &str) -> bool {
@@ -1072,6 +1140,28 @@ fn request_input_read_facts(file_path: &str, facts: &[Fact], lines: &[&str]) -> 
                     variable,
                     None,
                 ));
+            }
+        } else if line.contains("parseRequestBody(") {
+            if let Some(variable) = assigned_variable(line) {
+                request_facts.push(request_input_fact(
+                    file_path,
+                    line_number,
+                    route_id,
+                    "body",
+                    variable,
+                    None,
+                ));
+            } else {
+                for variable in destructured_assignment_variables(lines, line_number) {
+                    request_facts.push(request_input_fact(
+                        file_path,
+                        line_number,
+                        route_id.clone(),
+                        "body",
+                        variable,
+                        None,
+                    ));
+                }
             }
         } else if line.contains("request.nextUrl.searchParams.get(")
             || line.contains("new URL(request.url).searchParams.get(")
@@ -1522,6 +1612,62 @@ fn assigned_variable(line: &str) -> Option<String> {
     (!variable.is_empty() && variable.chars().all(is_identifier_char)).then(|| variable.to_string())
 }
 
+fn destructured_assignment_variables(lines: &[&str], line_number: usize) -> Vec<String> {
+    let Some(end_line) = lines.get(line_number.saturating_sub(1)) else {
+        return Vec::new();
+    };
+    if !end_line.contains("} =") {
+        return Vec::new();
+    }
+    let mut start_index = None;
+    for index in (0..line_number.saturating_sub(1)).rev() {
+        let trimmed = lines[index].trim();
+        if trimmed.starts_with("const {")
+            || trimmed.starts_with("let {")
+            || trimmed.starts_with("var {")
+        {
+            start_index = Some(index);
+            break;
+        }
+        if trimmed.contains(';') || trimmed.ends_with('}') {
+            break;
+        }
+    }
+    let Some(start_index) = start_index else {
+        return Vec::new();
+    };
+    lines[start_index + 1..line_number.saturating_sub(1)]
+        .iter()
+        .filter_map(|line| destructured_binding_variable(line))
+        .collect()
+}
+
+fn destructured_binding_variable(line: &str) -> Option<String> {
+    let without_comment = line.split("//").next().unwrap_or_default();
+    let trimmed = without_comment
+        .trim()
+        .trim_end_matches(',')
+        .trim()
+        .trim_start_matches("...")
+        .trim();
+    if trimmed.is_empty() || trimmed.contains('{') || trimmed.contains('}') {
+        return None;
+    }
+    let variable = trimmed
+        .split_once(':')
+        .map(|(_, alias)| alias.trim())
+        .unwrap_or(trimmed)
+        .split_once('=')
+        .map(|(name, _)| name.trim())
+        .unwrap_or_else(|| {
+            trimmed
+                .split_once(':')
+                .map(|(_, alias)| alias.trim())
+                .unwrap_or(trimmed)
+        });
+    (!variable.is_empty() && variable.chars().all(is_identifier_char)).then(|| variable.to_string())
+}
+
 fn quoted_argument(line: &str, marker: &str) -> Option<String> {
     let after_marker = line.split(marker).nth(1)?;
     let quote = after_marker
@@ -1611,17 +1757,28 @@ fn protected_sink_after_line(facts: &[Fact], line: usize) -> bool {
 }
 
 fn line_is_inside_callback(lines: &[&str], line_number: usize) -> bool {
+    let target_index = line_number.saturating_sub(1);
     lines
         .iter()
-        .take(line_number.saturating_sub(1))
-        .rev()
-        .take_while(|line| !line.contains("export "))
-        .any(|line| {
+        .enumerate()
+        .take(target_index)
+        .filter(|(_, line)| {
             (line.contains("=>") && line.contains('{'))
                 || line.contains(".then(")
                 || line.contains(".catch(")
                 || line.contains(".forEach(")
                 || line.contains(".map(")
+        })
+        .any(|(callback_index, _)| open_brace_depth_until(lines, callback_index, target_index) > 0)
+}
+
+fn open_brace_depth_until(lines: &[&str], start_index: usize, end_index: usize) -> i32 {
+    lines
+        .iter()
+        .take(end_index)
+        .skip(start_index)
+        .fold(0_i32, |depth, line| {
+            depth + line.matches('{').count() as i32 - line.matches('}').count() as i32
         })
 }
 
@@ -1674,9 +1831,13 @@ fn outbound_request_api(fact: &Fact) -> &'static str {
 
 fn outbound_url_source(line: &str, url_var: Option<&str>, security_facts: &[Fact]) -> &'static str {
     if first_call_argument_text(line).is_some_and(|argument| {
-        argument.starts_with('"') || argument.starts_with('\'') || argument.starts_with('`')
+        (argument.starts_with('"') || argument.starts_with('\''))
+            || (argument.starts_with('`') && !argument.contains("${"))
     }) {
         return "constant";
+    }
+    if contains_request_input(line) {
+        return "request_input";
     }
     if let Some(url_var) = url_var
         && security_facts
@@ -1685,7 +1846,29 @@ fn outbound_url_source(line: &str, url_var: Option<&str>, security_facts: &[Fact
     {
         return "request_input";
     }
+    if security_facts.iter().any(|fact| {
+        fact.kind == FactKind::RequestInputRead
+            && !fact.name.is_empty()
+            && line
+                .split(|character: char| !is_identifier_char(character))
+                .any(|part| part == fact.name)
+    }) {
+        return "request_input";
+    }
     "unknown"
+}
+
+fn contains_request_input(text: &str) -> bool {
+    text.contains("request.nextUrl.searchParams.get(")
+        || text.contains("new URL(request.url).searchParams.get(")
+        || text.contains("request.headers.get(")
+        || text.contains("cookies().get(")
+        || text.contains("request.cookies.get(")
+        || text.contains("params.")
+        || text.contains("context.params.")
+        || text.contains("request.json()")
+        || text.contains("request.formData()")
+        || text.contains("request.text()")
 }
 
 fn first_call_argument_text(line: &str) -> Option<&str> {

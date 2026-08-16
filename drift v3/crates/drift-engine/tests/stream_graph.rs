@@ -177,6 +177,72 @@ export async function GET() {
     assert!(completed["stats"]["graph_edges"].as_u64().unwrap() > 0);
 }
 
+#[cfg(unix)]
+#[test]
+fn scan_stream_reports_broken_symlinks_without_failing() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let route = dir.path().join("app/api/users");
+    fs::create_dir_all(&route).expect("create route dir");
+    fs::write(
+        route.join("route.ts"),
+        r#"export async function GET() {
+  return Response.json({});
+}
+"#,
+    )
+    .expect("write route");
+    let ee_dir = dir
+        .path()
+        .join("apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)");
+    fs::create_dir_all(&ee_dir).expect("create ee dir");
+    std::os::unix::fs::symlink("../../../../(ee)/LICENSE.md", ee_dir.join("LICENSE.md"))
+        .expect("create broken symlink");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_drift-engine"))
+        .args([
+            "scan-repo",
+            dir.path().to_str().expect("utf8 temp dir"),
+            "--format",
+            "jsonl",
+            "--repo-id",
+            "repo_abc",
+            "--scan-id",
+            "scan_abc",
+        ])
+        .output()
+        .expect("run drift-engine");
+    assert!(
+        output.status.success(),
+        "engine failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("json line"))
+        .collect::<Vec<_>>();
+    let diagnostics = events
+        .iter()
+        .filter(|event| event["event"] == "diagnostic_batch")
+        .flat_map(|event| event["diagnostics"].as_array().expect("diagnostics").iter())
+        .collect::<Vec<_>>();
+
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic["code"] == "broken_symlink"
+                && diagnostic["file_path"]
+                    == "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/LICENSE.md"
+        }),
+        "missing broken symlink diagnostic: {diagnostics:#?}"
+    );
+    let completed = events
+        .iter()
+        .find(|event| event["event"] == "scan_completed")
+        .expect("scan_completed event");
+    assert_eq!(completed["stats"]["files_skipped"].as_u64().unwrap(), 1);
+}
+
 #[test]
 fn scan_stream_resolves_alias_workspace_index_imports_and_reports_unresolved_imports() {
     let dir = tempfile::tempdir().expect("tempdir");

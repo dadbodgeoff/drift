@@ -148,7 +148,7 @@ pub fn accepted_request_validator_for_call<'a>(
                         || imported_symbol_matches(facts, &call.name, &validator.symbol))
             }
             RequestValidatorKind::Schema => {
-                matches!(call.name.as_str(), "parse" | "safeParse")
+                matches!(call.name.as_str(), "parse" | "parseAsync" | "safeParse")
                     && call.value.as_deref().is_some_and(|receiver| {
                         schema_receiver_matches(facts, receiver, &validator.symbol)
                     })

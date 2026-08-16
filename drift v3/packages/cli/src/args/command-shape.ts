@@ -23,6 +23,9 @@ export function unknownCommandError(parsed: ParsedArgs): string | null {
   if (group === "repo") {
     return exact(["map"]);
   }
+  if (group === "security") {
+    return exact(["audit"]);
+  }
   if (group === "checks") {
     return exact(["list", "run"]);
   }
@@ -105,6 +108,10 @@ export function validateCommandShape(parsed: ParsedArgs): void {
   }
   if (group === "repo" && command === "map") {
     exact("repo map", 2);
+    return;
+  }
+  if (group === "security" && command === "audit") {
+    exact("security audit", 2);
     return;
   }
   if (group === "checks" && (command === "list" || command === "run")) {

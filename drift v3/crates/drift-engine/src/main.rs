@@ -34,6 +34,12 @@ struct ReuseIndex {
     snapshots_by_file: BTreeMap<String, ScannedFile>,
 }
 
+#[derive(Default)]
+struct FileDiscoveryResult {
+    files: Vec<PathBuf>,
+    diagnostics: Vec<EngineDiagnostic>,
+}
+
 fn main() {
     if let Err(error) = run() {
         eprintln!("{error}");
@@ -141,16 +147,16 @@ fn scan_repo(
     reuse_manifest_path: Option<&Path>,
 ) -> Result<ScanRepoOutput, Box<dyn std::error::Error>> {
     let started = Instant::now();
-    let mut files = Vec::new();
     let ignore = IgnoreMatcher::from_repo(repo_root);
-    collect_indexable_files(repo_root, repo_root, &mut files, &ignore)?;
+    let discovery = collect_indexable_files(repo_root, &ignore)?;
+    let mut files = discovery.files;
     files.sort();
     let mut resolver = build_resolver_context(repo_root, &files);
     let reuse_index = load_reuse_index(reuse_manifest_path)?;
 
     let mut scanned_files = Vec::new();
     let mut facts = Vec::new();
-    let mut diagnostics = Vec::new();
+    let mut diagnostics = discovery.diagnostics;
     let mut graph_node_count = 0_usize;
     let mut graph_edge_count = 0_usize;
     let scanned = scan_files(repo_root, &files, &mut diagnostics, reuse_index.as_ref())?;
@@ -212,9 +218,9 @@ fn stream_scan_repo(
         },
     )?;
 
-    let mut files = Vec::new();
     let ignore = IgnoreMatcher::from_repo(repo_root);
-    collect_indexable_files(repo_root, repo_root, &mut files, &ignore)?;
+    let discovery = collect_indexable_files(repo_root, &ignore)?;
+    let mut files = discovery.files;
     files.sort();
     let mut resolver = build_resolver_context(repo_root, &files);
     let reuse_index = load_reuse_index(reuse_manifest_path)?;
@@ -225,7 +231,7 @@ fn stream_scan_repo(
     let mut graph_nodes_emitted = 0_usize;
     let mut graph_edges_emitted = 0_usize;
     let mut diagnostics_emitted = 0_usize;
-    let mut scan_diagnostics = Vec::new();
+    let mut scan_diagnostics = discovery.diagnostics;
     let mut scanned = scan_files(
         repo_root,
         &files,
@@ -570,17 +576,23 @@ fn reused_file(file: &ScannedFile, reuse: Option<&ReuseIndex>) -> bool {
 
 fn collect_indexable_files(
     repo_root: &Path,
+    ignore: &IgnoreMatcher,
+) -> io::Result<FileDiscoveryResult> {
+    let mut result = FileDiscoveryResult::default();
+    collect_indexable_files_in_dir(repo_root, repo_root, &mut result, ignore)?;
+    Ok(result)
+}
+
+fn collect_indexable_files_in_dir(
+    repo_root: &Path,
     dir: &Path,
-    files: &mut Vec<PathBuf>,
+    result: &mut FileDiscoveryResult,
     ignore: &IgnoreMatcher,
 ) -> io::Result<()> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         let file_type = entry.file_type()?;
-        if file_type.is_symlink() {
-            continue;
-        }
         let relative = path.strip_prefix(repo_root).unwrap_or(&path);
         if ignore.is_ignored(relative) {
             continue;
@@ -588,11 +600,31 @@ fn collect_indexable_files(
         if !should_index_path(relative) {
             continue;
         }
+        if file_type.is_symlink() {
+            if let Err(error) = fs::metadata(&path) {
+                let code = if error.kind() == io::ErrorKind::NotFound {
+                    "broken_symlink"
+                } else {
+                    "symlink_target_unreadable"
+                };
+                result.diagnostics.push(EngineDiagnostic {
+                    severity: "warning".to_string(),
+                    code: code.to_string(),
+                    message: format!(
+                        "Skipped symlink {} because its target could not be read: {}",
+                        normalize_path(relative),
+                        error
+                    ),
+                    file_path: Some(normalize_path(relative)),
+                });
+            }
+            continue;
+        }
 
         if file_type.is_dir() {
-            collect_indexable_files(repo_root, &path, files, ignore)?;
+            collect_indexable_files_in_dir(repo_root, &path, result, ignore)?;
         } else if file_type.is_file() && is_typescript_path(&path) {
-            files.push(relative.to_path_buf());
+            result.files.push(relative.to_path_buf());
         }
     }
     Ok(())

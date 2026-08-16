@@ -15,6 +15,7 @@ import { checkPolicyContext,grantAgentPermission,revokeAgentPermission,setEgress
 import { prepareTask } from "../commands/prepare.js";
 import { showRepoMap } from "../commands/repo-map.js";
 import { scanRepo,scanStatus } from "../commands/scan.js";
+import { securityAudit } from "../commands/security.js";
 import { startRepo } from "../commands/start.js";
 import { supportBundle } from "../commands/support.js";
 import { CommandPayload,ParsedArgs } from "./command-types.js";
@@ -48,6 +49,10 @@ export async function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs
 
   if (group === "repo" && command === "map") {
     return showRepoMap(storage, parsed);
+  }
+
+  if (group === "security" && command === "audit") {
+    return securityAudit(storage, parsed);
   }
 
   if (group === "checks" && command === "list") {

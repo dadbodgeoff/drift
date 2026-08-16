@@ -841,6 +841,8 @@ function parserGapKindForDiagnostic(code: string): ParserGapKind | null {
     case "unsupported_namespace_import_symbol":
       return "unsupported_framework_pattern";
     case "typescript_fallback_used":
+    case "broken_symlink":
+    case "symlink_target_unreadable":
     case "file_too_large":
     case "unsupported_dynamic_middleware_matcher":
       return "partial_parse";

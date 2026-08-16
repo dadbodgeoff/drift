@@ -207,6 +207,79 @@ fn canonical_requires_auth_helpers_normalizes_trusted_guard_calls() {
 }
 
 #[test]
+fn wrapped_sibling_routes_treat_wrapper_as_route_level_auth_guard() {
+    let source = [
+        r#"import { withWorkspace } from "@/lib/auth";"#,
+        r#"import { prisma } from "@dub/prisma";"#,
+        "",
+        "export const GET = withWorkspace(",
+        "  async ({ workspace }) => {",
+        "    const apps = await prisma.oAuthApp.findMany({ where: { projectId: workspace.id } });",
+        "    return Response.json({ apps });",
+        "  },",
+        ");",
+        "",
+        "export const POST = withWorkspace(",
+        "  async ({ req, workspace }) => {",
+        "    const existing = await prisma.integration.findUnique({ where: { slug: \"demo\" } });",
+        "    return Response.json({ existing, workspace });",
+        "  },",
+        ");",
+        "",
+    ]
+    .join("\n");
+    let repo_root = temp_repo("wrapped_sibling_routes");
+    let route_path = repo_root.join("app/api/projects/route.ts");
+    fs::create_dir_all(route_path.parent().expect("route parent")).expect("create route parent");
+    fs::write(&route_path, source).expect("write route");
+    let scan = run_scan_repo(&repo_root);
+
+    let payload = run_check_repo(json!({
+        "repo": {
+            "repo_id": "repo_auth",
+            "repo_root": repo_root.to_string_lossy()
+        },
+        "scan": {
+            "scan_id": "scan_auth",
+            "facts": scan["facts"].clone()
+        },
+        "contract": {
+            "contract_id": "contract_auth",
+            "contract_schema_version": 1,
+            "conventions": [{
+                "id": "security_api_auth_with_workspace",
+                "kind": "api_route_requires_auth_helper",
+                "matcher": {
+                    "required_calls": ["withWorkspace"],
+                    "applies_to_file_roles": ["api_route"]
+                },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+    let proofs = payload["security_boundary_proofs"]
+        .as_array()
+        .expect("proofs");
+    assert_eq!(proofs.len(), 2, "{payload:#?}");
+    assert!(
+        proofs
+            .iter()
+            .all(|proof| proof["result"]["proof_status"] == "proven"),
+        "{payload:#?}"
+    );
+}
+
+#[test]
 fn security_phase8_proof_includes_route_path_and_method() {
     let source = [
         r#"import { requireUser } from "@/server/auth";"#,

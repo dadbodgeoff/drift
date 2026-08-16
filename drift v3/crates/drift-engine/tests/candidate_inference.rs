@@ -152,6 +152,333 @@ fn infer_candidates_uses_resolved_import_targets_for_data_access_modules() {
 }
 
 #[test]
+fn infer_candidates_learns_workspace_wrappers_as_auth_patterns() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [],
+            "graph_edges": [],
+            "graph_evidence": []
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/webhooks/route.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "api_route",
+                    "start_line": 1,
+                    "end_line": 8
+                },
+                {
+                    "kind": "import_used",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "withWorkspace",
+                    "value": "@/lib/auth",
+                    "imported_name": "withWorkspace",
+                    "start_line": 1,
+                    "end_line": 1
+                },
+                {
+                    "kind": "symbol_called",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "withWorkspace",
+                    "start_line": 3,
+                    "end_line": 8
+                },
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "app/api/webhooks/route.ts",
+                    "name": "api_route",
+                    "start_line": 1,
+                    "end_line": 8
+                },
+                {
+                    "kind": "import_used",
+                    "file_path": "app/api/webhooks/route.ts",
+                    "name": "withWorkspace",
+                    "value": "@/lib/auth",
+                    "imported_name": "withWorkspace",
+                    "start_line": 1,
+                    "end_line": 1
+                },
+                {
+                    "kind": "symbol_called",
+                    "file_path": "app/api/webhooks/route.ts",
+                    "name": "withWorkspace",
+                    "start_line": 3,
+                    "end_line": 8
+                }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let candidates = payload["candidates"].as_array().expect("candidates");
+
+    assert!(
+        candidates.iter().any(|candidate| {
+            candidate["kind"] == "api_route_requires_auth_helper"
+                && candidate["matcher"]["required_calls"]
+                    .as_array()
+                    .is_some_and(|calls| calls.iter().any(|call| call == "withWorkspace"))
+                && candidate["scoring"]["supporting_examples_count"] == 2
+        }),
+        "{payload:#?}"
+    );
+}
+
+#[test]
+fn infer_candidates_does_not_treat_body_parser_as_validation_pattern() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [],
+            "graph_edges": [],
+            "graph_evidence": []
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/tokens/route.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "api_route",
+                    "start_line": 1,
+                    "end_line": 8
+                },
+                {
+                    "kind": "import_used",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "parseRequestBody",
+                    "value": "@/lib/api/utils",
+                    "imported_name": "parseRequestBody",
+                    "start_line": 1,
+                    "end_line": 1
+                },
+                {
+                    "kind": "symbol_called",
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "name": "parseRequestBody",
+                    "start_line": 4,
+                    "end_line": 4
+                },
+                {
+                    "kind": "file_role_detected",
+                    "file_path": "app/api/tokens/route.ts",
+                    "name": "api_route",
+                    "start_line": 1,
+                    "end_line": 8
+                },
+                {
+                    "kind": "import_used",
+                    "file_path": "app/api/tokens/route.ts",
+                    "name": "parseRequestBody",
+                    "value": "@/lib/api/utils",
+                    "imported_name": "parseRequestBody",
+                    "start_line": 1,
+                    "end_line": 1
+                },
+                {
+                    "kind": "symbol_called",
+                    "file_path": "app/api/tokens/route.ts",
+                    "name": "parseRequestBody",
+                    "start_line": 4,
+                    "end_line": 4
+                }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let candidates = payload["candidates"].as_array().expect("candidates");
+
+    assert!(
+        !candidates.iter().any(|candidate| {
+            candidate["kind"] == "api_route_requires_request_validation"
+                && candidate["requires"]["validators"][0]["symbol"] == "parseRequestBody"
+        }),
+        "{payload:#?}"
+    );
+}
+
+#[test]
+fn infer_candidates_keeps_distinct_validation_patterns_separate() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [],
+            "graph_edges": [],
+            "graph_evidence": []
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "app/api/apps/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/tokens/route.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/webhooks/route.ts",
+                    "content_hash": "c".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/webhooks/[id]/route.ts",
+                    "content_hash": "d".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                { "kind": "file_role_detected", "file_path": "app/api/apps/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/apps/route.ts", "name": "parseRequestBody", "start_line": 4, "end_line": 4 },
+                { "kind": "file_role_detected", "file_path": "app/api/tokens/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/tokens/route.ts", "name": "parseRequestBody", "start_line": 4, "end_line": 4 },
+                { "kind": "file_role_detected", "file_path": "app/api/webhooks/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/webhooks/route.ts", "name": "validateWebhook", "start_line": 4, "end_line": 4 },
+                { "kind": "file_role_detected", "file_path": "app/api/webhooks/[id]/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/webhooks/[id]/route.ts", "name": "validateWebhook", "start_line": 4, "end_line": 4 }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let validation_candidates = payload["candidates"]
+        .as_array()
+        .expect("candidates")
+        .iter()
+        .filter(|candidate| candidate["kind"] == "api_route_requires_request_validation")
+        .collect::<Vec<_>>();
+    let validators = validation_candidates
+        .iter()
+        .filter_map(|candidate| candidate["requires"]["validators"][0]["symbol"].as_str())
+        .collect::<Vec<_>>();
+    let candidate_ids = validation_candidates
+        .iter()
+        .filter_map(|candidate| candidate["candidate_id"].as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    assert!(validators.contains(&"validateWebhook"), "{payload:#?}");
+    assert!(!validators.contains(&"parseRequestBody"), "{payload:#?}");
+    assert_eq!(
+        candidate_ids.len(),
+        validation_candidates.len(),
+        "{payload:#?}"
+    );
+}
+
+#[test]
+fn infer_candidates_filters_security_helper_noise_from_body_error_event_and_precondition_symbols() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [],
+            "graph_edges": [],
+            "graph_evidence": []
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "app/api/oauth/apps/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "app/api/oauth/tokens/route.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                { "kind": "file_role_detected", "file_path": "app/api/oauth/apps/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "parseRequestBody", "start_line": 4, "end_line": 4 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "exceededLimitError", "start_line": 5, "end_line": 5 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "accountApplicationDeauthorized", "start_line": 6, "end_line": 6 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "throwIfNoPartnerIdOrTenantId", "start_line": 7, "end_line": 7 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "revalidatePath", "start_line": 8, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/apps/route.ts", "name": "validateScopesForRole", "start_line": 9, "end_line": 9 },
+                { "kind": "file_role_detected", "file_path": "app/api/oauth/tokens/route.ts", "name": "api_route", "start_line": 1, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "parseRequestBody", "start_line": 4, "end_line": 4 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "exceededLimitError", "start_line": 5, "end_line": 5 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "accountApplicationDeauthorized", "start_line": 6, "end_line": 6 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "throwIfNoPartnerIdOrTenantId", "start_line": 7, "end_line": 7 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "revalidatePath", "start_line": 8, "end_line": 8 },
+                { "kind": "symbol_called", "file_path": "app/api/oauth/tokens/route.ts", "name": "validateScopesForRole", "start_line": 9, "end_line": 9 }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+    let candidates = payload["candidates"].as_array().expect("candidates");
+    let blocked_symbols = [
+        ("api_route_requires_request_validation", "parseRequestBody"),
+        ("api_route_requires_rate_limit", "exceededLimitError"),
+        (
+            "api_route_requires_auth_helper",
+            "accountApplicationDeauthorized",
+        ),
+        (
+            "api_route_requires_tenant_scope",
+            "throwIfNoPartnerIdOrTenantId",
+        ),
+        ("api_route_requires_request_validation", "revalidatePath"),
+        (
+            "api_route_requires_request_validation",
+            "validateScopesForRole",
+        ),
+    ];
+
+    for (kind, symbol) in blocked_symbols {
+        assert!(
+            !candidates.iter().any(|candidate| {
+                candidate["kind"] == kind
+                    && candidate["matcher"]["required_calls"]
+                        .as_array()
+                        .is_some_and(|calls| calls.iter().any(|call| call == symbol))
+            }),
+            "unexpected {kind} candidate for {symbol}: {payload:#?}"
+        );
+    }
+}
+
+#[test]
 fn infer_candidates_uses_graph_evidence_without_raw_import_facts() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
@@ -237,6 +564,91 @@ fn infer_candidates_uses_graph_evidence_without_raw_import_facts() {
     assert_eq!(
         direct["required_capabilities"],
         json!(["syntax_facts", "import_resolution", "route_detection"])
+    );
+}
+
+#[test]
+fn infer_candidates_does_not_make_api_route_helpers_direct_data_access_forbidden_imports() {
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:apps/web/app/(ee)/api/users/route.ts", "file", "apps/web/app/(ee)/api/users/route.ts", json!({ "path": "apps/web/app/(ee)/api/users/route.ts" })),
+                graph_node("file:apps/web/app/(ee)/api/users/loaders.ts", "file", "apps/web/app/(ee)/api/users/loaders.ts", json!({ "path": "apps/web/app/(ee)/api/users/loaders.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:apps/web/app/(ee)/api/users/route.ts", "module", "apps/web/app/(ee)/api/users/route.ts", json!({ "file_path": "apps/web/app/(ee)/api/users/route.ts" })),
+                graph_node("module:apps/web/app/(ee)/api/users/loaders.ts", "module", "apps/web/app/(ee)/api/users/loaders.ts", json!({ "file_path": "apps/web/app/(ee)/api/users/loaders.ts" })),
+                {
+                    "id": "import_decl:apps/web/app/(ee)/api/users/route.ts:aaaaaaaaaaaa:./loaders:loadUsers:1-1",
+                    "kind": "import_decl",
+                    "label": "loadUsers from ./loaders",
+                    "stable": false,
+                    "evidence_ids": ["evidence_route_helper_import"],
+                    "metadata": {
+                        "file_path": "apps/web/app/(ee)/api/users/route.ts",
+                        "source": "./loaders",
+                        "local_name": "loadUsers",
+                        "imported_name": "loadUsers",
+                        "resolved_file_path": "apps/web/app/(ee)/api/users/loaders.ts",
+                        "resolved_module_id": "module:apps/web/app/(ee)/api/users/loaders.ts"
+                    }
+                }
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:apps/web/app/(ee)/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:apps/web/app/(ee)/api/users/loaders.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:apps/web/app/(ee)/api/users/route.ts", "module:apps/web/app/(ee)/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:apps/web/app/(ee)/api/users/loaders.ts", "module:apps/web/app/(ee)/api/users/loaders.ts"),
+                graph_edge_with_evidence("IMPORT_DECL_REFERENCES_MODULE", "import_decl:apps/web/app/(ee)/api/users/route.ts:aaaaaaaaaaaa:./loaders:loadUsers:1-1", "module:apps/web/app/(ee)/api/users/route.ts", "evidence_route_helper_import"),
+                graph_edge_with_evidence("IMPORT_RESOLVES_TO_MODULE", "import_decl:apps/web/app/(ee)/api/users/route.ts:aaaaaaaaaaaa:./loaders:loadUsers:1-1", "module:apps/web/app/(ee)/api/users/loaders.ts", "evidence_route_helper_import")
+            ],
+            "graph_evidence": [{
+                "id": "evidence_route_helper_import",
+                "repo_id": "repo_abc",
+                "scan_id": "scan_abc",
+                "artifact_id": "file_version:apps/web/app/(ee)/api/users/route.ts:aaaaaaaaaaaa",
+                "file_path": "apps/web/app/(ee)/api/users/route.ts",
+                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "start_line": 1,
+                "end_line": 1,
+                "adapter_id": "typescript",
+                "adapter_version": "0.1.0",
+                "fact_ids": ["fact_route_helper_import"],
+                "redaction_state": "none"
+            }]
+        },
+        "scan": {
+            "scan_id": "scan_abc",
+            "file_snapshots": [
+                {
+                    "file_path": "apps/web/app/(ee)/api/users/route.ts",
+                    "content_hash": "a".repeat(64),
+                    "byte_size": 120,
+                    "indexed": true
+                },
+                {
+                    "file_path": "apps/web/app/(ee)/api/users/loaders.ts",
+                    "content_hash": "b".repeat(64),
+                    "byte_size": 80,
+                    "indexed": true
+                }
+            ],
+            "facts": [
+                { "kind": "file_role_detected", "file_path": "apps/web/app/(ee)/api/users/loaders.ts", "name": "data_access_module", "start_line": 1, "end_line": 20 },
+                { "kind": "import_used", "file_path": "apps/web/app/(ee)/api/users/loaders.ts", "name": "prisma", "value": "@dub/prisma", "start_line": 1, "end_line": 1 }
+            ]
+        }
+    });
+    let payload = run_infer_candidates(request);
+
+    assert!(
+        !payload["candidates"]
+            .as_array()
+            .expect("candidates")
+            .iter()
+            .any(|candidate| candidate["kind"] == "api_route_no_direct_data_access"),
+        "{payload:#?}"
     );
 }
 
