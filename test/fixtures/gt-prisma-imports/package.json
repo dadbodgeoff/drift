@@ -1,0 +1,6 @@
+{
+  "name": "gt-prisma-imports",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": { "@prisma/client": "5.0.0", "next": "14.0.0" }
+}
