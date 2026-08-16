@@ -1031,7 +1031,23 @@ export function parserGapKindForDiagnostic(code: string): ParserGapKind | null {
     case "symlink_target_unreadable":
     case "file_too_large":
     case "unsupported_dynamic_middleware_matcher":
+    // D-PA1. `partial_parse` has been a declared gap kind of `ts.syntax_facts.v1` since that
+    // registry was written, and nothing could ever produce one: no code path in the engine
+    // inspected `tree.root_node().has_error()`. The engine emits it now - 129 files across the
+    // seven corpus repos - so the declaration is true for the first time.
+    case "partial_parse":
       return "partial_parse";
+    // D-PA3. The five distinct outcomes of the engine's one file-skip arm. They shared the code
+    // `file_unreadable` and were told apart only by free text, so none of them reached this
+    // taxonomy at all. A file that was not parsed is a parser error whichever way it failed; what
+    // differs is what the reader should do about it, and that lives in the limitations map in
+    // import-coverage.ts, which is keyed on exactly these codes.
+    case "file_unreadable":
+    case "file_not_utf8":
+    case "file_too_deep":
+    case "file_parse_failed":
+    case "parser_language_unavailable":
+      return "parser_error";
     default:
       return null;
   }
