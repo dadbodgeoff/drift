@@ -11,6 +11,7 @@
 // remeasured by hand.
 
 import { afterEach, describe, expect, it } from "vitest";
+import { openDriftStorage } from "../../packages/storage/src/index.js";
 import { cleanupGtTempDirs, readFacts, runGtWorkflow } from "./gt-harness.js";
 
 afterEach(cleanupGtTempDirs);
@@ -185,6 +186,34 @@ describe("D3 — a local `export { name }` is an exported symbol", () => {
         imported_name: "helper"
       }
     ]);
+  });
+
+  it("leaves the graph referentially intact — no edge names a node that does not exist", async () => {
+    // Not a D3 property: a D2 consequence, pinned here because it is the failure mode a fact
+    // deletion causes and nothing else in the suite would have caught it.
+    //
+    // `symbol:<file>:function:<name>` nodes are inserted ONLY from `exported_symbol` facts
+    // (main.rs:1627). Three edges point at them, and one of the three -
+    // ROUTE_HANDLED_BY_SYMBOL (main.rs:1712) - used to target a Next pages/api route's local
+    // handler identifier. That node existed only because a default-exported declaration emitted a
+    // second fact under its local name, which is precisely the fact D2 removes. Dropping it
+    // without retargeting the edge left `route_handler_symbol_ids` (query/src/index.ts:504)
+    // handing callers an id that names nothing.
+    const run = await runGtWorkflow({ fixture: "gt-fact-extraction" });
+    const scanId = run.scanPayload.scan?.id ?? run.scanPayload.scan_id;
+    const storage = openDriftStorage({ databasePath: run.databasePath });
+    try {
+      const nodeIds = new Set(storage.listGraphNodes(run.repoId, scanId).map((node: any) => node.id));
+      const dangling = storage
+        .listGraphEdges(run.repoId, scanId)
+        .filter((edge: any) => !nodeIds.has(edge.from) || !nodeIds.has(edge.to))
+        .map((edge: any) => `${edge.kind}: ${edge.from} -> ${edge.to}`)
+        .sort();
+
+      expect(dangling, "every edge endpoint must resolve to a node in the same graph").toEqual([]);
+    } finally {
+      storage.close();
+    }
   });
 
   it("leaves `symbol_called` facts untouched", async () => {
