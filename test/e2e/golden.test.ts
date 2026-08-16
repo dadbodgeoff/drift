@@ -297,12 +297,17 @@ describe("golden realistic repo evidence", () => {
         "files_indexed": 2,
       }
     `);
+    // D3 (TDD §5.3): `src/server.ts:8` is `export { app };` — a local export specifier, which
+    // emitted no `exported_symbol` fact before D3 and emits exactly one after it. Predicted
+    // 22 -> 23 before measuring, derived from that single specifier; observed 22 -> 23 with
+    // every other field unchanged. Re-recorded by hand rather than with `vitest -u`, which
+    // would have re-recorded every snapshot in the run from one flagless invocation.
     expect(express).toMatchInlineSnapshot(`
       {
         "candidate_kinds": [],
         "diagnostics_count": 0,
         "engine_source": "rust",
-        "facts_count": 22,
+        "facts_count": 23,
         "files_indexed": 4,
       }
     `);
