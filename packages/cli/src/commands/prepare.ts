@@ -265,7 +265,29 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     },
     conventions,
     audit_integrity: auditIntegrity,
-    scan_status: scanStatus,
+    // W7: the summary, not the records - the same decision BB-6 already made one field over.
+    //
+    // D-A5 added the itemized `parser_gaps.records` to `scan status` so that
+    // `guidance.parser_gaps.full_list_command` pointed at data that exists, which it does and
+    // should. `prepare` then embeds the whole scan-status payload, so the list BB-6 had removed
+    // from `task_preflight_packet` came straight back at the top level of the same envelope.
+    // Measured on dub: 637 records, 342,701 of the packet's 715,023 bytes, against a 500 KB budget.
+    // The envelope was over on dub, cal.com and openstatus, and the external-eval baseline still
+    // recorded `packet_within_envelope_budget: true` because it was last written before D-A5.
+    //
+    // Nothing is lost and the records were never meant to travel here: `full_list_command` names
+    // `drift scan status --repo <id> --json`, the surface D-A5 built for exactly this, and it still
+    // returns every one. The count is kept so the packet can still say how many there are, and
+    // named rather than implied so an empty list cannot be read as "no gaps".
+    scan_status: {
+      ...scanStatus,
+      parser_gaps: {
+        ...scanStatus.parser_gaps,
+        records: [],
+        records_omitted: scanStatus.parser_gaps.records.length,
+        records_command: guidance.parser_gaps.full_list_command
+      }
+    },
     freshness_requirement: freshnessRequirement(requireFresh, scanStatus),
     graph_context: graphContext,
     task_model: taskModel,

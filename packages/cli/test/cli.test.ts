@@ -2589,6 +2589,75 @@ supported_sqlite_schema_version: MIGRATIONS.length,
     ]);
   });
 
+  it("sends the parser gap summary in prepare and a pointer that actually serves the records", async () => {
+    // W7. BB-6 removed the itemized parser-gap records from `task_preflight_packet` after measuring
+    // them at 358,538 bytes / 639 records on dub - the single largest section of the packet. D-A5
+    // then added the same records to `scan status`, correctly, so that
+    // `guidance.parser_gaps.full_list_command` pointed at data that exists. But `prepare` embeds
+    // the whole scan-status payload, so the list came straight back at the top level of the same
+    // envelope.
+    //
+    // Measured on dub after D-A5: 637 records, 342,701 of the packet's 715,023 bytes, against a
+    // 500 KB budget. dub, cal.com and openstatus were all over it, and scripts/external-eval.mjs
+    // reported `packet_within_envelope_budget: true` throughout - its baseline was last written
+    // before D-A5 landed, so nothing had measured it since.
+    //
+    // The count and the command are asserted beside the emptiness on purpose: an empty list with
+    // nothing next to it reads as "this repo has no parser gaps", which is a worse falsehood than
+    // an oversized packet.
+    const dir = await mkdtemp(join(tmpdir(), "drift-prepare-envelope-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        // A relative import of a module the repo does not contain, which is what produces a gap.
+        "import { missing } from \"./nowhere\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany(missing));",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const started = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+    const startedPayload = JSON.parse(started.stdout);
+    const prepared = await runCli([
+      "--db", startedPayload.state.database_path,
+      "prepare", "change the users API route",
+      "--repo", startedPayload.repo.id,
+      "--json"
+    ]);
+    expect(prepared.exitCode).toBe(0);
+    const gaps = JSON.parse(prepared.stdout).scan_status.parser_gaps;
+
+    expect(gaps.total_count).toBeGreaterThan(0);
+    expect(gaps.records).toEqual([]);
+    expect(gaps.records_omitted).toBe(gaps.total_count);
+    expect(gaps.records_command).toBe(`drift scan status --repo ${startedPayload.repo.id} --json`);
+
+    // D-A5's lesson applied to the pointer this packet now leans on: the command has to return the
+    // records, not merely look as though it would.
+    const status = await runCli([
+      "--db", startedPayload.state.database_path,
+      "scan", "status",
+      "--repo", startedPayload.repo.id,
+      "--json"
+    ]);
+    expect(status.exitCode).toBe(0);
+    expect(JSON.parse(status.stdout).parser_gaps.records).toHaveLength(gaps.total_count);
+  });
+
   it("materializes a pnpm test safe command during onboarding when a test script exists", async () => {
     const dir = await mkdtemp(join(tmpdir(), "drift-start-pnpm-safe-command-"));
     tempDirs.push(dir);

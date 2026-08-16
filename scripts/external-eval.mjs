@@ -449,10 +449,20 @@ function evaluateRepoAt(reposDir, cfg) {
         // A threshold, not a recorded byte count: the full envelope's size moves by tens of bytes
         // between runs (ids and timestamps), so baselining the exact number would make the suite flap
         // on noise. 500 KB is the BB-6 requirement; the exact figure is not the thing under test.
-        result.packet_within_envelope_budget =
-          Buffer.byteLength(prepared.stdout, "utf8") < 500_000;
-      } catch {
+        // W7: record the measurement, not just the verdict. `packet_within_envelope_budget` is a
+        // threshold with nothing behind it, so when it flipped there was no way to see what had
+        // grown without reproducing the whole run by hand. Volatile, for the reason the comment
+        // above gives - the number moves by tens of bytes between runs - but present.
+        result.packet_bytes = Buffer.byteLength(prepared.stdout, "utf8");
+        result.packet_largest_sections = Object.entries(packet)
+          .map(([key, value]) => [key, Buffer.byteLength(JSON.stringify(value) ?? "null", "utf8")])
+          .sort((left, right) => right[1] - left[1])
+          .slice(0, 3)
+          .map(([key, bytes]) => `${key}:${bytes}`);
+        result.packet_within_envelope_budget = result.packet_bytes < 500_000;
+      } catch (error) {
         result.guidance_within_budget = false;
+        result.guidance_parse_error = String(error.message).slice(0, 200);
       }
     } else {
       result.guidance_within_budget = false;
@@ -515,7 +525,13 @@ const VOLATILE = new Set([
   "repo_id",
   "files",
   "facts",
-  "candidates"
+  "candidates",
+  // W7: the packet's measured size and its top sections. Recorded so a budget flip can be
+  // diagnosed from the baseline instead of by reproducing the run, and volatile for the same
+  // reason `packet_within_envelope_budget` is a threshold rather than a pinned number: ids and
+  // timestamps move it by tens of bytes between runs. The gated field is still the boolean.
+  "packet_bytes",
+  "packet_largest_sections"
 ]);
 
 function diffResult(before, after) {
