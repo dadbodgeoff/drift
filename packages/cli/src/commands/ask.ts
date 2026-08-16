@@ -43,15 +43,7 @@ export function askRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Comman
   const conventions = conventionsForFiles(activeConventions, relevantFiles).map((convention) =>
     // Explicit lambda: a bare reference passes Array#map's index as the context argument,
     // which the compiler caught when BB-5 gave preparedConvention a second parameter.
-    preparedConvention(convention, {
-      scopeFiles: askExemplarContext.scopeFilesFor(convention),
-      // CV-5: any accepted convention, not just this one - see violatingFilesAnyConvention.
-      violatingFiles: askExemplarContext.violatingFilesAnyConvention(),
-      roleByFile: askExemplarContext.roleByFile,
-      baselineActiveCount: askExemplarContext.baselineActiveCountFor(convention.id),
-      targetPath: targetPath ?? undefined,
-      importsByFile: askExemplarContext.importsByFile
-    })
+    preparedConvention(convention, askExemplarContext, { targetPath: targetPath ?? undefined })
   );
   const findings = findingsForTopic(storage.listFindings(repoId), topic, relevantFiles)
     .map((finding) => ({

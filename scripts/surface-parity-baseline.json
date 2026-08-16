@@ -1,0 +1,324 @@
+{
+  "duplicates": [
+    {
+      "key": "allRequiredChecks<->allRequiredChecks",
+      "mcp": "packages/mcp/src/index.ts:allRequiredChecks",
+      "cli": "packages/cli/src/domain/preflight.ts:allRequiredChecks",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "auditVerifyNextCommands<->auditVerifyNextCommands",
+      "mcp": "packages/mcp/src/index.ts:auditVerifyNextCommands",
+      "cli": "packages/cli/src/domain/audit-review.ts:auditVerifyNextCommands",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Audit verification summary and its next-commands list."
+    },
+    {
+      "key": "auditVerifySummary<->auditVerifySummary",
+      "mcp": "packages/mcp/src/index.ts:auditVerifySummary",
+      "cli": "packages/cli/src/domain/audit-review.ts:auditVerifySummary",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Audit verification summary and its next-commands list."
+    },
+    {
+      "key": "baselineSummary<->baselineSummary",
+      "mcp": "packages/mcp/src/index.ts:baselineSummary",
+      "cli": "packages/cli/src/domain/baselines.ts:baselineSummary",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Baseline counting; reaches storage on both sides."
+    },
+    {
+      "key": "collectResolverInputPaths<->collectResolverInputPaths",
+      "mcp": "packages/mcp/src/index.ts:collectResolverInputPaths",
+      "cli": "packages/cli/src/domain/scan-status.ts:collectResolverInputPaths",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "conventionSummary<->acceptedConventionSummary",
+      "mcp": "packages/mcp/src/index.ts:conventionSummary",
+      "cli": "packages/cli/src/commands/conventions.ts:acceptedConventionSummary",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. Convention listing/ordering for review surfaces."
+    },
+    {
+      "key": "countBy<->countBy",
+      "mcp": "packages/mcp/src/index.ts:countBy",
+      "cli": "packages/cli/src/domain/pagination.ts:countBy",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Generic counting helper."
+    },
+    {
+      "key": "defaultSafeCommandsForRepo<->defaultSafeCommandsForRepo",
+      "mcp": "packages/mcp/src/index.ts:defaultSafeCommandsForRepo",
+      "cli": "packages/cli/src/domain/contract-materialization.ts:defaultSafeCommandsForRepo",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Default safe-command materialization."
+    },
+    {
+      "key": "graphConfidenceReasons<->graphConfidenceReasons",
+      "mcp": "packages/mcp/src/index.ts:graphConfidenceReasons",
+      "cli": "packages/cli/src/commands/prepare.ts:graphConfidenceReasons",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified, and module-private on both sides - the class the census could not see. These feed the change-impact and graph-confidence sections of the preflight packet."
+    },
+    {
+      "key": "graphPreflightContext<->graphPreflightContext",
+      "mcp": "packages/mcp/src/index.ts:graphPreflightContext",
+      "cli": "packages/cli/src/domain/graph-preflight.ts:graphPreflightContext",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Graph preflight context assembly; reaches storage on both sides."
+    },
+    {
+      "key": "isRepoRelativeMcpPath<->isRepoRelativePolicyPattern",
+      "mcp": "packages/mcp/src/index.ts:isRepoRelativeMcpPath",
+      "cli": "packages/cli/src/domain/repo-paths.ts:isRepoRelativePolicyPattern",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Different concepts that score alike: MCP validates a repo-relative TOOL argument, the CLI validates a repo-relative POLICY pattern. Same three-line shape, different callers and different error surfaces. Two copies are defensible here; recorded so the score does not have to be re-litigated."
+    },
+    {
+      "key": "isResolverInputPath<->isResolverInputPath",
+      "mcp": "packages/mcp/src/index.ts:isResolverInputPath",
+      "cli": "packages/cli/src/domain/scan-status.ts:isResolverInputPath",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "latestIndexedScan<->latestIndexedScan",
+      "mcp": "packages/mcp/src/index.ts:latestIndexedScan",
+      "cli": "packages/cli/src/domain/scan-status.ts:latestIndexedScan",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "latestSecurityScan<->latestIndexedScan",
+      "mcp": "packages/mcp/src/security-context.ts:latestSecurityScan",
+      "cli": "packages/cli/src/domain/scan-status.ts:latestIndexedScan",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "mcpV1Scope<->doctorV1Scope",
+      "mcp": "packages/mcp/src/index.ts:mcpV1Scope",
+      "cli": "packages/cli/src/domain/versions.ts:doctorV1Scope",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Version/runtime reporting; the two differ only in the surface name they report, which is the argument for one function with a parameter."
+    },
+    {
+      "key": "orderAcceptedConventionsForReview<->orderAcceptedConventionsForReview",
+      "mcp": "packages/mcp/src/index.ts:orderAcceptedConventionsForReview",
+      "cli": "packages/cli/src/commands/conventions.ts:orderAcceptedConventionsForReview",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. Convention listing/ordering for review surfaces."
+    },
+    {
+      "key": "policyContextNextCommands<->policyContextNextCommands",
+      "mcp": "packages/mcp/src/index.ts:policyContextNextCommands",
+      "cli": "packages/cli/src/domain/policy-context.ts:policyContextNextCommands",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Policy-context summary and its next-commands list."
+    },
+    {
+      "key": "policyContextSummary<->policyContextSummary",
+      "mcp": "packages/mcp/src/index.ts:policyContextSummary",
+      "cli": "packages/cli/src/domain/policy-context.ts:policyContextSummary",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Policy-context summary and its next-commands list."
+    },
+    {
+      "key": "policyFileContext<->policyFileContext",
+      "mcp": "packages/mcp/src/index.ts:policyFileContext",
+      "cli": "packages/cli/src/domain/repo-map.ts:policyFileContext",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "EXPECTED, and the shape W6 is aiming for. Both are now thin wrappers that resolve their own repo/contract/policy and delegate to buildRepoMapPayload in @drift/query. They still score high because a wrapper is mostly its argument list - but the derivation underneath is one function, which is the property that matters. policyFileContext is genuinely not yet unified."
+    },
+    {
+      "key": "preflightSummary<->preflightSummary",
+      "mcp": "packages/mcp/src/index.ts:preflightSummary",
+      "cli": "packages/cli/src/domain/preflight.ts:preflightSummary",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "readinessForStoredScan<->readinessForStoredScan",
+      "mcp": "packages/mcp/src/index.ts:readinessForStoredScan",
+      "cli": "packages/cli/src/domain/scan-status.ts:readinessForStoredScan",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "requiredChecksForFiles<->requiredChecksForFiles",
+      "mcp": "packages/mcp/src/index.ts:requiredChecksForFiles",
+      "cli": "packages/cli/src/domain/preflight.ts:requiredChecksForFiles",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "requiredChecksFromGraphRisk<->requiredChecksFromGraphRisk",
+      "mcp": "packages/mcp/src/index.ts:requiredChecksFromGraphRisk",
+      "cli": "packages/cli/src/domain/graph-risk-checks.ts:requiredChecksFromGraphRisk",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. Required checks derived from graph risk."
+    },
+    {
+      "key": "resolverInputPaths<->resolverInputPaths",
+      "mcp": "packages/mcp/src/index.ts:resolverInputPaths",
+      "cli": "packages/cli/src/domain/scan-status.ts:resolverInputPaths",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "routeFlowsForChangeImpact<->routeFlowsForChangeImpact",
+      "mcp": "packages/mcp/src/index.ts:routeFlowsForChangeImpact",
+      "cli": "packages/cli/src/commands/prepare.ts:routeFlowsForChangeImpact",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified, and module-private on both sides - the class the census could not see. These feed the change-impact and graph-confidence sections of the preflight packet."
+    },
+    {
+      "key": "scanStatusNextCommands<->scanStatusNextCommands",
+      "mcp": "packages/mcp/src/index.ts:scanStatusNextCommands",
+      "cli": "packages/cli/src/domain/scan-status.ts:scanStatusNextCommands",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "scanStatusSummary<->scanStatusSummary",
+      "mcp": "packages/mcp/src/index.ts:scanStatusSummary",
+      "cli": "packages/cli/src/domain/scan-status.ts:scanStatusSummary",
+      "similarity": 1,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "unavailableGraphContext<->unavailableGraphContext",
+      "mcp": "packages/mcp/src/index.ts:unavailableGraphContext",
+      "cli": "packages/cli/src/domain/graph-preflight.ts:unavailableGraphContext",
+      "similarity": 1,
+      "both_private": true,
+      "reason": "Not yet unified. Graph preflight context assembly; reaches storage on both sides."
+    },
+    {
+      "key": "waiversForFiles<->waiversForFiles",
+      "mcp": "packages/mcp/src/index.ts:waiversForFiles",
+      "cli": "packages/cli/src/domain/preflight.ts:waiversForFiles",
+      "similarity": 0.989,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "riskyAreasForFiles<->riskyAreasForFiles",
+      "mcp": "packages/mcp/src/index.ts:riskyAreasForFiles",
+      "cli": "packages/cli/src/domain/preflight.ts:riskyAreasForFiles",
+      "similarity": 0.984,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "countDeniedFiles<->countDeniedFiles",
+      "mcp": "packages/mcp/src/index.ts:countDeniedFiles",
+      "cli": "packages/cli/src/domain/preflight.ts:countDeniedFiles",
+      "similarity": 0.974,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "scopeMatchesFile<->scopeMatchesFile",
+      "mcp": "packages/mcp/src/index.ts:scopeMatchesFile",
+      "cli": "packages/cli/src/domain/preflight.ts:scopeMatchesFile",
+      "similarity": 0.974,
+      "both_private": false,
+      "reason": "Not yet unified. W6 moved the preflight derivation that PRODUCES payload fields (preparedConvention/instructionForConvention, where the two copies had actually diverged); these are the scope/matching helpers around it and are next."
+    },
+    {
+      "key": "currentMachineContractVersions<->currentMachineContractVersions",
+      "mcp": "packages/mcp/src/index.ts:currentMachineContractVersions",
+      "cli": "packages/cli/src/domain/versions.ts:currentMachineContractVersions",
+      "similarity": 0.971,
+      "both_private": false,
+      "reason": "Not yet unified. Version/runtime reporting; the two differ only in the surface name they report, which is the argument for one function with a parameter."
+    },
+    {
+      "key": "mcpRuntime<->doctorRuntime",
+      "mcp": "packages/mcp/src/index.ts:mcpRuntime",
+      "cli": "packages/cli/src/domain/versions.ts:doctorRuntime",
+      "similarity": 0.97,
+      "both_private": false,
+      "reason": "Not yet unified. Version/runtime reporting; the two differ only in the surface name they report, which is the argument for one function with a parameter."
+    },
+    {
+      "key": "graphNodeIdsForPreflight<->graphNodeIdsForPreflight",
+      "mcp": "packages/mcp/src/index.ts:graphNodeIdsForPreflight",
+      "cli": "packages/cli/src/commands/prepare.ts:graphNodeIdsForPreflight",
+      "similarity": 0.957,
+      "both_private": true,
+      "reason": "Not yet unified, and module-private on both sides - the class the census could not see. These feed the change-impact and graph-confidence sections of the preflight packet."
+    },
+    {
+      "key": "gitOutput<->gitOutput",
+      "mcp": "packages/mcp/src/index.ts:gitOutput",
+      "cli": "packages/cli/src/io/git.ts:gitOutput",
+      "similarity": 0.912,
+      "both_private": false,
+      "reason": "Not yet unified. Thin execFileSync wrapper; the CLI's variant carries CLI-specific error text."
+    },
+    {
+      "key": "scanInvalidationReasons<->scanInvalidationReasons",
+      "mcp": "packages/mcp/src/index.ts:scanInvalidationReasons",
+      "cli": "packages/cli/src/domain/scan-status.ts:scanInvalidationReasons",
+      "similarity": 0.887,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "resolverInputFingerprint<->resolverInputFingerprint",
+      "mcp": "packages/mcp/src/index.ts:resolverInputFingerprint",
+      "cli": "packages/cli/src/domain/scan-status.ts:resolverInputFingerprint",
+      "similarity": 0.882,
+      "both_private": false,
+      "reason": "Not yet unified. scan-status.ts is the largest remaining unit (~1300 lines) and MCP's copy of it spans ten functions; moving it is its own change because scanStatusPayload reaches storage on both sides and the CLI's copy also serves `drift scan status`, which MCP has no equivalent of."
+    },
+    {
+      "key": "repoMapPayload<->repoMapPayload",
+      "mcp": "packages/mcp/src/index.ts:repoMapPayload",
+      "cli": "packages/cli/src/domain/repo-map.ts:repoMapPayload",
+      "similarity": 0.88,
+      "both_private": false,
+      "reason": "EXPECTED, and the shape W6 is aiming for. Both are now thin wrappers that resolve their own repo/contract/policy and delegate to buildRepoMapPayload in @drift/query. They still score high because a wrapper is mostly its argument list - but the derivation underneath is one function, which is the property that matters. policyFileContext is genuinely not yet unified."
+    },
+    {
+      "key": "validatePolicySurface<->policySurface",
+      "mcp": "packages/mcp/src/index.ts:validatePolicySurface",
+      "cli": "packages/cli/src/domain/policy-context.ts:policySurface",
+      "similarity": 0.868,
+      "both_private": false,
+      "reason": "Not yet unified. Policy-context summary and its next-commands list."
+    }
+  ]
+}

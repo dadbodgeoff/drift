@@ -53,15 +53,8 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   // about - an exemplar it cannot vouch for is the thing this item exists to stop.
   const exemplarContext = conformingExemplarContext(storage, repoId);
   const conventions = activeConventions.map((convention) =>
-    preparedConvention(convention, {
-      scopeFiles: exemplarContext.scopeFilesFor(convention),
-      // CV-5: any accepted convention, not just this one - see violatingFilesAnyConvention.
-      violatingFiles: exemplarContext.violatingFilesAnyConvention(),
-      roleByFile: exemplarContext.roleByFile,
-      baselineActiveCount: exemplarContext.baselineActiveCountFor(convention.id),
-      targetPath: targetPath ?? undefined,
-      importsByFile: exemplarContext.importsByFile
-    })
+    // Explicit lambda: a bare reference passes Array#map's index as the second argument.
+    preparedConvention(convention, exemplarContext, { targetPath: targetPath ?? undefined })
   );
   const findings = storage
     .listFindings(repoId)

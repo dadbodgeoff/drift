@@ -10923,6 +10923,31 @@ schema_version: MIGRATIONS.length,
     expect(unsafe.stderr).toContain("--path must be repo-relative.");
   });
 
+  it("repo map carries the route-trust fields alongside the routes", async () => {
+    // W6/D-A2. `routes` says what the routes are; these three say how much to trust that list -
+    // where each route came from, whether the canonical list fell back, and whether the proofs
+    // behind it are from this scan. All three were computed inside the CLI's copy of this
+    // payload, off the same phase-8 read model it takes `routes` from, and then dropped, while
+    // MCP emitted them under the same `response_schema`. So two documents both claiming
+    // drift.repo.map.v1 disagreed about which keys that schema has.
+    const { databasePath, repoId } = await seedStartedDoctorState("drift-repo-map-trust-fields-");
+
+    const mapped = await runCli(["--db", databasePath, "repo", "map", "--repo", repoId, "--json"]);
+    const payload = JSON.parse(mapped.stdout);
+
+    expect(mapped.exitCode).toBe(0);
+    // Presence, not value: absence is the defect, and a null here would still be an answer.
+    expect(Object.keys(payload)).toEqual(
+      expect.arrayContaining(["route_source_summary", "canonical_route_fallback", "proof_freshness"])
+    );
+    expect(payload.route_source_summary).toMatchObject({
+      normalized_entrypoint: expect.any(Number),
+      security_proof: expect.any(Number),
+      legacy_fact_fallback: expect.any(Number)
+    });
+    expect(payload.canonical_route_fallback).toMatchObject({ used: expect.any(Boolean) });
+  });
+
   it("fails repo map when fresh scan context is required but the graph is stale", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
