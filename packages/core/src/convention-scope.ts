@@ -88,9 +88,9 @@ const CRON_SEGMENTS = new Set(["cron", "crons", "jobs", "scheduled"]);
 const WEBHOOK_SEGMENTS = new Set(["webhook", "webhooks"]);
 
 export function routeFlavor(filePath: string): RouteFlavor {
-  // Only segments below the api boundary decide flavour. A repo mounted under `apps/cron-service/`
+  // Only segments below the route root decide flavour. A repo mounted under `apps/cron-service/`
   // does not make every route in it a cron job.
-  const segments = routeSegmentsBelowApi(filePath);
+  const segments = routeSegmentsBelowRouteRoot(filePath);
   if (segments.some((segment) => CRON_SEGMENTS.has(segment))) {
     return "cron_job";
   }
@@ -100,10 +100,17 @@ export function routeFlavor(filePath: string): RouteFlavor {
   return "api_route";
 }
 
-function routeSegmentsBelowApi(filePath: string): string[] {
+/**
+ * D-H2 made the "no api segment" case reachable for real paths, and the previous fallback - the
+ * whole path - was wrong: `apps/cron/app/wellknown/route.ts` would have read as a cron job because
+ * of the directory the app lives in. `app` is the route root when nothing below it is called `api`.
+ * Kept byte-equivalent to `route_flavor` in crates/drift-engine/src/facts.rs.
+ */
+function routeSegmentsBelowRouteRoot(filePath: string): string[] {
   const segments = filePath.toLowerCase().split("/");
   const apiIndex = segments.lastIndexOf("api");
-  const below = apiIndex === -1 ? segments : segments.slice(apiIndex + 1);
+  const routeRoot = apiIndex === -1 ? segments.lastIndexOf("app") : apiIndex;
+  const below = routeRoot === -1 ? segments : segments.slice(routeRoot + 1);
   return below
     // Next route groups - `(ee)`, `(admin)` - are organisational and carry no flavour.
     .filter((segment) => !(segment.startsWith("(") && segment.endsWith(")")))

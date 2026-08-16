@@ -14,9 +14,9 @@ mod protocol;
 use candidate_command::infer_candidates;
 use check_command::check_repo;
 use drift_engine::{
-    Fact, FactKind, PrismaFactKind, dynamic_middleware_matcher_line, extract_prisma_facts,
-    extract_security_facts, extract_typescript_facts, should_index_path,
-    static_middleware_coverage,
+    Fact, FactExtractError, FactKind, PrismaFactKind, dynamic_middleware_matcher_line,
+    extract_prisma_facts, extract_security_facts, extract_typescript_facts_with_report,
+    should_index_path, static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
 use protocol::*;
@@ -601,7 +601,49 @@ fn scan_file_with_reuse(
             import_source: None,
         });
     }
-    let mut facts = extract_typescript_facts(file_path, &source)?;
+    let (mut facts, parse) = extract_typescript_facts_with_report(file_path, &source)?;
+    // D-PA1: say when the grammar could not read the file.
+    //
+    // No code path in this crate inspected `tree.root_node().has_error()` before this line - an
+    // exhaustive grep for `has_error|is_error|ERROR|is_missing` across crates/drift-engine/src
+    // returned one hit, a comment. So foreign content under a TypeScript-family extension produced
+    // confident facts with `indexed: true` and no diagnostic at all: Python yielded 3
+    // `symbol_called`, Go an `ImportUsed` plus 3 `SymbolCalled`, a README saved as `.ts` a
+    // `SymbolCalled` with an empty name. Only `.prisma` was guarded, and only by never being parsed.
+    //
+    // What this does NOT do is drop the facts, and that is a measured decision rather than
+    // timidity. Two candidate rules were tried against the corpus and both were wrong:
+    //
+    //   - a damage-ratio threshold cannot separate the cases. 129 corpus files carry parse errors;
+    //     122 sit under 5%, but four real cal.com email components sit at 66-100% because their
+    //     JSX bodies do not fit the grammar - while foreign content starts at 22%. Any threshold
+    //     either keeps Python or discards cal.com.
+    //   - refusing facts from inside ERROR subtrees does the wrong thing in BOTH directions,
+    //     measured: `BaseEmailHtml.tsx` fell from 9 facts to 1, losing 8 correct `import_used`
+    //     records whose statements parsed perfectly, while every junk fact from the Python and Go
+    //     samples survived - tree-sitter had recovered them as well-formed top-level statements
+    //     OUTSIDE any ERROR node. Recovery does not put the untrustworthy content where a
+    //     structural rule can find it.
+    //
+    // So the fix is the thing that was actually missing: the file says how much of itself the
+    // grammar could not read, once, with numbers. A consumer that needs certainty can act on it;
+    // silence gave it nothing to act on.
+    if !parse.is_clean() {
+        diagnostics.push(EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "partial_parse".to_string(),
+            message: format!(
+                "{} of {} bytes did not fit the {} grammar across {} error node(s) ({:.0}% of the file); facts from this file are incomplete",
+                parse.error_bytes,
+                parse.source_bytes,
+                parse.grammar,
+                parse.error_nodes,
+                parse.damage_ratio() * 100.0
+            ),
+            file_path: Some(normalized.clone()),
+            import_source: None,
+        });
+    }
     facts.extend(extract_security_facts(file_path, &source, &[])?);
     let facts = facts.into_iter().map(engine_fact).collect();
     Ok(Some((file, facts, false)))
@@ -634,7 +676,7 @@ fn scan_files(
             Err(error) => {
                 diagnostics.push(EngineDiagnostic {
                     severity: "warning".to_string(),
-                    code: "file_unreadable".to_string(),
+                    code: skipped_file_code(error.as_ref()).to_string(),
                     message: format!("file skipped: {error}"),
                     file_path: Some(normalize_path(file_path)),
                     import_source: None,
@@ -644,6 +686,36 @@ fn scan_files(
         }
     }
     Ok(result)
+}
+
+/// D-PA3: which of five different things went wrong with a file.
+///
+/// The single `Err` arm above tagged all of them `file_unreadable`: a genuinely unreadable path, a
+/// non-UTF-8 file, an AST too deep to walk, a parse that returned nothing, and a parser that could
+/// not be constructed. Only the free-text `message` distinguished them, so anything keying on
+/// `code` - the coverage report, the limitations map in
+/// packages/cli/src/domain/import-coverage.ts, any user filter - could not tell "this file is a
+/// 130 KB minified bundle, split it" from "this file is not text". Those have different answers,
+/// and `file_unreadable` was the wrong answer for four of the five.
+///
+/// `file_unreadable` keeps its name and its meaning: an I/O failure that is not an encoding
+/// problem. Nothing that was correctly labelled changes label.
+fn skipped_file_code(error: &(dyn std::error::Error + 'static)) -> &'static str {
+    if let Some(extract) = error.downcast_ref::<FactExtractError>() {
+        return match extract {
+            FactExtractError::TooDeep { .. } => "file_too_deep",
+            FactExtractError::ParseFailed => "file_parse_failed",
+            FactExtractError::ParserLanguage(_) => "parser_language_unavailable",
+        };
+    }
+    if let Some(io_error) = error.downcast_ref::<io::Error>()
+        && io_error.kind() == io::ErrorKind::InvalidData
+    {
+        // What `fs::read_to_string` returns for bytes that are not valid UTF-8. The file is
+        // perfectly readable; it is not text this parser can accept.
+        return "file_not_utf8";
+    }
+    "file_unreadable"
 }
 
 fn reusable_facts_for_file(

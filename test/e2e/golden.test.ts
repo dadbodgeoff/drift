@@ -297,12 +297,16 @@ describe("golden realistic repo evidence", () => {
         "files_indexed": 2,
       }
     `);
+    // W7 / D-S2: 22 -> 23. The one new fact is `exported_symbol app` from `src/server.ts`, whose
+    // last line is `export { app };` - a bare export list naming an identifier declared above.
+    // That shape produced no fact at all before D-S2, so this fixture reported an Express app
+    // that exports nothing.
     expect(express).toMatchInlineSnapshot(`
       {
         "candidate_kinds": [],
         "diagnostics_count": 0,
         "engine_source": "rust",
-        "facts_count": 22,
+        "facts_count": 23,
         "files_indexed": 4,
       }
     `);

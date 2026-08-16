@@ -127,24 +127,66 @@ impl std::fmt::Display for FactExtractError {
 
 impl std::error::Error for FactExtractError {}
 
+/// D-PA1: what the parse actually managed, measured rather than assumed.
+///
+/// Before this existed, NO code path in the crate inspected `tree.root_node().has_error()` - an
+/// exhaustive grep for `has_error|is_error|ERROR|is_missing` across crates/drift-engine/src
+/// returned exactly one hit, and it was a comment. So foreign content under a TypeScript-family
+/// extension produced confident facts with `indexed: true` and not one diagnostic: Python yielded
+/// 3 `symbol_called`, Go an `ImportUsed` plus 3 `SymbolCalled`, a README saved as `.ts` a
+/// `SymbolCalled` with an empty name. Only `.prisma` was guarded, and only by never being parsed.
+///
+/// That silence is the product's own stated worst case - a guardrail that reports success when it
+/// could not check. Carried on this struct so the caller can say so.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseReport {
+    /// Which grammar produced the tree the facts came from. Not always derivable from the
+    /// extension: see `parse_with_best_grammar`.
+    pub grammar: &'static str,
+    /// Nodes tree-sitter could not fit into the grammar (ERROR) or had to invent (MISSING).
+    pub error_nodes: usize,
+    /// Bytes of the source covered by those nodes.
+    pub error_bytes: usize,
+    pub source_bytes: usize,
+}
+
+impl ParseReport {
+    pub fn is_clean(&self) -> bool {
+        self.error_nodes == 0
+    }
+
+    /// The share of the file the grammar could not read, 0.0 to 1.0.
+    pub fn damage_ratio(&self) -> f64 {
+        if self.source_bytes == 0 {
+            return 0.0;
+        }
+        (self.error_bytes as f64 / self.source_bytes as f64).min(1.0)
+    }
+}
+
 pub fn extract_typescript_facts(
     file_path: impl AsRef<Path>,
     source: &str,
 ) -> Result<Vec<Fact>, FactExtractError> {
+    extract_typescript_facts_with_report(file_path, source).map(|(facts, _)| facts)
+}
+
+pub fn extract_typescript_facts_with_report(
+    file_path: impl AsRef<Path>,
+    source: &str,
+) -> Result<(Vec<Fact>, ParseReport), FactExtractError> {
     let file_path = file_path.as_ref().to_string_lossy().replace('\\', "/");
-    let mut parser = Parser::new();
-    let language = if file_path.ends_with(".tsx") || file_path.ends_with(".jsx") {
-        tree_sitter_typescript::LANGUAGE_TSX
-    } else {
-        tree_sitter_typescript::LANGUAGE_TYPESCRIPT
-    };
-    parser
-        .set_language(&language.into())
-        .map_err(FactExtractError::ParserLanguage)?;
-    let tree = parser
-        .parse(source, None)
-        .ok_or(FactExtractError::ParseFailed)?;
+    let (tree, grammar) = parse_with_best_grammar(&file_path, source)?;
     let root = tree.root_node();
+    let mut error_nodes = 0;
+    let mut error_bytes = 0;
+    measure_parse_errors(root, &mut error_nodes, &mut error_bytes);
+    let report = ParseReport {
+        grammar,
+        error_nodes,
+        error_bytes,
+        source_bytes: source.len(),
+    };
     let mut facts = Vec::new();
 
     facts.push(Fact {
@@ -213,7 +255,102 @@ pub fn extract_typescript_facts(
     walk_node(root, source.as_bytes(), &file_path, &mut facts);
     apply_runtime_use_analysis(root, source.as_bytes(), &mut facts);
 
-    Ok(facts)
+    Ok((facts, report))
+}
+
+/// D-PA2: the grammar, chosen by extension and then checked.
+///
+/// It used to be chosen by suffix alone - TSX for `.tsx`/`.jsx`, TypeScript for everything else -
+/// which put `.js` on a grammar that cannot read JSX. Identical component source parsed as
+/// `profile.js` yielded 4 facts and as `profile.jsx` 6. The two missing were a `setOpen(false)`
+/// call and a `posts.map(...)` call inside the JSX return, both with exact line and column when
+/// parsed right. The `.js` scan reported full success having dropped two real call sites, and JSX
+/// in a plain `.js` file is not an edge case - it is how a large share of React code is written.
+///
+/// `.js` cannot contain TypeScript-only syntax, so TSX is a strict improvement for it in principle.
+/// In practice there is one ambiguity - `a < b && c > (d)` can be misread as a JSX element, which
+/// is exactly why TypeScript makes you rename to `.tsx` - so the choice is checked rather than
+/// asserted: if the TSX parse has errors, the file is parsed again as TypeScript and whichever
+/// grammar covered more of the file wins. Ties go to TSX, which is the better default for the
+/// extension. The second parse only happens when the first one failed at something, so it costs
+/// nothing on the overwhelming majority of files.
+///
+/// `.ts` gets no alternate. A `.ts` file containing JSX does not compile, so parsing one as TSX
+/// would be inventing recall for source that cannot run.
+fn parse_with_best_grammar(
+    file_path: &str,
+    source: &str,
+) -> Result<(tree_sitter::Tree, &'static str), FactExtractError> {
+    let jsx_capable = file_path.ends_with(".tsx") || file_path.ends_with(".jsx");
+    // The plain-JavaScript family, where the extension does not settle whether JSX is present.
+    let ambiguous =
+        file_path.ends_with(".js") || file_path.ends_with(".mjs") || file_path.ends_with(".cjs");
+
+    let (primary, primary_name): (tree_sitter::Language, &'static str) = if jsx_capable || ambiguous
+    {
+        (tree_sitter_typescript::LANGUAGE_TSX.into(), "tsx")
+    } else {
+        (
+            tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            "typescript",
+        )
+    };
+
+    let tree = parse_with(primary, source)?;
+    if !ambiguous || !tree.root_node().has_error() {
+        return Ok((tree, primary_name));
+    }
+
+    let alternate = parse_with(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(), source)?;
+    let mut primary_errors = (0, 0);
+    let mut alternate_errors = (0, 0);
+    measure_parse_errors(
+        tree.root_node(),
+        &mut primary_errors.0,
+        &mut primary_errors.1,
+    );
+    measure_parse_errors(
+        alternate.root_node(),
+        &mut alternate_errors.0,
+        &mut alternate_errors.1,
+    );
+    if alternate_errors.1 < primary_errors.1 {
+        return Ok((alternate, "typescript"));
+    }
+    Ok((tree, primary_name))
+}
+
+fn parse_with(
+    language: tree_sitter::Language,
+    source: &str,
+) -> Result<tree_sitter::Tree, FactExtractError> {
+    let mut parser = Parser::new();
+    parser
+        .set_language(&language)
+        .map_err(FactExtractError::ParserLanguage)?;
+    parser
+        .parse(source, None)
+        .ok_or(FactExtractError::ParseFailed)
+}
+
+/// Count the ERROR and MISSING nodes and the bytes they cover.
+///
+/// A MISSING node has an empty byte range - it is a token the grammar had to invent to keep
+/// going - so it counts as one byte rather than none; a file whose only damage is missing tokens
+/// still has damage.
+fn measure_parse_errors(node: Node<'_>, nodes: &mut usize, bytes: &mut usize) {
+    if node.is_error() || node.is_missing() {
+        *nodes += 1;
+        *bytes += node.byte_range().len().max(1);
+        return;
+    }
+    if !node.has_error() {
+        return;
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        measure_parse_errors(child, nodes, bytes);
+    }
 }
 
 /// Remove `import_used` facts for bindings that are only ever used in *type* positions.
@@ -750,6 +887,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         });
     }
 
+    extract_local_export_list(node, source, file_path, facts);
+
     if let Some(name) = first_named_declaration_identifier(node, source) {
         let start_line = node.start_position().row + 1;
         let end_line = node.end_position().row + 1;
@@ -827,6 +966,108 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 end_column,
             });
         }
+    }
+}
+
+/// D-S2: `export { a, b };` referring to identifiers declared on earlier lines.
+///
+/// `extract_export` had three fact-producing paths - a list export WITH a `from` source, a bare
+/// `export default <expr>`, and an inline declaration on the export node - and none of them saw
+/// this one. It is the ordinary way a module publishes helpers declared above, and it produced no
+/// `exported_symbol` fact at all. Two distinct symptoms, both worse than a missing fact:
+///
+///   (a) A file MIXING inline and list exports has a key in `resolver.exported_symbols` from its
+///       inline exports, and that key is precisely the condition the conservative-diagnostic gate
+///       in main.rs uses to decide absence is provable. So every consumer of a list-exported symbol
+///       got a FALSE `unresolved_import_symbol`. On taxonomy, all 8 files importing `{ toast }` or
+///       `{ useToast }` from `components/ui/use-toast.ts` were flagged, though TypeScript resolves
+///       them without complaint - the file exports `const TOAST_LIMIT` inline and `toast`,
+///       `useToast` by list. Those diagnostics feed check completeness, so they withhold findings.
+///
+///   (b) A file exporting ONLY via bare lists has no key at all, so the gate stays silent: no
+///       fact, no gap, no signal. Nothing anywhere says the module was not understood.
+///
+/// Both contradict what `ts.import_resolution.v1` and `ts.syntax_facts.v1` declare about themselves
+/// in packages/core/src/semantic-capabilities.ts - `certification: "certified_deterministic"`,
+/// `can_block: true`.
+///
+/// Read off the AST rather than the statement text, because the text route cannot tell
+/// `export { a, b };` from `export const x = { a: 1 };` - both contain a brace pair, and the second
+/// would have yielded a phantom export named `a:`.
+///
+/// Deliberately NOT emitting `RouteDeclared` for `export { GET };`. Re-exported handlers have never
+/// produced one either (formbricks' 28 `export { GET } from "@/modules/..."` routes), so adding it
+/// here would fix half of a different gap and move route counts on every repo for a reason this
+/// change has not measured.
+fn extract_local_export_list(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    facts: &mut Vec<Fact>,
+) {
+    // With a source this is a re-export, which the branch at the top of `extract_export` owns.
+    if node.child_by_field_name("source").is_some() {
+        return;
+    }
+    let Some(clause) = (0..node.named_child_count())
+        .filter_map(|index| node.named_child(index))
+        .find(|child| child.kind() == "export_clause")
+    else {
+        return;
+    };
+    // `export type { Foo };` is erased at compile time, exactly like `import type`. The whole clause
+    // is type-only and there is no field on the node that says so, only the statement text.
+    if node_text(node, source)
+        .as_deref()
+        .is_some_and(|text| text.trim_start().starts_with("export type"))
+    {
+        return;
+    }
+
+    let start_line = node.start_position().row + 1;
+    let end_line = node.end_position().row + 1;
+    let start_column = node.start_position().column + 1;
+    let end_column = node.end_position().column + 1;
+
+    for index in 0..clause.named_child_count() {
+        let Some(specifier) = clause.named_child(index) else {
+            continue;
+        };
+        if specifier.kind() != "export_specifier" {
+            continue;
+        }
+        // The per-specifier form, `export { value, type Only };`.
+        if node_text(specifier, source)
+            .as_deref()
+            .is_some_and(|text| text.trim_start().starts_with("type "))
+        {
+            continue;
+        }
+        let Some(local_name) = specifier
+            .child_by_field_name("name")
+            .and_then(|child| node_text(child, source))
+        else {
+            continue;
+        };
+        // `export { handler as default };` exports `default`; the alias is what the module publishes.
+        let exported_name = specifier
+            .child_by_field_name("alias")
+            .and_then(|child| node_text(child, source))
+            .unwrap_or_else(|| local_name.clone());
+        facts.push(Fact {
+            kind: FactKind::ExportedSymbol,
+            file_path: file_path.to_string(),
+            // The local binding when the export is renamed, so consumers can follow the exported
+            // name back to what it names - the same convention the default-export branch uses.
+            value: (exported_name != local_name).then_some(local_name),
+            name: exported_name,
+            imported_name: None,
+            runtime_use: None,
+            start_line,
+            end_line,
+            start_column,
+            end_column,
+        });
     }
 }
 
@@ -1229,9 +1470,18 @@ pub fn route_flavor(file_path: &str) -> &'static str {
 
     let lower = file_path.to_ascii_lowercase();
     let all = lower.split('/').collect::<Vec<_>>();
-    // Only segments below the api boundary decide flavour: a repo mounted under `apps/cron-service/`
+    // Only segments below the route root decide flavour: a repo mounted under `apps/cron-service/`
     // does not make every route inside it a cron job.
-    let below = match all.iter().rposition(|segment| *segment == "api") {
+    //
+    // D-H2 made the `None` arm reachable for real paths, and it was wrong: it fell back to the WHOLE
+    // path, so `apps/cron/app/wellknown/route.ts` - a route handler in a repo whose app directory is
+    // called `cron` - would have been classified `cron_job` and dropped out of the session family's
+    // denominator. `app` is the route root when there is no `api` below it, so it is the boundary.
+    let route_root = all
+        .iter()
+        .rposition(|segment| *segment == "api")
+        .or_else(|| all.iter().rposition(|segment| *segment == "app"));
+    let below = match route_root {
         Some(index) => &all[index + 1..],
         None => &all[..],
     };

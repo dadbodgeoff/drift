@@ -7,6 +7,9 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use drift_engine::next_routes::API_ROUTE_SCOPE_GLOBS;
+// D-H3: the data-layer vocabulary moved to the library so tests/data_access_vocabulary.rs can
+// hold it against the TypeScript fallback it is supposed to improve on.
+use drift_engine::{contains_data_layer_token, is_data_access_source};
 
 use crate::protocol::{
     CandidateRequest, CandidateResult, CheckFact, ENGINE_CANDIDATES_RESULT_SCHEMA_VERSION,
@@ -311,76 +314,6 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             reasons: Vec::new(),
         }],
     }
-}
-
-/// Surfaces of a data package that are types, enums or schemas rather than a client.
-///
-/// Importing `@calcom/prisma/enums` gives you generated enum values; importing
-/// `@calcom/prisma/zod-utils` gives you validation schemas. Neither is a database client, and
-/// treating them as one put four wrong entries in cal.com's learned contract out of six.
-///
-/// `/schema` is deliberately absent. In a Drizzle repo the schema module *is* part of the data
-/// layer - `@openstatus/db/src/schema` is imported at runtime and passed to queries - so
-/// excluding it would trade these false positives for a false negative on a real data layer.
-const DATA_LAYER_TYPE_SURFACES: [&str; 4] = ["/enums", "/zod-utils", "/types", "/constants"];
-
-/// True when a data-layer name occurs at a path or word boundary rather than mid-identifier.
-///
-/// `is_data_access_source` matched raw substrings, so `@calcom/lib/isPrismaObj` - a type-guard
-/// utility - matched "prisma" inside a camelCase identifier and was recorded as a database
-/// client. This is the same boundary principle applied to forbidden-import matching in B3.
-fn contains_data_layer_token(lower: &str, token: &str) -> bool {
-    let mut from = 0;
-    while let Some(offset) = lower[from..].find(token) {
-        let start = from + offset;
-        let end = start + token.len();
-        let before_ok = start == 0
-            || !lower[..start]
-                .chars()
-                .next_back()
-                .is_some_and(|c| c.is_ascii_alphanumeric());
-        let after_ok = end == lower.len()
-            || !lower[end..]
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_ascii_alphanumeric());
-        if before_ok && after_ok {
-            return true;
-        }
-        from = end;
-    }
-    false
-}
-
-fn is_data_access_source(source: &str) -> bool {
-    let lower = source.to_ascii_lowercase();
-    if lower.contains("@prisma/client/runtime") {
-        return false;
-    }
-    // Compare with any file extension removed, so this catches both the import specifier
-    // form (`@calcom/prisma/zod-utils`) and the resolved file form
-    // (`packages/prisma/zod-utils.ts`).
-    let without_extension = lower
-        .rsplit_once('.')
-        .map(|(stem, ext)| {
-            if matches!(ext, "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs") {
-                stem
-            } else {
-                lower.as_str()
-            }
-        })
-        .unwrap_or(lower.as_str());
-    if DATA_LAYER_TYPE_SURFACES
-        .iter()
-        .any(|surface| without_extension.ends_with(surface))
-    {
-        return false;
-    }
-    contains_data_layer_token(&lower, "prisma")
-        || contains_data_layer_token(&lower, "database")
-        || lower.contains("/db")
-        || lower.ends_with("db")
-        || lower.contains("data-access")
 }
 
 fn is_next_app_tree_path(file_path: &str) -> bool {

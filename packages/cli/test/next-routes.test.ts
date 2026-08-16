@@ -35,9 +35,13 @@ const apiRouteConvention: AcceptedConvention = {
 };
 
 describe("Next.js route group handling", () => {
-  it("classifies grouped app api routes without classifying non-api app routes", () => {
+  it("classifies every route handler under an app tree, and only those", () => {
     expect(isApiRoutePath("apps/web/app/(admin)/api/projects/route.ts")).toBe(true);
-    expect(isApiRoutePath("apps/web/app/(marketing)/about/route.ts")).toBe(false);
+    // D-H2: this asserted `false`. dub's `app/wellknown/[domain]/[file]/route.ts` - no auth
+    // wrapper, `import { prisma }` called directly - is the same shape and was never counted.
+    expect(isApiRoutePath("apps/web/app/(marketing)/about/route.ts")).toBe(true);
+    expect(isApiRoutePath("apps/web/app/wellknown/[domain]/[file]/route.ts")).toBe(true);
+    expect(isApiRoutePath("server/api/users/route.ts")).toBe(false);
   });
 
   it("applies legacy accepted api route scopes to grouped app api routes", () => {

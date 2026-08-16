@@ -44,8 +44,15 @@ describe("api route scope compatibility", () => {
     expect(globs).toContain("**/app/**/api/**/route.ts");
   });
 
-  it("recognizes grouped api route and rejects non api app route", () => {
+  it("recognizes every route handler under an app tree, and only those", () => {
     expect(isNextApiRoutePath("app/(admin)/api/projects/route.ts")).toBe(true);
-    expect(isNextApiRoutePath("app/(marketing)/about/route.ts")).toBe(false);
+    // D-H2: this asserted `false`, which is what made 27 real handlers across the corpus invisible
+    // to every role-scoped convention. Under the App Router the folder name decides the URL, not
+    // whether the file is a handler.
+    expect(isNextApiRoutePath("app/(marketing)/about/route.ts")).toBe(true);
+    expect(isNextApiRoutePath("apps/web/app/wellknown/[domain]/[file]/route.ts")).toBe(true);
+    // The `app` ancestor is still the boundary.
+    expect(isNextApiRoutePath("server/api/users/route.ts")).toBe(false);
+    expect(isNextApiRoutePath("apps/web/modules/api/v2/management/webhooks/route.ts")).toBe(false);
   });
 });

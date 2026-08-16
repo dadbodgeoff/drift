@@ -29,10 +29,17 @@ const EXPECTED: &[(&str, &str)] = &[
     ("app/api/cronjobs-docs/route.ts", "api_route"),
     ("app/api/webhooks-docs/route.ts", "api_route"),
     ("app/api/synchronised/route.ts", "api_route"),
-    // Only segments below the api boundary decide flavour.
+    // Only segments below the route root decide flavour.
     ("apps/cron-service/app/api/users/route.ts", "api_route"),
     ("apps/cron/app/api/users/route.ts", "api_route"),
     ("apps/cron/app/api/cron/rollup/route.ts", "cron_job"),
+    // D-H2: a route handler outside any `api` folder has no `api` boundary, and the old fallback was
+    // the whole path - so this read as a cron job because of the directory the app lives in. `app` is
+    // the route root when nothing below it is called `api`.
+    ("apps/cron/app/wellknown/route.ts", "api_route"),
+    ("apps/jobs/app/(ee)/invoices/[id]/route.tsx", "api_route"),
+    ("apps/web/app/cron/rollup/route.ts", "cron_job"),
+    ("apps/web/app/webhooks/stripe/route.ts", "webhook_handler"),
     // Cron, including dub's real shape.
     (
         "apps/web/app/(ee)/api/cron/aggregate-clicks/route.ts",

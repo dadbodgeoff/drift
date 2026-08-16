@@ -41,12 +41,20 @@ describe("CV-2 route flavour", () => {
       expect(routeFlavor("app/api/synchronised/route.ts")).toBe("api_route");
     });
 
-    it("only segments below the api boundary decide flavour", () => {
+    it("only segments below the route root decide flavour", () => {
       // A service mounted under a cron-named directory does not make its ordinary routes cron jobs.
       expect(routeFlavor("apps/cron-service/app/api/users/route.ts")).toBe("api_route");
       expect(routeFlavor("apps/cron/app/api/users/route.ts")).toBe("api_route");
       // ...and the same repo's genuine cron route still classifies.
       expect(routeFlavor("apps/cron/app/api/cron/rollup/route.ts")).toBe("cron_job");
+      // D-H2: a route handler outside any `api` folder has no `api` boundary, and the old fallback
+      // was the whole path - so this read as a cron job because of the directory the app lives in.
+      // `app` is the route root when nothing below it is called `api`.
+      expect(routeFlavor("apps/cron/app/wellknown/route.ts")).toBe("api_route");
+      expect(routeFlavor("apps/jobs/app/(ee)/invoices/[id]/route.tsx")).toBe("api_route");
+      // ...and a genuine cron or webhook handler outside `api` still classifies.
+      expect(routeFlavor("apps/web/app/cron/rollup/route.ts")).toBe("cron_job");
+      expect(routeFlavor("apps/web/app/webhooks/stripe/route.ts")).toBe("webhook_handler");
     });
 
     it("does not manufacture a flavour for an ordinary repo", () => {

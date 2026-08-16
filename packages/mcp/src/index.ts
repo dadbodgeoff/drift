@@ -88,7 +88,7 @@ import {
   rankRelevantFiles,
   relevantFilesForTask,
   repoMapFileForPayload,
-  walkIndexableFiles,buildParserGapSection} from "@drift/query";
+  walkIndexableFiles,buildParserGapSection,withParserGapRecordsOmitted} from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -427,7 +427,9 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         },
         conventions: preflightConventions,
         audit_integrity: scanStatus.audit_integrity,
-        scan_status: scanStatus,
+        // Same withholding as the CLI's prepare, from the same shared function. Each surface builds
+        // its own scan_status, so a reshape applied to one alone turns the parity check red.
+        scan_status: withParserGapRecordsOmitted(scanStatus, guidance.parser_gaps.full_list_command),
         freshness_requirement: freshnessRequirement(Boolean(require_fresh), scanStatus),
         graph_context: graphContext,
         task_model: taskModel,

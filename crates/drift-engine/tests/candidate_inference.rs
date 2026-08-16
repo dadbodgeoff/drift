@@ -1320,15 +1320,13 @@ fn infer_candidates_uses_route_group_aware_api_scope_globs() {
 
     assert_eq!(
         direct["scope"]["path_globs"],
+        // D-H2: `app/**` rather than `app/api/**`. Under the App Router any `route.ts` is a
+        // handler, and the narrower globs missed 27 real handlers across the corpus.
         json!([
-            "**/app/api/**/route.ts",
-            "**/app/api/**/route.tsx",
-            "**/app/api/**/route.js",
-            "**/app/api/**/route.jsx",
-            "**/app/**/api/**/route.ts",
-            "**/app/**/api/**/route.tsx",
-            "**/app/**/api/**/route.js",
-            "**/app/**/api/**/route.jsx",
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
             "**/pages/api/**/*.ts",
             "**/pages/api/**/*.tsx",
             "**/pages/api/**/*.js",
