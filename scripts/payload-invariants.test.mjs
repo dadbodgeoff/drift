@@ -9,6 +9,7 @@ import {
   isTrustDiscriminator,
   leafFields,
   pointerFields,
+  populatedArrayPaths,
   pointerIsRoutable,
   routedCommandPrefixes
 } from "./payload-invariants.mjs";
@@ -165,6 +166,51 @@ describe("leaf flattening", () => {
 
   it("keeps nulls, which are answers", () => {
     expect(leafFields({ reason: null }).get("reason")).toEqual([null]);
+  });
+
+  it("emits a leaf for an EMPTY array, which is the always-[] blind spot", () => {
+    // The hole this gate shipped with. `covered_symbols: []` produced no path at all, so a field
+    // that is an empty list in every cell - declared shape with nothing computing it - was
+    // invisible, while the `snapshot_usage: false` sitting beside it in the same object was
+    // caught. An always-empty list is the same defect wearing a different type.
+    const leaves = leafFields({ covered_symbols: [], snapshot_usage: false });
+    expect([...leaves.keys()]).toEqual(["covered_symbols", "snapshot_usage"]);
+    expect(leaves.get("covered_symbols")).toEqual([[]]);
+    expect(isTrustDiscriminator("test_intelligence[].covered_symbols", [])).toBe(true);
+  });
+
+  it("does not call a list frozen when another cell filled it", () => {
+    // The correctness half of emitting `[]`. `conventions` is empty in the no-ts fixture and
+    // populated everywhere else; the two states land under different keys, so counting only the
+    // empty ones would report a working field as a hardcoded literal.
+    //
+    // Prefix-wise, and this is the part an exact-match test gets wrong: an array of OBJECTS never
+    // produces the bare key `conventions[]`, only `conventions[].mode`. Matching on the exact key
+    // missed every populated object-array and reported 208 constants instead of 12.
+    const populated = populatedArrayPaths([
+      "prepare.conventions",
+      "prepare.conventions[].mode",
+      "prepare.safe_commands",
+      "prepare.safe_commands[]",
+      "prepare.test_intelligence[].covered_symbols",
+      "prepare.graph_context.route_flows[].diagnostics[].code"
+    ]);
+    expect(populated.has("prepare.conventions")).toBe(true);
+    expect(populated.has("prepare.safe_commands")).toBe(true);
+    // Nested: both the outer array and the inner one were filled.
+    expect(populated.has("prepare.graph_context.route_flows")).toBe(true);
+    expect(populated.has("prepare.graph_context.route_flows[].diagnostics")).toBe(true);
+    // The always-empty field itself is NOT populated - it is the one that must survive to the
+    // baseline, and a guard that swallowed it would restore the blind spot with extra steps.
+    expect(populated.has("prepare.test_intelligence[].covered_symbols")).toBe(false);
+  });
+
+  it("still recurses into a NON-empty array rather than emitting a leaf for it", () => {
+    // The collapse semantics above must survive: a populated array contributes its elements and
+    // no leaf of its own, so `conventions[].mode` keeps gathering values across elements.
+    const leaves = leafFields({ conventions: [{ mode: "warn" }, { mode: "block" }] });
+    expect([...leaves.keys()]).toEqual(["conventions[].mode"]);
+    expect(leaves.has("conventions")).toBe(false);
   });
 });
 
