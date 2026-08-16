@@ -207,7 +207,34 @@ describe("D5.2 — invocation evidence", () => {
     ).toMatch(/could not be classified \(reference_escapes\)/);
   }, 180000);
 
-  it("leaves exactly the six routes with invocation or ambiguity evidence", async () => {
+  // Not a hypothetical. Measured by running this classifier over the local papermark checkout
+  // against the audit's own 35 recorded `@prisma/client` findings: two of them are this shape.
+  // The audit hand-checked all 35 as inert enum imports; `Prisma.sql` is a tagged template,
+  // which parses as a call_expression, and the fragments it builds are executed by
+  // `prisma.$queryRaw`. Pinned so a later precision refinement cannot quietly suppress raw-SQL
+  // construction on its way to making a predicted number land.
+  it("retains a `Prisma.sql` tagged template — a member call, not an enum read", async () => {
+    const findings = await prismaImportFindings();
+    // Two import statements in this route, so two findings; the `@prisma/client` one is the
+    // subject here.
+    const route = forRoute(findings, "route-tagged-template-sql.ts").filter((finding) =>
+      finding.message.includes("from @prisma/client")
+    );
+
+    expect(
+      route.length,
+      "D5.2 REGRESSION: `Prisma.sql`...`` invokes `sql` on the imported `Prisma` namespace. " +
+        `It must stay flagged, and as proven invocation rather than ambiguity.\n${render(route)}`
+    ).toBe(1);
+
+    expect(
+      route[0].message,
+      "D5.2 DEFECT: this is a PROVEN member call. Labelling it unclassified would make the " +
+        `ambiguity clause meaningless on the findings that really are ambiguous.\n  ${route[0].message}`
+    ).not.toMatch(/could not be classified/);
+  }, 180000);
+
+  it("leaves exactly the seven routes with invocation or ambiguity evidence", async () => {
     const findings = await prismaImportFindings();
     const flagged = [
       ...new Set(findings.map((finding) => finding.file_path ?? "(no path)"))
@@ -216,20 +243,23 @@ describe("D5.2 — invocation evidence", () => {
     expect(
       flagged,
       `D5 DEFECT: after grouping and invocation evidence the fixture's flagged routes should be ` +
-        `exactly the four with proven invocation and the two with unresolvable use. Got:\n${render(findings)}`
+        `exactly the five with proven invocation and the two with unresolvable use. Got:\n${render(findings)}`
     ).toEqual([
       "pages/api/route-aliased-invocation.ts",
       "pages/api/route-dynamic-member.ts",
       "pages/api/route-escaping-read.ts",
       "pages/api/route-multi-specifier.ts",
       "pages/api/route-new-client.ts",
-      "pages/api/route-reassignment.ts"
+      "pages/api/route-reassignment.ts",
+      "pages/api/route-tagged-template-sql.ts"
     ]);
 
+    // Seven routes, eight findings: the tagged-template route imports from two different
+    // forbidden modules, which is two import statements and therefore two findings.
     expect(
       findings.length,
-      `D5 DEFECT: six flagged routes, one finding each (one import statement per route).\n${render(findings)}`
-    ).toBe(6);
+      `D5 DEFECT: one finding per offending import statement.\n${render(findings)}`
+    ).toBe(8);
   }, 180000);
 });
 
