@@ -1,4 +1,5 @@
 import { streamJson, type FactRecord, type FileSnapshot } from "@drift/core";
+import { GraphEdgeKindSchema, GraphNodeKindSchema } from "@drift/vocabulary";
 import { createHash } from "node:crypto";
 import { dirname, join, normalize } from "node:path";
 import { z } from "zod";
@@ -6,50 +7,17 @@ import { z } from "zod";
 export const FACTGRAPH_SCHEMA_VERSION = "factgraph.v2";
 export const SUPPORTED_FACTGRAPH_SCHEMA_VERSIONS = ["factgraph.v1", "factgraph.v2"] as const;
 
-export const GraphNodeKindSchema = z.enum([
-  "repo",
-  "package",
-  "artifact",
-  "file",
-  "file_version",
-  "module",
-  "symbol",
-  "import_decl",
-  "export_decl",
-  "callsite",
-  "data_store",
-  "data_operation",
-  "endpoint",
-  "re_export",
-  "route",
-  "file_role",
-  "diagnostic",
-  "finding"
-]);
-
-export const GraphEdgeKindSchema = z.enum([
-  "REPO_HAS_FILE",
-  "FILE_HAS_VERSION",
-  "FILE_DEFINES_MODULE",
-  "FILE_HAS_ROLE",
-  "FILE_CONTAINS_SYMBOL",
-  "MODULE_IMPORTS_MODULE",
-  "IMPORT_DECL_REFERENCES_MODULE",
-  "IMPORT_RESOLVES_TO_MODULE",
-  "IMPORT_RESOLVES_TO_SYMBOL",
-  "MODULE_EXPORTS_SYMBOL",
-  "ROUTE_DECLARED_IN_FILE",
-  "ROUTE_HANDLED_BY_SYMBOL",
-  "ROUTE_HAS_ENDPOINT",
-  "MODULE_REEXPORTS_MODULE",
-  "REEXPORT_RESOLVES_TO_SYMBOL",
-  "CALLSITE_REFERENCES_SYMBOL",
-  "DATA_OPERATION_READS_DATA_STORE",
-  "DATA_OPERATION_WRITES_DATA_STORE",
-  "DATA_OPERATION_DELETES_DATA_STORE",
-  "DATA_OPERATION_TOUCHES_DATA_STORE",
-  "FINDING_HAS_EVIDENCE"
-]);
+// D-G4/D-G5: the graph vocabularies come from vocabulary/vocabulary.json, which also generates the
+// Rust enums the engine now emits them through. They were two hand-written lists - eighteen node
+// kinds and twenty-one edge kinds here, bare `String`s on the engine side - with nothing comparing
+// them, so the engine could emit a kind this enum did not name and the failure arrived as a generic
+// Zod parse error and exit 1 rather than the exit-3 refusal the fact-kind handshake gives.
+export {
+  GRAPH_EDGE_KINDS,
+  GRAPH_NODE_KINDS,
+  GraphEdgeKindSchema,
+  GraphNodeKindSchema
+} from "@drift/vocabulary";
 
 export const EvidenceConfidenceKindSchema = z.enum(["deterministic", "heuristic", "unresolved"]);
 

@@ -1,5 +1,11 @@
 import { z } from "zod";
 import {
+  CandidateConventionKindSchema,
+  FactKindSchema,
+  SecurityCapabilityNameSchema,
+  SecurityContractKindSchema
+} from "@drift/vocabulary";
+import {
   GraphEdgeSchema,
   GraphEvidenceSchema,
   GraphNodeSchema
@@ -245,44 +251,10 @@ export const EngineFileSnapshotSchema = z.object({
 });
 
 export const EngineFactSchema = z.object({
-  kind: z.enum([
-    "file_detected",
-    "import_used",
-    "re_export_used",
-    "exported_symbol",
-    "symbol_called",
-    "data_operation_detected",
-    "route_declared",
-    "file_role_detected",
-    "route_flavor_detected",
-    "test_declared",
-    "auth_guard_called",
-    "route_returns_response",
-    "callback_boundary_detected",
-    "middleware_declared",
-    "middleware_matcher_declared",
-    "middleware_protects_route",
-    "request_input_read",
-    "session_read",
-    "tenant_source",
-    "tenant_guard_called",
-    "authorization_guard_called",
-    "request_validation_called",
-    "validated_input_used",
-    "outbound_request_called",
-    "raw_sql_called",
-    "parameterized_sql_used",
-    "cors_policy_declared",
-    "csrf_guard_called",
-    "rate_limit_guard_called",
-    "sensitive_field_declared",
-    "response_emits_field",
-    "serializer_called",
-    "secret_read",
-    "data_model_declared",
-    "data_model_field_declared",
-    "data_model_relation_declared"
-  ]),
+  // W5: the fact vocabulary, generated into both languages from vocabulary/vocabulary.json. This
+  // enum was a hand-copy of the engine's `FactKind`; the engine's own check path kept a THIRD copy
+  // in `fact_kind_from_str` which named 30 of the 36 and dropped the rest silently (D-F1).
+  kind: FactKindSchema,
   file_path: z.string().min(1),
   name: z.string().min(1),
   value: z.string().optional(),
@@ -555,25 +527,10 @@ export const EngineCandidateScoringSchema = z.object({
 export const EngineCandidateSchema = z.object({
   candidate_id: z.string().min(1),
   candidate_version: z.number().int().positive(),
-  kind: z.enum([
-    "api_route_no_direct_data_access",
-    "api_route_requires_service_delegation",
-    "api_route_requires_auth_helper",
-    "middleware_must_cover_routes",
-    "api_route_requires_request_validation",
-    "session_object_must_come_from_trusted_helper",
-    "api_route_requires_authorization",
-    "api_route_requires_tenant_scope",
-    "api_route_forbids_sensitive_response_fields",
-    "api_route_forbids_secret_exposure",
-    "api_route_forbids_untrusted_ssrf",
-    "api_route_forbids_raw_sql_without_params",
-    "api_route_cors_must_match_policy",
-    "api_route_requires_csrf_for_mutation",
-    "api_route_requires_rate_limit",
-    "test_expected_for_changed_module",
-    "custom_briefing"
-  ]),
+  // W5: the kinds candidate inference may propose, derived from the one convention vocabulary's
+  // `proposable` flag rather than hand-copied. The 17 values here happened to be right; the same
+  // list copied into `get_conventions`' MCP input enum named 9 of 23.
+  kind: CandidateConventionKindSchema,
   rule_id: z.string().min(1),
   rule_version: z.string().min(1),
   matcher_schema_version: z.string().min(1),
@@ -695,21 +652,8 @@ export function isKnownEngineMissingProofCode(code: string): boolean {
 }
 
 
-const EngineSecurityContractKindSchema = z.enum([
-  "api_route_requires_auth_helper",
-  "middleware_must_cover_routes",
-  "api_route_requires_request_validation",
-  "api_route_forbids_untrusted_ssrf",
-  "api_route_forbids_raw_sql_without_params",
-  "api_route_cors_must_match_policy",
-  "api_route_requires_csrf_for_mutation",
-  "api_route_requires_rate_limit",
-  "api_route_forbids_sensitive_response_fields",
-  "api_route_forbids_secret_exposure",
-  "session_object_must_come_from_trusted_helper",
-  "api_route_requires_authorization",
-  "api_route_requires_tenant_scope"
-]);
+// The security contract kinds, from the one convention vocabulary (see @drift/core's vocabulary.ts).
+const EngineSecurityContractKindSchema = SecurityContractKindSchema;
 
 const EngineSecurityParserGapSchema = z.object({
   parser_gap_id: z.string().min(1),
@@ -829,7 +773,10 @@ const EngineSecurityBoundaryProofSchema = z.object({
     matched: z.boolean()
   })),
   capability_status: z.array(z.object({
-    name: z.string().min(1),
+    // D-P3b: a member of the security capability vocabulary rather than any string. This was
+    // `z.string().min(1)` while `SecurityCapabilityNameSchema` sat in @drift/core with no reference
+    // anywhere, so the enum that was written to constrain this field never constrained anything.
+    name: SecurityCapabilityNameSchema,
     status: z.enum(["complete", "partial", "unsupported", "failed"]),
     can_block: z.boolean(),
     parser_gap_ids: z.array(z.string().min(1)),
@@ -1341,7 +1288,12 @@ export const EngineStreamEventSchema = z.discriminatedUnion("event", [
     build_profile: z.enum(["release", "debug"]).optional(),
     // Every fact kind the engine can emit. Optional so a newer CLI can still read an older
     // engine's stream and say so plainly, rather than failing to parse the handshake itself.
-    fact_kinds: z.array(z.string().min(1)).optional()
+    fact_kinds: z.array(z.string().min(1)).optional(),
+    // D-G4: the graph vocabularies, on the same terms. A node or edge kind the CLI does not know
+    // used to surface as an "Invalid enum value" from GraphNodeSchema partway through the stream -
+    // exit 1, naming a Zod enum - where the fact-kind path had given exit 3 and named the cause.
+    graph_node_kinds: z.array(z.string().min(1)).optional(),
+    graph_edge_kinds: z.array(z.string().min(1)).optional()
   }),
   z.object({
     schema_version: z.literal(ENGINE_STREAM_EVENT_SCHEMA_VERSION),

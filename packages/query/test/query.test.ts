@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { API_ROUTE_SCOPE_GLOBS, type Finding, type RepoContract } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS, ENGINE_CERTIFIED_SCAN_CAPABILITIES, type Finding, type RepoContract } from "@drift/core";
 import { buildFactGraphArtifact, buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { openDriftStorage } from "@drift/storage";
 import { afterEach, describe, expect, it } from "vitest";
@@ -1572,7 +1572,7 @@ describe("GraphQueryService", () => {
       end_line: 4,
       confidence_impact: "blocks_enforcement" as const,
       message: "Dynamic import target is not statically resolvable.",
-      affected_capabilities: ["ts.dynamic_imports.v1"],
+      affected_capabilities: ["dynamic_imports"],
       affected_contract_kinds: ["api_route_no_direct_data_access" as const],
       suggested_action: "rewrite_static" as const,
       evidence_refs: ["diagnostic_dynamic_import"]
@@ -1585,7 +1585,7 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [parserGap],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1", "ts.dynamic_imports.v1"],
+      required_capabilities: ["route_flow", "dynamic_imports"],
       missing_capabilities: []
     });
 
@@ -1594,8 +1594,8 @@ describe("GraphQueryService", () => {
       scan_id: "scan_abc",
       scope: "preflight",
       scope_id: "task_users_route",
-      required_capabilities: ["ts.route_flow.v1", "ts.dynamic_imports.v1"],
-      certified_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow", "dynamic_imports"],
+      certified_capabilities: ["route_flow"],
       missing_capabilities: [],
       readiness,
       parser_gaps: [parserGap],
@@ -1605,8 +1605,8 @@ describe("GraphQueryService", () => {
     expect(coverage).toMatchObject({
       schema_version: "drift.semantic_coverage.v1",
       scope: "preflight",
-      complete_capabilities: ["ts.route_flow.v1"],
-      partial_capabilities: ["ts.dynamic_imports.v1"],
+      complete_capabilities: ["route_flow"],
+      partial_capabilities: ["dynamic_imports"],
       parser_gap_ids: ["parser_gap_dynamic_route"],
       confidence: 0.4,
       decision: "refuse",
@@ -1614,7 +1614,20 @@ describe("GraphQueryService", () => {
     });
   });
 
-  it("builds semantic coverage from mixed scan capability vocabulary and fails closed on unknown requirements", () => {
+  /**
+   * D-S1, the flagship. This is the case that never worked.
+   *
+   * The capability report here is not a fixture shape - it is what `scanCapabilityReportForScan`
+   * stores after a real scan: `certified` is the engine's `certified_capabilities()` verbatim and
+   * `required` is `capability_stats(&["file_discovery", "syntax_facts", "graph_stream"])`. Readiness
+   * is synthetically perfect: blocking_allowed, confidence 1.0, no parser gaps, nothing missing.
+   *
+   * Against the unfixed code this produced `decision: "refuse"`, and it did so on every repo. The
+   * mapping table translated `graph_stream` to nothing, so it became an unknown capability; the
+   * preflight requirement `ts.route_flow.v1` belonged to a namespace no engine string is in, so it
+   * was never certified; and either alone forces the refusal.
+   */
+  it("allows blocking preflight coverage on a real engine capability report", () => {
     const readiness = buildReadiness({
       repo_id: "repo_abc",
       scan_id: "scan_abc",
@@ -1623,7 +1636,46 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow"],
+      missing_capabilities: []
+    });
+    expect(readiness.decision).toBe("blocking_allowed");
+
+    const coverage = buildSemanticCoverageFromCapabilityReport({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      scope: "preflight",
+      scope_id: "task_users_route",
+      capability_report: {
+        certified_capabilities: [...ENGINE_CERTIFIED_SCAN_CAPABILITIES],
+        required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+        missing_capabilities: []
+      },
+      readiness,
+      parser_gaps: [],
+      generated_at: "2026-05-28T00:00:00.000Z"
+    });
+
+    expect(coverage).toMatchObject({
+      required_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      missing_capabilities: [],
+      unsupported_capabilities: [],
+      decision: "blocking_allowed",
+      reasons: []
+    });
+  });
+
+  it("builds semantic coverage from a scan capability report and fails closed on unknown requirements", () => {
+    const readiness = buildReadiness({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      surface: "prepare",
+      graph_available: true,
+      graph_complete: true,
+      parser_gaps: [],
+      completeness_reasons: [],
+      required_capabilities: ["route_flow"],
       missing_capabilities: []
     });
 
@@ -1633,8 +1685,10 @@ describe("GraphQueryService", () => {
       scope: "preflight",
       scope_id: "task_users_route",
       capability_report: {
-        certified_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "ts.route_flow.v1"],
-        required_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "unknown_capability"],
+        certified_capabilities: ["syntax_facts", "file_discovery", "route_flow"],
+        // `fact_graph` was one of the four names the old translation table invented. It is not a
+        // capability any producer emits, so it belongs in the same bucket as any other typo.
+        required_capabilities: ["syntax_facts", "file_discovery", "fact_graph"],
         missing_capabilities: []
       },
       readiness,
@@ -1643,24 +1697,15 @@ describe("GraphQueryService", () => {
     });
 
     expect(coverage).toMatchObject({
-      required_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1",
-        "unknown_capability"
-      ],
-      complete_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1"
-      ],
-      missing_capabilities: ["unknown_capability"],
-      unsupported_capabilities: ["unknown_capability"],
+      required_capabilities: ["fact_graph", "file_discovery", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "route_flow", "syntax_facts"],
+      missing_capabilities: ["fact_graph"],
+      unsupported_capabilities: ["fact_graph"],
       decision: "refuse"
     });
     expect(coverage.reasons).toEqual(expect.arrayContaining([
-      "missing_capability:unknown_capability",
-      "unsupported_capability:unknown_capability"
+      "missing_capability:fact_graph",
+      "unsupported_capability:fact_graph"
     ]));
   });
 
@@ -1673,7 +1718,7 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow"],
       missing_capabilities: []
     });
 
@@ -1683,8 +1728,8 @@ describe("GraphQueryService", () => {
       scope: "preflight",
       scope_id: "task_users_route",
       capability_report: {
-        certified_capabilities: ["fact_graph"],
-        required_capabilities: ["fact_graph", "import_resolution"],
+        certified_capabilities: ["route_flow"],
+        required_capabilities: ["route_flow", "import_resolution"],
         missing_capabilities: []
       },
       readiness,
@@ -1693,12 +1738,12 @@ describe("GraphQueryService", () => {
     });
 
     expect(coverage).toMatchObject({
-      required_capabilities: ["ts.import_resolution.v1", "ts.route_flow.v1"],
-      complete_capabilities: ["ts.route_flow.v1"],
-      missing_capabilities: ["ts.import_resolution.v1"],
+      required_capabilities: ["import_resolution", "route_flow"],
+      complete_capabilities: ["route_flow"],
+      missing_capabilities: ["import_resolution"],
       decision: "refuse"
     });
-    expect(coverage.reasons).toContain("missing_capability:ts.import_resolution.v1");
+    expect(coverage.reasons).toContain("missing_capability:import_resolution");
   });
 
   it("allows blocking readiness when graph and parser evidence are complete", () => {

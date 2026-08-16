@@ -1,4 +1,75 @@
 import { z } from "zod";
+// W5: the closed vocabularies that cross the engine boundary are generated into
+// packages/core/src/vocabulary.ts from vocabulary/vocabulary.json, and re-exported here so the
+// hundreds of existing `import { FileRoleSchema } from "@drift/core"` sites are unchanged. Before
+// this, each of these lists existed here AND as a union in domain.ts AND as a third copy in
+// packages/engine-contract or packages/mcp, with nothing comparing them.
+import {
+  CANDIDATE_CONVENTION_KINDS,
+  CandidateConventionKindSchema,
+  CLI_EVALUATED_CONVENTION_KINDS,
+  CliEvaluatedConventionKindSchema,
+  CONVENTION_DISPATCH,
+  CONVENTION_DISPATCH_TARGETS,
+  CONVENTION_KINDS,
+  ConventionKindSchema,
+  ENGINE_CERTIFIED_SCAN_CAPABILITIES,
+  FACT_KINDS,
+  FactKindSchema,
+  FILE_ROLES,
+  FileRoleSchema,
+  GRAPH_EDGE_KINDS,
+  GRAPH_NODE_KINDS,
+  GraphEdgeKindSchema,
+  GraphNodeKindSchema,
+  PARSER_GAP_KINDS,
+  ParserGapKindSchema,
+  ROUTE_FLAVORS,
+  RouteFlavorSchema,
+  SCAN_CAPABILITIES,
+  ScanCapabilitySchema,
+  SECURITY_CONTRACT_CONVENTION_KINDS,
+  SECURITY_SCAN_CAPABILITIES,
+  SecurityContractKindSchema,
+  SOURCE_READING_CONVENTION_KINDS,
+  UNEVALUATED_CONVENTION_KINDS
+} from "@drift/vocabulary";
+
+/** Kept under its historical name: the six kinds the CLI evaluates. */
+const AgentContractKindSchema = CliEvaluatedConventionKindSchema;
+
+export {
+  AgentContractKindSchema,
+  CANDIDATE_CONVENTION_KINDS,
+  CandidateConventionKindSchema,
+  CLI_EVALUATED_CONVENTION_KINDS,
+  CliEvaluatedConventionKindSchema,
+  CONVENTION_DISPATCH,
+  CONVENTION_DISPATCH_TARGETS,
+  CONVENTION_KINDS,
+  ConventionKindSchema,
+  ENGINE_CERTIFIED_SCAN_CAPABILITIES,
+  FACT_KINDS,
+  FactKindSchema,
+  FILE_ROLES,
+  FileRoleSchema,
+  GRAPH_EDGE_KINDS,
+  GRAPH_NODE_KINDS,
+  GraphEdgeKindSchema,
+  GraphNodeKindSchema,
+  PARSER_GAP_KINDS,
+  ParserGapKindSchema,
+  ROUTE_FLAVORS,
+  RouteFlavorSchema,
+  SCAN_CAPABILITIES,
+  ScanCapabilitySchema,
+  SECURITY_CONTRACT_CONVENTION_KINDS,
+  SECURITY_SCAN_CAPABILITIES,
+  SecurityContractKindSchema,
+  SOURCE_READING_CONVENTION_KINDS,
+  UNEVALUATED_CONVENTION_KINDS
+};
+export type { ConventionDispatch } from "@drift/vocabulary";
 
 const RepoRelativePatternSchema = z.string().min(1).refine(
   (value) => !value.startsWith("/") &&
@@ -7,64 +78,8 @@ const RepoRelativePatternSchema = z.string().min(1).refine(
   "pattern must be repo-relative"
 );
 
-export const AgentContractKindSchema = z.enum([
-  "file_role",
-  "module_placement",
-  "import_boundary",
-  "entrypoint_flow",
-  "canonical_helper_reuse",
-  "required_change_checks"
-]);
 
-export const ConventionKindSchema = z.enum([
-  "api_route_no_direct_data_access",
-  "api_route_requires_service_delegation",
-  "api_route_requires_auth_helper",
-  "middleware_must_cover_routes",
-  "api_route_requires_request_validation",
-  "api_route_forbids_untrusted_ssrf",
-  "api_route_forbids_raw_sql_without_params",
-  "api_route_cors_must_match_policy",
-  "api_route_requires_csrf_for_mutation",
-  "api_route_requires_rate_limit",
-  "api_route_forbids_sensitive_response_fields",
-  "api_route_forbids_secret_exposure",
-  "session_object_must_come_from_trusted_helper",
-  "api_route_requires_authorization",
-  "api_route_requires_tenant_scope",
-  "test_expected_for_changed_module",
-  "custom_briefing",
-  "file_role",
-  "module_placement",
-  "import_boundary",
-  "entrypoint_flow",
-  "canonical_helper_reuse",
-  "required_change_checks"
-]);
 
-export const FileRoleSchema = z.enum([
-  "api_route",
-  "server_module",
-  "service_module",
-  "data_access_module",
-  "component",
-  "ui_component",
-  "hook_module",
-  "schema_module",
-  "test",
-  "config",
-  "cli_command_module",
-  "core_module",
-  "query_module",
-  "factgraph_module",
-  "adapter_module",
-  "storage_module",
-  "engine_bridge_module",
-  "mcp_module",
-  "docs",
-  "package_manifest",
-  "custom"
-]);
 
 export const CanonicalRoleSchema = z.enum([
   "route",
@@ -104,7 +119,6 @@ export const ConventionScopeSchema = z.object({
   exclude_path_globs: z.array(RepoRelativePatternSchema).optional()
 });
 
-export const RouteFlavorSchema = z.enum(["api_route", "cron_job", "webhook_handler"]);
 
 export const ConventionMatcherSchema = z.object({
   kind: ConventionKindSchema,
@@ -309,45 +323,6 @@ export const BackupManifestSchema = z.object({
   created_at: z.string().datetime()
 });
 
-export const FactKindSchema = z.enum([
-  "file_detected",
-  "import_used",
-  "re_export_used",
-  "exported_symbol",
-  "symbol_called",
-  "data_operation_detected",
-  "route_declared",
-  "file_role_detected",
-  "route_flavor_detected",
-  "test_declared",
-  "auth_guard_called",
-  "route_returns_response",
-  "callback_boundary_detected",
-  "middleware_declared",
-  "middleware_matcher_declared",
-  "middleware_protects_route",
-  "request_input_read",
-  "session_read",
-  "tenant_source",
-  "tenant_guard_called",
-  "authorization_guard_called",
-  "request_validation_called",
-  "validated_input_used",
-  "outbound_request_called",
-  "raw_sql_called",
-  "parameterized_sql_used",
-  "cors_policy_declared",
-  "csrf_guard_called",
-  "rate_limit_guard_called",
-  "sensitive_field_declared",
-  "response_emits_field",
-  "serializer_called",
-  "secret_read",
-  // Declared in a schema file rather than inferred from a call site.
-  "data_model_declared",
-  "data_model_field_declared",
-  "data_model_relation_declared"
-]);
 
 export const FactEvidenceLevelSchema = z.enum(["path", "text", "ast", "graph", "heuristic"]);
 export const FactResolutionStatusSchema = z.enum(["resolved", "unresolved", "partial", "unsupported"]);
@@ -386,17 +361,6 @@ export const FactRecordSchema = z.object({
   last_seen_scan_id: z.string().min(1)
 });
 
-export const ParserGapKindSchema = z.enum([
-  "unresolved_import",
-  "unresolved_symbol",
-  "unknown_file_role",
-  "mixed_file_role",
-  "unsupported_framework_pattern",
-  "parser_error",
-  "partial_parse",
-  "dynamic_import_unresolved",
-  "reflection_or_magic_detected"
-]);
 
 export const ParserGapConfidenceImpactSchema = z.enum([
   "none",
@@ -1031,33 +995,6 @@ export const AgentTaskSchema = z.object({
   required_checks: z.array(z.string().min(1)),
   forbidden_actions: z.array(z.string().min(1)),
   human_approval_needed: z.boolean()
-});
-
-export const GraphNodeRecordSchema = z.object({
-  id: z.string().min(1),
-  kind: z.enum(["file", "module", "symbol", "import", "route", "role", "data_store", "data_operation", "endpoint", "re_export"]),
-  label: z.string().min(1)
-});
-
-export const GraphEdgeRecordSchema = z.object({
-  id: z.string().min(1),
-  kind: z.enum([
-    "FILE_CONTAINS_SYMBOL",
-    "MODULE_IMPORTS_MODULE",
-    "FILE_HAS_ROLE",
-    "ROUTE_DECLARED_IN_FILE",
-    "ROUTE_HAS_ENDPOINT",
-    "MODULE_REEXPORTS_MODULE",
-    "REEXPORT_RESOLVES_TO_SYMBOL",
-    "IMPORT_RESOLVES_TO_MODULE",
-    "IMPORT_RESOLVES_TO_SYMBOL",
-    "DATA_OPERATION_READS_DATA_STORE",
-    "DATA_OPERATION_WRITES_DATA_STORE",
-    "DATA_OPERATION_DELETES_DATA_STORE",
-    "DATA_OPERATION_TOUCHES_DATA_STORE"
-  ]),
-  from: z.string().min(1),
-  to: z.string().min(1)
 });
 
 export const FactGraphArtifactSchema = z.object({

@@ -9,7 +9,10 @@ use sha2::{Digest, Sha256};
 use drift_engine::next_routes::API_ROUTE_SCOPE_GLOBS;
 // D-H3: the data-layer vocabulary moved to the library so tests/data_access_vocabulary.rs can
 // hold it against the TypeScript fallback it is supposed to improve on.
-use drift_engine::{contains_data_layer_token, is_data_access_source};
+use drift_engine::{
+    ConventionKind, GraphEdgeKind, GraphNodeKind, ScanCapability, contains_data_layer_token,
+    is_data_access_source,
+};
 
 use crate::protocol::{
     CandidateRequest, CandidateResult, CheckFact, ENGINE_CANDIDATES_RESULT_SCHEMA_VERSION,
@@ -150,7 +153,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
                 &matcher,
             ),
             candidate_version: 1,
-            kind: "api_route_no_direct_data_access".to_string(),
+            kind: ConventionKind::ApiRouteNoDirectDataAccess,
             rule_id: "api_route_no_direct_data_access".to_string(),
             rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             matcher_schema_version: "convention.matcher.v1".to_string(),
@@ -221,7 +224,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
         candidates.push(EngineCandidate {
             candidate_id: candidate_id(&request.repo.repo_id, "api_route_requires_service_delegation", &matcher),
             candidate_version: 1,
-            kind: "api_route_requires_service_delegation".to_string(),
+            kind: ConventionKind::ApiRouteRequiresServiceDelegation,
             rule_id: "api_route_requires_service_delegation".to_string(),
             rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             matcher_schema_version: "convention.matcher.v1".to_string(),
@@ -281,14 +284,14 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
     stats.graph_edges = request.graph.graph_edges.len();
     let data_access_candidate_found = candidates
         .iter()
-        .any(|candidate| candidate.kind == "api_route_no_direct_data_access");
+        .any(|candidate| candidate.kind == ConventionKind::ApiRouteNoDirectDataAccess);
     let inference_complete = data_access_candidate_found || scope_file_count == 0;
     stats.capabilities = capability_stats(
-        &["candidate_inference"],
+        &[ScanCapability::CandidateInference],
         if inference_complete {
             &[]
         } else {
-            &["data_access_inference"]
+            &[ScanCapability::DataAccessInference]
         },
     );
 
@@ -373,7 +376,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_requires_auth_helper",
+            kind: ConventionKind::ApiRouteRequiresAuthHelper,
             statement: format!("API routes appear to use `{symbol}` as an auth helper."),
             rationale: "Detected repeated auth-like helper calls in API routes.",
             scope: route_scope.clone(),
@@ -414,7 +417,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "middleware_must_cover_routes",
+            kind: ConventionKind::MiddlewareMustCoverRoutes,
             statement: "API routes appear to rely on middleware protection.".to_string(),
             rationale: "Detected static middleware-to-route protection facts.",
             scope: route_scope.clone(),
@@ -457,7 +460,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_requires_request_validation",
+            kind: ConventionKind::ApiRouteRequiresRequestValidation,
             statement: format!(
                 "Mutation API routes appear to validate request input with `{symbol}`."
             ),
@@ -486,7 +489,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "authorization_guard_called",
-        candidate_kind: "api_route_requires_authorization",
+        candidate_kind: ConventionKind::ApiRouteRequiresAuthorization,
         requires_key: "authorization_helpers",
         capability: "authorization",
         heuristic_id: "security-authorization-helper-v1",
@@ -502,7 +505,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_authorization",
+        candidate_kind: ConventionKind::ApiRouteRequiresAuthorization,
         requires_key: "authorization_helpers",
         capability: "authorization",
         heuristic_id: "security-authorization-helper-v1",
@@ -518,7 +521,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "tenant_guard_called",
-        candidate_kind: "api_route_requires_tenant_scope",
+        candidate_kind: ConventionKind::ApiRouteRequiresTenantScope,
         requires_key: "tenant_helpers",
         capability: "tenant_scope",
         heuristic_id: "security-tenant-helper-v1",
@@ -534,7 +537,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_tenant_scope",
+        candidate_kind: ConventionKind::ApiRouteRequiresTenantScope,
         requires_key: "tenant_helpers",
         capability: "tenant_scope",
         heuristic_id: "security-tenant-helper-v1",
@@ -582,7 +585,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_forbids_sensitive_response_fields",
+            kind: ConventionKind::ApiRouteForbidsSensitiveResponseFields,
             statement:
                 "API responses appear to include sensitive fields that need an accepted policy."
                     .to_string(),
@@ -611,7 +614,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "parameterized_sql_used",
-        candidate_kind: "api_route_forbids_raw_sql_without_params",
+        candidate_kind: ConventionKind::ApiRouteForbidsRawSqlWithoutParams,
         requires_key: "raw_sql_safe_wrappers",
         capability: "raw_sql",
         heuristic_id: "security-raw-sql-safe-wrapper-v1",
@@ -636,7 +639,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_forbids_untrusted_ssrf",
+            kind: ConventionKind::ApiRouteForbidsUntrustedSsrf,
             statement: format!(
                 "API routes appear to use `{symbol}` as an outbound URL allowlist helper."
             ),
@@ -664,7 +667,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "csrf_guard_called",
-        candidate_kind: "api_route_requires_csrf_for_mutation",
+        candidate_kind: ConventionKind::ApiRouteRequiresCsrfForMutation,
         requires_key: "csrf_helpers",
         capability: "csrf",
         heuristic_id: "security-csrf-helper-v1",
@@ -680,7 +683,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_csrf_for_mutation",
+        candidate_kind: ConventionKind::ApiRouteRequiresCsrfForMutation,
         requires_key: "csrf_helpers",
         capability: "csrf",
         heuristic_id: "security-csrf-helper-v1",
@@ -696,7 +699,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "rate_limit_guard_called",
-        candidate_kind: "api_route_requires_rate_limit",
+        candidate_kind: ConventionKind::ApiRouteRequiresRateLimit,
         requires_key: "rate_limit_helpers",
         capability: "rate_limit",
         heuristic_id: "security-rate-limit-helper-v1",
@@ -712,7 +715,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_rate_limit",
+        candidate_kind: ConventionKind::ApiRouteRequiresRateLimit,
         requires_key: "rate_limit_helpers",
         capability: "rate_limit",
         heuristic_id: "security-rate-limit-helper-v1",
@@ -738,7 +741,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_cors_must_match_policy",
+            kind: ConventionKind::ApiRouteCorsMustMatchPolicy,
             statement: "API routes appear to declare a static CORS policy.".to_string(),
             rationale: "Detected static CORS policy facts.",
             scope: route_scope,
@@ -776,7 +779,7 @@ fn security_candidates(
 
 /// One convention family: a kind whose members are interchangeable helpers drawn from one module.
 struct FamilySpec {
-    kind: &'static str,
+    kind: ConventionKind,
     /// Every fact kind that already produces a per-symbol candidate of this kind, each with the
     /// nominator that site filters by. Both the dedicated fact kind (`rate_limit_guard_called`)
     /// and the generic `symbol_called` path emit candidates today, so a family that read only one
@@ -846,7 +849,7 @@ struct FamilySource {
 /// reachable; what never arrived was a candidate whose coverage cleared the noise floor.
 const FAMILY_SPECS: &[FamilySpec] = &[
     FamilySpec {
-        kind: "api_route_requires_auth_helper",
+        kind: ConventionKind::ApiRouteRequiresAuthHelper,
         sources: &[FamilySource {
             fact_kind: "symbol_called",
             nominator: is_auth_candidate_symbol,
@@ -862,7 +865,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         confirmation: FamilyConfirmation::WrapsHandler,
     },
     FamilySpec {
-        kind: "api_route_requires_request_validation",
+        kind: ConventionKind::ApiRouteRequiresRequestValidation,
         // Only the dedicated fact kind. Adding `symbol_called` here is what produced an 89-member
         // family on dub: every symbol the dominant module exported joined, validators and bulk
         // delete operations alike.
@@ -880,7 +883,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         confirmation: FamilyConfirmation::AlreadyDetected,
     },
     FamilySpec {
-        kind: "api_route_requires_rate_limit",
+        kind: ConventionKind::ApiRouteRequiresRateLimit,
         sources: &[
             FamilySource {
                 fact_kind: "rate_limit_guard_called",
@@ -1155,11 +1158,11 @@ fn emit_family_candidate(input: FamilyEmitInput<'_>) {
     sorted_symbols.sort();
 
     let mut matcher = json!({
-        "kind": spec.kind,
+        "kind": spec.kind.as_wire(),
         "required_calls": sorted_symbols.clone(),
         "applies_to_file_roles": ["api_route"]
     });
-    if spec.kind == "api_route_requires_request_validation" {
+    if spec.kind == ConventionKind::ApiRouteRequiresRequestValidation {
         // Mirrors the per-symbol validation candidate: only mutations are in scope.
         matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
     }
@@ -1193,10 +1196,10 @@ fn emit_family_candidate(input: FamilyEmitInput<'_>) {
         })
         .collect::<Vec<_>>();
     let mut requires = json!({ spec.requires_key: helpers });
-    if spec.kind == "api_route_requires_auth_helper" {
+    if spec.kind == ConventionKind::ApiRouteRequiresAuthHelper {
         requires["dominates"] = json!(["data_operation", "response"]);
     }
-    if spec.kind == "api_route_requires_request_validation" {
+    if spec.kind == ConventionKind::ApiRouteRequiresRequestValidation {
         requires["input_sources"] = json!(["body", "query", "params"]);
         requires["sinks"] = json!(["data_operation", "response"]);
         requires["schemas"] = json!([]);
@@ -1521,7 +1524,7 @@ fn family_keys_match(left: &str, right: &str) -> bool {
 
 struct SecurityCandidateInput<'a> {
     request: &'a CandidateRequest,
-    kind: &'a str,
+    kind: ConventionKind,
     statement: String,
     rationale: &'a str,
     scope: Value,
@@ -1547,7 +1550,7 @@ struct GuardCandidateInput<'a> {
     graph_fingerprint: &'a str,
     route_scope: &'a Value,
     fact_kind: &'a str,
-    candidate_kind: &'a str,
+    candidate_kind: ConventionKind,
     requires_key: &'a str,
     capability: &'a str,
     heuristic_id: &'a str,
@@ -1589,10 +1592,14 @@ fn security_candidate_from_facts(input: SecurityCandidateInput<'_>) -> EngineCan
     let evidence_fingerprint = evidence_fingerprint(&evidence_refs);
     let covered_files = unique_fact_file_count(&input.facts);
     EngineCandidate {
-        candidate_id: candidate_id(&input.request.repo.repo_id, input.kind, &input.matcher),
+        candidate_id: candidate_id(
+            &input.request.repo.repo_id,
+            input.kind.as_wire(),
+            &input.matcher,
+        ),
         candidate_version: 1,
-        kind: input.kind.to_string(),
-        rule_id: input.kind.to_string(),
+        kind: input.kind,
+        rule_id: input.kind.as_wire().to_string(),
         rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
         matcher_schema_version: "convention.matcher.v1".to_string(),
         matcher_fingerprint: stable_hash_json(&input.matcher),
@@ -1634,7 +1641,7 @@ fn push_guard_candidate(input: GuardCandidateInput<'_>) {
             .filter(|(symbol, facts)| facts.len() >= 2 && (input.symbol_filter)(symbol))
     {
         let matcher = json!({
-            "kind": input.candidate_kind,
+            "kind": input.candidate_kind.as_wire(),
             "required_calls": [symbol],
             "applies_to_file_roles": ["api_route"]
         });
@@ -1709,7 +1716,7 @@ fn push_request_validation_candidates(input: RequestValidationCandidateInput<'_>
             .candidates
             .push(security_candidate_from_facts(SecurityCandidateInput {
                 request: input.request,
-                kind: "api_route_requires_request_validation",
+                kind: ConventionKind::ApiRouteRequiresRequestValidation,
                 statement: format!(
                     "Mutation API routes appear to validate request input with `{symbol}`."
                 ),
@@ -1757,7 +1764,7 @@ fn push_serializer_candidate(input: SerializerCandidateInput<'_>) {
             .candidates
             .push(security_candidate_from_facts(SecurityCandidateInput {
                 request: input.request,
-                kind: "api_route_forbids_sensitive_response_fields",
+                kind: ConventionKind::ApiRouteForbidsSensitiveResponseFields,
                 statement: format!("API routes appear to serialize responses with `{symbol}`."),
                 rationale: "Detected repeated response serializer-like helper calls.",
                 scope: input.route_scope.clone(),
@@ -2035,7 +2042,7 @@ fn graph_role_files(request: &CandidateRequest, role_name: &str) -> BTreeSet<Str
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "FILE_HAS_ROLE")
+        .filter(|edge| edge.kind == GraphEdgeKind::FileHasRole)
         .filter_map(|edge| {
             let role = nodes_by_id.get(edge.to.as_str())?;
             if metadata_string(&role.metadata, "role")? != role_name {
@@ -2059,7 +2066,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "module")
+        .filter(|node| node.kind == GraphNodeKind::Module)
         .filter_map(|node| {
             metadata_string(&node.metadata, "file_path").map(|path| (node.id.as_str(), path))
         })
@@ -2084,7 +2091,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_DECL_REFERENCES_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportDeclReferencesModule)
         .map(|edge| (edge.from.as_str(), edge.to.as_str()))
         .collect::<BTreeMap<_, _>>();
     let evidence_by_id = request
@@ -2098,7 +2105,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_RESOLVES_TO_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportResolvesToModule)
         .filter_map(|edge| {
             let owner_module = import_owner_module.get(edge.from.as_str())?;
             if !route_modules.contains(owner_module) || !data_modules.contains(edge.to.as_str()) {
@@ -2158,7 +2165,7 @@ fn resolved_imports_by_fact(request: &CandidateRequest) -> BTreeMap<String, Stri
         .graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "import_decl")
+        .filter(|node| node.kind == GraphNodeKind::ImportDecl)
         .filter_map(|node| {
             let file_path = metadata_string(&node.metadata, "file_path")?;
             let local_name = metadata_string(&node.metadata, "local_name")?;

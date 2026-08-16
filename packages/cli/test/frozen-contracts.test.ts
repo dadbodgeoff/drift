@@ -45,10 +45,26 @@ describe("frozen contracts", () => {
    * expected digests here AND populating `legacyFingerprints` (run-check.ts) so old baselines still
    * match - that parameter exists and is currently never passed a non-default value.
    */
+  /**
+   * D-C3: these digests are the other half of a differential.
+   *
+   * The same fingerprint is computed by three implementations - this one, the engine's
+   * `direct_data_access_fingerprint` (rules.rs), and the engine's
+   * `legacy_direct_data_access_fingerprint` (check_command.rs), which exists so a graph-derived
+   * finding still matches a baseline written by the import-based path. Only this side was pinned, so
+   * either Rust copy could have changed alone and orphaned every stored baseline in the field
+   * without failing a test.
+   *
+   * crates/drift-engine/tests/finding_fingerprint_differential_dc3.rs asserts the same two digests
+   * and fails when they stop appearing in this file. Change one, and both files have to open.
+   */
   it("pins findingFingerprint inputs and digest", () => {
     expect(
       findingFingerprint("convention_x", "apps/web/app/api/users/route.ts", "prisma", "@/lib/prisma")
     ).toBe("f89345641d5764b90d14c8ce1f569170c0d67bc6788356ba11764a17f83a36a5");
+    expect(
+      findingFingerprint("convention_no_direct_db", "app/api/items/route.ts", "db", "@/lib/db")
+    ).toBe("03a8e3c929e01da4d31ecd949629e4822f454eb51fe78421df1f88cc8283cecf");
   });
 
   it("pins canonicalHelperReuseFindingFingerprint inputs and digest", () => {

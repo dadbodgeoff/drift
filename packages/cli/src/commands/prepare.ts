@@ -151,8 +151,12 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     graph_complete: graphContext.completeness?.complete ?? false,
     parser_gaps: allParserGaps,
     completeness_reasons: graphContext.completeness?.reasons ?? graphContext.diagnostics,
-    required_capabilities: ["ts.route_flow.v1"],
-    missing_capabilities: graphContext.available ? [] : ["fact_graph"]
+    // D-S1: one namespace. `ts.route_flow.v1` was a member of a namespace the engine emits
+    // nothing from; `fact_graph` was not a capability id at all - the translation table mapped
+    // it onto `ts.route_flow.v1`, so "the graph is missing" was reported as "route flow is
+    // missing". `graph` is the name the TypeScript fallback already uses for exactly this.
+    required_capabilities: ["route_flow"],
+    missing_capabilities: graphContext.available ? [] : ["graph"]
   });
   const semanticCoverage = buildSemanticCoverageFromCapabilityReport({
     repo_id: repoId,

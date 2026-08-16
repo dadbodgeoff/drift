@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { API_ROUTE_SCOPE_GLOBS } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS, ENGINE_CERTIFIED_SCAN_CAPABILITIES } from "@drift/core";
 import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { runCli } from "../src/index.js";
@@ -10232,6 +10232,61 @@ schema_version: MIGRATIONS.length,
     ]);
   });
 
+  /**
+   * D-S1, end to end. `prepare --json` never once returned anything but `"refuse"` here.
+   *
+   * The capability report is what a real scan stores: `certified` is the engine's
+   * `certified_capabilities()` and `required` is what `capability_stats` reports on the scan path.
+   * Against the unfixed code this run produced `decision: "refuse"` with
+   * `missing_capabilities: ["graph_stream", "ts.route_flow.v1"]` - `graph_stream` because the
+   * translation table had no entry for it, `ts.route_flow.v1` because `DEFAULT_PREFLIGHT_CAPABILITIES`
+   * required a namespace the engine emits nothing from.
+   */
+  it("prepare allows blocking semantic coverage on a real engine capability report", async () => {
+    const { databasePath, repoId } = await seedScannedNoContractState("drift-prepare-coverage-ok-");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const scan = storage.listScanManifests(repoId)
+      .find((entry) => entry.status === "completed")!;
+    storage.upsertScanCapabilityReport({
+      schema_version: "drift.scan_capability_report.v1",
+      repo_id: repoId,
+      scan_id: scan.id,
+      engine_source: "rust",
+      engine_version: null,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
+      certified_capabilities: [...ENGINE_CERTIFIED_SCAN_CAPABILITIES],
+      required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+      missing_capabilities: [],
+      completeness: [],
+      parser_gap_count: 0,
+      parser_gap_kinds: {},
+      fallback_used: false,
+      enforcement_degraded: false,
+      created_at: "2026-05-10T00:00:45.000Z"
+    });
+    storage.close();
+
+    const prepared = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "change users api route",
+      "--repo", repoId,
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout).semantic_coverage).toMatchObject({
+      required_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      missing_capabilities: [],
+      unsupported_capabilities: [],
+      decision: "blocking_allowed"
+    });
+  });
+
   it("prepare derives semantic coverage from scan capability vocabulary", async () => {
     const { databasePath, repoId } = await seedScannedNoContractState("drift-prepare-semantic-coverage-");
     const storage = openDriftStorage({ databasePath });
@@ -10246,8 +10301,8 @@ schema_version: MIGRATIONS.length,
       engine_version: null,
       scanner_version: "0.1.0",
       adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
-      certified_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "ts.route_flow.v1"],
-      required_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "unknown_capability"],
+      certified_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "route_flow"],
+      required_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "unknown_capability"],
       missing_capabilities: [],
       completeness: [],
       parser_gap_count: 0,
@@ -10270,15 +10325,17 @@ schema_version: MIGRATIONS.length,
     expect(prepared.exitCode).toBe(0);
     expect(JSON.parse(prepared.stdout).semantic_coverage).toMatchObject({
       required_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1",
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts",
         "unknown_capability"
       ],
       complete_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1"
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts"
       ],
       missing_capabilities: ["unknown_capability"],
       unsupported_capabilities: ["unknown_capability"],

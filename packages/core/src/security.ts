@@ -1,27 +1,23 @@
 import { z } from "zod";
 
-export const SecurityCapabilityNameSchema = z.enum([
-  "security_facts",
-  "auth_boundary_facts",
-  "control_flow_guard_dominance",
-  "middleware_coverage",
-  "request_validation_facts",
-  "ssrf",
-  "raw_sql",
-  "cors_policy",
-  "csrf",
-  "rate_limit",
-  "outbound_request_facts",
-  "raw_sql_facts",
-  "cors_policy_facts",
-  "csrf_facts",
-  "rate_limit_facts",
-  "response_shape_facts",
-  "secret_exposure",
-  "session_trust",
-  "authorization",
-  "tenant_scope"
-]);
+/**
+ * D-P3b: the security capability names, from the one capability vocabulary.
+ *
+ * Twenty names were declared here and thirteen reported by the engine's `security_capabilities()`,
+ * with seven never appearing there: cors_policy_facts, csrf_facts, middleware_coverage,
+ * outbound_request_facts, rate_limit_facts, raw_sql_facts, request_validation_facts. Five of the
+ * seven were a SECOND NAME for a capability the engine already reported under a shorter one
+ * (`ssrf`/`outbound_request_facts`, `raw_sql`/`raw_sql_facts`, `cors_policy`/`cors_policy_facts`,
+ * `csrf`/`csrf_facts`, `rate_limit`/`rate_limit_facts`), so the same capability was required under
+ * one name and certified under another. The pairs are collapsed onto the `*_facts` names - the ones
+ * that reach `stats.capabilities.required` on the wire.
+ *
+ * This enum had no reference anywhere; every `capability` field it should have typed was
+ * `z.string().min(1)`. The parity gate now enforces the correspondence the enum was written to
+ * express.
+ */
+export { SecurityCapabilityNameSchema } from "@drift/vocabulary";
+export type { SecurityCapabilityName } from "@drift/vocabulary";
 
 export const SecurityMissingProofCodeSchema = z.enum([
   "missing_auth_guard",
@@ -77,21 +73,10 @@ export const SecurityParserGapCodeSchema = z.enum([
   "unsupported_callback_boundary"
 ]);
 
-const SecurityContractKindSchema = z.enum([
-  "api_route_requires_auth_helper",
-  "middleware_must_cover_routes",
-  "api_route_requires_request_validation",
-  "api_route_forbids_untrusted_ssrf",
-  "api_route_forbids_raw_sql_without_params",
-  "api_route_cors_must_match_policy",
-  "api_route_requires_csrf_for_mutation",
-  "api_route_requires_rate_limit",
-  "api_route_forbids_sensitive_response_fields",
-  "api_route_forbids_secret_exposure",
-  "session_object_must_come_from_trusted_helper",
-  "api_route_requires_authorization",
-  "api_route_requires_tenant_scope"
-]);
+// The kinds that carry a security boundary proof, from the one convention vocabulary. This list,
+// the identical one in @drift/engine-contract, and EXPERIMENTAL_SECURITY_CONVENTION_KINDS all claim
+// to be the same set; the third had twelve entries to these thirteen.
+import { SecurityContractKindSchema } from "@drift/vocabulary";
 
 const Phase5SensitiveFieldSchema = z.object({
   field_path: z.string().min(1),

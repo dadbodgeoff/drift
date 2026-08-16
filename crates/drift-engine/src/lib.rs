@@ -13,6 +13,7 @@ mod security_patterns;
 mod security_phase6;
 mod security_proof;
 mod security_rules;
+pub mod vocabulary;
 
 use std::{
     fs::File,
@@ -28,7 +29,7 @@ pub use diff::{
     classify_findings_against_diff, parse_unified_diff,
 };
 pub use facts::{
-    Fact, FactExtractError, FactKind, ParseReport, RUNTIME_USE_DYNAMIC, RUNTIME_USE_SIDE_EFFECT,
+    Fact, FactExtractError, ParseReport, RUNTIME_USE_DYNAMIC, RUNTIME_USE_SIDE_EFFECT,
     RUNTIME_USE_VALUE_POSITION, SIDE_EFFECT_IMPORT_BINDING, extract_typescript_facts,
     extract_typescript_facts_with_report, route_flavor,
 };
@@ -94,6 +95,10 @@ pub use security_rules::{
     evaluate_api_route_requires_authorization, evaluate_api_route_requires_csrf_for_mutation,
     evaluate_api_route_requires_rate_limit, evaluate_api_route_requires_request_validation,
     evaluate_api_route_requires_tenant_scope, evaluate_middleware_must_cover_routes,
+};
+pub use vocabulary::{
+    ConventionDispatch, ConventionKind, FactKind, FileRole, GraphEdgeKind, GraphNodeKind,
+    RouteFlavor, ScanCapability,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

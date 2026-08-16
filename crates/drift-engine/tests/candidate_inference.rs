@@ -175,7 +175,7 @@ fn infer_candidates_keeps_auth_payment_and_prisma_runtime_out_of_direct_data_acc
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -183,7 +183,7 @@ fn infer_candidates_keeps_auth_payment_and_prisma_runtime_out_of_direct_data_acc
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],
@@ -447,7 +447,7 @@ fn infer_candidates_uses_graph_only_client_data_access_modules() {
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -455,7 +455,7 @@ fn infer_candidates_uses_graph_only_client_data_access_modules() {
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],
@@ -590,7 +590,7 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -598,7 +598,7 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],

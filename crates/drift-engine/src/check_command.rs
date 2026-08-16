@@ -10,11 +10,12 @@ use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedHelperImport,
     AcceptedRequestValidator, AcceptedSecurityHelper, AcceptedTenantHelper, AuthGuardBehavior,
     AuthorizationHelperBehavior, AuthorizationHelperKind, BaselineStatus, BaselineViolation,
-    DiffFile, DiffScope, DirectDataAccessRule, EnforcementMode, Fact, FactKind, FindingStatus,
-    ParsedDiff, Phase4SecurityPolicy, Phase6AcceptedHelper, Phase6CorsContract,
-    Phase6RawSqlContract, Phase6SecurityContract, Phase6SecurityProof, Phase6SsrfContract,
-    RequestValidatorBehavior, RequestValidatorKind, RouteSecurityBoundaryProof, RuleFinding,
-    SecurityBoundaryProof, SecurityProofStatus, Severity, accepted_phase5_contract_from_requires,
+    ConventionDispatch, ConventionKind, DiffFile, DiffScope, DirectDataAccessRule, EnforcementMode,
+    Fact, FactKind, FindingStatus, GraphEdgeKind, GraphNodeKind, ParsedDiff, Phase4SecurityPolicy,
+    Phase6AcceptedHelper, Phase6CorsContract, Phase6RawSqlContract, Phase6SecurityContract,
+    Phase6SecurityProof, Phase6SsrfContract, RequestValidatorBehavior, RequestValidatorKind,
+    RouteSecurityBoundaryProof, RuleFinding, ScanCapability, SecurityBoundaryProof,
+    SecurityProofStatus, Severity, accepted_phase5_contract_from_requires,
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
     materialize_direct_data_access_findings, phase6_proof_to_json,
@@ -85,7 +86,9 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
 
     let mut findings = Vec::new();
     let mut security_boundary_proofs = Vec::new();
-    let mut required_capabilities = BTreeSet::from(["direct_data_access_check".to_string()]);
+    let mut required_capabilities = BTreeSet::from([ScanCapability::DirectDataAccessCheck]);
+    let mut missing_capabilities: BTreeSet<ScanCapability> = BTreeSet::new();
+    let mut source_required_kinds: BTreeSet<ConventionKind> = BTreeSet::new();
     for convention in request.contract.conventions {
         let _convention_metadata = (
             &convention.scope,
@@ -97,189 +100,260 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
         {
             continue;
         }
+        // D-P3a: the vocabulary decides which evaluator owns this kind.
+        //
+        // Twenty-three kinds were dispatched by three mechanisms - a chain of `else if
+        // convention.kind == "..."` here, `is_phase6_security_convention` beside it, and a separate
+        // chain in packages/cli/src/check/run-check.ts - plus three the schema accepts that neither
+        // implements. No single place listed all twenty-three or said where each one went, so a
+        // twenty-fourth kind that named no target would have fallen off the end of this chain into
+        // `continue` and produced a clean pass for a contract enforcing nothing. That listing is now
+        // vocabulary/vocabulary.json, and the match below is exhaustive over the generated enum, so
+        // adding a kind without giving it a target does not compile.
+        let Some(kind) = ConventionKind::from_wire(&convention.kind) else {
+            // Not in the vocabulary at all. The schema rejects these before they reach the engine;
+            // reaching here means the two disagree, which is the parity gate's business, not a
+            // finding.
+            continue;
+        };
+        if !matches!(
+            kind.dispatch(),
+            ConventionDispatch::EngineDirect | ConventionDispatch::EnginePhase6
+        ) {
+            continue;
+        }
+        // D-F1, the part the fact-kind drop was hiding. Every security evaluator below re-reads the
+        // route file from disk (`read_repo_file`, five call sites) rather than working from the
+        // facts on the wire, and each one `continue`s when the read fails. `repo_root` is
+        // `Option<String>` in `CheckRepoContext`, so a caller that omits it - which the protocol
+        // permits and only `engine-check.ts` happens never to do - got zero findings for all twelve
+        // security kinds and a clean pass, with no diagnostic and `can_block: true`.
+        //
+        // Saying so is the fix available here. Rewriting the evaluators to work from facts is a
+        // different change; reporting a gap Drift has instead of a pass it has not earned is this
+        // project's whole premise.
+        if kind.requires_engine_source()
+            && repo_root.is_none()
+            && !is_presence_convention(&convention)
+        {
+            missing_capabilities.extend(phase6_required_capabilities(kind));
+            source_required_kinds.insert(kind);
+            continue;
+        }
         let severity = severity_from_str(&convention.severity);
         let enforcement_mode = enforcement_mode_from_str(&convention.enforcement_mode);
-        let mut rule_findings = if convention.kind == "api_route_no_direct_data_access" {
-            let rule = DirectDataAccessRule {
-                convention_id: convention.id.clone(),
-                forbidden_imports: convention.matcher.forbidden_imports.unwrap_or_default(),
-                forbidden_module_files: convention
+        let mut rule_findings = match kind {
+            ConventionKind::ApiRouteNoDirectDataAccess => {
+                let rule = DirectDataAccessRule {
+                    convention_id: convention.id.clone(),
+                    forbidden_imports: convention.matcher.forbidden_imports.unwrap_or_default(),
+                    forbidden_module_files: convention
+                        .matcher
+                        .forbidden_module_files
+                        .unwrap_or_default(),
+                    severity,
+                    enforcement_mode,
+                };
+                let mut findings = materialize_direct_data_access_findings(&facts, &rule)
+                    .into_iter()
+                    .map(|finding| PendingFinding {
+                        fingerprint: finding.fingerprint.clone(),
+                        convention_id: finding.convention_id.clone(),
+                        rule_id: "api_route_no_direct_data_access".to_string(),
+                        title: finding.title,
+                        message: finding.message,
+                        severity: finding.severity,
+                        enforcement_result: finding.enforcement_result,
+                        file_path: finding.file_path,
+                        import_name: finding.import_name,
+                        import_source: finding.import_source,
+                        line: finding.line,
+                        evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
+                        symbol: PendingFinding::no_symbol(),
+                        legacy_fingerprints: Vec::new(),
+                        related_node_ids: Vec::new(),
+                    })
+                    .collect::<Vec<_>>();
+                findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
+                findings
+            }
+            ConventionKind::ApiRouteRequiresServiceDelegation => {
+                let allowed_delegate_imports = convention
                     .matcher
-                    .forbidden_module_files
-                    .unwrap_or_default(),
-                severity,
-                enforcement_mode,
-            };
-            let mut findings = materialize_direct_data_access_findings(&facts, &rule)
-                .into_iter()
-                .map(|finding| PendingFinding {
-                    fingerprint: finding.fingerprint.clone(),
-                    convention_id: finding.convention_id.clone(),
-                    rule_id: "api_route_no_direct_data_access".to_string(),
-                    title: finding.title,
-                    message: finding.message,
-                    severity: finding.severity,
-                    enforcement_result: finding.enforcement_result,
-                    file_path: finding.file_path,
-                    import_name: finding.import_name,
-                    import_source: finding.import_source,
-                    line: finding.line,
-                    evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
-                    symbol: PendingFinding::no_symbol(),
-                    legacy_fingerprints: Vec::new(),
-                    related_node_ids: Vec::new(),
-                })
-                .collect::<Vec<_>>();
-            findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
-            findings
-        } else if convention.kind == "api_route_requires_service_delegation" {
-            let allowed_delegate_imports = convention
-                .matcher
-                .allowed_delegate_imports
-                .unwrap_or_default();
-            graph_service_delegation_findings(
-                &request.graph,
-                &convention.id,
-                severity,
-                enforcement_mode,
-                &allowed_delegate_imports,
-            )
-        } else if is_presence_convention(&convention) {
-            // CV-3 (option B): presence-only enforcement, beside the proof path rather than replacing
-            // it.
-            //
-            // The capability list says what this actually does. It does NOT claim
-            // `control_flow_guard_dominance`, because it does not compute it - that is the whole
-            // difference between this path and the one below, and the reason this one can leave
-            // quarantine while that one cannot.
-            required_capabilities
-                .extend(["syntax_facts".to_string(), "import_resolution".to_string()]);
-            presence_findings(
-                &facts,
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            )
-        } else if convention.kind == "api_route_requires_auth_helper" {
-            required_capabilities.extend([
-                "security_facts".to_string(),
-                "auth_boundary_facts".to_string(),
-                "control_flow_guard_dominance".to_string(),
-            ]);
-            let auth_result = security_auth_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(auth_result.proofs);
-            auth_result.findings
-        } else if convention.kind == "api_route_requires_request_validation" {
-            required_capabilities.extend([
-                "security_facts".to_string(),
-                "request_validation_facts".to_string(),
-            ]);
-            let validation_result = security_request_validation_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(validation_result.proofs);
-            validation_result.findings
-        } else if is_phase6_security_convention(&convention.kind) {
-            required_capabilities.extend(phase6_required_capabilities(&convention.kind));
-            let phase6_result = security_phase6_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(phase6_result.proofs);
-            phase6_result.findings
-        } else if convention.kind == "api_route_forbids_sensitive_response_fields" {
-            let has_phase5_inputs = convention
-                .requires
-                .as_ref()
-                .and_then(accepted_phase5_contract_from_requires)
-                .is_some_and(|accepted| {
-                    !accepted.sensitive_response_fields.is_empty()
-                        || !accepted.response_serializers.is_empty()
-                });
-            if has_phase5_inputs {
+                    .allowed_delegate_imports
+                    .unwrap_or_default();
+                graph_service_delegation_findings(
+                    &request.graph,
+                    &convention.id,
+                    severity,
+                    enforcement_mode,
+                    &allowed_delegate_imports,
+                )
+            }
+            // CV-3 (option B): presence-only enforcement, beside the proof path rather than
+            // replacing it. Selected by the MATCHER rather than the kind, so it is a guard arm and
+            // stays where it was in the old chain - after the two layering kinds, before every
+            // security kind it can apply to.
+            _ if is_presence_convention(&convention) => {
+                // CV-3 (option B): presence-only enforcement, beside the proof path rather than replacing
+                // it.
+                //
+                // The capability list says what this actually does. It does NOT claim
+                // `control_flow_guard_dominance`, because it does not compute it - that is the whole
+                // difference between this path and the one below, and the reason this one can leave
+                // quarantine while that one cannot.
                 required_capabilities.extend([
-                    "security_facts".to_string(),
-                    "response_shape_facts".to_string(),
+                    ScanCapability::SyntaxFacts,
+                    ScanCapability::ImportResolution,
                 ]);
+                presence_findings(
+                    &facts,
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                )
             }
-            let phase5_result = security_phase5_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(phase5_result.proofs);
-            phase5_result.findings
-        } else if convention.kind == "api_route_forbids_secret_exposure" {
-            let has_phase5_inputs = convention
-                .requires
-                .as_ref()
-                .and_then(accepted_phase5_contract_from_requires)
-                .is_some_and(|accepted| {
-                    !accepted.secret_sources.is_empty() || !accepted.log_sinks.is_empty()
-                });
-            if has_phase5_inputs {
-                required_capabilities
-                    .extend(["security_facts".to_string(), "secret_exposure".to_string()]);
+            ConventionKind::ApiRouteRequiresAuthHelper => {
+                required_capabilities.extend([
+                    ScanCapability::SecurityFacts,
+                    ScanCapability::AuthBoundaryFacts,
+                    ScanCapability::ControlFlowGuardDominance,
+                ]);
+                let auth_result = security_auth_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(auth_result.proofs);
+                auth_result.findings
             }
-            let phase5_result = security_phase5_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(phase5_result.proofs);
-            phase5_result.findings
-        } else if convention.kind == "api_route_requires_tenant_scope"
-            || convention.kind == "api_route_requires_authorization"
-            || convention.kind == "session_object_must_come_from_trusted_helper"
-        {
-            required_capabilities.extend([
-                "security_facts".to_string(),
-                "session_trust".to_string(),
-                "authorization".to_string(),
-                "tenant_scope".to_string(),
-            ]);
-            let phase4_result = security_phase4_findings_and_proofs(
-                &facts,
-                repo_root.as_deref(),
-                &parsed_diff,
-                diff_scope,
-                &convention,
-                severity,
-                enforcement_mode,
-            );
-            security_boundary_proofs.extend(phase4_result.proofs);
-            phase4_result.findings
-        } else {
-            continue;
+            ConventionKind::ApiRouteRequiresRequestValidation => {
+                required_capabilities.extend([
+                    ScanCapability::SecurityFacts,
+                    ScanCapability::RequestValidationFacts,
+                ]);
+                let validation_result = security_request_validation_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(validation_result.proofs);
+                validation_result.findings
+            }
+            ConventionKind::ApiRouteForbidsUntrustedSsrf
+            | ConventionKind::ApiRouteForbidsRawSqlWithoutParams
+            | ConventionKind::ApiRouteCorsMustMatchPolicy
+            | ConventionKind::ApiRouteRequiresCsrfForMutation
+            | ConventionKind::ApiRouteRequiresRateLimit => {
+                required_capabilities.extend(phase6_required_capabilities(kind));
+                let phase6_result = security_phase6_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(phase6_result.proofs);
+                phase6_result.findings
+            }
+            ConventionKind::ApiRouteForbidsSensitiveResponseFields => {
+                let has_phase5_inputs = convention
+                    .requires
+                    .as_ref()
+                    .and_then(accepted_phase5_contract_from_requires)
+                    .is_some_and(|accepted| {
+                        !accepted.sensitive_response_fields.is_empty()
+                            || !accepted.response_serializers.is_empty()
+                    });
+                if has_phase5_inputs {
+                    required_capabilities.extend([
+                        ScanCapability::SecurityFacts,
+                        ScanCapability::ResponseShapeFacts,
+                    ]);
+                }
+                let phase5_result = security_phase5_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(phase5_result.proofs);
+                phase5_result.findings
+            }
+            ConventionKind::ApiRouteForbidsSecretExposure => {
+                let has_phase5_inputs = convention
+                    .requires
+                    .as_ref()
+                    .and_then(accepted_phase5_contract_from_requires)
+                    .is_some_and(|accepted| {
+                        !accepted.secret_sources.is_empty() || !accepted.log_sinks.is_empty()
+                    });
+                if has_phase5_inputs {
+                    required_capabilities.extend([
+                        ScanCapability::SecurityFacts,
+                        ScanCapability::SecretExposure,
+                    ]);
+                }
+                let phase5_result = security_phase5_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(phase5_result.proofs);
+                phase5_result.findings
+            }
+            ConventionKind::ApiRouteRequiresTenantScope
+            | ConventionKind::ApiRouteRequiresAuthorization
+            | ConventionKind::SessionObjectMustComeFromTrustedHelper => {
+                required_capabilities.extend([
+                    ScanCapability::SecurityFacts,
+                    ScanCapability::SessionTrust,
+                    ScanCapability::Authorization,
+                    ScanCapability::TenantScope,
+                ]);
+                let phase4_result = security_phase4_findings_and_proofs(
+                    &facts,
+                    repo_root.as_deref(),
+                    &parsed_diff,
+                    diff_scope,
+                    &convention,
+                    severity,
+                    enforcement_mode,
+                );
+                security_boundary_proofs.extend(phase4_result.proofs);
+                phase4_result.findings
+            }
+            // Evaluated elsewhere, or by nobody. `dispatch()` above already skipped every one of
+            // these, so this arm exists to make the match exhaustive: a kind added to the
+            // vocabulary must be named here, which is the compile error D-P3a is for.
+            ConventionKind::MiddlewareMustCoverRoutes
+            | ConventionKind::TestExpectedForChangedModule
+            | ConventionKind::CustomBriefing
+            | ConventionKind::FileRole
+            | ConventionKind::ModulePlacement
+            | ConventionKind::ImportBoundary
+            | ConventionKind::EntrypointFlow
+            | ConventionKind::CanonicalHelperReuse
+            | ConventionKind::RequiredChangeChecks => continue,
         };
         dedupe_pending_findings(&mut rule_findings);
         let pending_by_fingerprint = rule_findings
@@ -354,19 +428,37 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
     let mut stats = engine_stats(0, 0, 0, facts.len(), 0, started.elapsed().as_millis());
     stats.graph_nodes = graph_node_count;
     stats.graph_edges = graph_edge_count;
-    stats.truncated = !can_block;
+    required_capabilities.extend(missing_capabilities.iter().copied());
     let required_capabilities_vec = required_capabilities.into_iter().collect::<Vec<_>>();
-    let required_capability_refs = required_capabilities_vec
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>();
-    stats.capabilities = capability_stats(&required_capability_refs, &[]);
+    let missing_capabilities_vec = missing_capabilities.into_iter().collect::<Vec<_>>();
+    if !source_required_kinds.is_empty() {
+        completeness_reasons.push(format!(
+            "repo_root_missing: {} security convention(s) ({}) could not be evaluated because their \
+             evaluator reads the route source from disk and no repo_root was supplied",
+            source_required_kinds.len(),
+            source_required_kinds
+                .iter()
+                .map(|kind| kind.as_wire())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    let can_block = can_block && source_required_kinds.is_empty();
+    stats.truncated = !can_block;
+    stats.capabilities = capability_stats(&required_capabilities_vec, &missing_capabilities_vec);
     let diagnostics = completeness_reasons
         .iter()
         .take(request.limits.max_diagnostics)
         .map(|reason| crate::protocol::EngineDiagnostic {
             severity: "warning".to_string(),
-            code: "check_limits_exceeded".to_string(),
+            // The reasons list carries two unrelated causes now, and one code for both would tell a
+            // reader that a missing repo_root is a limit breach. It is not - it is a request that
+            // could not be answered.
+            code: if reason.starts_with("repo_root_missing:") {
+                "check_source_unavailable".to_string()
+            } else {
+                "check_limits_exceeded".to_string()
+            },
             message: reason.clone(),
             file_path: None,
             import_source: None,
@@ -388,8 +480,14 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
         completeness: vec![EngineCompleteness {
             scope: "repo".to_string(),
             complete: can_block,
-            required_capabilities: required_capabilities_vec,
-            missing_capabilities: Vec::new(),
+            required_capabilities: required_capabilities_vec
+                .iter()
+                .map(|capability| capability.as_wire().to_string())
+                .collect(),
+            missing_capabilities: missing_capabilities_vec
+                .iter()
+                .map(|capability| capability.as_wire().to_string())
+                .collect(),
             truncated: !can_block,
             can_block,
             // EW-2: the graph is sound unless a *limit* was breached. Import-scoped gaps are
@@ -628,7 +726,7 @@ fn graph_direct_data_access_findings(
     let module_files = graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "module")
+        .filter(|node| node.kind == GraphNodeKind::Module)
         .filter_map(|node| string_metadata(node, "file_path").map(|path| (node.id.as_str(), path)))
         .collect::<BTreeMap<_, _>>();
     let module_by_file = module_files
@@ -644,13 +742,13 @@ fn graph_direct_data_access_findings(
     let import_owner_module = graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_DECL_REFERENCES_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportDeclReferencesModule)
         .map(|edge| (edge.from.as_str(), edge.to.as_str()))
         .collect::<BTreeMap<_, _>>();
     let resolved_import_edges = graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_RESOLVES_TO_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportResolvesToModule)
         .collect::<Vec<_>>();
     let evidence_lines = graph
         .graph_evidence
@@ -1156,27 +1254,23 @@ fn security_phase6_findings_and_proofs(
     SecurityPhase6Evaluation { findings, proofs }
 }
 
-fn is_phase6_security_convention(kind: &str) -> bool {
-    matches!(
-        kind,
-        "api_route_forbids_untrusted_ssrf"
-            | "api_route_forbids_raw_sql_without_params"
-            | "api_route_cors_must_match_policy"
-            | "api_route_requires_csrf_for_mutation"
-            | "api_route_requires_rate_limit"
-    )
-}
-
-fn phase6_required_capabilities(kind: &str) -> Vec<String> {
+/// The security capability each Phase 6 kind requires, from the one capability vocabulary.
+///
+/// `is_phase6_security_convention` used to sit beside this, listing the same five kinds a second
+/// time. The dispatch table in vocabulary/vocabulary.json says which kinds are Phase 6, and the
+/// match in `check_repo` is what routes them here, so the predicate had nothing left to decide.
+fn phase6_required_capabilities(kind: ConventionKind) -> Vec<ScanCapability> {
     let capability = match kind {
-        "api_route_forbids_untrusted_ssrf" => "outbound_request_facts",
-        "api_route_forbids_raw_sql_without_params" => "raw_sql_facts",
-        "api_route_cors_must_match_policy" => "cors_policy_facts",
-        "api_route_requires_csrf_for_mutation" => "csrf_facts",
-        "api_route_requires_rate_limit" => "rate_limit_facts",
-        _ => "security_facts",
+        ConventionKind::ApiRouteForbidsUntrustedSsrf => ScanCapability::OutboundRequestFacts,
+        ConventionKind::ApiRouteForbidsRawSqlWithoutParams => ScanCapability::RawSqlFacts,
+        ConventionKind::ApiRouteCorsMustMatchPolicy => ScanCapability::CorsPolicyFacts,
+        ConventionKind::ApiRouteRequiresCsrfForMutation => ScanCapability::CsrfFacts,
+        ConventionKind::ApiRouteRequiresRateLimit => ScanCapability::RateLimitFacts,
+        // Not a Phase 6 kind. Reachable only if the dispatch table and the match in `check_repo`
+        // disagree, which the parity gate fails on.
+        _ => ScanCapability::SecurityFacts,
     };
-    vec!["security_facts".to_string(), capability.to_string()]
+    vec![ScanCapability::SecurityFacts, capability]
 }
 
 fn phase6_contract_for_convention(
@@ -3546,7 +3640,7 @@ fn graph_service_delegation_findings(
     let module_files = graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "module")
+        .filter(|node| node.kind == GraphNodeKind::Module)
         .filter_map(|node| string_metadata(node, "file_path").map(|path| (node.id.as_str(), path)))
         .collect::<BTreeMap<_, _>>();
     let module_by_file = module_files
@@ -3573,7 +3667,7 @@ fn graph_service_delegation_findings(
     for edge in graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "MODULE_IMPORTS_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ModuleImportsModule)
     {
         if !route_modules.contains(edge.from.as_str())
             || !data_access_modules.contains(edge.to.as_str())
@@ -3630,7 +3724,7 @@ fn role_modules<'a>(
 ) -> BTreeSet<&'a str> {
     edges
         .iter()
-        .filter(|edge| edge.kind == "FILE_HAS_ROLE")
+        .filter(|edge| edge.kind == GraphEdgeKind::FileHasRole)
         .filter_map(|edge| {
             let role = nodes_by_id.get(edge.to.as_str())?;
             if string_metadata(role, "role")? != role_name {
@@ -3649,7 +3743,7 @@ fn api_route_files<'a>(
 ) -> BTreeSet<String> {
     edges
         .iter()
-        .filter(|edge| edge.kind == "FILE_HAS_ROLE")
+        .filter(|edge| edge.kind == GraphEdgeKind::FileHasRole)
         .filter_map(|edge| {
             let role = nodes_by_id.get(edge.to.as_str())?;
             if string_metadata(role, "role")? != "api_route" {
@@ -3724,10 +3818,9 @@ fn forbidden_graph_import_target<'a>(
         if !visited.insert(module_id) {
             continue;
         }
-        for edge in edges
-            .iter()
-            .filter(|edge| edge.kind == "MODULE_REEXPORTS_MODULE" && edge.from == module_id)
-        {
+        for edge in edges.iter().filter(|edge| {
+            edge.kind == GraphEdgeKind::ModuleReexportsModule && edge.from == module_id
+        }) {
             let Some(target_path) = module_files.get(edge.to.as_str()).copied() else {
                 continue;
             };
@@ -3847,7 +3940,25 @@ fn legacy_direct_data_access_fingerprint(
 
 fn check_fact_to_engine_fact(fact: CheckFact) -> Option<Fact> {
     Some(Fact {
-        kind: fact_kind_from_str(&fact.kind)?,
+        // D-F1: the whole vocabulary, from the generated table.
+        //
+        // This was a hand-written match that named 30 of the 36 fact kinds. The six it omitted -
+        // cors_policy_declared, csrf_guard_called, outbound_request_called, parameterized_sql_used,
+        // rate_limit_guard_called, raw_sql_called - fell through a `_ => None` arm and were dropped
+        // by the `filter_map` at the call site, silently. Four of them (all but the two csrf/
+        // rate-limit kinds, which nothing emits yet) are produced by security_facts.rs, survive the
+        // scan, the schema and storage, and then vanished on the way into the rule evaluator.
+        //
+        // It went unnoticed because `security_phase6_findings_and_proofs` re-reads the route file
+        // from disk and re-extracts, so the facts came back by another route. That mask holds only
+        // while `repo_root` is present, and the wire protocol declares it `Option<String>`
+        // (`CheckRepoContext`). engine-check.ts always sets it; any other caller that does not gets
+        // zero findings for all five Phase 6 conventions with nothing reporting a gap.
+        //
+        // `from_wire` is generated from the same manifest as the enum, so the two cannot come apart
+        // again: a new variant with no wire mapping is not a missing arm, it is a file that does not
+        // exist until the generator runs.
+        kind: FactKind::from_wire(&fact.kind)?,
         file_path: fact.file_path,
         name: fact.name,
         value: fact.value,
@@ -3872,47 +3983,6 @@ fn check_baseline_to_engine_baseline(
             _ => return None,
         },
     })
-}
-
-fn fact_kind_from_str(kind: &str) -> Option<FactKind> {
-    match kind {
-        "file_detected" => Some(FactKind::FileDetected),
-        "import_used" => Some(FactKind::ImportUsed),
-        "re_export_used" => Some(FactKind::ReExportUsed),
-        "exported_symbol" => Some(FactKind::ExportedSymbol),
-        "symbol_called" => Some(FactKind::SymbolCalled),
-        "data_operation_detected" => Some(FactKind::DataOperationDetected),
-        "route_declared" => Some(FactKind::RouteDeclared),
-        "file_role_detected" => Some(FactKind::FileRoleDetected),
-        // CV-2: without this the flavour fact is dropped on the check path, and a family conditioned
-        // to application routes would silently fall back to covering every flavour.
-        "route_flavor_detected" => Some(FactKind::RouteFlavorDetected),
-        "test_declared" => Some(FactKind::TestDeclared),
-        "auth_guard_called" => Some(FactKind::AuthGuardCalled),
-        "route_returns_response" => Some(FactKind::RouteReturnsResponse),
-        "callback_boundary_detected" => Some(FactKind::CallbackBoundaryDetected),
-        "middleware_declared" => Some(FactKind::MiddlewareDeclared),
-        "middleware_matcher_declared" => Some(FactKind::MiddlewareMatcherDeclared),
-        "middleware_protects_route" => Some(FactKind::MiddlewareProtectsRoute),
-        "request_input_read" => Some(FactKind::RequestInputRead),
-        "session_read" => Some(FactKind::SessionRead),
-        "tenant_source" => Some(FactKind::TenantSource),
-        "tenant_guard_called" => Some(FactKind::TenantGuardCalled),
-        "authorization_guard_called" => Some(FactKind::AuthorizationGuardCalled),
-        "request_validation_called" => Some(FactKind::RequestValidationCalled),
-        "validated_input_used" => Some(FactKind::ValidatedInputUsed),
-        "sensitive_field_declared" => Some(FactKind::SensitiveFieldDeclared),
-        "response_emits_field" => Some(FactKind::ResponseEmitsField),
-        "serializer_called" => Some(FactKind::SerializerCalled),
-        "secret_read" => Some(FactKind::SecretRead),
-        "data_model_declared" => Some(FactKind::DataModelDeclared),
-        "data_model_field_declared" => Some(FactKind::DataModelFieldDeclared),
-        "data_model_relation_declared" => Some(FactKind::DataModelRelationDeclared),
-        // Anything unmapped is dropped by the `filter_map` at the call site, silently. That is the
-        // failure mode this arm exists to avoid for the kinds above: a fact that survives the scan,
-        // the schema and storage, and then vanishes on its way into the rule evaluator.
-        _ => None,
-    }
 }
 
 fn severity_from_str(severity: &str) -> Severity {
@@ -3968,5 +4038,54 @@ fn diff_status_to_str(status: drift_engine::DiffStatus) -> &'static str {
         drift_engine::DiffStatus::NewInDiff => "new_in_diff",
         drift_engine::DiffStatus::TouchedExisting => "touched_existing",
         drift_engine::DiffStatus::OutsideDiff => "outside_diff",
+    }
+}
+
+#[cfg(test)]
+mod finding_fingerprint_dc3_tests {
+    use super::legacy_direct_data_access_fingerprint;
+
+    /// D-C3: the third copy of the fingerprint recipe.
+    ///
+    /// `legacy_fingerprints` exists so a graph-derived finding matches a baseline the import-based
+    /// path wrote, which is only true while this function agrees byte for byte with
+    /// `direct_data_access_fingerprint` in rules.rs and `findingFingerprint` in
+    /// packages/cli/src/check/finding-fingerprint.ts. It is private and had no test, so it could
+    /// have drifted from both and taken every stored baseline's continuity with it.
+    ///
+    /// The digests are the ones asserted in
+    /// crates/drift-engine/tests/finding_fingerprint_differential_dc3.rs and
+    /// packages/cli/test/frozen-contracts.test.ts.
+    #[test]
+    fn legacy_fingerprint_matches_the_other_two_implementations() {
+        assert_eq!(
+            legacy_direct_data_access_fingerprint(
+                "convention_x",
+                "apps/web/app/api/users/route.ts",
+                "prisma",
+                "@/lib/prisma"
+            ),
+            "f89345641d5764b90d14c8ce1f569170c0d67bc6788356ba11764a17f83a36a5"
+        );
+        assert_eq!(
+            legacy_direct_data_access_fingerprint(
+                "convention_no_direct_db",
+                "app/api/items/route.ts",
+                "db",
+                "@/lib/db"
+            ),
+            "03a8e3c929e01da4d31ecd949629e4822f454eb51fe78421df1f88cc8283cecf"
+        );
+    }
+
+    /// Windows separators must normalise, or the same violation fingerprints differently depending
+    /// on which platform wrote the baseline. Pinned on the TypeScript side; pinned here too, because
+    /// "the other implementation tests it" is how the three came apart in the first place.
+    #[test]
+    fn legacy_fingerprint_normalises_path_separators() {
+        assert_eq!(
+            legacy_direct_data_access_fingerprint("c", "a\\b\\route.ts", "s", "src"),
+            legacy_direct_data_access_fingerprint("c", "a/b/route.ts", "s", "src")
+        );
     }
 }

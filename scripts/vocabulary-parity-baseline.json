@@ -1,0 +1,80 @@
+{
+  "_comment": [
+    "Vocabulary members that are declared and not produced, and hand-written lists that are a",
+    "deliberate subset of a vocabulary.",
+    "",
+    "An entry here is a claim that a human looked and the gap is intended. It must say what the",
+    "member is for and what, if anything, consumes it - the gate cannot answer the consumer question",
+    "itself without false positives, because vocabulary members are short common words (`package`,",
+    "`artifact` and `finding` all occur in unrelated enums in this repo).",
+    "",
+    "Both directions ratchet: a NEW gap fails, and so does an entry whose gap has been closed. A",
+    "baseline that still claims something no longer true is a false record, which is the thing this",
+    "repo exists to not produce."
+  ],
+
+  "declared_subsets": [],
+
+  "reserved_members": [
+    {
+      "vocabulary": "fact_kind",
+      "member": "test_declared",
+      "gap": "no_producer",
+      "reason": "D-F2. Declared in the enum, in the scan_started handshake and in the TypeScript schema, and produced by no extractor. Its only intended consumer is `test_expected_for_changed_module`, whose dispatch is \"none\" - the kind has no evaluator either - so both halves are absent and neither could be discovered from the other. Kept rather than removed because the pair is a deliberate placeholder for change-coverage enforcement; the honest record is that the engine advertises a fact it cannot emit. Emitting it is what closes this entry."
+    },
+    {
+      "vocabulary": "fact_kind",
+      "member": "csrf_guard_called",
+      "gap": "no_producer",
+      "reason": "D-F2. Consumed by candidate_command.rs's `push_guard_candidate` (fact_kind: \"csrf_guard_called\"), which therefore nominates nothing from it. security_facts.rs has no CSRF guard extractor. The `symbol_called` variant of the same call site still produces api_route_requires_csrf_for_mutation candidates, so the missing kind degrades nomination rather than disabling it - which is why it was invisible."
+    },
+    {
+      "vocabulary": "fact_kind",
+      "member": "rate_limit_guard_called",
+      "gap": "no_producer",
+      "reason": "D-F2, identical in shape to csrf_guard_called: consumed by push_guard_candidate, extracted by nothing, with the `symbol_called` path still covering the kind."
+    },
+    {
+      "vocabulary": "graph_node_kind",
+      "member": "package",
+      "gap": "no_producer",
+      "reason": "D-G5. Produced by neither the Rust graph builder nor the TypeScript fallback, and consumed by nothing - the string \"package\" occurs in this repo only as a `specifier_kind` value, an unrelated vocabulary. Reserved for workspace-package nodes, which nothing yet builds."
+    },
+    {
+      "vocabulary": "graph_node_kind",
+      "member": "artifact",
+      "gap": "no_producer",
+      "reason": "D-G5. No producer and no consumer; the string \"artifact\" occurs only as an evidence-surface value elsewhere. Reserved for build-artifact nodes."
+    },
+    {
+      "vocabulary": "graph_node_kind",
+      "member": "export_decl",
+      "gap": "no_producer",
+      "reason": "D-G5. No producer and no consumer in either language. The import side has `import_decl` and is built; the export side was declared symmetrically and never implemented. Its absence was invisible partly because the dead `GraphNodeRecordSchema` copy named `import` and `role` rather than `import_decl` and `file_role`, so nothing that read a graph vocabulary was reading a correct one."
+    },
+    {
+      "vocabulary": "graph_node_kind",
+      "member": "diagnostic",
+      "gap": "no_producer",
+      "reason": "D-G5. No producer and no consumer. Diagnostics travel as their own stream event and their own table; they were never made graph nodes."
+    },
+    {
+      "vocabulary": "graph_node_kind",
+      "member": "finding",
+      "gap": "no_producer",
+      "reason": "D-G5. No producer. Its intended consumer is the FINDING_HAS_EVIDENCE traversal in packages/query/src/index.ts:688, which walks from a finding node to its evidence - so the traversal exists, the edge kind exists, and neither end of it is ever built. See the FINDING_HAS_EVIDENCE entry."
+    },
+    {
+      "vocabulary": "graph_edge_kind",
+      "member": "FINDING_HAS_EVIDENCE",
+      "gap": "no_producer",
+      "reason": "D-G5, and the sharpest case. packages/query/src/index.ts:688 branches on this edge kind in production code - not a test - to resolve a finding's evidence, and nothing in either language emits it. The query returns empty rather than failing, so the result reads as 'this finding has no evidence' instead of 'this edge is never built'."
+    },
+    {
+      "vocabulary": "parser_gap_kind",
+      "member": "reflection_or_magic_detected",
+      "gap": "unreferenced",
+      "reason": "Declared in the parser-gap vocabulary and referenced nowhere in either language: no diagnostic maps to it, no capability contract names it, nothing filters on it. Reserved for the reflection case the TypeScript adapter does not attempt."
+    }
+  ]
+}

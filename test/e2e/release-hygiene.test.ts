@@ -62,12 +62,15 @@ describe("release hygiene", () => {
       // there. Listing them did not execute them; it produced a gate that named an oracle it never
       // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
       // union that any "verified" claim has to cite.
-      // W1 added `pnpm check:storage-invariants`; W3 added `pnpm check:error-contract`. This
-      // assertion pins the whole string on purpose - a gate silently dropped from verify:ci is
-      // indistinguishable from one that never existed - so adding a gate has to land here too.
-      // Both workstreams forgot, and this stayed red on main until a later one noticed: the
-      // package suites and the harness were run before merge, `test:e2e` was not.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      // W1 added `pnpm check:storage-invariants` and W3 added `pnpm check:error-contract`, and
+      // neither updated this assertion - so this test was red from W1 until a later workstream
+      // noticed. A pinned string is only a gate while somebody reruns it.
+      //
+      // W5 adds `pnpm check:vocabulary`: ten closed vocabularies cross the engine boundary as
+      // hand-maintained mirrors, and the day this was written check-repo silently dropped 6 of 36
+      // fact kinds while semantic coverage refused on every repo. Neither is visible from any
+      // behaviour a test would naturally assert, which is what makes it a gate rather than a test.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
     expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
     expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");

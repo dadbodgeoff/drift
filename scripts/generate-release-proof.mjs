@@ -23,6 +23,7 @@ const dirtyEntries = gitStatusPorcelainEntries().filter((entry) => !isGeneratedR
 const dirtyState = dirtyEntries.length > 0;
 const sourceBuildSchemaMatch = builtSchemaVersion !== null && builtSchemaVersion === sourceSchemaVersion;
 const packageVersions = packageVersionMap([
+  "packages/vocabulary",
   "packages/core",
   "packages/engine-contract",
   "packages/factgraph",

@@ -1,5 +1,6 @@
 import {
   BUILTIN_SEMANTIC_CAPABILITIES,
+  SCAN_CAPABILITIES,
   SemanticCoverageContractSchema,
   type ParserGap,
   type ParserGapV2,
@@ -38,21 +39,39 @@ export interface BuildSemanticCoverageFromCapabilityReportInput {
   generated_at: string;
 }
 
-const DEFAULT_PREFLIGHT_CAPABILITIES = ["ts.route_flow.v1"] as const;
+/**
+ * D-S1: what a task preflight needs before it can say anything about a route.
+ *
+ * `route_flow` is the right requirement - preflight is about which routes a task touches and what
+ * they reach - and it is now a capability the engine certifies, so requiring it is a question with a
+ * possible "yes". It was spelled `ts.route_flow.v1`, a member of a namespace the engine has never
+ * emitted a single string from, so it was required on every call and certified on none.
+ */
+const DEFAULT_PREFLIGHT_CAPABILITIES = ["route_flow"] as const;
 
-const SCAN_CAPABILITY_TO_SEMANTIC_CAPABILITY: Record<string, string> = {
-  file_discovery: "ts.file_discovery.v1",
-  syntax_facts: "ts.syntax_facts.v1",
-  import_resolution: "ts.import_resolution.v1",
-  data_operations: "ts.data_operations.v1",
-  data_operation_facts: "ts.data_operations.v1",
-  fact_graph: "ts.route_flow.v1",
-  route_flow: "ts.route_flow.v1"
-};
-
+/**
+ * D-S1: the translation table that used to sit here is gone, because there is one namespace now.
+ *
+ * It mapped seven scan-capability names onto `ts.*.v1` ids. Four of the seven - `data_operations`,
+ * `data_operation_facts`, `fact_graph`, `route_flow` - are strings the engine has never emitted, and
+ * three the engine emits on every scan (`graph_stream`, `route_detection`,
+ * `data_operation_detection`) were absent. A normal scan reports `required: ["file_discovery",
+ * "syntax_facts", "graph_stream"]`; `graph_stream` translated to nothing and became an unknown
+ * capability, `ts.route_flow.v1` was required by the constant above and appeared in no certified
+ * list, and `decision` came out `"refuse"` on every repo, on every `prepare` and every
+ * `get_task_preflight`. Measured against synthetic perfect readiness - blocking_allowed, confidence
+ * 1.0, zero parser gaps - still "refuse". One commit ever touched this file, a workspace move; the
+ * table has never matched the engine.
+ *
+ * It was a set of plausible-sounding synonyms written from memory rather than from source, so the
+ * fix is not a corrected table. `SCAN_CAPABILITIES` is generated into both languages from
+ * vocabulary/vocabulary.json, and an id outside it is unknown - still a refusal, but a true one.
+ */
 const SEMANTIC_CAPABILITIES = new Map(
   BUILTIN_SEMANTIC_CAPABILITIES.map((capability) => [capability.capability_id, capability])
 );
+
+const KNOWN_CAPABILITIES = new Set<string>(SCAN_CAPABILITIES);
 
 export function buildSemanticCoverage(input: BuildSemanticCoverageInput): SemanticCoverageContract {
   const parserGaps = input.parser_gaps ?? [];
@@ -116,9 +135,15 @@ export function buildSemanticCoverageFromCapabilityReport(
   ]);
   const unsupported = uniqueSorted([
     ...required.unknown_capabilities,
-    ...required.capabilities.filter((capabilityId) =>
-      SEMANTIC_CAPABILITIES.get(capabilityId)?.support !== "supported"
-    )
+    // A required capability whose contract says `deferred` or `unsupported` cannot back a decision.
+    // A required capability with NO contract is not unsupported - `symbol_linking` and
+    // `candidate_inference` are engine capabilities with no semantic contract written for them, and
+    // `?.support !== "supported"` used to read absent-contract as unsupported, which is how a
+    // vocabulary this file did not fully know turned into a fail-closed refusal.
+    ...required.capabilities.filter((capabilityId) => {
+      const contract = SEMANTIC_CAPABILITIES.get(capabilityId);
+      return contract !== undefined && contract.support !== "supported";
+    })
   ]);
   const certifiedCapabilities = new Set(certified);
   const reportedMissingCapabilities = new Set(reportedMissing);
@@ -186,11 +211,16 @@ function normalizeKnownCapabilities(values: string[]): string[] {
   }));
 }
 
+/**
+ * A capability id, or null when this build does not know it.
+ *
+ * One namespace means membership, not translation. A member of the vocabulary that has no semantic
+ * capability contract - `symbol_linking`, say, or `candidate_inference` - is still a real capability
+ * the engine reports, so it passes here and is judged on whether it was certified. Only a string
+ * outside the vocabulary entirely is unknown, and unknown fails closed.
+ */
 function normalizeCapability(value: string): string | null {
-  if (SEMANTIC_CAPABILITIES.has(value)) {
-    return value;
-  }
-  return SCAN_CAPABILITY_TO_SEMANTIC_CAPABILITY[value] ?? null;
+  return KNOWN_CAPABILITIES.has(value) ? value : null;
 }
 
 function uniqueSorted(values: string[]): string[] {

@@ -14,9 +14,10 @@ mod protocol;
 use candidate_command::infer_candidates;
 use check_command::check_repo;
 use drift_engine::{
-    Fact, FactExtractError, FactKind, PrismaFactKind, dynamic_middleware_matcher_line,
-    extract_prisma_facts, extract_security_facts, extract_typescript_facts_with_report,
-    should_index_path, static_middleware_coverage,
+    Fact, FactExtractError, FactKind, GraphEdgeKind, GraphNodeKind, PrismaFactKind, ScanCapability,
+    dynamic_middleware_matcher_line, extract_prisma_facts, extract_security_facts,
+    extract_typescript_facts, extract_typescript_facts_with_report, should_index_path,
+    static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
 use protocol::*;
@@ -251,7 +252,14 @@ fn scan_repo(
     stats.reuse_applied = files_reused > 0;
     stats.graph_nodes = graph_node_count;
     stats.graph_edges = graph_edge_count;
-    stats.capabilities = capability_stats(&["file_discovery", "syntax_facts", "graph_stream"], &[]);
+    stats.capabilities = capability_stats(
+        &[
+            ScanCapability::FileDiscovery,
+            ScanCapability::SyntaxFacts,
+            ScanCapability::GraphStream,
+        ],
+        &[],
+    );
     Ok(ScanRepoOutput {
         schema_version: ENGINE_SCAN_RESULT_SCHEMA_VERSION,
         repo_id,
@@ -291,6 +299,8 @@ fn stream_scan_repo(
             engine_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             build_profile: engine_build_profile(),
             fact_kinds: emittable_fact_kind_names(),
+            graph_node_kinds: emittable_graph_node_kind_names(),
+            graph_edge_kinds: emittable_graph_edge_kind_names(),
         },
     )?;
 
@@ -454,7 +464,14 @@ fn stream_scan_repo(
     stats.graph_edges = graph_edges_emitted;
     stats.files_reused = files_reused;
     stats.reuse_applied = files_reused > 0;
-    stats.capabilities = capability_stats(&["file_discovery", "syntax_facts", "graph_stream"], &[]);
+    stats.capabilities = capability_stats(
+        &[
+            ScanCapability::FileDiscovery,
+            ScanCapability::SyntaxFacts,
+            ScanCapability::GraphStream,
+        ],
+        &[],
+    );
     write_event(
         &mut stdout,
         &ScanStreamEvent::ScanCompleted {
@@ -791,7 +808,11 @@ fn add_middleware_coverage_facts(scanned: &mut [(ScannedFile, Vec<EngineFact>)])
             for middleware in matched {
                 let protection_kind = middleware.protection_kind.clone();
                 new_facts.push(EngineFact {
-                    kind: "middleware_protects_route".to_string(),
+                    // W5: through the vocabulary rather than as a literal. This is the only fact the
+                    // engine synthesises outside the extractors, and it was the only one whose kind
+                    // was spelled as a bare string - a fourth copy beside the enum, the handshake
+                    // list and check_command's translation table.
+                    kind: FactKind::MiddlewareProtectsRoute.as_wire().to_string(),
                     file_path: route_file_path.clone(),
                     name: middleware.middleware_id.clone(),
                     value: Some(
@@ -998,7 +1019,7 @@ fn stable_hash(value: &str) -> String {
 
 fn engine_fact(fact: Fact) -> EngineFact {
     EngineFact {
-        kind: fact_kind(fact.kind).to_string(),
+        kind: fact.kind.as_wire().to_string(),
         file_path: fact.file_path,
         name: fact.name,
         value: fact.value,
@@ -1011,9 +1032,9 @@ fn engine_fact(fact: Fact) -> EngineFact {
     }
 }
 
-/// Every fact kind this engine can emit, declared to the CLI at `scan_started`.
+/// Every vocabulary the engine declares to the CLI at `scan_started`.
 ///
-/// The CLI refuses the stream up front if it does not recognise all of them. Without this, a CLI
+/// The CLI refuses the stream up front if it does not recognise every member. Without this, a CLI
 /// paired with an engine that knows a newer kind failed on the FIRST RECORD OF THAT KIND - line 16
 /// of the stream, with `Invalid Drift engine stream event`, naming a Zod enum rather than the
 /// actual problem, and aborting a scan already partly done.
@@ -1023,85 +1044,64 @@ fn engine_fact(fact: Fact) -> EngineFact {
 /// vocabulary itself distinguishes a stale binary from a current one, so the vocabulary is what
 /// gets compared.
 ///
-/// This list is the reason `fact_kind` below is exhaustive: adding a variant without adding it here
-/// trips `every_fact_kind_is_declared`.
-const EMITTABLE_FACT_KINDS: &[FactKind] = &[
-    FactKind::FileDetected,
-    FactKind::ImportUsed,
-    FactKind::ReExportUsed,
-    FactKind::ExportedSymbol,
-    FactKind::SymbolCalled,
-    FactKind::DataOperationDetected,
-    FactKind::RouteDeclared,
-    FactKind::FileRoleDetected,
-    FactKind::RouteFlavorDetected,
-    FactKind::TestDeclared,
-    FactKind::AuthGuardCalled,
-    FactKind::RouteReturnsResponse,
-    FactKind::CallbackBoundaryDetected,
-    FactKind::MiddlewareDeclared,
-    FactKind::MiddlewareMatcherDeclared,
-    FactKind::MiddlewareProtectsRoute,
-    FactKind::RequestInputRead,
-    FactKind::SessionRead,
-    FactKind::TenantSource,
-    FactKind::TenantGuardCalled,
-    FactKind::AuthorizationGuardCalled,
-    FactKind::RequestValidationCalled,
-    FactKind::ValidatedInputUsed,
-    FactKind::OutboundRequestCalled,
-    FactKind::RawSqlCalled,
-    FactKind::ParameterizedSqlUsed,
-    FactKind::CsrfGuardCalled,
-    FactKind::RateLimitGuardCalled,
-    FactKind::CorsPolicyDeclared,
-    FactKind::SensitiveFieldDeclared,
-    FactKind::ResponseEmitsField,
-    FactKind::SerializerCalled,
-    FactKind::SecretRead,
-    FactKind::DataModelDeclared,
-    FactKind::DataModelFieldDeclared,
-    FactKind::DataModelRelationDeclared,
-];
+/// W5 (D-G4): the graph vocabularies join the handshake. They were bare `String`s on both sides of
+/// the wire, so a node kind this CLI did not know produced a generic Zod parse failure and exit 1,
+/// where the fact-kind path had given an exit-3 `engine_vocabulary_mismatch` naming the cause since
+/// the handshake was built. Both lists come from vocabulary/vocabulary.json, so neither can be
+/// declared here and forgotten in the enum.
+fn emittable_fact_kind_names() -> Vec<String> {
+    FactKind::all_wire_names()
+}
+
+fn emittable_graph_node_kind_names() -> Vec<String> {
+    GraphNodeKind::all_wire_names()
+}
+
+fn emittable_graph_edge_kind_names() -> Vec<String> {
+    GraphEdgeKind::all_wire_names()
+}
 
 #[cfg(test)]
 mod emittable_fact_kind_tests {
-    use super::{EMITTABLE_FACT_KINDS, emittable_fact_kind_names, fact_kind};
-    use drift_engine::FactKind;
+    use super::{
+        emittable_fact_kind_names, emittable_graph_edge_kind_names, emittable_graph_node_kind_names,
+    };
+    use drift_engine::{FactKind, GraphEdgeKind, GraphNodeKind};
 
-    /// The declared list must cover every variant of `FactKind`.
+    /// The handshake must cover every variant of the generated enums.
     ///
-    /// A variant missing from `EMITTABLE_FACT_KINDS` would be emitted by the engine and absent from
-    /// the handshake, which is precisely the case the handshake exists to catch - the CLI would
-    /// accept the pairing and then throw on the first record of that kind, mid-stream.
-    ///
-    /// Rust cannot enumerate an enum's variants, so this pins the count. Adding a variant without
-    /// declaring it here fails this test rather than shipping a silent gap.
+    /// Before W5 this pinned a hand-written `EMITTABLE_FACT_KINDS` list against a hand-written
+    /// `FactKind` enum, because Rust cannot enumerate an enum's variants - a count assertion, which
+    /// caught a missing entry only by tripping on the number. `FactKind::ALL` is now generated from
+    /// the same manifest as the enum, so the two cannot come apart; the counts stay as a pin on the
+    /// manifest itself, which is what a reviewer reads.
     #[test]
-    fn every_fact_kind_is_declared() {
-        assert_eq!(
-            EMITTABLE_FACT_KINDS.len(),
-            36,
-            "a FactKind variant was added or removed - update EMITTABLE_FACT_KINDS to match"
-        );
+    fn every_vocabulary_member_is_declared() {
+        assert_eq!(FactKind::ALL.len(), 36);
+        assert_eq!(GraphNodeKind::ALL.len(), 18);
+        assert_eq!(GraphEdgeKind::ALL.len(), 21);
     }
 
     #[test]
     fn declared_kinds_are_unique_sorted_and_named() {
-        let names = emittable_fact_kind_names();
-        assert_eq!(names.len(), EMITTABLE_FACT_KINDS.len());
-        let mut sorted = names.clone();
-        sorted.sort();
-        assert_eq!(
-            names, sorted,
-            "handshake list must be sorted for stable comparison"
-        );
-        let unique: std::collections::BTreeSet<_> = names.iter().collect();
-        assert_eq!(
-            unique.len(),
-            names.len(),
-            "two variants map to the same wire string"
-        );
+        for names in [
+            emittable_fact_kind_names(),
+            emittable_graph_node_kind_names(),
+            emittable_graph_edge_kind_names(),
+        ] {
+            let mut sorted = names.clone();
+            sorted.sort();
+            assert_eq!(
+                names, sorted,
+                "handshake list must be sorted for stable comparison"
+            );
+            let unique: std::collections::BTreeSet<_> = names.iter().collect();
+            assert_eq!(
+                unique.len(),
+                names.len(),
+                "two variants map to the same wire string"
+            );
+        }
     }
 
     #[test]
@@ -1112,58 +1112,8 @@ mod emittable_fact_kind_tests {
             FactKind::DataModelFieldDeclared,
             FactKind::DataModelRelationDeclared,
         ] {
-            assert!(names.contains(&fact_kind(kind).to_string()));
+            assert!(names.contains(&kind.as_wire().to_string()));
         }
-    }
-}
-
-fn emittable_fact_kind_names() -> Vec<String> {
-    let mut names: Vec<String> = EMITTABLE_FACT_KINDS
-        .iter()
-        .map(|kind| fact_kind(*kind).to_string())
-        .collect();
-    names.sort();
-    names
-}
-
-fn fact_kind(kind: FactKind) -> &'static str {
-    match kind {
-        FactKind::FileDetected => "file_detected",
-        FactKind::ImportUsed => "import_used",
-        FactKind::ReExportUsed => "re_export_used",
-        FactKind::ExportedSymbol => "exported_symbol",
-        FactKind::SymbolCalled => "symbol_called",
-        FactKind::DataOperationDetected => "data_operation_detected",
-        FactKind::RouteDeclared => "route_declared",
-        FactKind::FileRoleDetected => "file_role_detected",
-        FactKind::RouteFlavorDetected => "route_flavor_detected",
-        FactKind::TestDeclared => "test_declared",
-        FactKind::AuthGuardCalled => "auth_guard_called",
-        FactKind::RouteReturnsResponse => "route_returns_response",
-        FactKind::CallbackBoundaryDetected => "callback_boundary_detected",
-        FactKind::MiddlewareDeclared => "middleware_declared",
-        FactKind::MiddlewareMatcherDeclared => "middleware_matcher_declared",
-        FactKind::MiddlewareProtectsRoute => "middleware_protects_route",
-        FactKind::RequestInputRead => "request_input_read",
-        FactKind::SessionRead => "session_read",
-        FactKind::TenantSource => "tenant_source",
-        FactKind::TenantGuardCalled => "tenant_guard_called",
-        FactKind::AuthorizationGuardCalled => "authorization_guard_called",
-        FactKind::RequestValidationCalled => "request_validation_called",
-        FactKind::ValidatedInputUsed => "validated_input_used",
-        FactKind::OutboundRequestCalled => "outbound_request_called",
-        FactKind::RawSqlCalled => "raw_sql_called",
-        FactKind::ParameterizedSqlUsed => "parameterized_sql_used",
-        FactKind::CsrfGuardCalled => "csrf_guard_called",
-        FactKind::RateLimitGuardCalled => "rate_limit_guard_called",
-        FactKind::CorsPolicyDeclared => "cors_policy_declared",
-        FactKind::SensitiveFieldDeclared => "sensitive_field_declared",
-        FactKind::ResponseEmitsField => "response_emits_field",
-        FactKind::SerializerCalled => "serializer_called",
-        FactKind::SecretRead => "secret_read",
-        FactKind::DataModelDeclared => "data_model_declared",
-        FactKind::DataModelFieldDeclared => "data_model_field_declared",
-        FactKind::DataModelRelationDeclared => "data_model_relation_declared",
     }
 }
 
@@ -1303,7 +1253,7 @@ fn graph_for_file(
     insert_node(
         &mut nodes,
         file_node.clone(),
-        "file",
+        GraphNodeKind::File,
         &file.file_path,
         true,
         Vec::new(),
@@ -1312,7 +1262,7 @@ fn graph_for_file(
     insert_node(
         &mut nodes,
         file_version_node.clone(),
-        "file_version",
+        GraphNodeKind::FileVersion,
         &format!("{}@{}", file.file_path, hash_prefix(&file.content_hash)),
         false,
         Vec::new(),
@@ -1325,7 +1275,7 @@ fn graph_for_file(
     insert_node(
         &mut nodes,
         module_node.clone(),
-        "module",
+        GraphNodeKind::Module,
         &file.file_path,
         true,
         Vec::new(),
@@ -1333,7 +1283,7 @@ fn graph_for_file(
     );
     insert_edge(
         &mut edges,
-        "FILE_HAS_VERSION",
+        GraphEdgeKind::FileHasVersion,
         &file_node,
         &file_version_node,
         Vec::new(),
@@ -1341,7 +1291,7 @@ fn graph_for_file(
     );
     insert_edge(
         &mut edges,
-        "FILE_DEFINES_MODULE",
+        GraphEdgeKind::FileDefinesModule,
         &file_node,
         &module_node,
         Vec::new(),
@@ -1386,7 +1336,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     role_node.clone(),
-                    "file_role",
+                    GraphNodeKind::FileRole,
                     &fact.name,
                     true,
                     vec![evidence_id.clone()],
@@ -1394,7 +1344,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "FILE_HAS_ROLE",
+                    GraphEdgeKind::FileHasRole,
                     &file_node,
                     &role_node,
                     vec![evidence_id],
@@ -1457,7 +1407,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     import_node.clone(),
-                    "import_decl",
+                    GraphNodeKind::ImportDecl,
                     &format!("{} from {}", fact.name, source),
                     false,
                     vec![evidence_id.clone()],
@@ -1465,7 +1415,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "IMPORT_DECL_REFERENCES_MODULE",
+                    GraphEdgeKind::ImportDeclReferencesModule,
                     &import_node,
                     &module_node,
                     vec![evidence_id.clone()],
@@ -1474,7 +1424,7 @@ fn graph_for_file(
                 if let (Some(resolved), Some(resolved_module)) = (&resolved, &resolved_module) {
                     insert_edge(
                         &mut edges,
-                        "IMPORT_RESOLVES_TO_MODULE",
+                        GraphEdgeKind::ImportResolvesToModule,
                         &import_node,
                         resolved_module,
                         vec![evidence_id.clone()],
@@ -1502,7 +1452,7 @@ fn graph_for_file(
                         let resolved_symbol = symbol_id(declaring_file, "function", imported_name);
                         insert_edge(
                             &mut edges,
-                            "IMPORT_RESOLVES_TO_SYMBOL",
+                            GraphEdgeKind::ImportResolvesToSymbol,
                             &import_node,
                             &resolved_symbol,
                             vec![evidence_id.clone()],
@@ -1551,7 +1501,7 @@ fn graph_for_file(
                     }
                     insert_edge(
                         &mut edges,
-                        "MODULE_IMPORTS_MODULE",
+                        GraphEdgeKind::ModuleImportsModule,
                         &module_node,
                         resolved_module,
                         vec![evidence_id.clone()],
@@ -1572,7 +1522,7 @@ fn graph_for_file(
                         insert_node(
                             &mut nodes,
                             target_file_node.clone(),
-                            "file",
+                            GraphNodeKind::File,
                             resolved,
                             true,
                             Vec::new(),
@@ -1581,7 +1531,7 @@ fn graph_for_file(
                         insert_node(
                             &mut nodes,
                             service_role_node.clone(),
-                            "file_role",
+                            GraphNodeKind::FileRole,
                             "service_module",
                             true,
                             vec![evidence_id.clone()],
@@ -1589,7 +1539,7 @@ fn graph_for_file(
                         );
                         insert_edge(
                             &mut edges,
-                            "FILE_HAS_ROLE",
+                            GraphEdgeKind::FileHasRole,
                             &target_file_node,
                             &service_role_node,
                             vec![evidence_id],
@@ -1641,7 +1591,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     reexport_node.clone(),
-                    "re_export",
+                    GraphNodeKind::ReExport,
                     &fact.name,
                     false,
                     vec![evidence_id.clone()],
@@ -1655,7 +1605,7 @@ fn graph_for_file(
                     let resolved_module = module_id(&resolved);
                     insert_edge(
                         &mut edges,
-                        "MODULE_REEXPORTS_MODULE",
+                        GraphEdgeKind::ModuleReexportsModule,
                         &module_node,
                         &resolved_module,
                         vec![evidence_id.clone()],
@@ -1680,7 +1630,7 @@ fn graph_for_file(
                     {
                         insert_edge(
                             &mut edges,
-                            "REEXPORT_RESOLVES_TO_SYMBOL",
+                            GraphEdgeKind::ReexportResolvesToSymbol,
                             &reexport_node,
                             &symbol_id(&resolved, "function", source_name),
                             vec![evidence_id],
@@ -1700,7 +1650,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     symbol_node.clone(),
-                    "symbol",
+                    GraphNodeKind::Symbol,
                     &fact.name,
                     true,
                     vec![evidence_id.clone()],
@@ -1712,7 +1662,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "FILE_CONTAINS_SYMBOL",
+                    GraphEdgeKind::FileContainsSymbol,
                     &file_node,
                     &symbol_node,
                     vec![evidence_id.clone()],
@@ -1720,7 +1670,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "MODULE_EXPORTS_SYMBOL",
+                    GraphEdgeKind::ModuleExportsSymbol,
                     &module_node,
                     &symbol_node,
                     vec![evidence_id],
@@ -1733,7 +1683,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     route_node.clone(),
-                    "route",
+                    GraphNodeKind::Route,
                     &fact.name,
                     true,
                     vec![evidence_id.clone()],
@@ -1745,7 +1695,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "ROUTE_DECLARED_IN_FILE",
+                    GraphEdgeKind::RouteDeclaredInFile,
                     &route_node,
                     &file_node,
                     vec![evidence_id.clone()],
@@ -1756,7 +1706,7 @@ fn graph_for_file(
                     insert_node(
                         &mut nodes,
                         endpoint_node.clone(),
-                        "endpoint",
+                        GraphNodeKind::Endpoint,
                         &endpoint.pattern,
                         true,
                         vec![evidence_id.clone()],
@@ -1770,7 +1720,7 @@ fn graph_for_file(
                     );
                     insert_edge(
                         &mut edges,
-                        "ROUTE_HAS_ENDPOINT",
+                        GraphEdgeKind::RouteHasEndpoint,
                         &route_node,
                         &endpoint_node,
                         vec![evidence_id.clone()],
@@ -1779,7 +1729,7 @@ fn graph_for_file(
                 }
                 insert_edge(
                     &mut edges,
-                    "ROUTE_HANDLED_BY_SYMBOL",
+                    GraphEdgeKind::RouteHandledBySymbol,
                     &route_node,
                     &symbol_id(
                         &fact.file_path,
@@ -1802,7 +1752,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     callsite_node.clone(),
-                    "callsite",
+                    GraphNodeKind::Callsite,
                     &fact.name,
                     false,
                     vec![evidence_id.clone()],
@@ -1816,7 +1766,7 @@ fn graph_for_file(
                 );
                 insert_edge(
                     &mut edges,
-                    "CALLSITE_REFERENCES_SYMBOL",
+                    GraphEdgeKind::CallsiteReferencesSymbol,
                     &callsite_node,
                     &module_node,
                     vec![evidence_id.clone()],
@@ -1831,7 +1781,7 @@ fn graph_for_file(
                     {
                         insert_edge(
                             &mut edges,
-                            "CALLSITE_REFERENCES_SYMBOL",
+                            GraphEdgeKind::CallsiteReferencesSymbol,
                             &callsite_node,
                             import_node,
                             vec![evidence_id.clone()],
@@ -1847,7 +1797,7 @@ fn graph_for_file(
                 {
                     insert_edge(
                         &mut edges,
-                        "CALLSITE_REFERENCES_SYMBOL",
+                        GraphEdgeKind::CallsiteReferencesSymbol,
                         &callsite_node,
                         import_node,
                         vec![evidence_id.clone()],
@@ -1881,7 +1831,7 @@ fn graph_for_file(
                     insert_node(
                         &mut nodes,
                         data_store_node.clone(),
-                        "data_store",
+                        GraphNodeKind::DataStore,
                         store_name,
                         true,
                         vec![evidence_id.clone()],
@@ -1898,7 +1848,7 @@ fn graph_for_file(
                     insert_node(
                         &mut nodes,
                         data_operation_node.clone(),
-                        "data_operation",
+                        GraphNodeKind::DataOperation,
                         &fact.name,
                         false,
                         vec![evidence_id.clone()],
@@ -1912,10 +1862,10 @@ fn graph_for_file(
                         ]),
                     );
                     let edge_kind = match operation_kind {
-                        "read" => "DATA_OPERATION_READS_DATA_STORE",
-                        "delete" => "DATA_OPERATION_DELETES_DATA_STORE",
-                        "unknown" => "DATA_OPERATION_TOUCHES_DATA_STORE",
-                        _ => "DATA_OPERATION_WRITES_DATA_STORE",
+                        "read" => GraphEdgeKind::DataOperationReadsDataStore,
+                        "delete" => GraphEdgeKind::DataOperationDeletesDataStore,
+                        "unknown" => GraphEdgeKind::DataOperationTouchesDataStore,
+                        _ => GraphEdgeKind::DataOperationWritesDataStore,
                     };
                     insert_edge(
                         &mut edges,
@@ -1957,7 +1907,7 @@ fn graph_for_file(
                 insert_node(
                     &mut nodes,
                     data_store_id(&accessor),
-                    "data_store",
+                    GraphNodeKind::DataStore,
                     &accessor,
                     true,
                     vec![evidence_id.clone()],
@@ -1987,7 +1937,7 @@ fn graph_for_file(
 fn insert_node(
     nodes: &mut BTreeMap<String, GraphNode>,
     id: String,
-    kind: &str,
+    kind: GraphNodeKind,
     label: &str,
     stable: bool,
     evidence_ids: Vec<String>,
@@ -1997,7 +1947,7 @@ fn insert_node(
         id.clone(),
         GraphNode {
             id,
-            kind: kind.to_string(),
+            kind,
             label: label.to_string(),
             stable,
             evidence_ids,
@@ -2008,18 +1958,20 @@ fn insert_node(
 
 fn insert_edge(
     edges: &mut BTreeMap<String, GraphEdge>,
-    kind: &str,
+    kind: GraphEdgeKind,
     from: &str,
     to: &str,
     evidence_ids: Vec<String>,
     metadata: BTreeMap<String, serde_json::Value>,
 ) {
-    let id = format!("edge:{from}:{kind}:{to}");
+    // The edge id embeds the wire name, which is what it embedded before this became an enum -
+    // changing it would rewrite every stored edge id for no reason.
+    let id = format!("edge:{from}:{}:{to}", kind.as_wire());
     edges.insert(
         id.clone(),
         GraphEdge {
             id,
-            kind: kind.to_string(),
+            kind,
             from: from.to_string(),
             to: to.to_string(),
             evidence_ids,

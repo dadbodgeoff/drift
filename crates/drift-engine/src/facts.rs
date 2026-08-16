@@ -2,51 +2,8 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use crate::next_routes::next_api_route_identity;
+use crate::vocabulary::{FactKind, FileRole, RouteFlavor};
 use tree_sitter::{Node, Parser};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FactKind {
-    FileDetected,
-    ImportUsed,
-    ReExportUsed,
-    ExportedSymbol,
-    SymbolCalled,
-    DataOperationDetected,
-    RouteDeclared,
-    FileRoleDetected,
-    RouteFlavorDetected,
-    TestDeclared,
-    AuthGuardCalled,
-    RouteReturnsResponse,
-    CallbackBoundaryDetected,
-    MiddlewareDeclared,
-    MiddlewareMatcherDeclared,
-    MiddlewareProtectsRoute,
-    RequestInputRead,
-    SessionRead,
-    TenantSource,
-    TenantGuardCalled,
-    AuthorizationGuardCalled,
-    RequestValidationCalled,
-    ValidatedInputUsed,
-    OutboundRequestCalled,
-    RawSqlCalled,
-    ParameterizedSqlUsed,
-    CsrfGuardCalled,
-    RateLimitGuardCalled,
-    CorsPolicyDeclared,
-    SensitiveFieldDeclared,
-    ResponseEmitsField,
-    SerializerCalled,
-    SecretRead,
-    /// Declared in a schema file rather than inferred from a call site. `data_store` graph nodes
-    /// are built today from TypeScript usage alone (`prisma.link.findMany()` implies a `link`
-    /// store); these say what the repository actually declares, which is the difference between
-    /// "some code calls this" and "this table exists".
-    DataModelDeclared,
-    DataModelFieldDeclared,
-    DataModelRelationDeclared,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fact {
@@ -208,13 +165,13 @@ pub fn extract_typescript_facts_with_report(
     let line_count = source.lines().count().max(1);
     let mut is_api_route = false;
     for role in file_roles(&file_path) {
-        if role == "api_route" {
+        if role == FileRole::ApiRoute {
             is_api_route = true;
         }
         facts.push(Fact {
             kind: FactKind::FileRoleDetected,
             file_path: file_path.clone(),
-            name: role.to_string(),
+            name: role.as_wire().to_string(),
             value: None,
             imported_name: None,
             runtime_use: None,
@@ -1464,7 +1421,7 @@ fn unquote(value: String) -> String {
 /// allow. The names are the existing entrypoint-kind vocabulary rather than new strings.
 ///
 /// Per SEGMENT, never substring: `app/api/crontab-editor/route.ts` is an ordinary route.
-pub fn route_flavor(file_path: &str) -> &'static str {
+pub fn route_flavor(file_path: &str) -> RouteFlavor {
     const CRON_SEGMENTS: &[&str] = &["cron", "crons", "jobs", "scheduled"];
     const WEBHOOK_SEGMENTS: &[&str] = &["webhook", "webhooks"];
 
@@ -1503,57 +1460,57 @@ pub fn route_flavor(file_path: &str) -> &'static str {
         .iter()
         .any(|segment| CRON_SEGMENTS.contains(segment))
     {
-        return "cron_job";
+        return RouteFlavor::CronJob;
     }
     if segments
         .iter()
         .any(|segment| WEBHOOK_SEGMENTS.contains(segment))
     {
-        return "webhook_handler";
+        return RouteFlavor::WebhookHandler;
     }
-    "api_route"
+    RouteFlavor::ApiRoute
 }
 
-fn file_roles(file_path: &str) -> Vec<&'static str> {
+fn file_roles(file_path: &str) -> Vec<FileRole> {
     let mut roles = Vec::new();
     if is_api_route_path(file_path) {
-        roles.push("api_route");
+        roles.push(FileRole::ApiRoute);
     }
     if is_service_module_path(file_path) {
-        roles.push("service_module");
+        roles.push(FileRole::ServiceModule);
     }
     if is_data_access_module_path(file_path) {
-        roles.push("data_access_module");
+        roles.push(FileRole::DataAccessModule);
     }
     if is_cli_command_module_path(file_path) {
-        roles.push("cli_command_module");
+        roles.push(FileRole::CliCommandModule);
     }
     if is_core_module_path(file_path) {
-        roles.push("core_module");
+        roles.push(FileRole::CoreModule);
     }
     if is_query_module_path(file_path) {
-        roles.push("query_module");
+        roles.push(FileRole::QueryModule);
     }
     if is_factgraph_module_path(file_path) {
-        roles.push("factgraph_module");
+        roles.push(FileRole::FactgraphModule);
     }
     if is_adapter_module_path(file_path) {
-        roles.push("adapter_module");
+        roles.push(FileRole::AdapterModule);
     }
     if is_storage_module_path(file_path) {
-        roles.push("storage_module");
+        roles.push(FileRole::StorageModule);
     }
     if is_engine_bridge_module_path(file_path) {
-        roles.push("engine_bridge_module");
+        roles.push(FileRole::EngineBridgeModule);
     }
     if is_mcp_module_path(file_path) {
-        roles.push("mcp_module");
+        roles.push(FileRole::McpModule);
     }
     if is_test_path(file_path) {
-        roles.push("test");
+        roles.push(FileRole::Test);
     }
     if is_config_path(file_path) {
-        roles.push("config");
+        roles.push(FileRole::Config);
     }
     roles
 }
