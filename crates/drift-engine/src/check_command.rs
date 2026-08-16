@@ -2570,26 +2570,110 @@ fn phase5_route_path_from_file(file_path: &str) -> Option<String> {
     next_api_route_identity(file_path).map(|identity| identity.route_path)
 }
 
+/// Path-glob matching for security-convention scopes, with globstar semantics.
+///
+/// **Third dead-path component of D1, and not one the audit named.** This was a pile of
+/// suffix special-cases that never implemented `**/` as *zero or more* segments. The consequence
+/// is stated verbatim in `packages/core/src/globs.ts`, which fixed the identical bug on the
+/// TypeScript side and left this copy untouched:
+///
+/// > `**/pages/api/**/*.ts` never matched a handler sitting directly in `pages/api/`, at any
+/// > depth.
+///
+/// Every scope the candidate proposer emits is `**/`-prefixed (`candidate_command.rs`'s
+/// `route_scope`), and a repo whose routes sit at the root — the default `create-next-app`
+/// layout — has zero leading segments for it to match. So `phase5_file_scope_matches` rejected
+/// every file of every proposer-produced convention, and the check could not fire on any repo
+/// even once its `source` provenance was correct. The three existing tests of the kind all
+/// hand-write a scope without the `**/` prefix, so none of them could see it.
+///
+/// Semantics are `globs.ts`'s, so the two sides of the process boundary agree:
+///   `**/`  zero or more complete path segments
+///   `/**`  (trailing) the directory itself or anything beneath it
+///   `**`   any run of characters, including `/`
+///   `*`    any run of characters except `/`
+///   `?`    exactly one character except `/`
 fn path_glob_matches(pattern: &str, file_path: &str) -> bool {
-    if pattern == file_path {
+    // Deliberately kept from the old matcher, not an oversight: a trailing `/*` also matches the
+    // directory itself. `phase5_file_scope_matches` tests these patterns against a *route path*
+    // (`/api/users`), and scopes are written as `/api/users/*` to mean that route and anything
+    // under it. Strict globstar would drop the bare-directory case, which
+    // `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
+    // pins. Widening only, and only for this one shape.
+    if let Some(prefix) = pattern.strip_suffix("/*")
+        && file_path == prefix
+    {
         return true;
     }
-    if let Some(prefix) = pattern.strip_suffix("/**/route.ts") {
-        return file_path.starts_with(prefix) && file_path.ends_with("/route.ts");
+    glob_matches_from(pattern.as_bytes(), 0, file_path.as_bytes(), 0)
+}
+
+fn glob_matches_from(pattern: &[u8], mut pi: usize, path: &[u8], mut si: usize) -> bool {
+    loop {
+        if pi >= pattern.len() {
+            return si >= path.len();
+        }
+
+        // `**/` — zero or more complete segments. The zero case is the whole bug.
+        if pattern[pi..].starts_with(b"**/") {
+            let rest = pi + 3;
+            if glob_matches_from(pattern, rest, path, si) {
+                return true;
+            }
+            for index in si..path.len() {
+                if path[index] == b'/' && glob_matches_from(pattern, rest, path, index + 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Trailing `/**` — this directory, or anything beneath it.
+        if pi + 3 == pattern.len() && pattern[pi..] == *b"/**" {
+            return si >= path.len() || path[si] == b'/';
+        }
+
+        // Bare `**` — any run of characters, separators included.
+        if pattern[pi..].starts_with(b"**") {
+            let rest = pi + 2;
+            for index in si..=path.len() {
+                if glob_matches_from(pattern, rest, path, index) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        match pattern[pi] {
+            b'*' => {
+                let rest = pi + 1;
+                let mut index = si;
+                loop {
+                    if glob_matches_from(pattern, rest, path, index) {
+                        return true;
+                    }
+                    if index >= path.len() || path[index] == b'/' {
+                        return false;
+                    }
+                    index += 1;
+                }
+            }
+            b'?' => {
+                if si >= path.len() || path[si] == b'/' {
+                    return false;
+                }
+                pi += 1;
+                si += 1;
+            }
+            literal => {
+                if si >= path.len() || path[si] != literal {
+                    return false;
+                }
+                pi += 1;
+                si += 1;
+            }
+        }
     }
-    if let Some(prefix) = pattern.strip_suffix("/*") {
-        return file_path == prefix || file_path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some(prefix) = pattern.strip_suffix("/**") {
-        return file_path == prefix || file_path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some((prefix, suffix)) = pattern.split_once("**") {
-        return file_path.starts_with(prefix) && file_path.ends_with(suffix);
-    }
-    if let Some(prefix) = pattern.strip_suffix('*') {
-        return file_path.starts_with(prefix);
-    }
-    false
 }
 
 fn request_validation_missing_code(proof: &SecurityBoundaryProof) -> String {
@@ -3968,5 +4052,77 @@ fn diff_status_to_str(status: drift_engine::DiffStatus) -> &'static str {
         drift_engine::DiffStatus::NewInDiff => "new_in_diff",
         drift_engine::DiffStatus::TouchedExisting => "touched_existing",
         drift_engine::DiffStatus::OutsideDiff => "outside_diff",
+    }
+}
+
+#[cfg(test)]
+mod path_glob_boundary_tests {
+    use super::path_glob_matches;
+
+    /// The globstar port (TDD §5.1, discovered during D1).
+    ///
+    /// The previous matcher was a pile of prefix/suffix special cases that never implemented
+    /// `**/` as *zero or more* segments. `packages/core/src/globs.ts:13-14` documents the
+    /// identical bug, fixed on the TypeScript side and never ported here; a comment at
+    /// `presence_file_in_scope` recorded it as still live and deliberately did not change it.
+    ///
+    /// The zero-segment rows are the whole defect: every scope the candidate proposer emits is
+    /// `**/`-prefixed, and a repo whose routes sit at the root — the default create-next-app
+    /// layout — has no leading segments to consume. Both the app-router and pages-router forms
+    /// failed, so no proposer-produced convention of an affected kind could match any file.
+    #[test]
+    fn globstar_prefixes_match_zero_leading_segments() {
+        // The exact patterns `candidate_command.rs`'s `route_scope` emits.
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "app/api/users/route.ts"),
+            ("**/app/api/**/route.ts", "app/api/route.ts"),
+            ("**/pages/api/**/*.ts", "pages/api/route-leak.ts"),
+            ("**/pages/api/**/*.ts", "pages/api/nested/handler.ts"),
+        ] {
+            assert!(
+                path_glob_matches(pattern, path),
+                "{pattern} must match root-level {path} — `**/` is zero or more segments"
+            );
+        }
+
+        // And still match when the leading segments are actually there (a monorepo mount).
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "apps/web/app/api/users/route.ts"),
+            ("**/pages/api/**/*.ts", "apps/web/pages/api/handler.ts"),
+        ] {
+            assert!(path_glob_matches(pattern, path), "{pattern} vs {path}");
+        }
+    }
+
+    #[test]
+    fn globstar_patterns_still_reject_what_they_should() {
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "app/api/users/handler.ts"),
+            ("**/pages/api/**/*.ts", "pages/app/handler.ts"),
+            // `*` does not cross a separator.
+            ("app/api/*/route.ts", "app/api/a/b/route.ts"),
+            // The old matcher answered true here: it reduced this to
+            // `starts_with("app/api") && ends_with("/route.ts")`, so a sibling directory whose
+            // name merely began with "api" matched. Tightening, and worth pinning.
+            ("app/api/**/route.ts", "app/apixyz/route.ts"),
+        ] {
+            assert!(
+                !path_glob_matches(pattern, path),
+                "{pattern} must not match {path}"
+            );
+        }
+    }
+
+    /// Deliberately kept from the old matcher: a trailing `/*` also matches the directory
+    /// itself, because `phase5_file_scope_matches` tests these patterns against a *route path*
+    /// and scopes are written as `/api/users/*` to mean that route and anything under it.
+    /// Strict globstar would drop the bare-directory case, which
+    /// `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
+    /// pins — it went red without this and is the reason the shim exists.
+    #[test]
+    fn a_trailing_star_still_matches_the_directory_itself() {
+        assert!(path_glob_matches("/api/users/*", "/api/users"));
+        assert!(path_glob_matches("/api/users/*", "/api/users/detail"));
+        assert!(!path_glob_matches("/api/users/*", "/api/admin"));
     }
 }
