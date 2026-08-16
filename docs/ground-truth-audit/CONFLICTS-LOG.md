@@ -58,11 +58,24 @@ green a merge-gate condition.
 `packet_within_envelope_budget` (`scripts/external-eval.mjs:452`). The baseline JSON was last
 blessed at `d2517b96` (2026-08-13); `255f2208` landed 2026-08-15. §0.2's pre-verification
 covered `build:engine` and `test:engine` only — both genuinely green.
-**Resolution:** not routed around and not blessed. Under investigation for full root cause;
-disposition recorded in `ENVELOPE-BUDGET-INVESTIGATION.md`. Blessing it to go green is
-refused on the same grounds as any other baseline bless (§9.4.4). The merge gate is
-evaluated against *this remediation's* deltas, with the pre-existing failure named
-explicitly rather than absorbed.
+**Resolution:** not routed around and not blessed. Root cause established and recorded in
+`ENVELOPE-BUDGET-INVESTIGATION.md`: `f3f81257` (W4 item D-A5) added itemized parser-gap
+`records` to the `scan status` payload, which `prepare --json` embeds wholesale — 359,973 of
+714,662 bytes on openstatus, 50.4% of the envelope. It is a genuine product defect, not a
+stale threshold, and a fix already exists in flight on `remediation/w7-detection`.
+
+This remediation **neither cherry-picks that fix nor blesses the baseline.** Pulling another
+branch's unmerged commits in to make a gate go green is gaming the gate — the same act as
+blessing a baseline, which §9.4.4 forbids. The merge gate is evaluated against *this
+remediation's* deltas, with the pre-existing failure named explicitly rather than absorbed.
+
+**Verified operational consequence:** `eval:external` stays fully usable for detecting
+fact-layer regressions while red. Every other assertion still runs and passes, and the
+baseline diff still walks every non-volatile key. Only the exit code is lost. So at every T3
+boundary the regression criterion is *a new line under `changed vs baseline`, or a new name in
+`failed_assertions` beyond `packet_within_envelope_budget`* — read the printed output, not
+`$?`. `updateGate` independently refuses `--update` while any verdict is FAIL, which is
+correct and is not worked around.
 
 ## 6. `eval:determinism` in §5.2's S2 experiment vs. §9.4.5's subagent ban
 
