@@ -45,7 +45,10 @@
     "enumerated_on": "2026-08-16"
   },
   "enforcement": {
-    "integration_branches": ["remediation/ground-truth-audit", "main"],
+    "integration_branches": [
+      "remediation/ground-truth-audit",
+      "main"
+    ],
     "override_env": "DRIFT_LEDGER_ENFORCE",
     "note": "On any other branch the checker reports and exits 0. See §4.2 'Scope of that CI rule'."
   },
@@ -188,10 +191,10 @@
       "kind": "api_route_forbids_sensitive_response_fields",
       "enforcement_path": "phase5_proof",
       "dispatch": "check_command.rs:211 (arm 6)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "This is D1. The proposer emits the candidate and `conventions accept` takes it, but the workflow produces ZERO findings on gt-sensitive-fields' leak route, so no firing evidence exists to hold. Track A's D1 fix is expected to earn the transition; per §4.2 the lead applies it at integration time, and it is deliberately NOT pre-marked here on the strength of in-flight work.",
+      "state": "firing",
+      "canary": "test/e2e/gt-sensitive-fields.test.ts",
+      "evidence": "D1 shipped. Both fixtures obtain the convention from the proposer via `drift start` -> `drift conventions accept` and never inject it: gt-sensitive-fields-schema (marker path) and gt-sensitive-fields (inference path) each yield exactly 1 finding on pages/api/route-leak.ts and 0 on pages/api/route-safe.ts. Transition applied by the lead at integration per §4.2, after re-running the suite and verifying the tests were red at ea9e774c for assertion reasons.",
+      "missing_evidence": null,
       "citation": null
     },
     {
