@@ -138,8 +138,19 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             .collect::<BTreeSet<_>>();
         let direction =
             baseline_coverage_direction(&violating_files, &scope_files, &diff_changed_files);
+        // D-H1: the count is the DEDUPED evidence, not the two source lists summed.
+        //
+        // `combined_evidence_refs` dedupes by (file_path, start_line, end_line, symbol,
+        // import_source), because a fact and a graph import routinely describe the same import
+        // statement. Summing the inputs counts that statement twice. On a fixture with one import
+        // in one file it reported `supporting_examples_count: 2` beside an `evidence_refs` of
+        // length 1 - and `commands/start.ts:368` renders the score directly, so a human accepting
+        // the convention read "Evidence: 2 matching import(s)" for one import.
+        //
+        // `build_candidate` at the bottom of this file already passes `evidence_refs.len()`;
+        // this makes the two agree.
         let mut data_access_scoring = scoring(
-            data_imports.len() + graph_data_imports.len(),
+            evidence_refs.len(),
             0,
             scope_file_count,
             unique_evidence_file_count(&data_imports, &graph_data_imports),
@@ -244,9 +255,14 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             suggested_enforcement_mode: "warn".to_string(),
             enforcement_capability: "heuristic_check".to_string(),
             confidence_label: if service_imports.is_empty() { "low" } else { "medium" }.to_string(),
+            // D-H1, second instance and not in the audit: same undeduped sum, one field over.
+            // `counterexample_refs` here is `combined_evidence_refs(data_imports,
+            // graph_data_imports)` - deduped - while `counterexamples_count` summed the same two
+            // inputs raw. `supporting` is `service_imports.len()` and stays: plain `evidence_refs`
+            // maps one ref per fact with no dedup, so that count already equals its list.
             scoring: scoring(
                 service_imports.len(),
-                data_imports.len() + graph_data_imports.len(),
+                counterexample_refs.len(),
                 scope_file_count,
                 unique_fact_file_count(&service_imports),
                 "engine-service-delegation-v1",

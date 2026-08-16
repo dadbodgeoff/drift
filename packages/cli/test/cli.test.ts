@@ -10923,6 +10923,31 @@ schema_version: MIGRATIONS.length,
     expect(unsafe.stderr).toContain("--path must be repo-relative.");
   });
 
+  it("repo map carries the route-trust fields alongside the routes", async () => {
+    // W6/D-A2. `routes` says what the routes are; these three say how much to trust that list -
+    // where each route came from, whether the canonical list fell back, and whether the proofs
+    // behind it are from this scan. All three were computed inside the CLI's copy of this
+    // payload, off the same phase-8 read model it takes `routes` from, and then dropped, while
+    // MCP emitted them under the same `response_schema`. So two documents both claiming
+    // drift.repo.map.v1 disagreed about which keys that schema has.
+    const { databasePath, repoId } = await seedStartedDoctorState("drift-repo-map-trust-fields-");
+
+    const mapped = await runCli(["--db", databasePath, "repo", "map", "--repo", repoId, "--json"]);
+    const payload = JSON.parse(mapped.stdout);
+
+    expect(mapped.exitCode).toBe(0);
+    // Presence, not value: absence is the defect, and a null here would still be an answer.
+    expect(Object.keys(payload)).toEqual(
+      expect.arrayContaining(["route_source_summary", "canonical_route_fallback", "proof_freshness"])
+    );
+    expect(payload.route_source_summary).toMatchObject({
+      normalized_entrypoint: expect.any(Number),
+      security_proof: expect.any(Number),
+      legacy_fact_fallback: expect.any(Number)
+    });
+    expect(payload.canonical_route_fallback).toMatchObject({ used: expect.any(Boolean) });
+  });
+
   it("fails repo map when fresh scan context is required but the graph is stale", async () => {
     const { databasePath } = await seedAcceptedDatabase();
 
@@ -13406,6 +13431,59 @@ schema_version: MIGRATIONS.length,
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
+
+  it("renders every mutating command for a human without --json", async () => {
+    // W4/D-CL2. `formatOutput` prints a string as-is, pretty JSON under `--json`, and otherwise
+    // COMPACT SINGLE-LINE JSON - so a command with no text branch emitted a one-line blob to a
+    // terminal. Six commands had no branch: scan, checks run, and the four convention mutations.
+    //
+    // No existing test caught it because every existing test for these six passes `--json`. The
+    // human path was untested precisely because it did not exist.
+    const databasePath = await seedDatabase();
+
+    const accepted = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--confirm",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(accepted.exitCode).toBe(0);
+    // The load-bearing assertion is the negative one: not JSON. A human-readable rendering is
+    // allowed to change wording, but it may never go back to being a serialized object.
+    expect(accepted.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(accepted.stdout).toContain("Convention accepted");
+    expect(accepted.stdout).toContain("convention_no_direct_db");
+    // The mode a human just chose has to be visible in what they are shown.
+    expect(accepted.stdout).toContain("warn");
+  });
+
+  it("says nothing was written when a mutation is a dry run", async () => {
+    // D-CL2's sharpest case: without --confirm these commands write nothing, and a headline
+    // reading "Convention accepted" over an unwritten change is worse than the JSON blob was.
+    const databasePath = await seedDatabase();
+
+    const dryRun = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--dry-run",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(dryRun.exitCode).toBe(0);
+    expect(dryRun.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(dryRun.stdout).toContain("dry run");
+    expect(dryRun.stdout).toContain("nothing written");
+    // And it must NOT read as though the write happened.
+    expect(dryRun.stdout).not.toContain("Convention accepted\n");
   });
 
   it("accepts a candidate, materializes a repo contract, and audits the action", async () => {

@@ -5,18 +5,21 @@ import { requiredDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
 import { auditEvent } from "../domain/governance.js";
 import { hashStable,repoIdForRoot,sanitizeAuditId } from "../domain/identifiers.js";
 import { runScanRepo,scanStatusPayload } from "../domain/scan-status.js";
+import { formatScanText } from "../formatters/scan.js";
 import { formatScanStatusText } from "../formatters/scan-status.js";
 
-export async function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs) {
+export async function scanRepo(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
   if (stringFlag(parsed, "repo")) {
     throw new Error("--repo is not supported for drift scan; use --repo-root with --state-root, or run scan status for an existing repo id.");
   }
-  return runScanRepo(storage, {
+  const payload = await runScanRepo(storage, {
     now: stringFlag(parsed, "now") ?? new Date().toISOString(),
     repoRoot: resolveRepoRoot(parsed),
     actor: actorFlag(parsed),
     databasePath: requiredDatabasePath(parsed)
   });
+  // D-CL2: without this branch, `drift scan` printed compact single-line JSON to a terminal.
+  return { payload: parsed.flags.has("json") ? payload : formatScanText(payload) };
 }
 
 export function scanStatus(storage: SqliteDriftStorage, parsed: ParsedArgs): CommandPayload {

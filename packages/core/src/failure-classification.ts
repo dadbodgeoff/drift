@@ -214,3 +214,36 @@ function extractRecoveryCommands(message: string, fallback: string[]): string[] 
   const match = message.match(/Run (drift [^;]+);/);
   return match?.[1] ? [match[1]] : fallback;
 }
+
+/**
+ * An error that states its own classification, without needing a shared class identity.
+ *
+ * W4/D-E7. `isSelfClassifiedError` above is deliberately structural so that "no package has to
+ * share a class identity across build boundaries" - but only the CLI ever had a constructor for
+ * the shape, so MCP kept throwing plain `Error`s and relied on `classifyFailureMessage` matching
+ * their prose. Two of its throw sites land on codes the CLI migrated away from prose-matching in
+ * W3: `Scan is stale for ...` -> `stale_scan` and `No repo contract exists for ...` ->
+ * `missing_contract`.
+ *
+ * Those matched, so nothing was broken. What was true is that MCP's classification depended on
+ * the first four words of two sentences, and since W3 the exit code follows the failure code - so
+ * rewording either sentence would have silently demoted a refusal to the catch-all. The CLI has
+ * not been able to do that since W3; this is the same protection for the other surface.
+ *
+ * Returns a real `Error` (so stacks and `instanceof Error` still work) with the classification
+ * attached, which is exactly what `isSelfClassifiedError` looks for.
+ */
+export function selfClassifiedError(input: {
+  message: string;
+  code: string;
+  userAction: string;
+  recoveryCommands?: string[];
+  safeToRetry?: boolean;
+}): Error {
+  return Object.assign(new Error(input.message), {
+    code: input.code,
+    userAction: input.userAction,
+    recoveryCommands: input.recoveryCommands ?? [],
+    safeToRetry: input.safeToRetry ?? true
+  });
+}

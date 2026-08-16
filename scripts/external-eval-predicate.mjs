@@ -6,6 +6,44 @@
  * failed, which the runner prints and records.
  */
 
+/** BB-6's envelope ceiling, in bytes. Shared so the runner and the ratchet cannot disagree. */
+export const PACKET_ENVELOPE_BUDGET = 500_000;
+
+/**
+ * W0: which coarse band of the envelope budget a repo's packet occupies.
+ *
+ * `packet_within_envelope_budget` is a cliff. It reads true at 499,999 bytes and false at
+ * 500,001, so the only regression it can see is one that has already shipped. W7 fixed the
+ * overrun that exposed this (dub 715,023 -> 269,235) and recorded `packet_bytes` so a flip
+ * could be diagnosed - but put it in VOLATILE, which is the set the baseline diff SKIPS. So
+ * the measurement exists and nothing compares it: dub could double from 270,193 to 499,999
+ * and the suite would print "no change vs baseline".
+ *
+ * A band is compared instead of the raw number for the reason `packet_bytes` was made
+ * volatile in the first place - ids and timestamps move it by tens of bytes between runs, and
+ * a pinned integer would flap. The bands are wide enough that the closest repo (dub, 54.0% of
+ * budget) sits 30k bytes clear of a boundary, and narrow enough that crossing 60% prints a
+ * line while there is still 40% of the budget left to fix it in.
+ */
+/**
+ * Band edges as fractions of the budget, exported because the anti-flap test asserts no suite
+ * repo sits near one. Hardcoding them in the test instead would let an edge be moved onto a
+ * repo with nothing failing - the gate losing its grip on the source it reads.
+ */
+export const ENVELOPE_BAND_EDGES = [0.6, 0.8, 0.95];
+
+/** Worst-to-best ordering, so "did this band get worse" is a comparison rather than a table. */
+export const ENVELOPE_BAND_ORDER = ["under_60pct", "60_to_80pct", "80_to_95pct", "over_95pct"];
+
+export function envelopeBudgetBand(packetBytes, budget = PACKET_ENVELOPE_BUDGET) {
+  if (!Number.isFinite(packetBytes) || !Number.isFinite(budget) || budget <= 0) {
+    return null;
+  }
+  const ratio = packetBytes / budget;
+  const index = ENVELOPE_BAND_EDGES.findIndex((edge) => ratio < edge);
+  return index === -1 ? ENVELOPE_BAND_ORDER.at(-1) : ENVELOPE_BAND_ORDER[index];
+}
+
 /**
  * @param {object} result the record built by evaluateRepo
  * @param {object} cfg    the REPOS entry (or ad-hoc config) that produced it
@@ -140,6 +178,16 @@ export function unsafeBaselineMoves(before, after) {
   }
   if (["fail", "refused"].includes(before.check_status) && after.check_status === "pass") {
     moves.push("check_status");
+  }
+  // W0: the envelope band may improve for free and may never silently worsen. Without this,
+  // `--update` would happily record a packet that grew from 54% to 94% of budget - still
+  // `packet_within_envelope_budget: true`, so no assertion fails, and the band delta would be
+  // the only line in the diff naming it. That is the shape of the movement W7 had to
+  // reconstruct by hand.
+  const beforeBand = ENVELOPE_BAND_ORDER.indexOf(before.packet_budget_band);
+  const afterBand = ENVELOPE_BAND_ORDER.indexOf(after.packet_budget_band);
+  if (beforeBand >= 0 && afterBand > beforeBand) {
+    moves.push("packet_budget_band");
   }
   return moves;
 }

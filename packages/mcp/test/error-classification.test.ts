@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
+import { classifyFailure, selfClassifiedError } from "@drift/core";
 import { openDriftStorage } from "@drift/storage";
 import { handleMcpJsonRpcRequest } from "../src/index.js";
 
@@ -130,5 +131,37 @@ describe("MCP errors arrive classified, not as raw SQLite strings", () => {
     expect(data.code).toBeTruthy();
     expect(data.user_action).toBeTruthy();
     expect(typeof data.safe_to_retry).toBe("boolean");
+  });
+
+  it("classifies MCP's own refusals from the error, not from its prose", () => {
+    // W4/D-E7. These two throw sites carried no classification, so `classifyFailureMessage`
+    // recognised them by the first four words of their sentences - "Scan is stale" and "No repo
+    // contract exists". That matched, so nothing was broken; what was true is that since W3 the
+    // exit code follows the failure code, so rewording either sentence would have silently
+    // demoted a refusal to the catch-all. The CLI stopped being able to do that in W3.
+    //
+    // Asserted against a REWORDED message, which is the property under test: a classifier reading
+    // the code gets it right, and one reading the prose cannot.
+    const stale = selfClassifiedError({
+      message: "the scan for repo_abc is out of date",
+      code: "stale_scan",
+      userAction: "Refresh the scan or rerun without --require-fresh for read-only stale context.",
+      recoveryCommands: ["drift scan --repo-root ."]
+    });
+    const missingContract = selfClassifiedError({
+      message: "repo_abc has not accepted anything yet",
+      code: "missing_contract",
+      userAction: "Accept or import a repo contract before running contract-backed enforcement.",
+      recoveryCommands: []
+    });
+
+    expect(classifyFailure(stale, stale.message).code).toBe("stale_scan");
+    expect(classifyFailure(missingContract, missingContract.message).code).toBe("missing_contract");
+
+    // The control: the same reworded prose, thrown as a plain Error, is NOT recognised. This is
+    // what the two sites were one edit away from.
+    expect(classifyFailure(new Error(stale.message), stale.message).code).not.toBe("stale_scan");
+    expect(classifyFailure(new Error("repo_abc has not accepted anything yet"), "repo_abc has not accepted anything yet").code)
+      .not.toBe("missing_contract");
   });
 });

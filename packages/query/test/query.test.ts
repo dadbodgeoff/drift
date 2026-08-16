@@ -385,7 +385,7 @@ describe("GraphQueryService", () => {
 
   it("selects route and service tests relevant to a changed route flow", () => {
     const result = selectRelevantTests({
-      changed_file: "app/api/users/route.ts",
+      changed_files: ["app/api/users/route.ts"],
       route_flow: {
         route: "GET /api/users",
         service_file: "server/services/users.ts"
@@ -396,8 +396,80 @@ describe("GraphQueryService", () => {
     expect(result).toMatchObject({
       closest_tests: ["app/api/users/route.test.ts", "server/services/users.test.ts"],
       missing_test_candidate: false,
-      required_check_hint: "npm test -- users"
+      required_check_hint: "npm test -- users",
+      test_intelligence_reason: null
     });
+  });
+
+  it("considers every changed file, not only the first", () => {
+    // D-A3(a). Both surfaces passed `relevantFiles[0]?.path`, and relevantFiles is ranked then
+    // truncated. This is midday's shape: the directly relevant test belongs to the file at
+    // index 2, and the files ahead of it have no tests at all, so selection returned [].
+    const result = selectRelevantTests({
+      changed_files: [
+        "app/(marketing)/page.tsx",
+        "lib/constants.ts",
+        "lib/email/onboarding-template.ts"
+      ],
+      test_files: ["lib/email/__tests__/onboarding-template.test.ts"]
+    });
+
+    expect(result.closest_tests).toEqual(["lib/email/__tests__/onboarding-template.test.ts"]);
+    // The subject is the file the test is about, not whichever file ranked first.
+    expect(result.test_intelligence[0]).toMatchObject({
+      test_subject: "lib/email/onboarding-template.ts"
+    });
+  });
+
+  it("matches a camelCase source against a kebab-case test", () => {
+    // D-A3(b). The exact pair from the audit: the raw slugs are `formatCurrency` and
+    // `format-currency`, and `.includes()` on them is false.
+    const result = selectRelevantTests({
+      changed_files: ["lib/utils/formatCurrency.ts"],
+      test_files: ["lib/utils/__tests__/format-currency.test.ts"]
+    });
+
+    expect(result.closest_tests).toEqual(["lib/utils/__tests__/format-currency.test.ts"]);
+    expect(result.missing_test_candidate).toBe(false);
+  });
+
+  it("distinguishes a repo with no tests from a change nothing covers", () => {
+    // D-A3(c). These two emitted the byte-identical `"not_implemented_for_repo"`, and they call
+    // for opposite responses: one means write the first test, the other means go find the test
+    // that already exists. taxonomy is the first shape, midday the second.
+    const noTestsAnywhere = selectRelevantTests({
+      changed_files: ["app/api/users/route.ts"],
+      test_files: []
+    });
+    const testsExistButNoneMatch = selectRelevantTests({
+      changed_files: ["app/api/users/route.ts"],
+      test_files: ["lib/unrelated/billing.test.ts"]
+    });
+
+    expect(noTestsAnywhere.test_intelligence_reason).toBe("no_test_files_in_repo");
+    expect(testsExistButNoneMatch.test_intelligence_reason).toBe("no_tests_matched_change");
+    expect(noTestsAnywhere.test_intelligence_reason).not.toBe(
+      testsExistButNoneMatch.test_intelligence_reason
+    );
+  });
+
+  it("reports no reason when tests were found", () => {
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/users.test.ts"]
+    });
+    expect(result.test_intelligence_reason).toBeNull();
+  });
+
+  it("does not match an unrelated test after separators are stripped", () => {
+    // Restraint for (b): removing separators must not turn every name into a substring of every
+    // other. A normalized match is still a substring match, not a fuzzy one.
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/billing-reports.test.ts"]
+    });
+    expect(result.closest_tests).toEqual([]);
+    expect(result.test_intelligence_reason).toBe("no_tests_matched_change");
   });
 
   it("classifies a user endpoint filtering task", () => {

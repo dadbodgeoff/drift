@@ -33,6 +33,7 @@ import {
   migrationSentence,
   canonicalScanStateJson,
   classifyFailure,
+  selfClassifiedError,
   createAgentEnvelopeV2,
   createAgentPreflightPacket,
   createContextPolicyMatrix,
@@ -88,7 +89,12 @@ import {
   rankRelevantFiles,
   relevantFilesForTask,
   repoMapFileForPayload,
-  walkIndexableFiles,buildParserGapSection,withParserGapRecordsOmitted} from "@drift/query";
+  walkIndexableFiles,buildParserGapSection,withParserGapRecordsOmitted,
+  // W6: derivations shared with the CLI rather than copied. MCP's private `preparedConvention`
+  // carried D-A1 and had never received CV-5's presence branch, and its `repoMapPayload` was the
+  // only one emitting the three route-trust fields - see query/src/prepared-convention.ts and
+  // query/src/repo-map-payload.ts.
+  agentEnvelopeForScan,buildRepoMapPayload,instructionForConvention,preparedConvention} from "@drift/query";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -260,7 +266,8 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         test_files: testFiles
       });
       const testSelection = selectRelevantTests({
-        changed_file: relevantFiles[0]?.path ?? requestedPath ?? "",
+        // D-A3(a): every relevant file, not just the head of the ranked list.
+        changed_files: relevantFiles.map((file) => file.path),
         route_flow: changeImpactRouteFlows[0],
         test_files: testFiles
       });
@@ -349,7 +356,10 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         }, new Map<string, string[]>())
       });
       const preflightConventions = activeConventions.map((convention) =>
-        preflightConvention(convention, preflightExemplars)
+        // W6/D-A1: `requestedPath` is passed, which the private copy never did. It is the same
+        // `path` this handler already uses to rank relevant files and reports as `target_path`;
+        // without it, a task naming a conforming file got that file back as an example of itself.
+        preparedConvention(convention, preflightExemplars, { targetPath: requestedPath ?? undefined })
       );
       const guidance = buildGuidanceView({
         repoId: requestedRepoId,
@@ -396,7 +406,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         task: requestedTask,
         target_path: requestedPath ?? null,
         generated_at: generatedAt,
-        agent_envelope: mcpAgentEnvelope({
+        agent_envelope: agentEnvelopeForScan({
           surface: "cli-preflight",
           policy,
           scanStatus,
@@ -440,9 +450,9 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         task_preflight_packet: taskPreflightPacket,
         change_impact: changeImpact,
         test_intelligence: testSelection.test_intelligence,
-        test_intelligence_reason: testSelection.test_intelligence.length === 0
-          ? "not_implemented_for_repo"
-          : null,
+        // D-A3(c): derived once, in selectRelevantTests. See the CLI's prepare for the two
+        // questions the old inline ternary gave the same answer to.
+        test_intelligence_reason: testSelection.test_intelligence_reason,
         agent_contract_packet: agentContractPacket,
         baseline,
         findings,
@@ -532,7 +542,7 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
       return {
         response_schema: "drift.findings.list.v1",
         repo_id: requestedRepoId,
-        agent_envelope: mcpAgentEnvelope({
+        agent_envelope: agentEnvelopeForScan({
           surface: "cli-check",
           policy,
           scanStatus,
@@ -1085,7 +1095,17 @@ function validateMcpToolArguments(name: keyof DriftMcpHandlers, args: Record<str
 
 function requiredContract(contract: RepoContract | undefined, repoId: string): RepoContract {
   if (!contract) {
-    throw new Error(`No repo contract exists for ${repoId}.`);
+    // D-E7: see assertFreshScanIfRequired. Same code the CLI reports for this scenario.
+    throw selfClassifiedError({
+      message: `No repo contract exists for ${repoId}.`,
+      code: "missing_contract",
+      userAction:
+        "Accept or import a repo contract before running contract-backed enforcement.",
+      recoveryCommands: [
+        "drift conventions list --status candidate --json",
+        "drift contract import <contract.json> --dry-run --json"
+      ]
+    });
   }
   return contract;
 }
@@ -1517,9 +1537,16 @@ function assertFreshScanIfRequired(
   if (!required || !scanStatus.stale) {
     return;
   }
-  throw new Error(
-    `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit require_fresh to inspect stale context.`
-  );
+  // D-E7: self-classified, so the refusal survives a reword. The code, action and recovery
+  // command are the ones classifyFailureMessage derived from this sentence's prose - this states
+  // them instead of spelling them.
+  throw selfClassifiedError({
+    message: `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit require_fresh to inspect stale context.`,
+    code: "stale_scan",
+    userAction:
+      "Refresh the scan or rerun without --require-fresh for read-only stale context.",
+    recoveryCommands: [scanStatus.next_command]
+  });
 }
 
 function policyContextSummary(input: {
@@ -1632,162 +1659,30 @@ function repoMapPayload(
   const { contract, policy } = authorizedMcpContractOrDefault(storage, repoId, options.surface);
   const latestScan = latestIndexedScan(storage.listScanManifests(repoId));
   const snapshots = latestScan ? storage.listFileSnapshots(repoId, latestScan.id) : [];
-  const facts = latestScan ? storage.listFacts(latestScan.id) : [];
-  const findings = storage.listFindings(repoId);
-  const graphMap = latestScan ? createGraphQueryService(storage).repoMap({ repoId, scanId: latestScan.id }) : null;
-  const normalizedEntrypoints = latestScan
-    ? storage.listNormalizedEntrypoints(repoId, latestScan.id)
-    : [];
-  const frameworkParserGaps = latestScan
-    ? storage.listFrameworkParserGaps(repoId, latestScan.id)
-    : [];
-  const frameworkCapabilities = latestScan
-    ? storage.listFrameworkCapabilities(repoId, latestScan.id)
-    : [];
-  const frameworkEntryPoints = latestScan
-    ? buildFrameworkEntrypointReadModel({
-        repo_id: repoId,
-        scan_id: latestScan.id,
-        entrypoints: normalizedEntrypoints,
-        parser_gaps: frameworkParserGaps,
-        capabilities: frameworkCapabilities
-      })
-    : null;
-  const offset = options.offset ?? 0;
-  const readModel = buildRepoMapReadModel({
-    repoId,
-    scanId: latestScan?.id ?? null,
-    graphFiles: graphMap?.files ?? [],
-    factFiles: fallbackFactRepoMapFiles(snapshots, facts),
-    contract,
-    findings,
-    filters: {
-      role: options.role,
-      path: options.path
-    },
-    limit: options.limit,
-    offset
-  });
   const scanStatus = scanStatusPayload(storage, repoId);
   assertFreshScanIfRequired(repoId, scanStatus, Boolean(options.requireFresh));
   const allParserGaps = latestScan
     ? [...storage.listParserGaps(repoId, latestScan.id), ...storage.listParserGapV2(repoId, latestScan.id)]
     : [];
-  const readiness = readinessForStoredScan(storage, repoId, latestScan?.id ?? null, "repo_map", allParserGaps);
-  const proofRuns = latestScan
-    ? storage.listLatestSecurityBoundaryProofRunsForRepo({
-        repo_id: repoId,
-        file_path: options.path
-      })
-    : [];
-  const fallbackProofs = proofRuns.length === 0 && latestScan
-    ? storage.listSecurityBoundaryProofs(repoId, latestScan.id)
-        .filter((proof) => !options.path || proof.route.file_path === options.path)
-    : [];
-  const proofs = proofRuns.length > 0 ? proofRuns.map((run) => run.proof) : fallbackProofs;
-  const proofScanId = proofRuns[0]?.scan_id ?? (fallbackProofs.length > 0 ? latestScan?.id ?? null : null);
-  const canonicalRoutes = buildCanonicalRouteReadModel({
-    repo_id: repoId,
-    scan_id: latestScan?.id ?? null,
-    entrypoints: normalizedEntrypoints,
-    proofs: proofs.map((proof) => ({
-      proof_scan_id: proofScanId,
-      route_id: proof.route.route_id,
-      ...(proof.route.normalized_entrypoint_id ? { normalized_entrypoint_id: proof.route.normalized_entrypoint_id } : {}),
-      file_path: proof.route.file_path,
-      path: proof.route.endpoint?.path ?? null,
-      method: proof.route.endpoint?.method ?? proof.route.handler_symbol ?? null
-    })),
-    fallback_fact_routes: fallbackFactRoutes(readModel.all_files)
-  });
-  const phase8Security = buildSecurityPhase8ReadModel({
-    repo_id: repoId,
-    scan_id: latestScan?.id ?? null,
-    check_id: proofRuns[0]?.check_id ?? null,
-    proof_scan_id: proofScanId,
-    proofs,
-    findings: findings.map((finding) => ({
-      finding_id: finding.id,
-      title: finding.title,
-      lifecycle: finding.status
-    })),
-    accepted_conventions: contract.conventions,
-    changed_files: options.path ? [options.path] : undefined,
-    known_routes: canonicalRoutes.routes.filter((route) => !options.path || route.file_path === options.path),
-    route_source_summary: canonicalRoutes.route_source_summary,
-    canonical_route_fallback: canonicalRoutes.fallback
-  });
-  return {
-    response_schema: "drift.repo.map.v1",
-    repo_id: repoId,
-    repo_root: repo.root_path,
-    generated_at: new Date().toISOString(),
-    agent_envelope: mcpAgentEnvelope({
-      surface: options.surface,
-      policy,
-      scanStatus,
-      requireFresh: Boolean(options.requireFresh),
-      // Same value the payload's `redactions` reports - see the CLI repo-map payload.
-      contextTruncated: readModel.pagination.has_more
-    }),
+  // W6/D-A2: one derivation, shared with the CLI. This surface was the one emitting the three
+  // trust fields; the CLI computed and discarded them. See query/src/repo-map-payload.ts.
+  return buildRepoMapPayload({
+    storage,
+    repoId,
+    repo,
+    contract,
     policy,
-    readiness,
-    parser_gap_quality: buildParserGapQuality({
-      repo_id: repoId,
-      scan_id: latestScan?.id ?? null,
-      surface: "repo_map",
-      parser_gaps: allParserGaps,
-      readiness
-    }),
     governance: preflightGovernance(),
-    latest_scan: latestScan ?? null,
-    scan_fingerprint: latestScan ? scanFingerprint(latestScan, snapshots) : null,
-    scan_status: scanStatus,
-    filters: {
-      role: options.role ?? null,
-      path: options.path ?? null
-    },
-    summary: readModel.summary,
-    impact_summary: readModel.impact_summary,
-    topology: readModel.topology,
-    pagination: readModel.pagination,
-    routes: phase8Security.routes,
-    route_source_summary: phase8Security.route_source_summary,
-    canonical_route_fallback: phase8Security.canonical_route_fallback,
-    proof_freshness: phase8Security.proof_freshness,
-    framework_entrypoints: frameworkEntryPoints,
-    freshness_requirement: freshnessRequirement(Boolean(options.requireFresh), scanStatus),
-    files: readModel.listed_files.map(repoMapFileForPayload),
-    redactions: {
-      denied_globs: contract.context_egress.denied_globs,
-      snippets_included: false,
-      source_content_included: false,
-      graph_context_included: Boolean(graphMap),
-      // Derived, not asserted - see the CLI repo-map payload for the same reasoning.
-      context_truncated: readModel.pagination.has_more
-    },
-    next_commands: [
-      `drift prepare "task" --repo ${repoId} --json`,
-      `drift scan status --repo ${repoId} --json`
-    ]
-  };
+    scanStatus,
+    freshnessRequirement: freshnessRequirement(Boolean(options.requireFresh), scanStatus),
+    scanFingerprint: latestScan ? scanFingerprint(latestScan, snapshots) : null,
+    latestScan: latestScan ?? null,
+    readiness: readinessForStoredScan(storage, repoId, latestScan?.id ?? null, "repo_map", allParserGaps),
+    options
+  });
 }
 
-function fallbackFactRoutes(files: RepoMapFile[]): CanonicalFactRouteInput[] {
-  return files
-    .filter((file) => file.roles.includes("api_route"))
-    .flatMap((file) => {
-      const methods = file.exported_symbols.filter((symbol) =>
-        ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].includes(symbol)
-      );
-      return (methods.length > 0 ? methods : ["unknown"]).map((method) => ({
-        route_id: `route:${file.path}:${method}`,
-        file_path: file.path,
-        method,
-        file_role: "api_route"
-      }));
-    });
-}
+
 
 function orderAcceptedConventionsForReview(conventions: AcceptedConvention[]): AcceptedConvention[] {
   return [...conventions].sort((left, right) =>
@@ -2038,9 +1933,7 @@ function isResolverInputPath(filePath: string): boolean {
 
 
 
-function isTypescriptPath(filePath: string): boolean {
-  return /\.[cm]?[jt]sx?$/.test(filePath);
-}
+
 
 function fileContentHash(absolutePath: string): string {
   return createHash("sha256").update(readFileSync(absolutePath)).digest("hex");
@@ -2502,81 +2395,7 @@ function prepareFinding(finding: Finding): {
   };
 }
 
-function preflightConvention(
-  convention: AcceptedConvention,
-  // BB-5/BB-6: same optional context, same shared derivation, as the CLI's preparedConvention. The
-  // parity gate compares these entries across surfaces, so a field present on one and absent on the
-  // other is a failure rather than a cosmetic difference.
-  context?: ExemplarContext
-): {
-  id: string;
-  kind: AcceptedConvention["kind"];
-  statement: string;
-  severity: Severity;
-  enforcement_mode: AcceptedConvention["enforcement_mode"];
-  enforcement_capability: AcceptedConvention["enforcement_capability"];
-  scope: AcceptedConvention["scope"];
-  matcher: AcceptedConvention["matcher"];
-  exceptions: AcceptedConvention["exceptions"];
-  agent_instruction: string;
-  conforming_examples: Array<{ file_path: string; role: string | null }>;
-  conforming_examples_reason: string | null;
-  rationale: { derivation: string; reason: string | null };
-  migration_sentence: string | null;
-} {
-  const exemplars = conformingExemplars({
-    scopeFiles: context?.scopeFilesFor(convention) ?? [],
-    // CV-5: any accepted convention, not just this one. The MCP packet and the CLI packet must not
-    // disagree about what conforms, which is the EW-6 parity shape.
-    violatingFiles: context?.violatingFilesAnyConvention() ?? [],
-    roleByFile: context?.roleByFile,
-    // Proven, not presumed - and this surface needs it most: get_task_preflight never runs a check,
-    // so an absent finding here means only that nothing has ever looked.
-    forbiddenImports: convention.matcher?.forbidden_imports ?? [],
-    importsByFile: context?.importsByFile
-  });
-  return {
-    id: convention.id,
-    kind: convention.kind,
-    statement: convention.statement,
-    severity: convention.severity,
-    enforcement_mode: convention.enforcement_mode,
-    enforcement_capability: convention.enforcement_capability,
-    scope: convention.scope,
-    matcher: convention.matcher,
-    exceptions: convention.exceptions,
-    agent_instruction: instructionForConvention(convention),
-    conforming_examples: exemplars.conforming_examples,
-    conforming_examples_reason: exemplars.reason,
-    rationale: conventionRationale({
-      kind: convention.kind,
-      derivation: convention.rationale ?? convention.statement
-    }),
-    migration_sentence: migrationSentence(context?.baselineActiveCountFor(convention.id) ?? 0)
-  };
-}
 
-function instructionForConvention(convention: AcceptedConvention): string {
-  if (convention.kind === "api_route_no_direct_data_access") {
-    const forbidden = (convention.matcher.forbidden_imports ?? []).join(", ");
-    return [
-      "When editing API route files, do not import data-access clients directly.",
-      forbidden ? `Forbidden imports: ${forbidden}.` : "",
-      "Delegate through the repo's accepted service/data-access layer and run drift check before finishing."
-    ].filter(Boolean).join(" ");
-  }
-
-  if (convention.kind === "api_route_requires_service_delegation") {
-    const delegates = (convention.matcher.allowed_delegate_imports ?? []).join(", ");
-    return [
-      "When editing API route files, keep route modules thin and delegate business/data-access work to the service layer.",
-      delegates ? `Observed delegate imports: ${delegates}.` : "",
-      "Treat this as briefing guidance unless the repo later upgrades it to a deterministic check."
-    ].filter(Boolean).join(" ");
-  }
-
-  return `${convention.statement} Follow its scope, matcher, and exceptions.`;
-}
 
 
 function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {
@@ -2588,29 +2407,6 @@ function countDeniedFiles(repoRoot: string, deniedGlobs: string[]): number {
   ).length;
 }
 
-function mcpAgentEnvelope(input: {
-  surface: PolicyDecision["surface"];
-  policy: Pick<PolicyDecision, "allowed" | "surface" | "reason">;
-  scanStatus: ReturnType<typeof scanStatusPayload>;
-  requireFresh: boolean;
-  diagnostics?: string[];
-  contextTruncated?: boolean;
-}) {
-  return createAgentEnvelopeV2({
-    surface: input.surface,
-    policy: input.policy,
-    scan: {
-      required_fresh: input.requireFresh,
-      stale: input.scanStatus.stale,
-      latest_scan_id: input.scanStatus.latest_scan?.id ?? null
-    },
-    redactions: {
-      snippets_included: false,
-      context_truncated: Boolean(input.contextTruncated)
-    },
-    diagnostics: input.diagnostics
-  });
-}
 
 function isApiRoutePath(filePath: string): boolean {
   return isNextApiRoutePath(filePath);
