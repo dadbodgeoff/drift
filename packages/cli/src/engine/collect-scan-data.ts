@@ -1,4 +1,4 @@
-import { FactKindSchema } from "@drift/core";
+import { FactKindSchema, GraphEdgeKindSchema, GraphNodeKindSchema } from "@drift/core";
 import { DriftError } from "../app/drift-error.js";
 import type {
   FactRecord,
@@ -181,7 +181,7 @@ export async function collectScanDataFromRust(input: ScanDataInput): Promise<Sca
     // parsed to completion before it is interpreted, so a check further down would run only after
     // the very record it exists to pre-empt had already thrown.
     if (event.event === "scan_started") {
-      assertEngineVocabularyUnderstood(event.fact_kinds);
+      assertEngineVocabularyUnderstood(event);
     }
     events.push(event);
   });
@@ -332,7 +332,7 @@ function parseEngineStreamOutput(output: string): EngineStreamEvent[] {
 }
 
 /**
- * Refuse an engine that can emit fact kinds this CLI does not understand.
+ * Refuse an engine whose vocabularies this CLI does not understand.
  *
  * Checked at `scan_started`, before a single fact is ingested. Previously the mismatch surfaced on
  * the FIRST RECORD of an unknown kind - measured at line 16 of a real stream - as
@@ -350,22 +350,50 @@ function parseEngineStreamOutput(output: string): EngineStreamEvent[] {
  * cannot skew - the engine is a version-pinned optional dependency whose checksum is verified - and
  * `DRIFT_ENGINE_BIN` validates only that the path is executable.
  *
- * Absent `fact_kinds` (an older engine) is not an error: it cannot emit a kind this CLI lacks,
- * because this CLI is the newer side of that pairing.
+ * D-G4: the graph vocabularies are checked here too. They were bare strings on both sides, so an
+ * unknown node or edge kind was caught only by `GraphNodeSchema` in the middle of the stream - the
+ * exact late, mislabelled failure this handshake was built to replace, still happening for two of
+ * the three vocabularies it covers. `graph_node_batch` arrives after `fact_batch` on a real scan, so
+ * the graph half failed even later than the fact half did.
+ *
+ * An absent list (an older engine) is not an error: it cannot emit a kind this CLI lacks, because
+ * this CLI is the newer side of that pairing.
  */
-function assertEngineVocabularyUnderstood(engineFactKinds: string[] | undefined): void {
-  if (!engineFactKinds) {
+function assertEngineVocabularyUnderstood(
+  event: Extract<EngineStreamEvent, { event: "scan_started" }>
+): void {
+  const mismatches = [
+    { noun: "facts", declared: event.fact_kinds, known: FactKindSchema.options as readonly string[] },
+    {
+      noun: "graph node kinds",
+      declared: event.graph_node_kinds,
+      known: GraphNodeKindSchema.options as readonly string[]
+    },
+    {
+      noun: "graph edge kinds",
+      declared: event.graph_edge_kinds,
+      known: GraphEdgeKindSchema.options as readonly string[]
+    }
+  ].flatMap(({ noun, declared, known }) => {
+    if (!declared) {
+      return [];
+    }
+    const understood = new Set<string>(known);
+    const unknown = declared.filter((kind) => !understood.has(kind)).sort();
+    return unknown.length > 0 ? [{ noun, unknown }] : [];
+  });
+
+  if (mismatches.length === 0) {
     return;
   }
-  const known = new Set<string>(FactKindSchema.options);
-  const unknown = engineFactKinds.filter((kind) => !known.has(kind)).sort();
-  if (unknown.length === 0) {
-    return;
-  }
+
+  const detail = mismatches
+    .map(({ noun, unknown }) => `${unknown.length} ${noun} (${unknown.join(", ")})`)
+    .join("; ");
   throw new DriftError(
-    `Drift engine and CLI disagree about facts: the engine can emit ${unknown.length} kind(s) this ` +
-      `CLI does not understand (${unknown.join(", ")}). Refusing before ingesting anything, because ` +
-      "this pairing would otherwise fail partway through the scan and leave a scan half done.",
+    `Drift engine and CLI disagree about vocabulary: the engine can emit ${detail} that this CLI ` +
+      "does not understand. Refusing before ingesting anything, because this pairing would " +
+      "otherwise fail partway through the scan and leave a scan half done.",
     {
       code: "engine_vocabulary_mismatch",
       userAction:

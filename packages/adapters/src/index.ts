@@ -1,16 +1,17 @@
+import { ENGINE_CERTIFIED_SCAN_CAPABILITIES } from "@drift/vocabulary";
 import { z } from "zod";
 
-export const AdapterCapabilityIdSchema = z.enum([
-  "file_discovery",
-  "syntax_facts",
-  "import_resolution",
-  "symbol_linking",
-  "route_detection",
-  "data_operation_detection",
-  "graph_stream",
-  "direct_data_access_check",
-  "candidate_inference"
-]);
+/**
+ * W5: the capabilities an adapter manifest may declare, from the one capability vocabulary.
+ *
+ * This was a hand-written list of nine against the engine's twelve certified capabilities, missing
+ * `security_facts`, `auth_boundary_facts` and `control_flow_guard_dominance` - so an adapter that
+ * declared any of the three failed to parse for no reason anyone had decided. It is the sixth copy
+ * of the capability namespace found under W5 and, like `GraphNodeRecordSchema` was, it is reachable
+ * from nothing: `@drift/adapters` has no importer in this workspace. Kept and pointed at the source
+ * rather than deleted, because a dead declaration that is WRONG is what seeded the live wrong ones.
+ */
+export const AdapterCapabilityIdSchema = z.enum(ENGINE_CERTIFIED_SCAN_CAPABILITIES);
 
 export type AdapterCapabilityId = z.infer<typeof AdapterCapabilityIdSchema>;
 

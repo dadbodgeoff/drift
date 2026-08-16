@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it } from "vitest";
+import { CONVENTION_KINDS, FILE_ROLES } from "@drift/core";
 import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { runCli } from "../../cli/src/index.js";
@@ -776,9 +777,9 @@ describe("read-only MCP handlers", () => {
       engine_version: null,
       scanner_version: "0.1.0",
       adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
-      certified_capabilities: ["file_discovery", "syntax_facts", "fact_graph"],
-      required_capabilities: ["file_discovery", "fact_graph"],
-      missing_capabilities: ["fact_graph"],
+      certified_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+      required_capabilities: ["file_discovery", "graph_stream"],
+      missing_capabilities: ["graph_stream"],
       completeness: [{
         scope: "repo",
         complete: false,
@@ -2896,8 +2897,8 @@ describe("read-only MCP handlers", () => {
       engine_version: null,
       scanner_version: "0.1.0",
       adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
-      certified_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "ts.route_flow.v1"],
-      required_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "unknown_capability"],
+      certified_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "route_flow"],
+      required_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "unknown_capability"],
       missing_capabilities: [],
       completeness: [],
       parser_gap_count: 0,
@@ -2917,17 +2918,22 @@ describe("read-only MCP handlers", () => {
       semantic_coverage: Record<string, unknown>;
     };
 
+    // D-S1: the required list is now the engine's own vocabulary rather than four `ts.*.v1` ids
+    // translated out of it, and `graph_stream` - which every scan requires - survives instead of
+    // vanishing into an unknown capability. Only the genuinely unknown name fails the run closed.
     expect(preflight.semantic_coverage).toMatchObject({
       required_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1",
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts",
         "unknown_capability"
       ],
       complete_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1"
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts"
       ],
       missing_capabilities: ["unknown_capability"],
       unsupported_capabilities: ["unknown_capability"],
@@ -3822,27 +3828,19 @@ describe("read-only MCP handlers", () => {
       "get_required_check_executions",
       "get_allowed_context"
     ]);
+    // D-M4 / D-M4b: both filters are the vocabulary itself, so the assertion is that they ARE the
+    // vocabulary rather than a second transcription of it. The old lists were 17 of 21 roles and 9
+    // of 23 convention kinds - and both were frozen here in exactly that shape, which is why a hand
+    // list is checked against the source and not against a copy of itself.
     const repoMapRoleSchema = DRIFT_READ_ONLY_MCP_TOOLS.find((tool) => tool.name === "get_repo_map")
       ?.inputSchema.properties.role as { enum?: string[] } | undefined;
-    expect(repoMapRoleSchema?.enum).toEqual([
-      "api_route",
-      "server_module",
-      "service_module",
-      "data_access_module",
-      "component",
-      "test",
-      "config",
-      "cli_command_module",
-      "core_module",
-      "query_module",
-      "factgraph_module",
-      "adapter_module",
-      "storage_module",
-      "engine_bridge_module",
-      "mcp_module",
-      "docs",
-      "package_manifest"
-    ]);
+    expect(repoMapRoleSchema?.enum).toEqual([...FILE_ROLES]);
+    expect(repoMapRoleSchema?.enum).toContain("ui_component");
+
+    const conventionKindSchema = DRIFT_READ_ONLY_MCP_TOOLS.find((tool) => tool.name === "get_conventions")
+      ?.inputSchema.properties.kind as { enum?: string[] } | undefined;
+    expect(conventionKindSchema?.enum).toEqual([...CONVENTION_KINDS]);
+    expect(conventionKindSchema?.enum).toContain("api_route_forbids_untrusted_ssrf");
     expect(called?.result).toMatchObject({
       content: [{ type: "text" }],
       isError: false

@@ -65,7 +65,7 @@ const EXPECTED: &[(&str, &str)] = &[
 fn engine_route_flavor_matches_the_core_predicate_table() {
     for (path, expected) in EXPECTED {
         assert_eq!(
-            drift_engine::route_flavor(path),
+            drift_engine::route_flavor(path).as_wire(),
             *expected,
             "flavour of {path} must match what @drift/core's routeFlavor returns for it"
         );

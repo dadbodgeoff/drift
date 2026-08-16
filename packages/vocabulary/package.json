@@ -1,7 +1,7 @@
 {
-  "name": "@drift/engine-contract",
+  "name": "@drift/vocabulary",
   "version": "0.1.0",
-  "description": "Versioned Drift engine request, result, diagnostic, stats, and stream event schemas.",
+  "description": "Generated closed vocabularies shared by every Drift package and by the Rust engine.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -21,16 +21,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "pnpm build",
-    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@drift/vocabulary": "workspace:*",
-    "@drift/factgraph": "workspace:*",
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.0",
-    "vitest": "^3.2.6"
+    "typescript": "^5.8.0"
   }
 }

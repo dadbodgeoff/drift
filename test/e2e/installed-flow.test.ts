@@ -53,6 +53,7 @@ async function installDriftPackages(): Promise<string> {
     ""
   ].join("\n"));
   const tarballs = await Promise.all([
+    packPackage("packages/vocabulary"),
     packPackage("packages/core"),
     packPackage("packages/factgraph"),
     packPackage("packages/engine-contract"),

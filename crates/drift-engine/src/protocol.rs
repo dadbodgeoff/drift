@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
+use drift_engine::{ConventionKind, GraphEdgeKind, GraphNodeKind, ScanCapability};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -270,7 +271,16 @@ pub struct EngineCompleteness {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GraphNode {
     pub id: String,
-    pub kind: String,
+    /// D-G4: a member of the generated vocabulary rather than a bare `String`.
+    ///
+    /// The engine emitted node kinds as free-form strings, so nothing on this side could tell a
+    /// typo from a kind the CLI simply had not learned yet. A corrupted kind travelled to the CLI
+    /// and failed there as a generic Zod enum error - exit 1, "Invalid enum value" - instead of the
+    /// exit-3 `engine_vocabulary_mismatch` the fact-kind handshake had given for the same class of
+    /// problem since it was built. Deserialization is strict for the same reason: a check request
+    /// carrying an unknown node kind is a disagreement about vocabulary, and saying so is more
+    /// useful than silently accepting it.
+    pub kind: GraphNodeKind,
     pub label: String,
     pub stable: bool,
     pub evidence_ids: Vec<String>,
@@ -280,7 +290,8 @@ pub struct GraphNode {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GraphEdge {
     pub id: String,
-    pub kind: String,
+    /// D-G4: see `GraphNode::kind`.
+    pub kind: GraphEdgeKind,
     pub from: String,
     pub to: String,
     pub evidence_ids: Vec<String>,
@@ -444,7 +455,9 @@ pub struct CandidateResult {
 pub struct EngineCandidate {
     pub candidate_id: String,
     pub candidate_version: usize,
-    pub kind: String,
+    /// D-P3a: the proposed convention's kind, from the one vocabulary. The engine used to build this
+    /// from string literals and the CLI validated it against a hand-copied 17-value Zod enum.
+    pub kind: ConventionKind,
     pub rule_id: String,
     pub rule_version: String,
     pub matcher_schema_version: String,
@@ -648,6 +661,10 @@ pub enum ScanStreamEvent {
         /// Neither `engine_version` nor `schema_version` moves when the vocabulary changes, so
         /// neither can detect a stale binary; this can.
         fact_kinds: Vec<String>,
+        /// D-G4: every graph node kind this engine can emit, sorted. Same contract as `fact_kinds`.
+        graph_node_kinds: Vec<String>,
+        /// D-G4: every graph edge kind this engine can emit, sorted.
+        graph_edge_kinds: Vec<String>,
     },
     #[serde(rename = "file_snapshot_batch")]
     FileSnapshotBatch {
@@ -744,7 +761,7 @@ pub fn engine_stats(
         diagnostics_emitted,
         duration_ms,
         truncated: false,
-        capabilities: capability_stats(&["syntax_facts"], &[]),
+        capabilities: capability_stats(&[ScanCapability::SyntaxFacts], &[]),
     }
 }
 
@@ -762,9 +779,9 @@ pub fn repo_completeness(
     files_skipped_too_large: usize,
 ) -> Vec<EngineCompleteness> {
     let required = vec![
-        "file_discovery".to_string(),
-        "syntax_facts".to_string(),
-        "graph_stream".to_string(),
+        ScanCapability::FileDiscovery.as_wire().to_string(),
+        ScanCapability::SyntaxFacts.as_wire().to_string(),
+        ScanCapability::GraphStream.as_wire().to_string(),
     ];
     let complete = files_skipped_unreadable == 0 && files_skipped_too_large == 0;
     let (missing_capabilities, reasons) = if complete {
@@ -785,7 +802,10 @@ pub fn repo_completeness(
                 "{files_skipped_too_large} file(s) exceeded the {MAX_FILE_BYTES} byte scan limit and were skipped"
             ));
         }
-        (vec!["syntax_facts".to_string()], reasons)
+        (
+            vec![ScanCapability::SyntaxFacts.as_wire().to_string()],
+            reasons,
+        )
     };
     vec![EngineCompleteness {
         scope: "repo".to_string(),
@@ -801,38 +821,43 @@ pub fn repo_completeness(
     }]
 }
 
-pub fn capability_stats(required: &[&str], missing: &[&str]) -> EngineCapabilityStats {
+pub fn capability_stats(
+    required: &[ScanCapability],
+    missing: &[ScanCapability],
+) -> EngineCapabilityStats {
     EngineCapabilityStats {
         certified: certified_capabilities(),
         required: required
             .iter()
-            .map(|capability| (*capability).to_string())
+            .map(|capability| capability.as_wire().to_string())
             .collect(),
         missing: missing
             .iter()
-            .map(|capability| (*capability).to_string())
+            .map(|capability| capability.as_wire().to_string())
             .collect(),
     }
 }
 
+/// D-S1: what this engine is certified to have done, from the one capability vocabulary.
+///
+/// The list used to be twelve literals here and eight `ts.*.v1` ids in
+/// packages/core/src/semantic-capabilities.ts, with no string in common by construction, bridged by
+/// a hand-written table in packages/query/src/semantic-coverage.ts that named four capabilities this
+/// engine has never emitted. One namespace now, generated into both languages.
+///
+/// `route_flow` and `static_imports` joined the certified set with that collapse. Both were declared
+/// on the TypeScript side as supported, certified-deterministic capabilities and were absent here,
+/// so `route_flow` - which `get_task_preflight` requires on every call - was required and never
+/// certified, and semantic coverage refused unconditionally. Certifying them is a claim about
+/// evidence, and it is checkable: `scripts/vocabulary-parity.mjs` fails if a capability contract
+/// names a fact, node or edge kind this engine does not produce.
 pub fn certified_capabilities() -> Vec<String> {
-    [
-        "candidate_inference",
-        "auth_boundary_facts",
-        "control_flow_guard_dominance",
-        "data_operation_detection",
-        "direct_data_access_check",
-        "file_discovery",
-        "graph_stream",
-        "import_resolution",
-        "route_detection",
-        "security_facts",
-        "symbol_linking",
-        "syntax_facts",
-    ]
-    .into_iter()
-    .map(ToOwned::to_owned)
-    .collect()
+    let mut names: Vec<String> = ScanCapability::ENGINE_CERTIFIED
+        .iter()
+        .map(|capability| capability.as_wire().to_string())
+        .collect();
+    names.sort();
+    names
 }
 
 #[cfg(test)]

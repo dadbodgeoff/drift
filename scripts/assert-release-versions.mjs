@@ -10,6 +10,7 @@ if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(ex
 }
 const packagePaths = [
   "package.json",
+  "packages/vocabulary/package.json",
   "packages/core/package.json",
   "packages/factgraph/package.json",
   "packages/query/package.json",
