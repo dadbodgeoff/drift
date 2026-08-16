@@ -15,6 +15,8 @@ fn finding(file_path: &str, line: usize) -> RuleFinding {
         import_name: "prisma".to_string(),
         import_source: "@/lib/prisma".to_string(),
         line,
+        import_names: vec!["prisma".to_string()],
+        legacy_fingerprints: Vec::new(),
     }
 }
 

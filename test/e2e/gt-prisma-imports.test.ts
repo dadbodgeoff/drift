@@ -64,10 +64,14 @@ describe("D5.1 — one finding per import statement", () => {
         `out one finding per specifier instead. Got ${route.length}:\n${render(route)}`
     ).toBe(1);
 
+    // Sorted, not source-ordered. The specifier order in a finding must not depend on the order
+    // facts happened to be emitted in — that is a determinism input, and `eval:determinism` is a
+    // release gate. Asserted as the exact joined string so a change to that decision is visible
+    // here rather than only in a nightly.
     expect(
       route[0].message,
-      `D5.1 DEFECT: the grouped finding must name every offending specifier on the line. Message was:\n  ${route[0].message}`
-    ).toContain("prismaClient, auditLog");
+      `D5.1 DEFECT: the grouped finding must name every offending specifier on the line, sorted. Message was:\n  ${route[0].message}`
+    ).toContain("imports auditLog, prismaClient from ../../lib/prisma");
   }, 180000);
 
   it("collapses the three-specifier enum line the same way, before D5.2 has an opinion", async () => {

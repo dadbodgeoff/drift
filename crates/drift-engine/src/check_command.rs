@@ -17,7 +17,7 @@ use drift_engine::{
     SecurityBoundaryProof, SecurityProofStatus, Severity, accepted_phase5_contract_from_requires,
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
-    materialize_direct_data_access_findings, phase6_proof_to_json,
+    materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
     sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
@@ -116,7 +116,22 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 severity,
                 enforcement_mode,
             };
-            let mut findings = materialize_direct_data_access_findings(&facts, &rule)
+            // D5.2 (TDD §5.5) classifies each specifier's use over the importing file's AST,
+            // because the fact stream cannot answer the question. `new PrismaClient()` emits no
+            // fact at all - `walk_node` dispatches on `call_expression`, and a `new_expression`
+            // is not one - and a member READ (`LinkType.GROUP`) emits no fact either. To a
+            // classifier reading facts alone those two are the same nothing, so suppressing on
+            // "no facts" would silently drop the one genuine violation shape §5.5 names. Reading
+            // the source at check time is how five security rules in this file already resolve
+            // questions the fact stream does not carry; `read_repo_file` is the same door.
+            //
+            // No `repo_root` means no source, which means every specifier is Unresolved and
+            // every finding is retained - D5.1 grouping only, and no suppression on a path that
+            // cannot prove inertness.
+            let mut findings =
+                materialize_direct_data_access_findings_with_sources(&facts, &rule, &|file_path| {
+                    read_repo_file(repo_root.as_deref(), file_path)
+                })
                 .into_iter()
                 .map(|finding| PendingFinding {
                     fingerprint: finding.fingerprint.clone(),
@@ -132,7 +147,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                     line: finding.line,
                     evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
                     symbol: PendingFinding::no_symbol(),
-                    legacy_fingerprints: Vec::new(),
+                    legacy_fingerprints: finding.legacy_fingerprints,
                     related_node_ids: Vec::new(),
                 })
                 .collect::<Vec<_>>();
@@ -620,9 +635,11 @@ impl From<PendingFinding> for drift_engine::RuleFinding {
             severity: value.severity,
             enforcement_result: value.enforcement_result,
             file_path: value.file_path,
+            import_names: vec![value.import_name.clone()],
             import_name: value.import_name,
             import_source: value.import_source,
             line: value.line,
+            legacy_fingerprints: value.legacy_fingerprints,
         }
     }
 }
