@@ -136,6 +136,25 @@ export function buildParserGapSummary(gaps: ParserGapLike[]): ParserGapSummary {
   };
 }
 
+/**
+ * The parser-gap section as both agent surfaces report it, including the itemized records.
+ *
+ * One implementation, because there were two and they diverged the moment one changed. The CLI and
+ * MCP each wrapped `buildParserGapSummary` above with a private, hand-written, near-identical
+ * function; adding `records` to the CLI's copy - so that the summary's own `full_list_command`
+ * finally pointed at data that exists (D-A5) - left MCP emitting `undefined` and turned
+ * `beta:proof`'s CLI/MCP parity check red.
+ *
+ * Both copies were module-private, which is exactly why no duplicate index caught them: the
+ * architecture census indexed only symbols carrying a top-level `export`, and recorded that as a
+ * known blind spot. This is an instance of it.
+ */
+export function buildParserGapSection(gaps: ParserGapLike[]): ParserGapSummary & {
+  records: ParserGapLike[];
+} {
+  return { ...buildParserGapSummary(gaps), records: gaps };
+}
+
 function readinessDecision(input: {
   graphAvailable: boolean;
   graphComplete: boolean;
