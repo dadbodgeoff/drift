@@ -750,6 +750,8 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         });
     }
 
+    extract_local_export_list(node, source, file_path, facts);
+
     if let Some(name) = first_named_declaration_identifier(node, source) {
         let start_line = node.start_position().row + 1;
         let end_line = node.end_position().row + 1;
@@ -827,6 +829,108 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 end_column,
             });
         }
+    }
+}
+
+/// D-S2: `export { a, b };` referring to identifiers declared on earlier lines.
+///
+/// `extract_export` had three fact-producing paths - a list export WITH a `from` source, a bare
+/// `export default <expr>`, and an inline declaration on the export node - and none of them saw
+/// this one. It is the ordinary way a module publishes helpers declared above, and it produced no
+/// `exported_symbol` fact at all. Two distinct symptoms, both worse than a missing fact:
+///
+///   (a) A file MIXING inline and list exports has a key in `resolver.exported_symbols` from its
+///       inline exports, and that key is precisely the condition the conservative-diagnostic gate
+///       in main.rs uses to decide absence is provable. So every consumer of a list-exported symbol
+///       got a FALSE `unresolved_import_symbol`. On taxonomy, all 8 files importing `{ toast }` or
+///       `{ useToast }` from `components/ui/use-toast.ts` were flagged, though TypeScript resolves
+///       them without complaint - the file exports `const TOAST_LIMIT` inline and `toast`,
+///       `useToast` by list. Those diagnostics feed check completeness, so they withhold findings.
+///
+///   (b) A file exporting ONLY via bare lists has no key at all, so the gate stays silent: no
+///       fact, no gap, no signal. Nothing anywhere says the module was not understood.
+///
+/// Both contradict what `ts.import_resolution.v1` and `ts.syntax_facts.v1` declare about themselves
+/// in packages/core/src/semantic-capabilities.ts - `certification: "certified_deterministic"`,
+/// `can_block: true`.
+///
+/// Read off the AST rather than the statement text, because the text route cannot tell
+/// `export { a, b };` from `export const x = { a: 1 };` - both contain a brace pair, and the second
+/// would have yielded a phantom export named `a:`.
+///
+/// Deliberately NOT emitting `RouteDeclared` for `export { GET };`. Re-exported handlers have never
+/// produced one either (formbricks' 28 `export { GET } from "@/modules/..."` routes), so adding it
+/// here would fix half of a different gap and move route counts on every repo for a reason this
+/// change has not measured.
+fn extract_local_export_list(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    facts: &mut Vec<Fact>,
+) {
+    // With a source this is a re-export, which the branch at the top of `extract_export` owns.
+    if node.child_by_field_name("source").is_some() {
+        return;
+    }
+    let Some(clause) = (0..node.named_child_count())
+        .filter_map(|index| node.named_child(index))
+        .find(|child| child.kind() == "export_clause")
+    else {
+        return;
+    };
+    // `export type { Foo };` is erased at compile time, exactly like `import type`. The whole clause
+    // is type-only and there is no field on the node that says so, only the statement text.
+    if node_text(node, source)
+        .as_deref()
+        .is_some_and(|text| text.trim_start().starts_with("export type"))
+    {
+        return;
+    }
+
+    let start_line = node.start_position().row + 1;
+    let end_line = node.end_position().row + 1;
+    let start_column = node.start_position().column + 1;
+    let end_column = node.end_position().column + 1;
+
+    for index in 0..clause.named_child_count() {
+        let Some(specifier) = clause.named_child(index) else {
+            continue;
+        };
+        if specifier.kind() != "export_specifier" {
+            continue;
+        }
+        // The per-specifier form, `export { value, type Only };`.
+        if node_text(specifier, source)
+            .as_deref()
+            .is_some_and(|text| text.trim_start().starts_with("type "))
+        {
+            continue;
+        }
+        let Some(local_name) = specifier
+            .child_by_field_name("name")
+            .and_then(|child| node_text(child, source))
+        else {
+            continue;
+        };
+        // `export { handler as default };` exports `default`; the alias is what the module publishes.
+        let exported_name = specifier
+            .child_by_field_name("alias")
+            .and_then(|child| node_text(child, source))
+            .unwrap_or_else(|| local_name.clone());
+        facts.push(Fact {
+            kind: FactKind::ExportedSymbol,
+            file_path: file_path.to_string(),
+            // The local binding when the export is renamed, so consumers can follow the exported
+            // name back to what it names - the same convention the default-export branch uses.
+            value: (exported_name != local_name).then_some(local_name),
+            name: exported_name,
+            imported_name: None,
+            runtime_use: None,
+            start_line,
+            end_line,
+            start_column,
+            end_column,
+        });
     }
 }
 
