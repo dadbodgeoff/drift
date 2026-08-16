@@ -62,7 +62,16 @@ describe("release hygiene", () => {
       // there. Listing them did not execute them; it produced a gate that named an oracle it never
       // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
       // union that any "verified" claim has to cite.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      //
+      // Three steps were undeclared here when the ground-truth remediation ran, and this
+      // assertion is precisely the thing meant to notice. `check:storage-invariants` and
+      // `check:error-contract` were already in the gate at 255f2208 and already unlisted --
+      // this test fails on a clean checkout of that commit, verified -- so the list had drifted
+      // from the gate it documents before this work started.
+      // `check:cell-ledger` is new: it enforces that every (convention kind x enforcement path)
+      // cell is declared with the evidence its state requires, which is the structural guardrail
+      // against the D1 class of defect, a kind that cannot fire while looking covered.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:cell-ledger && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
     expect(manifest.scripts["verify:evals"]).toBe(
       "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
