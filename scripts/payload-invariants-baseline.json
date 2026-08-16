@@ -1,0 +1,1378 @@
+{
+  "constants": [
+    {
+      "path": "prepare.guidance.truncated.conventions",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.guidance.truncated.relevant_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.guidance.truncated.required_checks",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.agent_envelope.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "prepare.agent_envelope.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.agent_envelope.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.agent_envelope.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.agent_envelope.policy_proof.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.agent_envelope.policy_proof.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.agent_envelope.policy_proof.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.agent_envelope.policy_proof.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.policy.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "prepare.readiness.surface",
+      "value": "prepare",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "prepare.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "prepare.readiness.required_capabilities[]",
+      "value": "route_flow",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "prepare.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "prepare.scan_status.latest_scan.dirty",
+      "value": false,
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "prepare.scan_status.latest_scan.status",
+      "value": "completed",
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "prepare.scan_status.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "prepare.scan_status.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "prepare.scan_status.summary.audit_valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "prepare.scan_status.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "prepare.scan_status.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "prepare.scan_status.readiness.surface",
+      "value": "scan_status",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "prepare.scan_status.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "prepare.scan_status.readiness.graph_complete",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "prepare.scan_status.readiness.required_capabilities[]",
+      "value": "fact_graph",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "prepare.scan_status.capability_report.engine_source",
+      "value": "rust",
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "prepare.scan_status.capability_report.completeness[].can_block",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.scan_status.capability_report.fallback_used",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "prepare.scan_status.capability_report.enforcement_degraded",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "prepare.graph_context.available",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "Constant at true across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.graph_context.diagnostic_summary.policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_model.human_approval_needed",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.task_preflight_packet.task_model.human_approval_needed",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_read_repo_map",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_read_source_snippets",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_read_contract",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_read_findings",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_execute_commands",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_modify_contract",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_create_waiver",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_request_human_approval",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_access_secret_like_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.context_policy.can_emit_patch",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.agent_contract_packet.selected_contracts_reason",
+      "value": "no_contracts_accepted",
+      "kind": "matrix_gap",
+      "reason": "`no_contracts_accepted` in every cell because no fixture carries an AGENT contract - a different object from the repo contract the accept step materializes. Closing it needs a fixture with one; until then this field's other values are unexercised here."
+    },
+    {
+      "path": "prepare.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "prepare.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "prepare.context_policy.can_read_repo_map",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_read_source_snippets",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_read_contract",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_read_findings",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_execute_commands",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_modify_contract",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_create_waiver",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_request_human_approval",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_access_secret_like_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.context_policy.can_emit_patch",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.redactions.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.redactions.graph_context_included",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "prepare.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "repo_map.agent_envelope.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.agent_envelope.scan.required_fresh",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "repo_map.agent_envelope.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.agent_envelope.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy_proof.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy_proof.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy_proof.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy_proof.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.agent_envelope.policy_proof.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "repo_map.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.policy.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "repo_map.readiness.surface",
+      "value": "repo_map",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "repo_map.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "repo_map.readiness.graph_complete",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "repo_map.readiness.required_capabilities[]",
+      "value": "fact_graph",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "repo_map.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "repo_map.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "repo_map.latest_scan.dirty",
+      "value": false,
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "repo_map.latest_scan.status",
+      "value": "completed",
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "repo_map.scan_status.latest_scan.dirty",
+      "value": false,
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "repo_map.scan_status.latest_scan.status",
+      "value": "completed",
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "repo_map.scan_status.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "repo_map.scan_status.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "repo_map.scan_status.summary.audit_valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "repo_map.scan_status.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "repo_map.scan_status.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "repo_map.scan_status.readiness.surface",
+      "value": "scan_status",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "repo_map.scan_status.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "repo_map.scan_status.readiness.graph_complete",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "repo_map.scan_status.readiness.required_capabilities[]",
+      "value": "fact_graph",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "repo_map.scan_status.capability_report.engine_source",
+      "value": "rust",
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "repo_map.scan_status.capability_report.completeness[].can_block",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "repo_map.scan_status.capability_report.fallback_used",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "repo_map.scan_status.capability_report.enforcement_degraded",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "repo_map.pagination.has_more",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "repo_map.routes[].security.proof_status",
+      "value": "unknown",
+      "kind": "matrix_gap",
+      "reason": "Security boundary proofs are produced by `check`, which this matrix does not run, so route trust reports `none`/`unknown` throughout. These are exactly the D-A2 fields the CLI used to omit, so the hole is worth naming: they are present and correct, and only one of their values is exercised."
+    },
+    {
+      "path": "repo_map.proof_freshness",
+      "value": "none",
+      "kind": "matrix_gap",
+      "reason": "Security boundary proofs are produced by `check`, which this matrix does not run, so route trust reports `none`/`unknown` throughout. These are exactly the D-A2 fields the CLI used to omit, so the hole is worth naming: they are present and correct, and only one of their values is exercised."
+    },
+    {
+      "path": "repo_map.freshness_requirement.required",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "repo_map.files[].indexed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "Constant at true across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "repo_map.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.redactions.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.redactions.graph_context_included",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "repo_map.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "scan_status.latest_scan.dirty",
+      "value": false,
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "scan_status.latest_scan.status",
+      "value": "completed",
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "scan_status.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "scan_status.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "scan_status.summary.audit_valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "scan_status.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "scan_status.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "scan_status.readiness.surface",
+      "value": "scan_status",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "scan_status.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "scan_status.readiness.graph_complete",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "scan_status.readiness.required_capabilities[]",
+      "value": "fact_graph",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "scan_status.capability_report.engine_source",
+      "value": "rust",
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "scan_status.capability_report.completeness[].can_block",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "scan_status.capability_report.fallback_used",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "scan_status.capability_report.enforcement_degraded",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "preflight.guidance.truncated.conventions",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "preflight.guidance.truncated.relevant_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "preflight.guidance.truncated.required_checks",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "preflight.agent_envelope.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "preflight.agent_envelope.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.agent_envelope.policy.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.agent_envelope.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.agent_envelope.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "preflight.agent_envelope.policy_proof.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.agent_envelope.policy_proof.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.agent_envelope.policy_proof.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.agent_envelope.policy_proof.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.agent_envelope.policy_proof.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "preflight.policy.allowed",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.policy.reason",
+      "value": "metadata-only local preflight packet",
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "preflight.readiness.surface",
+      "value": "prepare",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "preflight.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "preflight.readiness.required_capabilities[]",
+      "value": "route_flow",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "preflight.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "preflight.scan_status.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "preflight.scan_status.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "preflight.scan_status.latest_scan.dirty",
+      "value": false,
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "preflight.scan_status.latest_scan.status",
+      "value": "completed",
+      "kind": "environment",
+      "reason": "Every scan in this matrix completes against a clean checkout, so the manifest reports the same state throughout. A failed or dirty scan is a different harness."
+    },
+    {
+      "path": "preflight.scan_status.audit_integrity.valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "preflight.scan_status.summary.audit_valid",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The audit chain verifies in every cell because nothing tampers with it. Making this false means corrupting a hash-linked log on purpose, which the storage suite does directly; this matrix only ever builds intact ones."
+    },
+    {
+      "path": "preflight.scan_status.readiness.schema_version",
+      "value": "drift.readiness.v1",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "preflight.scan_status.readiness.surface",
+      "value": "scan_status",
+      "kind": "payload_identity",
+      "reason": "Identity, not calibration: a repo-map readiness block reports surface `repo_map` in every cell because that is what it is. Pinned so a renamed surface or a bumped schema shows up."
+    },
+    {
+      "path": "preflight.scan_status.readiness.graph_available",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "preflight.scan_status.readiness.graph_complete",
+      "value": true,
+      "kind": "environment",
+      "reason": "The engine produces a graph for every fixture here, so the degraded path never engages. The absent-graph branch is covered where it can be forced directly rather than by hoping a fixture fails to parse."
+    },
+    {
+      "path": "preflight.scan_status.readiness.required_capabilities[]",
+      "value": "fact_graph",
+      "kind": "payload_identity",
+      "reason": "The capability list a surface requires is a property of that surface, not of the repo it is reporting on. Pinned so a silently narrowed requirement shows up."
+    },
+    {
+      "path": "preflight.scan_status.capability_report.engine_source",
+      "value": "rust",
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "preflight.scan_status.capability_report.completeness[].can_block",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.scan_status.capability_report.fallback_used",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "preflight.scan_status.capability_report.enforcement_degraded",
+      "value": false,
+      "kind": "environment",
+      "reason": "Fixed by the environment this gate runs in: the engine binary is always present, so the TypeScript fallback never engages. external-eval asserts the same two fields against the real corpus, where a fallback would be a genuine regression."
+    },
+    {
+      "path": "preflight.graph_context.available",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "Constant at true across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.graph_context.diagnostic_summary.policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_model.human_approval_needed",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.task_preflight_packet.task_model.human_approval_needed",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "Constant at false across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_read_repo_map",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_read_source_snippets",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_read_contract",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_read_findings",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_execute_commands",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_modify_contract",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_create_waiver",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_request_human_approval",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_access_secret_like_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.context_policy.can_emit_patch",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.agent_contract_packet.selected_contracts_reason",
+      "value": "no_contracts_accepted",
+      "kind": "matrix_gap",
+      "reason": "`no_contracts_accepted` in every cell because no fixture carries an AGENT contract - a different object from the repo contract the accept step materializes. Closing it needs a fixture with one; until then this field's other values are unexercised here."
+    },
+    {
+      "path": "preflight.governance.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "preflight.governance.agent_can_mutate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "preflight.context_policy.can_read_repo_map",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_read_source_snippets",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_read_contract",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_read_findings",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_execute_commands",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_modify_contract",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_create_waiver",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_request_human_approval",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_access_secret_like_files",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.context_policy.can_emit_patch",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.redactions.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.redactions.graph_context_included",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "preflight.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.guidance.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "prepare.graph_context.route_flows[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.graph_context.route_flows[].complete",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "Constant at true across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.graph_context.reachable_data_access[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.graph_context.affected_files[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "prepare.task_preflight_packet.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "prepare.risky_areas[].reason",
+      "value": "API route changes can bypass the accepted data-access layering convention.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "prepare.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "preflight.guidance.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "preflight.graph_context.route_flows[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.graph_context.route_flows[].complete",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "Constant at true across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.graph_context.reachable_data_access[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.graph_context.affected_files[].policy.local_only",
+      "value": true,
+      "kind": "matrix_gap",
+      "reason": "The policy dimension is unexercised: no fixture sets a restrictive `context_egress` in its contract, so authorization is granted in every cell and the whole permission matrix reads as one value. Closing it needs a fixture whose contract denies a surface - not a bigger repo. Known hole, not a promise that policy cannot deny."
+    },
+    {
+      "path": "preflight.task_preflight_packet.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "preflight.risky_areas[].reason",
+      "value": "API route changes can bypass the accepted data-access layering convention.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "preflight.required_checks[].reason",
+      "value": "Block newly introduced deterministic convention violations before code is merged.",
+      "kind": "payload_identity",
+      "reason": "The default contract's own wording. Every fixture materializes the same default checks and risky areas, so the sentence explaining each is the same sentence. Pinned so a reworded rationale is visible rather than silent."
+    },
+    {
+      "path": "refusal.agent_envelope.read_only",
+      "value": true,
+      "kind": "product_invariant",
+      "reason": "Every surface this gate drives is read-only by construction - check:surface-parity asserts zero storage writes in packages/mcp/src, and these CLI reads mutate nothing. If this ever varies, the STALE half of this gate fires and that is the intended alarm."
+    },
+    {
+      "path": "refusal.agent_envelope.redactions.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "refusal.agent_envelope.redactions.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "refusal.agent_envelope.policy_proof.snippets_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "refusal.agent_envelope.policy_proof.source_content_included",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "Drift ships metadata about code, never the code. These are the fields that say so, and they are false on every surface deliberately rather than incidentally."
+    },
+    {
+      "path": "refusal.agent_envelope.policy_proof.context_truncated",
+      "value": false,
+      "kind": "matrix_gap",
+      "reason": "NOT a guarantee - the matrix never truncates. Truncation needs a guidance view over the 32,768-byte budget, which takes roughly 60 realistically-sized conventions; the largest fixture here produces three. This is the exact field D-M5 found hardcoded to false, so it is recorded as a known hole rather than as a property. Closing it needs a fixture built for the budget, not a bigger repo."
+    },
+    {
+      "path": "prepare.task_preflight_packet.test_intelligence[].test_type",
+      "value": "integration",
+      "kind": "matrix_gap",
+      "reason": "Constant at \"integration\" across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.task_preflight_packet.test_intelligence[].snapshot_usage",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "prepare.task_preflight_packet.test_intelligence[].missing_test_candidate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+    },
+    {
+      "path": "prepare.task_preflight_packet.test_intelligence[].stale_test_candidate",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "prepare.test_intelligence[].test_type",
+      "value": "integration",
+      "kind": "matrix_gap",
+      "reason": "Constant at \"integration\" across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "prepare.test_intelligence[].snapshot_usage",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "prepare.test_intelligence[].missing_test_candidate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+    },
+    {
+      "path": "prepare.test_intelligence[].stale_test_candidate",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "preflight.task_preflight_packet.test_intelligence[].test_type",
+      "value": "integration",
+      "kind": "matrix_gap",
+      "reason": "Constant at \"integration\" across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.task_preflight_packet.test_intelligence[].snapshot_usage",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "preflight.task_preflight_packet.test_intelligence[].missing_test_candidate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+    },
+    {
+      "path": "preflight.task_preflight_packet.test_intelligence[].stale_test_candidate",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "preflight.test_intelligence[].test_type",
+      "value": "integration",
+      "kind": "matrix_gap",
+      "reason": "Constant at \"integration\" across the matrix, and not yet explained. Either the matrix lacks the state that moves it, or the field is frozen and this gate has found one."
+    },
+    {
+      "path": "preflight.test_intelligence[].snapshot_usage",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    },
+    {
+      "path": "preflight.test_intelligence[].missing_test_candidate",
+      "value": false,
+      "kind": "product_invariant",
+      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+    },
+    {
+      "path": "preflight.test_intelligence[].stale_test_candidate",
+      "value": false,
+      "kind": "unimplemented_placeholder",
+      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+    }
+  ]
+}
