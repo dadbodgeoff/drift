@@ -6,7 +6,7 @@ import {
   createContextPolicyMatrix,
   type FileRole
 } from "@drift/core";
-import { buildChangeImpact,buildParserGapQuality,buildReadiness,buildSemanticCoverageFromCapabilityReport,classifyAgentTask,selectRelevantTests,type ChangeImpactRouteFlow } from "@drift/query";
+import { buildChangeImpact,buildParserGapQuality,buildReadiness,buildSemanticCoverageFromCapabilityReport,classifyAgentTask,selectRelevantTests,type ChangeImpactRouteFlow,withParserGapRecordsOmitted} from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { optionalRepoRelativeFlag,requiredValue,stringFlag } from "../args/flag-readers.js";
@@ -279,15 +279,7 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     // `drift scan status --repo <id> --json`, the surface D-A5 built for exactly this, and it still
     // returns every one. The count is kept so the packet can still say how many there are, and
     // named rather than implied so an empty list cannot be read as "no gaps".
-    scan_status: {
-      ...scanStatus,
-      parser_gaps: {
-        ...scanStatus.parser_gaps,
-        records: [],
-        records_omitted: scanStatus.parser_gaps.records.length,
-        records_command: guidance.parser_gaps.full_list_command
-      }
-    },
+    scan_status: withParserGapRecordsOmitted(scanStatus, guidance.parser_gaps.full_list_command),
     freshness_requirement: freshnessRequirement(requireFresh, scanStatus),
     graph_context: graphContext,
     task_model: taskModel,

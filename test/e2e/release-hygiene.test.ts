@@ -72,7 +72,10 @@ describe("release hygiene", () => {
     expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
     expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");
     expect(manifest.scripts["verify:evals"]).toBe(
-      "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
+      // W7 added `pnpm eval:breadth`, the detection-breadth ratchet. Pinned whole for the same
+      // reason as verify:ci above: an eval silently dropped is indistinguishable from one that
+      // never existed.
+      "pnpm eval:external && pnpm eval:breadth && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
     );
     expect(manifest.scripts["verify:full"]).toBe("pnpm verify:ci && pnpm verify:evals");
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
