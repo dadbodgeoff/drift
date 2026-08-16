@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { API_ROUTE_SCOPE_GLOBS, ENGINE_CERTIFIED_SCAN_CAPABILITIES, type Finding, type RepoContract } from "@drift/core";
@@ -470,6 +470,120 @@ describe("GraphQueryService", () => {
     });
     expect(result.closest_tests).toEqual([]);
     expect(result.test_intelligence_reason).toBe("no_tests_matched_change");
+  });
+
+  /** A repo with one matched test whose source carries the three things now read from it. */
+  async function repoWithTestSource(source: string): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(dir);
+    await mkdir(join(dir, "server/services"), { recursive: true });
+    await writeFile(join(dir, "server/services/users.test.ts"), source);
+    return dir;
+  }
+
+  const SELECT_USERS = {
+    changed_files: ["server/services/users.ts"],
+    test_files: ["server/services/users.test.ts"]
+  };
+
+  it("reads snapshot, mock and fixture evidence from the matched test's source", async () => {
+    // EW-3. These three were literals - `false`, `[]`, `[]` - on every entry Drift has ever
+    // emitted, and the payload-invariants gate confirms it: identical across all 176 matrix cells.
+    // An agent asking "does my edit break a snapshot test" got a confident no from a field that
+    // had never opened the file.
+    const repoRoot = await repoWithTestSource([
+      'import { describe, expect, it, vi } from "vitest";',
+      'import { listUsers } from "./users";',
+      'import { userRows } from "../__fixtures__/users.json";',
+      'import { seed } from "./users.fixture";',
+      'vi.mock("server/repositories/users");',
+      "jest.mock('server/lib/clock');",
+      'it("renders", () => { expect(listUsers(userRows)).toMatchSnapshot(); });'
+    ].join("\n"));
+
+    const result = selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot });
+
+    expect(result.test_intelligence[0]).toMatchObject({
+      snapshot_usage: true,
+      // Both framework spellings, deduplicated and ordered so the payload is stable.
+      mocked_dependencies: ["server/lib/clock", "server/repositories/users"],
+      // A `__fixtures__` path segment and a `.fixture.` filename; `./users` and `vitest` are
+      // imports and not fixtures, and must not be swept in.
+      fixture_usage: ["../__fixtures__/users.json", "./users.fixture"]
+    });
+  });
+
+  it("answers no rather than nothing when the test genuinely has none of them", async () => {
+    // The other half, and the one that makes the field worth reading: a real `false` from a real
+    // look has to be distinguishable from the `null` below.
+    const repoRoot = await repoWithTestSource(
+      'import { listUsers } from "./users";\nit("works", () => { expect(listUsers()).toEqual([]); });\n'
+    );
+    expect(selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot }).test_intelligence[0])
+      .toMatchObject({ snapshot_usage: false, mocked_dependencies: [], fixture_usage: [] });
+  });
+
+  it("says null, not false, when it never opened the file", async () => {
+    // Two ways to have nothing to read, and neither may be reported as a measurement. Without a
+    // repo_root there is nowhere to look; with one, a path from a stale scan can name a file that
+    // has since been deleted.
+    const noRepoRoot = selectRelevantTests(SELECT_USERS);
+    expect(noRepoRoot.test_intelligence[0]).toMatchObject({
+      snapshot_usage: null,
+      mocked_dependencies: null,
+      fixture_usage: null
+    });
+
+    const emptyRepo = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(emptyRepo);
+    expect(selectRelevantTests({ ...SELECT_USERS, repo_root: emptyRepo }).test_intelligence[0])
+      .toMatchObject({ snapshot_usage: null, mocked_dependencies: null, fixture_usage: null });
+  });
+
+  it("keeps the selection's missing_test_candidate after dropping the per-entry one", async () => {
+    // The drop, and the trap in it. `missing_test_candidate` names two different things one level
+    // apart: the per-entry flag was false by construction - an entry exists only because a test
+    // was FOUND - while the selection-level one carries the real signal and varies. A blind
+    // rename would have taken both.
+    const repoRoot = await repoWithTestSource('it("works", () => {});\n');
+    const found = selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot });
+    expect(found.missing_test_candidate).toBe(false);
+    expect(found.test_intelligence[0]).not.toHaveProperty("missing_test_candidate");
+
+    const missing = selectRelevantTests({
+      changed_files: ["server/services/billing.ts"],
+      test_files: ["server/services/users.test.ts"],
+      repo_root: repoRoot
+    });
+    expect(missing.missing_test_candidate).toBe(true);
+  });
+
+  it("does not let one test file's mocks leak into the next", async () => {
+    // The `g` flag makes `lastIndex` stateful, so a module-level regex shared across two files
+    // starts the second scan wherever the first one stopped - and the second test silently loses
+    // its first mock. Two matched tests in one selection is the case that exposes it.
+    const dir = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(dir);
+    await mkdir(join(dir, "server/services"), { recursive: true });
+    await writeFile(
+      join(dir, "server/services/users.test.ts"),
+      'vi.mock("server/repositories/users");\nit("a", () => {});\n'
+    );
+    await writeFile(
+      join(dir, "server/services/users-admin.test.ts"),
+      'vi.mock("server/repositories/admin");\nit("b", () => {});\n'
+    );
+
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/users-admin.test.ts", "server/services/users.test.ts"],
+      repo_root: dir
+    });
+
+    expect(result.test_intelligence.map((entry) => entry.mocked_dependencies)).toEqual([
+      ["server/repositories/admin"],
+      ["server/repositories/users"]
+    ]);
   });
 
   it("classifies a user endpoint filtering task", () => {

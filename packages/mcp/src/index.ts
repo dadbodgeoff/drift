@@ -269,7 +269,10 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         // D-A3(a): every relevant file, not just the head of the ranked list.
         changed_files: relevantFiles.map((file) => file.path),
         route_flow: changeImpactRouteFlows[0],
-        test_files: testFiles
+        test_files: testFiles,
+        // Lets the matched tests be read for snapshot/mock/fixture evidence. Without it those three
+        // fields report `null` rather than a zero value they did not measure.
+        repo_root: storage.getRepo(requestedRepoId)!.root_path
       });
       const waivers = waiversForFiles(contract, relevantFiles, generatedAt);
       const agentContractPacket = createAgentPreflightPacket({

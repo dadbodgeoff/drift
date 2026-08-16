@@ -97,6 +97,34 @@ const FIXTURES = [
   },
   {
     name: "next-api-direct-db",
+    as: "next-api-direct-db+snapshot-test",
+    // The counterpart to +matching-test, and both are needed. `snapshot_usage`,
+    // `mocked_dependencies` and `fixture_usage` are read from the matched test's own source, and
+    // the only cells that produce a `test_intelligence` entry AT ALL are the ones with a matching
+    // test. With just the plain test above, every entry in the matrix would report `false`/`[]` -
+    // correctly, having actually looked - and the fields would still read as frozen. This is the
+    // cell where the answer is yes, and it is what moves them off the baseline.
+    async seed(repoRoot) {
+      await mkdir(join(repoRoot, "apps/web/app/api/users/__fixtures__"), { recursive: true });
+      await writeFile(
+        join(repoRoot, "apps/web/app/api/users/__fixtures__/users.ts"),
+        "export const userRows = [];\n"
+      );
+      await writeFile(
+        join(repoRoot, "apps/web/app/api/users/route.test.ts"),
+        [
+          'import { expect, it, vi } from "vitest";',
+          'import { GET } from "./route";',
+          'import { userRows } from "./__fixtures__/users";',
+          'vi.mock("@/lib/db");',
+          'it("renders", () => { expect(GET(userRows)).toMatchSnapshot(); });',
+          ""
+        ].join("\n")
+      );
+    }
+  },
+  {
+    name: "next-api-direct-db",
     as: "next-api-direct-db+unrelated-test",
     // Tests exist and none of them is about the change: the `no_tests_matched_change` half.
     async seed(repoRoot) {
@@ -286,24 +314,28 @@ export function classifyConstant(path, value) {
         "same state throughout. A failed or dirty scan is a different harness."
     };
   }
-  if (/test_intelligence\[\]\.(snapshot_usage|stale_test_candidate|covered_symbols|mocked_dependencies|fixture_usage)$/.test(path)) {
+  if (/test_intelligence\[\]\.covered_symbols$/.test(path)) {
     return {
       kind: "unimplemented_placeholder",
       reason:
-        "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test " +
-        "for snapshots or staleness, so these are declared shape rather than measurement. Recorded " +
-        "as a placeholder rather than as an invariant, because `false` here reads to an agent as " +
-        "`checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix " +
-        "is to compute them or drop them, not to baseline them as properties."
+        "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the " +
+        "call sites inside a test file against the symbol graph - the engine emits symbol " +
+        "identities, but nothing links a test's calls to them - so this is engine work rather than " +
+        "a read of the test's source, which is why it did not land with the three fields beside it. " +
+        "Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test " +
+        "covers nothing` when it means `never looked`."
     };
   }
-  if (/test_intelligence\[\]\.missing_test_candidate$/.test(path)) {
+  if (/test_intelligence\[\]\.stale_test_candidate$/.test(path)) {
     return {
-      kind: "product_invariant",
+      kind: "unimplemented_placeholder",
       reason:
-        "False by construction: an entry exists in this array only because a test was FOUND for the " +
-        "subject, so a per-entry `missing` flag can never be true. The real signal is the sibling " +
-        "`missing_test_candidate` on the selection itself, which does vary."
+        "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is " +
+        "worse than an honest gap. Stale relative to what - the subject's mtime, a content hash " +
+        "across two scans, the last scan of the test itself? Those disagree on real repos, and each " +
+        "would make `stale_test_candidate: true` mean something different to an agent deciding " +
+        "whether to trust a passing test. Recorded as a placeholder rather than an invariant: it " +
+        "needs the definition settled before it needs code."
     };
   }
   if (/required_capabilities\[\]$/.test(path)) {

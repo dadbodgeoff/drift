@@ -260,7 +260,7 @@ describe("core domain", () => {
     })).toMatchObject({ affected_routes: ["GET /api/users"] });
 
     expect(TestIntelligenceSchema.parse({
-      schema_version: "drift.test_intelligence.v1",
+      schema_version: "drift.test_intelligence.v2",
       test_subject: "server/services/users.ts",
       test_type: "unit",
       test_framework: "vitest",
@@ -270,9 +270,41 @@ describe("core domain", () => {
       mocked_dependencies: ["server/repositories/users.ts"],
       fixture_usage: [],
       snapshot_usage: false,
-      missing_test_candidate: false,
       stale_test_candidate: false
     })).toMatchObject({ test_framework: "vitest" });
+
+    // The read that did not happen. `null` is a legal value for the three source-derived fields
+    // and is NOT interchangeable with `[]`/`false`: it says the test file was never opened.
+    expect(TestIntelligenceSchema.parse({
+      schema_version: "drift.test_intelligence.v2",
+      test_subject: "server/services/users.ts",
+      test_type: "unit",
+      test_framework: "vitest",
+      test_file_for: ["server/services/users.ts"],
+      covered_symbols: [],
+      covered_routes: [],
+      mocked_dependencies: null,
+      fixture_usage: null,
+      snapshot_usage: null,
+      stale_test_candidate: false
+    })).toMatchObject({ snapshot_usage: null });
+
+    // And the dropped field is rejected rather than tolerated, so a producer still emitting the
+    // per-entry `missing_test_candidate` is a failure and not a silent no-op.
+    expect(() => TestIntelligenceSchema.strict().parse({
+      schema_version: "drift.test_intelligence.v2",
+      test_subject: "server/services/users.ts",
+      test_type: "unit",
+      test_framework: "vitest",
+      test_file_for: ["server/services/users.ts"],
+      covered_symbols: [],
+      covered_routes: [],
+      mocked_dependencies: null,
+      fixture_usage: null,
+      snapshot_usage: null,
+      missing_test_candidate: false,
+      stale_test_candidate: false
+    })).toThrow();
   });
 
   it("creates deterministic agent envelope actions", () => {

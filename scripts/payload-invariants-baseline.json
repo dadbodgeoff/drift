@@ -865,19 +865,7 @@
       "reason": "The engine supports every capability these fixtures exercise, so the shortfall lists stay empty. NOT a claim that coverage is total: it is the same absence `semantic_coverage` exists to report, observed on a matrix small enough never to produce one."
     },
     {
-      "path": "repo_map.topology.areas[].external_systems",
-      "value": [],
-      "kind": "matrix_gap",
-      "reason": "Repo topology beyond the source tree. These fixtures are hand-built directories with no config files, no generated zones and no external systems to detect, so the lists naming them are empty by fixture size rather than by any property of the detector."
-    },
-    {
       "path": "repo_map.topology.configs",
-      "value": [],
-      "kind": "matrix_gap",
-      "reason": "Repo topology beyond the source tree. These fixtures are hand-built directories with no config files, no generated zones and no external systems to detect, so the lists naming them are empty by fixture size rather than by any property of the detector."
-    },
-    {
-      "path": "repo_map.topology.external_systems",
       "value": [],
       "kind": "matrix_gap",
       "reason": "Repo topology beyond the source tree. These fixtures are hand-built directories with no config files, no generated zones and no external systems to detect, so the lists naming them are empty by fixture size rather than by any property of the detector."
@@ -2074,37 +2062,13 @@
       "path": "prepare.task_preflight_packet.test_intelligence[].covered_symbols",
       "value": [],
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.task_preflight_packet.test_intelligence[].mocked_dependencies",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.task_preflight_packet.test_intelligence[].fixture_usage",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.task_preflight_packet.test_intelligence[].snapshot_usage",
-      "value": false,
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.task_preflight_packet.test_intelligence[].missing_test_candidate",
-      "value": false,
-      "kind": "product_invariant",
-      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+      "reason": "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the call sites inside a test file against the symbol graph - the engine emits symbol identities, but nothing links a test's calls to them - so this is engine work rather than a read of the test's source, which is why it did not land with the three fields beside it. Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test covers nothing` when it means `never looked`."
     },
     {
       "path": "prepare.task_preflight_packet.test_intelligence[].stale_test_candidate",
       "value": false,
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+      "reason": "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is worse than an honest gap. Stale relative to what - the subject's mtime, a content hash across two scans, the last scan of the test itself? Those disagree on real repos, and each would make `stale_test_candidate: true` mean something different to an agent deciding whether to trust a passing test. Recorded as a placeholder rather than an invariant: it needs the definition settled before it needs code."
     },
     {
       "path": "prepare.test_intelligence[].test_type",
@@ -2116,37 +2080,13 @@
       "path": "prepare.test_intelligence[].covered_symbols",
       "value": [],
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.test_intelligence[].mocked_dependencies",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.test_intelligence[].fixture_usage",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.test_intelligence[].snapshot_usage",
-      "value": false,
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "prepare.test_intelligence[].missing_test_candidate",
-      "value": false,
-      "kind": "product_invariant",
-      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+      "reason": "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the call sites inside a test file against the symbol graph - the engine emits symbol identities, but nothing links a test's calls to them - so this is engine work rather than a read of the test's source, which is why it did not land with the three fields beside it. Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test covers nothing` when it means `never looked`."
     },
     {
       "path": "prepare.test_intelligence[].stale_test_candidate",
       "value": false,
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+      "reason": "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is worse than an honest gap. Stale relative to what - the subject's mtime, a content hash across two scans, the last scan of the test itself? Those disagree on real repos, and each would make `stale_test_candidate: true` mean something different to an agent deciding whether to trust a passing test. Recorded as a placeholder rather than an invariant: it needs the definition settled before it needs code."
     },
     {
       "path": "preflight.task_preflight_packet.test_intelligence[].test_type",
@@ -2158,37 +2098,13 @@
       "path": "preflight.task_preflight_packet.test_intelligence[].covered_symbols",
       "value": [],
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.task_preflight_packet.test_intelligence[].mocked_dependencies",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.task_preflight_packet.test_intelligence[].fixture_usage",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.task_preflight_packet.test_intelligence[].snapshot_usage",
-      "value": false,
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.task_preflight_packet.test_intelligence[].missing_test_candidate",
-      "value": false,
-      "kind": "product_invariant",
-      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+      "reason": "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the call sites inside a test file against the symbol graph - the engine emits symbol identities, but nothing links a test's calls to them - so this is engine work rather than a read of the test's source, which is why it did not land with the three fields beside it. Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test covers nothing` when it means `never looked`."
     },
     {
       "path": "preflight.task_preflight_packet.test_intelligence[].stale_test_candidate",
       "value": false,
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+      "reason": "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is worse than an honest gap. Stale relative to what - the subject's mtime, a content hash across two scans, the last scan of the test itself? Those disagree on real repos, and each would make `stale_test_candidate: true` mean something different to an agent deciding whether to trust a passing test. Recorded as a placeholder rather than an invariant: it needs the definition settled before it needs code."
     },
     {
       "path": "preflight.test_intelligence[].test_type",
@@ -2200,37 +2116,13 @@
       "path": "preflight.test_intelligence[].covered_symbols",
       "value": [],
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.test_intelligence[].mocked_dependencies",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.test_intelligence[].fixture_usage",
-      "value": [],
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.test_intelligence[].snapshot_usage",
-      "value": false,
-      "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
-    },
-    {
-      "path": "preflight.test_intelligence[].missing_test_candidate",
-      "value": false,
-      "kind": "product_invariant",
-      "reason": "False by construction: an entry exists in this array only because a test was FOUND for the subject, so a per-entry `missing` flag can never be true. The real signal is the sibling `missing_test_candidate` on the selection itself, which does vary."
+      "reason": "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the call sites inside a test file against the symbol graph - the engine emits symbol identities, but nothing links a test's calls to them - so this is engine work rather than a read of the test's source, which is why it did not land with the three fields beside it. Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test covers nothing` when it means `never looked`."
     },
     {
       "path": "preflight.test_intelligence[].stale_test_candidate",
       "value": false,
       "kind": "unimplemented_placeholder",
-      "reason": "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test for snapshots or staleness, so these are declared shape rather than measurement. Recorded as a placeholder rather than as an invariant, because `false` here reads to an agent as `checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix is to compute them or drop them, not to baseline them as properties."
+      "reason": "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is worse than an honest gap. Stale relative to what - the subject's mtime, a content hash across two scans, the last scan of the test itself? Those disagree on real repos, and each would make `stale_test_candidate: true` mean something different to an agent deciding whether to trust a passing test. Recorded as a placeholder rather than an invariant: it needs the definition settled before it needs code."
     }
   ]
 }

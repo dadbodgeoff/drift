@@ -893,18 +893,28 @@ export interface ChangeImpact {
   missing_test_candidates: string[];
 }
 
+/**
+ * What is known about a test that covers a change.
+ *
+ * `missing_test_candidate` is NOT here, and its absence is the point. An entry exists in this array
+ * only because a test was FOUND for the subject, so a per-entry "a test is missing" flag was false
+ * by construction - it could not have been true in any payload Drift has ever emitted. The signal
+ * it looked like it carried is real and lives on the selection, where it varies.
+ *
+ * The three nullable fields are read from the test file's own source, and `null` means the source
+ * was not read - not that the answer is no. See TestFileEvidence in @drift/query.
+ */
 export interface TestIntelligence {
-  schema_version: "drift.test_intelligence.v1";
+  schema_version: "drift.test_intelligence.v2";
   test_subject: string;
   test_type: "unit" | "integration" | "e2e" | "unknown";
   test_framework: "vitest" | "jest" | "playwright" | "unknown";
   test_file_for: string[];
   covered_symbols: string[];
   covered_routes: string[];
-  mocked_dependencies: string[];
-  fixture_usage: string[];
-  snapshot_usage: boolean;
-  missing_test_candidate: boolean;
+  mocked_dependencies: string[] | null;
+  fixture_usage: string[] | null;
+  snapshot_usage: boolean | null;
   stale_test_candidate: boolean;
 }
 

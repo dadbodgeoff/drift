@@ -117,9 +117,11 @@ describe("baseline honesty", () => {
   });
 
   it("records the unimplemented placeholders as placeholders", () => {
-    // `snapshot_usage` and `stale_test_candidate` are hardcoded false in test-intelligence.ts and
+    // `covered_symbols` and `stale_test_candidate` are still hardcoded in test-intelligence.ts and
     // nothing computes them. Recording them as invariants would say "checked, and no" about a
-    // field that never looked.
+    // field that never looked. Their three former neighbours - `snapshot_usage`,
+    // `mocked_dependencies`, `fixture_usage` - are read from the test's source now and vary, which
+    // is why they are absent from the baseline entirely rather than recorded here.
     const placeholders = JSON.parse(original).constants.filter(
       (entry) => entry.kind === "unimplemented_placeholder"
     );
