@@ -113,7 +113,11 @@ describe("BB-6 guidance view", () => {
       { code: "dynamic_route_segment", count: 120 },
       { code: "namespace_import", count: 12 }
     ]);
-    expect(view.parser_gaps.full_list_command).toContain("drift doctor");
+    // D-A5: this pinned `drift doctor`, which accepts neither --repo nor --db and returns no
+    // parser_gaps key at all - so the assertion froze the shape of a pointer to data no command
+    // could produce. `scan status` takes --repo and now carries the itemized records.
+    expect(view.parser_gaps.full_list_command).toContain("drift scan status");
+    expect(view.parser_gaps.full_list_command).toContain("--repo repo_abc");
     // The count is kept honest even though the tail is dropped: 639 total, 3 kinds shown.
     expect(view.parser_gaps.count).toBeGreaterThan(
       view.parser_gaps.by_code.reduce((sum, entry) => sum + entry.count, 0)
@@ -142,6 +146,30 @@ describe("BB-6 guidance view", () => {
     // And the truncation is declared, not silent - a capped list that says nothing reads as complete.
     expect(view.truncated.relevant_files).toBe(true);
     expect(view.truncated.required_checks).toBe(true);
+  });
+
+  it("holds the byte budget when the conventions themselves are what overflow it (D-M5)", () => {
+    // The worst case above varies everything except the one field that was unbounded. Conventions
+    // were `input.conventions.map(...)` with no slice, and `truncated.conventions` was the bare
+    // literal `false` while its two siblings were computed comparisons. Measured before the fix:
+    // 60 conventions produced 57,031 bytes against a 32,768 budget (1.74x) and 200 produced
+    // 189,211 (5.8x), with the field reporting false at every size.
+    const view = buildGuidanceView({
+      repoId: "repo_many",
+      conventions: Array.from({ length: 200 }, (_, index) =>
+        convention({ id: `convention_${index}`, kind: "api_route_no_direct_data_access" })
+      ),
+      relevantFiles: [],
+      requiredChecks: [],
+      parserGaps: []
+    });
+
+    expect(Buffer.byteLength(JSON.stringify(view), "utf8")).toBeLessThanOrEqual(GUIDANCE_BYTE_BUDGET);
+    expect(view.truncated.conventions).toBe(true);
+    // Dropped down to what fits, but never to nothing: an empty list reads as "this repo has no
+    // conventions", which is a worse falsehood than a short list that declares itself short.
+    expect(view.conventions.length).toBeGreaterThan(0);
+    expect(view.conventions.length).toBeLessThan(200);
   });
 
   it("declares no truncation when nothing was dropped", () => {

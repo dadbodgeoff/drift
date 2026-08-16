@@ -1,4 +1,4 @@
-import type { ChangeImpact, SymbolIdentity } from "@drift/core";
+import { isNextApiRoutePath, type ChangeImpact, type SymbolIdentity } from "@drift/core";
 
 export interface ChangeImpactRouteFlow {
   route: string;
@@ -40,7 +40,13 @@ export function buildChangeImpact(input: BuildChangeImpactInput): ChangeImpact {
     scan_id: input.scan_id,
     changed_files: uniqueSorted(input.changed_files),
     changed_symbols: changedSymbols,
-    changed_routes: uniqueSorted(input.changed_files.filter((file) => file.includes("/api/"))),
+    // D-A4: this filtered on `file.includes("/api/")`. midday's backend package is `apps/api/`,
+    // so every one of the 25 task-relevant files matched - a fixtures file, two test files and a
+    // tRPC router among them - and the field reported 25 changed routes out of 25. It sits inside
+    // the schema-validated task_preflight_packet, not an internal scratch value, so an agent reads
+    // it as measured. `isNextApiRoutePath` is the same framework-semantic predicate the rest of the
+    // system uses to decide what a route is.
+    changed_routes: uniqueSorted(input.changed_files.filter(isNextApiRoutePath)),
     changed_tests: uniqueSorted(input.changed_files.filter(isTestFile)),
     changed_contract_surfaces: changedContractSurfaces(input.changed_files),
     affected_routes: affectedRoutes,
@@ -66,7 +72,9 @@ function changedSymbolsForFiles(files: string[], identities: SymbolIdentity[]): 
 
 function changedContractSurfaces(files: string[]): string[] {
   const surfaces = files.flatMap((file) => {
-    if (file.includes("/api/")) {
+    // Same predicate as changed_routes above, and for the same reason: the substring form
+    // inherited the identical false-positive class (D-A4).
+    if (isNextApiRoutePath(file)) {
       return ["entrypoint"];
     }
     if (file.includes("repositories") || file.includes("data") || file.includes("db")) {

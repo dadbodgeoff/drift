@@ -934,6 +934,7 @@ export function parserGapSummary(gaps: Array<ParserGap | ParserGapV2>): {
   confidence_impact: Record<ParserGapConfidenceImpact, number>;
   by_capability: Record<string, number>;
   by_contract_kind: Record<string, number>;
+  records: Array<ParserGap | ParserGapV2>;
 } {
   const summary = buildParserGapSummary(gaps);
   return {
@@ -941,7 +942,13 @@ export function parserGapSummary(gaps: Array<ParserGap | ParserGapV2>): {
     by_kind: summary.by_kind,
     confidence_impact: summary.confidence_impact as Record<ParserGapConfidenceImpact, number>,
     by_capability: summary.by_capability,
-    by_contract_kind: summary.by_contract_kind
+    by_contract_kind: summary.by_contract_kind,
+    // D-A5: the itemized records, so `guidance.parser_gaps.full_list_command` points at data that
+    // exists. It named `drift doctor --repo <id> --json`, which accepts neither `--repo` nor `--db`
+    // - the flag was silently swallowed and the wrong directory evaluated - and returned no
+    // parser_gaps key even when invoked correctly. No surface returned the itemized list at all, so
+    // the field was an unchecked string template handed to agents as a pointer to data.
+    records: gaps
   };
 }
 
