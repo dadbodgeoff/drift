@@ -54,10 +54,18 @@ jobs:
           REPO_ID=$(ls "$HOME/.drift/repos" | head -1)
           echo "DRIFT_REPO_ID=$REPO_ID" >> "$GITHUB_ENV"
           echo "DRIFT_DB=$HOME/.drift/repos/$REPO_ID/drift.sqlite" >> "$GITHUB_ENV"
-          if [ -f drift.lock ]; then
-            node packages/cli/dist/main.js contract import drift.lock \
-              --repo "$REPO_ID" --confirm --json
+          # drift.lock is a precondition, not an option. Inference finds nothing to propose on this
+          # repo - it is a TS/Rust monorepo with no routes and no data layer, so `start` yields zero
+          # candidates - and without a committed contract `check` correctly refuses with
+          # empty_contract. That refusal was read as a Drift failure and went red on every PR from
+          # #108 onward while the actual cause was a missing file. Fail here, where the message can
+          # say so, rather than letting it surface as an unexplained refusal one step later.
+          if [ ! -f drift.lock ]; then
+            echo "::error::drift.lock is missing. This gate enforces the committed contract; without it Drift has nothing to check and will refuse. Export one with 'drift contract export --output drift.lock --confirm'."
+            exit 1
           fi
+          node packages/cli/dist/main.js contract import drift.lock \
+            --repo "$REPO_ID" --confirm --json
 
       - name: Check the diff
         env:
@@ -80,10 +88,26 @@ jobs:
           # 3 is treated as a failure deliberately. It means no enforcement claim was made — a stale
           # scan, a missing contract, an unavailable engine — and a guardrail that reports success
           # when it could not check is worse than one that stops.
+          # A refusal and a violation are both red, but they are not the same event and must not
+          # read the same. Exit 2 means the diff broke a rule someone committed. Exit 3 means Drift
+          # made no claim at all - and when the reason is configuration rather than code, saying so
+          # is the difference between a gate people fix and a gate people learn to ignore.
+          REFUSAL=$(python3 -c "import json,sys; d=json.load(open('drift-check.json')); print((d.get('failure') or {}).get('code',''))" 2>/dev/null || echo "")
+
           case "$EXIT" in
             0) echo "Drift: no blocking violations" ;;
             2) echo "::error::Drift found a new violation in this diff"; exit 1 ;;
-            3) echo "::error::Drift declined to check this diff (refusal, not a pass)"; exit 1 ;;
+            3)
+              case "$REFUSAL" in
+                empty_contract|missing_contract)
+                  echo "::error::Drift refused because the contract is empty - a configuration problem in this workflow, not a problem with this diff. Check that drift.lock imported."
+                  ;;
+                *)
+                  echo "::error::Drift declined to check this diff (refusal, not a pass): ${REFUSAL:-unknown}"
+                  ;;
+              esac
+              exit 1
+              ;;
             *) echo "::error::Drift failed to run"; exit 1 ;;
           esac
 
