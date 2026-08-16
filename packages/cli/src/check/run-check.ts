@@ -490,6 +490,10 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const findings: Finding[] = [];
   const waivedFindings: WaivedFinding[] = [];
   const securityBoundaryProofs: SecurityBoundaryProof[] = [];
+  // TDD §5.1.4. An accepted convention the engine cannot read, or reads and then discards
+  // entirely, enforces nothing while `check` reports a clean pass. That is the shape of the D1
+  // P0, so the engine now says so and the verdict carries it rather than dropping it on the floor.
+  const unenforceableConventions: string[] = [];
   let waivedFindingsCount = 0;
 
   const engineOwned = await runEngineOwnedDirectDataAccessCheck({
@@ -655,6 +659,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   waivedFindings.push(...engineOwnedAuth.waivedFindings);
   waivedFindingsCount += engineOwnedAuth.waivedFindingsCount;
   securityBoundaryProofs.push(...engineOwnedAuth.securityBoundaryProofs);
+  unenforceableConventions.push(...engineOwnedAuth.unenforceableConventions);
   for (const finding of engineOwnedAuth.findings) {
     storage.upsertFinding(finding);
   }
@@ -1026,6 +1031,11 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
         : {}),
       ...(enforcementDemotions.length > 0
         ? { enforcement_demotions: enforcementDemotions }
+        : {}),
+      // BB-4's pattern, applied to §5.1.4: present only when something is actually dead, so its
+      // presence is the signal and an empty array is not one more field to skip.
+      ...(unenforceableConventions.length > 0
+        ? { unenforceable_conventions: unenforceableConventions }
         : {})
     },
     review_items: findings.map(reviewFinding),
@@ -2766,11 +2776,14 @@ async function runEngineOwnedAuthCheck(input: {
   waivedFindings: WaivedFinding[];
   waivedFindingsCount: number;
   securityBoundaryProofs: SecurityBoundaryProof[];
+  /** Engine diagnostics naming an accepted convention that is configured to enforce nothing. */
+  unenforceableConventions: string[];
 }> {
   const findings: Finding[] = [];
   const waivedFindings: WaivedFinding[] = [];
   let waivedFindingsCount = 0;
   const securityBoundaryProofs: SecurityBoundaryProof[] = [];
+  const unenforceableConventions: string[] = [];
 
   for (const convention of input.contract.conventions) {
     if (
@@ -2792,7 +2805,7 @@ async function runEngineOwnedAuthCheck(input: {
       convention.enforcement_capability !== "deterministic_check" ||
       !isActiveConvention(convention, input.now)
     ) {
-      continue;
+        continue;
     }
 
     const files = filesForConvention(input.parsedDiff, convention, input.scope)
@@ -2818,6 +2831,16 @@ async function runEngineOwnedAuthCheck(input: {
     });
     securityBoundaryProofs.push(
       ...result.security_boundary_proofs.map((proof) => SecurityBoundaryProofSchema.parse(proof))
+    );
+    // §5.1.4: dead config. Carried by message, not code alone, because the message is the part
+    // that tells the user which convention and what to do about it.
+    unenforceableConventions.push(
+      ...(result.diagnostics ?? [])
+        .filter((diagnostic) =>
+          diagnostic.code === "convention_config_unenforceable" ||
+          diagnostic.code === "convention_config_unreadable"
+        )
+        .map((diagnostic) => diagnostic.message)
     );
 
     for (const engineFinding of result.findings) {
@@ -2961,7 +2984,13 @@ async function runEngineOwnedAuthCheck(input: {
     }
   }
 
-  return { findings, waivedFindings, waivedFindingsCount, securityBoundaryProofs };
+  return {
+    findings,
+    waivedFindings,
+    waivedFindingsCount,
+    securityBoundaryProofs,
+    unenforceableConventions
+  };
 }
 
 function isPhase5SecurityFinding(ruleId: string): boolean {

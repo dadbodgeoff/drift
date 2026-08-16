@@ -639,7 +639,15 @@ fn security_candidates(
                 json!({
                     "field_path": json_string_field(fact, "field_path").unwrap_or_else(|| fact.name.clone()),
                     "classification": json_string_field(fact, "classification").unwrap_or_else(|| "internal".to_string()),
-                    "source": "candidate"
+                    // D1 (P0). This was hardcoded to "candidate", which destroyed the one thing
+                    // downstream depends on. `source` is *provenance*: extraction records "schema"
+                    // for a field the user marked `driftSensitive` and "candidate" for one the name
+                    // heuristic guessed (security_facts.rs:983,999). `security_proof.rs` then drops
+                    // "candidate" as an unreviewed guess. Relabelling a marker-declared field as a
+                    // guess made the proof discard it, so the check could not fire on any repo.
+                    // Propagate what the fact actually said; "candidate" is only the fallback for a
+                    // fact that carries no provenance at all.
+                    "source": json_string_field(fact, "source").unwrap_or_else(|| "candidate".to_string())
                 })
             })
             .collect::<Vec<_>>();

@@ -18,6 +18,7 @@ use drift_engine::{
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
     materialize_direct_data_access_findings, phase6_proof_to_json,
+    sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
 
@@ -85,6 +86,11 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
 
     let mut findings = Vec::new();
     let mut security_boundary_proofs = Vec::new();
+    // TDD §5.1.4. An accepted convention whose config the engine cannot read, or can read and
+    // then discards entirely, enforces nothing while reporting a clean pass — the exact shape of
+    // the D1 P0, and the shape D1's first proposed fix would have reproduced. These say so out
+    // loud instead.
+    let mut config_diagnostics: Vec<crate::protocol::EngineDiagnostic> = Vec::new();
     let mut required_capabilities = BTreeSet::from(["direct_data_access_check".to_string()]);
     for convention in request.contract.conventions {
         let _convention_metadata = (
@@ -209,6 +215,10 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             security_boundary_proofs.extend(phase6_result.proofs);
             phase6_result.findings
         } else if convention.kind == "api_route_forbids_sensitive_response_fields" {
+            config_diagnostics.extend(sensitive_response_field_config_diagnostics(
+                &convention.id,
+                convention.requires.as_ref(),
+            ));
             let has_phase5_inputs = convention
                 .requires
                 .as_ref()
@@ -371,6 +381,8 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             file_path: None,
             import_source: None,
         })
+        .chain(config_diagnostics)
+        .take(request.limits.max_diagnostics)
         .collect::<Vec<_>>();
 
     CheckResult {
@@ -1560,6 +1572,78 @@ fn security_phase4_findings_and_proofs(
     }
 
     SecurityPhase4Evaluation { findings, proofs }
+}
+
+/// TDD §5.1.4 — the dead-config diagnostic, defence in depth for the D1 class of defect.
+///
+/// The two ways an accepted `api_route_forbids_sensitive_response_fields` convention can enforce
+/// nothing while reporting a clean pass, both of which were silent before this existed:
+///
+/// 1. **The parser could not read an entry.** `accepted_sensitive_response_field` fails closed via
+///    `filter_map`, so an unknown `classification` or `source` vanishes with no error. This is the
+///    trap that would have made D1's first proposed fix a total no-op: it promoted `source` to a
+///    value the allowlist rejected, and the check would have gone on never firing, silently.
+/// 2. **Every entry parsed, and the proof then discarded all of them.** `source: "candidate"` is
+///    an unreviewed guess and `sensitive_field_source_is_trusted` drops it. A convention made
+///    entirely of those has no enforceable field left — which is precisely the state every
+///    convention accepted before D1's fix is in, and the non-destructive alternative to migrating
+///    those users' state DBs (see docs/decisions/d1-sensitive-field-source-migration.md).
+///
+/// Either way the user's remedy is the same and is named in the message: re-run
+/// `drift conventions accept` on the candidate so provenance is recorded correctly.
+fn sensitive_response_field_config_diagnostics(
+    convention_id: &str,
+    requires: Option<&serde_json::Value>,
+) -> Vec<crate::protocol::EngineDiagnostic> {
+    let Some(requires) = requires else {
+        return Vec::new();
+    };
+    let mut diagnostics = Vec::new();
+
+    let rejections = sensitive_response_field_rejections(requires);
+    if !rejections.is_empty() {
+        diagnostics.push(crate::protocol::EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "convention_config_unreadable".to_string(),
+            message: format!(
+                "Accepted convention {convention_id} has {} sensitive_response_fields entr{} the \
+                 engine cannot read, so they are not being checked: {}. Re-run `drift conventions \
+                 accept` for this candidate to record them in a form the check understands.",
+                rejections.len(),
+                if rejections.len() == 1 { "y" } else { "ies" },
+                rejections.join("; ")
+            ),
+            file_path: None,
+            import_source: None,
+        });
+    }
+
+    let parsed = accepted_phase5_contract_from_requires(requires);
+    let fields = parsed
+        .as_ref()
+        .map(|accepted| accepted.sensitive_response_fields.as_slice())
+        .unwrap_or_default();
+    if !fields.is_empty()
+        && !fields
+            .iter()
+            .any(|field| sensitive_field_source_is_trusted(&field.source))
+    {
+        diagnostics.push(crate::protocol::EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "convention_config_unenforceable".to_string(),
+            message: format!(
+                "Accepted convention {convention_id} enforces nothing: all {} of its \
+                 sensitive_response_fields carry source \"candidate\", an unreviewed name-heuristic \
+                 guess the proof will not enforce on. Re-run `drift conventions accept` for this \
+                 candidate to record the fields as reviewed.",
+                fields.len()
+            ),
+            file_path: None,
+            import_source: None,
+        });
+    }
+
+    diagnostics
 }
 
 fn security_phase5_findings_and_proofs(

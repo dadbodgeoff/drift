@@ -766,6 +766,26 @@ pub fn build_request_validation_proof_with_scope(
     })
 }
 
+/// Whether a sensitive-field `source` is trusted enough to enforce against.
+///
+/// **This is a TRUST boundary, not an acceptance boundary** — the misreading that produced D1's
+/// first proposed fix, and worth stating in the code rather than a review comment.
+///
+/// The values it tests are *provenance*: where the claim "this field is sensitive" came from.
+/// `"candidate"` means a name heuristic guessed it and **no human has looked at the guess** — so
+/// enforcing on it would block a diff on Drift's own unreviewed inference. Every other value in
+/// `SENSITIVE_FIELD_SOURCES` carries a human behind it: `"contract"` and `"schema"` were written
+/// by hand, and `"accepted_inference"` is a guess someone confirmed with `drift conventions
+/// accept`.
+///
+/// What this filter must never be read as is "drop fields that were not accepted". Nothing
+/// unaccepted reaches here; the whole input is an accepted convention's `requires`. Reading it
+/// that way is what made a hardcoded `"source": "candidate"` at the proposal site
+/// (`candidate_command.rs`) look harmless, and it is why this check could not fire on any repo.
+pub fn sensitive_field_source_is_trusted(source: &str) -> bool {
+    source != "candidate"
+}
+
 pub fn build_response_shape_proof(
     file_path: impl AsRef<std::path::Path>,
     source: &str,
@@ -781,7 +801,7 @@ pub fn build_response_shape_proof(
         .iter()
         .filter(|fact| fact.kind == crate::FactKind::SensitiveFieldDeclared)
         .filter_map(sensitive_field_declared_value)
-        .filter(|field| field.source != "candidate")
+        .filter(|field| sensitive_field_source_is_trusted(&field.source))
         .collect::<Vec<_>>();
     let serializers = facts
         .iter()
