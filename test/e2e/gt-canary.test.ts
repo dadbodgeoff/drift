@@ -34,6 +34,7 @@ const DATA_ACCESS = "api_route_no_direct_data_access";
 const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
+const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
 const CELLS_COVERED_HERE: Record<string, string> = {
@@ -48,7 +49,9 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "session_object_must_come_from_trusted_helper::phase4_proof":
     "proposer emits no candidate of the unimplemented shapes",
   "middleware_must_cover_routes::no_dispatch_arm":
-    "middleware_must_cover_routes is refused at acceptance, by name"
+    "middleware_must_cover_routes is refused at acceptance, by name",
+  "api_route_forbids_sensitive_response_fields::phase5_proof":
+    "phase-5 sensitive-response-fields path fires, on both provenance routes"
 };
 
 describe("cell canaries — firing", () => {
@@ -150,6 +153,28 @@ describe("cell canaries — firing", () => {
 
     const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), AUTH_HELPER);
     expect(flagged).toEqual(["pages/api/route-c.ts"]);
+  }, 180000);
+
+  it("phase-5 sensitive-response-fields path fires, on both provenance routes", async () => {
+    // The D1 cell. Its evidence is the reason this ledger exists at all: before D1 this path
+    // could not fire for ANY proposer-produced convention, and the three tests that covered the
+    // kind all hand-built their contract, so none of them could see it.
+    //
+    // Both provenance routes are asserted because they fail independently. The marker path
+    // exercises `source: "schema"` surviving proposal (candidate_command.rs:642); the inference
+    // path exercises `accepted_inference` being stamped at the accept path and admitted by the
+    // allowlist (security_patterns.rs:266). Fixing only one leaves the other dead.
+    for (const fixture of ["gt-sensitive-fields-schema", "gt-sensitive-fields"]) {
+      const run = await runGtWorkflow({ fixture, acceptKinds: [SENSITIVE_FIELDS] });
+
+      // Obtained from the proposer, never injected — the property that makes this evidence.
+      expect(run.acceptPayloads, `${fixture}: convention must come from the proposer`).toHaveLength(1);
+
+      const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), SENSITIVE_FIELDS);
+      expect(flagged, `${fixture}: the leaking route and only the leaking route`).toEqual([
+        "pages/api/route-leak.ts"
+      ]);
+    }
   }, 180000);
 
   it("phase-6 CORS policy path fires", async () => {
