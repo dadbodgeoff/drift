@@ -718,6 +718,20 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
             "graph_fact_db"
         ])
     );
+
+    // D-H1: the SCORE has to agree with the list it summarises.
+    //
+    // This fixture is one import statement in one file described twice - once as a raw fact and
+    // once as a graph import - which is exactly what `combined_evidence_refs` dedupes and exactly
+    // what `data_imports.len() + graph_data_imports.len()` did not. The test asserted the deduped
+    // list and never the count, so `supporting_examples_count: 2` sat beside one ref for as long
+    // as it existed. `commands/start.ts:368` prints this number as "Evidence: N matching
+    // import(s)" on the screen a human uses to accept the convention.
+    assert_eq!(
+        direct["scoring"]["supporting_examples_count"],
+        json!(refs.len()),
+        "{direct:#?}"
+    );
 }
 
 /// T26: `withWorkspace` is NOT recognised as an auth helper, and that is the correct behaviour.

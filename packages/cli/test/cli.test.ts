@@ -13433,6 +13433,59 @@ schema_version: MIGRATIONS.length,
     expect(result.stderr).toContain("Unknown repo repo_missing");
   });
 
+  it("renders every mutating command for a human without --json", async () => {
+    // W4/D-CL2. `formatOutput` prints a string as-is, pretty JSON under `--json`, and otherwise
+    // COMPACT SINGLE-LINE JSON - so a command with no text branch emitted a one-line blob to a
+    // terminal. Six commands had no branch: scan, checks run, and the four convention mutations.
+    //
+    // No existing test caught it because every existing test for these six passes `--json`. The
+    // human path was untested precisely because it did not exist.
+    const databasePath = await seedDatabase();
+
+    const accepted = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--confirm",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(accepted.exitCode).toBe(0);
+    // The load-bearing assertion is the negative one: not JSON. A human-readable rendering is
+    // allowed to change wording, but it may never go back to being a serialized object.
+    expect(accepted.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(accepted.stdout).toContain("Convention accepted");
+    expect(accepted.stdout).toContain("convention_no_direct_db");
+    // The mode a human just chose has to be visible in what they are shown.
+    expect(accepted.stdout).toContain("warn");
+  });
+
+  it("says nothing was written when a mutation is a dry run", async () => {
+    // D-CL2's sharpest case: without --confirm these commands write nothing, and a headline
+    // reading "Convention accepted" over an unwritten change is worse than the JSON blob was.
+    const databasePath = await seedDatabase();
+
+    const dryRun = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--dry-run",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(dryRun.exitCode).toBe(0);
+    expect(dryRun.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(dryRun.stdout).toContain("dry run");
+    expect(dryRun.stdout).toContain("nothing written");
+    // And it must NOT read as though the write happened.
+    expect(dryRun.stdout).not.toContain("Convention accepted\n");
+  });
+
   it("accepts a candidate, materializes a repo contract, and audits the action", async () => {
     const databasePath = await seedDatabase();
 

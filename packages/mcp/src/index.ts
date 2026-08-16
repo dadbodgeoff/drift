@@ -33,6 +33,7 @@ import {
   migrationSentence,
   canonicalScanStateJson,
   classifyFailure,
+  selfClassifiedError,
   createAgentEnvelopeV2,
   createAgentPreflightPacket,
   createContextPolicyMatrix,
@@ -265,7 +266,8 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         test_files: testFiles
       });
       const testSelection = selectRelevantTests({
-        changed_file: relevantFiles[0]?.path ?? requestedPath ?? "",
+        // D-A3(a): every relevant file, not just the head of the ranked list.
+        changed_files: relevantFiles.map((file) => file.path),
         route_flow: changeImpactRouteFlows[0],
         test_files: testFiles
       });
@@ -448,9 +450,9 @@ export function createReadOnlyMcpHandlers(options: DriftMcpOptions): DriftMcpHan
         task_preflight_packet: taskPreflightPacket,
         change_impact: changeImpact,
         test_intelligence: testSelection.test_intelligence,
-        test_intelligence_reason: testSelection.test_intelligence.length === 0
-          ? "not_implemented_for_repo"
-          : null,
+        // D-A3(c): derived once, in selectRelevantTests. See the CLI's prepare for the two
+        // questions the old inline ternary gave the same answer to.
+        test_intelligence_reason: testSelection.test_intelligence_reason,
         agent_contract_packet: agentContractPacket,
         baseline,
         findings,
@@ -1093,7 +1095,17 @@ function validateMcpToolArguments(name: keyof DriftMcpHandlers, args: Record<str
 
 function requiredContract(contract: RepoContract | undefined, repoId: string): RepoContract {
   if (!contract) {
-    throw new Error(`No repo contract exists for ${repoId}.`);
+    // D-E7: see assertFreshScanIfRequired. Same code the CLI reports for this scenario.
+    throw selfClassifiedError({
+      message: `No repo contract exists for ${repoId}.`,
+      code: "missing_contract",
+      userAction:
+        "Accept or import a repo contract before running contract-backed enforcement.",
+      recoveryCommands: [
+        "drift conventions list --status candidate --json",
+        "drift contract import <contract.json> --dry-run --json"
+      ]
+    });
   }
   return contract;
 }
@@ -1525,9 +1537,16 @@ function assertFreshScanIfRequired(
   if (!required || !scanStatus.stale) {
     return;
   }
-  throw new Error(
-    `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit require_fresh to inspect stale context.`
-  );
+  // D-E7: self-classified, so the refusal survives a reword. The code, action and recovery
+  // command are the ones classifyFailureMessage derived from this sentence's prose - this states
+  // them instead of spelling them.
+  throw selfClassifiedError({
+    message: `Scan is stale for ${repoId}. Run ${scanStatus.next_command}; omit require_fresh to inspect stale context.`,
+    code: "stale_scan",
+    userAction:
+      "Refresh the scan or rerun without --require-fresh for read-only stale context.",
+    recoveryCommands: [scanStatus.next_command]
+  });
 }
 
 function policyContextSummary(input: {

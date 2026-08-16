@@ -9,6 +9,7 @@ import { listChecks } from "../commands/checks.js";
 import { runRequiredCheck } from "../commands/checks-run.js";
 import { addContractWaiver,exportContract,importContractDryRun,listContractWaivers,removeContractWaiver,showContract,showContractWaiver,validateContract } from "../commands/contract.js";
 import { acceptCandidate,addConventionException,editCandidate,listAcceptedConventions,listConventionCandidates,rejectCandidate,showConventionCandidate } from "../commands/conventions.js";
+import { formatConventionMutationText } from "../formatters/convention-mutations.js";
 import { listFindings,markFindingFixed,resolveFindingWithReason,showFinding } from "../commands/findings.js";
 import { initRepo } from "../commands/init.js";
 import { checkPolicyContext,grantAgentPermission,revokeAgentPermission,setEgressPolicy,showPolicy } from "../commands/policy.js";
@@ -115,24 +116,31 @@ export async function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs
     return showConventionCandidate(storage, parsed, id);
   }
 
+  // D-CL2: the four convention mutations are wrapped here rather than at each of their several
+  // return points, so the text branch cannot be added to three of them and forgotten on the
+  // fourth - which is the shape of the defect being fixed.
   if (group === "conventions" && command === "accept") {
     const id = requiredValue(maybeId, "candidate id");
-    return acceptCandidate(storage, parsed, id);
+    return conventionMutationResult(parsed, "accepted", acceptCandidate(storage, parsed, id));
   }
 
   if (group === "conventions" && command === "reject") {
     const id = requiredValue(maybeId, "candidate id");
-    return rejectCandidate(storage, parsed, id);
+    return conventionMutationResult(parsed, "rejected", rejectCandidate(storage, parsed, id));
   }
 
   if (group === "conventions" && command === "edit") {
     const id = requiredValue(maybeId, "candidate id");
-    return editCandidate(storage, parsed, id);
+    return conventionMutationResult(parsed, "edited", editCandidate(storage, parsed, id));
   }
 
   if (group === "conventions" && command === "exception" && maybeId === "add") {
     const conventionId = requiredValue(parsed.positional[3], "convention id");
-    return addConventionException(storage, parsed, conventionId);
+    return conventionMutationResult(
+      parsed,
+      "exception added",
+      addConventionException(storage, parsed, conventionId)
+    );
   }
 
   if (group === "contract" && command === "show") {
@@ -238,4 +246,22 @@ export async function runCommand(storage: SqliteDriftStorage, parsed: ParsedArgs
   }
 
   throw new Error(`Unknown command: ${parsed.positional.join(" ")}. Run drift --help.`);
+}
+
+/**
+ * D-CL2: give a convention mutation its human rendering.
+ *
+ * These four commands each have several return points (dry run, already-in-that-state, and the
+ * confirmed write), so branching inside them would mean twelve places to remember instead of one.
+ */
+function conventionMutationResult(
+  parsed: ParsedArgs,
+  action: "accepted" | "rejected" | "edited" | "exception added",
+  result: unknown
+): CommandPayload {
+  return {
+    payload: parsed.flags.has("json")
+      ? result
+      : formatConventionMutationText(action, result as Parameters<typeof formatConventionMutationText>[1])
+  };
 }

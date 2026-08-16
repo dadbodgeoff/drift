@@ -115,7 +115,8 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     test_files: testFiles
   });
   const testSelection = selectRelevantTests({
-    changed_file: relevantFiles[0]?.path ?? targetPath ?? "",
+    // D-A3(a): every relevant file, not just the head of the ranked list.
+    changed_files: relevantFiles.map((file) => file.path),
     route_flow: changeImpactRouteFlows[0],
     test_files: testFiles
   });
@@ -283,11 +284,12 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     task_preflight_packet: taskPreflightPacket,
     change_impact: changeImpact,
     test_intelligence: testSelection.test_intelligence,
-    // BB-6 (EW-3 shape): a bare `[]` cannot say whether test selection ran and found nothing or was
-    // never implemented for this repo, and the two call for opposite responses from a reader.
-    test_intelligence_reason: testSelection.test_intelligence.length === 0
-      ? "not_implemented_for_repo"
-      : null,
+    // BB-6 (EW-3 shape): a bare `[]` cannot say whether test selection ran and found nothing or
+    // was never implemented for this repo, and the two call for opposite responses from a reader.
+    // D-A3(c): derived by selectRelevantTests, which is where the inputs that tell "no tests
+    // exist" from "the matcher missed them" actually live. This was an inline ternary here and a
+    // byte-identical one in MCP, and both answered "not_implemented_for_repo" to both questions.
+    test_intelligence_reason: testSelection.test_intelligence_reason,
     agent_contract_packet: agentContractPacket,
     baseline,
     findings,

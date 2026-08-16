@@ -9,6 +9,7 @@ import { actorFlag,optionalPositiveIntegerFlag,requiredNonEmptyFlag,stringFlag }
 import { resolveRepoId } from "../args/repo-flags.js";
 import { auditEvent,preflightGovernance } from "../domain/governance.js";
 import { contractFingerprint,hashStable } from "../domain/identifiers.js";
+import { formatChecksRunText } from "../formatters/checks-run.js";
 import { allRequiredChecks } from "../domain/preflight.js";
 import { requiredRepoContract } from "../domain/repo-paths.js";
 import { gitOutput } from "../io/git.js";
@@ -133,7 +134,8 @@ export async function runRequiredCheck(storage: SqliteDriftStorage, parsed: Pars
 
   return {
     exitCode: status === "passed" ? 0 : 1,
-    payload
+    // D-CL2: the exit code is the contract; the text is what a human reads beside it.
+    payload: parsed.flags.has("json") ? payload : formatChecksRunText(payload)
   };
 }
 
