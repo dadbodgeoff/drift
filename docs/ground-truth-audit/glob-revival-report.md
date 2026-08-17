@@ -46,7 +46,9 @@ route, and so what makes the exception legitimate rather than a shortcut.
 The brief's workflow was `scan → conventions list → conventions accept → check`. The harness reads
 candidates from `start --json`, which emits them **unfiltered**. `drift conventions list` — the
 command a human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,85-87` drops
-every `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed, and
+every `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed or the
+candidate is a promoted presence family (which is why the `api_route_requires_auth_helper` presence
+canary needs no such assertion), and
 `EXPERIMENTAL_SECURITY_CONVENTION_KINDS` is the entire security-contract set
 (`packages/core/src/capabilities.ts:187`).
 
@@ -113,7 +115,7 @@ Every revert below was actually performed, the named test observed failing, and 
 | 3 | `check_command.rs` — the bare-directory widening moved out of `path_glob_matches` into a phase5-only `phase5_scope_pattern_matches`, making the Rust matcher byte-equivalent to `matchesGlob` | `a_trailing_star_still_matches_the_directory_itself` + `rust_matcher_reproduces_the_shared_parity_selection` |
 | 4 | `security_patterns.rs` + `security_facts.rs` + `check_command.rs` + `lib.rs` — new `RequestValidatorKind::SchemaMethod`, plus `defaulted_request_validator_kind` retagging any validator that names a `SCHEMA_METHOD_VALIDATOR_SYMBOLS` symbol (currently only `safeParse`) with no explicit `kind` from Helper to SchemaMethod, so a proposer-shaped `safeParse` validator can prove | `gt-canary > request-validation safeParse proof path fires`; `security_check_repo_request_validation.rs > proposer_shaped_safe_parse_validator_proves_a_guarded_schema_call` |
 | 5 | `check_command.rs` — `sink_line_from_sink_id`: sink ids are `sink:{file}:{line}:{symbol}`, so reading the last `:`-segment as the line failed and the call site's `unwrap_or(1)` (`check_command.rs:1124`, itself unchanged) then invented line 1 on **every** request-validation finding | `security_check_repo_request_validation.rs > request_validation_finding_points_at_the_unvalidated_sink_line` |
-| 6 | `test/e2e/gt-harness.ts` — `withDebugEngine()`, pinning `DRIFT_ENGINE_BIN` around every CLI call a test makes *after* a workflow returns. Without it those calls resolved to `target/release/drift-engine`, which nothing in the e2e suite builds (§4.1) | the glob mutation itself: with this reverted, `phase-4 session-trust path fires through contract import` stops failing under the mutation — i.e. the reverted state is exactly the false-green that hid the defect |
+| 6 | `test/e2e/gt-harness.ts` — `withDebugEngine()`, pinning `DRIFT_ENGINE_BIN` around every CLI call a test makes *after* a workflow returns. Without it those calls resolved to `target/release/drift-engine`, which nothing in the e2e suite builds (§4.1) | `gt-canary > ledger integrity > every CLI call in this file runs the engine binary under test` — a standing source-level guard that fails on any unwrapped `runCli([`. (The behavioural proof is the mutation itself: reverted, `phase-4 session-trust …` stops failing under it — but that is a one-off falsification, so the standing guard was added too, because deleting the fix otherwise leaves the suite green.) |
 | 7 | `test/e2e/gt-canary.test.ts` — sensitive-fields gained the block-mode half it was missing, and lost a false claim that block mode was impossible for the kind (§3, "one assertion that was wrong") | `gt-canary > phase-5 sensitive-response-fields path fires, on both provenance routes` — its exit-2 block-mode assertions |
 
 ### One assertion that was wrong, and what replaced it
@@ -214,9 +216,21 @@ the `check` closure returned by the import workflow, a second blocking `check` o
 (`target/release/drift-engine`). Nothing in the e2e suite rebuilds that. So those assertions were
 being made against a stale engine, and mutating the debug binary looked like it changed nothing.
 
+Two precise qualifications, because the unqualified version overstates it. First, resolution only
+falls through to `workspace_release_binary` **if `target/release/drift-engine` happens to exist**;
+otherwise it falls to `workspace_cargo` (`cargo run -p drift-engine`), which is the debug build and
+behaves correctly (`rust-engine.ts:277-292`). So reproducing this on a clean clone requires a release
+binary to be present. Second, `pnpm verify` runs `build:engine` (a *release* build of the same
+source) before `test:e2e`, so under the full gate those calls hit a freshly built engine rather than
+a stale one. The defect's real domain is isolated and ad-hoc runs — which is exactly where the
+mutation experiment lives, and exactly why it bit there and nowhere else.
+
 Fixed by `withDebugEngine()` in `test/e2e/gt-harness.ts`, which pins and restores around any
 post-workflow CLI call; every such call site now goes through it. **With the fix, session-trust fails
-under the mutation as originally reported.** All five glob-scoped canaries now die in isolation.
+under the mutation as originally reported** — reproduced independently by a third reviewer. All five
+glob-scoped canaries now die in isolation. A standing source-level guard,
+`ledger integrity > every CLI call in this file runs the engine binary under test`, now fails if any
+`runCli([` in the canary file is left unwrapped; without it, deleting the fix leaves the suite green.
 
 Two lessons this leaves behind, both cheap and both real:
 
@@ -287,6 +301,8 @@ Whole-file runs mix in ordering effects, so each was run alone against a rebuilt
 | `phase-4 session-trust …` | **fails** — glob-dependent (see §4.1) |
 | `request-validation safeParse …` | passes — structurally not glob-gated (§4), reported as an honest negative |
 
+---
+
 ## 6. Found, not fixed
 
 Out of scope for this sprint. Not fixed, listed with `file:line`.
@@ -335,10 +351,16 @@ value), so it needs its own decision.
    trusted sessions come only from `requires.auth_helpers`, which an authorization candidate never
    carries. `requireRole(session.user, "admin")` — i.e. `security-role-guard-present` — can never pass.
 7. **Dead branch:** `check_command.rs:3589-3596` — the `.or_else` inside `phase4_finding_line`
-   parses a line out of `sink_fact_id`, but sink ids put the symbol last, so it always returns
-   `None`. For a pure-authorization run `proof.tenant.missing` is empty, so this branch does execute
-   and simply yields nothing. Unreachable as a *source of line numbers*, so no test could fail on its
-   revert.
+   parses a line out of `sink_fact_id`, but both sink-id formats put the *symbol* last
+   (`security_control_flow.rs:745`, `security_proof.rs:537`), so it can never yield a number. It is
+   also never entered on any current fixture: `build_tenant_proof_from_facts`
+   (`security_proof.rs:1186-1194`) pushes `tenant_predicate_missing` whenever data operations exist
+   with no predicate, which is true of all three flagged `gt-authorization` routes, so the tenant arm
+   above returns `Some` and short-circuits it — and that arm is where the canary's asserted lines
+   (7, 10, 14, the `db.*` lines) actually come from. **The consequence is undiscovered elsewhere:** a
+   route whose data operation IS tenant-scoped but whose authorization guard is missing gets nothing
+   from the tenant arm and `None` from this one, so the finding falls through to `unwrap_or(1)`
+   (`check_command.rs:1653`) and reports at line 1. No fixture has that shape.
 8. **`security_facts.rs:1648`** `is_session_like_variable` matches any variable containing `user`, so
    `const userAgent = request.headers.get("user-agent")` would read as an untrusted session read.
    Suspected false positive, **not measured**, and deliberately not exercised by any fixture.
@@ -354,7 +376,13 @@ value), so it needs its own decision.
     Reverting a change and re-running can rebuild the binary without relinking the test target, which
     then silently exercises the OLD binary and reports a false pass. Force it with
     `touch crates/drift-engine/tests/*.rs`. Every revert-proof in §3 was confirmed with the relink.
-12. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
+12. **The same unpinned-engine hazard exists in two sibling e2e files.**
+    `test/e2e/dogfood-enforcement-proof.test.ts:27,101,139` and `test/e2e/golden.test.ts` (11 call
+    sites) drive `runCli` with no engine pin at all — the same class of defect as §4.1's P0,
+    pre-existing and outside this sprint's scope. Under `verify:ci` they hit the release binary
+    `build:engine` just produced, so they are not currently wrong; run ad hoc, they are a false green
+    waiting to happen.
+13. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
     uses `storage.upsertAcceptedConvention` and the de-globbed `app/api/**/route.ts`. Left untouched
     under the no-weakening rule; it is the exact pattern this sprint's canaries exist to replace.
 

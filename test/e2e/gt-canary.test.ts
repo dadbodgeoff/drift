@@ -147,7 +147,8 @@ function addedFilesPatch(repoRoot: string, paths: readonly string[]): string {
  * `runGtWorkflow` reads candidates from `start --json`, which emits `result.candidates`
  * unfiltered (`packages/cli/src/commands/start.ts`). `drift conventions list` — the command a
  * human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,85-87` drops every
- * `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed, and
+ * `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed (or it is
+ * a promoted presence family), and
  * `EXPERIMENTAL_SECURITY_CONVENTION_KINDS` is the whole security-contract set
  * (`packages/core/src/capabilities.ts:187`).
  *
@@ -847,10 +848,10 @@ describe("cell canaries — firing", () => {
     const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), REQUEST_VALIDATION);
     expect(flagged).toEqual(["app/api/projects/route.ts"]);
 
+    await assertListVisibility(run.databasePath, run.repoId, REQUEST_VALIDATION);
     // ...at the sink line, not at a default. `sink_id` is `sink:{file}:{line}:{symbol}` while every
     // other id is `...:{line}`, so the shared parser read "create" as the line, failed, and every
     // request-validation finding ever emitted reported line 1.
-    await assertListVisibility(run.databasePath, run.repoId, REQUEST_VALIDATION);
 
     const findings = (run.checkPayload.findings ?? []).filter(
       (finding: any) => finding.title === "API route uses unvalidated request input"
@@ -978,7 +979,7 @@ describe("cell canaries — firing", () => {
     expect(run.acceptPayloads, "the convention must come from the proposer").toHaveLength(1);
 
     // THE GLOB. This is the literal set the proposer emits, `**/` prefix and all, and it is what
-    // phase 4 hands to `path_glob_matches` (check_command.rs:1614). Every assertion below is
+    // phase 4 hands to `path_glob_matches` (check_command.rs:1616). Every assertion below is
     // downstream of that call returning true for `app/api/<x>/route.ts`; when the glob engine
     // reduced `**/app/api/**/route.ts` to `starts_with("**/app/api")` it returned false for all
     // five routes and this cell reported a clean pass over a rule that matched nothing.
@@ -1187,6 +1188,29 @@ describe("ledger integrity", () => {
         ).toBeTruthy();
       }
     }
+  });
+
+  it("every CLI call in this file runs the engine binary under test", () => {
+    // The standing half of the DRIFT_ENGINE_BIN fix. Deleting `withDebugEngine` and its call sites
+    // leaves every canary GREEN — the assertions simply start being made against whatever engine
+    // resolution falls through to (`target/release/drift-engine` if one happens to exist, otherwise
+    // `cargo run`). That is a false green no assertion can see, so it is pinned at the source level
+    // instead: `assertEngineIdentity` only ever runs on `start --json` inside the two workflows and
+    // never reaches a call a test makes afterwards.
+    const source = readFileSync(resolve("test/e2e/gt-canary.test.ts"), "utf8").split("\n");
+    // Built at runtime so this detector does not match its own source line.
+    const callForm = `runCli` + `([`;
+    const unpinned: string[] = [];
+    source.forEach((line, index) => {
+      if (!line.includes(callForm)) return;
+      const window = source.slice(Math.max(0, index - 2), index + 1).join("\n");
+      if (!window.includes("withDebugEngine(")) unpinned.push(`${index + 1}: ${line.trim()}`);
+    });
+    expect(
+      unpinned,
+      `Every runCli call in this file must be wrapped in withDebugEngine(), or it runs an engine ` +
+        `nobody built and the assertion below it proves nothing about the code under test.`
+    ).toEqual([]);
   });
 
   it("every cited quarantine document actually exists at the cited path", () => {
