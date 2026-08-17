@@ -427,6 +427,9 @@ function readinessLine(acceptance: AcceptanceDisclosure): string {
       "breaking them until a convention is in block mode.";
 }
 
+/** Exported for tests - see packages/cli/test/start-readiness-line.test.ts. */
+export const readinessLineForTest = readinessLine;
+
 /**
  * A printed command, made runnable exactly as printed.
  *
