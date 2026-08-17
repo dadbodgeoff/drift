@@ -8,7 +8,8 @@ use crate::security_patterns::{
     AcceptedSensitiveResponseField, Phase4SecurityPolicy, RequestValidatorBehavior,
     RequestValidatorKind, accepted_auth_helper_for_call, accepted_authorization_helper_for_call,
     accepted_phase4_auth_helper_for_call, accepted_request_validator_for_call,
-    accepted_response_serializer_for_call, static_middleware_matchers,
+    accepted_response_serializer_for_call, is_validation_candidate_symbol,
+    static_middleware_matchers,
 };
 use crate::{Fact, FactExtractError, FactKind, extract_typescript_facts};
 
@@ -48,21 +49,47 @@ use crate::{Fact, FactExtractError, FactKind, extract_typescript_facts};
 /// `scan_time_validator_shapes_match_the_proposer_table` in `tests/scan_time_validators.rs`; they
 /// are separate functions only because that one is private to a module this change may not edit.
 ///
-/// **Why the symbol must also resolve to an import.** The consumer of this fact is the family, and
-/// `family_member_inputs` (`candidate_command.rs`) drops any symbol for which
-/// `dominant_import_source` returns `None` — a symbol with no import can never be a family member.
-/// So emitting the fact for a bare method call feeds nothing this change exists to feed. It is not
-/// inert either: a second, older per-symbol loop over `request_validation_called`
-/// (`candidate_command.rs`, just after the middleware block) emits a candidate that the live
-/// `push_request_validation_candidates` path already emits from `symbol_called`, byte for byte and
-/// under the same id. Registering an unimportable symbol therefore buys one duplicate candidate and
-/// no family member. `safeParse` is exactly that case — always written `Schema.safeParse(body)`,
-/// never imported — and it is the sibling proof cell's symbol, which re-extracts with the accepted
-/// schema at check time and never wanted a scanned fact.
+/// **Why the symbol must also resolve to an import.** The only consumer of this fact is the family,
+/// and `family_member_inputs` (`candidate_command.rs`) drops any symbol for which
+/// `dominant_import_source` returns `None` — a symbol with no import can never be a member. So
+/// emitting the fact for a bare method call writes a fact that nothing can read. `safeParse` is
+/// exactly that case: always written `Schema.safeParse(body)`, never imported, and it belongs to
+/// the sibling proof cell, which re-extracts with the accepted schema at check time and never
+/// wanted a scanned fact.
 ///
-/// The duplicate is still reachable for an imported helper, and belongs to `candidate_command.rs`:
-/// two paths propose the same candidate for one kind, and one of them should dedupe or go. Recorded
-/// as a handoff rather than fixed here, because that file is not this change's to edit.
+/// ("The only consumer" is now true and was not always. A second, older per-symbol loop over this
+/// fact kind duplicated `push_request_validation_candidates` byte for byte, including the candidate
+/// id — invisible while the kind was unobtainable, and one duplicate candidate per symbol the
+/// moment it was not. That loop is gone; see the note where it stood.)
+/// The security facts the SCAN path records for one file.
+///
+/// This exists as a library function so that the scan's validator wiring can be TESTED. It used to
+/// be two statements inline in `main.rs`, which is the binary - no integration test can reach it,
+/// so restoring the empty validator slice there left `cargo test -p drift-engine` completely green
+/// while making `request_validation_called` unobtainable again and the presence family unreachable.
+/// That is the exact regression this whole change exists to fix, and it was undetectable at the
+/// Rust level. `the_scan_path_wiring_emits_the_fact` (`tests/scan_time_validators.rs`) now fails on
+/// it, and `main_rs_delegates_its_security_facts_to_the_library` pins that `main.rs` still calls
+/// through here rather than reassembling the pieces.
+///
+/// `base_facts` is the file's already-extracted TypeScript facts. Passing them in rather than
+/// re-parsing is why the registry costs a pass over a vector.
+pub fn extract_scan_security_facts(
+    file_path: impl AsRef<std::path::Path>,
+    source: &str,
+    base_facts: &[Fact],
+) -> Result<Vec<Fact>, FactExtractError> {
+    // No auth helpers: those are accepted-contract inputs with no scan-time equivalent, and every
+    // fact kind behind them stays unobtainable at scan. See the fact-kind table in
+    // docs/ground-truth-audit/presence-facts-report.md.
+    extract_security_facts_with_validation(
+        file_path,
+        source,
+        &[],
+        &scan_time_request_validators(base_facts),
+    )
+}
+
 pub fn scan_time_request_validators(facts: &[Fact]) -> Vec<AcceptedRequestValidator> {
     let imported = facts
         .iter()
@@ -73,7 +100,7 @@ pub fn scan_time_request_validators(facts: &[Fact]) -> Vec<AcceptedRequestValida
     for fact in facts
         .iter()
         .filter(|fact| fact.kind == FactKind::SymbolCalled)
-        .filter(|fact| is_recognized_validator_symbol(&fact.name))
+        .filter(|fact| is_validation_candidate_symbol(&fact.name))
         // Mirrors `import_source_for_symbol`: the local binding name is the import fact's `name`.
         .filter(|fact| imported.contains(fact.name.as_str()))
     {
@@ -96,19 +123,6 @@ pub fn scan_time_request_validators(facts: &[Fact]) -> Vec<AcceptedRequestValida
             behavior: RequestValidatorBehavior::Unknown,
         })
         .collect()
-}
-
-/// The shape table shared with `is_validation_candidate_symbol` (`candidate_command.rs`).
-///
-/// The exclusions are not decoration. `revalidate*` is Next.js cache revalidation, and
-/// `*permission*` / `*role*` belong to the authorization family - admitting any of them would put a
-/// non-validator into a family whose acceptance then reads as "this route validates its input".
-fn is_recognized_validator_symbol(symbol: &str) -> bool {
-    let lower = symbol.to_ascii_lowercase();
-    if lower.starts_with("revalidate") || lower.contains("permission") || lower.contains("role") {
-        return false;
-    }
-    lower.starts_with("validate") || lower.contains("validator") || lower == "safeparse"
 }
 
 pub fn extract_security_facts(

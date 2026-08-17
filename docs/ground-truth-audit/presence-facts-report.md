@@ -64,12 +64,10 @@ was the one family sourced from an acceptance-gated kind. That was the bug.
   deliberately the same table as the proposer's `is_validation_candidate_symbol` (`validate*`,
   `*validator*`, `safeParse`, minus `revalidate*` / `*permission*` / `*role*`).
 - *Import.* `family_member_inputs` drops any symbol whose `dominant_import_source` is `None`, so an
-  unimported symbol can never be a member. It is not inert either — a second, older per-symbol loop
-  over `request_validation_called` emits a candidate the live `symbol_called` path already emits
-  under the same id — so registering an unimportable symbol buys one duplicate candidate and no
-  family member. `safeParse` is exactly that case: always written `Schema.safeParse(body)`, never
-  imported, and it is the sibling *proof* cell's symbol, which re-extracts with the accepted schema
-  at check time and never wanted a scanned fact.
+  unimported symbol can never be a member — emitting the fact for one writes something nothing can
+  read. `safeParse` is exactly that case: always written `Schema.safeParse(body)`, never imported,
+  and it is the sibling *proof* cell's symbol, which re-extracts with the accepted schema at check
+  time and never wanted a scanned fact.
 
 `behavior` is recorded as `unknown`, not guessed. A recognised shape says a validation call
 happened; it says nothing about throws / returns-parsed / boolean. Acceptance pins that down later.
@@ -115,7 +113,10 @@ silently left out.
 - **Declared but emitted nowhere.** `csrf_guard_called`, `rate_limit_guard_called` and
   `test_declared` appear only in `vocabulary.rs` — no extractor produces them, in any configuration.
   `rate_limit_guard_called` is a `FAMILY_SPECS` source; that family survives only because it lists a
-  `symbol_called` source beside it.
+  `symbol_called` source beside it. **Now a checked property** rather than a paragraph:
+  `tests/fact_kind_emission.rs` derives the emitted set from the sources and fails if a kind is
+  undeclared *or* if a declared-dead kind comes alive — so wiring one up cannot leave this table
+  stale.
 - **Corpus gap, not code gap.** `data_model_declared`, `data_model_field_declared`,
   `data_model_relation_declared` never appear because the corpus contains **zero** `.prisma` files.
   The extractor exists and is reachable.
@@ -126,7 +127,8 @@ silently left out.
 |---|---|---|
 | `&[]` restored at the scan call site | canary dies | **both halves fail**: proposer emits **zero** presence families, so `acceptOnly` selects nothing. Exactly the structural unreachability. |
 | `&[]` restored — corpus census | two kinds disappear | `request_validation_called` and `validated_input_used` gone; every other count identical |
-| `&[]` restored — Rust suite | still green | still green, correctly: those tests call the extractor directly and pin its contract, not the wiring. **The wiring is covered only by the e2e canary** — noted, not hidden. |
+| registry bypassed inside `extract_scan_security_facts` | Rust suite dies | `the_scan_path_wiring_emits_the_fact` **FAILED** (before the seam existed, this mutation left the whole Rust suite green) |
+| `main.rs` bypasses the library seam | Rust suite dies | `main_rs_delegates_its_security_facts_to_the_library` **FAILED** |
 | fix in place — sibling proof cell | unchanged | `request-validation safeParse proof path fires` passes; `safeParse` is not registered (no import), so `gt-request-validation` scans exactly as before |
 
 ## 5. Evidence
@@ -153,25 +155,55 @@ Fixture (`gt-presence-request-validation`) carries the negative controls the §4
 - a `webhooks` route, equally unvalidated, which must stay **silent** because the family is
   api-route-conditioned — proving the flavour scoping is real rather than incidental.
 
-## 6. Handoffs
+## 6. Handoffs — all four closed
 
-1. **`candidate_command.rs` proposes one candidate twice.** Two paths emit the per-symbol
-   request-validation candidate — `push_request_validation_candidates` from `symbol_called`, and an
-   older inline loop over `request_validation_called`. With the scan fact now obtainable, an
-   *imported* validator helper triggers both, and they are byte-identical including the id. One
-   should dedupe or go. Not fixed here: that file is owned elsewhere this wave. The import narrowing
-   in §2 keeps it away from the existing corpus, so nothing is red — but the redundancy is real and
-   will surface on any repo with imported `validate*` helpers in ≥2 routes.
-2. **The shape table is duplicated.** `is_recognized_validator_symbol` (`security_facts.rs`) mirrors
-   the private `is_validation_candidate_symbol` (`candidate_command.rs`). They are asserted equal
-   case-by-case by `scan_time_validator_shapes_match_the_proposer_table`, but a single shared
-   predicate is better; it needs an export from the owned file.
-3. **The wiring has no Rust-level guard.** Restoring the `&[]` in `main.rs` leaves
-   `cargo test -p drift-engine` green — `main.rs` is the binary and the scan path is not reachable
-   from an integration test. Only the e2e canary catches it.
-4. **`rate_limit_guard_called` and `csrf_guard_called` are emitted by nothing.** See §3.
-5. **The corpus has no `.prisma` file**, so three declared fact kinds are never exercised end to
-   end. Cheap to close with one fixture.
+Originally recorded for other owners; permission was given to take them here.
+
+1. **`candidate_command.rs` proposed one candidate twice — FIXED.** Two paths emitted the per-symbol
+   request-validation candidate: `push_request_validation_candidates` from `symbol_called`, and an
+   older inline loop over `request_validation_called`. They were byte-identical including the
+   candidate id, differing only in a prose `rationale`. Invisible while the fact kind was
+   unobtainable; one duplicate per symbol once it was not.
+
+   **Deleted rather than deduplicated**, because it was also the weaker path: it applied no symbol
+   filter, leaning entirely on the fact kind to be precise, and it counted *facts* where the
+   surviving path counts calls — so a single `parseRequestBody` call whose destructuring yields two
+   bindings cleared a floor named "repeated" and proposed a convention from one call site.
+   `FAMILY_SPECS` still sources the family from that kind; that consumer is untouched.
+
+   One test had to move with it: `infer_candidates_emits_security_phase_candidates_as_non_blocking_elections`
+   hand-built `request_validation_called` facts with **no** matching `symbol_called`, a shape no scan
+   can produce, and passed only because the deleted loop read the kind directly. The fixture now
+   carries the `import_used` + `symbol_called` + `request_validation_called` triple a real scan
+   emits. No assertion changed.
+
+2. **Shape table duplicated — FIXED.** `is_validation_candidate_symbol` now has one definition, in
+   `security_patterns.rs`. It lives in the **library** because `candidate_command` is a module of
+   the *binary* — the library cannot import from it, so the shared predicate could not live on the
+   proposer's side. Both callers use the one copy; the case-by-case parity test survives as an
+   exercise of the table from the scanner's side.
+
+3. **No Rust-level guard on the wiring — FIXED.** The two statements moved out of `main.rs` into
+   `extract_scan_security_facts`, a library seam an integration test can reach.
+   `the_scan_path_wiring_emits_the_fact` pins the behaviour, and
+   `main_rs_delegates_its_security_facts_to_the_library` pins the call site at the source level (the
+   instrument `gt-canary.test.ts` already uses for its engine-binary pin), so the seam cannot be
+   bypassed by reassembling the pieces inline. Both mutations were run and both now fail — see §4.
+
+4. **`rate_limit_guard_called` / `csrf_guard_called` emitted by nothing — PINNED, not implemented.**
+   `tests/fact_kind_emission.rs` derives the emitted set from the crate's sources and checks it
+   against a declared `NEVER_EMITTED` list carrying a reason per kind. It fails both ways: an
+   undeclared dead kind, and a declared-dead kind that something starts emitting.
+
+   Deliberately **not** implementing emission. Producing real `rate_limit_guard_called` /
+   `csrf_guard_called` facts is a feature — it needs a recognition rule per kind, with its own
+   over-aggregation risk, and the CSRF checker does not read facts at all today
+   (`evaluate_api_route_requires_csrf_for_mutation` reasons over source text). That is a separate
+   piece of work; what is fixed here is that the gap can no longer be *forgotten*.
+
+   Writing this test found a real defect in its own first draft: grepping only for the
+   `kind: FactKind::X` struct literal reported the three `data_model_*` kinds as dead when the Prisma
+   reader emits them through a `PrismaFactKind` mapping arm. The detection covers both forms.
 
 ## 7. Pre-existing failure repaired (not part of this change)
 

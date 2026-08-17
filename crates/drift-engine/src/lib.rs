@@ -50,6 +50,7 @@ pub use security_control_flow::{
     MatchedMiddleware, MiddlewareMismatch, ValidatedInputUse, static_middleware_coverage,
     validated_input_uses,
 };
+pub use security_facts::extract_scan_security_facts;
 pub use security_facts::extract_security_facts;
 pub use security_facts::extract_security_facts_with_phase5;
 pub use security_facts::extract_security_facts_with_policy;
@@ -63,7 +64,7 @@ pub use security_patterns::{
     SCHEMA_METHOD_VALIDATOR_SYMBOLS, SENSITIVE_FIELD_CLASSIFICATIONS, SENSITIVE_FIELD_SOURCES,
     accepted_phase5_contract_from_requires, accepted_response_serializer_for_call,
     dynamic_middleware_matcher_line, is_schema_method_validator_symbol,
-    sensitive_response_field_rejections,
+    is_validation_candidate_symbol, sensitive_response_field_rejections,
 };
 pub use security_phase6::{
     Phase6AcceptedHelper, Phase6CorsContract, Phase6CorsPolicyProof, Phase6CorsProof,

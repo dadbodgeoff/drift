@@ -13,7 +13,7 @@
 //! `test/e2e/gt-canary.test.ts > request-validation presence family fires per handler`.
 
 use drift_engine::{
-    AcceptedRequestValidator, FactKind, RequestValidatorKind,
+    AcceptedRequestValidator, FactKind, RequestValidatorKind, extract_scan_security_facts,
     extract_security_facts_with_validation, extract_typescript_facts, scan_time_request_validators,
 };
 
@@ -44,14 +44,14 @@ export async function POST(request: Request) {{
     )
 }
 
-/// The shape table this registry shares with `is_validation_candidate_symbol`
-/// (`candidate_command.rs`), asserted case by case.
+/// The shape table, exercised through the registry.
 ///
-/// They are two functions rather than one only because that one is private to a module this change
-/// is not permitted to edit. If a future change moves the proposer's table, this test is where the
-/// divergence shows up — and divergence matters in a specific way: the family's nominator is
-/// `always_candidate_symbol`, so every symbol carrying this fact kind joins the family. This
-/// predicate is the only narrowing there is.
+/// Scanner and proposer now share ONE definition — `is_validation_candidate_symbol` in
+/// `security_patterns.rs`, which the library owns because `candidate_command` is a module of the
+/// binary and cannot be imported from here. This test is what keeps that definition honest from
+/// the scanner's side: the family's nominator is `always_candidate_symbol`, so every symbol
+/// carrying `request_validation_called` joins the family, and this predicate is the only narrowing
+/// in that path.
 #[test]
 fn scan_time_validator_shapes_match_the_proposer_table() {
     for symbol in ["validateBody", "validateQuery", "bodyValidator"] {
@@ -238,4 +238,70 @@ export async function POST(request: Request) {
 }
 "#;
     assert_eq!(symbols_for(source), vec!["validateBody", "validateQuery"]);
+}
+
+/// The wiring, not just the extractor — the guard that did not exist.
+///
+/// Every other test in this file calls the extractor with a registry it built itself, so all of
+/// them stay green if the scan path stops building one. That is not hypothetical: restoring the
+/// empty validator slice in `main.rs` left the whole Rust suite passing while making the fact
+/// unobtainable and the presence family unreachable, and only an end-to-end canary caught it.
+/// `extract_scan_security_facts` is the seam that closes that hole.
+#[test]
+fn the_scan_path_wiring_emits_the_fact() {
+    let source = r#"
+import { validateBody } from "@/server/validation";
+
+const db = { order: { create: async (input: unknown) => input } };
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const parsed = validateBody(body);
+  await db.order.create({ data: parsed });
+  return Response.json({ ok: true });
+}
+"#;
+    let base = extract_typescript_facts("app/api/orders/route.ts", source).expect("ts facts");
+    let facts = extract_scan_security_facts("app/api/orders/route.ts", source, &base)
+        .expect("scan security facts");
+
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::RequestValidationCalled
+                && fact.name == "validateBody"),
+        "the scan path itself must emit the fact, not merely be capable of it"
+    );
+    // Its downstream kind comes with it. Both were unobtainable before, and the corpus census says
+    // these two are the only kinds this change adds.
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind == FactKind::ValidatedInputUsed)
+    );
+}
+
+/// `main.rs` still routes through the library seam.
+///
+/// The test above proves the seam works; it cannot prove the binary uses it. `main.rs` is not
+/// reachable from an integration test, so the call site is pinned at the source level — the same
+/// instrument `gt-canary.test.ts` uses to pin that its CLI calls run the engine under test. Without
+/// this, someone could reassemble the two statements inline, get the empty slice back, and keep a
+/// green suite.
+#[test]
+fn main_rs_delegates_its_security_facts_to_the_library() {
+    let main_rs = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.rs"),
+    )
+    .expect("read main.rs");
+
+    assert!(
+        main_rs.contains("extract_scan_security_facts(file_path, &source, &facts)"),
+        "the scan path must delegate to the library seam, which is where the wiring is tested"
+    );
+    // The pre-fix shape, in either arity, must not come back.
+    assert!(
+        !main_rs.contains("extract_security_facts(file_path, &source, &[])"),
+        "the 3-arg wrapper hard-codes an empty validator slice - that is the original bug"
+    );
 }

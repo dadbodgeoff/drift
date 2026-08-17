@@ -11,7 +11,7 @@ use drift_engine::next_routes::API_ROUTE_SCOPE_GLOBS;
 // hold it against the TypeScript fallback it is supposed to improve on.
 use drift_engine::{
     ConventionKind, GraphEdgeKind, GraphNodeKind, ScanCapability, contains_data_layer_token,
-    is_data_access_source,
+    is_data_access_source, is_validation_candidate_symbol,
 };
 
 use crate::protocol::{
@@ -451,50 +451,25 @@ fn security_candidates(
         }));
     }
 
-    for (symbol, facts) in
-        grouped_route_facts(request, api_route_files, "request_validation_called")
-            .into_iter()
-            .filter(|(_, facts)| facts.len() >= 2)
-    {
-        let matcher = json!({
-            "kind": "api_route_requires_request_validation",
-            "applies_to_file_roles": ["api_route"],
-            "methods": ["POST", "PUT", "PATCH", "DELETE"],
-            "required_calls": [symbol]
-        });
-        let requires = json!({
-            "input_sources": ["body", "query", "params"],
-            "sinks": ["data_operation", "response"],
-            "validators": [{
-                "validator_id": format!("validator:{symbol}"),
-                "symbol": symbol,
-                "import": import_source_for_symbol(request, &facts[0].file_path, &symbol)
-            }],
-            "schemas": [],
-            "allow_throwing_parse": true,
-            "allow_safe_parse_success_guard": true
-        });
-        candidates.push(security_candidate_from_facts(SecurityCandidateInput {
-            request,
-            kind: ConventionKind::ApiRouteRequiresRequestValidation,
-            statement: format!(
-                "Mutation API routes appear to validate request input with `{symbol}`."
-            ),
-            rationale: "Detected repeated request validation facts.",
-            scope: route_scope.clone(),
-            matcher,
-            requires: Some(requires),
-            suggested_severity: "warning",
-            enforcement_capability: "deterministic_check",
-            confidence_label: "medium",
-            facts,
-            scope_file_count,
-            file_hashes,
-            graph_fingerprint,
-            heuristic_id: "security-request-validation-v1",
-            required_capabilities: &["syntax_facts", "request_validation"],
-        }));
-    }
+    // The per-symbol request-validation candidate is proposed ONCE, by
+    // `push_request_validation_candidates` above, from `symbol_called`.
+    //
+    // A second loop stood here and proposed the same thing from `request_validation_called`. It
+    // was invisible for as long as that fact kind was unobtainable - the scan path passed no
+    // validators, so the kind had zero instances in every repo and this loop never ran. Once the
+    // scan started emitting it, the two paths produced byte-identical candidates: same matcher,
+    // therefore the same candidate id, differing only in the `rationale` string. Every candidate
+    // of this kind arrived twice.
+    //
+    // Deleted rather than deduplicated, because it was also the weaker of the two. It applied no
+    // symbol filter, leaning entirely on the fact kind to be precise, and it counted FACTS where
+    // the surviving path counts calls - so a single `parseRequestBody` call whose destructuring
+    // yields two bindings produced two facts and cleared a floor named "repeated", proposing a
+    // convention from one call site. `push_request_validation_candidates` has the name predicate
+    // and the honest count.
+    //
+    // `FAMILY_SPECS` still sources the family from `request_validation_called`, which is a
+    // different consumer and is untouched by this.
 
     push_guard_candidate(GuardCandidateInput {
         candidates: &mut candidates,
@@ -1872,14 +1847,6 @@ fn is_auth_candidate_symbol(symbol: &str) -> bool {
             // its handler before it joins anything.
             || (lower.starts_with("verify")
                 && (lower.contains("signature") || lower.contains("hmac"))))
-}
-
-fn is_validation_candidate_symbol(symbol: &str) -> bool {
-    let lower = symbol.to_ascii_lowercase();
-    if lower.starts_with("revalidate") || lower.contains("permission") || lower.contains("role") {
-        return false;
-    }
-    lower.starts_with("validate") || lower.contains("validator") || lower == "safeparse"
 }
 
 fn is_authorization_candidate_symbol(symbol: &str) -> bool {
