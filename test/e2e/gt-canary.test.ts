@@ -14,7 +14,13 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanupGtTempDirs, flaggedPaths, readFindings, runGtWorkflow } from "./gt-harness.js";
+import {
+  assertNoProposerFor,
+  cleanupGtTempDirs,
+  flaggedPaths,
+  readFindings,
+  runGtWorkflow
+} from "./gt-harness.js";
 
 afterEach(cleanupGtTempDirs);
 
@@ -35,6 +41,24 @@ const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
 const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
+const SECRET_EXPOSURE = "api_route_forbids_secret_exposure";
+
+/**
+ * The proposer's literal emitted route scope, from `candidate_command.rs:372` (and `:1010`).
+ *
+ * Copied byte for byte on purpose. The historical D1 bug was that `**\/app/api/**\/route.ts` reduced
+ * to `starts_with("**\/app/api")` and matched nothing, so every proposer-scoped security convention
+ * accepted cleanly and was structurally unable to fire. A hand-written scope like
+ * `app/api/**\/route.ts` sidesteps the `**\/`-prefix entirely and would pass under the broken
+ * matcher too — which is exactly how the three pre-existing tests of the phase-5 kinds missed it.
+ * The zero-leading-segment case (`app/api/billing/route.ts` against `**\/app/api/**\/route.ts`) is
+ * the case that was dead, and it is the case this fixture's layout forces.
+ */
+const PROPOSER_ROUTE_SCOPE_GLOBS = [
+  "**/app/api/**/route.ts",
+  "**/app/api/**/route.tsx",
+  "**/pages/api/**/*.ts"
+];
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
 const CELLS_COVERED_HERE: Record<string, string> = {
@@ -45,7 +69,7 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "api_route_requires_auth_helper::auth_proof": "per-symbol auth proof path fires",
   "api_route_cors_must_match_policy::phase6_proof": "phase-6 CORS policy path fires",
   "api_route_forbids_secret_exposure::phase5_proof":
-    "proposer emits no candidate of the unimplemented shapes",
+    "phase-5 secret-exposure path fires, reached by contract import",
   "session_object_must_come_from_trusted_helper::phase4_proof":
     "proposer emits no candidate of the unimplemented shapes",
   "middleware_must_cover_routes::no_dispatch_arm":
@@ -53,6 +77,25 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "api_route_forbids_sensitive_response_fields::phase5_proof":
     "phase-5 sensitive-response-fields path fires, on both provenance routes"
 };
+
+/**
+ * A unified-diff stanza presenting a whole file as added, for `check --diff-file`.
+ *
+ * Only the hunk header matters to the classifier — `parse_hunk_new_start` plus the line count give
+ * the changed line numbers — so the body is elided rather than duplicating the fixture, which would
+ * silently rot the moment the fixture changed.
+ */
+function unifiedAddedFile(path: string, lineCount: number): string {
+  return [
+    `diff --git a/${path} b/${path}`,
+    "new file mode 100644",
+    "--- /dev/null",
+    `+++ b/${path}`,
+    `@@ -0,0 +1,${lineCount} @@`,
+    ...Array.from({ length: lineCount }, () => "+"),
+    ""
+  ].join("\n");
+}
 
 describe("cell canaries — firing", () => {
   it("data-access materialized+graph path fires", async () => {
@@ -177,6 +220,110 @@ describe("cell canaries — firing", () => {
     }
   }, 180000);
 
+  it("phase-5 secret-exposure path fires, reached by contract import", async () => {
+    // THE ONE PLACE IN THIS FILE THAT DOES NOT GO THROUGH `conventions accept`, and the reason is
+    // the cell itself. `api_route_forbids_secret_exposure` has NO proposer — zero
+    // `ConventionKind::ApiRouteForbidsSecretExposure` occurrences in candidate_command.rs — so
+    // `acceptKinds` cannot reach its enforcement arm, not because the arm is broken but because
+    // nothing proposes the shape. The documented remaining path is a hand-authored contract
+    // (`drift contract import drift.lock --repo <id> --confirm`, docs/agent-integration.md:84,
+    // router.ts:158, contract.ts:452), and it runs the real command: schema validation,
+    // `hasConventionEvaluator`, fingerprint compatibility, `--confirm`. Nothing here calls
+    // `storage.upsertAcceptedConvention`.
+    //
+    // WHAT THIS DOES AND DOES NOT CLAIM. It does not claim the kind is proposable; the
+    // `unimplemented` describe below still pins that the proposer emits nothing of this shape, and
+    // `assertNoProposerFor` re-checks it inside this very run. What it falsifies is the *second*
+    // half of the old ledger evidence — "nothing can ever reach it". Something can: an imported
+    // contract does, and the arm fires.
+    //
+    // The scope is the proposer's own glob set rather than a de-globbed convenience, so this is
+    // still a test of `phase5_file_scope_matches` -> `path_glob_matches` and still dies if the
+    // globstar matcher regresses.
+    const patch = [
+      unifiedAddedFile("app/api/billing/route.ts", 4),
+      unifiedAddedFile("app/api/webhooks/route.ts", 5),
+      unifiedAddedFile("app/api/status/route.ts", 5)
+    ].join("");
+
+    const run = await runGtWorkflow({
+      fixture: "gt-secret-exposure",
+      scope: "changed-hunks",
+      diffPatch: patch,
+      importConventions: ({ contractId, now }) => [{
+        id: "convention_gt_secret_exposure",
+        contract_id: contractId,
+        kind: SECRET_EXPOSURE,
+        statement:
+          "API routes must not let a secret read from the environment reach a response or log sink.",
+        scope: { path_globs: PROPOSER_ROUTE_SCOPE_GLOBS, file_roles: ["api_route"] },
+        matcher: { kind: SECRET_EXPOSURE, applies_to_file_roles: ["api_route"] },
+        requires: { secret_sources: ["env"], log_sinks: ["console.error"] },
+        severity: "error",
+        enforcement_mode: "block",
+        enforcement_capability: "deterministic_check",
+        exceptions: [],
+        evidence_refs: [],
+        counterexample_refs: [],
+        accepted_by: "gt-canary",
+        accepted_at: now,
+        updated_at: now
+      }]
+    });
+
+    // The precondition for taking the import path at all, asserted from this run rather than from
+    // a grep. If the proposer ever learns this kind, this fails and the canary must be rewritten
+    // as an `acceptKinds` workflow.
+    assertNoProposerFor(run, SECRET_EXPOSURE, "gt-secret-exposure");
+    expect(run.acceptPayloads, "nothing was accepted through the candidate path").toHaveLength(0);
+    expect(run.importPayload.compatibility.reasons).toEqual([]);
+    expect(
+      run.importPayload.compatibility.repo_fingerprint_matches,
+      "the contract must be imported into the repository it names, not any repository"
+    ).toBe(true);
+
+    // Block mode survived the import. `contractValidationReasons` refuses block for
+    // non-deterministic capability and for candidate-sourced sensitive fields; neither applies
+    // here, and the finding below carries enforcement_result "block" as a result.
+    const stored = run.checkPayload.findings.filter(
+      (finding: any) => finding.convention_id === "convention_gt_secret_exposure"
+    );
+    expect(stored.length, `check payload: ${JSON.stringify(run.checkPayload.findings)}`).toBe(2);
+
+    // Violation half, at the exact sink line. `phase5_finding_line` reports the *sink*, not the
+    // secret read, so a finding at line 2 would mean the proof located the wrong end of the flow.
+    const located = stored
+      .map((finding: any) => `${finding.evidence_refs[0].file_path}:${finding.evidence_refs[0].start_line}`)
+      .sort();
+    expect(located).toEqual([
+      "app/api/billing/route.ts:3",   // secret reaches Response.json
+      "app/api/webhooks/route.ts:3"   // secret reaches console.error
+    ]);
+    for (const finding of stored) {
+      expect(finding.enforcement_result).toBe("block");
+      expect(finding.diff_status).toBe("new_in_diff");
+    }
+
+    // Conformance half, and the §4.3 near-miss: status/route.ts reads the SAME secret from the
+    // SAME env key and genuinely uses it, but routes it to an outbound header rather than a sink.
+    // A detector that flagged "route reads process.env.*_API_KEY" would score identically to a
+    // correct one without this route, and it is in the diff and in scope, so it was evaluated
+    // rather than skipped — the engine names it as a conforming example of the same convention.
+    expect(flaggedPaths(readFindings(run.databasePath, run.repoId), SECRET_EXPOSURE)).toEqual([
+      "app/api/billing/route.ts",
+      "app/api/webhooks/route.ts"
+    ]);
+    for (const finding of stored) {
+      expect(
+        (finding.conforming_examples ?? []).map((example: any) => example.file_path),
+        "the compliant sibling must be evaluated, not merely absent"
+      ).toContain("app/api/status/route.ts");
+    }
+
+    // And the exit code the whole enforcement contract is about: 2, blocked.
+    expect(run.checkExitCode, `check stderr:\n${run.checkStderr}`).toBe(2);
+  }, 180000);
+
   it("phase-6 CORS policy path fires", async () => {
     const run = await runGtWorkflow({ fixture: "gt-cors-policy", acceptKinds: [CORS] });
 
@@ -197,6 +344,12 @@ describe("cell canaries — unimplemented", () => {
     // unreachable through the documented workflow no matter what it would do. The fixtures chosen
     // are the ones built to exhibit each violation - if any shape were proposable at all, these are
     // the repos where it would be.
+    //
+    // `api_route_forbids_secret_exposure` stays in this list even though its cell is now `firing`.
+    // The two claims are separate and both true: the proposer emits nothing (this test), and the
+    // enforcement arm nevertheless fires when a hand-authored contract is imported ("phase-5
+    // secret-exposure path fires, reached by contract import" above). Deleting this case would
+    // discard the half that makes the import path legitimate rather than a shortcut.
     const cases: Array<[string, string]> = [
       ["security-secret-leak", "api_route_forbids_secret_exposure"],
       ["security-session-from-request-untrusted", "session_object_must_come_from_trusted_helper"],
@@ -208,8 +361,9 @@ describe("cell canaries — unimplemented", () => {
       const kinds = (run.startPayload.candidates ?? []).map((candidate: any) => candidate.kind);
       expect(
         kinds,
-        `${fixture} proposed ${kind}. The ledger declares this cell "unimplemented" on the ` +
-          `evidence that the proposer emits nothing of this shape; that evidence is now false and ` +
+        `${fixture} proposed ${kind}. Both this kind's ledger cells rest on the evidence that the ` +
+          `proposer emits nothing of this shape - "unimplemented" entirely, and "firing" for the ` +
+          `part that justifies reaching the arm by contract import. That evidence is now false and ` +
           `the ledger row must be re-derived.`
       ).not.toContain(kind);
     }
