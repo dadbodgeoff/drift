@@ -256,26 +256,36 @@ Both survivors are explained, not excused:
 
 ## 5. Gate runs
 
-All run on the fully merged branch, in this session.
+Every row below was run **after** the final round of fixes, on the merged branch, in this session.
+The suite was gated three times in total (baseline, post-merge, post-fixes); these are the last.
 
 | Command | Exit |
 |---|---|
 | `pnpm verify:ci` — baseline at `80a9f6e3`, before any change | **0** |
-| `pnpm verify:ci` — final, merged branch | **0** |
+| `pnpm verify:ci` — final | **0** |
 | `cargo test -p drift-engine` | 0 (all binaries) |
 | `cargo fmt --all -- --check` | 0 |
 | `cargo clippy -p drift-engine --all-targets -- -D warnings` | 0 (inside `verify:ci`) |
 | `pnpm typecheck` | 0 |
 | `DRIFT_LEDGER_ENFORCE=1 node scripts/convention-cell-ledger.mjs` | 0 — 18 cells: firing 10, quarantined 1, unimplemented 0, needs-review 7 |
 | `vitest run test/e2e/gt-canary.test.ts` ×3 (determinism) | 14 passed / 14, identical each run |
-| Glob mutation, per canary in isolation | **all 5 glob-scoped canaries fail**; request-validation passes (structural — §4) |
-| Glob mutation restored | 14 passed / 14 |
 
 `verify:ci` covers `check:cell-ledger`, `check:surface-parity`, `check:payload-invariants`,
 `validate:claims`, `beta:proof` and `git diff --check`. **No baseline or eval baseline was blessed;
 no `--update` was run in any form.** Working tree clean at the final sha.
 
----
+### Mutation matrix — measured per canary, in isolation
+
+Whole-file runs mix in ordering effects, so each was run alone against a rebuilt mutated binary:
+
+| Canary | Under the `**/` zero-segment kill |
+|---|---|
+| `phase-4 tenant-scope …` | **fails** — glob-dependent |
+| `phase-4 authorization …` | **fails** — glob-dependent |
+| `phase-5 sensitive-response-fields …` | **fails** — glob-dependent |
+| `phase-5 secret-exposure …` | **fails** — glob-dependent |
+| `phase-4 session-trust …` | **fails** — glob-dependent (see §4.1) |
+| `request-validation safeParse …` | passes — structurally not glob-gated (§4), reported as an honest negative |
 
 ## 6. Found, not fixed
 
