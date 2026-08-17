@@ -1,26 +1,8 @@
-import { createAgentEnvelopeV2,type PolicyDecision } from "@drift/core";
-import type { scanStatusPayload } from "./scan-status.js";
-
-export function agentEnvelopeForScan(input: {
-  surface: PolicyDecision["surface"] | "cli-error";
-  policy?: Pick<PolicyDecision, "allowed" | "surface" | "reason">;
-  scanStatus?: ReturnType<typeof scanStatusPayload>;
-  requireFresh?: boolean;
-  diagnostics?: string[];
-  contextTruncated?: boolean;
-}) {
-  return createAgentEnvelopeV2({
-    surface: input.surface,
-    policy: input.policy,
-    scan: {
-      required_fresh: Boolean(input.requireFresh),
-      stale: input.scanStatus?.stale ?? false,
-      latest_scan_id: input.scanStatus?.latest_scan?.id ?? null
-    },
-    redactions: {
-      snippets_included: false,
-      context_truncated: Boolean(input.contextTruncated)
-    },
-    diagnostics: input.diagnostics
-  });
-}
+/**
+ * W6: `agentEnvelopeForScan` moved to @drift/query.
+ *
+ * MCP kept `mcpAgentEnvelope` - the same `createAgentEnvelopeV2` call with a narrower signature -
+ * and the two would have had to be edited in step forever. Re-exported from here so the CLI's
+ * existing importers keep their path; @drift/query holds the only definition.
+ */
+export { agentEnvelopeForScan } from "@drift/query";

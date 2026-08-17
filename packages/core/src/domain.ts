@@ -1,45 +1,16 @@
-export type ConventionKind =
-  | "api_route_no_direct_data_access"
-  | "api_route_requires_service_delegation"
-  | "api_route_requires_auth_helper"
-  | "middleware_must_cover_routes"
-  | "api_route_requires_request_validation"
-  | "api_route_forbids_untrusted_ssrf"
-  | "api_route_forbids_raw_sql_without_params"
-  | "api_route_cors_must_match_policy"
-  | "api_route_requires_csrf_for_mutation"
-  | "api_route_requires_rate_limit"
-  | "api_route_forbids_sensitive_response_fields"
-  | "api_route_forbids_secret_exposure"
-  | "session_object_must_come_from_trusted_helper"
-  | "api_route_requires_authorization"
-  | "api_route_requires_tenant_scope"
-  | "test_expected_for_changed_module"
-  | "custom_briefing"
-  | AgentContractKind;
+import type {
+  ConventionKind,
+  FactKind,
+  FileRole,
+  ParserGapKind,
+  RouteFlavor
+} from "@drift/vocabulary";
+import type { CLI_EVALUATED_CONVENTION_KINDS } from "@drift/vocabulary";
 
-export type FileRole =
-  | "api_route"
-  | "server_module"
-  | "service_module"
-  | "data_access_module"
-  | "component"
-  | "ui_component"
-  | "hook_module"
-  | "schema_module"
-  | "test"
-  | "config"
-  | "cli_command_module"
-  | "core_module"
-  | "query_module"
-  | "factgraph_module"
-  | "adapter_module"
-  | "storage_module"
-  | "engine_bridge_module"
-  | "mcp_module"
-  | "docs"
-  | "package_manifest"
-  | "custom";
+// W5: these were four hand-written unions here, four Zod enums in schemas.ts, and a third copy of
+// each in packages/engine-contract and packages/mcp. They are generated from
+// vocabulary/vocabulary.json now, and re-exported here so every existing import site keeps working.
+export type { ConventionKind, FactKind, FileRole, ParserGapKind, RouteFlavor };
 
 export type CanonicalRole =
   | "route"
@@ -70,13 +41,13 @@ export type CanonicalRole =
   | "unknown"
   | "mixed_role";
 
-export type AgentContractKind =
-  | "file_role"
-  | "module_placement"
-  | "import_boundary"
-  | "entrypoint_flow"
-  | "canonical_helper_reuse"
-  | "required_change_checks";
+/**
+ * The convention kinds the CLI evaluates rather than the engine.
+ *
+ * Derived from the dispatch table, so a kind that moves between evaluators cannot leave this union
+ * describing the old arrangement.
+ */
+export type AgentContractKind = (typeof CLI_EVALUATED_CONVENTION_KINDS)[number];
 
 export interface ConventionScope {
   path_globs: string[];
@@ -85,8 +56,6 @@ export interface ConventionScope {
   include_symbols?: string[];
   exclude_path_globs?: string[];
 }
-
-export type RouteFlavor = "api_route" | "cron_job" | "webhook_handler";
 
 export interface ConventionMatcher {
   kind: ConventionKind;
@@ -281,44 +250,6 @@ export interface BackupManifest {
   created_at: string;
 }
 
-export type FactKind =
-  | "file_detected"
-  | "import_used"
-  | "re_export_used"
-  | "exported_symbol"
-  | "symbol_called"
-  | "data_operation_detected"
-  | "route_declared"
-  | "file_role_detected"
-  | "route_flavor_detected"
-  | "test_declared"
-  | "auth_guard_called"
-  | "route_returns_response"
-  | "callback_boundary_detected"
-  | "middleware_declared"
-  | "middleware_matcher_declared"
-  | "middleware_protects_route"
-  | "request_input_read"
-  | "session_read"
-  | "tenant_source"
-  | "tenant_guard_called"
-  | "authorization_guard_called"
-  | "request_validation_called"
-  | "validated_input_used"
-  | "outbound_request_called"
-  | "raw_sql_called"
-  | "parameterized_sql_used"
-  | "cors_policy_declared"
-  | "csrf_guard_called"
-  | "rate_limit_guard_called"
-  | "sensitive_field_declared"
-  | "response_emits_field"
-  | "serializer_called"
-  | "secret_read"
-  // Declared in a schema file rather than inferred from a call site.
-  | "data_model_declared"
-  | "data_model_field_declared"
-  | "data_model_relation_declared";
 
 export type FactEvidenceLevel = "path" | "text" | "ast" | "graph" | "heuristic";
 export type FactResolutionStatus = "resolved" | "unresolved" | "partial" | "unsupported";
@@ -391,16 +322,6 @@ export interface FactRecord {
   last_seen_scan_id: string;
 }
 
-export type ParserGapKind =
-  | "unresolved_import"
-  | "unresolved_symbol"
-  | "unknown_file_role"
-  | "mixed_file_role"
-  | "unsupported_framework_pattern"
-  | "parser_error"
-  | "partial_parse"
-  | "dynamic_import_unresolved"
-  | "reflection_or_magic_detected";
 
 export type ParserGapConfidenceImpact = "none" | "lowers_file" | "lowers_flow" | "blocks_enforcement";
 
@@ -972,18 +893,28 @@ export interface ChangeImpact {
   missing_test_candidates: string[];
 }
 
+/**
+ * What is known about a test that covers a change.
+ *
+ * `missing_test_candidate` is NOT here, and its absence is the point. An entry exists in this array
+ * only because a test was FOUND for the subject, so a per-entry "a test is missing" flag was false
+ * by construction - it could not have been true in any payload Drift has ever emitted. The signal
+ * it looked like it carried is real and lives on the selection, where it varies.
+ *
+ * The three nullable fields are read from the test file's own source, and `null` means the source
+ * was not read - not that the answer is no. See TestFileEvidence in @drift/query.
+ */
 export interface TestIntelligence {
-  schema_version: "drift.test_intelligence.v1";
+  schema_version: "drift.test_intelligence.v2";
   test_subject: string;
   test_type: "unit" | "integration" | "e2e" | "unknown";
   test_framework: "vitest" | "jest" | "playwright" | "unknown";
   test_file_for: string[];
   covered_symbols: string[];
   covered_routes: string[];
-  mocked_dependencies: string[];
-  fixture_usage: string[];
-  snapshot_usage: boolean;
-  missing_test_candidate: boolean;
+  mocked_dependencies: string[] | null;
+  fixture_usage: string[] | null;
+  snapshot_usage: boolean | null;
   stale_test_candidate: boolean;
 }
 
@@ -1014,31 +945,19 @@ export interface AgentTask {
   human_approval_needed: boolean;
 }
 
-export interface GraphNodeRecord {
-  id: string;
-  kind: "file" | "module" | "symbol" | "import" | "route" | "role" | "data_store" | "data_operation" | "endpoint" | "re_export";
-  label: string;
-}
-
-export interface GraphEdgeRecord {
-  id: string;
-  kind:
-    | "FILE_CONTAINS_SYMBOL"
-    | "MODULE_IMPORTS_MODULE"
-    | "FILE_HAS_ROLE"
-    | "ROUTE_DECLARED_IN_FILE"
-    | "ROUTE_HAS_ENDPOINT"
-    | "MODULE_REEXPORTS_MODULE"
-    | "REEXPORT_RESOLVES_TO_SYMBOL"
-    | "IMPORT_RESOLVES_TO_MODULE"
-    | "IMPORT_RESOLVES_TO_SYMBOL"
-    | "DATA_OPERATION_READS_DATA_STORE"
-    | "DATA_OPERATION_WRITES_DATA_STORE"
-    | "DATA_OPERATION_DELETES_DATA_STORE"
-    | "DATA_OPERATION_TOUCHES_DATA_STORE";
-  from: string;
-  to: string;
-}
+/**
+ * W5: `GraphNodeRecord` and `GraphEdgeRecord` were removed here, and their Zod counterparts in
+ * schemas.ts with them.
+ *
+ * They were a fifth copy of the graph vocabulary - ten node kinds against the real eighteen,
+ * thirteen edge kinds against twenty-one - referenced by nothing in this repo. Two of the ten node
+ * kinds did not exist: `import` (the real kind is `import_decl`) and `role` (`file_role`). Those two
+ * wrong names are the ones that turn up again in `BUILTIN_SEMANTIC_CAPABILITIES.emitted_node_kinds`
+ * and in the engine's own candidate-inference fixtures, which is what a dead declaration costs: it
+ * is read, believed and copied precisely because nothing exercises it.
+ *
+ * `GraphNodeKindSchema` / `GraphEdgeKindSchema` in vocabulary.ts are the live ones.
+ */
 
 export interface FactGraphArtifact {
   id: string;

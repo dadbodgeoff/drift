@@ -136,6 +136,53 @@ export function buildParserGapSummary(gaps: ParserGapLike[]): ParserGapSummary {
   };
 }
 
+/**
+ * The parser-gap section as both agent surfaces report it, including the itemized records.
+ *
+ * One implementation, because there were two and they diverged the moment one changed. The CLI and
+ * MCP each wrapped `buildParserGapSummary` above with a private, hand-written, near-identical
+ * function; adding `records` to the CLI's copy - so that the summary's own `full_list_command`
+ * finally pointed at data that exists (D-A5) - left MCP emitting `undefined` and turned
+ * `beta:proof`'s CLI/MCP parity check red.
+ *
+ * Both copies were module-private, which is exactly why no duplicate index caught them: the
+ * architecture census indexed only symbols carrying a top-level `export`, and recorded that as a
+ * known blind spot. This is an instance of it.
+ */
+export function buildParserGapSection(gaps: ParserGapLike[]): ParserGapSummary & {
+  records: ParserGapLike[];
+} {
+  return { ...buildParserGapSummary(gaps), records: gaps };
+}
+
+/**
+ * A scan-status view with the parser-gap records withheld, and the withholding named.
+ *
+ * The records are the largest section of the preflight envelope - 358,538 bytes in 639 records on
+ * dub - and pushed it to 774,327 against a 500,000 budget. They were never meant to travel in a
+ * packet an agent eats; `records_command` names the surface that serves them in full.
+ *
+ * Shared rather than inlined at each caller because this is the third time this exact section has
+ * diverged between the CLI and MCP: each surface builds its own scan_status, so a reshape applied
+ * to one leaves the other emitting `undefined` and turns the parity check red. Named rather than
+ * implied, so an empty list cannot be misread as "no gaps".
+ */
+export function withParserGapRecordsOmitted<
+  T extends { parser_gaps: { records: unknown[] } }
+>(scanStatus: T, recordsCommand: string): T & {
+  parser_gaps: T["parser_gaps"] & { records_omitted: number; records_command: string };
+} {
+  return {
+    ...scanStatus,
+    parser_gaps: {
+      ...scanStatus.parser_gaps,
+      records: [],
+      records_omitted: scanStatus.parser_gaps.records.length,
+      records_command: recordsCommand
+    }
+  };
+}
+
 function readinessDecision(input: {
   graphAvailable: boolean;
   graphComplete: boolean;

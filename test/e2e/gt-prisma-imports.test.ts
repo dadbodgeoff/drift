@@ -313,17 +313,24 @@ describe("D5.2 control — the audit's true positives are not silenced", () => {
     const run = await runGtWorkflow({ fixture: "gt-data-access", acceptKinds: [DATA_ACCESS_KIND] });
     const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), DATA_ACCESS_KIND);
 
-    expect(
-      flagged,
-      "D5.2 REGRESSION: invocation-evidence classification suppressed a genuine data-access " +
-        "route. Every one of these calls its import — `loadOrders()`, `connect()`, " +
-        "`rawQuery(...)`, `prismaClient.user.findMany()` — so all four carry proven invocation " +
-        `evidence and must survive. Got: ${JSON.stringify(flagged)}`
-    ).toEqual([
+    // Containment, not equality. Which *near-miss* routes the name heuristic admits is D4's
+    // question and is asserted in `gt-data-access.test.ts` — including the two `db` near-misses
+    // upstream deliberately keeps matching. Pinning the whole list here would put that decision in
+    // two places and make a D4 change look like a D5.2 regression, which is the opposite of what
+    // this control is for.
+    for (const route of [
       "pages/api/route-data-access.ts",
       "pages/api/route-database.ts",
       "pages/api/route-db.ts",
       "pages/api/route-prisma.ts"
-    ]);
+    ]) {
+      expect(
+        flagged,
+        "D5.2 REGRESSION: invocation-evidence classification suppressed a genuine data-access " +
+          "route. Every one of these calls its import — `loadOrders()`, `connect()`, " +
+          "`rawQuery(...)`, `prismaClient.user.findMany()` — so all four carry proven invocation " +
+          `evidence and must survive. Got: ${JSON.stringify(flagged)}`
+      ).toContain(route);
+    }
   }, 180000);
 });

@@ -23,7 +23,7 @@ describe("semantic capabilities", () => {
   it("rejects blocking semantic capabilities without deterministic certification", () => {
     expect(() => SemanticCapabilityContractSchema.parse({
       schema_version: "drift.semantic_capability.v1",
-      capability_id: "ts.computed_calls.v1",
+      capability_id: "computed_calls",
       display_name: "Computed call resolution",
       language: "typescript",
       support: "partial",
@@ -44,13 +44,16 @@ describe("semantic capabilities", () => {
     const result = validateConventionRuleCapabilities({
       rule: {
         rule_id: "api_route_no_direct_data_access",
-        requires_capabilities: ["ts.static_imports.v1", "ts.missing.v1"]
+        requires_capabilities: ["static_imports", "ts.missing.v1"]
       },
       capabilities: BUILTIN_SEMANTIC_CAPABILITIES
     });
 
     expect(result).toEqual({
       valid: false,
+      // D-S1: `ts.missing.v1` is unknown because there is one namespace and it is not in it. Before
+      // the collapse `ts.static_imports.v1` was the KNOWN half of this pair, and every id the engine
+      // actually emits would have been the unknown half.
       missing_capabilities: ["ts.missing.v1"]
     });
   });
@@ -60,12 +63,12 @@ describe("semantic capabilities", () => {
       rule: {
         rule_id: "api_route_no_direct_data_access",
         requires_capabilities: [
-          "ts.file_discovery.v1",
-          "ts.syntax_facts.v1",
-          "ts.static_imports.v1",
-          "ts.import_resolution.v1",
-          "ts.data_operations.v1",
-          "ts.route_flow.v1"
+          "file_discovery",
+          "syntax_facts",
+          "static_imports",
+          "import_resolution",
+          "data_operation_detection",
+          "route_flow"
         ]
       },
       capabilities: BUILTIN_SEMANTIC_CAPABILITIES

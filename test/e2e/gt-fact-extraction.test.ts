@@ -161,13 +161,16 @@ describe("D3 — a local `export { name }` is an exported symbol", () => {
     ).toEqual([]);
   });
 
-  it("records a local alias in `imported_name`, following the EW-4 convention", async () => {
+  it("records a local alias in `value`, alongside the default form", async () => {
     // `export { helper as renamedHelper }` exports `renamedHelper`; `helper` is the local
-    // binding. EW-4 already established `name` = exported, `imported_name` = the other name,
-    // for the re-export case (facts.rs:936). The ASYMMETRY worth stating: in a re-export
-    // `imported_name` is resolved in the TARGET module, whereas a local alias has no target,
-    // so here it records the local binding in this same file. `value` is deliberately not
-    // used — it means "the module specifier"/"the local binding of a default" elsewhere.
+    // binding, and it is recorded in `value`.
+    //
+    // D3 originally put it in `imported_name`, reasoning from EW-4's re-export convention.
+    // Upstream's D-S2 (`90a76c74`) landed the same defect fix independently and chose `value`,
+    // matching what the `export default <identifier>` branch two lines below already does — see
+    // `default | value = "prisma"`. D3 was dropped at the merge as redundant, so this assertion
+    // now pins upstream's field choice: within this one file, a renamed local export and a
+    // default export record the local binding the same way.
     const rows = await exportedSymbols("gt-default-export-shapes");
     const local = rows.filter((row) => row.file_path === "lib/local-specifiers.ts");
 
@@ -181,9 +184,9 @@ describe("D3 — a local `export { name }` is an exported symbol", () => {
       { name: "prisma", value: null, file_path: "lib/local-specifiers.ts", imported_name: null },
       {
         name: "renamedHelper",
-        value: null,
+        value: "helper",
         file_path: "lib/local-specifiers.ts",
-        imported_name: "helper"
+        imported_name: null
       }
     ]);
   });

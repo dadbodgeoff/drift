@@ -297,11 +297,10 @@ describe("golden realistic repo evidence", () => {
         "files_indexed": 2,
       }
     `);
-    // D3 (TDD §5.3): `src/server.ts:8` is `export { app };` — a local export specifier, which
-    // emitted no `exported_symbol` fact before D3 and emits exactly one after it. Predicted
-    // 22 -> 23 before measuring, derived from that single specifier; observed 22 -> 23 with
-    // every other field unchanged. Re-recorded by hand rather than with `vitest -u`, which
-    // would have re-recorded every snapshot in the run from one flagless invocation.
+    // W7 / D-S2: 22 -> 23. The one new fact is `exported_symbol app` from `src/server.ts`, whose
+    // last line is `export { app };` - a bare export list naming an identifier declared above.
+    // That shape produced no fact at all before D-S2, so this fixture reported an Express app
+    // that exports nothing.
     expect(express).toMatchInlineSnapshot(`
       {
         "candidate_kinds": [],

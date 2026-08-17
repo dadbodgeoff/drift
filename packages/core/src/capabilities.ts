@@ -1,4 +1,5 @@
 import { createContractParityLedger,type ContractParityLedger } from "./contract-ledger.js";
+import { SECURITY_CONTRACT_CONVENTION_KINDS, UNEVALUATED_CONVENTION_KINDS } from "@drift/vocabulary";
 
 export interface DriftCapabilities {
   read_only_cli: string[];
@@ -174,21 +175,16 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
  *
  * `api_route_no_direct_data_access` and `api_route_requires_service_delegation` are NOT here:
  * they are the layering wedge, deterministic, and stay on by default.
+ *
+ * W5: derived from the convention vocabulary's `security_contract` flag, which is also what
+ * `SecurityContractKindSchema` is built from. This was a hand-written list of twelve beside two
+ * hand-written lists of thirteen, and the one it omitted was `api_route_forbids_secret_exposure` -
+ * so the flag that keeps every security kind behind `--experimental-security` did not cover the one
+ * kind whose subject is secrets. Latent rather than shipped: candidate inference proposes thirteen
+ * kinds and that is not one of them, so no candidate of that kind has ever existed to escape. A
+ * hand-authored contract carrying it would have.
  */
-export const EXPERIMENTAL_SECURITY_CONVENTION_KINDS = [
-  "api_route_requires_auth_helper",
-  "api_route_requires_authorization",
-  "api_route_requires_csrf_for_mutation",
-  "api_route_requires_rate_limit",
-  "api_route_requires_request_validation",
-  "api_route_requires_tenant_scope",
-  "api_route_forbids_raw_sql_without_params",
-  "api_route_forbids_sensitive_response_fields",
-  "api_route_forbids_untrusted_ssrf",
-  "api_route_cors_must_match_policy",
-  "middleware_must_cover_routes",
-  "session_object_must_come_from_trusted_helper"
-] as const;
+export const EXPERIMENTAL_SECURITY_CONVENTION_KINDS = SECURITY_CONTRACT_CONVENTION_KINDS;
 
 export function isExperimentalSecurityKind(kind: string): boolean {
   return (EXPERIMENTAL_SECURITY_CONVENTION_KINDS as readonly string[]).includes(kind);
@@ -210,13 +206,16 @@ export function isExperimentalSecurityKind(kind: string): boolean {
  * `api_route_requires_service_delegation` has none but IS evaluated by the engine, so it is absent
  * from this list.
  *
- * Deleting a kind from here is the LAST step of implementing it, not the first.
+ * W5 (D-P3a): derived from the dispatch table rather than restated. This was a hand-written list
+ * beside a hand-written engine chain and a hand-written CLI chain, with no place that named all
+ * twenty-three kinds - so "which kinds have no evaluator" was answerable only by reading three files
+ * and trusting the reader. `vocabulary/vocabulary.json` answers it, and the parity gate checks the
+ * answer against the two evaluators' sources.
+ *
+ * Deleting a kind from here is the LAST step of implementing it, not the first - which now means
+ * changing its `dispatch` in the manifest and adding the arm the compiler then demands.
  */
-export const UNIMPLEMENTED_CONVENTION_KINDS = [
-  "middleware_must_cover_routes",
-  "test_expected_for_changed_module",
-  "custom_briefing"
-] as const;
+export const UNIMPLEMENTED_CONVENTION_KINDS = UNEVALUATED_CONVENTION_KINDS;
 
 export function hasConventionEvaluator(kind: string): boolean {
   return !(UNIMPLEMENTED_CONVENTION_KINDS as readonly string[]).includes(kind);

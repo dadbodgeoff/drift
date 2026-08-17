@@ -101,6 +101,7 @@ function expectNoWorkspaceDependencies(manifest: PackedPackage["manifest"]): voi
 async function packAllWorkspacePackages(): Promise<Record<string, PackedPackage>> {
   const enginePackage = currentEnginePackageFixture();
   const packages = await Promise.all([
+    packWorkspacePackage("packages/vocabulary"),
     packWorkspacePackage("packages/core"),
     packWorkspacePackage("packages/factgraph"),
     packWorkspacePackage("packages/engine-contract"),
@@ -322,7 +323,8 @@ describe("packed Drift workspace packages", () => {
       "@drift/factgraph",
       "@drift/mcp",
       "@drift/query",
-      "@drift/storage"
+      "@drift/storage",
+      "@drift/vocabulary"
     ]);
     expect(Object.values(packed).every((entry) => entry.tarballPath.endsWith(".tgz"))).toBe(true);
   }, 30000);

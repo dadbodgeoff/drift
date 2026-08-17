@@ -1,7 +1,7 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { API_ROUTE_SCOPE_GLOBS, type Finding, type RepoContract } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS, ENGINE_CERTIFIED_SCAN_CAPABILITIES, type Finding, type RepoContract } from "@drift/core";
 import { buildFactGraphArtifact, buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { openDriftStorage } from "@drift/storage";
 import { afterEach, describe, expect, it } from "vitest";
@@ -385,7 +385,7 @@ describe("GraphQueryService", () => {
 
   it("selects route and service tests relevant to a changed route flow", () => {
     const result = selectRelevantTests({
-      changed_file: "app/api/users/route.ts",
+      changed_files: ["app/api/users/route.ts"],
       route_flow: {
         route: "GET /api/users",
         service_file: "server/services/users.ts"
@@ -396,8 +396,194 @@ describe("GraphQueryService", () => {
     expect(result).toMatchObject({
       closest_tests: ["app/api/users/route.test.ts", "server/services/users.test.ts"],
       missing_test_candidate: false,
-      required_check_hint: "npm test -- users"
+      required_check_hint: "npm test -- users",
+      test_intelligence_reason: null
     });
+  });
+
+  it("considers every changed file, not only the first", () => {
+    // D-A3(a). Both surfaces passed `relevantFiles[0]?.path`, and relevantFiles is ranked then
+    // truncated. This is midday's shape: the directly relevant test belongs to the file at
+    // index 2, and the files ahead of it have no tests at all, so selection returned [].
+    const result = selectRelevantTests({
+      changed_files: [
+        "app/(marketing)/page.tsx",
+        "lib/constants.ts",
+        "lib/email/onboarding-template.ts"
+      ],
+      test_files: ["lib/email/__tests__/onboarding-template.test.ts"]
+    });
+
+    expect(result.closest_tests).toEqual(["lib/email/__tests__/onboarding-template.test.ts"]);
+    // The subject is the file the test is about, not whichever file ranked first.
+    expect(result.test_intelligence[0]).toMatchObject({
+      test_subject: "lib/email/onboarding-template.ts"
+    });
+  });
+
+  it("matches a camelCase source against a kebab-case test", () => {
+    // D-A3(b). The exact pair from the audit: the raw slugs are `formatCurrency` and
+    // `format-currency`, and `.includes()` on them is false.
+    const result = selectRelevantTests({
+      changed_files: ["lib/utils/formatCurrency.ts"],
+      test_files: ["lib/utils/__tests__/format-currency.test.ts"]
+    });
+
+    expect(result.closest_tests).toEqual(["lib/utils/__tests__/format-currency.test.ts"]);
+    expect(result.missing_test_candidate).toBe(false);
+  });
+
+  it("distinguishes a repo with no tests from a change nothing covers", () => {
+    // D-A3(c). These two emitted the byte-identical `"not_implemented_for_repo"`, and they call
+    // for opposite responses: one means write the first test, the other means go find the test
+    // that already exists. taxonomy is the first shape, midday the second.
+    const noTestsAnywhere = selectRelevantTests({
+      changed_files: ["app/api/users/route.ts"],
+      test_files: []
+    });
+    const testsExistButNoneMatch = selectRelevantTests({
+      changed_files: ["app/api/users/route.ts"],
+      test_files: ["lib/unrelated/billing.test.ts"]
+    });
+
+    expect(noTestsAnywhere.test_intelligence_reason).toBe("no_test_files_in_repo");
+    expect(testsExistButNoneMatch.test_intelligence_reason).toBe("no_tests_matched_change");
+    expect(noTestsAnywhere.test_intelligence_reason).not.toBe(
+      testsExistButNoneMatch.test_intelligence_reason
+    );
+  });
+
+  it("reports no reason when tests were found", () => {
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/users.test.ts"]
+    });
+    expect(result.test_intelligence_reason).toBeNull();
+  });
+
+  it("does not match an unrelated test after separators are stripped", () => {
+    // Restraint for (b): removing separators must not turn every name into a substring of every
+    // other. A normalized match is still a substring match, not a fuzzy one.
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/billing-reports.test.ts"]
+    });
+    expect(result.closest_tests).toEqual([]);
+    expect(result.test_intelligence_reason).toBe("no_tests_matched_change");
+  });
+
+  /** A repo with one matched test whose source carries the three things now read from it. */
+  async function repoWithTestSource(source: string): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(dir);
+    await mkdir(join(dir, "server/services"), { recursive: true });
+    await writeFile(join(dir, "server/services/users.test.ts"), source);
+    return dir;
+  }
+
+  const SELECT_USERS = {
+    changed_files: ["server/services/users.ts"],
+    test_files: ["server/services/users.test.ts"]
+  };
+
+  it("reads snapshot, mock and fixture evidence from the matched test's source", async () => {
+    // EW-3. These three were literals - `false`, `[]`, `[]` - on every entry Drift has ever
+    // emitted, and the payload-invariants gate confirms it: identical across all 176 matrix cells.
+    // An agent asking "does my edit break a snapshot test" got a confident no from a field that
+    // had never opened the file.
+    const repoRoot = await repoWithTestSource([
+      'import { describe, expect, it, vi } from "vitest";',
+      'import { listUsers } from "./users";',
+      'import { userRows } from "../__fixtures__/users.json";',
+      'import { seed } from "./users.fixture";',
+      'vi.mock("server/repositories/users");',
+      "jest.mock('server/lib/clock');",
+      'it("renders", () => { expect(listUsers(userRows)).toMatchSnapshot(); });'
+    ].join("\n"));
+
+    const result = selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot });
+
+    expect(result.test_intelligence[0]).toMatchObject({
+      snapshot_usage: true,
+      // Both framework spellings, deduplicated and ordered so the payload is stable.
+      mocked_dependencies: ["server/lib/clock", "server/repositories/users"],
+      // A `__fixtures__` path segment and a `.fixture.` filename; `./users` and `vitest` are
+      // imports and not fixtures, and must not be swept in.
+      fixture_usage: ["../__fixtures__/users.json", "./users.fixture"]
+    });
+  });
+
+  it("answers no rather than nothing when the test genuinely has none of them", async () => {
+    // The other half, and the one that makes the field worth reading: a real `false` from a real
+    // look has to be distinguishable from the `null` below.
+    const repoRoot = await repoWithTestSource(
+      'import { listUsers } from "./users";\nit("works", () => { expect(listUsers()).toEqual([]); });\n'
+    );
+    expect(selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot }).test_intelligence[0])
+      .toMatchObject({ snapshot_usage: false, mocked_dependencies: [], fixture_usage: [] });
+  });
+
+  it("says null, not false, when it never opened the file", async () => {
+    // Two ways to have nothing to read, and neither may be reported as a measurement. Without a
+    // repo_root there is nowhere to look; with one, a path from a stale scan can name a file that
+    // has since been deleted.
+    const noRepoRoot = selectRelevantTests(SELECT_USERS);
+    expect(noRepoRoot.test_intelligence[0]).toMatchObject({
+      snapshot_usage: null,
+      mocked_dependencies: null,
+      fixture_usage: null
+    });
+
+    const emptyRepo = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(emptyRepo);
+    expect(selectRelevantTests({ ...SELECT_USERS, repo_root: emptyRepo }).test_intelligence[0])
+      .toMatchObject({ snapshot_usage: null, mocked_dependencies: null, fixture_usage: null });
+  });
+
+  it("keeps the selection's missing_test_candidate after dropping the per-entry one", async () => {
+    // The drop, and the trap in it. `missing_test_candidate` names two different things one level
+    // apart: the per-entry flag was false by construction - an entry exists only because a test
+    // was FOUND - while the selection-level one carries the real signal and varies. A blind
+    // rename would have taken both.
+    const repoRoot = await repoWithTestSource('it("works", () => {});\n');
+    const found = selectRelevantTests({ ...SELECT_USERS, repo_root: repoRoot });
+    expect(found.missing_test_candidate).toBe(false);
+    expect(found.test_intelligence[0]).not.toHaveProperty("missing_test_candidate");
+
+    const missing = selectRelevantTests({
+      changed_files: ["server/services/billing.ts"],
+      test_files: ["server/services/users.test.ts"],
+      repo_root: repoRoot
+    });
+    expect(missing.missing_test_candidate).toBe(true);
+  });
+
+  it("does not let one test file's mocks leak into the next", async () => {
+    // The `g` flag makes `lastIndex` stateful, so a module-level regex shared across two files
+    // starts the second scan wherever the first one stopped - and the second test silently loses
+    // its first mock. Two matched tests in one selection is the case that exposes it.
+    const dir = await mkdtemp(join(tmpdir(), "drift-test-intelligence-"));
+    tempDirs.push(dir);
+    await mkdir(join(dir, "server/services"), { recursive: true });
+    await writeFile(
+      join(dir, "server/services/users.test.ts"),
+      'vi.mock("server/repositories/users");\nit("a", () => {});\n'
+    );
+    await writeFile(
+      join(dir, "server/services/users-admin.test.ts"),
+      'vi.mock("server/repositories/admin");\nit("b", () => {});\n'
+    );
+
+    const result = selectRelevantTests({
+      changed_files: ["server/services/users.ts"],
+      test_files: ["server/services/users-admin.test.ts", "server/services/users.test.ts"],
+      repo_root: dir
+    });
+
+    expect(result.test_intelligence.map((entry) => entry.mocked_dependencies)).toEqual([
+      ["server/repositories/admin"],
+      ["server/repositories/users"]
+    ]);
   });
 
   it("classifies a user endpoint filtering task", () => {
@@ -1572,7 +1758,7 @@ describe("GraphQueryService", () => {
       end_line: 4,
       confidence_impact: "blocks_enforcement" as const,
       message: "Dynamic import target is not statically resolvable.",
-      affected_capabilities: ["ts.dynamic_imports.v1"],
+      affected_capabilities: ["dynamic_imports"],
       affected_contract_kinds: ["api_route_no_direct_data_access" as const],
       suggested_action: "rewrite_static" as const,
       evidence_refs: ["diagnostic_dynamic_import"]
@@ -1585,7 +1771,7 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [parserGap],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1", "ts.dynamic_imports.v1"],
+      required_capabilities: ["route_flow", "dynamic_imports"],
       missing_capabilities: []
     });
 
@@ -1594,8 +1780,8 @@ describe("GraphQueryService", () => {
       scan_id: "scan_abc",
       scope: "preflight",
       scope_id: "task_users_route",
-      required_capabilities: ["ts.route_flow.v1", "ts.dynamic_imports.v1"],
-      certified_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow", "dynamic_imports"],
+      certified_capabilities: ["route_flow"],
       missing_capabilities: [],
       readiness,
       parser_gaps: [parserGap],
@@ -1605,8 +1791,8 @@ describe("GraphQueryService", () => {
     expect(coverage).toMatchObject({
       schema_version: "drift.semantic_coverage.v1",
       scope: "preflight",
-      complete_capabilities: ["ts.route_flow.v1"],
-      partial_capabilities: ["ts.dynamic_imports.v1"],
+      complete_capabilities: ["route_flow"],
+      partial_capabilities: ["dynamic_imports"],
       parser_gap_ids: ["parser_gap_dynamic_route"],
       confidence: 0.4,
       decision: "refuse",
@@ -1614,7 +1800,20 @@ describe("GraphQueryService", () => {
     });
   });
 
-  it("builds semantic coverage from mixed scan capability vocabulary and fails closed on unknown requirements", () => {
+  /**
+   * D-S1, the flagship. This is the case that never worked.
+   *
+   * The capability report here is not a fixture shape - it is what `scanCapabilityReportForScan`
+   * stores after a real scan: `certified` is the engine's `certified_capabilities()` verbatim and
+   * `required` is `capability_stats(&["file_discovery", "syntax_facts", "graph_stream"])`. Readiness
+   * is synthetically perfect: blocking_allowed, confidence 1.0, no parser gaps, nothing missing.
+   *
+   * Against the unfixed code this produced `decision: "refuse"`, and it did so on every repo. The
+   * mapping table translated `graph_stream` to nothing, so it became an unknown capability; the
+   * preflight requirement `ts.route_flow.v1` belonged to a namespace no engine string is in, so it
+   * was never certified; and either alone forces the refusal.
+   */
+  it("allows blocking preflight coverage on a real engine capability report", () => {
     const readiness = buildReadiness({
       repo_id: "repo_abc",
       scan_id: "scan_abc",
@@ -1623,7 +1822,46 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow"],
+      missing_capabilities: []
+    });
+    expect(readiness.decision).toBe("blocking_allowed");
+
+    const coverage = buildSemanticCoverageFromCapabilityReport({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      scope: "preflight",
+      scope_id: "task_users_route",
+      capability_report: {
+        certified_capabilities: [...ENGINE_CERTIFIED_SCAN_CAPABILITIES],
+        required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+        missing_capabilities: []
+      },
+      readiness,
+      parser_gaps: [],
+      generated_at: "2026-05-28T00:00:00.000Z"
+    });
+
+    expect(coverage).toMatchObject({
+      required_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      missing_capabilities: [],
+      unsupported_capabilities: [],
+      decision: "blocking_allowed",
+      reasons: []
+    });
+  });
+
+  it("builds semantic coverage from a scan capability report and fails closed on unknown requirements", () => {
+    const readiness = buildReadiness({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      surface: "prepare",
+      graph_available: true,
+      graph_complete: true,
+      parser_gaps: [],
+      completeness_reasons: [],
+      required_capabilities: ["route_flow"],
       missing_capabilities: []
     });
 
@@ -1633,8 +1871,10 @@ describe("GraphQueryService", () => {
       scope: "preflight",
       scope_id: "task_users_route",
       capability_report: {
-        certified_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "ts.route_flow.v1"],
-        required_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "unknown_capability"],
+        certified_capabilities: ["syntax_facts", "file_discovery", "route_flow"],
+        // `fact_graph` was one of the four names the old translation table invented. It is not a
+        // capability any producer emits, so it belongs in the same bucket as any other typo.
+        required_capabilities: ["syntax_facts", "file_discovery", "fact_graph"],
         missing_capabilities: []
       },
       readiness,
@@ -1643,24 +1883,15 @@ describe("GraphQueryService", () => {
     });
 
     expect(coverage).toMatchObject({
-      required_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1",
-        "unknown_capability"
-      ],
-      complete_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1"
-      ],
-      missing_capabilities: ["unknown_capability"],
-      unsupported_capabilities: ["unknown_capability"],
+      required_capabilities: ["fact_graph", "file_discovery", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "route_flow", "syntax_facts"],
+      missing_capabilities: ["fact_graph"],
+      unsupported_capabilities: ["fact_graph"],
       decision: "refuse"
     });
     expect(coverage.reasons).toEqual(expect.arrayContaining([
-      "missing_capability:unknown_capability",
-      "unsupported_capability:unknown_capability"
+      "missing_capability:fact_graph",
+      "unsupported_capability:fact_graph"
     ]));
   });
 
@@ -1673,7 +1904,7 @@ describe("GraphQueryService", () => {
       graph_complete: true,
       parser_gaps: [],
       completeness_reasons: [],
-      required_capabilities: ["ts.route_flow.v1"],
+      required_capabilities: ["route_flow"],
       missing_capabilities: []
     });
 
@@ -1683,8 +1914,8 @@ describe("GraphQueryService", () => {
       scope: "preflight",
       scope_id: "task_users_route",
       capability_report: {
-        certified_capabilities: ["fact_graph"],
-        required_capabilities: ["fact_graph", "import_resolution"],
+        certified_capabilities: ["route_flow"],
+        required_capabilities: ["route_flow", "import_resolution"],
         missing_capabilities: []
       },
       readiness,
@@ -1693,12 +1924,12 @@ describe("GraphQueryService", () => {
     });
 
     expect(coverage).toMatchObject({
-      required_capabilities: ["ts.import_resolution.v1", "ts.route_flow.v1"],
-      complete_capabilities: ["ts.route_flow.v1"],
-      missing_capabilities: ["ts.import_resolution.v1"],
+      required_capabilities: ["import_resolution", "route_flow"],
+      complete_capabilities: ["route_flow"],
+      missing_capabilities: ["import_resolution"],
       decision: "refuse"
     });
-    expect(coverage.reasons).toContain("missing_capability:ts.import_resolution.v1");
+    expect(coverage.reasons).toContain("missing_capability:import_resolution");
   });
 
   it("allows blocking readiness when graph and parser evidence are complete", () => {

@@ -1,3 +1,4 @@
+import { CONVENTION_KINDS, FILE_ROLES } from "@drift/core";
 import type { DriftMcpTool } from "./types.js";
 
 export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
@@ -43,28 +44,11 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
       type: "object",
       properties: {
         repo_id: { type: "string" },
-        role: {
-          type: "string",
-          enum: [
-            "api_route",
-            "server_module",
-            "service_module",
-            "data_access_module",
-            "component",
-            "test",
-            "config",
-            "cli_command_module",
-            "core_module",
-            "query_module",
-            "factgraph_module",
-            "adapter_module",
-            "storage_module",
-            "engine_bridge_module",
-            "mcp_module",
-            "docs",
-            "package_manifest"
-          ]
-        },
+        // D-M4: the file roles, from the one vocabulary. This was a 17-value hand-copy of
+        // `FileRoleSchema`'s 21, missing `ui_component`, `hook_module`, `schema_module` and
+        // `custom` - four roles the scanner stores and this tool declared unfilterable, so an agent
+        // asking for them got a protocol error naming a closed enum rather than the rows.
+        role: { type: "string", enum: [...FILE_ROLES] },
         path: { type: "string" },
         limit: { type: "number" },
         offset: { type: "number" },
@@ -113,20 +97,13 @@ export const DRIFT_READ_ONLY_MCP_TOOLS: DriftMcpTool[] = [
       type: "object",
       properties: {
         repo_id: { type: "string" },
-        kind: {
-          type: "string",
-          enum: [
-            "api_route_no_direct_data_access",
-            "api_route_requires_service_delegation",
-            "api_route_requires_auth_helper",
-            "middleware_must_cover_routes",
-            "session_object_must_come_from_trusted_helper",
-            "api_route_requires_authorization",
-            "api_route_requires_tenant_scope",
-            "test_expected_for_changed_module",
-            "custom_briefing"
-          ]
-        },
+        // D-M4b: the convention kinds, from the one vocabulary. This was 9 of the 23 -
+        // a snapshot of an older, aspirational list rather than a filter. All three kinds with no
+        // evaluator at all were in it, and 14 kinds with working evaluators were not, including
+        // every Phase 5 and Phase 6 security kind and all six the CLI evaluates. So the tool
+        // offered filters for rules that can never produce a finding and refused filters for the
+        // ones that do.
+        kind: { type: "string", enum: [...CONVENTION_KINDS] },
         capability: {
           type: "string",
           enum: ["briefing_only", "heuristic_check", "deterministic_check"]

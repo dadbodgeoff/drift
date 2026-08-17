@@ -1,33 +1,38 @@
-use drift_engine::{SecurityCapabilityStatus, security_capabilities};
+use drift_engine::{ScanCapability, SecurityCapabilityStatus, security_capabilities};
 
+/// D-P3b: the report covers every capability the vocabulary marks as security-owned.
+///
+/// It used to report thirteen names against a twenty-name TypeScript enum, and five of the seven
+/// it omitted were a second name for something it already reported (`ssrf` here,
+/// `outbound_request_facts` on the wire). The synonym pairs are collapsed and the list is derived,
+/// so a capability can no longer be required under one name and certified under another.
 #[test]
-fn reports_phase_one_security_capabilities() {
+fn reports_every_security_capability_in_the_vocabulary() {
     let capabilities = security_capabilities();
-    let names: Vec<&str> = capabilities
+    let names: Vec<ScanCapability> = capabilities
         .iter()
-        .map(|capability| capability.name.as_str())
+        .map(|capability| capability.name)
         .collect();
 
-    assert!(
-        names.contains(&"security_facts"),
-        "missing security_facts: {capabilities:#?}"
+    assert_eq!(
+        names,
+        ScanCapability::SECURITY.to_vec(),
+        "security_capabilities() must report exactly the vocabulary's security members"
     );
-    assert!(
-        names.contains(&"auth_boundary_facts"),
-        "missing auth_boundary_facts: {capabilities:#?}"
-    );
-    assert!(
-        names.contains(&"control_flow_guard_dominance"),
-        "missing control_flow_guard_dominance: {capabilities:#?}"
-    );
-    assert!(
-        names.contains(&"response_shape_facts"),
-        "missing Phase 5 response_shape_facts: {capabilities:#?}"
-    );
-    assert!(
-        names.contains(&"secret_exposure"),
-        "missing Phase 5 secret_exposure: {capabilities:#?}"
-    );
+
+    for expected in [
+        ScanCapability::SecurityFacts,
+        ScanCapability::AuthBoundaryFacts,
+        ScanCapability::ControlFlowGuardDominance,
+        ScanCapability::ResponseShapeFacts,
+        ScanCapability::SecretExposure,
+    ] {
+        assert!(
+            names.contains(&expected),
+            "missing {expected}: {capabilities:#?}"
+        );
+    }
+
     assert!(
         capabilities
             .iter()
@@ -38,8 +43,8 @@ fn reports_phase_one_security_capabilities() {
         capabilities
             .iter()
             .filter(|capability| matches!(
-                capability.name.as_str(),
-                "response_shape_facts" | "secret_exposure"
+                capability.name,
+                ScanCapability::ResponseShapeFacts | ScanCapability::SecretExposure
             ))
             .all(|capability| capability.can_block
                 && capability.status == SecurityCapabilityStatus::Partial),
@@ -57,7 +62,11 @@ fn reports_phase_one_security_capabilities() {
 fn phase4_capabilities_reflect_supported_parser_gaps_and_contracts() {
     let capabilities = security_capabilities();
 
-    for expected in ["session_trust", "authorization", "tenant_scope"] {
+    for expected in [
+        ScanCapability::SessionTrust,
+        ScanCapability::Authorization,
+        ScanCapability::TenantScope,
+    ] {
         let capability = capabilities
             .iter()
             .find(|capability| capability.name == expected)
@@ -79,17 +88,29 @@ fn phase4_capabilities_reflect_supported_parser_gaps_and_contracts() {
     assert!(
         capabilities
             .iter()
-            .any(|capability| capability.name == "tenant_scope"
+            .any(|capability| capability.name == ScanCapability::TenantScope
                 && capability.status == SecurityCapabilityStatus::Partial),
         "tenant scope must stay partial while dynamic tenant shapes are parser-gap backed: {capabilities:#?}"
     );
 }
 
+/// The Phase 6 capabilities, under the names `phase6_required_capabilities` actually requires.
+///
+/// This asserted `ssrf`, `raw_sql`, `cors_policy`, `csrf`, `rate_limit` - the names only
+/// `security_capabilities()` used. The engine required `outbound_request_facts`, `raw_sql_facts`,
+/// `cors_policy_facts`, `csrf_facts` and `rate_limit_facts` on the wire, so this test passed while
+/// the two halves of the same capability had different names and nothing compared them.
 #[test]
 fn security_phase8_reports_phase6_capabilities() {
     let capabilities = security_capabilities();
 
-    for expected in ["ssrf", "raw_sql", "cors_policy", "csrf", "rate_limit"] {
+    for expected in [
+        ScanCapability::OutboundRequestFacts,
+        ScanCapability::RawSqlFacts,
+        ScanCapability::CorsPolicyFacts,
+        ScanCapability::CsrfFacts,
+        ScanCapability::RateLimitFacts,
+    ] {
         let capability = capabilities
             .iter()
             .find(|capability| capability.name == expected)

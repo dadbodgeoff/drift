@@ -187,7 +187,8 @@ Field meanings, which differ by shape:
 | `export default prisma;` | `default` | `prisma` | ∅ |
 | `export default () => 1` | `default` | ∅ | ∅ |
 | `export { internalHelper };` | `internalHelper` | ∅ | ∅ |
-| `export { helper as renamed };` | `renamed` | ∅ | `helper` |
+| `export { helper as renamed };` | `renamed` | `helper` | ∅ |
+| `export { handler as default };` | `default` | `handler` | ∅ |
 | `export { x } from "./y"` | — no `exported_symbol`; `import_used` + `re_export_used` | | |
 | `export interface T {}` / `export type { T }` | — no fact | | |
 
@@ -199,11 +200,17 @@ Two rules the table encodes:
   `exported_symbols_by_file` (`main.rs:2174`) keys purely on `fact.name`, so a second fact under
   the local name made exactly that import resolve. The local identifier is metadata, carried in
   `value`.
-- **`imported_name` is "the other name", and its resolution scope depends on the shape (D3).** For a
-  re-export it is the name to resolve in the *target* module (EW-4). For a local
-  `export { a as b }` there is no target module, so it names a binding declared in the *same* file.
-  The alias does not go in `value`: that field means the module specifier, or the local binding of a
-  default, everywhere else in the extractor.
+- **`value` carries the local binding for every renamed or default export (D-S2).** For
+  `export { a as b };` the module publishes `b`, and `a` is the binding declared in this same file
+  that a consumer follows the export back to — the identical role `value` plays for
+  `export default prisma`. `imported_name` is reserved for the *re-export* shapes, where it is the
+  name to resolve in the **target** module (EW-4), and a local export has no target module.
+
+  Recorded because the two workstreams disagreed here and one of them was dropped: D3
+  (`docs/tdd-ground-truth-remediation.md` §5.3) fixed the same missing-fact defect and put the alias
+  in `imported_name`, reasoning from EW-4. Upstream's D-S2 (`90a76c74`) landed first, reads the
+  shape off the AST rather than off the statement text, and chose `value`. D-S2's implementation is
+  the one that ships; D3 was removed at the merge rather than kept as a second emission path.
 
 A local `export { x };` must never emit `re_export_used`. That fact kind feeds
 `export_star_sources_by_file` (`main.rs:2192`) and the `MODULE_REEXPORTS_MODULE` edge; emitting it

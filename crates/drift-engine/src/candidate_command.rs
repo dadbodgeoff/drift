@@ -7,6 +7,12 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use drift_engine::next_routes::API_ROUTE_SCOPE_GLOBS;
+// D-H3: the data-layer vocabulary moved to the library so tests/data_access_vocabulary.rs can
+// hold it against the TypeScript fallback it is supposed to improve on.
+use drift_engine::{
+    ConventionKind, GraphEdgeKind, GraphNodeKind, ScanCapability, contains_data_layer_token,
+    is_data_access_source,
+};
 
 use crate::protocol::{
     CandidateRequest, CandidateResult, CheckFact, ENGINE_CANDIDATES_RESULT_SCHEMA_VERSION,
@@ -132,8 +138,19 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             .collect::<BTreeSet<_>>();
         let direction =
             baseline_coverage_direction(&violating_files, &scope_files, &diff_changed_files);
+        // D-H1: the count is the DEDUPED evidence, not the two source lists summed.
+        //
+        // `combined_evidence_refs` dedupes by (file_path, start_line, end_line, symbol,
+        // import_source), because a fact and a graph import routinely describe the same import
+        // statement. Summing the inputs counts that statement twice. On a fixture with one import
+        // in one file it reported `supporting_examples_count: 2` beside an `evidence_refs` of
+        // length 1 - and `commands/start.ts:368` renders the score directly, so a human accepting
+        // the convention read "Evidence: 2 matching import(s)" for one import.
+        //
+        // `build_candidate` at the bottom of this file already passes `evidence_refs.len()`;
+        // this makes the two agree.
         let mut data_access_scoring = scoring(
-            data_imports.len() + graph_data_imports.len(),
+            evidence_refs.len(),
             0,
             scope_file_count,
             unique_evidence_file_count(&data_imports, &graph_data_imports),
@@ -147,7 +164,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
                 &matcher,
             ),
             candidate_version: 1,
-            kind: "api_route_no_direct_data_access".to_string(),
+            kind: ConventionKind::ApiRouteNoDirectDataAccess,
             rule_id: "api_route_no_direct_data_access".to_string(),
             rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             matcher_schema_version: "convention.matcher.v1".to_string(),
@@ -218,7 +235,7 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
         candidates.push(EngineCandidate {
             candidate_id: candidate_id(&request.repo.repo_id, "api_route_requires_service_delegation", &matcher),
             candidate_version: 1,
-            kind: "api_route_requires_service_delegation".to_string(),
+            kind: ConventionKind::ApiRouteRequiresServiceDelegation,
             rule_id: "api_route_requires_service_delegation".to_string(),
             rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
             matcher_schema_version: "convention.matcher.v1".to_string(),
@@ -238,9 +255,14 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             suggested_enforcement_mode: "warn".to_string(),
             enforcement_capability: "heuristic_check".to_string(),
             confidence_label: if service_imports.is_empty() { "low" } else { "medium" }.to_string(),
+            // D-H1, second instance and not in the audit: same undeduped sum, one field over.
+            // `counterexample_refs` here is `combined_evidence_refs(data_imports,
+            // graph_data_imports)` - deduped - while `counterexamples_count` summed the same two
+            // inputs raw. `supporting` is `service_imports.len()` and stays: plain `evidence_refs`
+            // maps one ref per fact with no dedup, so that count already equals its list.
             scoring: scoring(
                 service_imports.len(),
-                data_imports.len() + graph_data_imports.len(),
+                counterexample_refs.len(),
                 scope_file_count,
                 unique_fact_file_count(&service_imports),
                 "engine-service-delegation-v1",
@@ -278,14 +300,14 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
     stats.graph_edges = request.graph.graph_edges.len();
     let data_access_candidate_found = candidates
         .iter()
-        .any(|candidate| candidate.kind == "api_route_no_direct_data_access");
+        .any(|candidate| candidate.kind == ConventionKind::ApiRouteNoDirectDataAccess);
     let inference_complete = data_access_candidate_found || scope_file_count == 0;
     stats.capabilities = capability_stats(
-        &["candidate_inference"],
+        &[ScanCapability::CandidateInference],
         if inference_complete {
             &[]
         } else {
-            &["data_access_inference"]
+            &[ScanCapability::DataAccessInference]
         },
     );
 
@@ -311,111 +333,6 @@ pub fn infer_candidates(request: CandidateRequest) -> CandidateResult {
             reasons: Vec::new(),
         }],
     }
-}
-
-/// Surfaces of a data package that are types, enums or schemas rather than a client.
-///
-/// Importing `@calcom/prisma/enums` gives you generated enum values; importing
-/// `@calcom/prisma/zod-utils` gives you validation schemas. Neither is a database client, and
-/// treating them as one put four wrong entries in cal.com's learned contract out of six.
-///
-/// `/schema` is deliberately absent. In a Drizzle repo the schema module *is* part of the data
-/// layer - `@openstatus/db/src/schema` is imported at runtime and passed to queries - so
-/// excluding it would trade these false positives for a false negative on a real data layer.
-const DATA_LAYER_TYPE_SURFACES: [&str; 4] = ["/enums", "/zod-utils", "/types", "/constants"];
-
-/// True when a data-layer name occurs at a path or word boundary rather than mid-identifier.
-///
-/// `is_data_access_source` matched raw substrings, so `@calcom/lib/isPrismaObj` - a type-guard
-/// utility - matched "prisma" inside a camelCase identifier and was recorded as a database
-/// client. This is the same boundary principle applied to forbidden-import matching in B3.
-fn contains_data_layer_token(lower: &str, token: &str) -> bool {
-    let mut from = 0;
-    while let Some(offset) = lower[from..].find(token) {
-        let start = from + offset;
-        let end = start + token.len();
-        let before_ok = start == 0
-            || !lower[..start]
-                .chars()
-                .next_back()
-                .is_some_and(|c| c.is_ascii_alphanumeric());
-        let after_ok = end == lower.len()
-            || !lower[end..]
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_ascii_alphanumeric());
-        if before_ok && after_ok {
-            return true;
-        }
-        from = end;
-    }
-    false
-}
-
-fn is_data_access_source(source: &str) -> bool {
-    let lower = source.to_ascii_lowercase();
-    if lower.contains("@prisma/client/runtime") {
-        return false;
-    }
-    // Compare with any file extension removed, so this catches both the import specifier
-    // form (`@calcom/prisma/zod-utils`) and the resolved file form
-    // (`packages/prisma/zod-utils.ts`).
-    let without_extension = lower
-        .rsplit_once('.')
-        .map(|(stem, ext)| {
-            if matches!(ext, "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs") {
-                stem
-            } else {
-                lower.as_str()
-            }
-        })
-        .unwrap_or(lower.as_str());
-    if DATA_LAYER_TYPE_SURFACES
-        .iter()
-        .any(|surface| without_extension.ends_with(surface))
-    {
-        return false;
-    }
-    // D4. `db` and `data-access` were bare substring tests while `prisma` and `database` were
-    // already boundary-aware — which is exactly why `lib/prismatic` behaved and `lib/dbg`,
-    // `lib/imdb` and `lib/no-data-access-here` did not. All four now test the extension-stripped
-    // string, so `db.ts` matches because the module is *named* `db`, not because the path happens
-    // to contain `/db`.
-    contains_data_layer_token(without_extension, "prisma")
-        || contains_data_layer_token(without_extension, "database")
-        || data_layer_token_names_segment(without_extension, "db")
-        || data_layer_token_names_segment(without_extension, "data-access")
-}
-
-/// True when a data-layer token *names* a path segment rather than appearing inside one.
-///
-/// Stricter than `contains_data_layer_token`, and it has to be, because `data-access` contains a
-/// hyphen: `-` is not alphanumeric, so `no-data-access-here` clears the plain boundary test on
-/// both sides while plainly not being a data-access module. `legacy-data-access-notes.ts` is the
-/// same shape. Requiring the token to sit at the start or the end of its segment separates the
-/// modules a name heuristic should claim — `lib/data-access/orders`, `my-db`, `db-client`, where
-/// the token is the segment or its head or tail — from the ones where it is an interior fragment
-/// of a longer phrase.
-///
-/// Kept to `db` and `data-access` deliberately. `prisma` and `database` are not reported as
-/// producing false positives and stay on the looser matcher; widening this rule to them would
-/// narrow matching on inputs no defect asks about, and any recall change there belongs to a
-/// measurement, not to this fix.
-fn data_layer_token_names_segment(haystack: &str, token: &str) -> bool {
-    haystack.split('/').any(|segment| {
-        if segment == token {
-            return true;
-        }
-        let starts_segment = segment
-            .strip_prefix(token)
-            .and_then(|rest| rest.chars().next())
-            .is_some_and(|character| !character.is_ascii_alphanumeric());
-        let ends_segment = segment
-            .strip_suffix(token)
-            .and_then(|rest| rest.chars().next_back())
-            .is_some_and(|character| !character.is_ascii_alphanumeric());
-        starts_segment || ends_segment
-    })
 }
 
 fn is_next_app_tree_path(file_path: &str) -> bool {
@@ -475,7 +392,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_requires_auth_helper",
+            kind: ConventionKind::ApiRouteRequiresAuthHelper,
             statement: format!("API routes appear to use `{symbol}` as an auth helper."),
             rationale: "Detected repeated auth-like helper calls in API routes.",
             scope: route_scope.clone(),
@@ -516,7 +433,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "middleware_must_cover_routes",
+            kind: ConventionKind::MiddlewareMustCoverRoutes,
             statement: "API routes appear to rely on middleware protection.".to_string(),
             rationale: "Detected static middleware-to-route protection facts.",
             scope: route_scope.clone(),
@@ -559,7 +476,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_requires_request_validation",
+            kind: ConventionKind::ApiRouteRequiresRequestValidation,
             statement: format!(
                 "Mutation API routes appear to validate request input with `{symbol}`."
             ),
@@ -588,7 +505,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "authorization_guard_called",
-        candidate_kind: "api_route_requires_authorization",
+        candidate_kind: ConventionKind::ApiRouteRequiresAuthorization,
         requires_key: "authorization_helpers",
         capability: "authorization",
         heuristic_id: "security-authorization-helper-v1",
@@ -604,7 +521,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_authorization",
+        candidate_kind: ConventionKind::ApiRouteRequiresAuthorization,
         requires_key: "authorization_helpers",
         capability: "authorization",
         heuristic_id: "security-authorization-helper-v1",
@@ -620,7 +537,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "tenant_guard_called",
-        candidate_kind: "api_route_requires_tenant_scope",
+        candidate_kind: ConventionKind::ApiRouteRequiresTenantScope,
         requires_key: "tenant_helpers",
         capability: "tenant_scope",
         heuristic_id: "security-tenant-helper-v1",
@@ -636,7 +553,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_tenant_scope",
+        candidate_kind: ConventionKind::ApiRouteRequiresTenantScope,
         requires_key: "tenant_helpers",
         capability: "tenant_scope",
         heuristic_id: "security-tenant-helper-v1",
@@ -692,7 +609,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_forbids_sensitive_response_fields",
+            kind: ConventionKind::ApiRouteForbidsSensitiveResponseFields,
             statement:
                 "API responses appear to include sensitive fields that need an accepted policy."
                     .to_string(),
@@ -721,7 +638,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "parameterized_sql_used",
-        candidate_kind: "api_route_forbids_raw_sql_without_params",
+        candidate_kind: ConventionKind::ApiRouteForbidsRawSqlWithoutParams,
         requires_key: "raw_sql_safe_wrappers",
         capability: "raw_sql",
         heuristic_id: "security-raw-sql-safe-wrapper-v1",
@@ -746,7 +663,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_forbids_untrusted_ssrf",
+            kind: ConventionKind::ApiRouteForbidsUntrustedSsrf,
             statement: format!(
                 "API routes appear to use `{symbol}` as an outbound URL allowlist helper."
             ),
@@ -774,7 +691,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "csrf_guard_called",
-        candidate_kind: "api_route_requires_csrf_for_mutation",
+        candidate_kind: ConventionKind::ApiRouteRequiresCsrfForMutation,
         requires_key: "csrf_helpers",
         capability: "csrf",
         heuristic_id: "security-csrf-helper-v1",
@@ -790,7 +707,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_csrf_for_mutation",
+        candidate_kind: ConventionKind::ApiRouteRequiresCsrfForMutation,
         requires_key: "csrf_helpers",
         capability: "csrf",
         heuristic_id: "security-csrf-helper-v1",
@@ -806,7 +723,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "rate_limit_guard_called",
-        candidate_kind: "api_route_requires_rate_limit",
+        candidate_kind: ConventionKind::ApiRouteRequiresRateLimit,
         requires_key: "rate_limit_helpers",
         capability: "rate_limit",
         heuristic_id: "security-rate-limit-helper-v1",
@@ -822,7 +739,7 @@ fn security_candidates(
         graph_fingerprint,
         route_scope: &route_scope,
         fact_kind: "symbol_called",
-        candidate_kind: "api_route_requires_rate_limit",
+        candidate_kind: ConventionKind::ApiRouteRequiresRateLimit,
         requires_key: "rate_limit_helpers",
         capability: "rate_limit",
         heuristic_id: "security-rate-limit-helper-v1",
@@ -848,7 +765,7 @@ fn security_candidates(
         });
         candidates.push(security_candidate_from_facts(SecurityCandidateInput {
             request,
-            kind: "api_route_cors_must_match_policy",
+            kind: ConventionKind::ApiRouteCorsMustMatchPolicy,
             statement: "API routes appear to declare a static CORS policy.".to_string(),
             rationale: "Detected static CORS policy facts.",
             scope: route_scope,
@@ -886,7 +803,7 @@ fn security_candidates(
 
 /// One convention family: a kind whose members are interchangeable helpers drawn from one module.
 struct FamilySpec {
-    kind: &'static str,
+    kind: ConventionKind,
     /// Every fact kind that already produces a per-symbol candidate of this kind, each with the
     /// nominator that site filters by. Both the dedicated fact kind (`rate_limit_guard_called`)
     /// and the generic `symbol_called` path emit candidates today, so a family that read only one
@@ -956,7 +873,7 @@ struct FamilySource {
 /// reachable; what never arrived was a candidate whose coverage cleared the noise floor.
 const FAMILY_SPECS: &[FamilySpec] = &[
     FamilySpec {
-        kind: "api_route_requires_auth_helper",
+        kind: ConventionKind::ApiRouteRequiresAuthHelper,
         sources: &[FamilySource {
             fact_kind: "symbol_called",
             nominator: is_auth_candidate_symbol,
@@ -972,7 +889,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         confirmation: FamilyConfirmation::WrapsHandler,
     },
     FamilySpec {
-        kind: "api_route_requires_request_validation",
+        kind: ConventionKind::ApiRouteRequiresRequestValidation,
         // Only the dedicated fact kind. Adding `symbol_called` here is what produced an 89-member
         // family on dub: every symbol the dominant module exported joined, validators and bulk
         // delete operations alike.
@@ -990,7 +907,7 @@ const FAMILY_SPECS: &[FamilySpec] = &[
         confirmation: FamilyConfirmation::AlreadyDetected,
     },
     FamilySpec {
-        kind: "api_route_requires_rate_limit",
+        kind: ConventionKind::ApiRouteRequiresRateLimit,
         sources: &[
             FamilySource {
                 fact_kind: "rate_limit_guard_called",
@@ -1265,11 +1182,11 @@ fn emit_family_candidate(input: FamilyEmitInput<'_>) {
     sorted_symbols.sort();
 
     let mut matcher = json!({
-        "kind": spec.kind,
+        "kind": spec.kind.as_wire(),
         "required_calls": sorted_symbols.clone(),
         "applies_to_file_roles": ["api_route"]
     });
-    if spec.kind == "api_route_requires_request_validation" {
+    if spec.kind == ConventionKind::ApiRouteRequiresRequestValidation {
         // Mirrors the per-symbol validation candidate: only mutations are in scope.
         matcher["methods"] = json!(["POST", "PUT", "PATCH", "DELETE"]);
     }
@@ -1303,10 +1220,10 @@ fn emit_family_candidate(input: FamilyEmitInput<'_>) {
         })
         .collect::<Vec<_>>();
     let mut requires = json!({ spec.requires_key: helpers });
-    if spec.kind == "api_route_requires_auth_helper" {
+    if spec.kind == ConventionKind::ApiRouteRequiresAuthHelper {
         requires["dominates"] = json!(["data_operation", "response"]);
     }
-    if spec.kind == "api_route_requires_request_validation" {
+    if spec.kind == ConventionKind::ApiRouteRequiresRequestValidation {
         requires["input_sources"] = json!(["body", "query", "params"]);
         requires["sinks"] = json!(["data_operation", "response"]);
         requires["schemas"] = json!([]);
@@ -1631,7 +1548,7 @@ fn family_keys_match(left: &str, right: &str) -> bool {
 
 struct SecurityCandidateInput<'a> {
     request: &'a CandidateRequest,
-    kind: &'a str,
+    kind: ConventionKind,
     statement: String,
     rationale: &'a str,
     scope: Value,
@@ -1657,7 +1574,7 @@ struct GuardCandidateInput<'a> {
     graph_fingerprint: &'a str,
     route_scope: &'a Value,
     fact_kind: &'a str,
-    candidate_kind: &'a str,
+    candidate_kind: ConventionKind,
     requires_key: &'a str,
     capability: &'a str,
     heuristic_id: &'a str,
@@ -1699,10 +1616,14 @@ fn security_candidate_from_facts(input: SecurityCandidateInput<'_>) -> EngineCan
     let evidence_fingerprint = evidence_fingerprint(&evidence_refs);
     let covered_files = unique_fact_file_count(&input.facts);
     EngineCandidate {
-        candidate_id: candidate_id(&input.request.repo.repo_id, input.kind, &input.matcher),
+        candidate_id: candidate_id(
+            &input.request.repo.repo_id,
+            input.kind.as_wire(),
+            &input.matcher,
+        ),
         candidate_version: 1,
-        kind: input.kind.to_string(),
-        rule_id: input.kind.to_string(),
+        kind: input.kind,
+        rule_id: input.kind.as_wire().to_string(),
         rule_version: drift_engine::DRIFT_ENGINE_VERSION.to_string(),
         matcher_schema_version: "convention.matcher.v1".to_string(),
         matcher_fingerprint: stable_hash_json(&input.matcher),
@@ -1744,7 +1665,7 @@ fn push_guard_candidate(input: GuardCandidateInput<'_>) {
             .filter(|(symbol, facts)| facts.len() >= 2 && (input.symbol_filter)(symbol))
     {
         let matcher = json!({
-            "kind": input.candidate_kind,
+            "kind": input.candidate_kind.as_wire(),
             "required_calls": [symbol],
             "applies_to_file_roles": ["api_route"]
         });
@@ -1819,7 +1740,7 @@ fn push_request_validation_candidates(input: RequestValidationCandidateInput<'_>
             .candidates
             .push(security_candidate_from_facts(SecurityCandidateInput {
                 request: input.request,
-                kind: "api_route_requires_request_validation",
+                kind: ConventionKind::ApiRouteRequiresRequestValidation,
                 statement: format!(
                     "Mutation API routes appear to validate request input with `{symbol}`."
                 ),
@@ -1867,7 +1788,7 @@ fn push_serializer_candidate(input: SerializerCandidateInput<'_>) {
             .candidates
             .push(security_candidate_from_facts(SecurityCandidateInput {
                 request: input.request,
-                kind: "api_route_forbids_sensitive_response_fields",
+                kind: ConventionKind::ApiRouteForbidsSensitiveResponseFields,
                 statement: format!("API routes appear to serialize responses with `{symbol}`."),
                 rationale: "Detected repeated response serializer-like helper calls.",
                 scope: input.route_scope.clone(),
@@ -2145,7 +2066,7 @@ fn graph_role_files(request: &CandidateRequest, role_name: &str) -> BTreeSet<Str
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "FILE_HAS_ROLE")
+        .filter(|edge| edge.kind == GraphEdgeKind::FileHasRole)
         .filter_map(|edge| {
             let role = nodes_by_id.get(edge.to.as_str())?;
             if metadata_string(&role.metadata, "role")? != role_name {
@@ -2169,7 +2090,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "module")
+        .filter(|node| node.kind == GraphNodeKind::Module)
         .filter_map(|node| {
             metadata_string(&node.metadata, "file_path").map(|path| (node.id.as_str(), path))
         })
@@ -2194,7 +2115,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_DECL_REFERENCES_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportDeclReferencesModule)
         .map(|edge| (edge.from.as_str(), edge.to.as_str()))
         .collect::<BTreeMap<_, _>>();
     let evidence_by_id = request
@@ -2208,7 +2129,7 @@ fn graph_data_access_imports(request: &CandidateRequest) -> Vec<GraphImportEvide
         .graph
         .graph_edges
         .iter()
-        .filter(|edge| edge.kind == "IMPORT_RESOLVES_TO_MODULE")
+        .filter(|edge| edge.kind == GraphEdgeKind::ImportResolvesToModule)
         .filter_map(|edge| {
             let owner_module = import_owner_module.get(edge.from.as_str())?;
             if !route_modules.contains(owner_module) || !data_modules.contains(edge.to.as_str()) {
@@ -2268,7 +2189,7 @@ fn resolved_imports_by_fact(request: &CandidateRequest) -> BTreeMap<String, Stri
         .graph
         .graph_nodes
         .iter()
-        .filter(|node| node.kind == "import_decl")
+        .filter(|node| node.kind == GraphNodeKind::ImportDecl)
         .filter_map(|node| {
             let file_path = metadata_string(&node.metadata, "file_path")?;
             let local_name = metadata_string(&node.metadata, "local_name")?;
@@ -2602,32 +2523,25 @@ mod coverage_direction_tests {
 mod data_layer_token_boundary_tests {
     use super::is_data_access_source;
 
-    /// D4 (TDD §5.4). The full boundary matrix, both extension forms.
+    /// D4 (TDD §5.4), reduced at the W7 merge to its `data-access` half.
     ///
-    /// `is_data_access_source` matched `db` and `data-access` as bare substrings, so `lib/dbg` (a
-    /// console logger) matched via `contains("/db")` and `lib/imdb` (a movie-API client) via
-    /// `ends_with("db")`. `data-access` had the identical bug and the audit did not report it:
-    /// `lib/no-data-access-here` matched a module whose name says it does no data access.
+    /// `is_data_access_source` matched `data-access` as a bare substring, so
+    /// `lib/no-data-access-here` and `legacy-data-access-notes.ts` matched modules whose own names
+    /// say they do no data access. The audit did not report this one; §5.4 found it.
     ///
-    /// The extension column is the part an earlier draft left unsettled. The token tests used to
-    /// run on the string *with* the extension, so `lib/db.ts` matched via the `/db` path-separator
-    /// branch and never via the name — right answer, wrong reason, and it meant `lib/my-db.ts`
-    /// depended on which branch happened to fire. They now run on the extension-stripped string.
+    /// **The `db` half of D4 was dropped**, in deference to upstream's documented decision at
+    /// `data_access.rs`: `db` is matched loosely on purpose, because `@acme/dbutils` and
+    /// `lib/appdb` are real data layers in the repos that write them. That trade-off is upstream's
+    /// to make, so `lib/dbg` and `lib/imdb` are no longer asserted silent here and this matrix
+    /// covers only the token this change actually touches.
     #[test]
-    fn data_layer_tokens_match_at_segment_boundaries_only() {
+    fn the_data_access_token_matches_at_segment_boundaries_only() {
         let matches = [
-            // Genuine data layers.
-            "lib/db",
-            "lib/db.ts",
-            "db/client",
-            "db/client.ts",
-            "my-db",
-            "my-db.ts",
-            "db.ts",
+            // Genuine data layers: the token is the segment, or its head, or its tail.
             "lib/data-access/orders",
             "lib/data-access/orders.ts",
-            // A hyphenated compound whose head is the token still names the module.
-            "lib/db-client.ts",
+            "lib/data-access.ts",
+            "orders-data-access.ts",
             // Untouched by D4, asserted so the change is visibly scoped.
             "lib/prisma.ts",
             "@calcom/prisma",
@@ -2641,22 +2555,14 @@ mod data_layer_token_boundary_tests {
         }
 
         let non_matches = [
-            // `db` inside a longer identifier, on each side and both.
-            "lib/dbg",
-            "lib/dbg.ts",
-            "lib/imdb",
-            "lib/imdb.ts",
-            "lib/appdb",
-            "lib/appdb.ts",
-            "lib/dbx",
-            "lib/dbx.ts",
-            // `data-access` as an interior fragment of a hyphenated phrase. The audit missed
-            // this one entirely; a `db`-only fix leaves both of these matching.
+            // `data-access` as an interior fragment of a hyphenated phrase. Routing it through
+            // `contains_data_layer_token` does NOT catch these — `-` is not alphanumeric, so the
+            // token clears that helper's boundary test on both sides.
             "lib/no-data-access-here",
             "lib/no-data-access-here.ts",
             "legacy-data-access-notes.ts",
-            // Already correct at baseline — `prisma` was the one token routed through the
-            // boundary matcher, which is why only it behaved.
+            // Already correct at baseline — `prisma` was routed through the boundary matcher,
+            // which is why only it behaved.
             "lib/prismatic.ts",
             "@calcom/lib/isPrismaObj",
             "lib/utils.ts",
@@ -2669,13 +2575,12 @@ mod data_layer_token_boundary_tests {
         }
     }
 
-    /// Accepted trade-off, asserted rather than left to a comment: a module genuinely named
-    /// `appdb` stops matching the *name* heuristic. Such modules typically also match via content
-    /// or the `database` token, and a miss surfaces as a candidate gap — visible — rather than a
-    /// false block, which is harmful.
+    /// Upstream's `db` decision, pinned so a later pass does not re-apply D4's dropped half by
+    /// reflex. `lib/appdb` and `@acme/dbutils` match, and that is deliberate: the type-surface
+    /// exclusions above `is_data_access_source`'s token tests are what keeps the loose rule honest.
     #[test]
-    fn a_module_genuinely_named_appdb_is_an_accepted_miss() {
-        assert!(!is_data_access_source("lib/appdb.ts"));
-        assert!(is_data_access_source("lib/appdb/database.ts"));
+    fn the_db_token_stays_loose_by_upstreams_documented_decision() {
+        assert!(is_data_access_source("lib/appdb"));
+        assert!(is_data_access_source("@acme/dbutils"));
     }
 }

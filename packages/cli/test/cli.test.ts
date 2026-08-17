@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { API_ROUTE_SCOPE_GLOBS } from "@drift/core";
+import { API_ROUTE_SCOPE_GLOBS, ENGINE_CERTIFIED_SCAN_CAPABILITIES } from "@drift/core";
 import { buildFactGraphArtifactFromParts } from "@drift/factgraph";
 import { MIGRATIONS, openDriftStorage } from "@drift/storage";
 import { runCli } from "../src/index.js";
@@ -2587,6 +2587,75 @@ supported_sqlite_schema_version: MIGRATIONS.length,
         command: `drift check --diff main...HEAD --repo ${startedPayload.repo.id} --scope changed-hunks --json`
       }
     ]);
+  });
+
+  it("sends the parser gap summary in prepare and a pointer that actually serves the records", async () => {
+    // W7. BB-6 removed the itemized parser-gap records from `task_preflight_packet` after measuring
+    // them at 358,538 bytes / 639 records on dub - the single largest section of the packet. D-A5
+    // then added the same records to `scan status`, correctly, so that
+    // `guidance.parser_gaps.full_list_command` pointed at data that exists. But `prepare` embeds
+    // the whole scan-status payload, so the list came straight back at the top level of the same
+    // envelope.
+    //
+    // Measured on dub after D-A5: 637 records, 342,701 of the packet's 715,023 bytes, against a
+    // 500 KB budget. dub, cal.com and openstatus were all over it, and scripts/external-eval.mjs
+    // reported `packet_within_envelope_budget: true` throughout - its baseline was last written
+    // before D-A5 landed, so nothing had measured it since.
+    //
+    // The count and the command are asserted beside the emptiness on purpose: an empty list with
+    // nothing next to it reads as "this repo has no parser gaps", which is a worse falsehood than
+    // an oversized packet.
+    const dir = await mkdtemp(join(tmpdir(), "drift-prepare-envelope-"));
+    tempDirs.push(dir);
+    const repoRoot = join(dir, "repo");
+    const stateRoot = join(dir, "state");
+    await mkdir(join(repoRoot, "apps/web/app/api/users"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "apps/web/app/api/users/route.ts"),
+      [
+        "import { prisma } from \"@/lib/prisma\";",
+        // A relative import of a module the repo does not contain, which is what produces a gap.
+        "import { missing } from \"./nowhere\";",
+        "export async function POST() {",
+        "  return Response.json(await prisma.user.findMany(missing));",
+        "}",
+        ""
+      ].join("\n")
+    );
+
+    const started = await runCli([
+      "start",
+      "--repo-root", repoRoot,
+      "--state-root", stateRoot,
+      "--accept-defaults",
+      "--now", "2026-05-10T00:00:30.000Z",
+      "--json"
+    ]);
+    const startedPayload = JSON.parse(started.stdout);
+    const prepared = await runCli([
+      "--db", startedPayload.state.database_path,
+      "prepare", "change the users API route",
+      "--repo", startedPayload.repo.id,
+      "--json"
+    ]);
+    expect(prepared.exitCode).toBe(0);
+    const gaps = JSON.parse(prepared.stdout).scan_status.parser_gaps;
+
+    expect(gaps.total_count).toBeGreaterThan(0);
+    expect(gaps.records).toEqual([]);
+    expect(gaps.records_omitted).toBe(gaps.total_count);
+    expect(gaps.records_command).toBe(`drift scan status --repo ${startedPayload.repo.id} --json`);
+
+    // D-A5's lesson applied to the pointer this packet now leans on: the command has to return the
+    // records, not merely look as though it would.
+    const status = await runCli([
+      "--db", startedPayload.state.database_path,
+      "scan", "status",
+      "--repo", startedPayload.repo.id,
+      "--json"
+    ]);
+    expect(status.exitCode).toBe(0);
+    expect(JSON.parse(status.stdout).parser_gaps.records).toHaveLength(gaps.total_count);
   });
 
   it("materializes a pnpm test safe command during onboarding when a test script exists", async () => {
@@ -10163,6 +10232,61 @@ schema_version: MIGRATIONS.length,
     ]);
   });
 
+  /**
+   * D-S1, end to end. `prepare --json` never once returned anything but `"refuse"` here.
+   *
+   * The capability report is what a real scan stores: `certified` is the engine's
+   * `certified_capabilities()` and `required` is what `capability_stats` reports on the scan path.
+   * Against the unfixed code this run produced `decision: "refuse"` with
+   * `missing_capabilities: ["graph_stream", "ts.route_flow.v1"]` - `graph_stream` because the
+   * translation table had no entry for it, `ts.route_flow.v1` because `DEFAULT_PREFLIGHT_CAPABILITIES`
+   * required a namespace the engine emits nothing from.
+   */
+  it("prepare allows blocking semantic coverage on a real engine capability report", async () => {
+    const { databasePath, repoId } = await seedScannedNoContractState("drift-prepare-coverage-ok-");
+    const storage = openDriftStorage({ databasePath });
+    storage.migrate();
+    const scan = storage.listScanManifests(repoId)
+      .find((entry) => entry.status === "completed")!;
+    storage.upsertScanCapabilityReport({
+      schema_version: "drift.scan_capability_report.v1",
+      repo_id: repoId,
+      scan_id: scan.id,
+      engine_source: "rust",
+      engine_version: null,
+      scanner_version: "0.1.0",
+      adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
+      certified_capabilities: [...ENGINE_CERTIFIED_SCAN_CAPABILITIES],
+      required_capabilities: ["file_discovery", "syntax_facts", "graph_stream"],
+      missing_capabilities: [],
+      completeness: [],
+      parser_gap_count: 0,
+      parser_gap_kinds: {},
+      fallback_used: false,
+      enforcement_degraded: false,
+      created_at: "2026-05-10T00:00:45.000Z"
+    });
+    storage.close();
+
+    const prepared = await runCli([
+      "--db", databasePath,
+      "prepare",
+      "change users api route",
+      "--repo", repoId,
+      "--now", "2026-05-10T00:01:00.000Z",
+      "--json"
+    ]);
+
+    expect(prepared.exitCode).toBe(0);
+    expect(JSON.parse(prepared.stdout).semantic_coverage).toMatchObject({
+      required_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      complete_capabilities: ["file_discovery", "graph_stream", "route_flow", "syntax_facts"],
+      missing_capabilities: [],
+      unsupported_capabilities: [],
+      decision: "blocking_allowed"
+    });
+  });
+
   it("prepare derives semantic coverage from scan capability vocabulary", async () => {
     const { databasePath, repoId } = await seedScannedNoContractState("drift-prepare-semantic-coverage-");
     const storage = openDriftStorage({ databasePath });
@@ -10177,8 +10301,8 @@ schema_version: MIGRATIONS.length,
       engine_version: null,
       scanner_version: "0.1.0",
       adapter_versions: { typescript: "0.1.0", resolver: "0.1.0" },
-      certified_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "ts.route_flow.v1"],
-      required_capabilities: ["fact_graph", "syntax_facts", "file_discovery", "unknown_capability"],
+      certified_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "route_flow"],
+      required_capabilities: ["graph_stream", "syntax_facts", "file_discovery", "unknown_capability"],
       missing_capabilities: [],
       completeness: [],
       parser_gap_count: 0,
@@ -10201,15 +10325,17 @@ schema_version: MIGRATIONS.length,
     expect(prepared.exitCode).toBe(0);
     expect(JSON.parse(prepared.stdout).semantic_coverage).toMatchObject({
       required_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1",
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts",
         "unknown_capability"
       ],
       complete_capabilities: [
-        "ts.file_discovery.v1",
-        "ts.route_flow.v1",
-        "ts.syntax_facts.v1"
+        "file_discovery",
+        "graph_stream",
+        "route_flow",
+        "syntax_facts"
       ],
       missing_capabilities: ["unknown_capability"],
       unsupported_capabilities: ["unknown_capability"],
@@ -10795,6 +10921,31 @@ schema_version: MIGRATIONS.length,
     });
     expect(unsafe.exitCode).toBe(1);
     expect(unsafe.stderr).toContain("--path must be repo-relative.");
+  });
+
+  it("repo map carries the route-trust fields alongside the routes", async () => {
+    // W6/D-A2. `routes` says what the routes are; these three say how much to trust that list -
+    // where each route came from, whether the canonical list fell back, and whether the proofs
+    // behind it are from this scan. All three were computed inside the CLI's copy of this
+    // payload, off the same phase-8 read model it takes `routes` from, and then dropped, while
+    // MCP emitted them under the same `response_schema`. So two documents both claiming
+    // drift.repo.map.v1 disagreed about which keys that schema has.
+    const { databasePath, repoId } = await seedStartedDoctorState("drift-repo-map-trust-fields-");
+
+    const mapped = await runCli(["--db", databasePath, "repo", "map", "--repo", repoId, "--json"]);
+    const payload = JSON.parse(mapped.stdout);
+
+    expect(mapped.exitCode).toBe(0);
+    // Presence, not value: absence is the defect, and a null here would still be an answer.
+    expect(Object.keys(payload)).toEqual(
+      expect.arrayContaining(["route_source_summary", "canonical_route_fallback", "proof_freshness"])
+    );
+    expect(payload.route_source_summary).toMatchObject({
+      normalized_entrypoint: expect.any(Number),
+      security_proof: expect.any(Number),
+      legacy_fact_fallback: expect.any(Number)
+    });
+    expect(payload.canonical_route_fallback).toMatchObject({ used: expect.any(Boolean) });
   });
 
   it("fails repo map when fresh scan context is required but the graph is stale", async () => {
@@ -13280,6 +13431,59 @@ schema_version: MIGRATIONS.length,
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Unknown repo repo_missing");
+  });
+
+  it("renders every mutating command for a human without --json", async () => {
+    // W4/D-CL2. `formatOutput` prints a string as-is, pretty JSON under `--json`, and otherwise
+    // COMPACT SINGLE-LINE JSON - so a command with no text branch emitted a one-line blob to a
+    // terminal. Six commands had no branch: scan, checks run, and the four convention mutations.
+    //
+    // No existing test caught it because every existing test for these six passes `--json`. The
+    // human path was untested precisely because it did not exist.
+    const databasePath = await seedDatabase();
+
+    const accepted = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--confirm",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--actor", "geoff",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(accepted.exitCode).toBe(0);
+    // The load-bearing assertion is the negative one: not JSON. A human-readable rendering is
+    // allowed to change wording, but it may never go back to being a serialized object.
+    expect(accepted.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(accepted.stdout).toContain("Convention accepted");
+    expect(accepted.stdout).toContain("convention_no_direct_db");
+    // The mode a human just chose has to be visible in what they are shown.
+    expect(accepted.stdout).toContain("warn");
+  });
+
+  it("says nothing was written when a mutation is a dry run", async () => {
+    // D-CL2's sharpest case: without --confirm these commands write nothing, and a headline
+    // reading "Convention accepted" over an unwritten change is worse than the JSON blob was.
+    const databasePath = await seedDatabase();
+
+    const dryRun = await runCli([
+      "--db", databasePath,
+      "conventions", "accept",
+      "candidate_no_direct_db",
+      "--dry-run",
+      "--severity", "warning",
+      "--mode", "warn",
+      "--now", "2026-05-10T00:00:10.000Z"
+    ]);
+
+    expect(dryRun.exitCode).toBe(0);
+    expect(dryRun.stdout.trimStart().startsWith("{")).toBe(false);
+    expect(dryRun.stdout).toContain("dry run");
+    expect(dryRun.stdout).toContain("nothing written");
+    // And it must NOT read as though the write happened.
+    expect(dryRun.stdout).not.toContain("Convention accepted\n");
   });
 
   it("accepts a candidate, materializes a repo contract, and audits the action", async () => {

@@ -6,7 +6,7 @@ import {
   createContextPolicyMatrix,
   type FileRole
 } from "@drift/core";
-import { buildChangeImpact,buildParserGapQuality,buildReadiness,buildSemanticCoverageFromCapabilityReport,classifyAgentTask,selectRelevantTests,type ChangeImpactRouteFlow } from "@drift/query";
+import { buildChangeImpact,buildParserGapQuality,buildReadiness,buildSemanticCoverageFromCapabilityReport,classifyAgentTask,selectRelevantTests,type ChangeImpactRouteFlow,withParserGapRecordsOmitted} from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { optionalRepoRelativeFlag,requiredValue,stringFlag } from "../args/flag-readers.js";
@@ -53,15 +53,8 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
   // about - an exemplar it cannot vouch for is the thing this item exists to stop.
   const exemplarContext = conformingExemplarContext(storage, repoId);
   const conventions = activeConventions.map((convention) =>
-    preparedConvention(convention, {
-      scopeFiles: exemplarContext.scopeFilesFor(convention),
-      // CV-5: any accepted convention, not just this one - see violatingFilesAnyConvention.
-      violatingFiles: exemplarContext.violatingFilesAnyConvention(),
-      roleByFile: exemplarContext.roleByFile,
-      baselineActiveCount: exemplarContext.baselineActiveCountFor(convention.id),
-      targetPath: targetPath ?? undefined,
-      importsByFile: exemplarContext.importsByFile
-    })
+    // Explicit lambda: a bare reference passes Array#map's index as the second argument.
+    preparedConvention(convention, exemplarContext, { targetPath: targetPath ?? undefined })
   );
   const findings = storage
     .listFindings(repoId)
@@ -122,9 +115,13 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     test_files: testFiles
   });
   const testSelection = selectRelevantTests({
-    changed_file: relevantFiles[0]?.path ?? targetPath ?? "",
+    // D-A3(a): every relevant file, not just the head of the ranked list.
+    changed_files: relevantFiles.map((file) => file.path),
     route_flow: changeImpactRouteFlows[0],
-    test_files: testFiles
+    test_files: testFiles,
+    // Lets the matched tests be read for snapshot/mock/fixture evidence. Without it those three
+    // fields report `null` rather than a zero value they did not measure.
+    repo_root: repo.root_path
   });
   const agentContractPacket = createAgentPreflightPacket({
     repoContract: { ...contract, conventions: activeConventions },
@@ -151,8 +148,12 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     graph_complete: graphContext.completeness?.complete ?? false,
     parser_gaps: allParserGaps,
     completeness_reasons: graphContext.completeness?.reasons ?? graphContext.diagnostics,
-    required_capabilities: ["ts.route_flow.v1"],
-    missing_capabilities: graphContext.available ? [] : ["fact_graph"]
+    // D-S1: one namespace. `ts.route_flow.v1` was a member of a namespace the engine emits
+    // nothing from; `fact_graph` was not a capability id at all - the translation table mapped
+    // it onto `ts.route_flow.v1`, so "the graph is missing" was reported as "route flow is
+    // missing". `graph` is the name the TypeScript fallback already uses for exactly this.
+    required_capabilities: ["route_flow"],
+    missing_capabilities: graphContext.available ? [] : ["graph"]
   });
   const semanticCoverage = buildSemanticCoverageFromCapabilityReport({
     repo_id: repoId,
@@ -265,18 +266,33 @@ export function prepareTask(storage: SqliteDriftStorage, parsed: ParsedArgs): Co
     },
     conventions,
     audit_integrity: auditIntegrity,
-    scan_status: scanStatus,
+    // W7: the summary, not the records - the same decision BB-6 already made one field over.
+    //
+    // D-A5 added the itemized `parser_gaps.records` to `scan status` so that
+    // `guidance.parser_gaps.full_list_command` pointed at data that exists, which it does and
+    // should. `prepare` then embeds the whole scan-status payload, so the list BB-6 had removed
+    // from `task_preflight_packet` came straight back at the top level of the same envelope.
+    // Measured on dub: 637 records, 342,701 of the packet's 715,023 bytes, against a 500 KB budget.
+    // The envelope was over on dub, cal.com and openstatus, and the external-eval baseline still
+    // recorded `packet_within_envelope_budget: true` because it was last written before D-A5.
+    //
+    // Nothing is lost and the records were never meant to travel here: `full_list_command` names
+    // `drift scan status --repo <id> --json`, the surface D-A5 built for exactly this, and it still
+    // returns every one. The count is kept so the packet can still say how many there are, and
+    // named rather than implied so an empty list cannot be read as "no gaps".
+    scan_status: withParserGapRecordsOmitted(scanStatus, guidance.parser_gaps.full_list_command),
     freshness_requirement: freshnessRequirement(requireFresh, scanStatus),
     graph_context: graphContext,
     task_model: taskModel,
     task_preflight_packet: taskPreflightPacket,
     change_impact: changeImpact,
     test_intelligence: testSelection.test_intelligence,
-    // BB-6 (EW-3 shape): a bare `[]` cannot say whether test selection ran and found nothing or was
-    // never implemented for this repo, and the two call for opposite responses from a reader.
-    test_intelligence_reason: testSelection.test_intelligence.length === 0
-      ? "not_implemented_for_repo"
-      : null,
+    // BB-6 (EW-3 shape): a bare `[]` cannot say whether test selection ran and found nothing or
+    // was never implemented for this repo, and the two call for opposite responses from a reader.
+    // D-A3(c): derived by selectRelevantTests, which is where the inputs that tell "no tests
+    // exist" from "the matcher missed them" actually live. This was an inline ternary here and a
+    // byte-identical one in MCP, and both answered "not_implemented_for_repo" to both questions.
+    test_intelligence_reason: testSelection.test_intelligence_reason,
     agent_contract_packet: agentContractPacket,
     baseline,
     findings,

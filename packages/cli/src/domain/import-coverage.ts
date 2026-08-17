@@ -80,8 +80,29 @@ const LIMITATIONS: Record<string, string> = {
   file_too_large:
     "the file is above the scan size limit and was skipped entirely. Nothing in it is analysed; " +
     "split it if it needs to be covered.",
+  // D-PA3: five outcomes of one `Err` arm that all reported `file_unreadable`, distinguishable
+  // only by free text. Their answers differ - split a bundle, convert an encoding, file a bug -
+  // and this map is the surface that exists to say so, keyed on `code`.
   file_unreadable:
-    "the file could not be read (permissions, or an encoding the parser rejects) and was skipped.",
+    "the file could not be read at all (permissions, or the path vanished mid-scan) and was " +
+    "skipped. Check permissions and rerun.",
+  file_not_utf8:
+    "the file is readable but is not valid UTF-8, so there is no text to parse. Convert it to " +
+    "UTF-8, or exclude it if it is not source.",
+  file_too_deep:
+    "the file's syntax tree nests deeper than the fact walkers can descend without overflowing " +
+    "the stack - in practice a minified or generated bundle. Nothing in it is analysed; exclude " +
+    "it or keep the unminified source alongside.",
+  file_parse_failed:
+    "the parser returned no tree for this file at all. Unlike a partial parse this yields " +
+    "nothing, and it is worth reporting: a TypeScript-family file should always produce a tree.",
+  parser_language_unavailable:
+    "the grammar itself could not be loaded, which is a defect in this build rather than " +
+    "anything about your repository. Please report it.",
+  partial_parse:
+    "part of the file did not fit the grammar. Facts from it are incomplete, and the diagnostic " +
+    "says how much of the file was affected. Usually syntax newer than the bundled grammar, or " +
+    "content under a TypeScript extension that is not TypeScript.",
   unreadable_path:
     "the path could not be traversed (a broken symlink, or permissions) and its contents were " +
     "skipped.",

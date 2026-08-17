@@ -29,7 +29,7 @@ export { classifyAgentTask } from "./task-intent.js";
 export { evaluateRoleEdge } from "./role-ontology.js";
 export { scoreHelperSimilarity } from "./helper-similarity.js";
 export { buildRepoTopology } from "./repo-topology.js";
-export { buildParserGapSummary, buildReadiness, buildStoredScanReadiness } from "./readiness.js";
+export { buildParserGapSection, buildParserGapSummary, withParserGapRecordsOmitted, buildReadiness, buildStoredScanReadiness } from "./readiness.js";
 export { buildParserGapQuality } from "./parser-gap-quality.js";
 export { buildSemanticCoverage, buildSemanticCoverageFromCapabilityReport } from "./semantic-coverage.js";
 export { buildCanonicalRouteReadModel } from "./canonical-routes.js";
@@ -1520,3 +1520,10 @@ function unique(values: string[]): string[] {
 }
 export { MAX_RELEVANT_FILES, rankRelevantFiles, relevanceScore, relevantFileForPath, relevantFilesForTask, tokenizeTask, type RankableFile } from "./relevance.js";
 export { isDeclarationPath, isIndexableFilePath, isTypescriptPath, shouldSkipPath, walkIndexableFiles } from "./repo-files.js";
+// W6: one derivation for the convention entry both preflight surfaces emit - see
+// ./prepared-convention.ts for the two divergences the second copy was carrying.
+export { instructionForConvention, preparedConvention, type PreparedConvention } from "./prepared-convention.js";
+// W6: one agent envelope, and one repo-map document. See ./repo-map-payload.ts for D-A2 - the
+// three trust fields the CLI's copy computed and then dropped.
+export { agentEnvelopeForScan, type AgentEnvelopeScanStatus } from "./agent-envelope.js";
+export { buildRepoMapPayload, type RepoMapPayloadInput } from "./repo-map-payload.js";

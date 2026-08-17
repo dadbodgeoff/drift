@@ -8,15 +8,15 @@ export interface NextApiRouteIdentity {
   ignored_segments: string[];
 }
 
+/**
+ * D-H2. Kept byte-identical to `API_ROUTE_SCOPE_GLOBS` in
+ * crates/drift-engine/src/next_routes.rs - see that file for why `app/api` widened to `app`.
+ */
 export const API_ROUTE_SCOPE_GLOBS = [
-  "**/app/api/**/route.ts",
-  "**/app/api/**/route.tsx",
-  "**/app/api/**/route.js",
-  "**/app/api/**/route.jsx",
-  "**/app/**/api/**/route.ts",
-  "**/app/**/api/**/route.tsx",
-  "**/app/**/api/**/route.js",
-  "**/app/**/api/**/route.jsx",
+  "**/app/**/route.ts",
+  "**/app/**/route.tsx",
+  "**/app/**/route.js",
+  "**/app/**/route.jsx",
   "**/pages/api/**/*.ts",
   "**/pages/api/**/*.tsx",
   "**/pages/api/**/*.js",
@@ -32,6 +32,11 @@ export function isNextApiRoutePath(filePath: string): boolean {
   return Boolean(nextApiRouteIdentity(filePath));
 }
 
+/**
+ * D-H2: a no-op against the default set now that it says `app/**`, and deliberately kept. A
+ * hand-authored or older contract can still narrow itself to `**\/app/api/**\/route.ts`, and that
+ * glob still needs the monorepo expansion it always did.
+ */
 export function expandApiRouteScopeGlobs(globs: string[]): string[] {
   const expanded = new Set(globs);
   for (const glob of globs) {
@@ -42,6 +47,11 @@ export function expandApiRouteScopeGlobs(globs: string[]): string[] {
   return [...expanded].sort();
 }
 
+/**
+ * D-H2. The mirror of `next_app_route_identity` in crates/drift-engine/src/next_routes.rs, which
+ * carries the full rationale. The two are held together by the shared table in
+ * test/fixtures/next-route-groups/route-cases.json, asserted from both sides.
+ */
 function nextAppRouteIdentity(filePath: string): NextApiRouteIdentity | undefined {
   const suffix = ["/route.ts", "/route.tsx", "/route.js", "/route.jsx"].find((value) =>
     filePath.endsWith(value)
@@ -55,17 +65,13 @@ function nextAppRouteIdentity(filePath: string): NextApiRouteIdentity | undefine
     return undefined;
   }
   const routeSegments = segments.slice(appIndex + 1);
-  const apiIndex = routeSegments.indexOf("api");
-  if (apiIndex < 0) {
-    return undefined;
-  }
 
   const dynamic_params: string[] = [];
-  const route_group_segments = routeSegments.slice(0, apiIndex).filter(isRouteGroup);
+  const route_group_segments: string[] = [];
   const ignored_segments: string[] = [];
   const urlSegments: string[] = [];
 
-  for (const segment of routeSegments.slice(apiIndex)) {
+  for (const segment of routeSegments) {
     if (isRouteGroup(segment)) {
       route_group_segments.push(segment);
       continue;
@@ -77,9 +83,6 @@ function nextAppRouteIdentity(filePath: string): NextApiRouteIdentity | undefine
     urlSegments.push(normalizeSegment(segment, dynamic_params));
   }
 
-  if (urlSegments[0] !== "api") {
-    return undefined;
-  }
   const route_path = `/${urlSegments.join("/")}`;
   return {
     framework: "next_app_route",

@@ -313,3 +313,108 @@ fn temp_repo(name: &str) -> std::path::PathBuf {
     fs::create_dir_all(&path).expect("create temp repo");
     path
 }
+
+/// D-F1: a check that cannot evaluate a security convention must say so, not report a pass.
+///
+/// The audit filed this as a fact-kind problem: `check_fact_to_engine_fact` translated wire kinds
+/// through a hand-written match naming 30 of the 36, and the six it dropped included
+/// `raw_sql_called` and `parameterized_sql_used`, which security_facts.rs produces on this exact
+/// fixture. That drop is real and is fixed. But it was not what made this case return nothing.
+///
+/// Measured here: every engine security evaluator - auth, request validation, Phase 4, Phase 5,
+/// Phase 6 - re-reads the route file from disk (`read_repo_file`, five call sites) and works from
+/// the re-extracted source. None of them reads the facts on the wire for their proof. So `repo_root`
+/// is not a mask over the dropped facts; it is the only input those twelve kinds have, and the wire
+/// protocol declares it `Option<String>`.
+///
+/// Against the unfixed engine this request returned `findings: []`, `security_boundary_proofs: []`,
+/// `completeness[0].can_block: true`, `complete: true`, `missing_capabilities: []` and no
+/// diagnostic - a clean pass for a route that reaches a raw SQL sink with request input in it.
+#[test]
+fn check_repo_reports_a_gap_when_security_conventions_have_no_source() {
+    let source = [
+        "const db = { $queryRawUnsafe: async (query) => query };",
+        "export async function POST(request: Request) {",
+        r#"  const id = request.nextUrl.searchParams.get("id");"#,
+        "  await db.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${id}`);",
+        "  return Response.json({ ok: true });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let repo_root = temp_repo("no_repo_root");
+    let route_path = repo_root.join("app/api/users/route.ts");
+    fs::create_dir_all(route_path.parent().expect("route parent")).expect("create route parent");
+    fs::write(&route_path, &source).expect("write route");
+    fs::write(repo_root.join("package.json"), "{}").expect("write package");
+    let scan = run_scan_repo(&repo_root);
+
+    // D-F1's fact half: the kinds the old `fact_kind_from_str` dropped are on the wire, so a request
+    // that carries them carries real evidence. `FactKind::from_wire` is generated from the same
+    // manifest as the enum, so none of them can be dropped on the way into the evaluator again.
+    let raw_sql_facts = scan["facts"]
+        .as_array()
+        .expect("facts")
+        .iter()
+        .filter(|fact| fact["kind"] == "raw_sql_called")
+        .count();
+    assert!(
+        raw_sql_facts > 0,
+        "the scan must emit raw_sql_called for this fixture, or the test proves nothing"
+    );
+
+    let payload = run_check_repo(json!({
+        // No repo_root. `CheckRepoContext` declares it optional and this is what that means.
+        "repo": { "repo_id": "repo_phase6" },
+        "scan": {
+            "scan_id": "scan_phase6",
+            "facts": scan["facts"]
+        },
+        "contract": {
+            "contract_id": "contract_phase6",
+            "contract_schema_version": 1,
+            "conventions": [json!({
+                "id": "security_api_no_raw_sql",
+                "kind": "api_route_forbids_raw_sql_without_params",
+                "matcher": {
+                    "applies_to_file_roles": ["api_route"],
+                    "methods": ["POST"]
+                },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            })]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let completeness = &payload["completeness"][0];
+    assert_eq!(
+        completeness["can_block"],
+        json!(false),
+        "a check that could not evaluate its only convention must not claim it could block: {payload:#?}"
+    );
+    assert_eq!(completeness["complete"], json!(false), "{payload:#?}");
+    assert_eq!(
+        completeness["missing_capabilities"],
+        json!(["security_facts", "raw_sql_facts"]),
+        "the capabilities the skipped convention needed must be reported missing: {payload:#?}"
+    );
+    assert_eq!(
+        payload["stats"]["capabilities"]["missing"],
+        json!(["security_facts", "raw_sql_facts"]),
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["diagnostics"][0]["code"], "check_source_unavailable",
+        "the cause must be named, and it is not a limit breach: {payload:#?}"
+    );
+    assert!(
+        payload["diagnostics"][0]["message"]
+            .as_str()
+            .expect("message")
+            .contains("api_route_forbids_raw_sql_without_params"),
+        "{payload:#?}"
+    );
+}

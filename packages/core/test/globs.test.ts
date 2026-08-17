@@ -25,6 +25,14 @@ describe("globstar matches zero segments (F3)", () => {
     "packages/web/app/api/users/route.ts",
     // route groups
     "apps/web/app/(ee)/api/admin/route.ts",
+    // D-H2: any `route.ts` under `app/` is a route handler whatever the folder is called, so the
+    // scope globs say `app/**` rather than `app/api/**`. These are dub's, formbricks' and
+    // openstatus's real shapes - 27 handlers corpus-wide that the narrower globs never covered.
+    "apps/web/app/wellknown/[domain]/[file]/route.ts",
+    "apps/web/app/(ee)/app.dub.co/invoices/[invoiceId]/route.tsx",
+    "apps/web/app/.well-known/openid-configuration/[[...issuer]]/route.ts",
+    "apps/status-page/src/app/(status-page)/[domain]/(public)/feed/[type]/route.ts",
+    "app/route.ts",
     // pages/api at repo root, file directly in the directory (papermark)
     "pages/api/report.ts",
     "pages/api/nested/report.ts",
@@ -42,11 +50,18 @@ describe("globstar matches zero segments (F3)", () => {
 
   const outOfScope = [
     "app/page.tsx",
-    "app/apiary/users/route.ts", // must not match on a partial segment
     "src/lib/db.ts",
     "pages/index.tsx",
     "app/api/users/helper.ts", // not a route file
     "docs/api/route.ts.md",
+    // An `app` ancestor is still what makes a `route.ts` a Next handler. These are Express modules
+    // and formbricks' re-export targets, and both must stay out.
+    "server/api/users/route.ts",
+    "apps/web/modules/api/v2/management/webhooks/route.ts",
+    // D-H2 removed `app/apiary/users/route.ts` from this list. It was here to prove `apiary` does
+    // not substring-match `api`; the scope globs no longer look for `api` at all, and under Next's
+    // own rules that file is a route handler serving `/apiary/users`. The substring concern it
+    // guarded now lives entirely in routeFlavor, which still matches per segment.
   ];
 
   for (const path of outOfScope) {

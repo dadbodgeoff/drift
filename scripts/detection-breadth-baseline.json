@@ -1,0 +1,133 @@
+[
+  {
+    "repo": "calcom",
+    "status": "OK",
+    "route_files": 86,
+    "route_files_outside_api": 0,
+    "exported_symbols": 7315,
+    "data_layer_specifiers_count": 6,
+    "data_layer_specifiers": [
+      "../../lib/prismaClient",
+      "@calcom/lib/isPrismaObj",
+      "@calcom/prisma",
+      "@calcom/prisma/enums",
+      "@calcom/prisma/zod-utils",
+      "@calcom/testing/lib/bookingScenario/createMockNextJsRequest"
+    ],
+    "unresolved_import_symbol": 338,
+    "unresolved_import": 700,
+    "partial_parse": 23
+  },
+  {
+    "repo": "dub",
+    "status": "OK",
+    "route_files": 497,
+    "route_files_outside_api": 3,
+    "exported_symbols": 6187,
+    "data_layer_specifiers_count": 3,
+    "data_layer_specifiers": [
+      "@/lib/prisma",
+      "@/lib/prisma/edge",
+      "@prisma/client"
+    ],
+    "unresolved_import_symbol": 15,
+    "unresolved_import": 16,
+    "partial_parse": 6
+  },
+  {
+    "repo": "fixture-stacks",
+    "learned_forbidden_imports": [
+      "@stacks/drizzle",
+      "@stacks/kysely"
+    ],
+    "learned_contract_names_data_layer": true,
+    "status": "OK",
+    "route_files": 3,
+    "route_files_outside_api": 2,
+    "exported_symbols": 13,
+    "data_layer_specifiers_count": 2,
+    "data_layer_specifiers": [
+      "@stacks/drizzle",
+      "@stacks/kysely"
+    ],
+    "unresolved_import_symbol": 0,
+    "unresolved_import": 0,
+    "partial_parse": 1
+  },
+  {
+    "repo": "formbricks",
+    "status": "OK",
+    "route_files": 92,
+    "route_files_outside_api": 9,
+    "exported_symbols": 5409,
+    "data_layer_specifiers_count": 1,
+    "data_layer_specifiers": [
+      "@formbricks/database"
+    ],
+    "unresolved_import_symbol": 138,
+    "unresolved_import": 72,
+    "partial_parse": 55
+  },
+  {
+    "repo": "midday",
+    "status": "OK",
+    "route_files": 10,
+    "route_files_outside_api": 0,
+    "exported_symbols": 4246,
+    "data_layer_specifiers_count": 3,
+    "data_layer_specifiers": [
+      "@midday/supabase/cached-queries",
+      "@midday/supabase/mutations",
+      "@midday/supabase/server"
+    ],
+    "unresolved_import_symbol": 369,
+    "unresolved_import": 17,
+    "partial_parse": 17
+  },
+  {
+    "repo": "openstatus",
+    "status": "OK",
+    "route_files": 52,
+    "route_files_outside_api": 15,
+    "exported_symbols": 4382,
+    "data_layer_specifiers_count": 4,
+    "data_layer_specifiers": [
+      "@openstatus/db",
+      "@openstatus/db/src/db",
+      "@openstatus/db/src/schema",
+      "@openstatus/db/src/schema/constants"
+    ],
+    "unresolved_import_symbol": 272,
+    "unresolved_import": 184,
+    "partial_parse": 10
+  },
+  {
+    "repo": "papermark",
+    "status": "OK",
+    "route_files": 283,
+    "route_files_outside_api": 0,
+    "exported_symbols": 2805,
+    "data_layer_specifiers_count": 2,
+    "data_layer_specifiers": [
+      "@/lib/prisma",
+      "@prisma/client"
+    ],
+    "unresolved_import_symbol": 243,
+    "unresolved_import": 99,
+    "partial_parse": 18
+  },
+  {
+    "repo": "taxonomy",
+    "status": "OK",
+    "route_files": 7,
+    "route_files_outside_api": 0,
+    "exported_symbols": 311,
+    "data_layer_specifiers_count": 1,
+    "data_layer_specifiers": [
+      "@/lib/db"
+    ],
+    "unresolved_import_symbol": 0,
+    "unresolved_import": 7,
+    "partial_parse": 0
+  }
+]

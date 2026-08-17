@@ -8,8 +8,11 @@
  * without declaring the resulting cell is a build failure rather than a silent coverage hole.
  *
  * Derivation, all by regex over the files that actually decide:
- *   - kind arms          crates/drift-engine/src/check_command.rs   `convention.kind == "..."`
- *   - phase-6 arm        crates/drift-engine/src/check_command.rs   is_phase6_security_convention
+ *   - kind arms          vocabulary/vocabulary.json                 convention_kind dispatch =
+ *                                                                  "engine_direct"
+ *   - phase-6 arm        vocabulary/vocabulary.json                 dispatch = "engine_phase6",
+ *                        cross-checked against phase6_required_capabilities in
+ *                        crates/drift-engine/src/check_command.rs
  *   - presence arm       crates/drift-engine/src/candidate_command.rs FAMILY_SPECS
  *                        cross-checked against packages/core/src/capabilities.ts
  *                        PRESENCE_PROMOTABLE_CONVENTION_KINDS
@@ -43,6 +46,7 @@ const LEDGER_PATH = process.env.DRIFT_LEDGER_PATH
 const CHECK_COMMAND = join(ROOT, "crates/drift-engine/src/check_command.rs");
 const CANDIDATE_COMMAND = join(ROOT, "crates/drift-engine/src/candidate_command.rs");
 const CAPABILITIES = join(ROOT, "packages/core/src/capabilities.ts");
+const VOCABULARY = join(ROOT, "vocabulary/vocabulary.json");
 
 const VALID_STATES = new Set(["firing", "quarantined", "unimplemented", "needs-review"]);
 const reportOnly = process.argv.includes("--report");
@@ -79,28 +83,99 @@ function sliceBetween(text, startMarker, endMarker, label) {
   return text.slice(start, end);
 }
 
-function deriveDispatch() {
-  const src = read(CHECK_COMMAND);
+/** `api_route_no_direct_data_access` -> `ApiRouteNoDirectDataAccess`. */
+function pascalCase(wire) {
+  return wire
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
 
-  // Arms 1,2,4,5,6,7,8 are `convention.kind == "..."` comparisons inside the dispatch chain.
-  const kindArms = unique(
+function conventionKindMembers() {
+  const vocabulary = JSON.parse(read(VOCABULARY));
+  const members = vocabulary?.vocabularies?.convention_kind?.members;
+  if (!Array.isArray(members) || members.length === 0) {
+    throw new Error(
+      `${VOCABULARY} has no convention_kind members. The vocabulary moved or its shape changed; ` +
+        `re-derive which kinds each evaluator owns by reading the source before trusting this ` +
+        `script again.`
+    );
+  }
+  return members;
+}
+
+/**
+ * `ConventionKind::ApiRouteRequiresAuthHelper` -> `api_route_requires_auth_helper`.
+ *
+ * W5/W7 replaced the string literals these patterns used to read with the generated enum, so the
+ * derivations now go through the same manifest the enum is generated from. A variant with no wire
+ * name is a generator/source mismatch and is refused rather than skipped - a silently dropped kind
+ * is a silently undeclared cell.
+ */
+function wireForVariants(variants, where) {
+  const byVariant = new Map(conventionKindMembers().map((m) => [pascalCase(m.wire), m.wire]));
+  return variants.map((variant) => {
+    const wire = byVariant.get(variant);
+    if (!wire) {
+      throw new Error(
+        `${where} names ConventionKind::${variant}, which has no member in ${VOCABULARY}. ` +
+          `The generated enum and its manifest disagree.`
+      );
+    }
+    return wire;
+  });
+}
+
+function deriveDispatch() {
+  // W7 (D-P3a) replaced the `else if convention.kind == "..."` chain and the
+  // `is_phase6_security_convention` helper this used to read with a single `match` that is
+  // exhaustive over the generated `ConventionKind` enum, and moved the listing of which evaluator
+  // owns which kind into vocabulary/vocabulary.json. So the derivation follows the listing.
+  //
+  // That is a stronger source than the regex it replaces, not a weaker one: a kind added without a
+  // target no longer compiles, whereas the old chain would have let it fall through to `continue`
+  // and report a clean pass for a contract enforcing nothing. The header's rule still holds - this
+  // reads a checked-in file with no build step, and fails loudly on an empty derivation.
+  const members = conventionKindMembers();
+  const withDispatch = (target) =>
+    unique(
+      nonEmpty(
+        members.filter((member) => member.dispatch === target).map((member) => member.wire),
+        `convention kinds dispatched to "${target}"`,
+        VOCABULARY
+      )
+    );
+
+  const kindArms = withDispatch("engine_direct");
+  const phase6 = withDispatch("engine_phase6");
+
+  // Cross-check against the file that actually decides. The vocabulary says who OWNS each kind; the
+  // match in check_command.rs is what routes it, and `phase6_required_capabilities` is the arm the
+  // five Phase 6 kinds land in. These disagreeing means the ledger is enumerating cells against a
+  // dispatch that no longer exists - the exact staleness this script exists to refuse.
+  const src = read(CHECK_COMMAND);
+  const phase6Block = sliceBetween(
+    src,
+    "fn phase6_required_capabilities",
+    "\n}\n",
+    "phase6_required_capabilities"
+  );
+  const routed = unique(
     nonEmpty(
-      matchAll(src, /convention\.kind\s*==\s*"([a-z0-9_]+)"/g),
-      "check_command kind arms",
+      matchAll(phase6Block, /ConventionKind::([A-Za-z0-9]+)\s*=>/g),
+      "phase-6 dispatch arms",
       CHECK_COMMAND
     )
   );
-
-  // The phase-6 arm is keyed on a helper, so its kinds live in that helper's `matches!`.
-  const phase6Block = sliceBetween(
-    src,
-    "fn is_phase6_security_convention",
-    "\n}\n",
-    "is_phase6_security_convention"
-  );
-  const phase6 = unique(
-    nonEmpty(matchAll(phase6Block, /"([a-z0-9_]+)"/g), "phase-6 kinds", CHECK_COMMAND)
-  );
+  const expected = unique(phase6.map(pascalCase));
+  if (JSON.stringify(routed) !== JSON.stringify(expected)) {
+    throw new Error(
+      `The Phase 6 kinds in ${VOCABULARY} and the arms of phase6_required_capabilities in ` +
+        `${CHECK_COMMAND} disagree.\n` +
+        `  vocabulary: ${expected.join(", ")}\n` +
+        `  check_command: ${routed.join(", ")}`
+    );
+  }
 
   return { kindArms, phase6 };
 }
@@ -119,7 +194,14 @@ function derivePresenceKinds() {
   }
   const specs = sliceBetween(src, "const FAMILY_SPECS", "\n];\n", "FAMILY_SPECS");
   const fromRust = unique(
-    nonEmpty(matchAll(specs, /\bkind:\s*"([a-z0-9_]+)"/g), "FAMILY_SPECS kinds", CANDIDATE_COMMAND)
+    wireForVariants(
+      nonEmpty(
+        matchAll(specs, /\bkind:\s*ConventionKind::([A-Za-z0-9]+)/g),
+        "FAMILY_SPECS kinds",
+        CANDIDATE_COMMAND
+      ),
+      "FAMILY_SPECS"
+    )
   );
 
   // Cross-check against the TypeScript allowlist. These two lists disagreeing is itself a defect:
@@ -148,10 +230,22 @@ function derivePresenceKinds() {
 
 function deriveProposerKinds() {
   const src = read(CANDIDATE_COMMAND);
-  const kinds = unique([
-    ...matchAll(src, /\bkind:\s*"(api_route_[a-z0-9_]+|session_object_[a-z0-9_]+|middleware_[a-z0-9_]+)"/g),
-    ...matchAll(src, /\bcandidate_kind:\s*"([a-z0-9_]+)"/g)
-  ]);
+  // W5 replaced every one of these string literals with the generated enum, so the patterns read
+  // variants now. `kind:` covers the direct proposers (including the one with no evaluator behind
+  // it, `middleware_must_cover_routes`), `candidate_kind:` the phase-4/phase-6 family specs.
+  const kinds = unique(
+    wireForVariants(
+      nonEmpty(
+        [
+          ...matchAll(src, /\bkind:\s*ConventionKind::([A-Za-z0-9]+)/g),
+          ...matchAll(src, /\bcandidate_kind:\s*ConventionKind::([A-Za-z0-9]+)/g)
+        ],
+        "proposer-emitted kinds",
+        CANDIDATE_COMMAND
+      ),
+      "proposer kinds"
+    )
+  );
   return nonEmpty(kinds, "proposer-emitted kinds", CANDIDATE_COMMAND);
 }
 

@@ -175,7 +175,7 @@ fn infer_candidates_keeps_auth_payment_and_prisma_runtime_out_of_direct_data_acc
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -183,7 +183,7 @@ fn infer_candidates_keeps_auth_payment_and_prisma_runtime_out_of_direct_data_acc
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],
@@ -447,7 +447,7 @@ fn infer_candidates_uses_graph_only_client_data_access_modules() {
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -455,7 +455,7 @@ fn infer_candidates_uses_graph_only_client_data_access_modules() {
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],
@@ -590,7 +590,7 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
                 },
                 {
                     "id": "role:api_route",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "api_route",
                     "stable": true,
                     "evidence_ids": [],
@@ -598,7 +598,7 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
                 },
                 {
                     "id": "role:data_access_module",
-                    "kind": "role",
+                    "kind": "file_role",
                     "label": "data_access_module",
                     "stable": true,
                     "evidence_ids": [],
@@ -717,6 +717,20 @@ fn infer_candidates_merges_duplicate_raw_and_graph_evidence_fact_ids() {
             "fact:import_used:app/api/users/route.ts:db:1-1",
             "graph_fact_db"
         ])
+    );
+
+    // D-H1: the SCORE has to agree with the list it summarises.
+    //
+    // This fixture is one import statement in one file described twice - once as a raw fact and
+    // once as a graph import - which is exactly what `combined_evidence_refs` dedupes and exactly
+    // what `data_imports.len() + graph_data_imports.len()` did not. The test asserted the deduped
+    // list and never the count, so `supporting_examples_count: 2` sat beside one ref for as long
+    // as it existed. `commands/start.ts:368` prints this number as "Evidence: N matching
+    // import(s)" on the screen a human uses to accept the convention.
+    assert_eq!(
+        direct["scoring"]["supporting_examples_count"],
+        json!(refs.len()),
+        "{direct:#?}"
     );
 }
 
@@ -1320,15 +1334,13 @@ fn infer_candidates_uses_route_group_aware_api_scope_globs() {
 
     assert_eq!(
         direct["scope"]["path_globs"],
+        // D-H2: `app/**` rather than `app/api/**`. Under the App Router any `route.ts` is a
+        // handler, and the narrower globs missed 27 real handlers across the corpus.
         json!([
-            "**/app/api/**/route.ts",
-            "**/app/api/**/route.tsx",
-            "**/app/api/**/route.js",
-            "**/app/api/**/route.jsx",
-            "**/app/**/api/**/route.ts",
-            "**/app/**/api/**/route.tsx",
-            "**/app/**/api/**/route.js",
-            "**/app/**/api/**/route.jsx",
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
             "**/pages/api/**/*.ts",
             "**/pages/api/**/*.tsx",
             "**/pages/api/**/*.js",

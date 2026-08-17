@@ -12,8 +12,23 @@ const packageSrcRoots = {
   factgraph: join(repoRoot, "packages/factgraph/src"),
   storage: join(repoRoot, "packages/storage/src"),
   mcp: join(repoRoot, "packages/mcp/src"),
-  engineContract: join(repoRoot, "packages/engine-contract/src")
+  engineContract: join(repoRoot, "packages/engine-contract/src"),
+  vocabulary: join(repoRoot, "packages/vocabulary/src")
 };
+
+/**
+ * Does this file IMPORT one of the named Drift packages?
+ *
+ * Deliberately not `source.includes("@drift/x")`. The same shortcut on `better-sqlite3` had this
+ * gate red from commit 201f462 onward because a package NAME appeared in a detection list, and the
+ * comment below records that lesson - it just was not applied to these rules, which still matched
+ * any mention. W5 tripped all three of them from prose: a comment in core/src/security.ts naming
+ * `@drift/engine-contract` was read as core importing it. A boundary check that fires on prose is
+ * one people learn to argue with.
+ */
+function importsDriftPackage(source, packages) {
+  return new RegExp(`(?:from|require\\(|import\\()\\s*["'\`]@drift/(?:${packages})(?:["'\`/])`).test(source);
+}
 
 function listFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -144,34 +159,46 @@ for (const { pkg, root, file } of packageFiles) {
     failures.push(`${repoRel} uses raw SQLite; database access belongs in packages/storage`);
   }
 
+  /**
+   * @drift/vocabulary is the one package every other package may import.
+   *
+   * It is the generated cross-boundary vocabulary and nothing else - zod and no Drift dependency -
+   * so it sits below core, factgraph, engine-contract and adapters rather than beside them. The
+   * whole point of W5 is that these packages share one list; forcing each to keep its own copy to
+   * satisfy a layering rule is how they came to have six.
+   */
+  if (pkg === "vocabulary" && /(?:from|require\(|import\()\s*["'`]@drift\//.test(source)) {
+    failures.push(`${repoRel} imports another Drift package; vocabulary must depend on nothing`);
+  }
+
   if (source.includes("packages/adapters/src") || /@drift\/adapters\//.test(source)) {
     failures.push(`${repoRel} imports adapter internals directly; use the @drift/adapters public registry`);
   }
 
-  if (pkg === "adapters" && /@drift\/(cli|storage|mcp|core|engine-contract)/.test(source)) {
+  if (pkg === "adapters" && importsDriftPackage(source, "cli|storage|mcp|core|engine-contract")) {
     failures.push(`${repoRel} imports another Drift package; adapters must stay manifest-only`);
   }
 
-  if (pkg === "core" && /@drift\/(cli|storage|mcp|query|factgraph|engine-contract)/.test(source)) {
+  if (pkg === "core" && importsDriftPackage(source, "cli|storage|mcp|query|factgraph|engine-contract")) {
     failures.push(`${repoRel} imports another Drift package; core must stay dependency-light`);
   }
 
-  if (pkg === "engineContract" && /@drift\/(cli|storage|mcp|core)/.test(source)) {
+  if (pkg === "engineContract" && importsDriftPackage(source, "cli|storage|mcp|core")) {
     failures.push(`${repoRel} imports another Drift package; engine-contract must stay standalone`);
   }
 
-  if (pkg === "factgraph" && /@drift\/(cli|storage|mcp|query|engine-contract)/.test(source)) {
+  if (pkg === "factgraph" && importsDriftPackage(source, "cli|storage|mcp|query|engine-contract")) {
     failures.push(`${repoRel} imports a product package; factgraph must stay schema-only`);
   }
 
-  if (pkg === "storage" && /@drift\/(cli|mcp|query)/.test(source)) {
+  if (pkg === "storage" && importsDriftPackage(source, "cli|mcp|query")) {
     failures.push(`${repoRel} imports product surfaces; storage must stay below CLI/MCP`);
   }
 
   if (
     pkg === "query" &&
     (
-      /@drift\/(cli|mcp|engine-contract)/.test(source) ||
+      importsDriftPackage(source, "cli|mcp|engine-contract") ||
       source.includes("better-sqlite3") ||
       source.includes("new Database(") ||
       source.includes("node:child_process") ||
@@ -184,7 +211,7 @@ for (const { pkg, root, file } of packageFiles) {
     failures.push(`${repoRel} imports mutation or execution behavior; query must stay read-model only`);
   }
 
-  if (pkg === "mcp" && /@drift\/cli/.test(source)) {
+  if (pkg === "mcp" && importsDriftPackage(source, "cli")) {
     failures.push(`${repoRel} imports CLI; MCP must use shared core/storage services only`);
   }
 

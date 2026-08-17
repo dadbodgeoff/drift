@@ -1,6 +1,6 @@
 import { type AuditChainVerification,type ConventionCandidate,DRIFT_RESOLVER_VERSION,DRIFT_RULE_ENGINE_VERSION,DRIFT_SCANNER_VERSION,DRIFT_TYPESCRIPT_ADAPTER_VERSION,type FileSnapshot,type ParserGap,type ParserGapConfidenceImpact,type ParserGapKind,type ParserGapV2,type RepoRecord,type ScanCapabilityReport,type ScanFileChange,type ScanManifest } from "@drift/core";
 import { buildFactGraphArtifactFromParts,type FactGraphArtifact,type GraphDiagnostic } from "@drift/factgraph";
-import { buildParserGapQuality,buildParserGapSummary,buildSecurityPhase8ReadModel,buildStoredScanReadiness,type DriftReadinessSurface } from "@drift/query";
+import { buildParserGapQuality,buildParserGapSummary,buildSecurityPhase8ReadModel,buildStoredScanReadiness,type DriftReadinessSurface,buildParserGapSection} from "@drift/query";
 import type { SqliteDriftStorage } from "@drift/storage";
 import { existsSync,mkdtempSync,readdirSync,rmSync,statSync,writeFileSync } from "node:fs";
 import { readFileSync } from "node:fs";
@@ -700,7 +700,7 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
       stale: true,
       invalidation_reasons: ["scan_missing"],
       changes: { added: [], modified: [], deleted: [] },
-      parser_gaps: parserGapSummary([]),
+      parser_gaps: buildParserGapSection([]),
       parser_gap_quality: buildParserGapQuality({
         repo_id: repoId,
         scan_id: null,
@@ -807,7 +807,7 @@ export function scanStatusPayload(storage: SqliteDriftStorage, repoId: string) {
     stale,
     invalidation_reasons: invalidationReasons,
     changes,
-    parser_gaps: parserGapSummary(allParserGaps),
+    parser_gaps: buildParserGapSection(allParserGaps),
     parser_gap_quality: buildParserGapQuality({
       repo_id: repoId,
       scan_id: latestScan.id,
@@ -928,29 +928,6 @@ export function parserGapsFromDiagnostics(input: {
     .filter((gap): gap is ParserGap => Boolean(gap));
 }
 
-export function parserGapSummary(gaps: Array<ParserGap | ParserGapV2>): {
-  total_count: number;
-  by_kind: Record<string, number>;
-  confidence_impact: Record<ParserGapConfidenceImpact, number>;
-  by_capability: Record<string, number>;
-  by_contract_kind: Record<string, number>;
-  records: Array<ParserGap | ParserGapV2>;
-} {
-  const summary = buildParserGapSummary(gaps);
-  return {
-    total_count: summary.total_count,
-    by_kind: summary.by_kind,
-    confidence_impact: summary.confidence_impact as Record<ParserGapConfidenceImpact, number>,
-    by_capability: summary.by_capability,
-    by_contract_kind: summary.by_contract_kind,
-    // D-A5: the itemized records, so `guidance.parser_gaps.full_list_command` points at data that
-    // exists. It named `drift doctor --repo <id> --json`, which accepts neither `--repo` nor `--db`
-    // - the flag was silently swallowed and the wrong directory evaluated - and returned no
-    // parser_gaps key even when invoked correctly. No surface returned the itemized list at all, so
-    // the field was an unchecked string template handed to agents as a pointer to data.
-    records: gaps
-  };
-}
 
 function scanCapabilityReportForScan(input: {
   repoId: string;
@@ -1054,7 +1031,23 @@ export function parserGapKindForDiagnostic(code: string): ParserGapKind | null {
     case "symlink_target_unreadable":
     case "file_too_large":
     case "unsupported_dynamic_middleware_matcher":
+    // D-PA1. `partial_parse` has been a declared gap kind of `ts.syntax_facts.v1` since that
+    // registry was written, and nothing could ever produce one: no code path in the engine
+    // inspected `tree.root_node().has_error()`. The engine emits it now - 129 files across the
+    // seven corpus repos - so the declaration is true for the first time.
+    case "partial_parse":
       return "partial_parse";
+    // D-PA3. The five distinct outcomes of the engine's one file-skip arm. They shared the code
+    // `file_unreadable` and were told apart only by free text, so none of them reached this
+    // taxonomy at all. A file that was not parsed is a parser error whichever way it failed; what
+    // differs is what the reader should do about it, and that lives in the limitations map in
+    // import-coverage.ts, which is keyed on exactly these codes.
+    case "file_unreadable":
+    case "file_not_utf8":
+    case "file_too_deep":
+    case "file_parse_failed":
+    case "parser_language_unavailable":
+      return "parser_error";
     default:
       return null;
   }

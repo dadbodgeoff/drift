@@ -5,7 +5,10 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  ENVELOPE_BAND_EDGES,
+  envelopeBudgetBand,
   mergeBaselineRows,
+  PACKET_ENVELOPE_BUDGET,
   repoVerdict,
   unsafeBaselineMoves,
   updateGate
@@ -346,6 +349,76 @@ describe("unsafeBaselineMoves", () => {
 
   it("is silent for a brand-new repo with no baseline row", () => {
     expect(unsafeBaselineMoves(undefined, before)).toEqual([]);
+  });
+
+  it("flags an envelope band that widened toward the budget", () => {
+    const banded = { ...before, packet_budget_band: "under_60pct" };
+    expect(unsafeBaselineMoves(banded, { ...banded, packet_budget_band: "60_to_80pct" })).toEqual([
+      "packet_budget_band"
+    ]);
+  });
+
+  it("lets an envelope band shrink for free", () => {
+    const banded = { ...before, packet_budget_band: "80_to_95pct" };
+    expect(unsafeBaselineMoves(banded, { ...banded, packet_budget_band: "under_60pct" })).toEqual([]);
+  });
+
+  it("is silent when the baseline row predates the band field", () => {
+    // The rollout case: every existing row lacks the key until the baseline is rewritten, and a
+    // missing baseline value is not evidence of a regression.
+    expect(unsafeBaselineMoves(before, { ...before, packet_budget_band: "over_95pct" })).toEqual([]);
+  });
+});
+
+describe("envelopeBudgetBand", () => {
+  it("bands a packet by its share of the budget", () => {
+    expect(envelopeBudgetBand(0)).toBe("under_60pct");
+    expect(envelopeBudgetBand(299_999)).toBe("under_60pct");
+    expect(envelopeBudgetBand(300_000)).toBe("60_to_80pct");
+    expect(envelopeBudgetBand(399_999)).toBe("60_to_80pct");
+    expect(envelopeBudgetBand(400_000)).toBe("80_to_95pct");
+    expect(envelopeBudgetBand(474_999)).toBe("80_to_95pct");
+    expect(envelopeBudgetBand(475_000)).toBe("over_95pct");
+    expect(envelopeBudgetBand(900_000)).toBe("over_95pct");
+  });
+
+  it("returns null rather than a band for an unmeasured packet", () => {
+    // `packet_bytes` is absent whenever prepare failed or its output would not parse. A band of
+    // "under_60pct" there would read as headroom that was never measured.
+    expect(envelopeBudgetBand(undefined)).toBeNull();
+    expect(envelopeBudgetBand(NaN)).toBeNull();
+    expect(envelopeBudgetBand(100, 0)).toBeNull();
+  });
+
+  it("keeps every suite repo clear of a band boundary", () => {
+    // The anti-flap requirement, asserted against the committed baseline rather than asserted in
+    // prose. `packet_bytes` moves by tens of bytes between runs; if a repo sat within a kilobyte
+    // of a boundary this ratchet would flap and get switched off, which is how gates die.
+    const rows = JSON.parse(readFileSync(new URL("./external-eval-baseline.json", import.meta.url), "utf8"));
+    for (const row of rows) {
+      if (typeof row.packet_bytes !== "number") continue;
+      const distance = Math.min(
+        ...ENVELOPE_BAND_EDGES.map((edge) => Math.abs(row.packet_bytes - edge * PACKET_ENVELOPE_BUDGET))
+      );
+      expect(distance, `${row.repo} sits ${distance} bytes from a band boundary`).toBeGreaterThan(10_000);
+    }
+  });
+
+  it("sees the growth the budget boolean cannot", () => {
+    // The defect this exists for, stated as a test: BB-6's ceiling is 500,000 and dub's packet is
+    // 270,193. A packet that grew to 480,000 - 78% larger, and 96% of the budget - still satisfies
+    // `packet_within_envelope_budget`, so repoVerdict passes it and `packet_bytes` is volatile so
+    // the diff stays silent. The band is the only field that moves.
+    const before = { packet_bytes: 270_193, packet_within_envelope_budget: true };
+    const after = { packet_bytes: 480_000, packet_within_envelope_budget: true };
+    expect(after.packet_within_envelope_budget).toBe(before.packet_within_envelope_budget);
+    expect(envelopeBudgetBand(after.packet_bytes)).not.toBe(envelopeBudgetBand(before.packet_bytes));
+    expect(
+      unsafeBaselineMoves(
+        { ...before, packet_budget_band: envelopeBudgetBand(before.packet_bytes) },
+        { ...after, packet_budget_band: envelopeBudgetBand(after.packet_bytes) }
+      )
+    ).toEqual(["packet_budget_band"]);
   });
 });
 

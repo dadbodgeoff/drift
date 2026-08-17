@@ -62,19 +62,42 @@ describe("release hygiene", () => {
       // there. Listing them did not execute them; it produced a gate that named an oracle it never
       // consulted. They now live in `verify:evals`, which is a LOCAL gate, and `verify:full` is the
       // union that any "verified" claim has to cite.
+      // W1 added `pnpm check:storage-invariants` and W3 added `pnpm check:error-contract`, and
+      // neither updated this assertion - so this test was red from W1 until a later workstream
+      // noticed. A pinned string is only a gate while somebody reruns it.
       //
-      // Three steps were undeclared here when the ground-truth remediation ran, and this
-      // assertion is precisely the thing meant to notice. `check:storage-invariants` and
-      // `check:error-contract` were already in the gate at 255f2208 and already unlisted --
-      // this test fails on a clean checkout of that commit, verified -- so the list had drifted
-      // from the gate it documents before this work started.
-      // `check:cell-ledger` is new: it enforces that every (convention kind x enforcement path)
-      // cell is declared with the evidence its state requires, which is the structural guardrail
-      // against the D1 class of defect, a kind that cannot fire while looking covered.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:cell-ledger && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      // W5 adds `pnpm check:vocabulary`: ten closed vocabularies cross the engine boundary as
+      // hand-maintained mirrors, and the day this was written check-repo silently dropped 6 of 36
+      // fact kinds while semantic coverage refused on every repo. Neither is visible from any
+      // behaviour a test would naturally assert, which is what makes it a gate rather than a test.
+      //
+      // W6 adds `pnpm check:surface-parity`: `beta:proof` compares the two surfaces' OUTPUT on one
+      // fixture repo, so a derivation implemented twice stays invisible until some input tells the
+      // copies apart - and three times running, the fixture was not that input. This gate reads the
+      // source instead and fails on a function body duplicated across the CLI/MCP boundary.
+      //
+      // And `pnpm check:payload-invariants`: a trust-calibration field that cannot change is not
+      // calibrating anything. Four shipped that way - `truncated.conventions`, `error.type`,
+      // `test_intelligence_reason`, `full_list_command` - each found by hand, one workstream at a
+      // time. It drives a fixture matrix through both surfaces and fails on a discriminator that is
+      // identical everywhere, and it FOLLOWS every data pointer, because `full_list_command` named
+      // a real command that exits 0 and simply did not serve the data.
+      //
+      // And the ground-truth remediation adds `pnpm check:cell-ledger`: it enforces that every
+      // (convention kind x enforcement path) cell is declared with the evidence its state requires,
+      // the structural guardrail against the D1 class of defect - a cell that cannot fire while
+      // looking covered.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && pnpm check:cell-ledger && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
+    expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
+    expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");
+    expect(manifest.scripts["check:surface-parity"]).toBe("node scripts/surface-parity.mjs");
+    expect(manifest.scripts["check:payload-invariants"]).toBe("node scripts/payload-invariants.mjs");
     expect(manifest.scripts["verify:evals"]).toBe(
-      "pnpm eval:external && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
+      // W7 added `pnpm eval:breadth`, the detection-breadth ratchet. Pinned whole for the same
+      // reason as verify:ci above: an eval silently dropped is indistinguishable from one that
+      // never existed.
+      "pnpm eval:external && pnpm eval:breadth && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
     );
     expect(manifest.scripts["verify:full"]).toBe("pnpm verify:ci && pnpm verify:evals");
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");

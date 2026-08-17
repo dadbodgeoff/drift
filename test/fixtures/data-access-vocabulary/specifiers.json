@@ -1,0 +1,114 @@
+{
+  "note": [
+    "D-H3. The shared table for the two implementations that decide whether an import specifier",
+    "names a data layer:",
+    "  engine       is_data_access_source        crates/drift-engine/src/data_access.rs",
+    "  ts_fallback  rawLooksLikeDataAccessImport packages/cli/src/domain/convention-candidates.ts",
+    "",
+    "The engine path is the primary one and the TypeScript regex is the degraded fallback it",
+    "replaced, so the containment must run one way: anything the fallback catches, the engine",
+    "catches. It did not. The fallback has recognised drizzle|typeorm|sequelize since it was",
+    "written and the engine recognised only prisma|database|db|data-access, which is how a repo",
+    "whose data layer is Drizzle got told it has no data layer at all.",
+    "",
+    "Where the engine is deliberately NARROWER it must say so in narrowing_reason. That is the",
+    "whole mechanism: a narrowing with a reason is a decision, a narrowing without one is the",
+    "D-H3 defect coming back. Both crates/drift-engine/tests/data_access_vocabulary.rs and",
+    "packages/cli/test/data-access-vocabulary.test.ts assert this table; add a case to the table",
+    "and both sides pick it up."
+  ],
+  "cases": [
+    {
+      "specifier": "drizzle-orm",
+      "engine": true,
+      "ts_fallback": false,
+      "why": "D-H3: the ORM package itself. The fallback misses it because the regex needs a / or end after the token."
+    },
+    {
+      "specifier": "drizzle-orm/node-postgres",
+      "engine": true,
+      "ts_fallback": false,
+      "why": "D-H3: the driver subpath a real Drizzle client module imports."
+    },
+    {
+      "specifier": "@acme/drizzle",
+      "engine": true,
+      "ts_fallback": true,
+      "why": "D-H3: a workspace package wrapping Drizzle. The engine saw nothing here before."
+    },
+    {
+      "specifier": "@/lib/store/drizzle",
+      "engine": true,
+      "ts_fallback": true,
+      "why": "D-H3: the positive control that measured the defect - a route importing this produced 0 candidates and 0 evidence refs."
+    },
+    {
+      "specifier": "src/server/drizzle.ts",
+      "engine": true,
+      "ts_fallback": false,
+      "why": "D-H3: the resolved-file form of the same module, which is the form resolved_imports carries."
+    },
+    { "specifier": "typeorm", "engine": true, "ts_fallback": true, "why": "D-H3." },
+    { "specifier": "@acme/typeorm/data-source", "engine": true, "ts_fallback": true, "why": "D-H3." },
+    { "specifier": "sequelize", "engine": true, "ts_fallback": true, "why": "D-H3." },
+    { "specifier": "@acme/sequelize", "engine": true, "ts_fallback": true, "why": "D-H3." },
+    {
+      "specifier": "kysely",
+      "engine": true,
+      "ts_fallback": false,
+      "why": "D-H3: already in DATA_LAYER_PACKAGES in data-layer-discovery.ts, so the project treated it as a data layer everywhere except the one place that decides. The engine is broader than the fallback here, which the containment allows."
+    },
+    { "specifier": "@/lib/kysely", "engine": true, "ts_fallback": false, "why": "D-H3." },
+    { "specifier": "@/lib/prisma", "engine": true, "ts_fallback": true, "why": "dub and papermark's real data layer." },
+    { "specifier": "@calcom/prisma", "engine": true, "ts_fallback": true, "why": "cal.com's real data layer." },
+    { "specifier": "@openstatus/db", "engine": true, "ts_fallback": true, "why": "openstatus's real data layer - a Drizzle repo that happened to name its package db." },
+    {
+      "specifier": "@openstatus/db/src/schema",
+      "engine": true,
+      "ts_fallback": true,
+      "why": "The schema module IS the data layer in a Drizzle repo - imported at runtime and passed to queries. /schema is deliberately absent from the type-surface exclusions, and this case is what holds that decision in place."
+    },
+    { "specifier": "@formbricks/database", "engine": true, "ts_fallback": true, "why": "formbricks' real data layer." },
+    { "specifier": "src/lib/data-access/users", "engine": true, "ts_fallback": false, "why": "The engine has always been broader here." },
+    { "specifier": "@acme/dbutils", "engine": true, "ts_fallback": false, "why": "`db` is matched loosely rather than at a boundary, deliberately." },
+    { "specifier": "lib/appdb", "engine": true, "ts_fallback": false, "why": "Same loose `db` match, trailing form." },
+
+    {
+      "specifier": "@calcom/lib/isPrismaObj",
+      "engine": false,
+      "ts_fallback": false,
+      "why": "B3's boundary rule: a type-guard utility is not a database client. Matching this as a substring put wrong entries in cal.com's learned contract."
+    },
+    { "specifier": "@/lib/drizzled-utils", "engine": false, "ts_fallback": false, "why": "The same boundary rule for a D-H3 token - `drizzled` is not `drizzle`." },
+    { "specifier": "@acme/sequelizer", "engine": false, "ts_fallback": false, "why": "The same boundary rule." },
+    { "specifier": "lib/typeormish", "engine": false, "ts_fallback": false, "why": "The same boundary rule." },
+    { "specifier": "next/server", "engine": false, "ts_fallback": false, "why": "Ordinary framework import." },
+    { "specifier": "@/lib/utils", "engine": false, "ts_fallback": false, "why": "Ordinary utility import." },
+    { "specifier": "react", "engine": false, "ts_fallback": false, "why": "Ordinary dependency." },
+
+    {
+      "specifier": "@calcom/prisma/enums",
+      "engine": false,
+      "ts_fallback": true,
+      "narrowing_reason": "Generated enum values, not a database client. Four of the six entries in cal.com's learned contract were surfaces like this one."
+    },
+    {
+      "specifier": "@calcom/prisma/zod-utils",
+      "engine": false,
+      "ts_fallback": true,
+      "narrowing_reason": "Validation schemas, not a database client. Same cal.com measurement."
+    },
+    {
+      "specifier": "@prisma/client/runtime/library",
+      "engine": false,
+      "ts_fallback": true,
+      "narrowing_reason": "Prisma's own runtime internals, imported by generated code rather than by anything that queries."
+    },
+    {
+      "specifier": "@acme/database/types",
+      "engine": false,
+      "ts_fallback": true,
+      "narrowing_reason": "A types surface of a data package. Types are erased and create no runtime dependency on the data layer."
+    }
+  ]
+}
