@@ -1205,8 +1205,28 @@ fn security_phase6_findings_and_proofs(
     let mut findings = Vec::new();
     let mut proofs = Vec::new();
 
+    // The scope narrowing phase6 applies. Absent or empty means "no narrowing", which is the
+    // semantics `path_matches_globs` carried on the `Option`; keeping it here means the field
+    // being absent (which is what every proposer-emitted convention looks like — the proposer
+    // writes its globs to `scope`, never to `matcher`) still evaluates every api-route file.
+    let path_globs = convention
+        .matcher
+        .path_globs
+        .as_deref()
+        .unwrap_or_default()
+        .to_vec();
+
     for file_path in files {
-        if !path_matches_globs(&file_path, convention.matcher.path_globs.as_deref()) {
+        // Was `path_matches_globs`, a prefix/equality shim that could not express `**/`. Phase4
+        // (`security_phase4_findings_and_proofs`) and phase5 (`phase5_file_scope_matches`) both
+        // narrow with `path_glob_matches`; phase6 was the last caller of the shim, so a
+        // `**/`-prefixed scope — the only shape the candidate proposer emits — reduced to an
+        // exact-string comparison here and excluded every file.
+        if !path_globs.is_empty()
+            && !path_globs
+                .iter()
+                .any(|pattern| path_glob_matches(pattern, &file_path))
+        {
             continue;
         }
         if !route_paths.is_empty() {
@@ -1549,24 +1569,6 @@ fn phase6_finding_text(kind: &str) -> (&'static str, &'static str, &'static str)
 
 fn route_path_from_file(file_path: &str) -> Option<String> {
     next_api_route_identity(file_path).map(|identity| identity.route_path)
-}
-
-fn path_matches_globs(file_path: &str, globs: Option<&[String]>) -> bool {
-    let Some(globs) = globs else {
-        return true;
-    };
-    if globs.is_empty() {
-        return true;
-    }
-    globs.iter().any(|glob| {
-        if let Some(prefix) = glob.strip_suffix("/**") {
-            file_path.starts_with(prefix)
-        } else if let Some(prefix) = glob.strip_suffix('*') {
-            file_path.starts_with(prefix)
-        } else {
-            file_path == glob
-        }
-    })
 }
 
 fn security_phase4_findings_and_proofs(
@@ -2756,11 +2758,38 @@ fn phase5_file_scope_matches(file_path: &str, path_globs: &[String]) -> bool {
     }
     let route_path = phase5_route_path_from_file(file_path);
     path_globs.iter().any(|pattern| {
-        path_glob_matches(pattern, file_path)
+        phase5_scope_pattern_matches(pattern, file_path)
             || route_path
                 .as_deref()
-                .is_some_and(|route_path| path_glob_matches(pattern, route_path))
+                .is_some_and(|route_path| phase5_scope_pattern_matches(pattern, route_path))
     })
+}
+
+/// Phase5 scope matching: globstar, plus one widening that belongs to phase5 alone.
+///
+/// A trailing `/*` also matches the bare directory. That is NOT glob semantics — `*` is "any run
+/// of characters except `/`", so strict globstar says `/api/users/*` does not match
+/// `/api/users`, and `matchesGlob` in `packages/core/src/globs.ts` says exactly that. The
+/// widening exists because this is the one scope site that tests patterns against a *route path*
+/// (`/api/users`) rather than a repo-relative file path, and scopes for that domain are written
+/// `/api/users/*` to mean that route and anything under it.
+/// `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
+/// pins the behaviour and is the reason it exists.
+///
+/// It used to live inside `path_glob_matches`, which made the engine's general-purpose matcher
+/// disagree with `matchesGlob` on `("/api/users/*", "/api/users")` — the two answer `true` and
+/// `false`. Since phase4 and phase6 only ever hand it file paths, and a file path is never a
+/// bare directory, no caller but this one wanted the widening. Moving it here leaves
+/// `path_glob_matches` byte-for-byte equivalent to `matchesGlob`'s documented semantics, which
+/// is what `glob_engine_parity_tests` and `packages/core/test/glob-parity.test.ts` assert, and
+/// leaves phase5's behaviour unchanged.
+fn phase5_scope_pattern_matches(pattern: &str, value: &str) -> bool {
+    if let Some(prefix) = pattern.strip_suffix("/*")
+        && value == prefix
+    {
+        return true;
+    }
+    path_glob_matches(pattern, value)
 }
 
 fn phase5_route_path_from_file(file_path: &str) -> Option<String> {
@@ -2790,18 +2819,14 @@ fn phase5_route_path_from_file(file_path: &str) -> Option<String> {
 ///   `**`   any run of characters, including `/`
 ///   `*`    any run of characters except `/`
 ///   `?`    exactly one character except `/`
+///
+/// Nothing else. This function carried one extra widening — a trailing `/*` also matching the
+/// bare directory — which made it answer `true` where `matchesGlob` answers `false` on
+/// `("/api/users/*", "/api/users")`, the only input on which the two engines were ever measured
+/// to disagree. That widening belongs to phase5's route-path domain and now lives with it, in
+/// `phase5_scope_pattern_matches`. `glob_engine_parity_tests` and
+/// `packages/core/test/glob-parity.test.ts` hold this equivalence.
 fn path_glob_matches(pattern: &str, file_path: &str) -> bool {
-    // Deliberately kept from the old matcher, not an oversight: a trailing `/*` also matches the
-    // directory itself. `phase5_file_scope_matches` tests these patterns against a *route path*
-    // (`/api/users`), and scopes are written as `/api/users/*` to mean that route and anything
-    // under it. Strict globstar would drop the bare-directory case, which
-    // `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
-    // pins. Widening only, and only for this one shape.
-    if let Some(prefix) = pattern.strip_suffix("/*")
-        && file_path == prefix
-    {
-        return true;
-    }
     glob_matches_from(pattern.as_bytes(), 0, file_path.as_bytes(), 0)
 }
 
@@ -4230,7 +4255,7 @@ fn diff_status_to_str(status: drift_engine::DiffStatus) -> &'static str {
 
 #[cfg(test)]
 mod path_glob_boundary_tests {
-    use super::path_glob_matches;
+    use super::{path_glob_matches, phase5_scope_pattern_matches};
 
     /// The globstar port (TDD §5.1, discovered during D1).
     ///
@@ -4286,17 +4311,120 @@ mod path_glob_boundary_tests {
         }
     }
 
-    /// Deliberately kept from the old matcher: a trailing `/*` also matches the directory
-    /// itself, because `phase5_file_scope_matches` tests these patterns against a *route path*
-    /// and scopes are written as `/api/users/*` to mean that route and anything under it.
-    /// Strict globstar would drop the bare-directory case, which
+    /// A trailing `/*` also matches the directory itself, because `phase5_file_scope_matches`
+    /// tests these patterns against a *route path* and scopes are written as `/api/users/*` to
+    /// mean that route and anything under it. Strict globstar would drop the bare-directory
+    /// case, which
     /// `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
-    /// pins — it went red without this and is the reason the shim exists.
+    /// pins — it went red without this and is the reason the widening exists.
+    ///
+    /// Same three assertions as before, moved off `path_glob_matches` and onto the function
+    /// that now owns the widening. `path_glob_matches` used to carry it, which made it the one
+    /// input where the engine's matcher and `matchesGlob` disagreed; the row below pins that
+    /// they no longer do.
     #[test]
     fn a_trailing_star_still_matches_the_directory_itself() {
-        assert!(path_glob_matches("/api/users/*", "/api/users"));
+        assert!(phase5_scope_pattern_matches("/api/users/*", "/api/users"));
+        assert!(phase5_scope_pattern_matches(
+            "/api/users/*",
+            "/api/users/detail"
+        ));
+        assert!(!phase5_scope_pattern_matches("/api/users/*", "/api/admin"));
+
+        // And the general-purpose matcher is now strictly globstar, exactly as
+        // `matchesGlob("/api/users", "/api/users/*")` answers on the TypeScript side.
+        assert!(!path_glob_matches("/api/users/*", "/api/users"));
         assert!(path_glob_matches("/api/users/*", "/api/users/detail"));
-        assert!(!path_glob_matches("/api/users/*", "/api/admin"));
+    }
+}
+
+/// Cross-process parity for the two glob engines.
+///
+/// Drift has two of them, on opposite sides of the CLI/engine process boundary:
+/// `matchesGlob` in `packages/core/src/globs.ts`, and `path_glob_matches` above. They have no
+/// shared code and cannot have any, so the only thing holding them together is a differential.
+/// They have disagreed before — `globs.ts` fixed the zero-segment `**/` bug and the Rust copy
+/// was left as a prefix shim for as long as it took someone to notice.
+///
+/// The comparison is deliberately between the two GLOB ENGINES and nothing else. The obvious
+/// alternative — run `conventionScopeFiles` against the engine's scope narrowing — is not a
+/// glob comparison at all. `convention-scope.ts:34-48` gates every api-route convention on
+/// `isNextApiRoutePath` first, and `:45-47` then short-circuits the *default* api-route glob
+/// set (`API_ROUTE_SCOPE_GLOBS`, the D-H2 eight) out of the comparison entirely, answering from
+/// that role check alone. A scope comparison run through it measures a role predicate rather
+/// than a matcher, and would agree for the wrong reason. Measured while writing this: the
+/// security proposer's narrower three-glob `route_scope` is *not* the default set, so it does
+/// not hit the short-circuit — but the role gate in front of it applies either way, so the CLI
+/// scope surface is never a bare glob engine.
+///
+/// Mechanics: `test/canary/glob-parity.json` carries the input (the proposer's literal emitted
+/// glob set and a fixture path list) and one `selected` list. This test asserts
+/// `path_glob_matches` reproduces `selected` exactly; `packages/core/test/glob-parity.test.ts`
+/// asserts `matchesGlob` reproduces the same `selected` from the same input. `selected` was
+/// generated from the Rust matcher's real output, never hand-written, and both sides recompute
+/// it from scratch on every run — so a change to EITHER matcher alone turns its own side red.
+/// There is no regeneration flag on purpose: if this goes red the matcher moved, and the
+/// question is which of the two is now wrong, not how to refresh the file.
+#[cfg(test)]
+mod glob_engine_parity_tests {
+    use super::path_glob_matches;
+
+    #[test]
+    fn rust_matcher_reproduces_the_shared_parity_selection() {
+        let artifact_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../test/canary/glob-parity.json"
+        );
+        let raw = std::fs::read_to_string(artifact_path)
+            .unwrap_or_else(|error| panic!("read {artifact_path}: {error}"));
+        let artifact: serde_json::Value =
+            serde_json::from_str(&raw).expect("parse glob-parity.json");
+
+        let globs = string_list(&artifact["globs"]);
+        let files = string_list(&artifact["files"]);
+        let expected = string_list(&artifact["selected"]);
+        assert!(
+            !globs.is_empty() && !files.is_empty(),
+            "the artifact must carry inputs"
+        );
+
+        // Input order, not sorted: a stable selection order is part of what parity means.
+        let selected = files
+            .iter()
+            .filter(|file| globs.iter().any(|glob| path_glob_matches(glob, file)))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            selected, expected,
+            "`path_glob_matches` no longer reproduces test/canary/glob-parity.json. Either the \
+             Rust matcher regressed, or it changed and `matchesGlob` in packages/core/src/globs.ts \
+             must change with it — decide from the documented semantics above `path_glob_matches`, \
+             do not edit the artifact to match."
+        );
+
+        // The single-pattern rows, for the semantics the proposer's glob set does not reach.
+        let cases = artifact["pattern_cases"].as_array().expect("pattern_cases");
+        assert!(!cases.is_empty(), "the artifact must carry pattern cases");
+        for case in cases {
+            let pattern = case["pattern"].as_str().expect("pattern");
+            let path = case["path"].as_str().expect("path");
+            let expected = case["matches"].as_bool().expect("matches");
+            assert_eq!(
+                path_glob_matches(pattern, path),
+                expected,
+                "path_glob_matches({pattern:?}, {path:?}) disagrees with test/canary/glob-parity.json"
+            );
+        }
+    }
+
+    fn string_list(value: &serde_json::Value) -> Vec<String> {
+        value
+            .as_array()
+            .expect("array")
+            .iter()
+            .map(|entry| entry.as_str().expect("string").to_string())
+            .collect()
     }
 }
 

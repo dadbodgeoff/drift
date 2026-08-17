@@ -146,6 +146,129 @@ fn check_repo_links_phase6_cors_proof_to_normalized_entrypoint() {
     );
 }
 
+/// Phase6's scope narrowing used `path_matches_globs`, a prefix/equality shim that had no
+/// `**/` case at all: a pattern that ended in neither `/**` nor `*` fell through to
+/// `file_path == glob`. Every glob the candidate proposer emits is `**/`-prefixed and ends in
+/// `route.ts` / `route.tsx`, so a phase6 convention carrying that scope compared
+/// `"app/api/public/route.ts" == "**/app/api/**/route.ts"`, skipped the file, and emitted
+/// nothing. Phase4 and phase5 already narrowed with `path_glob_matches`; phase6 was the last
+/// caller of the shim, and the shim is now gone.
+///
+/// This is the revert-proof test for that migration. Restore `path_matches_globs` at the phase6
+/// site and this goes red — the route is skipped and `findings` is empty. The glob set is the
+/// proposer's literal `route_scope` from `candidate_command.rs`, copied verbatim.
+#[test]
+fn phase6_narrows_with_the_proposers_globstar_scope() {
+    let source = [
+        "export async function GET() {",
+        "  return Response.json({ ok: true }, {",
+        "    headers: {",
+        r#"      "Access-Control-Allow-Origin": "*","#,
+        r#"      "Access-Control-Allow-Credentials": "true""#,
+        "    }",
+        "  });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let payload = run_phase6_fixture(
+        "cors_globstar_scope",
+        // Root-level app router — the default create-next-app layout, which has zero leading
+        // segments for `**/` to consume. That is the case the old matcher could not express.
+        "app/api/public/route.ts",
+        &source,
+        json!({
+            "id": "security_api_cors_globstar",
+            "kind": "api_route_cors_must_match_policy",
+            "matcher": {
+                "applies_to_file_roles": ["api_route"],
+                "methods": ["GET"],
+                "path_globs": [
+                    "**/app/api/**/route.ts",
+                    "**/app/api/**/route.tsx",
+                    "**/pages/api/**/*.ts"
+                ]
+            },
+            "requires": {
+                "cors": {
+                    "allowed_origins": ["https://app.example.com"],
+                    "allow_credentials": true
+                }
+            },
+            "severity": "error",
+            "enforcement_mode": "block",
+            "enforcement_capability": "deterministic_check"
+        }),
+    );
+
+    assert_eq!(
+        payload["findings"][0]["rule_id"], "api_route_cors_must_match_policy",
+        "the proposer's `**/`-prefixed scope must select a root-level app-router route: {payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"][0]["evidence"][0]["file_path"],
+        "app/api/public/route.ts"
+    );
+    assert_eq!(payload["findings"][0]["enforcement_result"], "block");
+    assert_eq!(
+        payload["security_boundary_proofs"][0]["route"]["normalized_entrypoint_id"],
+        "entrypoint:next_app:app/api/public/route.ts:GET"
+    );
+}
+
+/// The other half: the migration must not have been a filter deletion. A `**/`-prefixed scope
+/// that names a *different* route subtree still excludes the file, so phase6 narrows — it just
+/// narrows with real globstar semantics now.
+#[test]
+fn phase6_globstar_scope_still_excludes_routes_it_does_not_name() {
+    let source = [
+        "export async function GET() {",
+        "  return Response.json({ ok: true }, {",
+        "    headers: {",
+        r#"      "Access-Control-Allow-Origin": "*","#,
+        r#"      "Access-Control-Allow-Credentials": "true""#,
+        "    }",
+        "  });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let payload = run_phase6_fixture(
+        "cors_globstar_scope_miss",
+        "app/api/public/route.ts",
+        &source,
+        json!({
+            "id": "security_api_cors_globstar_miss",
+            "kind": "api_route_cors_must_match_policy",
+            "matcher": {
+                "applies_to_file_roles": ["api_route"],
+                "methods": ["GET"],
+                "path_globs": ["**/app/api/admin/**/route.ts"]
+            },
+            "requires": {
+                "cors": {
+                    "allowed_origins": ["https://app.example.com"],
+                    "allow_credentials": true
+                }
+            },
+            "severity": "error",
+            "enforcement_mode": "block",
+            "enforcement_capability": "deterministic_check"
+        }),
+    );
+
+    assert_eq!(
+        payload["findings"],
+        json!([]),
+        "a scope naming /admin must not select /public: {payload:#?}"
+    );
+    assert_eq!(
+        payload["security_boundary_proofs"],
+        json!([]),
+        "{payload:#?}"
+    );
+}
+
 #[test]
 fn check_repo_links_phase6_csrf_proof_to_normalized_entrypoint() {
     let source = [
