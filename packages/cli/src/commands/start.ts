@@ -462,12 +462,6 @@ function selfContainedCommand(command: string, databasePath: string): string {
 }
 
 /**
- * Exported for tests: every command onboarding prints has to run verbatim, and the property is
- * about the printer rather than about any one command string.
- */
-export const selfContainedCommandForTest = selfContainedCommand;
-
-/**
  * What to say when inference produced no enforceable data-access convention.
  *
  * "No enforceable convention candidates found yet." was indistinguishable from "this
