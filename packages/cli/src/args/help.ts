@@ -236,6 +236,14 @@ export function helpText(parsed: ParsedArgs): string {
       "  --scope changed-files  Check findings anywhere in changed files.",
       "  --scope full           Classify all evaluated findings as full-scope.",
       "  --json                 Emit machine-readable JSON.",
+      "",
+      "Notes:",
+      // Phrased around what full scope classifies rather than around an exit code, because that is
+      // the mechanism and it does not move: every finding it produces is `touched_existing`, and
+      // only `new_in_diff` findings are counted as blocking. So full scope cannot exit 2 under any
+      // convention or mode, and a pipeline that gates on it gates on nothing.
+      "  --scope full does not gate. It classifies every finding as pre-existing, so it never",
+      "  exits 2 no matter what the contract enforces. Use --scope changed-hunks in CI.",
       ""
     ].join("\n");
   }
@@ -255,6 +263,21 @@ export function helpText(parsed: ParsedArgs): string {
       "  drift --db <path> conventions exception add <convention_id> --repo <repo_id> --path <glob> --reason \"...\" --confirm --json",
       "  drift --db <path> conventions exception add <convention_id> --repo <repo_id> --endpoint /api/health --method GET --reason \"...\" --confirm --json",
       "  drift --db <path> conventions exception add <convention_id> --repo <repo_id> --operation-kind read --reason \"...\" --confirm --json",
+      "",
+      // Both flags existed and neither appeared anywhere in help, so the only way to learn that a
+      // listing was withholding candidates - or what to type to see them - was to read the JSON
+      // payload. `conventions list` now names its withheld counts in human output too; these are
+      // the flags those lines point at.
+      "Options for conventions list:",
+      "  --include-low-confidence  Also list candidates below the coverage floor. Hidden by default:",
+      "                            secondary heuristics promote any repeated helper name, and on a large",
+      "                            repo they bury the enforceable candidates.",
+      "  --experimental-security   Also list candidates from the experimental security heuristics.",
+      "                            Hidden by default: that layer's own audit found it cannot prove what",
+      "                            it claims, so its candidates are inventory, not findings.",
+      "",
+      "Notes:",
+      "  conventions list reports how many candidates each of those defaults withheld, and the command that shows them.",
       ""
     ].join("\n");
   }

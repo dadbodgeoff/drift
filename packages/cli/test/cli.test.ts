@@ -2428,7 +2428,11 @@ supported_sqlite_schema_version: MIGRATIONS.length,
     expect(result.stdout).toContain("new violations will be reported but will NOT block");
     expect(result.stdout).toContain("To make this a gate: drift conventions accept");
     expect(result.stdout).toContain("--mode block --confirm");
-    expect(result.stdout).toContain("Ready for AI-assisted work.");
+    // And does NOT close by announcing readiness. This is the warn-shaped fixture: the line above
+    // says new violations will not block, and "Ready for AI-assisted work." printed underneath it
+    // unconditionally. See start-readiness-line.test.ts for both directions.
+    expect(result.stdout).not.toContain("Ready for AI-assisted work.");
+    expect(result.stdout).toContain("Nothing accepted here blocks yet");
     expect(result.stdout).toContain("drift scan status");
     expect(result.stdout).toContain("drift backup create");
 
@@ -2870,14 +2874,19 @@ supported_sqlite_schema_version: MIGRATIONS.length,
       repo_root: repoRoot
     });
     expect(payload.state.database_path).toContain("drift.sqlite");
+    // Every printed command names the database it needs. `contract show`, `baseline status` and
+    // `backup create` fall outside every case `resolveDatabasePath` derives, so without `--db`
+    // three of these seven answered `Missing --db <path> or DRIFT_DB` and exited 1. The
+    // `--repo-root` command is exempt: it locates its own state from the repo root.
+    const database = payload.state.database_path;
     expect(payload.next_commands).toEqual([
       `drift doctor --repo-root ${repoRoot} --state-root ${stateRoot} --json`,
-      `drift scan status --repo ${payload.repo.id}`,
-      `drift contract show --repo ${payload.repo.id}`,
-      `drift baseline status --repo ${payload.repo.id}`,
-      `drift prepare "task" --repo ${payload.repo.id} --json`,
-      `drift check --diff main...HEAD --repo ${payload.repo.id} --scope changed-hunks`,
-      `drift backup create --repo ${payload.repo.id} --confirm`
+      `drift scan status --repo ${payload.repo.id} --db ${database}`,
+      `drift contract show --repo ${payload.repo.id} --db ${database}`,
+      `drift baseline status --repo ${payload.repo.id} --db ${database}`,
+      `drift prepare "task" --repo ${payload.repo.id} --json --db ${database}`,
+      `drift check --diff main...HEAD --repo ${payload.repo.id} --scope changed-hunks --db ${database}`,
+      `drift backup create --repo ${payload.repo.id} --confirm --db ${database}`
     ]);
   });
 
