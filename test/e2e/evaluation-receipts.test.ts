@@ -42,9 +42,10 @@ function receiptsOf(payload: any): Receipt[] {
   const receipts = payload?.summary?.evaluation_receipts;
   expect(
     Array.isArray(receipts),
-    `summary.evaluation_receipts must be present on every check payload, unconditionally. ` +
-      `An account of coverage that appears only when Drift already knows it has a problem is not ` +
-      `an account. Got: ${JSON.stringify(payload?.summary?.evaluation_receipts)}`
+    `summary.evaluation_receipts must be present on every check payload that reaches a verdict, ` +
+      `unconditionally - refusals included. An account of coverage that appears only when Drift ` +
+      `already knows it has a problem is not an account. ` +
+      `Got: ${JSON.stringify(payload?.summary?.evaluation_receipts)}`
   ).toBe(true);
   return receipts as Receipt[];
 }

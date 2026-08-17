@@ -1278,7 +1278,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           ...unindexedContractTargets.map((filePath) => `contract_target_not_indexed:${filePath}`)
         ]
       },
-      // One receipt per convention, on every run, always present.
+      // One receipt per convention, on every run that reaches a verdict.
       //
       // Deliberately NOT the house "present only when something is wrong" pattern that
       // `contract_staleness` and `unenforceable_conventions` below follow. Those say "something
@@ -1291,6 +1291,15 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       // questions. `partial_coverage.reasons` are keyed on file paths and say which FILES Drift
       // could not read; no value it has ever taken reflects which CONVENTIONS ran. A contract of
       // twelve accepted conventions, none of them reached, is `complete: true` by that measure.
+      //
+      // "Reaches a verdict" is the honest scope and covers every exit this function returns,
+      // refusals included - `full_scope_cannot_block` and the coverage-degradation refusal both
+      // come back through here and carry their receipts. What it does not cover is the three
+      // early returns above, where the engine was unavailable, timed out, or no contract exists:
+      // those exit 3 having evaluated nothing and claiming nothing, so there is no pass for a
+      // coverage account to qualify. Stated rather than left to be discovered, because "always
+      // present" is the sort of promise a consumer writes `payload.summary.evaluation_receipts[0]`
+      // against.
       evaluation_receipts: evaluationReceipts,
       // EW-3: the coverage number travels with the verdict. A verdict read without it invites
       // exactly the mistake open beta will produce most - a clean check on a repo shape Drift
