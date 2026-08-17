@@ -1,15 +1,42 @@
 # Canary fixtures — the cells the audit corpus could not reach
 
-`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The two
-below were added by phase 0b (TDD §4.2) for cells that no fixture in `test/fixtures/` could enter.
-They are not audit artifacts and carry no audit numbers.
+`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The ones
+below were added for cells that no fixture in `test/fixtures/` could enter — the first two by phase
+0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
 
 | Fixture | Cell it exists for | Why a new fixture was needed |
 |---|---|---|
 | `gt-presence-auth` | `api_route_requires_auth_helper` × `presence_findings` | A presence family is only proposed when **two** helpers from one module each wrap handlers in **two** files (`candidate_command.rs`, `FAMILY_SPECS` + `members.len() < 2`). Sweeping all 79 fixture directories through `scan` → `start` produced no candidate carrying `enforcement_semantics: "presence"`. Arm 3 intercepts before every kind arm, so with no such fixture the whole presence path was unreachable from the test suite. |
 | `gt-cors-policy` | `api_route_cors_must_match_policy` × `phase6_proof` | `security-cors-policy-violation` is a single route and is entirely the violation, so it offers no conformance half. The `firing` state requires ≥1 finding on a violation **and** 0 on a conformance route; this fixture supplies both against one inferred policy. |
+| `gt-authorization` | `api_route_requires_authorization` × `phase4_proof` | The cell was `needs-review` on the evidence that no fixture produces a candidate of this kind. That is a fixture-shape problem, not an engine one: `push_guard_candidate` (`candidate_command.rs`) nominates a symbol only when it appears in **≥2** route facts, and `security-role-guard-present`, `security-role-missing` and `security-role-branch-bypass` are each a single route making a single `requireRole` call, so the group never reaches the threshold and the kind was unreachable from the documented workflow. This fixture calls one helper, `requirePermission`, from three of its five `app/api/.../route.ts` files, which is what makes it a convention rather than a one-off. |
+
+## Why `gt-authorization`'s guard takes no arguments
+
+`requirePermission()` is called with an empty argument list, not as
+`requirePermission(session.user, "projects:write")`. That is forced, and it is worth knowing why
+before anyone "fixes" the fixture to read more naturally.
+
+`build_authorization_proof_from_facts` (`security_proof.rs`) records `session_not_trusted` for any
+guard whose first argument is not a variable listed in `session_trust.trusted_sessions`. Trusted
+sessions come only from `SessionRead` facts with `source: "auth_result"`, which `security_facts.rs`
+emits only for a helper listed in the convention's `requires.auth_helpers`. A candidate of kind
+`api_route_requires_authorization` carries `requires.authorization_helpers` and nothing else — the
+proposer never puts `auth_helpers` on it — so `trusted_sessions` is necessarily empty, and **any**
+subject argument makes the proof fail. A guard called with no arguments has no `subject_var`, the
+check is skipped, and the conformance half is expressible. See the report accompanying this fixture:
+the false positive is real and is deliberately left unfixed here, because fixing it means changing
+shared phase-4 proof semantics.
 
 ## Near-miss content, per §4.3
+
+`gt-authorization` carries two, one per side of the workflow. `logPermissionCheck` is a proposal-side
+near-miss: it passes `is_authorization_candidate_symbol` on its name alone (lowercased, it contains
+`permission`) and guards nothing, and one call site keeps it below the ≥2 threshold, so it must never
+be nominated while the route calling it must still be flagged. `app/api/audits/route.ts` is an
+enforcement-side near-miss: it does call the accepted helper, but after the sink has already run, so
+a presence-only matcher scores it clean while this path must report
+`authorization_guard_not_dominating_sink`. Drop either route and a name match plus a call-presence
+check would score identically to the real evaluator.
 
 `gt-presence-auth/lib/blog.ts` exports `withAuthorHat`. The name is a deliberate hit for
 `is_auth_candidate_symbol` — it starts with `with`, it contains `auth` — and the body decorates a

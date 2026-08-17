@@ -11,10 +11,16 @@
 // precisely why a P0 shipped under their coverage: a hand-built contract is not coverage for a
 // convention kind, so a test that injects its convention cannot be evidence for `firing`.
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanupGtTempDirs, flaggedPaths, readFindings, runGtWorkflow } from "./gt-harness.js";
+import {
+  cleanupGtTempDirs,
+  DEBUG_ENGINE,
+  flaggedPaths,
+  readFindings,
+  runGtWorkflow
+} from "./gt-harness.js";
 
 afterEach(cleanupGtTempDirs);
 
@@ -35,6 +41,58 @@ const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
 const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
+const AUTHORIZATION = "api_route_requires_authorization";
+
+// The proposer's literal route-scope glob set (candidate_command.rs, API_ROUTE_SCOPE_GLOBS).
+//
+// Pinned here because the authorization canary's whole point is that the accepted scope reaches the
+// routes through `path_glob_matches` (check_command.rs:2793) rather than a prefix compare. The first
+// glob matching `app/api/projects/route.ts` is the ZERO-SEGMENT double-star case: the leading
+// double-star-slash consumes nothing at all. That is the case the historical bug got wrong — the
+// pattern reduced to a `starts_with` over its own literal prefix and matched no file in any repo.
+//
+// This is a restatement of what the proposer emits, asserted for equality below. It is not a
+// hand-written scope: nothing here is fed INTO the workflow.
+const PROPOSER_ROUTE_SCOPE_GLOBS = [
+  "**/app/api/**/route.ts",
+  "**/app/api/**/route.tsx",
+  "**/pages/api/**/*.ts"
+];
+
+/** Every route in gt-authorization, violating and conforming alike. */
+const ALL_GT_AUTHORIZATION_ROUTES = [
+  "app/api/audits/route.ts",
+  "app/api/invoices/route.ts",
+  "app/api/members/route.ts",
+  "app/api/projects/route.ts",
+  "app/api/reports/route.ts"
+];
+
+/**
+ * A unified diff that adds `paths` verbatim, read out of the copied fixture so it cannot drift from
+ * the files under test.
+ *
+ * Needed because `blockingCount` only counts `new_in_diff` findings, and `--scope full` classifies
+ * everything `touched_existing`. Rather than assert a weaker exit code, the canary takes the
+ * verdict over the diff that a pull request adding these routes would actually produce.
+ */
+function addedFilesPatch(repoRoot: string, paths: readonly string[]): string {
+  return paths
+    .map((path) => {
+      const lines = readFileSync(join(repoRoot, path), "utf8").split("\n");
+      if (lines.at(-1) === "") lines.pop();
+      return [
+        `diff --git a/${path} b/${path}`,
+        "new file mode 100644",
+        "--- /dev/null",
+        `+++ b/${path}`,
+        `@@ -0,0 +1,${lines.length} @@`,
+        ...lines.map((line) => `+${line}`)
+      ].join("\n");
+    })
+    .join("\n")
+    .concat("\n");
+}
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
 const CELLS_COVERED_HERE: Record<string, string> = {
@@ -51,7 +109,9 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "middleware_must_cover_routes::no_dispatch_arm":
     "middleware_must_cover_routes is refused at acceptance, by name",
   "api_route_forbids_sensitive_response_fields::phase5_proof":
-    "phase-5 sensitive-response-fields path fires, on both provenance routes"
+    "phase-5 sensitive-response-fields path fires, on both provenance routes",
+  "api_route_requires_authorization::phase4_proof":
+    "phase-4 authorization path fires over the proposer's own route globs"
 };
 
 describe("cell canaries — firing", () => {
@@ -175,6 +235,150 @@ describe("cell canaries — firing", () => {
         "pages/api/route-leak.ts"
       ]);
     }
+  }, 180000);
+
+  it("phase-4 authorization path fires over the proposer's own route globs", async () => {
+    // The cell's recorded missing_evidence was "no fixture produces a candidate of this kind".
+    // That was a fixture-shape problem, not an engine one: `push_guard_candidate`
+    // (candidate_command.rs:1660) needs the SAME symbol in >= 2 route facts, and all three
+    // security-role-* fixtures are a single route with a single `requireRole` call, so the group
+    // never reaches the threshold. gt-authorization calls one helper from three route files.
+    const run = await runGtWorkflow({
+      fixture: "gt-authorization",
+      acceptKinds: [AUTHORIZATION],
+      mode: "block",
+      severity: "error"
+    });
+
+    // --- the candidate came from the proposer, and carries the glob scope --------------------
+    const candidates = (run.startPayload.candidates ?? []).filter(
+      (candidate: any) => candidate.kind === AUTHORIZATION
+    );
+    expect(
+      candidates,
+      "exactly one authorization candidate: `requirePermission`, nominated by repetition"
+    ).toHaveLength(1);
+    expect(candidates[0].matcher.required_calls).toEqual(["requirePermission"]);
+    expect(candidates[0].requires.authorization_helpers).toEqual([
+      { helper_id: "authorization:requirePermission", symbol: "requirePermission", import: "@/server/authz" }
+    ]);
+    expect(
+      candidates[0].scope.path_globs,
+      "the accepted scope is the proposer's glob set, verbatim — this canary is worthless if the " +
+        "convention is scoped by anything else"
+    ).toEqual(PROPOSER_ROUTE_SCOPE_GLOBS);
+    expect(run.acceptPayloads, "obtained from the proposer, never injected").toHaveLength(1);
+
+    // §4.3 near-miss, proposal side. `logPermissionCheck` passes
+    // `is_authorization_candidate_symbol` on its name alone (it contains "permission") and guards
+    // nothing. One call site keeps it under the >= 2 threshold, so it must never be nominated by
+    // ANY candidate in this run — not just by the authorization one.
+    const everyRequiredCall = (run.startPayload.candidates ?? []).flatMap(
+      (candidate: any) => candidate.matcher?.required_calls ?? []
+    );
+    expect(everyRequiredCall).not.toContain("logPermissionCheck");
+
+    // --- violation half ------------------------------------------------------------------------
+    const findings = readFindings(run.databasePath, run.repoId);
+    expect(flaggedPaths(findings, AUTHORIZATION)).toEqual([
+      // near-miss: calls the accepted helper, but only AFTER the sink has run
+      "app/api/audits/route.ts",
+      // the unambiguous violation: no authorization guard at all
+      "app/api/projects/route.ts",
+      // near-miss: calls a permission-shaped symbol that is not the accepted helper
+      "app/api/reports/route.ts"
+    ]);
+
+    // Exact file AND line, from the JSON payload the CLI actually emits. The line is the protected
+    // sink, not the handler or the file head.
+    const byPath = new Map<string, any>(
+      (run.checkPayload.findings ?? [])
+        .filter((finding: any) => finding.expected_layer === "authorization")
+        .map((finding: any) => [finding.evidence_refs[0].file_path, finding])
+    );
+    const projects = byPath.get("app/api/projects/route.ts");
+    expect(projects.title).toBe("API route missing required authorization proof");
+    expect(projects.actual_layer).toBe("authorization_guard_missing");
+    expect(projects.evidence_refs[0].start_line, "the `db.project.delete` call").toBe(7);
+    expect(projects.severity).toBe("error");
+    expect(projects.enforcement_result, "accepted in block mode").toBe("block");
+
+    // The dominance near-miss fails for a DIFFERENT reason than the missing-guard one. A presence
+    // matcher cannot tell these apart; this cell's path can, and that distinction is the claim.
+    expect(byPath.get("app/api/audits/route.ts").actual_layer).toBe(
+      "authorization_guard_not_dominating_sink"
+    );
+    expect(byPath.get("app/api/audits/route.ts").evidence_refs[0].start_line).toBe(10);
+    expect(byPath.get("app/api/reports/route.ts").actual_layer).toBe("authorization_guard_missing");
+    expect(byPath.get("app/api/reports/route.ts").evidence_refs[0].start_line).toBe(14);
+
+    // Exit code. A `--scope full` run classifies every finding `touched_existing`, and
+    // `blockingCount` (run-check.ts:821) counts only `new_in_diff` — inherited debt never blocks,
+    // by design, so the full-scope run above exits 0 with three block-mode findings. The blocking
+    // verdict therefore has to be taken over a diff, which is what a PR adding these routes looks
+    // like. Same database, same accepted convention, so this is the same cell.
+    const patchPath = join(run.repoRoot, "..", "adds-the-routes.patch");
+    writeFileSync(patchPath, addedFilesPatch(run.repoRoot, ALL_GT_AUTHORIZATION_ROUTES), "utf8");
+    const { runCli } = await import("../../packages/cli/src/index.js");
+    // `runGtWorkflow` restores DRIFT_ENGINE_BIN when it returns, and without it the CLI falls back
+    // to `cargo run` — a different binary than the one the assertions above were made against.
+    const previousEngineBin = process.env.DRIFT_ENGINE_BIN;
+    process.env.DRIFT_ENGINE_BIN = DEBUG_ENGINE;
+    let blocked;
+    try {
+      blocked = await runCli([
+        "--db", run.databasePath,
+        "check",
+        "--repo", run.repoId,
+        "--scope", "changed-hunks",
+        "--diff-file", patchPath,
+        "--now", "2026-08-16T00:05:00.000Z",
+        "--json"
+      ]);
+    } finally {
+      if (previousEngineBin === undefined) delete process.env.DRIFT_ENGINE_BIN;
+      else process.env.DRIFT_ENGINE_BIN = previousEngineBin;
+    }
+    expect(blocked.exitCode, `blocking check stderr:\n${blocked.stderr}`).toBe(2);
+    const blockedPayload = JSON.parse(blocked.stdout);
+    const blockedAuthorization = (blockedPayload.findings ?? []).filter(
+      (finding: any) => finding.expected_layer === "authorization"
+    );
+    expect(
+      blockedAuthorization.map((finding: any) => finding.evidence_refs[0].file_path).sort()
+    ).toEqual([
+      "app/api/audits/route.ts",
+      "app/api/projects/route.ts",
+      "app/api/reports/route.ts"
+    ]);
+    for (const finding of blockedAuthorization) {
+      expect(finding.diff_status).toBe("new_in_diff");
+      expect(finding.enforcement_result).toBe("block");
+    }
+
+    // --- inverse half, in the same run ---------------------------------------------------------
+    // Both conformance routes are inside the accepted scope and carry a protected sink, so the
+    // convention was evaluated over them and returned proven. The violating siblings above are the
+    // evidence that "no finding" here means evaluated-and-passed rather than skipped.
+    for (const route of ["app/api/members/route.ts", "app/api/invoices/route.ts"]) {
+      expect(
+        flaggedPaths(findings, AUTHORIZATION),
+        `${route} guards its sink and must be silent`
+      ).not.toContain(route);
+    }
+    const proofs = (run.checkPayload.security_boundary_proofs ?? []).filter((proof: any) =>
+      (proof.contracts ?? []).some((contract: any) => contract.kind === AUTHORIZATION)
+    );
+    const provenPaths = proofs
+      .filter((proof: any) => proof.authorization?.required === true && proof.authorization?.proven === true)
+      .map((proof: any) => proof.route.file_path)
+      .sort();
+    expect(
+      provenPaths,
+      "a proof record for each conformance route is what distinguishes evaluated-and-passed from " +
+        "never-reached; evaluation receipts do not exist in this codebase, so the proof payload is " +
+        "the receipt"
+    ).toEqual(["app/api/invoices/route.ts", "app/api/members/route.ts"]);
   }, 180000);
 
   it("phase-6 CORS policy path fires", async () => {
