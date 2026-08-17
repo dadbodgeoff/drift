@@ -94,7 +94,7 @@
       "state": "needs-review",
       "canary": null,
       "evidence": null,
-      "missing_evidence": "No fixture in test/fixtures induces the proposer to emit ANY api_route_requires_request_validation candidate, presence or per-symbol (swept all 79 fixture directories through scan+start). A validation family additionally needs >=2 distinct `request_validation_called` symbols each appearing in >=2 files (candidate_command.rs:1397, FamilyConfirmation::AlreadyDetected). Needed: a fixture that produces request_validation_called facts for two helpers across two files each.",
+      "missing_evidence": "Corrected 2026-08-16 on branch glob-revival/safeparse. The old text said no fixture can produce ANY candidate of this kind; that is now false - test/fixtures/gt-request-validation produces the per-symbol candidate, and the sibling request_validation_proof cell is `firing` on it. The presence half remains blocked, and for a reason that no fixture can lift: FAMILY_SPECS (candidate_command.rs:891-908) sources the request-validation family from the `request_validation_called` fact kind ONLY - `symbol_called` is deliberately excluded, because including it produced an 89-member family on dub. But `request_validation_called` facts are produced by extract_security_facts only when accepted validators are already passed in, and the scan path calls `extract_security_facts(file_path, &source, &[])` with an empty slice (main.rs:663). So at scan time - the only time the proposer reads facts - zero `request_validation_called` facts exist in any repo, and the family can never form. This is a code gap, not a corpus gap: no fixture can supply a fact kind the scanner never emits. Fixing main.rs:663 to feed the accepted validators into the scan was explicitly out of scope for the glob-revival sprint.",
       "citation": null
     },
     {
@@ -125,10 +125,10 @@
       "kind": "api_route_requires_request_validation",
       "enforcement_path": "request_validation_proof",
       "dispatch": "check_command.rs:259 (match arm, ConventionKind::ApiRouteRequiresRequestValidation)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "Same root cause as the presence row: no fixture produces a candidate of this kind, so acceptance cannot be driven through the documented workflow and no finding can be observed. Not `unimplemented` - candidate_command.rs:508,527 does emit this kind, it is the corpus that cannot supply the facts.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > request-validation safeParse proof path fires",
+      "evidence": "gt-request-validation: the proposer emits exactly one candidate of this kind (symbol `safeParse`, from `symbol_called` facts via push_request_validation_candidates + is_validation_candidate_symbol), accepted in block mode at severity error through `conventions accept`. Result: exactly 1 finding, on the violating route app/api/projects/route.ts, at line 7 - the `db.project.create` sink - and 0 on the two conforming safeParse routes, each of which carries a request_validation proof with required=true and proven=true naming its own schema receiver. The old missing_evidence was wrong on its premise: candidates of this kind ARE reachable through symbol_called; the corpus simply had no fixture with two safeParse calls in api-route files. Reaching `firing` also required two code fixes on this branch - RequestValidatorKind::SchemaMethod (security_patterns.rs), because the proposer writes the method name into `requires.validators` and the Helper arm rejects any call carrying a receiver; and sink_line_from_sink_id (check_command.rs), because the finding line fell through to a hardcoded 1.",
+      "missing_evidence": null,
       "citation": null
     },
     {

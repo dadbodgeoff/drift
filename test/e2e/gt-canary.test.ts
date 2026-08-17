@@ -35,6 +35,7 @@ const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
 const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
+const REQUEST_VALIDATION = "api_route_requires_request_validation";
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
 const CELLS_COVERED_HERE: Record<string, string> = {
@@ -51,7 +52,9 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "middleware_must_cover_routes::no_dispatch_arm":
     "middleware_must_cover_routes is refused at acceptance, by name",
   "api_route_forbids_sensitive_response_fields::phase5_proof":
-    "phase-5 sensitive-response-fields path fires, on both provenance routes"
+    "phase-5 sensitive-response-fields path fires, on both provenance routes",
+  "api_route_requires_request_validation::request_validation_proof":
+    "request-validation safeParse proof path fires"
 };
 
 describe("cell canaries — firing", () => {
@@ -175,6 +178,104 @@ describe("cell canaries — firing", () => {
         "pages/api/route-leak.ts"
       ]);
     }
+  }, 180000);
+
+  it("request-validation safeParse proof path fires", async () => {
+    // The safeParse cell. Before this branch the proposer could infer a request-validation
+    // convention from `safeParse` usage and a human could accept it, and the result proved nothing
+    // and flagged the very routes it had been inferred from:
+    //
+    //   `push_request_validation_candidates` (candidate_command.rs) writes every inferred symbol
+    //   into `requires.validators` and leaves `requires.schemas` empty, so `safeParse` arrived at
+    //   the prover as `RequestValidatorKind::Helper`. The Helper arm
+    //   (security_patterns.rs::accepted_request_validator_for_call) requires `call.value.is_none()`
+    //   — a call with no receiver — and `SomeSchema.safeParse(body)` always has one. The Schema arm
+    //   below it names "safeParse", but it matches the *schema* symbol, so nothing the proposer can
+    //   emit ever reaches it. No `request_validation_called` fact, no validation, three findings on
+    //   three routes, two of which were correct.
+    //
+    // So this test is a false-positive canary as much as a firing canary: the assertion that
+    // tasks/notes are silent is the half that was failing.
+    const run = await runGtWorkflow({
+      fixture: "gt-request-validation",
+      acceptKinds: [REQUEST_VALIDATION],
+      severity: "error",
+      mode: "block"
+    });
+
+    // Obtained from the proposer, never injected, and asserted in the exact shape whose kind
+    // defaulted wrong: the method name under `validators`, with `schemas` empty.
+    const candidates = (run.startPayload.candidates ?? []).filter(
+      (candidate: any) => candidate.kind === REQUEST_VALIDATION
+    );
+    expect(candidates, "the proposer must emit the request-validation candidate").toHaveLength(1);
+    expect(candidates[0].requires.validators.map((v: any) => v.symbol)).toEqual(["safeParse"]);
+    expect(candidates[0].requires.schemas).toEqual([]);
+    expect(run.acceptPayloads).toHaveLength(1);
+    expect(run.acceptPayloads[0].accepted.enforcement_mode).toBe("block");
+
+    // Violation half: the route that hands `await request.json()` straight to a data sink, and
+    // only that route.
+    const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), REQUEST_VALIDATION);
+    expect(flagged).toEqual(["app/api/projects/route.ts"]);
+
+    // ...at the sink line, not at a default. `sink_id` is `sink:{file}:{line}:{symbol}` while every
+    // other id is `...:{line}`, so the shared parser read "create" as the line, failed, and every
+    // request-validation finding ever emitted reported line 1.
+    const findings = (run.checkPayload.findings ?? []).filter(
+      (finding: any) => finding.title === "API route uses unvalidated request input"
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].evidence_refs[0].file_path).toBe("app/api/projects/route.ts");
+    expect(findings[0].evidence_refs[0].start_line).toBe(7);
+    expect(findings[0].actual_layer).toBe("request_input_not_validated");
+    expect(findings[0].enforcement_result).toBe("block");
+    expect(findings[0].severity).toBe("error");
+
+    // Conformance half, and the proof that the convention was EVALUATED on it rather than skipped:
+    // both safeParse routes carry a request-validation proof that is `required` and `proven`, and
+    // names the receiver as the schema. A skipped route would have no proof at all.
+    const provenBySchema = new Map(
+      (run.checkPayload.security_boundary_proofs ?? [])
+        .filter((proof: any) => proof.proof_id.endsWith(":request_validation"))
+        .map((proof: any) => [
+          proof.route.file_path,
+          {
+            required: proof.request_validation.required,
+            proven: proof.request_validation.proven,
+            schemas: proof.request_validation.validations.map((v: any) => [
+              v.validator_symbol,
+              v.schema_symbol
+            ])
+          }
+        ])
+    );
+    expect(provenBySchema.get("app/api/tasks/route.ts")).toEqual({
+      required: true,
+      proven: true,
+      schemas: [["safeParse", "TaskInputSchema"]]
+    });
+    expect(provenBySchema.get("app/api/notes/route.ts")).toEqual({
+      required: true,
+      proven: true,
+      schemas: [["safeParse", "NoteInputSchema"]]
+    });
+    expect(provenBySchema.get("app/api/projects/route.ts")).toEqual({
+      required: true,
+      proven: false,
+      schemas: []
+    });
+
+    // Exit code is 0, and that is NOT this cell's doing. `--scope full` counts a finding as
+    // blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the harness
+    // copies the fixture to a temp repo with no diff, so every full-scope finding in this suite is
+    // `touched_existing`. Every other canary in this file lands on 0 for the same reason. Pinned so
+    // that if full-scope blocking is ever fixed, this assertion is one of the places that says so.
+    expect(run.checkExitCode).toBe(0);
+    expect(run.checkPayload.summary.outcome.non_blocking_reasons).toContainEqual({
+      reason: "full_scope_reports_existing_violations_without_blocking",
+      count: 1
+    });
   }, 180000);
 
   it("phase-6 CORS policy path fires", async () => {
