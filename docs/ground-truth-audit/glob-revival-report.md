@@ -7,8 +7,9 @@ The engine's scope-glob matcher was historically broken: `path_glob_matches` red
 `**/app/api/**/route.ts` to `starts_with("**/app/api")`, which no repo-relative path matches. Every
 proposer-emitted scope therefore selected zero files, and several security convention kinds accepted
 cleanly while structurally unable to fire. A real recursive matcher now exists. This sprint proves,
-per kind and end to end, that the revived kinds actually fire — and that each canary *dies* when the
-old bug is put back.
+per kind and end to end, that the revived kinds actually fire — and, for four of the five
+glob-scoped kinds, that the canary *dies* when the old bug is put back. The fifth exception is
+stated plainly in §4.1 rather than smoothed over.
 
 ---
 
@@ -24,7 +25,7 @@ was deleted from `glob_matches_from`.
 | `api_route_requires_authorization` | **proposer** | `gt-authorization/app/api/projects/route.ts:7` | same, `authorization_guard_missing`, `block` | **2** over a diff | **YES** | `needs-review → firing` |
 | `api_route_forbids_sensitive_response_fields` | **proposer** (canary pre-existed) | `gt-sensitive-fields{,-schema}/pages/api/route-leak.ts` | same | 0 (`--scope full`) | **YES** | `firing → firing`, now mutation-verified |
 | `api_route_forbids_secret_exposure` | **contract import** — no proposer exists | `gt-secret-exposure/app/api/billing/route.ts:3`, `webhooks/route.ts:3` | both, `block` | **2** | **YES** | `unimplemented → firing` |
-| `session_object_must_come_from_trusted_helper` | **contract import** — no proposer exists | `gt-session-trust/app/api/session/route.ts:4` | same, `session_not_trusted`, `block` | **2** | **YES** | `unimplemented → firing` |
+| `session_object_must_come_from_trusted_helper` | **contract import** — no proposer exists | `gt-session-trust/app/api/session/route.ts:4` | same, `session_not_trusted`, `block` | **2** | **NO — did not reproduce; see §4.1** | `unimplemented → firing` |
 | `api_route_requires_request_validation` (`safeParse`) | **proposer** | `gt-request-validation/app/api/projects/route.ts:7` | same, `request_input_not_validated`, `block` | 0 — see §6.5 | **NO — structurally cannot; see §4** | `needs-review → firing` (`request_validation_proof`) |
 
 **Contract-import exception, flagged as required.** Two kinds used it: `api_route_forbids_secret_exposure`
@@ -184,6 +185,35 @@ the zero-nesting cases (`app/api/route.ts`, `pages/api/handler.ts` — the origi
 `isNextApiRoutePath` first, so it measures a role predicate, not a matcher. That would have been a
 parity test that could not fail for matcher reasons.
 
+### 4.1 One mutation claim did not survive re-checking, and it is corrected here
+
+**Run the canary file whole and five tests fail under the mutation. Run them one at a time and only
+four do.** `session_object_must_come_from_trusted_helper` passes in isolation. That was chased down
+rather than left as noise:
+
+- Re-run at the pre-fix commit `9e435070` in a separate worktree, in isolation: **passes**. So this
+  is not something the fix round broke.
+- Re-run after an explicit `cargo build -p drift-engine` with the mutation applied, binary mtime
+  confirmed newer than the edit: **passes**. So it is not a stale-binary artifact — and the same
+  mechanism makes tenant-scope, authorization, secret-exposure and sensitive-fields all fail.
+- The imported convention really does carry the `**/`-prefixed scope: dumped from storage after the
+  import, `scope.path_globs` is the proposer's three globs verbatim, and `engine-check.ts:94` passes
+  `scope` through to the engine.
+
+So the honest statement is: **the subagent's reported mutation failure for this kind, and my own
+first combined-run observation, were both artifacts of running the full file.** The isolated result
+is the trustworthy one, and by it this canary does not exercise the glob path.
+
+What it still proves is unchanged and was verified independently: the phase-4 arm for this kind is
+reachable via `contract import` and fires, at `app/api/session/route.ts:4`, `enforcement_result:
+block`, exit 2, with the compliant sibling carrying a `proven: true` proof. The ledger transition
+rests on that, not on the mutation. What is NOT established is that this particular canary would
+catch a regression of the globstar matcher — see §6.13 for the open question about why phase-4
+findings of this kind are not gated by the scope globs when tenant-scope's and authorization's are.
+
+Methodological note for anyone re-running this: **mutation results must be taken per test, in
+isolation.** A whole-file run produces cross-test ordering effects that read as extra failures.
+
 ### The merged-tree mutation run is the strongest single piece of evidence here
 
 Deleting the `**/` zero-segment early return and running the whole canary file failed **exactly five
@@ -193,7 +223,7 @@ tests, and exactly the right five**:
 × phase-5 sensitive-response-fields path fires, on both provenance routes
 × phase-5 secret-exposure path fires, reached by contract import
 × phase-4 authorization path fires over the proposer's own route globs
-× phase-4 session-trust path fires through contract import
+× phase-4 session-trust path fires through contract import   <- does NOT reproduce in isolation (§4.1)
 × phase-4 tenant-scope path fires, and the helper-scoped siblings pass
 ✓ (9 others, including request-validation and phase-6 CORS)
 ```
@@ -226,7 +256,8 @@ All run on the fully merged branch, in this session.
 | `pnpm typecheck` | 0 |
 | `DRIFT_LEDGER_ENFORCE=1 node scripts/convention-cell-ledger.mjs` | 0 — 18 cells: firing 10, quarantined 1, unimplemented 0, needs-review 7 |
 | `vitest run test/e2e/gt-canary.test.ts` ×3 (determinism) | 14 passed / 14, identical each run |
-| Merged-tree glob mutation applied | **5 failed / 9 passed** — exactly the five glob-dependent canaries |
+| Glob mutation, per canary in isolation | **4 fail** (tenant-scope, authorization, secret-exposure, sensitive-fields); session-trust passes — §4.1 |
+| Glob mutation, whole file in one run | 5 failed / 9 passed — the fifth is an ordering artifact, not reproducible alone |
 | Glob mutation restored | 14 passed / 14 |
 
 `verify:ci` covers `check:cell-ledger`, `check:surface-parity`, `check:payload-invariants`,
@@ -300,7 +331,16 @@ value), so it needs its own decision.
     Reverting a change and re-running can rebuild the binary without relinking the test target, which
     then silently exercises the OLD binary and reports a false pass. Force it with
     `touch crates/drift-engine/tests/*.rs`. Every revert-proof in §3 was confirmed with the relink.
-12. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
+12. **Open question — why is `session_object_must_come_from_trusted_helper` not gated by its scope
+    globs, when the other two phase-4 kinds are?** `security_phase4_findings_and_proofs`
+    (`check_command.rs:1604-1618`) filters its per-file loop on `convention.scope["path_globs"]`, and
+    that filter demonstrably bites for `api_route_requires_tenant_scope` and
+    `api_route_requires_authorization` — both die under the globstar mutation. The session-trust
+    finding ("API route uses untrusted session object", `check_command.rs:3532`) survives it with the
+    same scope on the same fixture layout, which means its findings reach the output by a path that
+    filter does not gate. Worth resolving: either a scope narrowing is being ignored for this kind
+    (a real over-reporting risk), or the filter is applied somewhere this analysis has not found.
+13. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
     uses `storage.upsertAcceptedConvention` and the de-globbed `app/api/**/route.ts`. Left untouched
     under the no-weakening rule; it is the exact pattern this sprint's canaries exist to replace.
 
