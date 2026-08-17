@@ -1,0 +1,1 @@
+{ "name": "gt-session-trust", "private": true, "version": "1.0.0", "dependencies": { "next": "14.0.0" } }

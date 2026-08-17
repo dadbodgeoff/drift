@@ -235,9 +235,9 @@
       "kind": "session_object_must_come_from_trusted_helper",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:353 (three-variant phase-4 arm, shared)",
-      "state": "unimplemented",
-      "canary": "test/e2e/gt-canary.test.ts > proposer emits no candidate of the unimplemented shapes",
-      "evidence": "candidate_command.rs contains zero occurrences of this kind, and both fixtures built for it (security-session-trusted-helper, security-session-from-request-untrusted) yield an empty candidate list. The arm-8 branch for it is unreachable through the documented workflow.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 session-trust path fires through contract import",
+      "evidence": "Two claims, and they are not one claim. (1) THE PROPOSER STILL EMITS NOTHING OF THIS SHAPE. candidate_command.rs contains zero occurrences of ConventionKind::SessionObjectMustComeFromTrustedHelper, and both fixtures built for it (security-session-trusted-helper, security-session-from-request-untrusted) still yield an empty candidate list; 'proposer emits no candidate of the unimplemented shapes' continues to assert exactly that, unweakened. (2) THE ENFORCEMENT ARM IS NEVERTHELESS REACHABLE, AND FIRES. The previous evidence inferred from (1) that the arm 'is unreachable through the documented workflow'; that inference was wrong, because 'drift contract import drift.lock --repo <id> --confirm' IS a documented workflow (docs/agent-integration.md:84, router.ts:158, contract.ts:199). Driven end to end over test/fixtures/gt-session-trust with a contract carrying the proposer's own literal scope globs, the phase-4 arm (check_command.rs:1636,1645) emits one finding at app/api/session/route.ts:4, title 'API route uses untrusted session object', severity error, enforcement_result block, exit code 2 at --scope changed-hunks. The compliant sibling app/api/profile/route.ts is silent AND carries session_trust {required: true, proven: true}, so it was evaluated rather than skipped. The glob scope filter at check_command.rs:1610-1618 is on that path: with path_glob_matches reverted to the pre-fix prefix behaviour the canary fails with zero findings.",
       "missing_evidence": null,
       "citation": null
     },
