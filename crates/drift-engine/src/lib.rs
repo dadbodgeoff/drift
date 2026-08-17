@@ -54,6 +54,7 @@ pub use security_facts::extract_security_facts;
 pub use security_facts::extract_security_facts_with_phase5;
 pub use security_facts::extract_security_facts_with_policy;
 pub use security_facts::extract_security_facts_with_validation;
+pub use security_facts::scan_time_request_validators;
 pub use security_patterns::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedHelperImport, AcceptedPhase5Contract,
     AcceptedRequestValidator, AcceptedResponseSerializer, AcceptedSensitiveResponseField,

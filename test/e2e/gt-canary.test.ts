@@ -210,7 +210,13 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "api_route_requires_authorization::phase4_proof":
     "phase-4 authorization path fires over the proposer's own route globs",
   "api_route_requires_request_validation::request_validation_proof":
-    "request-validation safeParse proof path fires"
+    "request-validation safeParse proof path fires",
+  // The second cell of that kind. It was `needs-review` with a `missing_evidence` that correctly
+  // diagnosed a CODE gap — the scan path emitted no `request_validation_called` fact, so the family
+  // this path needs could not form in any repo. Fixed in `security_facts.rs`/`main.rs` on this
+  // branch; the canary drives the same documented workflow as every other cell here.
+  "api_route_requires_request_validation::presence_findings":
+    "request-validation presence family fires per handler"
 };
 
 describe("cell canaries — firing", () => {
@@ -896,11 +902,21 @@ describe("cell canaries — firing", () => {
       schemas: []
     });
 
-    // The full-scope run exits 0, and that is NOT this cell's doing: `--scope full` counts a
+    // The full-scope run REFUSES, and that is not this cell's doing either. `--scope full` counts a
     // finding as blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the
     // harness copies the fixture to a temp repo with no diff, so every full-scope finding is
-    // `touched_existing`. Pinned so that if full-scope blocking is ever fixed, this says so.
-    expect(run.checkExitCode).toBe(0);
+    // `touched_existing` and exit 2 is unreachable.
+    //
+    // This assertion used to pin exit 0 and said "if full-scope blocking is ever fixed, this says
+    // so". It did say so: #121 (remediation/check-pipeline-honesty) turned that silence into a
+    // first-class refusal, so a block-mode convention that CANNOT block now reports
+    // `full_scope_cannot_block` and exits 3 rather than reporting green. That merge left this
+    // assertion stale and `main` red on `pnpm test:e2e`; this is the repair, and it is the stronger
+    // claim — exit 0 said only "nothing blocked", exit 3 names the convention that went unenforced.
+    expect(run.checkExitCode).toBe(3);
+    expect(run.checkPayload.check.status).toBe("refused");
+    expect(run.checkPayload.failure.code).toBe("full_scope_cannot_block");
+    expect(run.checkPayload.summary.blocked_reasons).toContain("full_scope_cannot_block");
     expect(run.checkPayload.summary.outcome.non_blocking_reasons).toContainEqual({
       reason: "full_scope_reports_existing_violations_without_blocking",
       count: 1
@@ -940,6 +956,171 @@ describe("cell canaries — firing", () => {
     expect(blockedFindings[0].evidence_refs[0].start_line).toBe(7);
     expect(blockedFindings[0].diff_status).toBe("new_in_diff");
   }, 180000);
+
+  it("request-validation presence family fires per handler", async () => {
+    // THE OTHER CELL OF THE SAME KIND, and the one the ledger said no fixture could lift. It was
+    // right, and it was a code gap rather than a corpus gap:
+    //
+    //   `request_validation_called` is emitted only for calls matching an ACCEPTED validator. The
+    //   scan path called the 3-arg `extract_security_facts`, whose wrapper hard-codes an empty
+    //   validator slice (`security_facts.rs`), and that is the only place the scanner extracts
+    //   security facts — so the kind had zero instances in every repo Drift had ever scanned. The
+    //   request-validation entry in `FAMILY_SPECS` sources that kind and nothing else
+    //   (`symbol_called` is excluded there, because admitting it produced an 89-member family on
+    //   dub), so the family could never form, so no candidate of this kind ever carried
+    //   `enforcement_semantics: "presence"`, so arm 3 could not be reached for it. Every piece of
+    //   the enforcement path already existed — `presence_missing_code`, `presence_finding_title`
+    //   and `presence_noun` all have an `api_route_requires_request_validation` arm — and nothing
+    //   could route into it.
+    //
+    // The fix is `scan_time_request_validators` (`security_facts.rs`), fed in at the scan call site
+    // in `main.rs`. Acceptance cannot be the gate on the input to the thing whose output IS
+    // acceptance — at first scan nothing is accepted — so the scan-time gate is recognised *shape*,
+    // using the same table as the proposer's `is_validation_candidate_symbol`. The acceptance gate
+    // is not weakened: it still binds at check time, where
+    // `build_request_validation_proof_with_scope` re-extracts from source with the convention's
+    // real validators and never reads a scanned fact. The extractor-level half, including the
+    // mutation control that the empty slice is what suppressed the fact, is
+    // `crates/drift-engine/tests/scan_time_validators.rs`.
+    const routes = [
+      "app/api/orders/route.ts",
+      "app/api/invoices/route.ts",
+      "app/api/reports/route.ts",
+      "app/api/exports/route.ts",
+      "app/api/mixed/route.ts",
+      "app/api/imports/route.ts",
+      "app/api/shipments/route.ts",
+      "app/api/webhooks/route.ts"
+    ];
+    const run = await runGtWorkflow({
+      fixture: "gt-presence-request-validation",
+      acceptKinds: [REQUEST_VALIDATION],
+      // The family, not the per-symbol candidates it speaks for. Accepting all of them stacks two
+      // conventions that each demand their own single validator on every route, so a route
+      // validated by the OTHER member is flagged and no repo of this shape can ever be clean —
+      // which is the over-narrowness families exist to fix, and it is not this cell.
+      acceptOnly: (candidate: any) => candidate.matcher?.enforcement_semantics === "presence",
+      severity: "error",
+      mode: "block",
+      // `--scope full` attributes every finding `touched_existing` and only `new_in_diff` counts
+      // toward blocking, so exit 2 is unreachable there by construction.
+      scope: "changed-hunks",
+      diffPatch: addedFilesPatch(resolve("test/fixtures/gt-presence-request-validation"), routes)
+    });
+
+    // The proposer produced the family; this test did not invent it. Before the scan-path fix this
+    // assertion was unsatisfiable in every repo, which is the whole of the cell.
+    const family = (run.startPayload.candidates ?? [])
+      .filter((candidate: any) => candidate.kind === REQUEST_VALIDATION)
+      .filter((candidate: any) => candidate.matcher?.enforcement_semantics === "presence");
+    expect(family, "the proposer must emit exactly one presence family").toHaveLength(1);
+    expect(family[0].matcher.required_calls).toEqual(["validateBody", "validateQuery"]);
+    // Members are evidenced only in api_route files, so the family conditions on that flavour.
+    expect(family[0].matcher.applies_to_route_flavors).toEqual(["api_route"]);
+
+    const presence = (run.checkPayload.findings ?? []).filter(
+      (finding: any) => finding.title === "API route calls no accepted request validator"
+    );
+    const flagged = presence
+      .map(
+        (finding: any) =>
+          `${finding.evidence_refs[0].file_path}:${finding.evidence_refs[0].symbol}`
+      )
+      .sort();
+
+    // Violation half. `imports` and `shipments` are whole unvalidated routes; `mixed` is flagged on
+    // PUT ONLY — the per-handler half. A file-wide question would let the validated POST excuse the
+    // unvalidated PUT, and "validate the read, forget the write" is the likeliest shape in a
+    // half-finished migration.
+    expect(flagged).toEqual([
+      "app/api/imports/route.ts:POST",
+      "app/api/mixed/route.ts:PUT",
+      "app/api/shipments/route.ts:POST"
+    ]);
+
+    // The line is the handler's own, not the hardcoded 1 that had to be fixed before the sibling
+    // proof cell could reach `firing`. Derived from the fixture, so editing it cannot silently
+    // invalidate the assertion.
+    const mixedSource = readFileSync(
+      resolve("test/fixtures/gt-presence-request-validation/app/api/mixed/route.ts"),
+      "utf8"
+    ).split("\n");
+    const putLine = mixedSource.findIndex((line) => line.includes("export async function PUT")) + 1;
+    expect(putLine).toBeGreaterThan(1);
+    expect(
+      presence.find((finding: any) => finding.evidence_refs[0].file_path === "app/api/mixed/route.ts")
+        .evidence_refs[0].start_line
+    ).toBe(putLine);
+
+    // §4.3 near-miss. `imports` calls `revalidateTag` and `hasPermission` — the two shapes the
+    // proposer's table excludes (`revalidate*` is cache revalidation, `*permission*` belongs to the
+    // authorization family). Neither joined the family, asserted by `required_calls` above, and the
+    // route is still flagged. A predicate that dropped the exclusions would not score the same here.
+    expect(flagged).toContain("app/api/imports/route.ts:POST");
+
+    // Route-flavour scoping is real rather than incidental: `webhooks` is equally unvalidated, and
+    // out of scope for an api_route-conditioned family, so it must stay silent.
+    expect(flagged.join(" ")).not.toContain("app/api/webhooks/route.ts");
+
+    // Conformance half: every handler calling a family member is silent, `mixed`'s POST included,
+    // and it shares a file with a flagged handler.
+    for (const route of [
+      "app/api/orders/route.ts",
+      "app/api/invoices/route.ts",
+      "app/api/reports/route.ts",
+      "app/api/exports/route.ts"
+    ]) {
+      expect(
+        flagged.join(" "),
+        `${route} calls a family member and must be silent`
+      ).not.toContain(route);
+    }
+    expect(flagged).not.toContain("app/api/mixed/route.ts:POST");
+
+    // Blocked, and blocked on these findings.
+    for (const finding of presence) {
+      expect(finding.enforcement_result).toBe("block");
+      expect(finding.severity).toBe("error");
+      expect(finding.diff_status).toBe("new_in_diff");
+    }
+    expect(run.checkPayload.summary.blocking_count).toBe(3);
+    expect(run.checkPayload.check.status).toBe("fail");
+    expect(run.checkExitCode, `check stderr:\n${run.checkStderr}`).toBe(2);
+
+    // The inverse repo: same kind, same family, same block mode, every handler validated. A
+    // presence check that reported anything here would be the F3 shape that made the rate-limit
+    // family strictly worse than what it superseded.
+    const cleanRoutes = [
+      "app/api/orders/route.ts",
+      "app/api/invoices/route.ts",
+      "app/api/reports/route.ts",
+      "app/api/exports/route.ts"
+    ];
+    const clean = await runGtWorkflow({
+      fixture: "gt-presence-request-validation-clean",
+      acceptKinds: [REQUEST_VALIDATION],
+      acceptOnly: (candidate: any) => candidate.matcher?.enforcement_semantics === "presence",
+      severity: "error",
+      mode: "block",
+      scope: "changed-hunks",
+      diffPatch: addedFilesPatch(
+        resolve("test/fixtures/gt-presence-request-validation-clean"),
+        cleanRoutes
+      )
+    });
+    expect(
+      (clean.startPayload.candidates ?? [])
+        .filter((candidate: any) => candidate.kind === REQUEST_VALIDATION)
+        .filter((candidate: any) => candidate.matcher?.enforcement_semantics === "presence")
+    ).toHaveLength(1);
+    expect(
+      (clean.checkPayload.findings ?? []).filter(
+        (finding: any) => finding.title === "API route calls no accepted request validator"
+      )
+    ).toEqual([]);
+    expect(clean.checkPayload.summary.blocking_count).toBe(0);
+    expect(clean.checkExitCode, `clean check stderr:\n${clean.checkStderr}`).toBe(0);
+  }, 300000);
 
   it("phase-6 CORS policy path fires", async () => {
     const run = await runGtWorkflow({ fixture: "gt-cors-policy", acceptKinds: [CORS] });

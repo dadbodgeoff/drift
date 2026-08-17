@@ -5,12 +5,111 @@ use std::collections::BTreeMap;
 use crate::security_control_flow::validated_input_uses;
 use crate::security_patterns::{
     AcceptedAuthHelper, AcceptedPhase5Contract, AcceptedRequestValidator,
-    AcceptedSensitiveResponseField, Phase4SecurityPolicy, RequestValidatorKind,
-    accepted_auth_helper_for_call, accepted_authorization_helper_for_call,
+    AcceptedSensitiveResponseField, Phase4SecurityPolicy, RequestValidatorBehavior,
+    RequestValidatorKind, accepted_auth_helper_for_call, accepted_authorization_helper_for_call,
     accepted_phase4_auth_helper_for_call, accepted_request_validator_for_call,
     accepted_response_serializer_for_call, static_middleware_matchers,
 };
 use crate::{Fact, FactExtractError, FactKind, extract_typescript_facts};
+
+/// The validator shapes the scanner recognises *before* any convention has been accepted.
+///
+/// **The circularity this breaks.** `request_validation_called` is emitted only for calls matching
+/// an entry in `accepted_validators`. The scan path passed nothing (`main.rs`, the 3-arg
+/// `extract_security_facts`, whose wrapper hard-codes `&[]` on line 20), so the kind had zero
+/// instances in every repo Drift has ever scanned. That is not a corpus gap. The proposer's
+/// `FAMILY_SPECS` entry for `api_route_requires_request_validation` sources *only* that kind
+/// (`candidate_command.rs`), so the family could never form, so no candidate of this kind ever
+/// carried `enforcement_semantics: "presence"`, so `presence_findings` was unreachable for it. The
+/// enforcement path existed and was tested; nothing could ever route into it.
+///
+/// Feeding the *accepted* validators into the scan does not fix that, and this is the whole design
+/// question: at first scan nothing is accepted yet, so the family that proposes what to accept
+/// would still never form. Acceptance cannot be the gate on the input to the thing whose output is
+/// acceptance. The honest scan-time gate is therefore **recognised shape**, not acceptance.
+///
+/// **Why this does not weaken the check.** The acceptance gate is not removed, it stays where it
+/// always bound - at check time. `build_request_validation_proof_with_scope` (`security_proof.rs`)
+/// re-extracts from source with the convention's real `accepted_validators` and never reads a
+/// scanned fact, so nothing here can satisfy a proof. The presence path reads `symbol_called`, not
+/// this kind. Scan-time `request_validation_called` is consumed by exactly two things: the
+/// proposer, which is meant to see unaccepted code, and the `security-architecture-audit` view.
+///
+/// This is precisely how the sibling auth family already works - `symbol_called` is unfiltered by
+/// acceptance at scan, the proposer nominates, a human accepts, the check enforces. Request
+/// validation was the one family sourced from an acceptance-gated kind, and that is the bug.
+///
+/// **Why the shape filter is load-bearing.** The family's nominator is `always_candidate_symbol`,
+/// so every symbol carrying this fact kind joins. Emitting the fact for *every* call would rebuild
+/// the 89-member dub family that `FAMILY_SPECS` documents as the reason `symbol_called` was
+/// excluded there. This predicate is the narrowing that the nominator does not do, and it is
+/// deliberately the same table as `is_validation_candidate_symbol` in `candidate_command.rs`, which
+/// already governs the per-symbol candidate of this kind. The two are asserted equal by
+/// `scan_time_validator_shapes_match_the_proposer_table` in `tests/scan_time_validators.rs`; they
+/// are separate functions only because that one is private to a module this change may not edit.
+///
+/// **Why the symbol must also resolve to an import.** The consumer of this fact is the family, and
+/// `family_member_inputs` (`candidate_command.rs`) drops any symbol for which
+/// `dominant_import_source` returns `None` — a symbol with no import can never be a family member.
+/// So emitting the fact for a bare method call feeds nothing this change exists to feed. It is not
+/// inert either: a second, older per-symbol loop over `request_validation_called`
+/// (`candidate_command.rs`, just after the middleware block) emits a candidate that the live
+/// `push_request_validation_candidates` path already emits from `symbol_called`, byte for byte and
+/// under the same id. Registering an unimportable symbol therefore buys one duplicate candidate and
+/// no family member. `safeParse` is exactly that case — always written `Schema.safeParse(body)`,
+/// never imported — and it is the sibling proof cell's symbol, which re-extracts with the accepted
+/// schema at check time and never wanted a scanned fact.
+///
+/// The duplicate is still reachable for an imported helper, and belongs to `candidate_command.rs`:
+/// two paths propose the same candidate for one kind, and one of them should dedupe or go. Recorded
+/// as a handoff rather than fixed here, because that file is not this change's to edit.
+pub fn scan_time_request_validators(facts: &[Fact]) -> Vec<AcceptedRequestValidator> {
+    let imported = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::ImportUsed)
+        .map(|fact| fact.name.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut symbols: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+    for fact in facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SymbolCalled)
+        .filter(|fact| is_recognized_validator_symbol(&fact.name))
+        // Mirrors `import_source_for_symbol`: the local binding name is the import fact's `name`.
+        .filter(|fact| imported.contains(fact.name.as_str()))
+    {
+        symbols.insert(fact.name.as_str());
+    }
+    symbols
+        .into_iter()
+        .map(|symbol| AcceptedRequestValidator {
+            // Same id shape the proposer writes into `requires.validators`, so a family accepted
+            // from these facts names its members the way the rest of the pipeline expects.
+            validator_id: format!("validator:{symbol}"),
+            symbol: symbol.to_string(),
+            // Always a free function here. The schema-method shape (`is_schema_method_validator_symbol`)
+            // carries a receiver and no import, so it cannot reach this point.
+            kind: RequestValidatorKind::Helper,
+            // Not a guess. A recognised shape says a validation call happened; it says nothing
+            // about whether the helper throws, returns a parsed value or returns a boolean. The
+            // contract is what acceptance later pins down, and the proof path reads it from the
+            // accepted convention rather than from here.
+            behavior: RequestValidatorBehavior::Unknown,
+        })
+        .collect()
+}
+
+/// The shape table shared with `is_validation_candidate_symbol` (`candidate_command.rs`).
+///
+/// The exclusions are not decoration. `revalidate*` is Next.js cache revalidation, and
+/// `*permission*` / `*role*` belong to the authorization family - admitting any of them would put a
+/// non-validator into a family whose acceptance then reads as "this route validates its input".
+fn is_recognized_validator_symbol(symbol: &str) -> bool {
+    let lower = symbol.to_ascii_lowercase();
+    if lower.starts_with("revalidate") || lower.contains("permission") || lower.contains("role") {
+        return false;
+    }
+    lower.starts_with("validate") || lower.contains("validator") || lower == "safeparse"
+}
 
 pub fn extract_security_facts(
     file_path: impl AsRef<std::path::Path>,

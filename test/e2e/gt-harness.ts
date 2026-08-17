@@ -80,6 +80,25 @@ export interface WorkflowOptions {
   fixture: string;
   /** Candidate kinds to accept. Every candidate of a listed kind is accepted. */
   acceptKinds?: readonly string[];
+  /**
+   * Narrows `acceptKinds` to the candidates this run is actually about. Default: accept them all.
+   *
+   * NOT a back door, and specifically not the injection this harness exists to forbid — the
+   * candidate still comes from the proposer and still goes through the real `conventions accept`.
+   * This only chooses *which* of the proposer's own candidates a human accepts, which is what the
+   * review surface is for.
+   *
+   * It earns its place where one kind yields both a family candidate and the per-symbol candidates
+   * it speaks for. `api_route_requires_request_validation` does: accepting all of them stacks two
+   * per-symbol conventions that each demand their own single validator on every route, so a route
+   * validated by the *other* member is flagged and no repo of that shape can ever be clean. That
+   * over-narrowness is exactly what families were built to fix (CV-1), so a canary for the
+   * family's presence path must not have it mixed into its findings or its exit code.
+   *
+   * The kind-was-proposed assertion below still runs against the unfiltered set, and a filter that
+   * selects nothing fails the run rather than silently accepting nothing.
+   */
+  acceptOnly?: (candidate: any) => boolean;
   severity?: string;
   mode?: string;
   scope?: "full" | "changed-hunks";
@@ -201,7 +220,20 @@ export async function runGtWorkflow(options: WorkflowOptions): Promise<WorkflowR
           `The harness must not fabricate one — see the injection ban in TDD §4.1.`
       ).toBeGreaterThan(0);
 
-      for (const candidate of candidates) {
+      const selected = options.acceptOnly ? candidates.filter(options.acceptOnly) : candidates;
+      expect(
+        selected.length,
+        `${options.fixture}: acceptOnly selected none of the ${candidates.length} proposed ` +
+          `${kind} candidate(s). Accepting nothing would make every later assertion vacuous.`
+      ).toBeGreaterThan(0);
+
+      // The proposer can emit one candidate under two paths (a family and the per-symbol
+      // candidate it speaks for share an id when their matchers coincide), and `conventions
+      // accept` is not idempotent on a second call.
+      const seen = new Set<string>();
+      for (const candidate of selected) {
+        if (seen.has(candidate.id)) continue;
+        seen.add(candidate.id);
         const args = ["--db", databasePath, "conventions", "accept", candidate.id];
         if (options.severity) args.push("--severity", options.severity);
         if (options.mode) args.push("--mode", options.mode);

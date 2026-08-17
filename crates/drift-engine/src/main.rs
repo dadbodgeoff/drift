@@ -15,8 +15,9 @@ use candidate_command::infer_candidates;
 use check_command::check_repo;
 use drift_engine::{
     Fact, FactExtractError, FactKind, GraphEdgeKind, GraphNodeKind, PrismaFactKind, ScanCapability,
-    dynamic_middleware_matcher_line, extract_prisma_facts, extract_security_facts,
-    extract_typescript_facts_with_report, should_index_path, static_middleware_coverage,
+    dynamic_middleware_matcher_line, extract_prisma_facts, extract_security_facts_with_validation,
+    extract_typescript_facts_with_report, scan_time_request_validators, should_index_path,
+    static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
 use protocol::*;
@@ -660,7 +661,24 @@ fn scan_file_with_reuse(
             import_source: None,
         });
     }
-    facts.extend(extract_security_facts(file_path, &source, &[])?);
+    // The validators are derived from the file's own calls rather than passed as `&[]`.
+    //
+    // The empty slice here was load-bearing in the worst way: `request_validation_called` is only
+    // emitted for calls matching an accepted validator, this is the only place the scanner extracts
+    // security facts, and so the kind had zero instances in every repo ever scanned - which left the
+    // proposer's request-validation family, and therefore the `presence_findings` path behind it,
+    // structurally unreachable. See `scan_time_request_validators` for why recognised shape rather
+    // than acceptance is the honest gate at scan time, and why this cannot satisfy a proof.
+    //
+    // `facts` already holds this file's `symbol_called` facts, so the registry costs a pass over a
+    // vector rather than a second parse.
+    let scan_validators = scan_time_request_validators(&facts);
+    facts.extend(extract_security_facts_with_validation(
+        file_path,
+        &source,
+        &[],
+        &scan_validators,
+    )?);
     let facts = facts.into_iter().map(engine_fact).collect();
     Ok(Some((file, facts, false)))
 }
