@@ -896,11 +896,19 @@ describe("cell canaries — firing", () => {
       schemas: []
     });
 
-    // The full-scope run exits 0, and that is NOT this cell's doing: `--scope full` counts a
-    // finding as blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the
-    // harness copies the fixture to a temp repo with no diff, so every full-scope finding is
-    // `touched_existing`. Pinned so that if full-scope blocking is ever fixed, this says so.
-    expect(run.checkExitCode).toBe(0);
+    // This is the "if full-scope blocking is ever fixed, this says so" pin firing, as intended.
+    //
+    // It used to read `toBe(0)`, with the note that the 0 was not this cell's doing: `--scope full`
+    // counts a finding as blocking only when its `diff_status` is `new_in_diff`, and the harness
+    // copies the fixture to a temp repo with no diff, so every full-scope finding is
+    // `touched_existing`. That reasoning was right, and W8-1 acted on it: a pass that could never
+    // have been withheld is not a pass, so a block-mode contract checked at `--scope full` now
+    // refuses instead of reporting one. Still not this cell's doing - the refusal names the scope,
+    // not the request-validation proof - which is what the failure code below pins.
+    expect(run.checkExitCode).toBe(3);
+    expect(run.checkPayload.failure?.code).toBe("full_scope_cannot_block");
+    // Unchanged, and the reason it still holds: a refusal reports what it saw. The findings are
+    // withheld from enforcement, not hidden.
     expect(run.checkPayload.summary.outcome.non_blocking_reasons).toContainEqual({
       reason: "full_scope_reports_existing_violations_without_blocking",
       count: 1
