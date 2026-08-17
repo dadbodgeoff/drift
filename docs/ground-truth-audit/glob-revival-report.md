@@ -336,7 +336,7 @@ value), so it needs its own decision.
 3. **A second, unrelated `path_glob_matches`** at `crates/drift-engine/src/security_rules.rs:690` —
    a three-line prefix matcher sharing the name of the real globstar engine, used by
    `phase5_contract_applies`. Verified **not** on the CLI check path: the `evaluate_api_route_*`
-   functions it serves are re-exported at `lib.rs:95-96` and called only from
+   functions it serves are re-exported at `lib.rs:96-97` and called only from
    `crates/drift-engine/tests/security_rules.rs`. So it is a test-only parallel implementation of
    logic production reaches by another route — worth deciding about on its own.
 4. **No `request_validation_called` fact exists at scan time in any repo.** Scan calls the 3-arg
