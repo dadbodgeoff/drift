@@ -44,28 +44,62 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
-      - name: Adopt the committed contract
-        env:
-          DRIFT_ENGINE_BIN: ${{ github.workspace }}/target/release/drift-engine
+      # drift.lock is a precondition, not an option. Inference finds nothing to propose on this repo
+      # - it is a TS/Rust monorepo with no routes and no data layer, so `start` yields zero
+      # candidates - and without a committed contract `check` correctly refuses with empty_contract.
+      # That refusal was read as a Drift failure and went red on every PR from #108 onward while the
+      # actual cause was a missing file. Fail where the message can say so, rather than letting it
+      # surface as an unexplained refusal one step later.
+      #
+      # Checked before `start` rather than after it: the precondition does not depend on anything
+      # `start` does, and failing in a second beats failing after a full scan of the repo.
+      - name: Require the committed contract
         run: |
-          # Identity is derived from the git remote and root commit, so the contract committed by a
-          # developer imports here even though CI checks out to a path nobody shares.
-          node packages/cli/dist/main.js start --repo-root . --accept-defaults --json
-          REPO_ID=$(ls "$HOME/.drift/repos" | head -1)
-          echo "DRIFT_REPO_ID=$REPO_ID" >> "$GITHUB_ENV"
-          echo "DRIFT_DB=$HOME/.drift/repos/$REPO_ID/drift.sqlite" >> "$GITHUB_ENV"
-          # drift.lock is a precondition, not an option. Inference finds nothing to propose on this
-          # repo - it is a TS/Rust monorepo with no routes and no data layer, so `start` yields zero
-          # candidates - and without a committed contract `check` correctly refuses with
-          # empty_contract. That refusal was read as a Drift failure and went red on every PR from
-          # #108 onward while the actual cause was a missing file. Fail here, where the message can
-          # say so, rather than letting it surface as an unexplained refusal one step later.
           if [ ! -f drift.lock ]; then
             echo "::error::drift.lock is missing. This gate enforces the committed contract; without it Drift has nothing to check and will refuse. Export one with 'drift contract export --output drift.lock --confirm'."
             exit 1
           fi
+
+      - name: Adopt the committed contract
+        env:
+          DRIFT_ENGINE_BIN: ${{ github.workspace }}/target/release/drift-engine
+        run: |
+          set -euo pipefail
+
+          # Identity is derived from the git remote and root commit, so the contract committed by a
+          # developer imports here even though CI checks out to a path nobody shares.
+          # `tee`, not `>`: this payload was printed to the job log before, and it is what you read
+          # when `start` is the thing that broke. Capturing it to a file without also printing it
+          # would trade one blind spot for another. `pipefail` above keeps node's exit code.
+          node packages/cli/dist/main.js start --repo-root . --accept-defaults --json \
+            | tee "$RUNNER_TEMP/drift-start.json"
+
+          # Read identity and the state path out of `start`'s own payload instead of guessing at
+          # $HOME/.drift's layout. `ls "$HOME/.drift/repos" | head -1` picks an arbitrary repo the
+          # day a second one exists, and a hand-assembled `$HOME/.drift/repos/$ID/drift.sqlite` is a
+          # second copy of an internal layout that nothing updates when that layout moves. `start
+          # --json` reports both authoritatively, and is the same payload a consumer would read.
+          DRIFT_REPO_ID=$(python3 -c 'import json,os;print(json.load(open(os.environ["RUNNER_TEMP"]+"/drift-start.json"))["repo"]["id"])')
+          DRIFT_DB=$(python3 -c 'import json,os;print(json.load(open(os.environ["RUNNER_TEMP"]+"/drift-start.json"))["state"]["database_path"])')
+
+          # Exported for THIS step and appended to $GITHUB_ENV for the next one. Both halves matter,
+          # and only the second was here before:
+          #
+          # `$GITHUB_ENV` does not affect the step that writes it, so `contract import` below ran
+          # with no --db and no DRIFT_DB and refused with "Missing --db <path> or DRIFT_DB. Run drift
+          # --help." - exit 1, on every pull request, since this gate was added. The job died here
+          # and never reached "Check the diff", which is why the dogfooding gate has never actually
+          # checked a diff: a guardrail that cannot fail because it never runs.
+          #
+          # `--db` is also passed explicitly to the import. The export makes the environment right;
+          # the flag makes the command correct on its own, so the failure cannot come back the next
+          # time these lines are reordered.
+          export DRIFT_REPO_ID DRIFT_DB
+          echo "DRIFT_REPO_ID=$DRIFT_REPO_ID" >> "$GITHUB_ENV"
+          echo "DRIFT_DB=$DRIFT_DB" >> "$GITHUB_ENV"
+
           node packages/cli/dist/main.js contract import drift.lock \
-            --repo "$REPO_ID" --confirm --json
+            --db "$DRIFT_DB" --repo "$DRIFT_REPO_ID" --confirm --json
 
       - name: Check the diff
         env:
@@ -102,7 +136,22 @@ jobs:
               # than throws, because those payloads carried `summary.blocked_reasons` and no
               # `failure` object - so the one field this step reads was absent on exactly the
               # refusals a working gate produces. Each code below now arrives from run-check.ts.
+              # The arms below are a dispatch table over the refusal vocabulary in
+              # docs/reference/enforcement.md, not over the subset this step happens to reach today.
+              # `full_scope_cannot_block` and `contract_stale_under_strict` cannot fire while this
+              # step hardcodes `--scope changed-hunks` and omits `--strict-contract`; they are kept
+              # because those two flags are the likeliest edit anyone will ever make to this file,
+              # and the alternative is that the edit silently degrades to the bare-code arm below.
               case "$REFUSAL" in
+                empty_diff_scope)
+                  echo "::error::Drift refused because the diff scope is empty - no file was examined, so there is no verdict to report. Check that origin/${{ github.base_ref }}...HEAD names two different commits; an empty pull request reaches this."
+                  ;;
+                stale_diff_scope)
+                  echo "::error::Drift refused because every file named by the diff is missing from this checkout, so nothing could be examined. The diff range and the working tree disagree about what exists - check that actions/checkout fetched the base ref (this workflow needs fetch-depth: 0)."
+                  ;;
+                unindexed_contract_target)
+                  echo "::error::Drift refused because the contract names a target the scan never indexed, so the rule could not be evaluated and a pass would not mean it held. summary.blocked_reasons names the target."
+                  ;;
                 empty_contract|missing_contract)
                   echo "::error::Drift refused because the contract is empty - a configuration problem in this workflow, not a problem with this diff. Check that drift.lock imported."
                   ;;

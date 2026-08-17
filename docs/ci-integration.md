@@ -7,6 +7,15 @@ infix stopped it from running. That was wrong — GitHub runs every `.yml` under
 this pnpm workspace. Treat the requirements below as verified on `ubuntu-latest` only from the
 first green run of that workflow onward.
 
+That first green run had still not happened as of 2026-08-17, for a second reason with the same
+shape as the first. The "Adopt the committed contract" step wrote `DRIFT_DB` to `$GITHUB_ENV` and
+then, in that same step, ran `contract import` without `--db`. `$GITHUB_ENV` takes effect only in
+*subsequent* steps, so the import always refused with `Missing --db <path> or DRIFT_DB`, and the job
+exited 1 before reaching "Check the diff". The gate was red on every pull request and had never
+checked a diff: the exact failure this page exists to argue against, in the file meant to
+demonstrate the opposite. The step now exports both variables for its own use *and* passes `--db`
+explicitly, so the fault cannot return if those lines are reordered.
+
 The self-check builds the engine from this workspace with `cargo build --release`, so it is not
 directly copyable into a consumer repository; there is still no published Linux engine binary (see
 `docs/architecture/engine-release.md`). The requirements below are what any consumer workflow has
