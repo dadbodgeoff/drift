@@ -54,12 +54,32 @@ async function detectsSneakyRoute(fixture: string): Promise<{ findings: number; 
 
   run(["start", "--repo-root", ".", "--accept-defaults"]);
   const repoId = execFileSync("ls", [join(home, ".drift/repos")], { encoding: "utf8" }).trim();
-  const payload = JSON.parse(
-    run([
+
+  // W8-1: `--scope full` under a block-mode contract now refuses (exit 3) rather than reporting a
+  // pass it could never have withheld - full scope attributes every finding to existing code, so
+  // exit 2 was unreachable through it. The bypasses these tests pin are still detected and still
+  // reported in the refusal; what changed is that `run` above throws on the non-zero status.
+  //
+  // Captured AND asserted rather than swallowed: a helper that ignored the exit code would keep
+  // passing the day the check started failing for an unrelated reason.
+  let code = 0;
+  let stdout = "";
+  try {
+    stdout = run([
       "--db", join(home, ".drift/repos", repoId, "drift.sqlite"),
       "check", "--repo", repoId, "--diff", "HEAD", "--scope", "full", "--json"
-    ])
-  ) as { findings?: Array<{ evidence_refs?: Array<{ file_path?: string }> }> };
+    ]);
+  } catch (error) {
+    const failure = error as { status?: number; stdout?: string };
+    code = failure.status ?? 1;
+    stdout = failure.stdout?.toString() ?? "";
+  }
+  expect(code, `expected the full-scope refusal, got ${code}: ${stdout.slice(0, 400)}`).toBe(3);
+  const payload = JSON.parse(stdout) as {
+    findings?: Array<{ evidence_refs?: Array<{ file_path?: string }> }>;
+    failure?: { code?: string };
+  };
+  expect(payload.failure?.code).toBe("full_scope_cannot_block");
 
   const findings = payload.findings ?? [];
   return {

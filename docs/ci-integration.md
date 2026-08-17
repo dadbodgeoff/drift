@@ -55,15 +55,27 @@ catch, so this does not do it. Building with cargo on the runner costs a few min
 
 When Linux binaries are published, the two build steps collapse to `npm i -g @drift/cli`.
 
-## Two details that are easy to get wrong
+## Three details that are easy to get wrong
 
 **`fetch-depth: 0`.** See Requirement 1 above. Beyond identity, the check compares against the
 merge base, and a shallow clone has none — a `--diff` range that crosses the shallow boundary
 fails, and the error names the boundary and the same remediation.
 
-**Exit 3 must fail the job.** It means Drift declined to answer — stale scan, missing contract,
-unavailable engine — and treating a refusal as a pass reintroduces the failure the exit codes exist
-to prevent. The example maps it to failure explicitly.
+**A blocking gate needs `--scope changed-hunks`, never `--scope full`.** `--scope full` has no
+diff, so it attributes every finding to existing code and none to a new hunk — and only new-hunk
+findings block. Exit `2` is unreachable through it. A CI step written that way is green whatever the
+diff contains, which is why a block-mode contract checked at `--scope full` now refuses with
+`failure.code: full_scope_cannot_block` instead of passing. Pair `--scope changed-hunks` with a
+`--diff "origin/$BASE...HEAD"` range, as the self-check workflow does. `--scope full` remains the
+right choice for a repo-wide inventory under a warn-mode contract, and for `drift scan`.
+
+**Exit 3 must fail the job, and should say why.** It means Drift declined to answer — stale scan,
+missing contract, unavailable engine, an engine that had to be killed — and treating a refusal as a
+pass reintroduces the failure the exit codes exist to prevent. The example maps it to failure
+explicitly. It also branches on the payload's `failure.code` before printing, because a refusal
+whose cause is a misconfigured pipeline and one whose cause is the code under review need different
+sentences to be actionable; the codes are tabulated in
+[reference/enforcement.md](./reference/enforcement.md).
 
 ## Before relying on this
 

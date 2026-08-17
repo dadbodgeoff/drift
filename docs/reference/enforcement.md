@@ -22,6 +22,35 @@ exists, or there is not enough disk for local state. A refusal is not a pass.
 `2` outranks `3`. A check that established one violation and could not judge another returns `2`:
 a refusal must never mask a violation Drift did manage to prove.
 
+### Every refusal states its cause
+
+Exit `3` says Drift declined to answer. It does not say why, and the why decides what you do next —
+a stale contract is a pipeline configuration problem, a coverage gap is a repo shape Drift half
+understands, a killed engine is an install problem. So every exit-`3` payload carries a top-level
+`failure` object, in the same shape the CLI's thrown errors use, and branching on `.failure.code`
+is the supported way to tell them apart:
+
+```json
+{ "failure": { "code": "enforcement_degraded_by_incomplete_coverage", "type": "refusal",
+               "message": "…", "remediation": "…", "recovery_commands": ["…"] } }
+```
+
+| `failure.code` | Cause |
+|---|---|
+| `full_scope_cannot_block` | A block-mode contract was checked through `--scope full`, which cannot block |
+| `enforcement_degraded_by_incomplete_coverage` | A finding under an enforcing convention came back `enforcement_result: "none"`, so coverage gaps zeroed it |
+| `contract_stale_under_strict` | `--strict-contract`, and the contract's forbidden specifiers match nothing in the repo |
+| `typescript_fallback_used` | The Rust engine was unavailable; the degraded scanner cannot make an enforcement claim |
+| `engine_timeout` | The engine exceeded `DRIFT_ENGINE_TIMEOUT_MS` (default 15 minutes) and was killed, so no scan completed |
+
+The key is **absent on a pass and on a block**: its presence is the signal. `summary.blocked_reasons`
+still carries the per-file detail — the code says what class of thing happened, the reasons name the
+files it happened to.
+
+The refusals `check` raises before it starts — `empty_diff_scope`, `stale_diff_scope`,
+`empty_contract`, `missing_contract` — arrive through the CLI's error envelope and carry the same
+`failure.code`, plus an `error` object. See [errors.md](errors.md).
+
 ### `empty_diff_scope`
 
 A refusal with its own cause code, because it is the one a CI pipeline reaches by accident. When the
@@ -62,6 +91,33 @@ tree)`. Enforcement does not weaken: a violation on a file Drift *did* examine s
 
 Deleted and renamed-away paths are not "missing" — they have their own reporting, and conflating them
 would turn a legitimate deletion into a refusal.
+
+### `full_scope_cannot_block`
+
+`--scope full` cannot block, so a **block-mode** contract checked through it refuses:
+
+```
+$ drift check --scope full --repo <id>
+exit 3  failure.code = full_scope_cannot_block
+```
+
+The mechanism is in Diff status below. With no diff there is nothing to call new, so every finding
+is attributed `touched_existing`, and only `new_in_diff` findings reach `blocking_count`. Exit 2 is
+therefore not rare under `--scope full` — it is unreachable. A block-mode convention and a real
+violation exited `0`, permanently, in a mode the docs list as an ordinary option.
+
+Refusing rather than teaching full scope to block is deliberate. "New" is defined against a diff,
+and the obvious substitutes are both wrong: blocking every violation would block a repo's entire
+pre-existing debt on the first run, and blocking none is the behaviour being removed. Failing
+closed states the limitation instead of inventing a verdict.
+
+`summary.blocked_reasons` names each block-mode convention that went unenforced, as
+`block_mode_convention_unenforced:<id>`. The findings are still reported — withheld enforcement is
+not concealment.
+
+**Warn-mode contracts are unaffected.** They never claimed to block, `--scope full` reports their
+findings honestly, and it remains the way to take a repo-wide inventory. Run a block-mode contract
+with `--scope changed-hunks` (or `--scope changed-files`) and a `--diff` range or `--diff-file`.
 
 ### `contract_staleness`
 
@@ -160,8 +216,13 @@ diff status below. Only findings that are simultaneously `status: "new"`,
 | `touched_existing` | The file changed but this line did not. Pre-existing debt; warns. |
 | `outside_diff` | Not in scope for this check. |
 
-Every line of an **added** file is `new_in_diff`, in every scope mode. Before this was fixed,
-brand-new violating routes inherited the baseline's legacy-code exemption and passed.
+Every line of an **added** file is `new_in_diff` in the diff-derived scopes — `changed-hunks` and
+`changed-files`. Before this was fixed, brand-new violating routes inherited the baseline's
+legacy-code exemption and passed.
+
+`--scope full` is the exception, and it is not a small one: there is no diff, so every finding is
+attributed `touched_existing` and no finding is ever `new_in_diff`. See `full_scope_cannot_block`
+below.
 
 A **renamed** file is not an addition. Moving a pre-existing violation keeps it
 `touched_existing`, so a refactor is not punished for relocating old debt — while a violation

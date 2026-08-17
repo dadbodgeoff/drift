@@ -98,9 +98,28 @@ jobs:
             0) echo "Drift: no blocking violations" ;;
             2) echo "::error::Drift found a new violation in this diff"; exit 1 ;;
             3)
+              # W8-2: this branch used to print "unknown" for every refusal `check` RETURNS rather
+              # than throws, because those payloads carried `summary.blocked_reasons` and no
+              # `failure` object - so the one field this step reads was absent on exactly the
+              # refusals a working gate produces. Each code below now arrives from run-check.ts.
               case "$REFUSAL" in
                 empty_contract|missing_contract)
                   echo "::error::Drift refused because the contract is empty - a configuration problem in this workflow, not a problem with this diff. Check that drift.lock imported."
+                  ;;
+                full_scope_cannot_block)
+                  echo "::error::Drift refused because this step used --scope full, which cannot block: it attributes every finding to existing code, so exit 2 is unreachable and a pass would mean nothing. Use --scope changed-hunks with a --diff range. A configuration problem in this workflow, not a problem with this diff."
+                  ;;
+                enforcement_degraded_by_incomplete_coverage)
+                  echo "::error::Drift refused because coverage gaps zeroed the enforcement on a finding it did produce, so it will not report a pass it cannot stand behind. summary.blocked_reasons names the files - usually an import Drift could not resolve."
+                  ;;
+                contract_stale_under_strict)
+                  echo "::error::Drift refused because --strict-contract was passed and this contract's forbidden specifiers no longer match anything in the repo, so the gate enforces nothing. Update or retire the conventions in summary.contract_staleness."
+                  ;;
+                typescript_fallback_used|missing_engine)
+                  echo "::error::Drift refused because the Rust engine was unavailable and no enforcement claim can be made without it. Check that the engine built and that DRIFT_ENGINE_BIN points at it."
+                  ;;
+                engine_timeout)
+                  echo "::error::Drift refused because the engine exceeded its time cap and was killed, so no scan completed. Raise DRIFT_ENGINE_TIMEOUT_MS if this repository legitimately needs longer."
                   ;;
                 *)
                   echo "::error::Drift declined to check this diff (refusal, not a pass): ${REFUSAL:-unknown}"

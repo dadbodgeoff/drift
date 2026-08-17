@@ -4656,7 +4656,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(result.exitCode).toBe(3);
     const payload = JSON.parse(result.stdout);
     expect(payload.summary).toMatchObject({
       scope: "full",
@@ -4739,7 +4744,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(result.exitCode).toBe(3);
     expect(JSON.parse(result.stdout).summary.findings_count).toBe(0);
   });
 
@@ -4785,7 +4795,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(checked.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(checked.exitCode).toBe(3);
     const payload = JSON.parse(checked.stdout);
     expect(payload.summary.findings_count, JSON.stringify(payload.findings, null, 2)).toBe(1);
     expect(payload.findings[0].evidence_refs[0].file_path).toBe("apps/web/app/api/users/route.ts");
@@ -4831,7 +4846,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(checked.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(checked.exitCode).toBe(3);
     const payload = JSON.parse(checked.stdout);
     expect(payload.summary.findings_count, JSON.stringify(payload.findings, null, 2)).toBe(1);
     expect(payload.findings[0].evidence_refs[0].file_path).toBe("apps/web/app/api/projects/route.ts");
@@ -4869,7 +4889,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(result.exitCode).toBe(3);
     expect(JSON.parse(result.stdout).summary.findings_count).toBe(1);
   });
 
@@ -5416,7 +5441,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(result.exitCode).toBe(3);
     expect(JSON.parse(result.stdout).summary).toMatchObject({
       findings_count: 0,
       waived_findings_count: 1
@@ -5463,7 +5493,12 @@ storage_schema_version: MIGRATIONS.length
       "--json"
     ]);
 
-    expect(result.exitCode).toBe(0);
+    // W8-1: `--scope full` cannot block - it attributes every finding to existing code, so no
+    // finding is ever `new_in_diff` and exit 2 is unreachable through it. A block-mode contract
+    // checked this way therefore refuses (`full_scope_cannot_block`) rather than reporting a pass
+    // it could never have withheld. Everything this test is about - the findings, the exceptions,
+    // the waivers - is unchanged and still asserted below; only the verdict on the invocation moved.
+    expect(result.exitCode).toBe(3);
     expect(JSON.parse(result.stdout).summary).toMatchObject({
       findings_count: 0,
       blocking_count: 0
