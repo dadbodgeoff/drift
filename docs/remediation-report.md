@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Repo** | `/Users/geoffreyfernald/drift-falsification/drift` |
-| **Baseline** | `255f2208` — `main` never moved from it |
-| **Integration branch** | `remediation/ground-truth-audit` |
-| **Merge status** | **NOT MERGED, and NOT PUSHED.** The merge gate fails (§6), so not merging is the correct outcome regardless; separately, `git push` was denied by this session's permission policy, so the PR could not be opened. Branch is complete and local. PR body: `docs/ground-truth-audit/PR-BODY.md`. |
+| **Baseline** | `255f2208` — the branch forked here; `main` has since advanced to `77c326d2` (W1–W7) and the branch is reconciled onto it, see §12 |
+| **Integration branch** | `remediation/ground-truth-audit` (PR #119) |
+| **Merge status** | **Gate re-evaluated after reconciliation and now PASSES.** §6 below is the pre-reconciliation evaluation and is left as a dated record; §12 supersedes it. All local checks and the full eval battery are green; the single remaining `eval:external` baseline diff is explained in §12 and was investigated rather than blessed. |
 | **Spec** | `docs/tdd-ground-truth-remediation.md` (v2.3) |
 
 ---
