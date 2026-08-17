@@ -3,6 +3,9 @@
 `GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The ones
 below were added for cells that no fixture in `test/fixtures/` could enter — the first two by phase
 0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
+`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The three
+below were added by phase 0b (TDD §4.2) for cells that no fixture in `test/fixtures/` could enter.
+They are not audit artifacts and carry no audit numbers.
 
 | Fixture | Cell it exists for | Why a new fixture was needed |
 |---|---|---|
@@ -28,6 +31,23 @@ subject argument makes the proof fail. A guard called with no arguments has no `
 check is skipped, and the conformance half is expressible. See the report accompanying this fixture:
 the false positive is real and is deliberately left unfixed here, because fixing it means changing
 shared phase-4 proof semantics.
+| `gt-session-trust` | `session_object_must_come_from_trusted_helper` × `phase4_proof` | The two fixtures that already exist for this kind (`security-session-from-request-untrusted`, `security-session-trusted-helper`) are one route each — one entirely the violation, one entirely the conformance — in *separate repos*, so neither can show the check discriminating between siblings in a single run, and neither carries a near-miss. `firing` needs all three in one repo. Reached by `drift contract import` rather than `conventions accept`, because `candidate_command.rs` contains zero occurrences of `ConventionKind::SessionObjectMustComeFromTrustedHelper` — see the note below. |
+
+## Why `gt-session-trust` is imported rather than accepted
+
+Every other canary in `test/e2e/gt-canary.test.ts` obtains its convention from the proposer, and
+that is the point of the §4.1 ban. This kind has no proposer at all: there is no candidate to
+accept, on any repo, ever. The remaining route is the documented lockfile workflow —
+`drift contract export` → edit → `drift contract import drift.lock --repo <id> --confirm`
+(`docs/agent-integration.md`) — which is a real user-reachable path, not a test backdoor, and which
+still enforces every compatibility and validation refusal a user would hit.
+
+`runGtContractImportWorkflow` (`test/e2e/gt-harness.ts`) keeps that narrow: it asserts the proposer
+emitted **no** candidate of the imported kind before it will import one, so the day this kind
+becomes proposable the import canary fails and has to move to `runGtWorkflow`. The imported
+contract's `scope.path_globs` is the proposer's own literal glob set, pinned against
+`candidate_command.rs` by the canary itself — a de-globbed scope would pass even under the historical
+`path_glob_matches` and would prove nothing.
 
 ## Near-miss content, per §4.3
 
@@ -70,3 +90,8 @@ example* rather than merely failing to flag it.
 `gt-canary.test.ts`, argued at the test and at `WorkflowOptions.importConventions` in `gt-harness.ts`.
 The imported scope is the proposer's own literal glob set, not a de-globbed convenience, so the canary
 still dies if the globstar matcher regresses.
+`gt-session-trust/app/api/trace/route.ts` reads from the *same* untrusted source as the violating
+route — `request.headers.get(...)` — into `traceId`, which is not a session object. A check reduced
+to "this route reads a request header" would flag it. The real discriminator is
+`is_session_like_variable` (`security_facts.rs:1642`) applied to the assigned variable, and without
+this route a detector that dropped that half would score identically to the correct one.

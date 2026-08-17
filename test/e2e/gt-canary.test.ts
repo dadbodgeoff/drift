@@ -10,6 +10,14 @@
 // `drift conventions accept`. Three existing tests of D1's kind inject their contract, and that is
 // precisely why a P0 shipped under their coverage: a hand-built contract is not coverage for a
 // convention kind, so a test that injects its convention cannot be evidence for `firing`.
+//
+// THE ONE EXCEPTION, and it is narrow. Two kinds have no proposer at all —
+// `candidate_command.rs` contains zero occurrences of `SessionObjectMustComeFromTrustedHelper` or
+// `ApiRouteForbidsSecretExposure` — so there is no candidate to accept and the rule above cannot be
+// satisfied for them by any test. For those, and only those, the convention arrives through the
+// documented `drift contract import` workflow (docs/agent-integration.md), driven by
+// `runGtContractImportWorkflow`, which asserts the proposer emitted nothing of the kind before it
+// will import one. That is a different claim from the proposer path and the ledger evidence says so.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
@@ -22,6 +30,7 @@ import {
   DEBUG_ENGINE,
   flaggedPaths,
   readFindings,
+  runGtContractImportWorkflow,
   runGtWorkflow
 } from "./gt-harness.js";
 
@@ -47,27 +56,7 @@ const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
 const TENANT_SCOPE = "api_route_requires_tenant_scope";
 const SECRET_EXPOSURE = "api_route_forbids_secret_exposure";
 const AUTHORIZATION = "api_route_requires_authorization";
-
-/**
- * `runGtWorkflow`'s own `check` runs `--scope full`, which is the right default for "which routes
- * does this convention flag" but can never exit 2: `blockingCount` only counts findings whose
- * `diff_status` is `new_in_diff` (run-check.ts:821), and a full-scope run has no diff. The
- * blocking exit code is a property of the diff, so asserting it needs one.
- */
-async function wholeFileDiff(repoRoot: string, paths: readonly string[]): Promise<string> {
-  const parts: string[] = [];
-  for (const path of paths) {
-    const body = (await readFile(join(repoRoot, path), "utf8")).trimEnd().split(/\r?\n/);
-    parts.push(
-      `diff --git a/${path} b/${path}`,
-      "--- /dev/null",
-      `+++ b/${path}`,
-      `@@ -0,0 +1,${body.length} @@`,
-      ...body.map((line) => `+${line}`)
-    );
-  }
-  return `${parts.join("\n")}\n`;
-}
+const SESSION_TRUST = "session_object_must_come_from_trusted_helper";
 
 /**
  * The proposer's literal emitted route scope, from `candidate_command.rs:372` (and `:1010`).
@@ -84,6 +73,11 @@ async function wholeFileDiff(repoRoot: string, paths: readonly string[]): Promis
  * matching `app/api/projects/route.ts` consumes nothing at all through its leading `**​/`. This is a
  * restatement of what the proposer emits, asserted for equality against a real candidate below — it
  * is not a hand-written scope, and nothing here is fed INTO the workflow.
+ *
+ * Copied rather than imported because the engine is a separate process with no TypeScript export
+ * of it — and pinned against the Rust source by `assertProposerScopeGlobs` below, so a drift
+ * between the two fails here rather than quietly turning the import canaries into a test of a scope
+ * no candidate ever carries.
  */
 const PROPOSER_ROUTE_SCOPE_GLOBS = [
   "**/app/api/**/route.ts",
@@ -101,17 +95,36 @@ const ALL_GT_AUTHORIZATION_ROUTES = [
 ];
 
 /**
- * A unified diff that adds `paths` verbatim, read out of the copied fixture so it cannot drift from
- * the files under test.
+ * Pins `PROPOSER_ROUTE_SCOPE_GLOBS` against the Rust source it claims to restate.
+ *
+ * The import canaries hand the engine a scope they say is the proposer's own. If the proposer's
+ * scope ever changes, that claim silently becomes a test of a glob set nothing produces — so the
+ * drift fails here rather than downstream, and it must be re-derived, not adjusted.
+ */
+function assertProposerScopeGlobs(): void {
+  const source = readFileSync(resolve("crates/drift-engine/src/candidate_command.rs"), "utf8");
+  const literal = `"path_globs": [${PROPOSER_ROUTE_SCOPE_GLOBS.map((glob) => `"${glob}"`).join(", ")}]`;
+  expect(
+    source.includes(literal),
+    `candidate_command.rs no longer emits ${literal}. The imported contract below claims to carry ` +
+      `the proposer's own scope; if the proposer's scope has changed, this canary is testing a ` +
+      `glob set nothing produces and must be re-derived, not adjusted.`
+  ).toBe(true);
+}
+
+/**
+ * A unified diff that introduces `paths` as new files, read out of the copied fixture so it cannot
+ * drift from the files under test.
  *
  * Needed because `blockingCount` only counts `new_in_diff` findings, and `--scope full` classifies
- * everything `touched_existing`. Rather than assert a weaker exit code, the canary takes the
+ * everything `touched_existing`. Rather than assert a weaker exit code, the canaries take the
  * verdict over the diff that a pull request adding these routes would actually produce.
  */
 function addedFilesPatch(repoRoot: string, paths: readonly string[]): string {
   return paths
     .map((path) => {
       const lines = readFileSync(join(repoRoot, path), "utf8").split("\n");
+      // A trailing newline produces a final empty element that is not a line of the file.
       if (lines.at(-1) === "") lines.pop();
       return [
         `diff --git a/${path} b/${path}`,
@@ -136,8 +149,12 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "api_route_cors_must_match_policy::phase6_proof": "phase-6 CORS policy path fires",
   "api_route_forbids_secret_exposure::phase5_proof":
     "phase-5 secret-exposure path fires, reached by contract import",
+  // Neither of these two is "unimplemented" any more, and the two words are not interchangeable.
+  // The proposer still emits nothing of either shape — the test below keeps asserting exactly that,
+  // on both of its fixtures — but "no proposer" is not "no reachable enforcement":
+  // `drift contract import` reaches the arm, and the arm fires.
   "session_object_must_come_from_trusted_helper::phase4_proof":
-    "proposer emits no candidate of the unimplemented shapes",
+    "phase-4 session-trust path fires through contract import",
   "middleware_must_cover_routes::no_dispatch_arm":
     "middleware_must_cover_routes is refused at acceptance, by name",
   "api_route_forbids_sensitive_response_fields::phase5_proof":
@@ -147,25 +164,6 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "api_route_requires_authorization::phase4_proof":
     "phase-4 authorization path fires over the proposer's own route globs"
 };
-
-/**
- * A unified-diff stanza presenting a whole file as added, for `check --diff-file`.
- *
- * Only the hunk header matters to the classifier — `parse_hunk_new_start` plus the line count give
- * the changed line numbers — so the body is elided rather than duplicating the fixture, which would
- * silently rot the moment the fixture changed.
- */
-function unifiedAddedFile(path: string, lineCount: number): string {
-  return [
-    `diff --git a/${path} b/${path}`,
-    "new file mode 100644",
-    "--- /dev/null",
-    `+++ b/${path}`,
-    `@@ -0,0 +1,${lineCount} @@`,
-    ...Array.from({ length: lineCount }, () => "+"),
-    ""
-  ].join("\n");
-}
 
 describe("cell canaries — firing", () => {
   it("data-access materialized+graph path fires", async () => {
@@ -310,11 +308,14 @@ describe("cell canaries — firing", () => {
     // The scope is the proposer's own glob set rather than a de-globbed convenience, so this is
     // still a test of `phase5_file_scope_matches` -> `path_glob_matches` and still dies if the
     // globstar matcher regresses.
-    const patch = [
-      unifiedAddedFile("app/api/billing/route.ts", 4),
-      unifiedAddedFile("app/api/webhooks/route.ts", 5),
-      unifiedAddedFile("app/api/status/route.ts", 5)
-    ].join("");
+    // Built from the SOURCE fixture, not the copied repo: this patch is an input to the workflow,
+    // so it has to exist before the temp repo does. Reading the real files still beats eliding the
+    // bodies — the hunk headers cannot drift from the fixture they describe.
+    const patch = addedFilesPatch(resolve("test/fixtures/gt-secret-exposure"), [
+      "app/api/billing/route.ts",
+      "app/api/webhooks/route.ts",
+      "app/api/status/route.ts"
+    ]);
 
     const run = await runGtWorkflow({
       fixture: "gt-secret-exposure",
@@ -538,6 +539,155 @@ describe("cell canaries — firing", () => {
     ).toEqual(["app/api/invoices/route.ts", "app/api/members/route.ts"]);
   }, 180000);
 
+  it("phase-4 session-trust path fires through contract import", async () => {
+    // THE CONTRACT-IMPORT CELL, and the one place in this file where the convention does not come
+    // from the proposer — because for this kind there is no proposer to come from.
+    // `candidate_command.rs` contains zero occurrences of
+    // `ConventionKind::SessionObjectMustComeFromTrustedHelper`, so no candidate of this kind has
+    // ever existed and `conventions accept` has nothing to accept. What DOES exist is
+    // `drift contract import drift.lock --repo <id> --confirm` (docs/agent-integration.md:84,
+    // router.ts:158, contract.ts:199) — a documented, user-reachable workflow. So the honest
+    // statement about this cell is two-part, and the ledger says both halves:
+    //
+    //   the proposer emits nothing of this shape   (still true; pinned by the `unimplemented`
+    //                                               test below, which keeps its two fixtures)
+    //   the enforcement arm IS reachable and fires (this test)
+    //
+    // The second half falsifies the old evidence's claim that the arm "is unreachable through the
+    // documented workflow". Import is a documented workflow.
+    assertProposerScopeGlobs();
+
+    const run = await runGtContractImportWorkflow({
+      fixture: "gt-session-trust",
+      importedKinds: [SESSION_TRUST],
+      amendContract: (contract, { contractId, now }) => {
+        // The fixture proposes nothing, so `start --accept-defaults` materialises an empty
+        // contract. Asserting that keeps this from silently becoming a test of some other
+        // convention that happened to be auto-accepted alongside.
+        expect(contract.conventions).toHaveLength(0);
+        contract.conventions.push({
+          id: "convention_gt_session_trust",
+          contract_id: contractId,
+          kind: SESSION_TRUST,
+          statement:
+            "API route session objects must come from the accepted trusted helper, not from the request.",
+          // The proposer's own scope, verbatim. This is what makes the mutation test meaningful:
+          // every one of these globs is `**/`-prefixed, and the fixture's routes sit at the repo
+          // root with zero leading segments, so `path_glob_matches` must handle the zero-segment
+          // `**/` case or `security_phase4_findings_and_proofs` (check_command.rs:1610-1618)
+          // filters every route out and this test sees nothing.
+          scope: {
+            path_globs: PROPOSER_ROUTE_SCOPE_GLOBS,
+            file_roles: ["api_route"]
+          },
+          matcher: {
+            kind: SESSION_TRUST,
+            applies_to_file_roles: ["api_route"]
+          },
+          requires: {
+            auth_helpers: [
+              { symbol: "requireUser", import: "@/server/auth", behavior: "returns_session" }
+            ]
+          },
+          severity: "error",
+          // Block mode, accepted by the import: this kind is `deterministic_check`, so
+          // `contractValidationReasons` has no objection. (The block-mode schema reject at
+          // engine-contract/src/index.ts:411-423 is specific to candidate-sourced sensitive fields
+          // and does not apply here.)
+          enforcement_mode: "block",
+          enforcement_capability: "deterministic_check",
+          exceptions: [],
+          evidence_refs: [],
+          counterexample_refs: [],
+          accepted_by: "gt-canary",
+          accepted_at: now,
+          updated_at: now
+        });
+        return contract;
+      }
+    });
+
+    // The import is a real one: the CLI's own compatibility verdict, not the test's opinion.
+    expect(run.dryRunExitCode, "the dry run must report the contract importable").toBe(0);
+    expect(run.dryRunPayload.compatibility).toMatchObject({ compatible: true, reasons: [] });
+    expect(run.importExitCode).toBe(0);
+    expect(run.importPayload).toMatchObject({ imported: true, added_convention_count: 1 });
+
+    // ── Violation half, with the blocking exit code. ────────────────────────────────────────────
+    // Exit 2 needs `diff_status: "new_in_diff"` (run-check.ts:821), and `--scope full` classifies
+    // every finding `touched_existing` by construction (diff.ts:diffStatusFor). So the blocking
+    // assertion runs the way CI runs: a diff that introduces the routes, at changed-hunks scope.
+    const routes = [
+      "app/api/session/route.ts",
+      "app/api/profile/route.ts",
+      "app/api/trace/route.ts"
+    ];
+    const blocked = await run.check({
+      scope: "changed-hunks",
+      diff: addedFilesPatch(run.repoRoot, routes)
+    });
+    expect(blocked.exitCode, `check stderr:\n${blocked.stderr}`).toBe(2);
+
+    const sessionFindings = blocked.payload.findings.filter(
+      (finding: any) => finding.convention_id === "convention_gt_session_trust"
+    );
+    expect(sessionFindings).toHaveLength(1);
+    expect(sessionFindings[0]).toMatchObject({
+      title: "API route uses untrusted session object",
+      expected_layer: "session_trust",
+      actual_layer: "session_not_trusted",
+      severity: "error",
+      enforcement_result: "block",
+      status: "new",
+      diff_status: "new_in_diff"
+    });
+    // The file AND the line. Line 4 of the fixture is
+    // `const session = request.headers.get("x-session-user");` — the session object being built
+    // from an untrusted source, which is the whole claim of the kind.
+    expect(sessionFindings[0].evidence_refs[0]).toMatchObject({
+      file_path: "app/api/session/route.ts",
+      start_line: 4
+    });
+
+    // ── Conformance half, and proof it was EVALUATED rather than skipped. ───────────────────────
+    // The compliant sibling is silent, and the engine's own proof for it says why: the session
+    // trust obligation was `required` for that route and `proven` on it. A skipped route emits no
+    // proof at all, so this distinguishes "passed" from "never looked".
+    const proofs = blocked.payload.security_boundary_proofs ?? [];
+    const profileProof = proofs.find(
+      (proof: any) => proof.route.file_path === "app/api/profile/route.ts"
+    );
+    expect(profileProof, "the compliant route must have been evaluated").toBeTruthy();
+    expect(profileProof.session_trust).toMatchObject({ required: true, proven: true });
+    expect(profileProof.session_trust.trusted_sessions[0]).toMatchObject({
+      variable: "session",
+      source: "auth_guard",
+      trust: "trusted"
+    });
+    expect(profileProof.result).toMatchObject({ proof_status: "proven", enforcement_result: "pass" });
+
+    // §4.3 near-miss: `app/api/trace/route.ts` reads from the SAME untrusted source into a
+    // variable that is not a session. A check that flagged "route reads a request header" would
+    // flag it; the real one does not.
+    const flaggedFiles = sessionFindings.map(
+      (finding: any) => finding.evidence_refs[0].file_path
+    );
+    expect(flaggedFiles).not.toContain("app/api/trace/route.ts");
+    expect(flaggedFiles).not.toContain("app/api/profile/route.ts");
+
+    // ── And the same verdict at full scope, where the glob filter is the only thing standing
+    // between the convention and the routes. Exit 0 here is correct and is not a pass claim about
+    // the violation: `--scope full` reports it as pre-existing debt rather than a new block.
+    const full = await run.check({ scope: "full" });
+    expect(
+      flaggedPaths(readFindings(run.databasePath, run.repoId), SESSION_TRUST),
+      "the violating route and only the violating route"
+    ).toEqual(["app/api/session/route.ts"]);
+    expect(full.payload.findings.map((finding: any) => finding.evidence_refs[0].file_path)).toEqual([
+      "app/api/session/route.ts"
+    ]);
+  }, 180000);
+
   it("phase-6 CORS policy path fires", async () => {
     const run = await runGtWorkflow({ fixture: "gt-cors-policy", acceptKinds: [CORS] });
 
@@ -613,7 +763,7 @@ describe("cell canaries — firing", () => {
       proven: false
     });
 
-    // The blocking exit code and the finding's file:line, over a diff (see `wholeFileDiff`).
+    // The blocking exit code and the finding's file:line, over a diff (see `addedFilesPatch`).
     const routes = [
       "app/api/projects/route.ts",
       "app/api/invoices/route.ts",
@@ -622,7 +772,7 @@ describe("cell canaries — firing", () => {
       "app/api/exports/route.ts"
     ];
     const violatingDiff = join(run.stateRoot, "..", "violating.patch");
-    await writeFile(violatingDiff, await wholeFileDiff(run.repoRoot, routes));
+    await writeFile(violatingDiff, addedFilesPatch(run.repoRoot, routes));
     const blocked = await runCli([
       "--db", run.databasePath,
       "check",
@@ -650,7 +800,7 @@ describe("cell canaries — firing", () => {
     const safeDiff = join(run.stateRoot, "..", "safe.patch");
     await writeFile(
       safeDiff,
-      await wholeFileDiff(run.repoRoot, ["app/api/invoices/route.ts", "app/api/reports/route.ts"])
+      addedFilesPatch(run.repoRoot, ["app/api/invoices/route.ts", "app/api/reports/route.ts"])
     );
     const clean = await runCli([
       "--db", run.databasePath,
@@ -673,16 +823,21 @@ describe("cell canaries — firing", () => {
 
 describe("cell canaries — unimplemented", () => {
   it("proposer emits no candidate of the unimplemented shapes", async () => {
-    // `unimplemented` means the PROPOSER emits nothing of this shape, so the enforcement arm is
-    // unreachable through the documented workflow no matter what it would do. The fixtures chosen
-    // are the ones built to exhibit each violation - if any shape were proposable at all, these are
-    // the repos where it would be.
+    // What this test asserts, exactly: the PROPOSER emits nothing of these shapes. The fixtures
+    // chosen are the ones built to exhibit each violation - if any shape were proposable at all,
+    // these are the repos where it would be.
     //
-    // `api_route_forbids_secret_exposure` stays in this list even though its cell is now `firing`.
-    // The two claims are separate and both true: the proposer emits nothing (this test), and the
-    // enforcement arm nevertheless fires when a hand-authored contract is imported ("phase-5
-    // secret-exposure path fires, reached by contract import" above). Deleting this case would
-    // discard the half that makes the import path legitimate rather than a shortcut.
+    // What it does NOT assert, and used to be read as asserting: that the enforcement arm is
+    // unreachable. Those are different claims, and for BOTH kinds still listed here the second one
+    // is false — `drift contract import` reaches their arms and the arms fire, which "phase-5
+    // secret-exposure path fires, reached by contract import" and "phase-4 session-trust path fires
+    // through contract import" above now pin. Both cells are `firing` rather than `unimplemented`
+    // as a result.
+    //
+    // Both cases nevertheless STAY in this list. The no-candidate half stayed true throughout and is
+    // what makes import the ONLY route for these two kinds, and so what makes those canaries honest
+    // rather than a way around `conventions accept`. Deleting either case would discard the half
+    // that licenses the exception.
     const cases: Array<[string, string]> = [
       ["security-secret-leak", "api_route_forbids_secret_exposure"],
       ["security-session-from-request-untrusted", "session_object_must_come_from_trusted_helper"],
