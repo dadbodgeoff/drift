@@ -1360,6 +1360,16 @@ fn infer_candidates_emits_security_phase_candidates_as_non_blocking_elections() 
         { "kind": "import_used", "file_path": route_b, "name": "requireUser", "value": "@/auth", "start_line": 1, "end_line": 1 },
         { "kind": "symbol_called", "file_path": route_a, "name": "requireUser", "start_line": 4, "end_line": 4 },
         { "kind": "symbol_called", "file_path": route_b, "name": "requireUser", "start_line": 4, "end_line": 4 },
+        // A validation call produces BOTH facts in a real scan: `symbol_called` from the TypeScript
+        // extractor, and `request_validation_called` from the security extractor once the scan-time
+        // validator registry recognises the symbol (which requires the import, hence `import_used`).
+        // This fixture used to carry only the second, which no scan can produce - and it passed
+        // because a now-deleted second candidate loop read that kind directly, duplicating the
+        // candidate `push_request_validation_candidates` already emits from `symbol_called`.
+        { "kind": "import_used", "file_path": route_a, "name": "validateBody", "value": "@/server/validation", "start_line": 2, "end_line": 2 },
+        { "kind": "import_used", "file_path": route_b, "name": "validateBody", "value": "@/server/validation", "start_line": 2, "end_line": 2 },
+        { "kind": "symbol_called", "file_path": route_a, "name": "validateBody", "start_line": 5, "end_line": 5 },
+        { "kind": "symbol_called", "file_path": route_b, "name": "validateBody", "start_line": 5, "end_line": 5 },
         { "kind": "request_validation_called", "file_path": route_a, "name": "validateBody", "start_line": 5, "end_line": 5 },
         { "kind": "request_validation_called", "file_path": route_b, "name": "validateBody", "start_line": 5, "end_line": 5 },
         { "kind": "authorization_guard_called", "file_path": route_a, "name": "requireRole", "start_line": 6, "end_line": 6 },

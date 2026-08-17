@@ -134,6 +134,36 @@ impl RequestValidatorKind {
 /// receiver to be the accepted schema.
 pub const SCHEMA_METHOD_VALIDATOR_SYMBOLS: &[&str] = &["safeParse"];
 
+/// The one table that decides whether a symbol names request validation.
+///
+/// It has two callers on opposite sides of the scan, and they MUST agree:
+///
+///   - `scan_time_request_validators` (`security_facts.rs`) decides which calls the scanner emits
+///     `request_validation_called` for;
+///   - `push_request_validation_candidates` and the request-validation `FAMILY_SPECS` entry
+///     (`candidate_command.rs`) decide what to propose from those facts.
+///
+/// It lives here, in the library, because `candidate_command` is a module of the BINARY - the
+/// library cannot import from it, so the shared predicate cannot live there. It was briefly
+/// duplicated in both places with a test asserting the two copies agreed case by case; one
+/// definition is better than a checked pair, so this is the definition.
+///
+/// **Why the narrowness is load-bearing.** The family's nominator is `always_candidate_symbol`, so
+/// every symbol carrying `request_validation_called` joins the family. This predicate is the only
+/// narrowing in that path - without it the family becomes the 89-member aggregate `FAMILY_SPECS`
+/// documents, containing `bulkDeleteLinks` and `addDomainToVercel`.
+///
+/// **Why the exclusions.** `revalidate*` is Next.js cache revalidation; `*permission*` and `*role*`
+/// belong to the authorization family. Admitting any of them puts a non-validator into a family
+/// whose acceptance then reads as "this route validates its input".
+pub fn is_validation_candidate_symbol(symbol: &str) -> bool {
+    let lower = symbol.to_ascii_lowercase();
+    if lower.starts_with("revalidate") || lower.contains("permission") || lower.contains("role") {
+        return false;
+    }
+    lower.starts_with("validate") || lower.contains("validator") || lower == "safeparse"
+}
+
 /// True when a validator symbol names a schema method rather than a free function.
 pub fn is_schema_method_validator_symbol(symbol: &str) -> bool {
     SCHEMA_METHOD_VALIDATOR_SYMBOLS.contains(&symbol)
