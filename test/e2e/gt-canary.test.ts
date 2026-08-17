@@ -28,11 +28,11 @@ import { runCli } from "../../packages/cli/src/index.js";
 import {
   assertNoProposerFor,
   cleanupGtTempDirs,
-  DEBUG_ENGINE,
   flaggedPaths,
   readFindings,
   runGtContractImportWorkflow,
-  runGtWorkflow
+  runGtWorkflow,
+  withDebugEngine
 } from "./gt-harness.js";
 
 afterEach(cleanupGtTempDirs);
@@ -146,7 +146,7 @@ function addedFilesPatch(repoRoot: string, paths: readonly string[]): string {
  *
  * `runGtWorkflow` reads candidates from `start --json`, which emits `result.candidates`
  * unfiltered (`packages/cli/src/commands/start.ts`). `drift conventions list` — the command a
- * human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,86-89` drops every
+ * human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,85-87` drops every
  * `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed, and
  * `EXPERIMENTAL_SECURITY_CONVENTION_KINDS` is the whole security-contract set
  * (`packages/core/src/capabilities.ts:187`).
@@ -161,7 +161,9 @@ async function assertListVisibility(
   repoId: string,
   kind: string
 ): Promise<void> {
-  const plain = await runCli(["--db", databasePath, "conventions", "list", "--repo", repoId, "--json"]);
+  const plain = await withDebugEngine(() =>
+    runCli(["--db", databasePath, "conventions", "list", "--repo", repoId, "--json"])
+  );
   expect(plain.exitCode, `conventions list stderr:\n${plain.stderr}`).toBe(0);
   expect(
     (JSON.parse(plain.stdout).candidates ?? []).map((candidate: any) => candidate.kind),
@@ -170,9 +172,11 @@ async function assertListVisibility(
       `--experimental-security reaches it is stale.`
   ).not.toContain(kind);
 
-  const gated = await runCli([
-    "--db", databasePath, "conventions", "list", "--repo", repoId, "--experimental-security", "--json"
-  ]);
+  const gated = await withDebugEngine(() =>
+    runCli([
+      "--db", databasePath, "conventions", "list", "--repo", repoId, "--experimental-security", "--json"
+    ])
+  );
   expect(gated.exitCode, `conventions list --experimental-security stderr:\n${gated.stderr}`).toBe(0);
   expect(
     (JSON.parse(gated.stdout).candidates ?? []).map((candidate: any) => candidate.kind),
@@ -351,17 +355,57 @@ describe("cell canaries — firing", () => {
         `${fixture}: the compliant sibling must be evaluated, not merely absent`
       ).toContain("pages/api/route-safe.ts");
 
-      // KIND-SPECIFIC LIMIT, and not the `--scope full` one the other canaries hit: a
-      // candidate-sourced sensitive-fields convention cannot be accepted in block mode at all
-      // (`packages/engine-contract/src/index.ts:412-420` — "candidate sensitive fields cannot back
-      // blocking enforcement"). It lands on `warn`, so exit 2 is unreachable for this kind by
-      // design rather than by the diff-scope accident. That reject is deliberate policy — a
-      // name-heuristic guess should not block a merge — so it is asserted, not worked around.
+      // This run accepted the proposer's suggested mode, which is `warn`, so the full-scope verdict
+      // is a warning and does not block. Block mode is exercised separately below.
       expect(findings[0].severity).toBe("warning");
       expect(findings[0].enforcement_result).toBe("warn");
       expect(run.checkExitCode, `${fixture}: warn-mode findings do not block`).toBe(0);
     }
-  }, 180000);
+
+    // BLOCK MODE, and the blocking exit code, taken deliberately.
+    //
+    // An earlier version of this canary claimed block mode was impossible for this kind, citing the
+    // schema reject at `packages/engine-contract/src/index.ts:412-420` ("candidate sensitive fields
+    // cannot back blocking enforcement"). That was WRONG, and the error is recorded here rather
+    // than quietly deleted: the reject keys on `source === "candidate"`, and `conventions accept`
+    // deliberately restamps `candidate` to `accepted_inference`
+    // (`packages/cli/src/domain/convention-candidates.ts:214`) precisely because a reviewed field is
+    // no longer an unreviewed guess. So it cannot fire on the accept path at all — and for
+    // `gt-sensitive-fields-schema` it is doubly inapplicable, those fields being `source: "schema"`.
+    const blockRun = await runGtWorkflow({
+      fixture: "gt-sensitive-fields",
+      acceptKinds: [SENSITIVE_FIELDS],
+      severity: "error",
+      mode: "block"
+    });
+    const blockPatch = join(blockRun.stateRoot, "..", "sensitive-fields.patch");
+    writeFileSync(
+      blockPatch,
+      addedFilesPatch(blockRun.repoRoot, ["pages/api/route-leak.ts", "pages/api/route-safe.ts"]),
+      "utf8"
+    );
+    const blocked = await withDebugEngine(() =>
+      runCli([
+        "--db", blockRun.databasePath,
+        "check",
+        "--repo", blockRun.repoId,
+        "--scope", "changed-hunks",
+        "--diff-file", blockPatch,
+        "--now", "2026-08-16T00:03:00.000Z",
+        "--json"
+      ])
+    );
+    expect(blocked.exitCode, `blocking check stderr:\n${blocked.stderr}`).toBe(2);
+    const blockedFindings = (JSON.parse(blocked.stdout).findings ?? []).filter(
+      (finding: any) => finding.title === "API route emits sensitive response field"
+    );
+    expect(blockedFindings).toHaveLength(1);
+    expect(blockedFindings[0].evidence_refs[0].file_path).toBe("pages/api/route-leak.ts");
+    expect(blockedFindings[0].evidence_refs[0].start_line).toBe(9);
+    expect(blockedFindings[0].enforcement_result).toBe("block");
+    expect(blockedFindings[0].severity).toBe("error");
+    expect(blockedFindings[0].diff_status).toBe("new_in_diff");
+  }, 300000);
 
   it("phase-5 secret-exposure path fires, reached by contract import", async () => {
     // THE ONE PLACE IN THIS FILE THAT DOES NOT GO THROUGH `conventions accept`, and the reason is
@@ -560,14 +604,10 @@ describe("cell canaries — firing", () => {
     // like. Same database, same accepted convention, so this is the same cell.
     const patchPath = join(run.repoRoot, "..", "adds-the-routes.patch");
     writeFileSync(patchPath, addedFilesPatch(run.repoRoot, ALL_GT_AUTHORIZATION_ROUTES), "utf8");
-    const { runCli } = await import("../../packages/cli/src/index.js");
-    // `runGtWorkflow` restores DRIFT_ENGINE_BIN when it returns, and without it the CLI falls back
-    // to `cargo run` — a different binary than the one the assertions above were made against.
-    const previousEngineBin = process.env.DRIFT_ENGINE_BIN;
-    process.env.DRIFT_ENGINE_BIN = DEBUG_ENGINE;
-    let blocked;
-    try {
-      blocked = await runCli([
+    // Post-workflow CLI calls run after `runGtWorkflow` restored DRIFT_ENGINE_BIN, so they must
+    // re-pin or they resolve to a different binary than the assertions above were made against.
+    const blocked = await withDebugEngine(() =>
+      runCli([
         "--db", run.databasePath,
         "check",
         "--repo", run.repoId,
@@ -575,11 +615,8 @@ describe("cell canaries — firing", () => {
         "--diff-file", patchPath,
         "--now", "2026-08-16T00:05:00.000Z",
         "--json"
-      ]);
-    } finally {
-      if (previousEngineBin === undefined) delete process.env.DRIFT_ENGINE_BIN;
-      else process.env.DRIFT_ENGINE_BIN = previousEngineBin;
-    }
+      ])
+    );
     expect(blocked.exitCode, `blocking check stderr:\n${blocked.stderr}`).toBe(2);
     const blockedPayload = JSON.parse(blocked.stdout);
     const blockedAuthorization = (blockedPayload.findings ?? []).filter(
@@ -675,7 +712,7 @@ describe("cell canaries — firing", () => {
           severity: "error",
           // Block mode, accepted by the import: this kind is `deterministic_check`, so
           // `contractValidationReasons` has no objection. (The block-mode schema reject at
-          // engine-contract/src/index.ts:411-423 is specific to candidate-sourced sensitive fields
+          // engine-contract/src/index.ts:412-420 is specific to candidate-sourced sensitive fields
           // and does not apply here.)
           enforcement_mode: "block",
           enforcement_capability: "deterministic_check",
@@ -883,15 +920,17 @@ describe("cell canaries — firing", () => {
       ]),
       "utf8"
     );
-    const blocked = await runCli([
-      "--db", run.databasePath,
-      "check",
-      "--repo", run.repoId,
-      "--scope", "changed-hunks",
-      "--diff-file", patchPath,
-      "--now", "2026-08-16T00:02:00.000Z",
-      "--json"
-    ]);
+    const blocked = await withDebugEngine(() =>
+      runCli([
+        "--db", run.databasePath,
+        "check",
+        "--repo", run.repoId,
+        "--scope", "changed-hunks",
+        "--diff-file", patchPath,
+        "--now", "2026-08-16T00:02:00.000Z",
+        "--json"
+      ])
+    );
     expect(blocked.exitCode, `check stderr:\n${blocked.stderr}`).toBe(2);
     const blockedFindings = (JSON.parse(blocked.stdout).findings ?? []).filter(
       (finding: any) => finding.title === "API route uses unvalidated request input"
@@ -990,15 +1029,17 @@ describe("cell canaries — firing", () => {
     ];
     const violatingDiff = join(run.stateRoot, "..", "violating.patch");
     await writeFile(violatingDiff, addedFilesPatch(run.repoRoot, routes));
-    const blocked = await runCli([
-      "--db", run.databasePath,
-      "check",
-      "--repo", run.repoId,
-      "--scope", "changed-hunks",
-      "--diff-file", violatingDiff,
-      "--now", "2026-08-16T00:01:00.000Z",
-      "--json"
-    ]);
+    const blocked = await withDebugEngine(() =>
+      runCli([
+        "--db", run.databasePath,
+        "check",
+        "--repo", run.repoId,
+        "--scope", "changed-hunks",
+        "--diff-file", violatingDiff,
+        "--now", "2026-08-16T00:01:00.000Z",
+        "--json"
+      ])
+    );
     expect(blocked.exitCode, `check stderr:\n${blocked.stderr}`).toBe(2);
     const blockedPayload = JSON.parse(blocked.stdout);
     const projects = (blockedPayload.findings ?? []).filter(
@@ -1019,15 +1060,17 @@ describe("cell canaries — firing", () => {
       safeDiff,
       addedFilesPatch(run.repoRoot, ["app/api/invoices/route.ts", "app/api/reports/route.ts"])
     );
-    const clean = await runCli([
-      "--db", run.databasePath,
-      "check",
-      "--repo", run.repoId,
-      "--scope", "changed-hunks",
-      "--diff-file", safeDiff,
-      "--now", "2026-08-16T00:02:00.000Z",
-      "--json"
-    ]);
+    const clean = await withDebugEngine(() =>
+      runCli([
+        "--db", run.databasePath,
+        "check",
+        "--repo", run.repoId,
+        "--scope", "changed-hunks",
+        "--diff-file", safeDiff,
+        "--now", "2026-08-16T00:02:00.000Z",
+        "--json"
+      ])
+    );
     expect(clean.exitCode, `check stderr:\n${clean.stderr}`).toBe(0);
     const cleanPayload = JSON.parse(clean.stdout);
     expect(
@@ -1086,16 +1129,17 @@ describe("cell canaries — quarantined", () => {
     expect(candidate, "the proposer does emit this kind — that is why it is not `unimplemented`")
       .toBeTruthy();
 
-    const { runCli } = await import("../../packages/cli/src/index.js");
-    const accepted = await runCli([
-      "--db",
-      run.databasePath,
-      "conventions",
-      "accept",
-      candidate.id,
-      "--confirm",
-      "--json"
-    ]);
+    const accepted = await withDebugEngine(() =>
+      runCli([
+        "--db",
+        run.databasePath,
+        "conventions",
+        "accept",
+        candidate.id,
+        "--confirm",
+        "--json"
+      ])
+    );
     expect(accepted.exitCode).toBe(1);
     expect(accepted.stderr).toContain(
       `Convention kind ${MIDDLEWARE} has no evaluator, so accepting it would enforce nothing while reporting a pass.`

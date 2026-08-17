@@ -29,6 +29,29 @@ export const DEBUG_ENGINE = resolve("target/debug/drift-engine");
 
 let debugEngineBuilt = false;
 
+/**
+ * Runs `fn` with `DRIFT_ENGINE_BIN` pinned to the debug binary, and restores it afterwards.
+ *
+ * Both workflow helpers pin the env var for their own duration and unpin it in a `finally`. Any CLI
+ * call a TEST makes afterwards — a second `check` over a diff, the `check` closure returned by the
+ * import workflow — therefore runs UNPINNED, and engine resolution falls through to
+ * `workspace_release_binary` (`target/release/drift-engine`). Nothing rebuilds that: `pnpm
+ * build:engine` does, but the e2e suite does not, and `ensureDebugEngine` only ever produces
+ * `target/debug`. The failure mode is silent and severe — the assertion passes against a stale
+ * engine, and a deliberate mutation of the debug binary looks like it changed nothing.
+ */
+export async function withDebugEngine<T>(fn: () => Promise<T>): Promise<T> {
+  ensureDebugEngine();
+  const previous = process.env.DRIFT_ENGINE_BIN;
+  process.env.DRIFT_ENGINE_BIN = DEBUG_ENGINE;
+  try {
+    return await fn();
+  } finally {
+    if (previous === undefined) delete process.env.DRIFT_ENGINE_BIN;
+    else process.env.DRIFT_ENGINE_BIN = previous;
+  }
+}
+
 export function ensureDebugEngine(): void {
   if (debugEngineBuilt) return;
   execFileSync("cargo", ["build", "-p", "drift-engine"], {
@@ -451,7 +474,12 @@ export async function runGtContractImportWorkflow(
         args.push("--diff-file", diffPath);
       }
       args.push("--scope", checkOptions.scope ?? "full", "--now", nextNow(), "--json");
-      const result = await runCli(args);
+      // This closure is called by the TEST, after the `finally` below has already restored
+      // DRIFT_ENGINE_BIN. Without re-pinning, the run resolves to `workspace_release_binary`
+      // (target/release/drift-engine) — a gitignored artifact that `ensureDebugEngine` never
+      // rebuilds — so it would silently check a DIFFERENT engine than the one under test, and any
+      // mutation of the debug binary would appear to have no effect.
+      const result = await withDebugEngine(() => runCli(args));
       return {
         exitCode: result.exitCode,
         payload: parseJson(result.stdout, `${options.fixture} check`),

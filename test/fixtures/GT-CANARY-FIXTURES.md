@@ -32,11 +32,13 @@ check is skipped, and the conformance half is expressible. See the report accomp
 the false positive is real and is deliberately left unfixed here, because fixing it means changing
 shared phase-4 proof semantics.
 
-## Why `gt-session-trust` is imported rather than accepted
+## Why `gt-session-trust` and `gt-secret-exposure` are imported rather than accepted
 
 Every other canary in `test/e2e/gt-canary.test.ts` obtains its convention from the proposer, and
-that is the point of the §4.1 ban. This kind has no proposer at all: there is no candidate to
-accept, on any repo, ever. The remaining route is the documented lockfile workflow —
+that is the point of the §4.1 ban. Two kinds have no proposer at all — `candidate_command.rs` contains zero occurrences of
+`ConventionKind::SessionObjectMustComeFromTrustedHelper` or `ConventionKind::ApiRouteForbidsSecretExposure`
+— so for `gt-session-trust` and `gt-secret-exposure` there is no candidate to accept, on any repo,
+ever. The remaining route is the documented lockfile workflow —
 `drift contract export` → edit → `drift contract import drift.lock --repo <id> --confirm`
 (`docs/agent-integration.md`) — which is a real user-reachable path, not a test backdoor, and which
 still enforces every compatibility and validation refusal a user would hit.
@@ -82,3 +84,16 @@ it, passing it as an outbound request header. The flow simply never reaches a re
 log sink. A detector reduced to "this route reads a secret-looking env var" scores identically to a
 correct one until this route exists, and the canary asserts the engine names it as a *conforming
 example* rather than merely failing to flag it.
+
+`gt-session-trust/app/api/trace/route.ts` reads from the *same* untrusted source as the violating
+route — `request.headers.get(...)` — into `traceId`, which is not a session object. A check reduced
+to "this route reads a request header" would flag it. The real discriminator is
+`is_session_like_variable` (`security_facts.rs:1648`) applied to the assigned variable, and without
+this route a detector that dropped that half would score identically to the correct one.
+
+`gt-request-validation` carries its near-miss inside the conforming routes rather than beside them.
+`safeParse` returns a result object, not the parsed value, so a check that merely saw the accepted
+symbol get called would pass a route that reads `result` directly and never checks `result.success`.
+The canary's conformance half therefore asserts `proven: true` on routes that DO guard and DO use
+`result.data` — the shapes `security_control_flow.rs::safe_parse_success_guard_dominates` already
+separates in unit tests, now driven through the real workflow.
