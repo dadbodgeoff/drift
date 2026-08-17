@@ -35,7 +35,7 @@
     "eval:bench:update": "node scripts/beta-bench.mjs --update",
     "eval:determinism": "node scripts/determinism.mjs",
     "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run scripts/detection-breadth.test.mjs scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs scripts/storage-lifecycle.test.mjs scripts/storage-invariants.test.mjs scripts/error-contract.test.mjs scripts/vocabulary-parity.test.mjs scripts/surface-parity.test.mjs scripts/payload-invariants.test.mjs scripts/convention-cell-ledger.test.mjs",
+    "test:harness": "vitest run --no-file-parallelism scripts/detection-breadth.test.mjs scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs scripts/storage-lifecycle.test.mjs scripts/storage-invariants.test.mjs scripts/error-contract.test.mjs scripts/vocabulary-parity.test.mjs scripts/surface-parity.test.mjs scripts/payload-invariants.test.mjs scripts/convention-cell-ledger.test.mjs",
     "eval:prepare": "node scripts/prepare-quality-eval.mjs",
     "eval:presence": "node scripts/presence-precision-recall.mjs",
     "eval:presence:update": "node scripts/presence-precision-recall.mjs --update",

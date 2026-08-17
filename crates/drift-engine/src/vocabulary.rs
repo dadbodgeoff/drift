@@ -912,7 +912,7 @@ impl ConventionKind {
     pub fn dispatch(self) -> ConventionDispatch {
         match self {
             ConventionKind::ApiRouteNoDirectDataAccess => ConventionDispatch::EngineDirect,
-            ConventionKind::ApiRouteRequiresServiceDelegation => ConventionDispatch::EngineDirect,
+            ConventionKind::ApiRouteRequiresServiceDelegation => ConventionDispatch::None,
             ConventionKind::ApiRouteRequiresAuthHelper => ConventionDispatch::EngineDirect,
             ConventionKind::MiddlewareMustCoverRoutes => ConventionDispatch::None,
             ConventionKind::ApiRouteRequiresRequestValidation => ConventionDispatch::EngineDirect,

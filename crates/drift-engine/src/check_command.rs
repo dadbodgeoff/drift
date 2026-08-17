@@ -252,19 +252,6 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
                 findings
             }
-            ConventionKind::ApiRouteRequiresServiceDelegation => {
-                let allowed_delegate_imports = convention
-                    .matcher
-                    .allowed_delegate_imports
-                    .unwrap_or_default();
-                graph_service_delegation_findings(
-                    &request.graph,
-                    &convention.id,
-                    severity,
-                    enforcement_mode,
-                    &allowed_delegate_imports,
-                )
-            }
             // CV-3 (option B): presence-only enforcement, beside the proof path rather than
             // replacing it. Selected by the MATCHER rather than the kind, so it is a guard arm and
             // stays where it was in the old chain - after the two layering kinds, before every
@@ -431,6 +418,14 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             // the failure mode the whole exhaustive-match design exists to prevent. A receipt is
             // the only thing standing between a bare `continue` and that pass.
             ConventionKind::MiddlewareMustCoverRoutes
+            // Moved here from an evaluator arm of its own. See
+            // docs/decisions/service-delegation-capability.md: the arm was unreachable three
+            // times over - both proposers stamp `heuristic_check` where the loop above requires
+            // `deterministic_check`, the CLI never dispatched the kind to this engine at all, and
+            // the evaluator ignored `allowed_delegate_imports`, the matcher's only configurable
+            // field. Acceptance now refuses the kind, so an arm here would be enforcing a
+            // convention that cannot exist.
+            | ConventionKind::ApiRouteRequiresServiceDelegation
             | ConventionKind::TestExpectedForChangedModule
             | ConventionKind::CustomBriefing
             | ConventionKind::FileRole
@@ -3980,119 +3975,6 @@ fn dispatch_wire(dispatch: ConventionDispatch) -> &'static str {
         ConventionDispatch::Cli => "cli",
         ConventionDispatch::None => "none",
     }
-}
-
-fn graph_service_delegation_findings(
-    graph: &CheckGraphData,
-    convention_id: &str,
-    severity: Severity,
-    enforcement_mode: EnforcementMode,
-    _allowed_delegate_imports: &[String],
-) -> Vec<PendingFinding> {
-    let nodes_by_id = graph
-        .graph_nodes
-        .iter()
-        .map(|node| (node.id.as_str(), node))
-        .collect::<BTreeMap<_, _>>();
-    let api_route_files = api_route_files(&graph.graph_edges, &nodes_by_id);
-    let module_files = graph
-        .graph_nodes
-        .iter()
-        .filter(|node| node.kind == GraphNodeKind::Module)
-        .filter_map(|node| string_metadata(node, "file_path").map(|path| (node.id.as_str(), path)))
-        .collect::<BTreeMap<_, _>>();
-    let module_by_file = module_files
-        .iter()
-        .map(|(module_id, file_path)| (*file_path, *module_id))
-        .collect::<BTreeMap<_, _>>();
-    let route_modules = api_route_files
-        .iter()
-        .filter_map(|file_path| module_by_file.get(file_path.as_str()).copied())
-        .collect::<BTreeSet<_>>();
-    let data_access_modules = role_modules(
-        &graph.graph_edges,
-        &nodes_by_id,
-        &module_by_file,
-        "data_access_module",
-    );
-    let evidence_lines = graph
-        .graph_evidence
-        .iter()
-        .map(|evidence| (evidence.id.as_str(), evidence.start_line))
-        .collect::<BTreeMap<_, _>>();
-
-    let mut findings = Vec::new();
-    for edge in graph
-        .graph_edges
-        .iter()
-        .filter(|edge| edge.kind == GraphEdgeKind::ModuleImportsModule)
-    {
-        if !route_modules.contains(edge.from.as_str())
-            || !data_access_modules.contains(edge.to.as_str())
-        {
-            continue;
-        }
-        let Some(route_file) = module_files.get(edge.from.as_str()) else {
-            continue;
-        };
-        let Some(data_file) = module_files.get(edge.to.as_str()) else {
-            continue;
-        };
-        let evidence_id = edge.evidence_ids.first().cloned().unwrap_or_else(|| {
-            format!(
-                "evidence_graph_{}",
-                &stable_hash(&format!("{route_file}:{data_file}"))[..16]
-            )
-        });
-        let line = evidence_lines
-            .get(evidence_id.as_str())
-            .copied()
-            .unwrap_or(1);
-        let fingerprint = stable_hash(&format!(
-            "{convention_id}:{route_file}:requires_service_delegation:{data_file}"
-        ));
-        findings.push(PendingFinding {
-            fingerprint,
-            convention_id: convention_id.to_string(),
-            rule_id: "api_route_requires_service_delegation".to_string(),
-            title: "API route reaches data access without service delegation".to_string(),
-            message: format!(
-                "API route {route_file} imports data-access module {data_file} directly instead of delegating through an approved service module."
-            ),
-            severity,
-            enforcement_result: enforcement_result_for_mode(enforcement_mode),
-            file_path: (*route_file).to_string(),
-            import_name: (*data_file).to_string(),
-            import_source: (*data_file).to_string(),
-            line,
-            evidence_id,
-            symbol: PendingFinding::no_symbol(),
-            legacy_fingerprints: Vec::new(),
-            related_node_ids: vec![edge.from.clone(), edge.to.clone()],
-        });
-    }
-    findings
-}
-
-fn role_modules<'a>(
-    edges: &'a [GraphEdge],
-    nodes_by_id: &BTreeMap<&'a str, &'a GraphNode>,
-    module_by_file: &BTreeMap<&'a str, &'a str>,
-    role_name: &str,
-) -> BTreeSet<&'a str> {
-    edges
-        .iter()
-        .filter(|edge| edge.kind == GraphEdgeKind::FileHasRole)
-        .filter_map(|edge| {
-            let role = nodes_by_id.get(edge.to.as_str())?;
-            if string_metadata(role, "role")? != role_name {
-                return None;
-            }
-            let file = nodes_by_id.get(edge.from.as_str())?;
-            let file_path = string_metadata(file, "path")?;
-            module_by_file.get(file_path).copied()
-        })
-        .collect()
 }
 
 fn api_route_files<'a>(

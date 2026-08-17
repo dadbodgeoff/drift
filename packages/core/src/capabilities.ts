@@ -110,7 +110,16 @@ export function createDriftCapabilities(input: {
         "api_route_no_direct_data_access",
         ...PRESENCE_PROMOTABLE_CONVENTION_KINDS
       ],
-      heuristic_convention_kinds: ["api_route_requires_service_delegation"],
+      // Empty, and the emptiness is the claim. This listed exactly one kind,
+      // `api_route_requires_service_delegation`, and the thing it asserted - that Drift enforces
+      // that kind heuristically - was never true of any code path: the proposers stamped
+      // `heuristic_check`, the engine's loop required `deterministic_check`, and the CLI never
+      // dispatched the kind at all. See docs/decisions/service-delegation-capability.md.
+      //
+      // Kept as a field rather than deleted: "Drift enforces nothing heuristically" is a real
+      // statement about the product, and a reader who finds the key absent cannot tell it from a
+      // key nobody thought to write.
+      heuristic_convention_kinds: [],
       check_scopes: ["changed-hunks", "changed-files", "full"],
       storage: "sqlite",
       source_mutation: false
@@ -175,8 +184,10 @@ export function createProductionClaimsManifest(): DriftProductionClaimsManifest 
  * The findings are not worthless, but they cannot honestly be called proofs, and a security
  * claim that overstates itself is worse than no security claim.
  *
- * `api_route_no_direct_data_access` and `api_route_requires_service_delegation` are NOT here:
- * they are the layering wedge, deterministic, and stay on by default.
+ * `api_route_no_direct_data_access` is NOT here: it is the layering wedge, deterministic, and
+ * stays on by default. `api_route_requires_service_delegation` used to be named beside it on the
+ * same grounds and was neither deterministic nor evaluated - it now fails closed at acceptance
+ * (docs/decisions/service-delegation-capability.md), so the wedge is one kind, not two.
  *
  * W5: derived from the convention vocabulary's `security_contract` flag, which is also what
  * `SecurityContractKindSchema` is built from. This was a hand-written list of twelve beside two
@@ -197,16 +208,22 @@ export function isExperimentalSecurityKind(kind: string): boolean {
  *
  * Established by searching both evaluators for every declared kind: the engine-owned
  * `crates/drift-engine/src/check_command.rs` and the CLI-owned
- * `packages/cli/src/check/run-check.ts`. These three appear in neither, so a contract declaring one
+ * `packages/cli/src/check/run-check.ts`. These appear in neither, so a contract declaring one
  * produces no finding on any repo, ever, and nothing reports that - `check` returns a clean pass.
  * "Accepted and silently enforcing nothing" is the one thing Drift must not let a user believe, so
  * acceptance refuses them instead of storing an inert rule.
  *
  * Note this is NOT the same as experimental: `middleware_must_cover_routes` is in
  * EXPERIMENTAL_SECURITY_CONVENTION_KINDS above, which gates default-on behaviour, not whether an
- * implementation exists. Nor is it "no TypeScript evaluator" -
- * `api_route_requires_service_delegation` has none but IS evaluated by the engine, so it is absent
- * from this list.
+ * implementation exists.
+ *
+ * `api_route_requires_service_delegation` joined this list rather than being reasoned around it.
+ * The note that used to sit here said it "has no TypeScript evaluator but IS evaluated by the
+ * engine, so it is absent from this list" - and that was wrong on the only point that mattered.
+ * The engine's arm existed and was unreachable: both proposers stamp `heuristic_check` where the
+ * engine's loop requires `deterministic_check`, and the CLI never dispatched the kind at all. An
+ * arm that exists is not an evaluator that runs, and a list derived from "is there an arm" would
+ * have kept saying so. See docs/decisions/service-delegation-capability.md.
  *
  * W5 (D-P3a): derived from the dispatch table rather than restated. This was a hand-written list
  * beside a hand-written engine chain and a hand-written CLI chain, with no place that named all
@@ -321,6 +338,18 @@ export const PRESENCE_AUTO_ACCEPT_MIN_EVIDENCE_FILES = 20;
  * violations - where the ONLY candidate is `api_route_requires_service_delegation`
  * (`heuristic_check`). The best-behaved repo got a convention that cannot block and an upgrade
  * instruction the tool rejects.
+ *
+ * That measurement now has a second reading, and it is the sharper one: the candidate could not
+ * block because it could not enforce at all. `--mode block` was refused while `--mode warn` was
+ * taken, so the tool's own refusal was pointing at a dead kind and the warn path quietly stored
+ * it. The kind fails closed at acceptance now
+ * (docs/decisions/service-delegation-capability.md), so that repo gets a refusal with a reason
+ * instead of a convention that reports `pass` forever - which is worse UX and a true statement,
+ * where the old behaviour was better UX and a false one.
+ *
+ * This predicate stays exactly as it was. `canEverBlock` is about the block/warn boundary among
+ * kinds that DO enforce, and a heuristic kind that enforces something real would still belong on
+ * the warn side of it.
  *
  * One predicate, so the auto-accept filter and the printed command agree with the preflight.
  */

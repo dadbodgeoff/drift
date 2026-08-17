@@ -179,9 +179,11 @@ describe("evaluation receipts — the three states are distinguishable", () => {
     // assembled from what the evaluators reported. Building it the other way would put the silence
     // one level up: a convention no evaluator mentions would have no receipt at all, which is the
     // original defect wearing a new field name.
+    // Two kinds, from one fixture, both obtained from the proposer. One convention would satisfy
+    // "receipts.length === accepted.length" trivially; two make the correspondence a real claim.
     const run = await runGtWorkflow({
-      fixture: "next-api-direct-db",
-      acceptKinds: [DATA_ACCESS, "api_route_requires_service_delegation"]
+      fixture: "next-real-repo-chadlike",
+      acceptKinds: [DATA_ACCESS, "api_route_requires_auth_helper"]
     });
     const receipts = receiptsOf(run.checkPayload);
     const accepted = run.acceptPayloads.map((payload: any) => payload.accepted.id).sort();

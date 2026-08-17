@@ -254,127 +254,6 @@ fn graph_backed_baseline_matches_legacy_import_fingerprints() {
 }
 
 #[test]
-fn check_repo_allows_route_to_service_to_data_access_flow() {
-    let request = json!({
-        "repo": { "repo_id": "repo_abc" },
-        "graph": {
-            "graph_nodes": [
-                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
-                graph_node("file:src/services/users.ts", "file", "src/services/users.ts", json!({ "path": "src/services/users.ts" })),
-                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
-                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
-                graph_node("file_role:service_module", "file_role", "service_module", json!({ "role": "service_module" })),
-                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
-                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
-                graph_node("module:src/services/users.ts", "module", "src/services/users.ts", json!({ "file_path": "src/services/users.ts" })),
-                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" }))
-            ],
-            "graph_edges": [
-                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
-                graph_edge("FILE_HAS_ROLE", "file:src/services/users.ts", "file_role:service_module"),
-                graph_edge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
-                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
-                graph_edge("FILE_DEFINES_MODULE", "file:src/services/users.ts", "module:src/services/users.ts"),
-                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
-                graph_edge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/services/users.ts"),
-                graph_edge("MODULE_IMPORTS_MODULE", "module:src/services/users.ts", "module:src/lib/db.ts")
-            ],
-            "graph_evidence": []
-        },
-        "scan": { "scan_id": "scan_abc", "facts": [] },
-        "contract": {
-            "conventions": [{
-                "id": "convention_service_delegation",
-                "kind": "api_route_requires_service_delegation",
-                "matcher": { "allowed_delegate_imports": ["src/services"] },
-                "severity": "error",
-                "enforcement_mode": "block",
-                "enforcement_capability": "deterministic_check"
-            }]
-        },
-        "baseline": [],
-        "diff": { "mode": "full", "files": [] }
-    });
-    let payload = run_check(request);
-    let findings = payload["findings"].as_array().expect("findings");
-
-    assert_eq!(findings.len(), 0, "{payload:#?}");
-    assert_eq!(payload["completeness"][0]["can_block"], true);
-}
-
-#[test]
-fn check_repo_flags_route_to_data_access_without_service_delegation() {
-    let request = json!({
-        "repo": { "repo_id": "repo_abc" },
-        "graph": {
-            "graph_nodes": [
-                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
-                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
-                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
-                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
-                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
-                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" }))
-            ],
-            "graph_edges": [
-                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
-                graph_edge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
-                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
-                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
-                graph_edge_with_evidence("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/lib/db.ts", "evidence_import")
-            ],
-            "graph_evidence": [{
-                "id": "evidence_import",
-                "repo_id": "repo_abc",
-                "scan_id": "scan_abc",
-                "artifact_id": "file_version:app/api/users/route.ts:aaaaaaaaaaaa",
-                "file_path": "app/api/users/route.ts",
-                "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "start_line": 1,
-                "end_line": 1,
-                "adapter_id": "typescript",
-                "adapter_version": "0.1.0",
-                "fact_ids": ["fact_import"],
-                "redaction_state": "none"
-            }]
-        },
-        "scan": { "scan_id": "scan_abc", "facts": [] },
-        "contract": {
-            "conventions": [{
-                "id": "convention_service_delegation",
-                "kind": "api_route_requires_service_delegation",
-                "matcher": { "allowed_delegate_imports": ["src/services"] },
-                "severity": "error",
-                "enforcement_mode": "block",
-                "enforcement_capability": "deterministic_check"
-            }]
-        },
-        "baseline": [],
-        "diff": { "mode": "full", "files": [] }
-    });
-    let payload = run_check(request);
-    let findings = payload["findings"].as_array().expect("findings");
-
-    assert_eq!(findings.len(), 1, "{payload:#?}");
-    assert_eq!(
-        findings[0]["convention_id"],
-        "convention_service_delegation"
-    );
-    assert_eq!(
-        findings[0]["rule_id"],
-        "api_route_requires_service_delegation"
-    );
-    assert_eq!(findings[0]["enforcement_result"], "block");
-    assert_eq!(findings[0]["evidence"][0]["evidence_id"], "evidence_import");
-    assert!(
-        findings[0]["related_node_ids"]
-            .as_array()
-            .expect("related nodes")
-            .iter()
-            .any(|node| node == "module:src/lib/db.ts")
-    );
-}
-
-#[test]
 fn check_repo_flags_direct_data_access_hidden_behind_barrel_reexport() {
     let request = json!({
         "repo": { "repo_id": "repo_abc" },
@@ -998,4 +877,80 @@ fn legacy_direct_db_fingerprint(
     hasher.update(b"\0");
     hasher.update(import_source.as_bytes());
     format!("{:x}", hasher.finalize())
+}
+
+#[test]
+fn check_repo_receipts_service_delegation_as_having_no_evaluator() {
+    // WHAT THIS REPLACES, and why the replacement is the stronger test.
+    //
+    // Two tests stood here: `check_repo_flags_route_to_data_access_without_service_delegation` and
+    // its clean counterpart `check_repo_allows_route_to_service_to_data_access_flow`. Both passed.
+    // Both hand-wrote `"enforcement_capability": "deterministic_check"` into the request, and no
+    // proposer has ever emitted that for this kind - both stamp `heuristic_check`. So the pair
+    // demonstrated that the arm WORKED while saying nothing about whether it RAN, and the answer
+    // to the second question was no: the capability gate above the arm rejected every real
+    // convention of this kind, and packages/cli/src/check/run-check.ts never dispatched the kind
+    // to this engine in the first place. Coverage over an unreachable path, which is the exact
+    // shape of the P0 the canary ledger exists to prevent.
+    //
+    // The arm is gone (docs/decisions/service-delegation-capability.md). What is worth asserting
+    // now is that its removal is LOUD: a convention of this kind reaching the engine gets a
+    // receipt naming the reason, not a silent empty findings list.
+    let request = json!({
+        "repo": { "repo_id": "repo_abc" },
+        "graph": {
+            "graph_nodes": [
+                graph_node("file:app/api/users/route.ts", "file", "app/api/users/route.ts", json!({ "path": "app/api/users/route.ts" })),
+                graph_node("file:src/lib/db.ts", "file", "src/lib/db.ts", json!({ "path": "src/lib/db.ts" })),
+                graph_node("file_role:api_route", "file_role", "api_route", json!({ "role": "api_route" })),
+                graph_node("file_role:data_access_module", "file_role", "data_access_module", json!({ "role": "data_access_module" })),
+                graph_node("module:app/api/users/route.ts", "module", "app/api/users/route.ts", json!({ "file_path": "app/api/users/route.ts" })),
+                graph_node("module:src/lib/db.ts", "module", "src/lib/db.ts", json!({ "file_path": "src/lib/db.ts" }))
+            ],
+            "graph_edges": [
+                graph_edge("FILE_HAS_ROLE", "file:app/api/users/route.ts", "file_role:api_route"),
+                graph_edge("FILE_HAS_ROLE", "file:src/lib/db.ts", "file_role:data_access_module"),
+                graph_edge("FILE_DEFINES_MODULE", "file:app/api/users/route.ts", "module:app/api/users/route.ts"),
+                graph_edge("FILE_DEFINES_MODULE", "file:src/lib/db.ts", "module:src/lib/db.ts"),
+                graph_edge("MODULE_IMPORTS_MODULE", "module:app/api/users/route.ts", "module:src/lib/db.ts")
+            ],
+            "graph_evidence": []
+        },
+        "scan": { "scan_id": "scan_abc", "facts": [] },
+        "contract": {
+            "conventions": [{
+                "id": "convention_service_delegation",
+                "kind": "api_route_requires_service_delegation",
+                "matcher": { "allowed_delegate_imports": ["src/services"] },
+                "severity": "error",
+                "enforcement_mode": "block",
+                // Still `deterministic_check`, deliberately: the strongest capability a caller can
+                // claim. Even that no longer buys an evaluator, because the kind's dispatch is
+                // `none` and no capability overrides the manifest.
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    });
+    let payload = run_check(request);
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+    let receipts = payload["evaluation_receipts"]
+        .as_array()
+        .expect("evaluation_receipts");
+    assert_eq!(receipts.len(), 1, "{payload:#?}");
+    assert_eq!(receipts[0]["kind"], "api_route_requires_service_delegation");
+    assert_eq!(receipts[0]["dispatch"], "none");
+    assert_eq!(receipts[0]["reached"], false);
+    assert_eq!(receipts[0]["skip_reason"], "no_evaluator_for_kind");
+    // The half that makes the receipt worth having: every other trust field in the payload still
+    // reports a clean, complete, blockable run. Before receipts, this payload and one from a
+    // convention that ran and found nothing were byte-identical.
+    assert_eq!(payload["completeness"][0]["complete"], true);
+    assert_eq!(payload["completeness"][0]["can_block"], true);
 }

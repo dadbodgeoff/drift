@@ -65,6 +65,49 @@ function accepted(input: Pick<AcceptedConvention, "id" | "kind" | "statement" | 
   };
 }
 
+/**
+ * A minimal security boundary proof naming one accepted convention as a matched contract.
+ *
+ * `contract_id` is the field that matters: the engine stamps it from `convention.id`
+ * (check_command.rs), so it is what makes "this convention was evaluated" an exact statement
+ * rather than "something of this kind was".
+ */
+function proofFor(conventionId: string) {
+  return {
+    proof_id: `proof_${conventionId}`,
+    proof_version: "security-boundary-proof/v1",
+    route: {
+      route_id: "route_apps_get",
+      file_path: "app/api/apps/route.ts",
+      file_role: "api_route"
+    },
+    contracts: [{
+      contract_id: conventionId,
+      kind: "api_route_requires_auth_helper",
+      enforcement_mode: "warn",
+      capability: "deterministic_check",
+      matched: true
+    }],
+    capability_status: [],
+    auth: {
+      required: true,
+      proven: true,
+      proof_kind: "handler_guard",
+      trusted_guard_calls: [],
+      dominated_sinks: [],
+      undominated_sinks: []
+    },
+    missing_proof: [],
+    parser_gaps: [],
+    result: {
+      proof_status: "proven",
+      enforcement_result: "pass",
+      can_block: false,
+      finding_ids: []
+    }
+  };
+}
+
 describe("security architecture audit", () => {
   it("summarizes repo security patterns without treating body parsers as validation proof", () => {
     const model = buildSecurityArchitectureAudit({
@@ -145,7 +188,14 @@ describe("security architecture audit", () => {
       accepted: true,
       candidate_only: false,
       priority: "high",
-      report_surface: "priority"
+      report_surface: "priority",
+      // This case runs with `proofs: []` and always has. It used to report `accepted_proof`, which
+      // was the fail-open: `proofBacked: true` was a literal on the seed, so acceptance WAS proof
+      // and `input.proofs` decided nothing. Pinned here because the surrounding assertions were
+      // all true before and after the fix - `accepted`, `priority` and `report_surface` are
+      // unchanged - so nothing in this test would have noticed.
+      proof_backed: false,
+      proof_truth: "accepted_unproven"
     });
     expect(model.areas.request_validation.patterns.find((pattern) => pattern.pattern === "parseRequestBody")).toMatchObject({
       semantic_role: "body_parser",
@@ -230,5 +280,136 @@ describe("security architecture audit", () => {
       proof_truth: "fact_inventory",
       accepted: false
     });
+  });
+  it("does not call an accepted convention proof-backed without a proof, and does with one", () => {
+    // ITEM 3's claim, made as a matched pair so it can fail in both directions. A fix that reported
+    // `accepted_unproven` for everything would satisfy the first half and be exactly as useless as
+    // the fail-open it replaced.
+    const conventionId = "convention_auth_workspace";
+    const authFacts = [
+      fact({ kind: "file_role_detected", file_path: "app/api/apps/route.ts", name: "api_route", start_line: 1 }),
+      fact({ kind: "symbol_called", file_path: "app/api/apps/route.ts", name: "withWorkspace", start_line: 5 })
+    ];
+    const authConvention = accepted({
+      id: conventionId,
+      kind: "api_route_requires_auth_helper",
+      statement: "Use withWorkspace.",
+      matcher: { kind: "api_route_requires_auth_helper", required_calls: ["withWorkspace"] },
+      requires: { auth_helpers: [{ symbol: "withWorkspace" }] }
+    });
+    const build = (proofs: unknown[]) => buildSecurityArchitectureAudit({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      facts: authFacts,
+      candidates: [],
+      accepted_conventions: [authConvention],
+      parser_gaps: [],
+      proofs: proofs as never
+    });
+
+    const unproven = build([]).areas.auth_boundary.patterns.find(
+      (pattern) => pattern.pattern === "withWorkspace"
+    );
+    expect(unproven).toMatchObject({
+      accepted: true,
+      accepted_convention_ids: [conventionId],
+      proof_backed: false,
+      proof_truth: "accepted_unproven"
+    });
+    // Still `high` priority, and that is not an oversight: an accepted rule with nothing behind it
+    // is the MORE urgent of the two states, because someone is relying on it. Demoting it would
+    // move it off the priority surface, which is the last thing this fix should do.
+    expect(unproven?.priority).toBe("high");
+
+    const proven = build([proofFor(conventionId)]).areas.auth_boundary.patterns.find(
+      (pattern) => pattern.pattern === "withWorkspace"
+    );
+    expect(proven).toMatchObject({
+      accepted: true,
+      proof_backed: true,
+      proof_truth: "accepted_proof"
+    });
+  });
+
+  it("attributes proofs by convention id, not by kind", () => {
+    // Two accepted conventions of the SAME kind, one proved. Attribution by kind would mark both
+    // proof-backed off one proof, which is the fail-open in a narrower disguise - and the disguise
+    // a "just check the proofs list" fix falls into, because every proof carries a `kind` and only
+    // some readers notice it also carries the `contract_id` the engine stamped from `convention.id`.
+    const model = buildSecurityArchitectureAudit({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      facts: [
+        fact({ kind: "file_role_detected", file_path: "app/api/apps/route.ts", name: "api_route", start_line: 1 }),
+        fact({ kind: "symbol_called", file_path: "app/api/apps/route.ts", name: "withWorkspace", start_line: 5 }),
+        fact({ kind: "symbol_called", file_path: "app/api/apps/route.ts", name: "withSession", start_line: 6 })
+      ],
+      candidates: [],
+      accepted_conventions: [
+        accepted({
+          id: "convention_proved",
+          kind: "api_route_requires_auth_helper",
+          statement: "Use withWorkspace.",
+          matcher: { kind: "api_route_requires_auth_helper", required_calls: ["withWorkspace"] },
+          requires: { auth_helpers: [{ symbol: "withWorkspace" }] }
+        }),
+        accepted({
+          id: "convention_unproved",
+          kind: "api_route_requires_auth_helper",
+          statement: "Use withSession.",
+          matcher: { kind: "api_route_requires_auth_helper", required_calls: ["withSession"] },
+          requires: { auth_helpers: [{ symbol: "withSession" }] }
+        })
+      ],
+      parser_gaps: [],
+      proofs: [proofFor("convention_proved")] as never
+    });
+
+    const byPattern = new Map(
+      model.areas.auth_boundary.patterns.map((pattern) => [pattern.pattern, pattern])
+    );
+    expect(byPattern.get("withWorkspace")?.proof_truth).toBe("accepted_proof");
+    expect(byPattern.get("withSession")?.proof_truth).toBe("accepted_unproven");
+  });
+
+  it("counts a FAILED proof as proof-backing, because a violation is a measurement", () => {
+    // The opposite over-correction, and it is easy to write by accident: requiring
+    // `proof_status === "proven"` would report every convention that actually CAUGHT something as
+    // unproven, which is the fail-open inverted. `matched` is the right predicate - it says this
+    // convention was evaluated against this route - and the verdict belongs to the finding.
+    const model = buildSecurityArchitectureAudit({
+      repo_id: "repo_abc",
+      scan_id: "scan_abc",
+      facts: [
+        fact({ kind: "file_role_detected", file_path: "app/api/apps/route.ts", name: "api_route", start_line: 1 }),
+        fact({ kind: "symbol_called", file_path: "app/api/apps/route.ts", name: "withWorkspace", start_line: 5 })
+      ],
+      candidates: [],
+      accepted_conventions: [
+        accepted({
+          id: "convention_caught_one",
+          kind: "api_route_requires_auth_helper",
+          statement: "Use withWorkspace.",
+          matcher: { kind: "api_route_requires_auth_helper", required_calls: ["withWorkspace"] },
+          requires: { auth_helpers: [{ symbol: "withWorkspace" }] }
+        })
+      ],
+      parser_gaps: [],
+      proofs: [
+        {
+          ...proofFor("convention_caught_one"),
+          result: {
+            proof_status: "unproven",
+            enforcement_result: "block",
+            can_block: true,
+            finding_ids: ["finding_abc"]
+          }
+        }
+      ] as never
+    });
+
+    expect(
+      model.areas.auth_boundary.patterns.find((pattern) => pattern.pattern === "withWorkspace")
+    ).toMatchObject({ proof_backed: true, proof_truth: "accepted_proof" });
   });
 });

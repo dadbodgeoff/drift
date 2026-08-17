@@ -44,8 +44,25 @@ export type SecurityArchitectureSemanticRole =
   | "secret_reference"
   | "unknown";
 
+/**
+ * How much this pattern's status is actually backed by, strongest first.
+ *
+ * `accepted_unproven` is new, and it exists because the other four could not express the state the
+ * audit was most often in. Acceptance was read as proof: every accepted convention seeded
+ * `proofBacked: true` unconditionally, `input.proofs` was consulted for nothing but an area-level
+ * count, and so a convention that was accepted and had never produced a single proof reported
+ * `accepted_proof` - the strongest word in this list - to a command called `security audit`. The
+ * eight dead conventions all reported that way.
+ *
+ * The distinction is not academic. `accepted_proof` says Drift checked this boundary and can show
+ * you the proof; `accepted_unproven` says someone accepted a rule about this boundary and Drift has
+ * no proof it ever ran. A reader deciding whether a security area is covered needs those apart, and
+ * the second is worse than `candidate_only` in one specific way: a candidate at least does not
+ * claim to be enforced.
+ */
 export type SecurityArchitectureProofTruth =
   | "accepted_proof"
+  | "accepted_unproven"
   | "candidate_only"
   | "fact_inventory"
   | "not_observed";
@@ -73,6 +90,14 @@ export interface SecurityArchitectureAuditPattern {
   candidate_only: boolean;
   candidate_ids: string[];
   accepted_convention_ids: string[];
+  /**
+   * A proof in this scan names one of `accepted_convention_ids` as a matched contract.
+   *
+   * Separate from `accepted` because the two were conflated and that conflation was the defect:
+   * accepting a convention is a governance act, and proving a boundary is a measurement, and only
+   * the second is evidence that anything ran.
+   */
+  proof_backed: boolean;
   proof_truth: SecurityArchitectureProofTruth;
   priority: SecurityArchitecturePriority;
   report_surface: SecurityArchitectureReportSurface;
@@ -198,6 +223,28 @@ export function buildSecurityArchitectureAudit(input: BuildSecurityArchitectureA
     }
   }
 
+  // Which accepted conventions this scan actually has a proof for.
+  //
+  // THE FAIL-OPEN THIS REPLACES. `proofBacked: true` was a literal on the seed below, so every
+  // accepted convention was proof-backed by definition and `input.proofs` decided nothing about
+  // it. `security audit` therefore reported `accepted_proof` for a convention that had never
+  // produced a proof, never run, or - in eight recorded cases - could not run at all. A field
+  // whose value does not depend on its evidence is not reporting on the evidence.
+  //
+  // Attribution is by convention id, not by kind. Each proof's `contracts[]` entries carry the
+  // `contract_id` the engine stamped from `convention.id`, so "this convention was proved" is
+  // exact rather than "some convention of this kind was".
+  //
+  // `matched` and not `proof_status`. A proof that came back FAILED is proof-backing - it is the
+  // proof that produced the finding - and requiring `proven` would have re-created the fail-open
+  // in the opposite direction: every convention that actually caught something would report as
+  // unproven.
+  const provenConventionIds = new Set(
+    input.proofs.flatMap((proof) =>
+      proof.contracts.filter((contract) => contract.matched).map((contract) => contract.contract_id)
+    )
+  );
+
   for (const convention of input.accepted_conventions) {
     const area = CONVENTION_AREA[convention.kind];
     if (!area) {
@@ -209,7 +256,7 @@ export function buildSecurityArchitectureAudit(input: BuildSecurityArchitectureA
         pattern,
         semanticRole: semanticRoleForConvention(area, pattern),
         acceptedConventionId: convention.id,
-        proofBacked: true
+        proofBacked: provenConventionIds.has(convention.id)
       });
     }
   }
@@ -286,6 +333,7 @@ function upsertPattern(patternMap: Map<string, SecurityArchitectureAuditPattern>
     candidate_only: false,
     candidate_ids: [],
     accepted_convention_ids: [],
+    proof_backed: false,
     proof_truth: "not_observed",
     priority: "low",
     report_surface: "inventory"
@@ -304,8 +352,12 @@ function upsertPattern(patternMap: Map<string, SecurityArchitectureAuditPattern>
   if (seed.acceptedConventionId && !pattern.accepted_convention_ids.includes(seed.acceptedConventionId)) {
     pattern.accepted_convention_ids.push(seed.acceptedConventionId);
   }
+  // Acceptance is established by `acceptedConventionId` below `finalizePattern`; this flag now
+  // says only whether a proof exists. It used to set `accepted`, which was harmless - the id is
+  // what actually decides that - and which is why nobody noticed that the value being fed in was
+  // the literal `true`.
   if (seed.proofBacked) {
-    pattern.accepted = true;
+    pattern.proof_backed = true;
   }
   pattern.file_count = new Set(pattern.files.map((file) => file.file_path)).size;
   patternMap.set(key, pattern);
@@ -317,7 +369,9 @@ function finalizePattern(pattern: SecurityArchitectureAuditPattern): SecurityArc
   pattern.accepted = accepted;
   pattern.candidate_only = candidateOnly;
   pattern.proof_truth = accepted
-    ? "accepted_proof"
+    ? pattern.proof_backed
+      ? "accepted_proof"
+      : "accepted_unproven"
     : candidateOnly
       ? "candidate_only"
       : pattern.fact_count > 0
@@ -688,6 +742,14 @@ function comparePatterns(left: SecurityArchitectureAuditPattern, right: Security
 }
 
 function patternPriority(pattern: SecurityArchitectureAuditPattern): SecurityArchitecturePriority {
+  // Both accepted states stay `high`, and deliberately: an accepted convention with no proof
+  // behind it is not LESS urgent than one with proof - it is the more urgent of the two, because
+  // someone is relying on it. Demoting it would move it off the priority surface, which is the
+  // last thing this fix should do.
+  //
+  // `proof_truth` is what tells them apart, and it is printed on every pattern line. The unchanged
+  // condition below is left as it was for the same reason: `pattern.accepted` already covers both,
+  // and narrowing it to `accepted_proof` would have silently dropped the unproven half.
   if (pattern.accepted || pattern.proof_truth === "accepted_proof") {
     return "high";
   }

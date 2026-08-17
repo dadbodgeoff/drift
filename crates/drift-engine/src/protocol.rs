@@ -549,7 +549,12 @@ pub struct CheckMatcher {
     /// re-export of the same module through (T93).
     #[serde(default)]
     pub forbidden_module_files: Option<Vec<String>>,
-    pub allowed_delegate_imports: Option<Vec<String>>,
+    // `allowed_delegate_imports` was here, read by nothing. It was the only configurable field
+    // of api_route_requires_service_delegation's matcher, and that kind's evaluator took it as
+    // `_allowed_delegate_imports` and never looked at it - so an author who narrowed their
+    // convention narrowed nothing. The kind now fails closed at acceptance
+    // (docs/decisions/service-delegation-capability.md) and the field goes with it. Serde
+    // ignores unknown keys, so an older contract still carrying one deserialises fine.
     pub required_calls: Option<Vec<String>>,
     pub applies_to_file_roles: Option<Vec<String>>,
     pub file_roles: Option<Vec<String>>,

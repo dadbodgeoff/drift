@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
+import { hasConventionEvaluator } from "@drift/core";
 import { runCli } from "../src/index.js";
 
 /**
@@ -17,6 +18,15 @@ import { runCli } from "../src/index.js";
  * The negative controls come first and are the harder half. This warning must not cry wolf: a healthy
  * repo, and a repo whose rule simply has no current violators, must both stay silent.
  */
+
+/**
+ * Every test here drives the CLI end to end - scan, start, accept, check - and each of those
+ * launches the Rust engine as a child process. Vitest's 5s default is not a budget for that: the
+ * two liveness-probe tests began timing out under a fully parallel `pnpm verify:ci` while passing
+ * in isolation, which is a false red that says nothing about the code. Stated per test rather than
+ * configured globally, so a test that becomes genuinely slow is still visible as one.
+ */
+const TEST_TIMEOUT_MS = 60000;
 
 const tempDirs: string[] = [];
 afterEach(async () => {
@@ -43,6 +53,21 @@ function git(cwd: string, ...args: string[]): void {
   execFileSync("git", args, { cwd, stdio: "ignore" });
 }
 
+/**
+ * `violatingRoutes: 0` has to be reached by FIXING routes, not by never writing them.
+ *
+ * The proposer infers `api_route_no_direct_data_access` from routes that actually import the data
+ * module, so a repo built clean produces no candidate of that kind at all - its only candidate is
+ * `api_route_requires_service_delegation`, which now fails closed at acceptance
+ * (docs/decisions/service-delegation-capability.md). The helper used to accept `candidates[0]`
+ * and got that one; it was reading `.accepted` off a refusal even before the refusal existed,
+ * because a heuristic convention was never going to enforce anything either.
+ *
+ * So the zero-violation state is produced the way a real repo produces it: write the violations,
+ * onboard, then fix them. That is a truer rendering of what these two negative controls are about
+ * ("the specifier resolves, there is simply nothing to flag") than a repo that never had a
+ * violation to begin with - and it is the only route to a live contract on a clean repo.
+ */
 async function fixture(options: { violatingRoutes: number; cleanRoutes: number }): Promise<{
   repoId: string;
   databasePath: string;
@@ -53,6 +78,9 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
   tempDirs.push(dir);
   const repoRoot = join(dir, "repo");
   const stateRoot = join(dir, "state");
+  // Onboard with at least one violation so the data-access convention is inferrable at all, then
+  // fix it below when the caller asked for none.
+  const onboardingViolations = Math.max(options.violatingRoutes, 1);
 
   await mkdir(join(repoRoot, "lib/services"), { recursive: true });
   await writeFile(join(repoRoot, "lib/prisma.ts"), "export const prisma = {} as never;\n");
@@ -60,7 +88,7 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
     join(repoRoot, "lib/services/users.ts"),
     'import { prisma } from "@/lib/prisma";\nexport async function listUsers() { return prisma; }\n'
   );
-  for (let index = 0; index < options.violatingRoutes; index += 1) {
+  for (let index = 0; index < onboardingViolations; index += 1) {
     await mkdir(join(repoRoot, `app/api/bad${index}`), { recursive: true });
     await writeFile(join(repoRoot, `app/api/bad${index}/route.ts`), VIOLATING);
   }
@@ -83,7 +111,12 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
     "start",
     "--repo-root", repoRoot,
     "--state-root", stateRoot,
-    "--accept-defaults",
+    // `--accept-defaults` accepts a deterministic convention at BLOCK, and every check in this
+    // suite runs `--scope full`, which refuses a block-mode contract outright (W8-1). That refusal
+    // is correct and has nothing to do with staleness, so the zero-violation fixtures - the ones
+    // whose negative controls assert exit 0 - take the explicit warn-mode path below instead. The
+    // fixtures that keep violations are unchanged.
+    ...(options.violatingRoutes > 0 ? ["--accept-defaults"] : []),
     "--now", "2026-08-03T00:00:30.000Z",
     "--json"
   ]);
@@ -93,10 +126,9 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
   const databasePath = payload.state.database_path;
 
   // T-12: `--accept-defaults` no longer auto-accepts a convention that can never block, so a repo
-  // with zero violating routes onboards with nothing accepted - the only candidate it produces is
-  // `api_route_requires_service_delegation` (heuristic_check). This suite is about staleness
-  // detection and needs A contract, not a particular kind, so it accepts the top candidate
-  // explicitly. Accepting by hand is still allowed; only the automatic path was narrowed.
+  // with zero violating routes onboards with nothing accepted. This suite is about staleness
+  // detection and needs A contract, not a particular kind, so it accepts a candidate explicitly.
+  // Accepting by hand is still allowed; only the automatic path was narrowed.
   let accepted = payload.accepted;
   if (!accepted) {
     const listed = JSON.parse(
@@ -105,8 +137,22 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
         "--include-low-confidence", "--json"
       ])).stdout
     );
-    const candidate = listed.candidates[0];
-    expect(candidate, "no candidate to accept for the liveness fixture").toBeTruthy();
+    // ...and it has to be a candidate acceptance will take. This was `candidates[0]`, which for a
+    // repo with zero violating routes is `api_route_requires_service_delegation` - a kind that now
+    // fails closed at acceptance (docs/decisions/service-delegation-capability.md), so the helper
+    // was asking for a refusal and reading `.accepted` off the error payload.
+    //
+    // Filtered on the predicate rather than pinned to a kind: this suite does not care which
+    // convention it gets, and a hard-coded kind here would break again the next time the candidate
+    // mix moves.
+    const candidate = listed.candidates.find(
+      (entry: { kind: string }) => hasConventionEvaluator(entry.kind)
+    );
+    expect(
+      candidate,
+      "no acceptable candidate for the liveness fixture; candidates were " +
+        JSON.stringify(listed.candidates.map((entry: { kind: string }) => entry.kind))
+    ).toBeTruthy();
     const result = await runCli([
       "--db", databasePath, "conventions", "accept", candidate.id, "--repo", repoId,
       "--mode", "warn", "--severity", "warning", "--confirm", "--json"
@@ -114,6 +160,27 @@ async function fixture(options: { violatingRoutes: number; cleanRoutes: number }
     expect(result.exitCode, result.stdout).toBe(0);
     accepted = JSON.parse(result.stdout).accepted;
   }
+
+  // The contract is live and was inferred from real violations. Now fix them, if the caller asked
+  // for a repo with none. `lib/services/users.ts` still imports `@/lib/prisma`, so the forbidden
+  // specifier still resolves - which is exactly the state the negative controls describe.
+  for (let index = options.violatingRoutes; index < onboardingViolations; index += 1) {
+    await writeFile(join(repoRoot, `app/api/bad${index}/route.ts`), CLEAN);
+  }
+  if (options.violatingRoutes < onboardingViolations) {
+    git(repoRoot, "add", "-A");
+    execFileSync(
+      "git",
+      ["-c", "user.email=bb4@drift.test", "-c", "user.name=bb4", "commit", "-qm", "fix the routes"],
+      { cwd: repoRoot, stdio: "ignore" }
+    );
+    const rescan = await runCli([
+      "scan", "--repo-root", repoRoot, "--state-root", stateRoot,
+      "--now", "2026-08-03T00:01:00.000Z", "--json"
+    ]);
+    expect(rescan.exitCode, rescan.stderr).toBe(0);
+  }
+
   return {
     repoId,
     databasePath,
@@ -134,7 +201,7 @@ describe("BB-4 contract liveness", () => {
       expect(payload.summary.contract_staleness).toBeUndefined();
       expect(payload.summary.contract_staleness_warnings).toBeUndefined();
       expect(payload.findings.length).toBeGreaterThan(0);
-    });
+    }, TEST_TIMEOUT_MS);
 
     it("stays silent when the specifier resolves but currently has zero violators", async () => {
       // Absence of violations is success, not staleness. `lib/services/users.ts` still imports the
@@ -146,14 +213,14 @@ describe("BB-4 contract liveness", () => {
       expect(payload.summary.contract_staleness).toBeUndefined();
       expect(payload.findings).toEqual([]);
       expect(result.exitCode).toBe(0);
-    });
+    }, TEST_TIMEOUT_MS);
 
     it("stays silent under --strict-contract too, when the contract is alive", async () => {
       const { repoId, databasePath } = await fixture({ violatingRoutes: 0, cleanRoutes: 3 });
       const result = await check(databasePath, repoId, "--strict-contract");
       expect(result.exitCode).toBe(0);
       expect(JSON.parse(result.stdout).summary.contract_staleness).toBeUndefined();
-    });
+    }, TEST_TIMEOUT_MS);
   });
 
   describe("the liveness probe", () => {
@@ -226,7 +293,7 @@ describe("BB-4 contract liveness", () => {
       expect(warning).toContain("@/lib/prisma");
       expect(warning).toContain("no longer contains");
       expect(warning).toContain("enforces nothing");
-    });
+    }, TEST_TIMEOUT_MS);
 
     it("does not change the exit code by itself", async () => {
       // A removed data layer is a legitimate refactor. Blocking it would be a false positive on a
@@ -251,7 +318,7 @@ describe("BB-4 contract liveness", () => {
         "a dead contract must not be the reason a check refuses without --strict-contract"
       ).toBe("full_scope_cannot_block");
       expect(payload.summary.contract_staleness).toHaveLength(1);
-    });
+    }, TEST_TIMEOUT_MS);
 
     // COVERAGE GAP, stated rather than left implicit: since W8-1 this fixture's block-mode contract
     // refuses at `--scope full` with or without `--strict-contract`, so the two tests below no longer
@@ -271,7 +338,7 @@ describe("BB-4 contract liveness", () => {
       // nothing.
       expect(result.exitCode).toBe(3);
       expect(JSON.parse(result.stdout).summary.contract_staleness).toHaveLength(1);
-    });
+    }, TEST_TIMEOUT_MS);
 
     // B-3, reopened by this very flag and closed again.
     //
@@ -290,7 +357,7 @@ describe("BB-4 contract liveness", () => {
 
       expect(result.exitCode).toBe(3);
       expect(payload.check.status).toBe("refused");
-    });
+    }, TEST_TIMEOUT_MS);
 
     it("names the dead specifier in the human output too", async () => {
       const { repoId, databasePath, repoRoot } = await fixture({ violatingRoutes: 1, cleanRoutes: 3 });
@@ -302,6 +369,6 @@ describe("BB-4 contract liveness", () => {
       ]);
       expect(result.stdout).toContain("@/lib/prisma");
       expect(result.stdout).toContain("enforces nothing");
-    });
+    }, TEST_TIMEOUT_MS);
   });
 });

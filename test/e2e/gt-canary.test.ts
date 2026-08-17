@@ -53,6 +53,7 @@ const DATA_ACCESS = "api_route_no_direct_data_access";
 const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
+const SERVICE_DELEGATION = "api_route_requires_service_delegation";
 const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
 const TENANT_SCOPE = "api_route_requires_tenant_scope";
 const REQUEST_VALIDATION = "api_route_requires_request_validation";
@@ -203,6 +204,8 @@ const CELLS_COVERED_HERE: Record<string, string> = {
     "phase-4 session-trust path fires through contract import",
   "middleware_must_cover_routes::no_dispatch_arm":
     "middleware_must_cover_routes is refused at acceptance, by name",
+  "api_route_requires_service_delegation::no_dispatch_arm":
+    "api_route_requires_service_delegation is refused at acceptance, by name",
   "api_route_forbids_sensitive_response_fields::phase5_proof":
     "phase-5 sensitive-response-fields path fires, on both provenance routes",
   "api_route_requires_tenant_scope::phase4_proof":
@@ -1171,6 +1174,46 @@ describe("cell canaries — quarantined", () => {
     // And therefore: no finding of this kind exists anywhere in the run.
     const findings = readFindings(run.databasePath, run.repoId);
     expect(findings.filter((finding) => finding.kind === MIDDLEWARE)).toHaveLength(0);
+  }, 180000);
+
+  it("api_route_requires_service_delegation is refused at acceptance, by name", async () => {
+    // The same shape as the middleware cell above, arrived at from the opposite direction. That one
+    // never had an evaluator; this one HAD an arm in check_command.rs, two passing engine tests over
+    // it, and no way for a real convention to reach any of them - both proposers stamp
+    // `heuristic_check` where the loop requires `deterministic_check`, and the CLI never dispatched
+    // the kind at all. See docs/decisions/service-delegation-capability.md.
+    //
+    // The fixture is the sharpest one available: next-api-direct-db's single API route imports
+    // Prisma directly and delegates through no service module. If any repo should have produced a
+    // finding under this kind, it is this one; it produced none and reported `pass`.
+    const run = await runGtWorkflow({ fixture: "next-api-direct-db" });
+    const candidate = (run.startPayload.candidates ?? []).find(
+      (c: any) => c.kind === SERVICE_DELEGATION
+    );
+    expect(candidate, "the proposer does emit this kind — that is why it is not `unimplemented`")
+      .toBeTruthy();
+    // The capability that made it unenforceable, read off the proposer's own output rather than
+    // assumed. This is the half a hand-built candidate would have hidden.
+    expect(candidate.enforcement_capability).toBe("heuristic_check");
+
+    const accepted = await withDebugEngine(() =>
+      runCli([
+        "--db",
+        run.databasePath,
+        "conventions",
+        "accept",
+        candidate.id,
+        "--confirm",
+        "--json"
+      ])
+    );
+    expect(accepted.exitCode).toBe(1);
+    expect(accepted.stderr).toContain(
+      `Convention kind ${SERVICE_DELEGATION} has no evaluator, so accepting it would enforce nothing while reporting a pass.`
+    );
+
+    const findings = readFindings(run.databasePath, run.repoId);
+    expect(findings.filter((finding) => finding.kind === SERVICE_DELEGATION)).toHaveLength(0);
   }, 180000);
 });
 

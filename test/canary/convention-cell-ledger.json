@@ -50,7 +50,9 @@
       "main"
     ],
     "override_env": "DRIFT_LEDGER_ENFORCE",
-    "note": "On any other branch the checker reports and exits 0. See §4.2 'Scope of that CI rule'."
+    "note": "On any other branch the checker reports and exits 0. See §4.2 'Scope of that CI rule'.",
+    "needs_review_strict_env": "DRIFT_LEDGER_STRICT_NEEDS_REVIEW",
+    "needs_review_note": "`needs-review` is a PASSING state by default. docs/decisions/ledger-needs-review.md proposes tightening it, and ships the mechanism: with DRIFT_LEDGER_STRICT_NEEDS_REVIEW=1 on an enforcing branch, a needs-review cell whose `receipt_evidence.reached` is not true becomes a failure. Default OFF because all six of today's needs-review cells would fail it, and the flip is a human call about whether an unmeasured kind may ship - not a change to make as a side effect of building the measurement."
   },
   "cells": [
     {
@@ -65,15 +67,22 @@
       "citation": null
     },
     {
-      "id": "api_route_requires_service_delegation::graph",
+      "id": "api_route_requires_service_delegation::no_dispatch_arm",
       "kind": "api_route_requires_service_delegation",
-      "enforcement_path": "graph",
-      "dispatch": "check_command.rs:203 (match arm, ConventionKind::ApiRouteRequiresServiceDelegation)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "No canary could be produced. The proposer emits this candidate readily (32 of 79 fixtures) and `conventions accept` takes it, but graph_service_delegation_findings returned ZERO findings on all ten fixtures probed, including violation-shaped ones (next-api-direct-db, route-write-operation, monorepo-alias-db, next-real-repo-chadlike, coverage-report-repo, default-export-service, next-non-prisma-fetch-service, mixed-js-ts, bypass-barrel-reexport, gt-data-access). No quarantine citation exists for it, and the proposer does emit candidates, so `unimplemented` is also unavailable. Needed: either a fixture that makes the graph path fire, or a located decision explaining why it does not.",
-      "citation": null
+      "enforcement_path": "no_dispatch_arm",
+      "dispatch": "none - check_command.rs names it only to `continue`; vocabulary/vocabulary.json records its dispatch as \"none\"",
+      "state": "quarantined",
+      "canary": "test/e2e/gt-canary.test.ts > api_route_requires_service_delegation is refused at acceptance, by name",
+      "evidence": "The proposer DOES emit this candidate (32 of 79 fixtures), and `drift conventions accept` now refuses it by name, so the workflow produces no convention of this kind and therefore no findings. The receipt half is recorded too: before the refusal, an accepted convention of this kind produced `reached: false` on next-api-direct-db - a fixture whose single route imports Prisma directly and delegates through nothing, i.e. an unambiguous violation of the statement the convention carries.",
+      "missing_evidence": null,
+      "citation": {
+        "path": "docs/decisions/service-delegation-capability.md",
+        "symbol": "The decision - option (b), fail closed at acceptance",
+        "quote": "The arm was unreachable three times over: both proposers stamp `enforcement_capability: \"heuristic_check\"` where the engine loop requires `deterministic_check`; packages/cli/src/check/run-check.ts contains zero occurrences of the kind, so the engine is never invoked for it; and graph_service_delegation_findings took `_allowed_delegate_imports` and never read it, so the matcher's only configurable field had no effect.",
+        "second_path": "packages/cli/src/domain/convention-candidates.ts",
+        "second_quote": "Refuse rather than store a rule nothing evaluates: an accepted convention with no evaluator produces no finding on any repo and reports a clean pass, which reads as \"checked, and fine\"."
+      },
+      "note": "Recorded as `quarantined` rather than `unimplemented` on the same reading as the middleware row: this ledger's `unimplemented` means the PROPOSER emits nothing, and here it does. The state moved from `needs-review`, whose missing_evidence asked for \"either a fixture that makes the graph path fire, or a located decision explaining why it does not\" - this is the second of those."
     },
     {
       "id": "api_route_requires_auth_helper::presence_findings",
@@ -95,7 +104,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "Corrected 2026-08-16 on branch glob-revival/safeparse. The old text said no fixture can produce ANY candidate of this kind; that is now false - test/fixtures/gt-request-validation produces the per-symbol candidate, and the sibling request_validation_proof cell is `firing` on it. The presence half remains blocked, and for a reason that no fixture can lift: FAMILY_SPECS (candidate_command.rs:891-908) sources the request-validation family from the `request_validation_called` fact kind ONLY - `symbol_called` is deliberately excluded, because including it produced an 89-member family on dub. But `request_validation_called` facts are produced by extract_security_facts only when accepted validators are already passed in, and the scan path calls the 3-arg `extract_security_facts` (main.rs:663), whose wrapper hard-codes the empty validator slice when it delegates (security_facts.rs:20) - the `&[]` at the call site is `accepted_auth_helpers`, not the validators. So at scan time - the only time the proposer reads facts - zero `request_validation_called` facts exist in any repo, and the family can never form. This is a code gap, not a corpus gap: no fixture can supply a fact kind the scanner never emits. Fixing main.rs:663 to feed the accepted validators into the scan was explicitly out of scope for the glob-revival sprint.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "The proposer emits the per-symbol candidate for gt-request-validation, not a presence family, so no convention of this (kind x path) pair is ever accepted and `drift check` emits no receipt for it at all."
+      }
     },
     {
       "id": "api_route_requires_rate_limit::presence_findings",
@@ -106,7 +120,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "No fixture induces the proposer to emit any api_route_requires_rate_limit candidate (swept all 79). security-rate-limit-missing produces no candidates at all, because the proposer infers from conformance evidence and that fixture is the violation. Needed: a fixture with >=2 rate-limit helpers, each called in >=2 route files.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "No fixture induces a rate-limit candidate of any shape, so no convention exists to receipt."
+      }
     },
     {
       "id": "api_route_requires_auth_helper::auth_proof",
@@ -140,7 +159,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "No fixture produces a candidate of this kind (security-ssrf and security-ssrf-allowlist-pass both yield zero candidates). Emission code exists at candidate_command.rs:693,706, so `unimplemented` is unavailable.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "No fixture produces a candidate of this kind, so no convention exists to receipt."
+      }
     },
     {
       "id": "api_route_forbids_raw_sql_without_params::phase6_proof",
@@ -151,7 +175,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "No fixture produces a candidate of this kind (security-raw-sql, security-raw-sql-parameterized-pass both yield zero). Emission code exists at candidate_command.rs:680.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "No fixture produces a candidate of this kind, so no convention exists to receipt."
+      }
     },
     {
       "id": "api_route_cors_must_match_policy::phase6_proof",
@@ -173,7 +202,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "No fixture produces a candidate of this kind (security-csrf-missing yields zero). Emission code exists at candidate_command.rs:733,749.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "No fixture produces a candidate of this kind, so no convention exists to receipt."
+      }
     },
     {
       "id": "api_route_requires_rate_limit::phase6_proof",
@@ -184,7 +218,12 @@
       "canary": null,
       "evidence": null,
       "missing_evidence": "No fixture produces a per-symbol candidate of this kind, so the non-presence route into the phase-6 arm was never entered. Emission code exists at candidate_command.rs:765,781.",
-      "citation": null
+      "citation": null,
+      "receipt_evidence": {
+        "reached": null,
+        "source": "test/e2e/ledger-needs-review.test.ts",
+        "note": "No fixture produces a per-symbol candidate of this kind, so no convention exists to receipt."
+      }
     },
     {
       "id": "api_route_forbids_sensitive_response_fields::phase5_proof",
