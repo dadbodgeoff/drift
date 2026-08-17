@@ -33,6 +33,7 @@ import { currentMachineContractVersions } from "../domain/versions.js";
 import { collectScanData,type ScanData } from "../engine/collect-scan-data.js";
 import { cleanupScanReuseManifest,createScanReuseManifest,latestIndexedScan,resolverInputFingerprint } from "../domain/scan-status.js";
 import { runEngineCheck } from "../engine/engine-check.js";
+import { ENGINE_TIMEOUT_FAILURE_CODE,isEngineTimeoutError } from "../engine/rust-engine.js";
 import { extractImports,importFactsForFile } from "../engine/fact-extraction.js";
 
 /**
@@ -539,6 +540,30 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       repoRoot: repo.root_path,
       reuseManifestPath: reuseManifest?.path
     });
+  } catch (error) {
+    // W8-3: an engine that had to be killed produced no scan, so there is no verdict - but it is a
+    // refusal with a stated cause, not an operational error and never a pass. Caught here rather
+    // than left to the top-level handler because that handler maps an unrecognised code to
+    // `cli_error` and exit 1, which reads as "Drift broke" when what happened is "Drift declined".
+    if (isEngineTimeoutError(error)) {
+      return engineTimeoutRefusal({
+        storage,
+        parsed,
+        repoId,
+        contract,
+        contractFingerprintValue,
+        checkId,
+        checkScanId,
+        scope,
+        machineContractVersions,
+        policy,
+        expiredFindingsCount,
+        deletedFiles: parsedDiff.deletedFiles,
+        error,
+        now
+      });
+    }
+    throw error;
   } finally {
     cleanupScanReuseManifest(reuseManifest);
   }
@@ -658,22 +683,48 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const unenforceableConventions: string[] = [];
   let waivedFindingsCount = 0;
 
-  const engineOwned = await runEngineOwnedDirectDataAccessCheck({
-    repoId,
-    repoRoot: repo.root_path,
-    contract,
-    now,
-    scope: scope as "changed-hunks" | "changed-files" | "full",
-    parsedDiff,
-    baseline,
-    existingFindings,
-    checkData,
-    snapshotsByPath,
-    checkId,
-    checkScanId,
-    contractFingerprintValue,
-    diffHash
-  });
+  // W8-3: the second engine invocation of a check, and the same rule applies to it. Two call
+  // sites, one refusal, so a cap that fires here cannot surface differently from one that fires
+  // during collection.
+  let engineOwned: Awaited<ReturnType<typeof runEngineOwnedDirectDataAccessCheck>>;
+  try {
+    engineOwned = await runEngineOwnedDirectDataAccessCheck({
+      repoId,
+      repoRoot: repo.root_path,
+      contract,
+      now,
+      scope: scope as "changed-hunks" | "changed-files" | "full",
+      parsedDiff,
+      baseline,
+      existingFindings,
+      checkData,
+      snapshotsByPath,
+      checkId,
+      checkScanId,
+      contractFingerprintValue,
+      diffHash
+    });
+  } catch (error) {
+    if (isEngineTimeoutError(error)) {
+      return engineTimeoutRefusal({
+        storage,
+        parsed,
+        repoId,
+        contract,
+        contractFingerprintValue,
+        checkId,
+        checkScanId,
+        scope,
+        machineContractVersions,
+        policy,
+        expiredFindingsCount,
+        deletedFiles: parsedDiff.deletedFiles,
+        error,
+        now
+      });
+    }
+    throw error;
+  }
 
   if (engineOwned) {
     findings.push(...engineOwned.findings);
@@ -1261,6 +1312,129 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
 
 function fallbackStatusForCheck(checkData: ScanData): ScanData["fallbackStatus"] {
   return checkData.fallbackStatus;
+}
+
+/**
+ * W8-3: the verdict a killed engine gets - which is no verdict, said out loud.
+ *
+ * Built by hand rather than through the normal payload path because there is nothing to build it
+ * from: the engine was killed, so there are no facts, no snapshots and no diagnostics, and every
+ * derived section would be a shape invented to fill a key. What a consumer needs is here - the
+ * status, the cause, the scope that was attempted - and what is not measurable is absent rather
+ * than defaulted. `readiness` in particular is omitted: it reports what a scan observed, and no
+ * scan finished.
+ *
+ * The check run is still recorded. A refusal is an event in the repo's history and `drift checks`
+ * should show it; an unrecorded refusal is how "it was fine yesterday" survives.
+ */
+function engineTimeoutRefusal(input: {
+  storage: SqliteDriftStorage;
+  parsed: ParsedArgs;
+  repoId: string;
+  contract: RepoContract;
+  contractFingerprintValue: string;
+  checkId: string;
+  checkScanId: string;
+  scope: string;
+  machineContractVersions: MachineContractVersions;
+  policy: ReturnType<typeof authorizeContextExport>;
+  expiredFindingsCount: number;
+  deletedFiles: string[];
+  error: { timeoutMs: number };
+  now: string;
+}): CommandPayload {
+  const message = input.error instanceof Error ? input.error.message : "The Drift Rust engine was killed after exceeding its time cap.";
+  const capabilityCompleteness = {
+    complete: false,
+    missing_capabilities: ["graph", "graph_evidence", "deterministic_enforcement"],
+    can_block: false
+  };
+  const fallbackStatus: ScanData["fallbackStatus"] = {
+    engine_source: "rust",
+    // Not a fallback: nothing answered in the engine's place. Saying `true` here would claim the
+    // TypeScript scanner ran, and a payload that names a scanner that never ran is the class of
+    // lie this whole change is about.
+    fallback_used: false,
+    fallback_reason: null,
+    engine_error_message: message,
+    degraded_capabilities: capabilityCompleteness.missing_capabilities,
+    enforcement_degraded: true,
+    engine_resolution: null,
+    engine_build_profile: null
+  };
+  const check = checkEnvelope({
+    checkId: input.checkId,
+    repoId: input.repoId,
+    contract: input.contract,
+    contractFingerprintValue: input.contractFingerprintValue,
+    checkScanId: input.checkScanId,
+    scope: input.scope,
+    status: "refused",
+    fallbackStatus,
+    capabilityCompleteness,
+    machineContractVersions: input.machineContractVersions
+  });
+  input.storage.upsertCheckRun({
+    id: input.checkId,
+    repo_id: input.repoId,
+    repo_contract_id: input.contract.id,
+    contract_fingerprint: input.contractFingerprintValue,
+    scan_id: input.checkScanId,
+    status: "refused",
+    scope: input.scope as "changed-hunks" | "changed-files" | "full",
+    engine_source: "rust",
+    fallback_used: false,
+    stale_scan: false,
+    capability_complete: false,
+    findings_count: 0,
+    blocking_count: 0,
+    machine_contract_versions: input.machineContractVersions,
+    started_at: input.now,
+    completed_at: input.now
+  });
+  const payload = {
+    response_schema: "drift.check.result.v1",
+    check,
+    failure: {
+      code: ENGINE_TIMEOUT_FAILURE_CODE,
+      type: "refusal",
+      message,
+      remediation:
+        `The engine was killed after ${input.error.timeoutMs}ms. Raise DRIFT_ENGINE_TIMEOUT_MS if this repository legitimately needs longer, then rerun; if it hangs again the engine is stuck rather than slow.`,
+      recovery_commands: ["drift doctor --json", `drift scan status --repo ${input.repoId} --json`]
+    } satisfies CheckFailure,
+    machine_contract_versions: input.machineContractVersions,
+    policy: input.policy,
+    governance: preflightGovernance(),
+    audit_integrity: input.storage.verifyAuditChain(input.repoId),
+    summary: {
+      repo_id: input.repoId,
+      scope: input.scope,
+      findings_count: 0,
+      blocking_count: 0,
+      waived_findings_count: 0,
+      expired_findings_count: input.expiredFindingsCount,
+      skipped_deleted_files: input.deletedFiles,
+      engine_source: "rust" as const,
+      blocked_reasons: [ENGINE_TIMEOUT_FAILURE_CODE],
+      // Nothing was examined, so `complete: false` is the only honest answer - the same reasoning
+      // BB-9 applied to a file the diff named and the tree did not have, one level up.
+      partial_coverage: {
+        complete: false,
+        reasons: [`engine_killed_after_ms:${input.error.timeoutMs}`]
+      }
+    },
+    review_items: [],
+    waived_findings: [],
+    diagnostics: [],
+    security_boundary_proofs: [],
+    next_commands: ["drift doctor --json", `drift scan status --repo ${input.repoId} --json`],
+    findings: []
+  };
+  return {
+    exitCode: CHECK_EXIT_REFUSED,
+    payload: input.parsed.flags.has("json") ? payload : formatCheckText(payload)
+  };
 }
 
 /**
