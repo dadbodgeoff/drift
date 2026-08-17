@@ -103,6 +103,7 @@ pub struct AcceptedRequestValidator {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RequestValidatorKind {
     Schema,
+    SchemaMethod,
     Helper,
 }
 
@@ -110,9 +111,32 @@ impl RequestValidatorKind {
     pub fn as_str(self) -> &'static str {
         match self {
             RequestValidatorKind::Schema => "schema",
+            RequestValidatorKind::SchemaMethod => "schema_method",
             RequestValidatorKind::Helper => "helper",
         }
     }
+}
+
+/// The one call name a candidate-sourced convention can ever name that is a **method on a schema
+/// object** rather than a free function.
+///
+/// `is_validation_candidate_symbol` (`candidate_command.rs`) admits exactly three shapes:
+/// `validate*`, `*validator*`, and the literal `safeparse`. The first two are free functions and
+/// the `Helper` arm below already proves them. `safeParse` is not a free function — it is always
+/// written `SomeSchema.safeParse(body)` — and the `Helper` arm's `call.value.is_none()` test
+/// rejected exactly that shape, so every convention the proposer inferred from `safeParse` usage
+/// proved nothing and flagged its own conforming routes.
+///
+/// `parse` and `parseAsync` are deliberately NOT here even though `RequestValidatorKind::Schema`
+/// names them. They cannot reach this list — no proposer emits them as a validator *symbol* — and
+/// admitting `parse` would let `JSON.parse(body)` satisfy a validation contract, which is a false
+/// negative on a security check. The `Schema` arm handles them the safe way, by requiring the
+/// receiver to be the accepted schema.
+pub const SCHEMA_METHOD_VALIDATOR_SYMBOLS: &[&str] = &["safeParse"];
+
+/// True when a validator symbol names a schema method rather than a free function.
+pub fn is_schema_method_validator_symbol(symbol: &str) -> bool {
+    SCHEMA_METHOD_VALIDATOR_SYMBOLS.contains(&symbol)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -146,6 +170,13 @@ pub fn accepted_request_validator_for_call<'a>(
                 call.value.is_none()
                     && (call.name == validator.symbol
                         || imported_symbol_matches(facts, &call.name, &validator.symbol))
+            }
+            // The accepted symbol IS the method (`safeParse`), so the receiver is whichever schema
+            // this route happens to use and is not named by the convention. Requiring a receiver
+            // keeps a bare `safeParse(x)` free function out of this arm - that shape belongs to
+            // `Helper`.
+            RequestValidatorKind::SchemaMethod => {
+                call.name == validator.symbol && call.value.is_some()
             }
             RequestValidatorKind::Schema => {
                 matches!(call.name.as_str(), "parse" | "parseAsync" | "safeParse")

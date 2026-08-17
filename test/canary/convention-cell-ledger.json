@@ -94,7 +94,7 @@
       "state": "needs-review",
       "canary": null,
       "evidence": null,
-      "missing_evidence": "No fixture in test/fixtures induces the proposer to emit ANY api_route_requires_request_validation candidate, presence or per-symbol (swept all 79 fixture directories through scan+start). A validation family additionally needs >=2 distinct `request_validation_called` symbols each appearing in >=2 files (candidate_command.rs:1397, FamilyConfirmation::AlreadyDetected). Needed: a fixture that produces request_validation_called facts for two helpers across two files each.",
+      "missing_evidence": "Corrected 2026-08-16 on branch glob-revival/safeparse. The old text said no fixture can produce ANY candidate of this kind; that is now false - test/fixtures/gt-request-validation produces the per-symbol candidate, and the sibling request_validation_proof cell is `firing` on it. The presence half remains blocked, and for a reason that no fixture can lift: FAMILY_SPECS (candidate_command.rs:891-908) sources the request-validation family from the `request_validation_called` fact kind ONLY - `symbol_called` is deliberately excluded, because including it produced an 89-member family on dub. But `request_validation_called` facts are produced by extract_security_facts only when accepted validators are already passed in, and the scan path calls the 3-arg `extract_security_facts` (main.rs:663), whose wrapper hard-codes the empty validator slice when it delegates (security_facts.rs:20) - the `&[]` at the call site is `accepted_auth_helpers`, not the validators. So at scan time - the only time the proposer reads facts - zero `request_validation_called` facts exist in any repo, and the family can never form. This is a code gap, not a corpus gap: no fixture can supply a fact kind the scanner never emits. Fixing main.rs:663 to feed the accepted validators into the scan was explicitly out of scope for the glob-revival sprint.",
       "citation": null
     },
     {
@@ -125,10 +125,10 @@
       "kind": "api_route_requires_request_validation",
       "enforcement_path": "request_validation_proof",
       "dispatch": "check_command.rs:259 (match arm, ConventionKind::ApiRouteRequiresRequestValidation)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "Same root cause as the presence row: no fixture produces a candidate of this kind, so acceptance cannot be driven through the documented workflow and no finding can be observed. Not `unimplemented` - candidate_command.rs:508,527 does emit this kind, it is the corpus that cannot supply the facts.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > request-validation safeParse proof path fires",
+      "evidence": "gt-request-validation: the proposer emits exactly one candidate of this kind (symbol `safeParse`, from `symbol_called` facts via push_request_validation_candidates + is_validation_candidate_symbol), accepted in block mode at severity error through `conventions accept`. Result: exactly 1 finding, on the violating route app/api/projects/route.ts, at line 7 - the `db.project.create` sink - and 0 on the two conforming safeParse routes, each of which carries a request_validation proof with required=true and proven=true naming its own schema receiver. The old missing_evidence was wrong on its premise: candidates of this kind ARE reachable through symbol_called; the corpus simply had no fixture with two safeParse calls in api-route files. Reaching `firing` also required two code fixes on this branch - RequestValidatorKind::SchemaMethod (security_patterns.rs), because the proposer writes the method name into `requires.validators` and the Helper arm rejects any call carrying a receiver; and sink_line_from_sink_id (check_command.rs), because the finding line fell through to a hardcoded 1.",
+      "missing_evidence": null,
       "citation": null
     },
     {
@@ -202,9 +202,9 @@
       "kind": "api_route_forbids_secret_exposure",
       "enforcement_path": "phase5_proof",
       "dispatch": "check_command.rs:325 (match arm, ConventionKind::ApiRouteForbidsSecretExposure)",
-      "state": "unimplemented",
-      "canary": "test/e2e/gt-canary.test.ts > proposer emits no candidate of the unimplemented shapes",
-      "evidence": "candidate_command.rs contains zero occurrences of this kind, and the fixture built to exhibit the violation (security-secret-leak) yields an empty candidate list. The enforcement arm exists; nothing can ever reach it, because no candidate of this shape is proposed.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts :: phase-5 secret-exposure path fires, reached by contract import",
+      "evidence": "Re-derived. The old row's first claim still holds and is still pinned: candidate_command.rs contains zero occurrences of this kind, so the proposer emits nothing of this shape, and both `proposer emits no candidate of the unimplemented shapes` (security-secret-leak) and an assertNoProposerFor check inside the new canary's own run continue to assert it. Its second claim - `nothing can ever reach it` - was false. `drift contract import drift.lock --repo <id> --confirm` (docs/agent-integration.md:84, router.ts:158, contract.ts:452) is a documented path for a kind with no proposer, and through it the arm fires end to end: on gt-secret-exposure, with the proposer's own literal scope [\"**/app/api/**/route.ts\", \"**/app/api/**/route.tsx\", \"**/pages/api/**/*.ts\"] (candidate_command.rs:372) so phase5_file_scope_matches -> path_glob_matches is genuinely exercised, `check --scope changed-hunks` emits exactly 2 block-mode findings - app/api/billing/route.ts:3 (secret to Response.json) and app/api/webhooks/route.ts:3 (secret to console.error) - names app/api/status/route.ts as a conforming example, and exits 2. Verified by mutation: stubbing path_glob_matches back to the pre-fix behaviour turns both findings into zero and the canary red. So this cell is `firing` with no proposer path, which is a state the ledger's vocabulary allows and the old row conflated.",
       "missing_evidence": null,
       "citation": null
     },
@@ -213,10 +213,10 @@
       "kind": "api_route_requires_tenant_scope",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:351 (three-variant phase-4 arm, shared)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "No fixture produces a candidate of this kind (security-tenant-bound-to-query, security-tenant-missing, security-tenant-param-unused, security-tenant-parser-gap, security-tenant-untrusted-source all yield zero candidates). Emission code exists at candidate_command.rs:587,603, so `unimplemented` is unavailable.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 tenant-scope path fires, and the helper-scoped siblings pass",
+      "evidence": "gt-tenant-scope: the proposer emits exactly one candidate of this kind (required_calls [requireTenantScope]; scope.path_globs the literal proposer set, **/app/api/**/route.ts included), accepted through `conventions accept --severity error --mode block`. 3 findings — app/api/projects/route.ts:4 with actual_layer tenant_predicate_missing and enforcement_result block, plus the two §4.3 near-miss routes that call throwIfTenantScopeMismatch. 0 findings on the two routes that call the accepted helper, and those two carry phase-4 proofs with tenant.required=true and tenant.proven=true, so they were evaluated and passed rather than skipped. Exit 2 over a diff of all five routes; exit 0 over a diff of the two scoped routes. Required one engine fix: security_proof.rs's untrusted-tenant-source clause counted a scoped_helper predicate as a route-supplied tenant value, which made this kind able to report a violation but never a pass.",
+      "missing_evidence": null,
       "citation": null
     },
     {
@@ -224,10 +224,10 @@
       "kind": "api_route_requires_authorization",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:352 (three-variant phase-4 arm, shared)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "No fixture produces a candidate of this kind (security-role-guard-present, security-role-missing, security-role-branch-bypass all yield zero). Emission code exists at candidate_command.rs:555,571.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 authorization path fires over the proposer's own route globs",
+      "evidence": "gt-authorization: the proposer emits exactly one candidate of this kind, required_calls [requirePermission], scoped to its own glob set. The three security-role-* fixtures yielded zero because push_guard_candidate needs the same symbol in >= 2 route facts and each is a single route with a single call; this fixture calls one helper from three route files. Accepted in block mode it yields 3 findings - projects/route.ts:7 and reports/route.ts:14 authorization_guard_missing, audits/route.ts:10 authorization_guard_not_dominating_sink - check exits 2, and 0 findings on members/ and invoices/, each of which carries an authorization proof with required=true, proven=true in the same run.",
+      "missing_evidence": null,
       "citation": null
     },
     {
@@ -235,9 +235,9 @@
       "kind": "session_object_must_come_from_trusted_helper",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:353 (three-variant phase-4 arm, shared)",
-      "state": "unimplemented",
-      "canary": "test/e2e/gt-canary.test.ts > proposer emits no candidate of the unimplemented shapes",
-      "evidence": "candidate_command.rs contains zero occurrences of this kind, and both fixtures built for it (security-session-trusted-helper, security-session-from-request-untrusted) yield an empty candidate list. The arm-8 branch for it is unreachable through the documented workflow.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 session-trust path fires through contract import",
+      "evidence": "Two claims, and they are not one claim. (1) THE PROPOSER STILL EMITS NOTHING OF THIS SHAPE. candidate_command.rs contains zero occurrences of ConventionKind::SessionObjectMustComeFromTrustedHelper, and both fixtures built for it (security-session-trusted-helper, security-session-from-request-untrusted) still yield an empty candidate list; 'proposer emits no candidate of the unimplemented shapes' continues to assert exactly that, unweakened. (2) THE ENFORCEMENT ARM IS NEVERTHELESS REACHABLE, AND FIRES. The previous evidence inferred from (1) that the arm 'is unreachable through the documented workflow'; that inference was wrong, because 'drift contract import drift.lock --repo <id> --confirm' IS a documented workflow (docs/agent-integration.md:84, router.ts:158, contract.ts:199). Driven end to end over test/fixtures/gt-session-trust with a contract carrying the proposer's own literal scope globs, the phase-4 arm (check_command.rs:1636,1645) emits one finding at app/api/session/route.ts:4, title 'API route uses untrusted session object', severity error, enforcement_result block, exit code 2 at --scope changed-hunks. The compliant sibling app/api/profile/route.ts is silent AND carries session_trust {required: true, proven: true}, so it was evaluated rather than skipped. The glob scope filter at check_command.rs:1610-1618 is on that path: with path_glob_matches reverted to the pre-fix prefix behaviour the canary fails with zero findings.",
       "missing_evidence": null,
       "citation": null
     },

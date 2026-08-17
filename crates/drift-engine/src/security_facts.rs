@@ -205,8 +205,14 @@ fn extract_security_facts_with_policy_and_phase5(
             && let Some(line) = source_lines.get(fact.start_line.saturating_sub(1))
         {
             let route_id = format!("route:{}:{route}", fact.file_path);
-            let schema_symbol =
-                (validator.kind == RequestValidatorKind::Schema).then(|| validator.symbol.clone());
+            // For a `Schema` validator the convention names the schema itself. For a
+            // `SchemaMethod` validator it names the method, so the schema is the call receiver -
+            // report that rather than repeating `safeParse` back as if it were a schema.
+            let schema_symbol = match validator.kind {
+                RequestValidatorKind::Schema => Some(validator.symbol.clone()),
+                RequestValidatorKind::SchemaMethod => fact.value.clone(),
+                RequestValidatorKind::Helper => None,
+            };
             for (input_var, result_var) in
                 validation_input_bindings(&source_lines, fact.start_line, line, &fact.name)
             {
