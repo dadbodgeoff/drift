@@ -134,6 +134,47 @@ const FIXTURES = [
         "export const unrelated = 1;\n"
       );
     }
+  },
+  {
+    name: "next-api-direct-db",
+    as: "next-api-direct-db+warn-contract",
+    // The same repo, accepted at warn instead of block. No seed: the difference IS the governance
+    // decision, which is the thing `enforcement_mode` and `will_this_block` report on. A second
+    // repo SHAPE would have been the wrong instrument - nothing about this fixture's code decides
+    // whether its contract blocks.
+    acceptAtWarn: true
+  },
+  {
+    name: "next-api-service-delegated",
+    as: "next-api-service-delegated+one-violation",
+    // The `change_impact.affected_*` cell, and it exists because this gate caught the loss of it.
+    //
+    // `affected_services` / `affected_callers` / `affected_importers` are populated from route flows
+    // whose module path contains "service" (query/change-impact.ts), and `next-api-service-delegated`
+    // is the ONLY fixture in this matrix with a `services/` directory. It is also, since
+    // `api_route_requires_service_delegation` began failing closed at acceptance, a repo with no
+    // acceptable candidate at all - that kind was its only one. No accepted contract means no graph
+    // preflight context, which means no route flows, which emptied all three fields matrix-wide.
+    //
+    // That is a true consequence of the decision and NOT one to baseline away: the fields still move
+    // on any repo that has both services and something to enforce. So this variant is that repo. One
+    // direct-db route makes `api_route_no_direct_data_access` inferrable while the delegated route
+    // and its service module stay exactly as they were - so the original cell keeps its role as the
+    // clean counterpart, and this one carries the populated end.
+    async seed(repoRoot) {
+      await mkdir(join(repoRoot, "apps/web/app/api/reports"), { recursive: true });
+      await writeFile(
+        join(repoRoot, "apps/web/app/api/reports/route.ts"),
+        [
+          'import { prisma } from "../../../lib/prisma";',
+          "",
+          "export async function GET() {",
+          "  return Response.json(await prisma.report.findMany());",
+          "}",
+          ""
+        ].join("\n")
+      );
+    }
   }
 ];
 
@@ -683,7 +724,17 @@ async function collectPayloads() {
       // accepting them all as suggested left `enforcement_mode` and `will_this_block` reading one
       // value across the matrix - the two fields an agent uses to decide whether a violation stops
       // a merge. A matrix that only ever warns cannot show that they move.
-      const blocking = index === 0 && candidate.enforcement_capability === "deterministic_check";
+      // `acceptAtWarn` exists because this matrix briefly stopped containing a warn-mode contract
+      // at all. It used to get one for free: `api_route_requires_service_delegation` was the second
+      // candidate on three cells and always accepted at its suggested `warn`, and when that kind
+      // began failing closed at acceptance (docs/decisions/service-delegation-capability.md) every
+      // accepted convention in every cell became the same kind at `block`. `enforcement_mode` and
+      // `will_this_block` - the two fields an agent reads to decide whether a violation stops a
+      // merge - went constant as a side effect of an unrelated decision, which is precisely the
+      // class of thing this gate exists to notice.
+      const blocking = !entry.acceptAtWarn &&
+        index === 0 &&
+        candidate.enforcement_capability === "deterministic_check";
       await cli([
         "conventions", "accept", candidate.id,
         "--confirm",

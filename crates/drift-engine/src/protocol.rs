@@ -549,7 +549,12 @@ pub struct CheckMatcher {
     /// re-export of the same module through (T93).
     #[serde(default)]
     pub forbidden_module_files: Option<Vec<String>>,
-    pub allowed_delegate_imports: Option<Vec<String>>,
+    // `allowed_delegate_imports` was here, read by nothing. It was the only configurable field
+    // of api_route_requires_service_delegation's matcher, and that kind's evaluator took it as
+    // `_allowed_delegate_imports` and never looked at it - so an author who narrowed their
+    // convention narrowed nothing. The kind now fails closed at acceptance
+    // (docs/decisions/service-delegation-capability.md) and the field goes with it. Serde
+    // ignores unknown keys, so an older contract still carrying one deserialises fine.
     pub required_calls: Option<Vec<String>>,
     pub applies_to_file_roles: Option<Vec<String>>,
     pub file_roles: Option<Vec<String>>,
@@ -605,6 +610,40 @@ pub struct CheckResult {
     pub diagnostics: Vec<EngineDiagnostic>,
     pub stats: EngineStats,
     pub completeness: Vec<EngineCompleteness>,
+    /// What this run did with each convention it was handed, one entry per convention.
+    ///
+    /// The engine's convention loop has five ways out and four of them are a bare `continue`: a
+    /// non-deterministic capability, a kind the vocabulary does not know, a kind dispatched
+    /// elsewhere, and the exhaustive skip arm at the end. Every one produced an empty findings
+    /// list indistinguishable from an evaluator that ran and was satisfied, and `completeness`
+    /// does not distinguish them either - it reports capabilities and limits, not conventions.
+    ///
+    /// Always emitted, including when everything ran. A coverage account that appears only on
+    /// failure is not an account, and a consumer must be able to ask "did this convention run"
+    /// without knowing the answer in advance.
+    pub evaluation_receipts: Vec<CheckEvaluationReceipt>,
+}
+
+/// One convention's account of itself: reached, on how much, producing what, or why not.
+///
+/// `skip_reason` is `Some` exactly when `reached` is false, so the two cannot describe different
+/// runs. The reason vocabulary is shared with the CLI ledger
+/// (packages/cli/src/check/evaluation-receipts.ts) rather than free text, because these are read
+/// by machines - the human summary counts them and `security audit` derives proof-backing from
+/// them.
+#[derive(Debug, Serialize)]
+pub struct CheckEvaluationReceipt {
+    pub convention_id: String,
+    pub kind: String,
+    /// Where the vocabulary says this kind is evaluated: engine_direct, engine_phase6, cli, none.
+    pub dispatch: String,
+    pub reached: bool,
+    /// Facts in scope for this convention. Zero with `reached: true` is a real outcome - the
+    /// evaluator ran on nothing - and not the same as never having run.
+    pub inputs_considered: usize,
+    pub findings_emitted: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub skip_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

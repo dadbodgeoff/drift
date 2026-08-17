@@ -240,7 +240,7 @@ export type ConventionKind = (typeof CONVENTION_KINDS)[number];
  */
 export const CONVENTION_DISPATCH: Readonly<Record<ConventionKind, ConventionDispatch>> = {
   api_route_no_direct_data_access: "engine_direct",
-  api_route_requires_service_delegation: "engine_direct",
+  api_route_requires_service_delegation: "none",
   api_route_requires_auth_helper: "engine_direct",
   middleware_must_cover_routes: "none",
   api_route_requires_request_validation: "engine_direct",
@@ -340,6 +340,7 @@ export const CliEvaluatedConventionKindSchema = z.enum(CLI_EVALUATED_CONVENTION_
 
 /** The kinds no evaluator implements - accepting one would enforce nothing, silently. */
 export const UNEVALUATED_CONVENTION_KINDS = [
+  "api_route_requires_service_delegation",
   "middleware_must_cover_routes",
   "test_expected_for_changed_module",
   "custom_briefing",

@@ -269,7 +269,11 @@ export function deriveExpectedCells() {
 
   const pathForKindArm = {
     api_route_no_direct_data_access: "materialized_and_graph",
-    api_route_requires_service_delegation: "graph",
+    // `api_route_requires_service_delegation: "graph"` was here. Its dispatch moved to `none`
+    // (docs/decisions/service-delegation-capability.md), so it is no longer a kind arm, and the
+    // derivation below reaches it through the proposer-with-no-arm branch as `::no_dispatch_arm`
+    // instead. Recorded as a comment rather than deleted silently: an entry in this map asserts
+    // that an arm exists, and this one's absence is the whole decision.
     api_route_requires_auth_helper: "auth_proof",
     api_route_requires_request_validation: "request_validation_proof",
     api_route_forbids_sensitive_response_fields: "phase5_proof",
@@ -348,6 +352,19 @@ function main() {
           `audit's worklist.`
       );
     }
+    // Every needs-review cell records what the evaluation receipts say about its kind, whether or
+    // not strict mode is on. Required unconditionally so the data exists before the flip is
+    // decided: a strict mode that could only be evaluated after being switched on is not a
+    // proposal anyone can assess.
+    if (cell.state === "needs-review" && cell.receipt_evidence === undefined) {
+      errors.push(
+        `NEEDS-REVIEW WITHOUT RECEIPT EVIDENCE: ${id}\n` +
+          `  Record what \`drift check\`'s evaluation receipts say about this kind on the canary ` +
+          `corpus: \`reached: true\` (an evaluator ran), \`false\` (a convention exists and its ` +
+          `evaluator did not run), or \`null\` (no convention of this kind can be accepted here, ` +
+          `so there is no receipt to read). See docs/decisions/ledger-needs-review.md.`
+      );
+    }
   }
 
   const counts = {};
@@ -357,6 +374,33 @@ function main() {
   const integration = ledger.enforcement.integration_branches.includes(branch);
   const forced = process.env[ledger.enforcement.override_env] === "1";
   const enforcing = !reportOnly && (integration || forced);
+
+  // THE TIGHTENING, shipped default-off. docs/decisions/ledger-needs-review.md carries the argument;
+  // the short version is that `needs-review` is currently a PASSING state, so a kind nobody has been
+  // able to evaluate ships exactly as quietly as one that was checked and found clean - which is the
+  // same silence the evaluation receipts were built to end, one level up in the process.
+  //
+  // Evaluated separately from `errors` above and appended after them, so a run with strict mode on
+  // still reports the structural problems first. Those are defects; these are a policy the project
+  // has not yet adopted.
+  const strictEnv = ledger.enforcement.needs_review_strict_env;
+  const strict = strictEnv ? process.env[strictEnv] === "1" : false;
+  if (strict) {
+    for (const cell of ledger.cells) {
+      if (cell.state !== "needs-review" || cell.receipt_evidence?.reached === true) {
+        continue;
+      }
+      errors.push(
+        `UNEVALUATED CELL (strict): ${cell.id}\n` +
+          `  ${strictEnv}=1, and this cell's receipts do not show an evaluator running for its ` +
+          `kind on the canary corpus (receipt_evidence.reached = ` +
+          `${JSON.stringify(cell.receipt_evidence?.reached ?? null)}).\n` +
+          `  ${cell.receipt_evidence?.note ?? "No note recorded."}\n` +
+          `  Fix by making the cell evaluable - a fixture the proposer emits a candidate for - not ` +
+          `by editing the evidence.`
+      );
+    }
+  }
 
   console.log(`convention cell ledger: ${ledger.cells.length} cells on branch ${branch}`);
   for (const state of ["firing", "quarantined", "unimplemented", "needs-review"]) {

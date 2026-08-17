@@ -218,7 +218,7 @@
       "member_fields": ["dispatch", "proposable", "requires_engine_source", "security_contract"],
       "members": [
         { "wire": "api_route_no_direct_data_access", "dispatch": "engine_direct", "proposable": true, "requires_engine_source": false, "security_contract": false },
-        { "wire": "api_route_requires_service_delegation", "dispatch": "engine_direct", "proposable": true, "requires_engine_source": false, "security_contract": false },
+        { "wire": "api_route_requires_service_delegation", "dispatch": "none", "proposable": true, "requires_engine_source": false, "security_contract": false },
         { "wire": "api_route_requires_auth_helper", "dispatch": "engine_direct", "proposable": true, "requires_engine_source": true, "security_contract": true },
         { "wire": "middleware_must_cover_routes", "dispatch": "none", "proposable": true, "requires_engine_source": false, "security_contract": true },
         { "wire": "api_route_requires_request_validation", "dispatch": "engine_direct", "proposable": true, "requires_engine_source": true, "security_contract": true },
