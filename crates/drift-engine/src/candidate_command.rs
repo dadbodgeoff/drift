@@ -591,7 +591,15 @@ fn security_candidates(
                 json!({
                     "field_path": json_string_field(fact, "field_path").unwrap_or_else(|| fact.name.clone()),
                     "classification": json_string_field(fact, "classification").unwrap_or_else(|| "internal".to_string()),
-                    "source": "candidate"
+                    // D1 (P0). This was hardcoded to "candidate", which destroyed the one thing
+                    // downstream depends on. `source` is *provenance*: extraction records "schema"
+                    // for a field the user marked `driftSensitive` and "candidate" for one the name
+                    // heuristic guessed (security_facts.rs:983,999). `security_proof.rs` then drops
+                    // "candidate" as an unreviewed guess. Relabelling a marker-declared field as a
+                    // guess made the proof discard it, so the check could not fire on any repo.
+                    // Propagate what the fact actually said; "candidate" is only the fallback for a
+                    // fact that carries no provenance at all.
+                    "source": json_string_field(fact, "source").unwrap_or_else(|| "candidate".to_string())
                 })
             })
             .collect::<Vec<_>>();
@@ -2508,5 +2516,71 @@ mod coverage_direction_tests {
         assert_eq!(suggested_mode_for_coverage(10, 10), "warn");
         // A degenerate scope cannot justify blocking.
         assert_eq!(suggested_mode_for_coverage(0, 0), "warn");
+    }
+}
+
+#[cfg(test)]
+mod data_layer_token_boundary_tests {
+    use super::is_data_access_source;
+
+    /// D4 (TDD §5.4), reduced at the W7 merge to its `data-access` half.
+    ///
+    /// `is_data_access_source` matched `data-access` as a bare substring, so
+    /// `lib/no-data-access-here` and `legacy-data-access-notes.ts` matched modules whose own names
+    /// say they do no data access. The audit did not report this one; §5.4 found it.
+    ///
+    /// **The `db` half of D4 was dropped**, in deference to upstream's documented decision at
+    /// `data_access.rs`: `db` is matched loosely on purpose, because `@acme/dbutils` and
+    /// `lib/appdb` are real data layers in the repos that write them. That trade-off is upstream's
+    /// to make, so `lib/dbg` and `lib/imdb` are no longer asserted silent here and this matrix
+    /// covers only the token this change actually touches.
+    #[test]
+    fn the_data_access_token_matches_at_segment_boundaries_only() {
+        let matches = [
+            // Genuine data layers: the token is the segment, or its head, or its tail.
+            "lib/data-access/orders",
+            "lib/data-access/orders.ts",
+            "lib/data-access.ts",
+            "orders-data-access.ts",
+            // Untouched by D4, asserted so the change is visibly scoped.
+            "lib/prisma.ts",
+            "@calcom/prisma",
+            "lib/database.ts",
+        ];
+        for source in matches {
+            assert!(
+                is_data_access_source(source),
+                "{source} is a data layer and must match"
+            );
+        }
+
+        let non_matches = [
+            // `data-access` as an interior fragment of a hyphenated phrase. Routing it through
+            // `contains_data_layer_token` does NOT catch these — `-` is not alphanumeric, so the
+            // token clears that helper's boundary test on both sides.
+            "lib/no-data-access-here",
+            "lib/no-data-access-here.ts",
+            "legacy-data-access-notes.ts",
+            // Already correct at baseline — `prisma` was routed through the boundary matcher,
+            // which is why only it behaved.
+            "lib/prismatic.ts",
+            "@calcom/lib/isPrismaObj",
+            "lib/utils.ts",
+        ];
+        for source in non_matches {
+            assert!(
+                !is_data_access_source(source),
+                "{source} is not a data layer and must not match"
+            );
+        }
+    }
+
+    /// Upstream's `db` decision, pinned so a later pass does not re-apply D4's dropped half by
+    /// reflex. `lib/appdb` and `@acme/dbutils` match, and that is deliberate: the type-surface
+    /// exclusions above `is_data_access_source`'s token tests are what keeps the loose rule honest.
+    #[test]
+    fn the_db_token_stays_loose_by_upstreams_documented_decision() {
+        assert!(is_data_access_source("lib/appdb"));
+        assert!(is_data_access_source("@acme/dbutils"));
     }
 }

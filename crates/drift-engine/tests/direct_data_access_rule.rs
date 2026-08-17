@@ -1,7 +1,9 @@
 use drift_engine::{
     BaselineStatus, BaselineViolation, DirectDataAccessRule, EnforcementMode, EnforcementResult,
-    FindingStatus, Severity, classify_findings_against_baseline, detect_direct_data_access_imports,
-    extract_typescript_facts, materialize_direct_data_access_findings,
+    FindingStatus, Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_NO_USE_FOUND,
+    UNRESOLVED_REFERENCE_ESCAPES, UNRESOLVED_SOURCE_UNPARSED, classify_findings_against_baseline,
+    classify_specifier_use, detect_direct_data_access_imports, extract_typescript_facts,
+    materialize_direct_data_access_findings, materialize_direct_data_access_findings_with_sources,
 };
 
 #[test]
@@ -385,4 +387,440 @@ export async function GET() {
     };
 
     assert!(detect_direct_data_access_imports(&facts, &rule).is_empty());
+}
+
+// --- D5.1: one import statement is one finding (TDD §5.5) -----------------------------------
+
+/// Measured, not assumed: papermark's 35 `@prisma/client` findings sit on 30 import lines, and
+/// 4 of those lines carry more than one specifier. Grouping is worth 35 -> 30. It is a message
+/// quality change, and this test exists so nobody has to take the 14% on faith.
+#[test]
+fn one_import_statement_with_two_specifiers_is_one_finding() {
+    let source = r#"
+import { prisma, auditLog } from "@/lib/prisma";
+export async function POST() {
+  await auditLog.write({});
+  return Response.json(await prisma.user.findMany());
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/users/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    // Two per-specifier violations, still detected as two - the detection layer is unchanged.
+    assert_eq!(detect_direct_data_access_imports(&facts, &rule).len(), 2);
+
+    let findings = materialize_direct_data_access_findings_with_sources(&facts, &rule, &|_| {
+        Some(source.to_string())
+    });
+
+    assert_eq!(findings.len(), 1, "one import statement, one finding");
+    assert_eq!(findings[0].import_names, vec!["auditLog", "prisma"]);
+    assert!(
+        findings[0]
+            .message
+            .contains("imports auditLog, prisma from @/lib/prisma"),
+        "the grouped message must name every offending specifier: {}",
+        findings[0].message
+    );
+}
+
+/// Two imports of the same module on two lines stay two findings: the grouping key is the
+/// statement, not the module.
+#[test]
+fn two_import_statements_from_one_module_stay_two_findings() {
+    let source = r#"
+import { prisma } from "@/lib/prisma";
+import { auditLog } from "@/lib/prisma";
+export async function POST() {
+  await auditLog.write({});
+  return Response.json(await prisma.user.findMany());
+}
+"#;
+    let facts = extract_typescript_facts("apps/web/app/api/users/route.ts", source)
+        .expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    let findings = materialize_direct_data_access_findings_with_sources(&facts, &rule, &|_| {
+        Some(source.to_string())
+    });
+
+    assert_eq!(findings.len(), 2);
+}
+
+/// A baselined violation must not come back as `new` because grouping changed its identity.
+///
+/// The single-specifier fingerprint is unchanged by construction (it hashes one name, exactly
+/// as before). The multi-specifier one cannot be, so it carries the old per-specifier values as
+/// legacy fingerprints, which the check command already matches baselines against.
+#[test]
+fn a_grouped_finding_carries_the_pre_grouping_fingerprints() {
+    let grouped_source = r#"
+import { prisma, auditLog } from "@/lib/prisma";
+export async function POST() {
+  await auditLog.write({});
+  return Response.json(await prisma.user.findMany());
+}
+"#;
+    let split_source = r#"
+import { prisma } from "@/lib/prisma";
+import { auditLog } from "@/lib/prisma";
+export async function POST() {
+  await auditLog.write({});
+  return Response.json(await prisma.user.findMany());
+}
+"#;
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+    let path = "apps/web/app/api/users/route.ts";
+
+    let split_facts = extract_typescript_facts(path, split_source).expect("typescript facts");
+    let split = materialize_direct_data_access_findings_with_sources(&split_facts, &rule, &|_| {
+        Some(split_source.to_string())
+    });
+    // Each of these is a single-specifier finding, so each fingerprint is byte-identical to what
+    // the pre-D5.1 rule wrote for the same specifier.
+    let mut pre_grouping = split
+        .iter()
+        .map(|finding| finding.fingerprint.clone())
+        .collect::<Vec<_>>();
+    pre_grouping.sort();
+
+    let grouped_facts = extract_typescript_facts(path, grouped_source).expect("typescript facts");
+    let grouped =
+        materialize_direct_data_access_findings_with_sources(&grouped_facts, &rule, &|_| {
+            Some(grouped_source.to_string())
+        });
+    assert_eq!(grouped.len(), 1);
+    let mut legacy = grouped[0].legacy_fingerprints.clone();
+    legacy.sort();
+
+    assert_eq!(
+        legacy, pre_grouping,
+        "the grouped finding must resolve against both fingerprints a stored baseline could hold"
+    );
+    assert!(
+        !legacy.contains(&grouped[0].fingerprint),
+        "the current fingerprint is not its own legacy value"
+    );
+}
+
+// --- D5.2: invocation evidence, and the two branches (TDD §5.5) -----------------------------
+
+const ROUTE: &str = "apps/web/app/api/links/route.ts";
+
+/// The measured papermark shape. `LinkType` is a generated enum imported as a VALUE (the
+/// `import type` skip never sees it) and read as a member. There is nothing to call.
+#[test]
+fn an_enum_member_read_is_inert() {
+    let source = r#"
+import { LinkType } from "@prisma/client";
+export async function GET(request: Request) {
+  const kind = new URL(request.url).searchParams.get("kind");
+  return Response.json({ grouped: kind === LinkType.GROUP });
+}
+"#;
+    assert_eq!(
+        classify_specifier_use(ROUTE, source, "LinkType"),
+        SpecifierUse::Inert
+    );
+}
+
+/// `PrismaClient` is the one genuine violation shape §5.5 names, and it appears zero times in
+/// papermark. It also emits NO fact: `walk_node` dispatches on `call_expression` and a
+/// `new_expression` is not one. A classifier over `symbol_called` facts alone therefore sees
+/// exactly the same nothing here as it sees for the inert enum above - which is why this
+/// classifier reads the AST instead of the fact stream, and why this test is the one that
+/// would have caught the shortcut.
+#[test]
+fn a_new_instantiation_is_invocation_evidence() {
+    let source = r#"
+import { PrismaClient } from "@prisma/client";
+export async function GET() {
+  const client = new PrismaClient();
+  return Response.json(await client.link.findMany());
+}
+"#;
+    assert!(matches!(
+        classify_specifier_use(ROUTE, source, "PrismaClient"),
+        SpecifierUse::Invocation(_)
+    ));
+}
+
+#[test]
+fn a_member_call_is_invocation_evidence() {
+    let source = r#"
+import { prisma } from "@/lib/prisma";
+export async function GET() { return Response.json(await prisma.link.findMany()); }
+"#;
+    assert!(matches!(
+        classify_specifier_use(ROUTE, source, "prisma"),
+        SpecifierUse::Invocation(_)
+    ));
+}
+
+/// §5.5's own reassignment example. The read emits no fact and `q()` names a local, so this is
+/// invisible to the fact stream; the alias fixpoint is what resolves it.
+#[test]
+fn a_member_read_bound_to_a_name_and_then_called_is_invocation_evidence() {
+    let source = r#"
+import { prisma } from "@/lib/prisma";
+export async function GET() {
+  const q = prisma.link.findMany;
+  return Response.json(await q());
+}
+"#;
+    assert!(matches!(
+        classify_specifier_use(ROUTE, source, "prisma"),
+        SpecifierUse::Invocation(_)
+    ));
+}
+
+/// The two branches §5.5 requires be kept distinct, asserted as distinct.
+///
+/// A single confidence score cannot express this pair: both sides have zero invocation facts,
+/// and they must land on opposite verdicts. Absence suppresses; ambiguity retains.
+#[test]
+fn absence_of_evidence_and_ambiguity_of_evidence_are_different_verdicts() {
+    let absent = r#"
+import { ItemType } from "@prisma/client";
+export async function GET(request: Request) {
+  const t = new URL(request.url).searchParams.get("t");
+  return Response.json({ folder: t === ItemType.FOLDER });
+}
+"#;
+    let ambiguous = r#"
+import { prisma } from "@/lib/prisma";
+export async function GET(request: Request) {
+  const store = new URL(request.url).searchParams.get("store") as string;
+  return Response.json(await prisma[store].findMany());
+}
+"#;
+
+    assert_eq!(
+        classify_specifier_use(ROUTE, absent, "ItemType"),
+        SpecifierUse::Inert,
+        "no invocation facts at all is absence: suppress"
+    );
+    assert_eq!(
+        classify_specifier_use(ROUTE, ambiguous, "prisma"),
+        SpecifierUse::Unresolved(UNRESOLVED_DYNAMIC_MEMBER),
+        "a computed member is ambiguity, not absence: retain, and say why"
+    );
+}
+
+/// Handing the client to a callee is the ambiguity branch, not the absence branch: the whole
+/// data-access surface leaves the route and what happens to it is decided elsewhere.
+#[test]
+fn an_escaping_binding_is_unresolved_rather_than_inert() {
+    let source = r#"
+import { prisma } from "@/lib/prisma";
+import { countLinks } from "@/lib/report";
+export async function GET() { return Response.json(await countLinks(prisma)); }
+"#;
+    assert_eq!(
+        classify_specifier_use(ROUTE, source, "prisma"),
+        SpecifierUse::Unresolved(UNRESOLVED_REFERENCE_ESCAPES)
+    );
+}
+
+/// Binding the whole data-access surface to a local and discarding it is NOT proof of inertness.
+///
+/// `const __h = <binding>; void __h;` is the body every `evasion-matrix.mjs` catch cell uses to
+/// mark an injected import as used. D5.2 classified it `Inert` and suppressed the finding, which
+/// turned S01/S06/S07/S08/S12/S13 from `warned`/`blocked` into `evaded` on all seven eval repos.
+///
+/// The routing defect was in `classify_value_consumption`: its `unary_expression` and comparison
+/// arms returned a hardcoded `Inert` instead of `terminal`, discarding the `is_member_read`
+/// asymmetry that is the classifier's entire licence to suppress. A member READ of a generated
+/// enum is one value and proving it inert proves something; the bare binding is the whole
+/// datastore handle and `void`-ing it proves only that this one expression did not call it.
+#[test]
+fn a_bound_then_discarded_binding_is_unresolved_rather_than_inert() {
+    for import_line in [
+        r#"import { prisma } from "@/lib/prisma";"#,
+        r#"import prisma from "@/lib/prisma";"#,
+    ] {
+        let source = format!(
+            "{import_line}\nexport async function GET() {{\n  const __h = prisma; void __h;\n  return new Response(\"ok\");\n}}\n"
+        );
+        assert_eq!(
+            classify_specifier_use(ROUTE, &source, "prisma"),
+            SpecifierUse::Unresolved(UNRESOLVED_REFERENCE_ESCAPES),
+            "bound-then-discarded must retain, for {import_line}"
+        );
+    }
+}
+
+/// The same, for the three import shapes whose binding form is not a named specifier.
+///
+/// Every D5.2 case the original fixture exercised was a named specifier, which is why a defect
+/// that fires on all of them went unmeasured. S06 binds a namespace object, S07 binds the result
+/// of a dynamic `import()`, S08 binds the result of `require()` - all three reach the datastore
+/// and all three must stay flagged.
+#[test]
+fn namespace_dynamic_and_require_bindings_are_not_suppressed() {
+    let cases = [
+        (
+            "S06-namespace-import",
+            "import * as __ns from \"@/lib/prisma\";\nexport async function GET() {\n  const __h = __ns; void __h;\n  return new Response(\"ok\");\n}\n",
+            "__ns",
+        ),
+        (
+            "S07-dynamic-import",
+            "export async function GET() {\n  const __m = await import(\"@/lib/prisma\"); void __m;\n  return new Response(\"ok\");\n}\n",
+            "__m",
+        ),
+        (
+            "S08-require-call",
+            "declare const require: (id: string) => unknown;\nexport async function GET() {\n  const __m = require(\"@/lib/prisma\"); void __m;\n  return new Response(\"ok\");\n}\n",
+            "__m",
+        ),
+    ];
+    for (id, source, binding) in cases {
+        assert_ne!(
+            classify_specifier_use(ROUTE, source, binding),
+            SpecifierUse::Inert,
+            "{id} must not be suppressed"
+        );
+    }
+}
+
+/// An import whose binding this classifier cannot find is AMBIGUITY, not absence.
+///
+/// This test asserted `Inert` and was wrong, in the direction that fails open. "No occurrence
+/// of the binding" and "no reachable use of the binding" are not the same claim: the first is
+/// what the classifier observed, the second is what suppression requires, and only evidence the
+/// classifier actually read can carry it from one to the other.
+///
+/// The corpus says so plainly. papermark's
+/// `pages/api/teams/[teamId]/datarooms/[id]/users/index.ts` has a live
+/// `import prisma from "@/lib/prisma"` whose every use is commented out. Zero occurrences, and
+/// the module is still executed at import and is still an unenforced datastore dependency -
+/// one of §7's 229 `@/lib/prisma` findings that must not move.
+#[test]
+fn a_binding_with_no_findable_use_is_unresolved_rather_than_inert() {
+    let source = r#"
+import { ItemType } from "@prisma/client";
+export async function GET() { return Response.json({ ok: true }); }
+"#;
+    assert_eq!(
+        classify_specifier_use(ROUTE, source, "ItemType"),
+        SpecifierUse::Unresolved(UNRESOLVED_NO_USE_FOUND)
+    );
+}
+
+/// A file tree-sitter could not fully parse cannot license suppression.
+///
+/// `Parser::parse` returning `Some` is not proof the source was understood - the grammar
+/// recovers by wrapping what it did not understand in an ERROR node, and identifiers inside it
+/// stop being reachable as `identifier` nodes. Occurrences then go missing rather than
+/// misclassify, which lands on the suppress branch, failing open on exactly the files the
+/// parser understood least.
+#[test]
+fn a_file_that_did_not_fully_parse_is_unresolved_rather_than_inert() {
+    let source = r#"
+import { ItemType } from "@prisma/client";
+export async function GET() {
+  const kind = ItemType.FOLDER;
+  this is not valid typescript @@@ ###
+  return Response.json({ kind });
+}
+"#;
+    assert_eq!(
+        classify_specifier_use(ROUTE, source, "ItemType"),
+        SpecifierUse::Unresolved(UNRESOLVED_SOURCE_UNPARSED)
+    );
+}
+
+/// Suppression requires proof of inertness, and no source is no proof.
+///
+/// This is the behaviour on any check request that arrives without a `repo_root`: D5.1 grouping
+/// applies, D5.2 suppresses nothing, and the finding says so.
+#[test]
+fn without_source_nothing_is_suppressed() {
+    let source = r#"
+import { ItemType } from "@prisma/client";
+export async function GET(request: Request) {
+  const t = new URL(request.url).searchParams.get("t");
+  return Response.json({ folder: t === ItemType.FOLDER });
+}
+"#;
+    let facts = extract_typescript_facts(ROUTE, source).expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@prisma/client".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    let with_source = materialize_direct_data_access_findings_with_sources(&facts, &rule, &|_| {
+        Some(source.to_string())
+    });
+    assert!(
+        with_source.is_empty(),
+        "with the source in hand, an inert enum read is suppressed"
+    );
+
+    let without_source = materialize_direct_data_access_findings(&facts, &rule);
+    assert_eq!(
+        without_source.len(),
+        1,
+        "without the source there is no proof of inertness, so the finding is retained"
+    );
+    assert!(
+        without_source[0]
+            .message
+            .contains("could not be classified (source_unavailable)"),
+        "and it must say that is why: {}",
+        without_source[0].message
+    );
+}
+
+/// S10 again, from D5.2's side. A bindingless import executes the module; there is no binding
+/// whose use could be inert, so it must never reach the suppress branch.
+#[test]
+fn a_side_effect_import_is_never_suppressed() {
+    let source = r#"
+import "@/lib/prisma";
+export async function GET() { return Response.json({ ok: true }); }
+"#;
+    let facts = extract_typescript_facts(ROUTE, source).expect("typescript facts");
+    let rule = DirectDataAccessRule {
+        convention_id: "convention_no_direct_data_access".to_string(),
+        forbidden_imports: vec!["@/lib/prisma".to_string()],
+        forbidden_module_files: Vec::new(),
+        severity: Severity::Error,
+        enforcement_mode: EnforcementMode::Block,
+    };
+
+    let findings = materialize_direct_data_access_findings_with_sources(&facts, &rule, &|_| {
+        Some(source.to_string())
+    });
+
+    assert_eq!(findings.len(), 1);
+    assert!(
+        findings[0].message.contains("for its side effects"),
+        "and it keeps the side-effect wording rather than gaining a retention clause: {}",
+        findings[0].message
+    );
+    assert!(!findings[0].message.contains("could not be classified"));
 }

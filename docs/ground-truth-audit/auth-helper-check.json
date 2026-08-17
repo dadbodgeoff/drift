@@ -1,0 +1,729 @@
+{
+  "response_schema": "drift.check.result.v1",
+  "check": {
+    "id": "check_0d1e20936f07bef2",
+    "repo_id": "repo_c5e67e6be2297ab7",
+    "repo_contract_id": "contract_c5e67e6be2297ab7",
+    "contract_fingerprint": "02e350c56316febdf60247adf867181ffa336c8735f24bde598f04549de5704e",
+    "scope": "full",
+    "status": "pass",
+    "scan_status": {
+      "mode": "check_time_collection",
+      "stored_scan_required": false,
+      "stale": false,
+      "scan_id": "scan_check_41592a364b6a69b5"
+    },
+    "fallback_status": {
+      "engine_source": "rust",
+      "fallback_used": false,
+      "fallback_reason": null,
+      "engine_error_message": null,
+      "degraded_capabilities": [],
+      "enforcement_degraded": false,
+      "engine_resolution": "env_override",
+      "engine_build_profile": "release"
+    },
+    "capability_completeness": {
+      "complete": true,
+      "missing_capabilities": [],
+      "can_block": true
+    },
+    "machine_contract_versions": {
+      "schema_version": "drift.machine_contract_versions.v1",
+      "cli_version": "0.1.0",
+      "core_version": "0.1.0",
+      "storage_schema_version": 34,
+      "contract_schema_version": 1,
+      "engine_contract_versions": {
+        "scan_request": "engine.scan.request.v1",
+        "scan_result": "engine.scan.result.v1",
+        "check_request": "engine.check.request.v1",
+        "check_result": "engine.check.result.v1",
+        "candidates_result": "engine.candidates.result.v1",
+        "stream_event": "engine.stream.event.v1"
+      },
+      "factgraph_schema_version": "factgraph.v2",
+      "scanner_version": "0.1.0",
+      "rule_engine_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0"
+      }
+    }
+  },
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_c5e67e6be2297ab7",
+    "scan_id": "scan_check_41592a364b6a69b5",
+    "surface": "check",
+    "graph_available": true,
+    "graph_complete": true,
+    "parser_gap_count": 0,
+    "parser_gaps_by_kind": {},
+    "confidence": 1,
+    "decision": "blocking_allowed",
+    "reasons": [],
+    "required_capabilities": [
+      "direct_data_access_check"
+    ],
+    "missing_capabilities": []
+  },
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 34,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0"
+    }
+  },
+  "policy": {
+    "allowed": true,
+    "surface": "cli-check",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "audit_integrity": {
+    "repo_id": "repo_c5e67e6be2297ab7",
+    "valid": true,
+    "event_count": 3,
+    "verified_count": 3,
+    "head_event_hash": "d4e518c3a6a530c91a405485b0993224da6b880029cb42203c1cfef893ed10b0",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "summary": {
+    "repo_id": "repo_c5e67e6be2297ab7",
+    "scope": "full",
+    "findings_count": 1,
+    "blocking_count": 0,
+    "blocked_reasons": [],
+    "partial_coverage": {
+      "complete": true,
+      "reasons": []
+    },
+    "import_coverage": {
+      "schema_version": "drift.import_coverage.v1",
+      "resolved_local_imports": 2,
+      "unresolved_local_imports": 0,
+      "local_import_resolution_rate": 1,
+      "diagnostic_count": 0,
+      "parser_gap_count": 0,
+      "reconciles": true,
+      "by_code": []
+    },
+    "waived_findings_count": 0,
+    "expired_findings_count": 0,
+    "skipped_deleted_files": [],
+    "engine_source": "rust",
+    "affected_scope": {
+      "mode": "full",
+      "changed_file_count": 4,
+      "changed_line_count": 0,
+      "deleted_file_count": 0,
+      "deleted_files": [],
+      "renamed_file_count": 0,
+      "missing_file_count": 0,
+      "missing_files": []
+    },
+    "outcome": {
+      "status_counts": {
+        "new": 1
+      },
+      "diff_status_counts": {
+        "touched_existing": 1
+      },
+      "enforcement_counts": {
+        "block": 1
+      },
+      "blocking_reasons": [],
+      "warning_reasons": [],
+      "non_blocking_reasons": [
+        {
+          "reason": "touched_existing_not_new_hunk",
+          "count": 1
+        },
+        {
+          "reason": "full_scope_reports_existing_violations_without_blocking",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "review_items": [
+    {
+      "id": "finding_cbe2b0951c7675c7",
+      "convention_id": "convention_83de49adbcdd0360",
+      "title": "API route missing required auth proof",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "block",
+      "evidence_ref_count": 1,
+      "first_evidence": {
+        "file_path": "pages/api/route-c.ts",
+        "start_line": 3
+      }
+    }
+  ],
+  "waived_findings": [],
+  "security_boundary_proofs": [
+    {
+      "proof_id": "proof:route:pages/api/route-a.ts:default:auth",
+      "proof_version": "security-boundary-proof/v1",
+      "route": {
+        "route_id": "route:pages/api/route-a.ts:default",
+        "normalized_entrypoint_id": "entrypoint:next_pages:pages/api/route-a.ts:default",
+        "file_path": "pages/api/route-a.ts",
+        "file_role": "api_route",
+        "endpoint": {
+          "path": "/api/route-a",
+          "method": "default",
+          "framework": "next_pages_api"
+        },
+        "handler_symbol": "default"
+      },
+      "contracts": [
+        {
+          "contract_id": "convention_83de49adbcdd0360",
+          "kind": "api_route_requires_auth_helper",
+          "enforcement_mode": "block",
+          "capability": "deterministic_check",
+          "matched": true
+        }
+      ],
+      "capability_status": [
+        {
+          "name": "control_flow_guard_dominance",
+          "status": "partial",
+          "can_block": true,
+          "parser_gap_ids": [],
+          "missing_proof_ids": []
+        }
+      ],
+      "auth": {
+        "required": true,
+        "proven": true,
+        "proof_kind": "handler_guard",
+        "trusted_guard_calls": [
+          {
+            "fact_id": "fact:pages/api/route-a.ts:10:3",
+            "guard_id": "auth:requireAuth",
+            "symbol": "requireAuth",
+            "start_line": 3,
+            "end_line": 3
+          }
+        ],
+        "dominated_sinks": [
+          {
+            "sink_id": "sink:pages/api/route-a.ts:4:json",
+            "sink_kind": "response",
+            "edge_id": "edge:auth-dominates:pages/api/route-a.ts:4"
+          }
+        ],
+        "undominated_sinks": []
+      },
+      "middleware": {
+        "required": false,
+        "proven": false,
+        "matched_middleware": [],
+        "mismatches": []
+      },
+      "request_validation": {
+        "required": false,
+        "proven": false,
+        "input_reads": [],
+        "validations": [],
+        "validated_uses": [],
+        "unvalidated_uses": []
+      },
+      "ssrf": {
+        "required": false,
+        "proven": false,
+        "outbound_requests": [],
+        "allowlist_proofs": [],
+        "missing_proof": []
+      },
+      "raw_sql": {
+        "required": false,
+        "proven": false,
+        "raw_sql_calls": [],
+        "parameterized_sql": [],
+        "missing_proof": []
+      },
+      "cors": {
+        "required": false,
+        "proven": false,
+        "policies": [],
+        "missing_proof": []
+      },
+      "csrf": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "rate_limit": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "response_shape": {
+        "required": false,
+        "proven": false,
+        "sensitive_leaks": []
+      },
+      "sinks": {
+        "secrets": []
+      },
+      "session_trust": {
+        "required": false,
+        "proven": false,
+        "trusted_sessions": [],
+        "missing_trust": []
+      },
+      "authorization": {
+        "required": false,
+        "proven": false,
+        "role_or_policy_guards": [],
+        "missing": []
+      },
+      "tenant": {
+        "required": false,
+        "proven": false,
+        "tenant_sources": [],
+        "predicates": [],
+        "missing": []
+      },
+      "missing_proof": [],
+      "parser_gaps": [],
+      "evidence_refs": [
+        {
+          "evidence_id": "evidence:route:pages/api/route-a.ts:default:fact:pages/api/route-a.ts:10:3:auth_boundary",
+          "fact_id": "fact:pages/api/route-a.ts:10:3",
+          "capability": "control_flow_guard_dominance",
+          "kind": "auth_boundary",
+          "file_path": "pages/api/route-a.ts",
+          "start_line": 3,
+          "end_line": 3,
+          "role": "guard"
+        }
+      ],
+      "result": {
+        "proof_status": "proven",
+        "enforcement_result": "pass",
+        "can_block": false,
+        "finding_ids": []
+      }
+    },
+    {
+      "proof_id": "proof:route:pages/api/route-b.ts:default:auth",
+      "proof_version": "security-boundary-proof/v1",
+      "route": {
+        "route_id": "route:pages/api/route-b.ts:default",
+        "normalized_entrypoint_id": "entrypoint:next_pages:pages/api/route-b.ts:default",
+        "file_path": "pages/api/route-b.ts",
+        "file_role": "api_route",
+        "endpoint": {
+          "path": "/api/route-b",
+          "method": "default",
+          "framework": "next_pages_api"
+        },
+        "handler_symbol": "default"
+      },
+      "contracts": [
+        {
+          "contract_id": "convention_83de49adbcdd0360",
+          "kind": "api_route_requires_auth_helper",
+          "enforcement_mode": "block",
+          "capability": "deterministic_check",
+          "matched": true
+        }
+      ],
+      "capability_status": [
+        {
+          "name": "control_flow_guard_dominance",
+          "status": "partial",
+          "can_block": true,
+          "parser_gap_ids": [],
+          "missing_proof_ids": []
+        }
+      ],
+      "auth": {
+        "required": true,
+        "proven": true,
+        "proof_kind": "handler_guard",
+        "trusted_guard_calls": [
+          {
+            "fact_id": "fact:pages/api/route-b.ts:10:3",
+            "guard_id": "auth:requireAuth",
+            "symbol": "requireAuth",
+            "start_line": 3,
+            "end_line": 3
+          }
+        ],
+        "dominated_sinks": [
+          {
+            "sink_id": "sink:pages/api/route-b.ts:4:json",
+            "sink_kind": "response",
+            "edge_id": "edge:auth-dominates:pages/api/route-b.ts:4"
+          }
+        ],
+        "undominated_sinks": []
+      },
+      "middleware": {
+        "required": false,
+        "proven": false,
+        "matched_middleware": [],
+        "mismatches": []
+      },
+      "request_validation": {
+        "required": false,
+        "proven": false,
+        "input_reads": [],
+        "validations": [],
+        "validated_uses": [],
+        "unvalidated_uses": []
+      },
+      "ssrf": {
+        "required": false,
+        "proven": false,
+        "outbound_requests": [],
+        "allowlist_proofs": [],
+        "missing_proof": []
+      },
+      "raw_sql": {
+        "required": false,
+        "proven": false,
+        "raw_sql_calls": [],
+        "parameterized_sql": [],
+        "missing_proof": []
+      },
+      "cors": {
+        "required": false,
+        "proven": false,
+        "policies": [],
+        "missing_proof": []
+      },
+      "csrf": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "rate_limit": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "response_shape": {
+        "required": false,
+        "proven": false,
+        "sensitive_leaks": []
+      },
+      "sinks": {
+        "secrets": []
+      },
+      "session_trust": {
+        "required": false,
+        "proven": false,
+        "trusted_sessions": [],
+        "missing_trust": []
+      },
+      "authorization": {
+        "required": false,
+        "proven": false,
+        "role_or_policy_guards": [],
+        "missing": []
+      },
+      "tenant": {
+        "required": false,
+        "proven": false,
+        "tenant_sources": [],
+        "predicates": [],
+        "missing": []
+      },
+      "missing_proof": [],
+      "parser_gaps": [],
+      "evidence_refs": [
+        {
+          "evidence_id": "evidence:route:pages/api/route-b.ts:default:fact:pages/api/route-b.ts:10:3:auth_boundary",
+          "fact_id": "fact:pages/api/route-b.ts:10:3",
+          "capability": "control_flow_guard_dominance",
+          "kind": "auth_boundary",
+          "file_path": "pages/api/route-b.ts",
+          "start_line": 3,
+          "end_line": 3,
+          "role": "guard"
+        }
+      ],
+      "result": {
+        "proof_status": "proven",
+        "enforcement_result": "pass",
+        "can_block": false,
+        "finding_ids": []
+      }
+    },
+    {
+      "proof_id": "proof:route:pages/api/route-c.ts:default:auth",
+      "proof_version": "security-boundary-proof/v1",
+      "route": {
+        "route_id": "route:pages/api/route-c.ts:default",
+        "normalized_entrypoint_id": "entrypoint:next_pages:pages/api/route-c.ts:default",
+        "file_path": "pages/api/route-c.ts",
+        "file_role": "api_route",
+        "endpoint": {
+          "path": "/api/route-c",
+          "method": "default",
+          "framework": "next_pages_api"
+        },
+        "handler_symbol": "default"
+      },
+      "contracts": [
+        {
+          "contract_id": "convention_83de49adbcdd0360",
+          "kind": "api_route_requires_auth_helper",
+          "enforcement_mode": "block",
+          "capability": "deterministic_check",
+          "matched": true
+        }
+      ],
+      "capability_status": [
+        {
+          "name": "control_flow_guard_dominance",
+          "status": "partial",
+          "can_block": true,
+          "parser_gap_ids": [],
+          "missing_proof_ids": [
+            "missing_proof:route:pages/api/route-c.ts:default:missing_auth_guard"
+          ]
+        }
+      ],
+      "auth": {
+        "required": true,
+        "proven": false,
+        "proof_kind": "none",
+        "trusted_guard_calls": [],
+        "dominated_sinks": [],
+        "undominated_sinks": [
+          {
+            "sink_id": "sink:pages/api/route-c.ts:3:json",
+            "sink_kind": "response",
+            "reason": "no_guard_call",
+            "fact_ids": [
+              "fact:pages/api/route-c.ts:11:3"
+            ]
+          }
+        ]
+      },
+      "middleware": {
+        "required": false,
+        "proven": false,
+        "matched_middleware": [],
+        "mismatches": []
+      },
+      "request_validation": {
+        "required": false,
+        "proven": false,
+        "input_reads": [],
+        "validations": [],
+        "validated_uses": [],
+        "unvalidated_uses": []
+      },
+      "ssrf": {
+        "required": false,
+        "proven": false,
+        "outbound_requests": [],
+        "allowlist_proofs": [],
+        "missing_proof": []
+      },
+      "raw_sql": {
+        "required": false,
+        "proven": false,
+        "raw_sql_calls": [],
+        "parameterized_sql": [],
+        "missing_proof": []
+      },
+      "cors": {
+        "required": false,
+        "proven": false,
+        "policies": [],
+        "missing_proof": []
+      },
+      "csrf": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "rate_limit": {
+        "required": false,
+        "proven": false,
+        "guard_calls": [],
+        "missing_proof": []
+      },
+      "response_shape": {
+        "required": false,
+        "proven": false,
+        "sensitive_leaks": []
+      },
+      "sinks": {
+        "secrets": []
+      },
+      "session_trust": {
+        "required": false,
+        "proven": false,
+        "trusted_sessions": [],
+        "missing_trust": []
+      },
+      "authorization": {
+        "required": false,
+        "proven": false,
+        "role_or_policy_guards": [],
+        "missing": []
+      },
+      "tenant": {
+        "required": false,
+        "proven": false,
+        "tenant_sources": [],
+        "predicates": [],
+        "missing": []
+      },
+      "missing_proof": [
+        {
+          "id": "missing_proof:route:pages/api/route-c.ts:default:missing_auth_guard",
+          "capability": "control_flow_guard_dominance",
+          "code": "missing_auth_guard",
+          "blocks_enforcement": true,
+          "fact_ids": [
+            "fact:pages/api/route-c.ts:11:3"
+          ],
+          "graph_edge_ids": []
+        }
+      ],
+      "parser_gaps": [],
+      "evidence_refs": [
+        {
+          "evidence_id": "evidence:route:pages/api/route-c.ts:default:fact:pages/api/route-c.ts:11:3:auth_boundary",
+          "fact_id": "fact:pages/api/route-c.ts:11:3",
+          "capability": "control_flow_guard_dominance",
+          "kind": "auth_boundary",
+          "file_path": "pages/api/route-c.ts",
+          "start_line": 3,
+          "end_line": 3,
+          "role": "missing_proof"
+        }
+      ],
+      "result": {
+        "proof_status": "missing_proof",
+        "enforcement_result": "block",
+        "can_block": true,
+        "finding_ids": [
+          "finding_cbe2b0951c7675c7"
+        ]
+      }
+    }
+  ],
+  "next_commands": [
+    "drift findings list --repo repo_c5e67e6be2297ab7 --status new --json",
+    "drift prepare \"task\" --repo repo_c5e67e6be2297ab7 --json",
+    "drift baseline create --repo repo_c5e67e6be2297ab7 --from main --confirm --json"
+  ],
+  "findings": [
+    {
+      "id": "finding_cbe2b0951c7675c7",
+      "repo_id": "repo_c5e67e6be2297ab7",
+      "convention_id": "convention_83de49adbcdd0360",
+      "check_id": "check_0d1e20936f07bef2",
+      "repo_contract_id": "contract_c5e67e6be2297ab7",
+      "fingerprint": "cbe2b0951c7675c753e85a948bd388aa0d6429695aa131a3f5e798a2a77ab47b",
+      "title": "API route missing required auth proof",
+      "message": "Accepted auth helper must dominate protected route sinks.",
+      "severity": "error",
+      "enforcement_result": "block",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "evidence_refs": [
+        {
+          "id": "evidence_cbe2b0951c7675c7",
+          "kind": "violation",
+          "file_path": "pages/api/route-c.ts",
+          "start_line": 3,
+          "end_line": 3,
+          "fact_ids": [
+            "fact_76ebb07bccc5f9e5",
+            "fact_45c81fdabf54ed99",
+            "fact_a1dd3bae58d0e212"
+          ],
+          "scan_id": "scan_check_41592a364b6a69b5",
+          "file_hash": "59c25fcea8c58a58fec9fba96f1b802a525dfcf56d52b6800aa70878607e8051",
+          "redaction_state": "none"
+        }
+      ],
+      "expected_layer": "auth_guard",
+      "actual_layer": "missing_auth_guard",
+      "graph_path": [
+        "pages/api/route-c.ts"
+      ],
+      "suggested_fix": "Call an accepted auth helper before route data operations or response sinks.",
+      "related_node_ids": [],
+      "created_at": "2026-08-16T02:10:33.779Z",
+      "conforming_examples": [
+        {
+          "file_path": "pages/api/route-a.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/route-b.ts",
+          "role": "api_route"
+        }
+      ],
+      "created_by_engine_version": "0.1.0",
+      "created_by_rule_engine_version": "0.1.0",
+      "contract_schema_version": 1
+    }
+  ]
+}

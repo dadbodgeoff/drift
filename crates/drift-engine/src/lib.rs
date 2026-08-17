@@ -37,8 +37,11 @@ pub use prisma::{PrismaFact, PrismaFactKind, extract_prisma_facts};
 pub use rules::{
     BaselineStatus, BaselineViolation, ClassifiedFinding, DirectDataAccessRule,
     DirectDataAccessViolation, EnforcementMode, EnforcementResult, FindingStatus, RuleFinding,
-    Severity, classify_findings_against_baseline, detect_direct_data_access_imports,
+    Severity, SpecifierUse, UNRESOLVED_DYNAMIC_MEMBER, UNRESOLVED_NO_USE_FOUND,
+    UNRESOLVED_REFERENCE_ESCAPES, UNRESOLVED_SOURCE_UNAVAILABLE, UNRESOLVED_SOURCE_UNPARSED,
+    classify_findings_against_baseline, classify_specifier_use, detect_direct_data_access_imports,
     is_forbidden_import, materialize_direct_data_access_findings,
+    materialize_direct_data_access_findings_with_sources,
 };
 pub use security_capabilities::{
     SecurityCapabilityStatus, SecurityScanCapability, security_capabilities,
@@ -56,8 +59,9 @@ pub use security_patterns::{
     AcceptedRequestValidator, AcceptedResponseSerializer, AcceptedSensitiveResponseField,
     AcceptedTenantHelper, AuthGuardBehavior, AuthorizationHelperBehavior, AuthorizationHelperKind,
     Phase4SecurityPolicy, RequestValidatorBehavior, RequestValidatorKind, ResponseSerializerPolicy,
+    SENSITIVE_FIELD_CLASSIFICATIONS, SENSITIVE_FIELD_SOURCES,
     accepted_phase5_contract_from_requires, accepted_response_serializer_for_call,
-    dynamic_middleware_matcher_line,
+    dynamic_middleware_matcher_line, sensitive_response_field_rejections,
 };
 pub use security_phase6::{
     Phase6AcceptedHelper, Phase6CorsContract, Phase6CorsPolicyProof, Phase6CorsProof,
@@ -79,7 +83,7 @@ pub use security_proof::{
     build_auth_boundary_proofs_for_file, build_middleware_coverage_proof,
     build_phase4_security_proof, build_phase4_security_proof_with_policy,
     build_request_validation_proof, build_request_validation_proof_with_scope,
-    build_response_shape_proof, build_secret_exposure_proof,
+    build_response_shape_proof, build_secret_exposure_proof, sensitive_field_source_is_trusted,
 };
 pub use security_rules::{
     AcceptedOutboundUrlHelper, AcceptedSecurityHelper, SecurityAuthContract,

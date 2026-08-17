@@ -1,0 +1,616 @@
+{
+  "response_schema": "drift.start.result.v1",
+  "repo": {
+    "id": "repo_e71ff414b8bc6786",
+    "root_path": "/tmp/gt-audit/fixtures/data-access",
+    "fingerprint": "f12923eb531f4c2e",
+    "vcs_provider": "git",
+    "remote_url_hash": null,
+    "package_manager": "unknown",
+    "lockfile_hashes": {},
+    "resolver_input_hash": "c3620a1c26910140411c2ae8a42b2886847c96446fdd44181b90147e816db0c4",
+    "created_at": "2026-08-16T02:08:24.931Z",
+    "updated_at": "2026-08-16T02:08:24.931Z"
+  },
+  "scan": {
+    "id": "scan_052a38dff3676a81",
+    "repo_id": "repo_e71ff414b8bc6786",
+    "branch": "main",
+    "commit": "8737f39a92d0cebc6151cec92aac4176e131f670",
+    "dirty": false,
+    "scanner_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "960719ad2f3fd27691110045fb7df42b7926c6e16e223f4cca6d2adfabeaa951",
+      "engine": "0.1.0"
+    },
+    "rule_engine_version": "0.1.0",
+    "status": "completed",
+    "file_count": 16,
+    "fact_count": 111,
+    "finding_count": 0,
+    "started_at": "2026-08-16T02:08:24.931Z",
+    "completed_at": "2026-08-16T02:08:24.931Z"
+  },
+  "candidates": [
+    {
+      "id": "candidate_09cd9d0d34e2f50e",
+      "repo_id": "repo_e71ff414b8bc6786",
+      "scan_id": "scan_052a38dff3676a81",
+      "kind": "api_route_no_direct_data_access",
+      "statement": "API routes should not import data-access clients directly.",
+      "rationale": "Detected API route imports that look like database/data-access clients.",
+      "scope": {
+        "path_globs": [
+          "**/app/api/**/route.ts",
+          "**/app/api/**/route.tsx",
+          "**/app/api/**/route.js",
+          "**/app/api/**/route.jsx",
+          "**/app/**/api/**/route.ts",
+          "**/app/**/api/**/route.tsx",
+          "**/app/**/api/**/route.js",
+          "**/app/**/api/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_no_direct_data_access",
+        "forbidden_imports": [
+          "../../lib/data-access/orders",
+          "../../lib/database",
+          "../../lib/db",
+          "../../lib/dbg",
+          "../../lib/imdb",
+          "../../lib/prisma"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "suggested_severity": "error",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "confidence_label": "high",
+      "scoring": {
+        "supporting_examples_count": 10,
+        "counterexamples_count": 0,
+        "scope_files_count": 8,
+        "coverage_ratio": 0.75,
+        "heuristic_id": "engine-direct-data-access-v1",
+        "coverage_direction": {
+          "violating_files": 6,
+          "scope_files": 8,
+          "violation_ratio": 0.75,
+          "threshold": 0.5,
+          "demoted": true
+        }
+      },
+      "evidence_refs": [
+        {
+          "id": "evidence_ref_cdcbf072b2e42832",
+          "kind": "supporting",
+          "file_path": "pages/api/route-data-access.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "loadOrders",
+          "import_source": "../../lib/data-access/orders",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-data-access.ts:loadOrders:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "a3bc355db37583644763f428264e4b456bf73b0429300f74d85e9f424eca5621",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_cfb50e2b644c4a2d",
+          "kind": "supporting",
+          "file_path": "pages/api/route-database.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "connect",
+          "import_source": "../../lib/database",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-database.ts:connect:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "23146751b286b947000daddfd286b2f5e89de779f8f9f2d6ee6a2e36bac248a4",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_089311ef3e647273",
+          "kind": "supporting",
+          "file_path": "pages/api/route-db.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "rawQuery",
+          "import_source": "../../lib/db",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-db.ts:rawQuery:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "ef36a8e1094fa167868e8d41d9e6cea8052b4957d09d928b51327c2441756e22",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_5922727f93171004",
+          "kind": "supporting",
+          "file_path": "pages/api/route-dbg.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "dbg",
+          "import_source": "../../lib/dbg",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-dbg.ts:dbg:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "f876e473d6d64fc32bf85db3ed454226e35183cf29231e4a235aca1b3b9c216a",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_8d98144ba6a1e197",
+          "kind": "supporting",
+          "file_path": "pages/api/route-imdb.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "fetchMovie",
+          "import_source": "../../lib/imdb",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-imdb.ts:fetchMovie:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "10815ab2d850e8a2df92ddadcbd8e44d2f143ad58620582e524ece6abe7dd8da",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_595cd3f376e59f39",
+          "kind": "supporting",
+          "file_path": "pages/api/route-prisma.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "prismaClient",
+          "import_source": "../../lib/prisma",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-prisma.ts:prismaClient:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "834cae88ef7d6e2506c63f7d2a8acaf91a6316833099a6a18baa9aa07595ac27",
+          "redaction_state": "none"
+        }
+      ],
+      "counterexample_refs": [],
+      "matcher_fingerprint": "d314d7a17a872d8ad40cb404be5c9e2537734716443edc904209a5514cd7d54f",
+      "scope_fingerprint": "c0ace5aa757d9f8b03bbb152434d8db5cdfd66649c2e6ad42b4286feb348603f",
+      "graph_fingerprint": "440e1b52453e70c7e98e70611e1a79c27c609d403ba33313ca1f0113fbe24495",
+      "evidence_fingerprint": "55640229436b7af97cd9bebc9837ddffa52f820eb178379d07990b6eea85c82c",
+      "required_capabilities": [
+        "syntax_facts",
+        "import_resolution",
+        "route_detection"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-16T02:08:24.931Z",
+      "provenance": "inferred"
+    },
+    {
+      "id": "candidate_d167398d2c2d7460",
+      "repo_id": "repo_e71ff414b8bc6786",
+      "scan_id": "scan_052a38dff3676a81",
+      "kind": "api_route_requires_service_delegation",
+      "statement": "API routes should delegate business and data-access work through service modules.",
+      "rationale": "Detected direct data-access imports; service delegation should be reviewed before enforcement.",
+      "scope": {
+        "path_globs": [
+          "**/app/api/**/route.ts",
+          "**/app/api/**/route.tsx",
+          "**/app/api/**/route.js",
+          "**/app/api/**/route.jsx",
+          "**/app/**/api/**/route.ts",
+          "**/app/**/api/**/route.tsx",
+          "**/app/**/api/**/route.js",
+          "**/app/**/api/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_requires_service_delegation",
+        "allowed_delegate_imports": [
+          "**/services/**",
+          "**/server/**",
+          "**/data-access/**"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "suggested_severity": "warning",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "heuristic_check",
+      "confidence_label": "low",
+      "scoring": {
+        "supporting_examples_count": 0,
+        "counterexamples_count": 10,
+        "scope_files_count": 8,
+        "coverage_ratio": 0,
+        "heuristic_id": "engine-service-delegation-v1"
+      },
+      "evidence_refs": [],
+      "counterexample_refs": [
+        {
+          "id": "evidence_ref_cdcbf072b2e42832",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-data-access.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "loadOrders",
+          "import_source": "../../lib/data-access/orders",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-data-access.ts:loadOrders:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "a3bc355db37583644763f428264e4b456bf73b0429300f74d85e9f424eca5621",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_cfb50e2b644c4a2d",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-database.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "connect",
+          "import_source": "../../lib/database",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-database.ts:connect:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "23146751b286b947000daddfd286b2f5e89de779f8f9f2d6ee6a2e36bac248a4",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_089311ef3e647273",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-db.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "rawQuery",
+          "import_source": "../../lib/db",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-db.ts:rawQuery:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "ef36a8e1094fa167868e8d41d9e6cea8052b4957d09d928b51327c2441756e22",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_5922727f93171004",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-dbg.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "dbg",
+          "import_source": "../../lib/dbg",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-dbg.ts:dbg:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "f876e473d6d64fc32bf85db3ed454226e35183cf29231e4a235aca1b3b9c216a",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_8d98144ba6a1e197",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-imdb.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "fetchMovie",
+          "import_source": "../../lib/imdb",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-imdb.ts:fetchMovie:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "10815ab2d850e8a2df92ddadcbd8e44d2f143ad58620582e524ece6abe7dd8da",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_595cd3f376e59f39",
+          "kind": "counterexample",
+          "file_path": "pages/api/route-prisma.ts",
+          "start_line": 1,
+          "end_line": 1,
+          "symbol": "prismaClient",
+          "import_source": "../../lib/prisma",
+          "fact_ids": [
+            "fact:import_used:pages/api/route-prisma.ts:prismaClient:1-1"
+          ],
+          "scan_id": "scan_052a38dff3676a81",
+          "file_hash": "834cae88ef7d6e2506c63f7d2a8acaf91a6316833099a6a18baa9aa07595ac27",
+          "redaction_state": "none"
+        }
+      ],
+      "matcher_fingerprint": "bc2289c00dfba01ee72712895ef3d96167de331ce42161e28e975fbb96b74ac3",
+      "scope_fingerprint": "c0ace5aa757d9f8b03bbb152434d8db5cdfd66649c2e6ad42b4286feb348603f",
+      "graph_fingerprint": "440e1b52453e70c7e98e70611e1a79c27c609d403ba33313ca1f0113fbe24495",
+      "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "required_capabilities": [
+        "syntax_facts",
+        "import_resolution",
+        "graph_stream"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-16T02:08:24.931Z",
+      "provenance": "inferred"
+    }
+  ],
+  "summary": {
+    "files_indexed": 16,
+    "facts_count": 111,
+    "diagnostics_count": 0,
+    "candidates_count": 2,
+    "engine_source": "rust",
+    "files_skipped": 0,
+    "incremental_changes": {
+      "added": 16,
+      "modified": 0,
+      "deleted": 0,
+      "unchanged": 0,
+      "total": 16
+    },
+    "incremental_plan": {
+      "previous_scan_id": null,
+      "execution_mode": "full_scan",
+      "reuse_applied": false,
+      "reusable_file_count": 0,
+      "changed_file_count": 16,
+      "blocked_reasons": [
+        "previous_scan_missing"
+      ]
+    }
+  },
+  "onboarding": {
+    "status": "ready",
+    "accepted_default": true,
+    "contract_ready": true,
+    "baselined_count": 6,
+    "candidate_count": 2
+  },
+  "state": {
+    "repo_id": "repo_e71ff414b8bc6786",
+    "repo_root": "/tmp/gt-audit/fixtures/data-access",
+    "database_path": "/tmp/gt-audit/state/data-access/repo_e71ff414b8bc6786/drift.sqlite"
+  },
+  "accepted": {
+    "id": "convention_09cd9d0d34e2f50e",
+    "contract_id": "contract_e71ff414b8bc6786",
+    "kind": "api_route_no_direct_data_access",
+    "statement": "API routes should not import data-access clients directly.",
+    "rationale": "Detected API route imports that look like database/data-access clients.",
+    "scope": {
+      "path_globs": [
+        "**/app/api/**/route.ts",
+        "**/app/api/**/route.tsx",
+        "**/app/api/**/route.js",
+        "**/app/api/**/route.jsx",
+        "**/app/**/api/**/route.ts",
+        "**/app/**/api/**/route.tsx",
+        "**/app/**/api/**/route.js",
+        "**/app/**/api/**/route.jsx",
+        "**/pages/api/**/*.ts",
+        "**/pages/api/**/*.tsx",
+        "**/pages/api/**/*.js",
+        "**/pages/api/**/*.jsx"
+      ],
+      "file_roles": [
+        "api_route"
+      ]
+    },
+    "matcher": {
+      "kind": "api_route_no_direct_data_access",
+      "forbidden_imports": [
+        "../../lib/data-access/orders",
+        "../../lib/database",
+        "../../lib/db",
+        "../../lib/dbg",
+        "../../lib/imdb",
+        "../../lib/prisma"
+      ],
+      "applies_to_file_roles": [
+        "api_route"
+      ]
+    },
+    "severity": "error",
+    "enforcement_mode": "warn",
+    "enforcement_capability": "deterministic_check",
+    "exceptions": [],
+    "evidence_refs": [
+      {
+        "id": "evidence_ref_cdcbf072b2e42832",
+        "kind": "supporting",
+        "file_path": "pages/api/route-data-access.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "loadOrders",
+        "import_source": "../../lib/data-access/orders",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-data-access.ts:loadOrders:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "a3bc355db37583644763f428264e4b456bf73b0429300f74d85e9f424eca5621",
+        "redaction_state": "none"
+      },
+      {
+        "id": "evidence_ref_cfb50e2b644c4a2d",
+        "kind": "supporting",
+        "file_path": "pages/api/route-database.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "connect",
+        "import_source": "../../lib/database",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-database.ts:connect:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "23146751b286b947000daddfd286b2f5e89de779f8f9f2d6ee6a2e36bac248a4",
+        "redaction_state": "none"
+      },
+      {
+        "id": "evidence_ref_089311ef3e647273",
+        "kind": "supporting",
+        "file_path": "pages/api/route-db.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "rawQuery",
+        "import_source": "../../lib/db",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-db.ts:rawQuery:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "ef36a8e1094fa167868e8d41d9e6cea8052b4957d09d928b51327c2441756e22",
+        "redaction_state": "none"
+      },
+      {
+        "id": "evidence_ref_5922727f93171004",
+        "kind": "supporting",
+        "file_path": "pages/api/route-dbg.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "dbg",
+        "import_source": "../../lib/dbg",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-dbg.ts:dbg:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "f876e473d6d64fc32bf85db3ed454226e35183cf29231e4a235aca1b3b9c216a",
+        "redaction_state": "none"
+      },
+      {
+        "id": "evidence_ref_8d98144ba6a1e197",
+        "kind": "supporting",
+        "file_path": "pages/api/route-imdb.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "fetchMovie",
+        "import_source": "../../lib/imdb",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-imdb.ts:fetchMovie:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "10815ab2d850e8a2df92ddadcbd8e44d2f143ad58620582e524ece6abe7dd8da",
+        "redaction_state": "none"
+      },
+      {
+        "id": "evidence_ref_595cd3f376e59f39",
+        "kind": "supporting",
+        "file_path": "pages/api/route-prisma.ts",
+        "start_line": 1,
+        "end_line": 1,
+        "symbol": "prismaClient",
+        "import_source": "../../lib/prisma",
+        "fact_ids": [
+          "fact:import_used:pages/api/route-prisma.ts:prismaClient:1-1"
+        ],
+        "scan_id": "scan_052a38dff3676a81",
+        "file_hash": "834cae88ef7d6e2506c63f7d2a8acaf91a6316833099a6a18baa9aa07595ac27",
+        "redaction_state": "none"
+      }
+    ],
+    "counterexample_refs": [],
+    "accepted_by": "local-user",
+    "accepted_at": "2026-08-16T02:08:24.931Z",
+    "updated_at": "2026-08-16T02:08:24.931Z"
+  },
+  "acceptance": {
+    "convention_id": "convention_09cd9d0d34e2f50e",
+    "convention_kind": "api_route_no_direct_data_access",
+    "mode": "warn",
+    "severity": "error",
+    "baselined_count": 6,
+    "baselined_by_kind": {
+      "api_route_no_direct_data_access": 6
+    },
+    "blocks_new_violations": false,
+    "upgrade_command": "drift conventions accept convention_09cd9d0d34e2f50e --repo repo_e71ff414b8bc6786 --severity error --mode block --confirm",
+    "accepted_count": 1,
+    "also_accepted": [],
+    "deferred_candidates": []
+  },
+  "baselined_count": 6,
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 34,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "960719ad2f3fd27691110045fb7df42b7926c6e16e223f4cca6d2adfabeaa951",
+      "engine": "0.1.0"
+    }
+  },
+  "engine": {
+    "status": "available",
+    "source": "env_override",
+    "path": "/Users/geoffreyfernald/drift-falsification/drift/target/release/drift-engine",
+    "command": "/Users/geoffreyfernald/drift-falsification/drift/target/release/drift-engine",
+    "args": [],
+    "cwd": null,
+    "package_name": null,
+    "package_version": null,
+    "target_triple": null,
+    "sha256": "0254f9f54fb008b94a1fe75c45069c254a56cb20ebecce7387cdae8848b13289",
+    "expected_sha256": "0254f9f54fb008b94a1fe75c45069c254a56cb20ebecce7387cdae8848b13289",
+    "checksum_matches": true,
+    "override_active": true,
+    "error": null
+  },
+  "v1_scope": {
+    "product_mode": "local_first_cli",
+    "primary_wedge": "typescript_api_route_layering",
+    "mutation_model": "human_confirmed_governance_only",
+    "source_mutation": false,
+    "language_adapters": [
+      "typescript"
+    ],
+    "deferred": [
+      "desktop_ui",
+      "cloud_sync",
+      "python_adapter",
+      "duplicate_helper_detection"
+    ]
+  },
+  "next_commands": [
+    "drift doctor --repo-root /tmp/gt-audit/fixtures/data-access --state-root /tmp/gt-audit/state/data-access --json",
+    "drift scan status --repo repo_e71ff414b8bc6786",
+    "drift contract show --repo repo_e71ff414b8bc6786",
+    "drift baseline status --repo repo_e71ff414b8bc6786",
+    "drift prepare \"task\" --repo repo_e71ff414b8bc6786 --json",
+    "drift check --diff main...HEAD --repo repo_e71ff414b8bc6786 --scope changed-hunks",
+    "drift backup create --repo repo_e71ff414b8bc6786 --confirm"
+  ],
+  "database_path": "/tmp/gt-audit/state/data-access/repo_e71ff414b8bc6786/drift.sqlite"
+}

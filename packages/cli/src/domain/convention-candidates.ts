@@ -89,7 +89,7 @@ export function acceptConventionCandidate(
     rationale: candidate.rationale,
     scope: candidate.scope,
     matcher: candidate.matcher,
-    requires: candidate.requires,
+    requires: requiresWithReviewedProvenance(candidate.requires),
     severity,
     enforcement_mode: mode,
     enforcement_capability: candidate.enforcement_capability,
@@ -177,6 +177,45 @@ export function acceptConventionCandidate(
     contract_summary: contractSummary(contract),
     next_commands: acceptedConventionNextCommands(candidate.repo_id)
   };
+}
+
+/**
+ * The accept path's half of D1 (TDD §5.1.2).
+ *
+ * A `sensitive_response_fields` entry carries `source` as *provenance*: `"schema"` when the user
+ * wrote a `driftSensitive` marker, `"candidate"` when Drift's name heuristic guessed it. The
+ * engine's proof deliberately refuses to enforce on `"candidate"` — that is an unreviewed guess,
+ * and blocking a diff on one would be enforcing Drift's own speculation.
+ *
+ * Running `drift conventions accept` is precisely the review that guess was missing: an explicit
+ * human act against a specific, displayed candidate. So acceptance re-stamps it as
+ * `"accepted_inference"` — "a heuristic guess a human signed off on" — which keeps `source` a
+ * single-purpose provenance field rather than smuggling lifecycle state into it, and leaves
+ * `"candidate"` meaning what its name says. A design where accepting a candidate still could not
+ * enforce would make this command meaningless for the kind.
+ *
+ * Provenance that already names a human — `"schema"`, `"contract"` — is left exactly as it is.
+ * Flattening those to `"accepted_inference"` would lose the distinction between "the user marked
+ * this field" and "Drift guessed and the user agreed".
+ *
+ * The value must stay in step with `SENSITIVE_FIELD_SOURCES` in
+ * `crates/drift-engine/src/security_patterns.rs`; a value that allowlist does not know is dropped
+ * by the parser, and the convention silently goes back to enforcing nothing.
+ */
+function requiresWithReviewedProvenance(
+  requires: AcceptedConvention["requires"]
+): AcceptedConvention["requires"] {
+  const fields = (requires as Record<string, unknown> | undefined)?.sensitive_response_fields;
+  if (!Array.isArray(fields)) {
+    return requires;
+  }
+  return {
+    ...(requires as Record<string, unknown>),
+    sensitive_response_fields: fields.map((field) => {
+      const entry = field as Record<string, unknown>;
+      return entry.source === "candidate" ? { ...entry, source: "accepted_inference" } : entry;
+    })
+  } as AcceptedConvention["requires"];
 }
 
 function previewRepoContractWithConvention(

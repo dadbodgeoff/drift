@@ -82,7 +82,12 @@ describe("release hygiene", () => {
       // time. It drives a fixture matrix through both surfaces and fails on a discriminator that is
       // identical everywhere, and it FOLLOWS every data pointer, because `full_list_command` named
       // a real command that exits 0 and simply did not serve the data.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      //
+      // And the ground-truth remediation adds `pnpm check:cell-ledger`: it enforces that every
+      // (convention kind x enforcement path) cell is declared with the evidence its state requires,
+      // the structural guardrail against the D1 class of defect - a cell that cannot fire while
+      // looking covered.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && pnpm check:cell-ledger && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
     expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
     expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");

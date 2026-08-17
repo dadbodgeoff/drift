@@ -105,5 +105,38 @@ pub fn is_data_access_source(source: &str) -> bool {
         // narrowing nobody asked for. The type-surface exclusions above are what keeps it honest.
         || lower.contains("/db")
         || lower.ends_with("db")
-        || lower.contains("data-access")
+        // D4 (TDD §5.4). `data-access` was the same bare substring test, and unlike `db` there is
+        // no repo it serves: `lib/no-data-access-here` and `legacy-data-access-notes.ts` matched
+        // modules whose own names say they do no data access. The audit did not report this one.
+        //
+        // `contains_data_layer_token` is NOT sufficient here, which §5.4 assumed it would be: that
+        // helper gates on `is_ascii_alphanumeric`, and `-` is not alphanumeric, so `data-access`
+        // clears the boundary test on both sides of `no-data-access-here`. The token has to name a
+        // path segment, or its head or its tail.
+        //
+        // Scoped to `data-access` deliberately. The loose `db` rule above stays exactly as it is.
+        || data_access_token_names_segment(without_extension)
+}
+
+/// True when `data-access` *names* a path segment rather than sitting inside one.
+///
+/// `lib/data-access/orders`, `lib/data-access.ts` and `orders-data-access` are data layers - the
+/// token is the segment, or its head, or its tail. `no-data-access-here` and
+/// `legacy-data-access-notes` are not: there the token is an interior fragment of a longer phrase.
+fn data_access_token_names_segment(haystack: &str) -> bool {
+    const TOKEN: &str = "data-access";
+    haystack.split('/').any(|segment| {
+        if segment == TOKEN {
+            return true;
+        }
+        let starts_segment = segment
+            .strip_prefix(TOKEN)
+            .and_then(|rest| rest.chars().next())
+            .is_some_and(|character| !character.is_ascii_alphanumeric());
+        let ends_segment = segment
+            .strip_suffix(TOKEN)
+            .and_then(|rest| rest.chars().next_back())
+            .is_some_and(|character| !character.is_ascii_alphanumeric());
+        starts_segment || ends_segment
+    })
 }

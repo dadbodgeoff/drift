@@ -18,7 +18,8 @@ use drift_engine::{
     SecurityProofStatus, Severity, accepted_phase5_contract_from_requires,
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
-    materialize_direct_data_access_findings, phase6_proof_to_json,
+    materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
+    sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
 
@@ -86,6 +87,11 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
 
     let mut findings = Vec::new();
     let mut security_boundary_proofs = Vec::new();
+    // TDD §5.1.4. An accepted convention whose config the engine cannot read, or can read and
+    // then discards entirely, enforces nothing while reporting a clean pass — the exact shape of
+    // the D1 P0, and the shape D1's first proposed fix would have reproduced. These say so out
+    // loud instead.
+    let mut config_diagnostics: Vec<crate::protocol::EngineDiagnostic> = Vec::new();
     let mut required_capabilities = BTreeSet::from([ScanCapability::DirectDataAccessCheck]);
     let mut missing_capabilities: BTreeSet<ScanCapability> = BTreeSet::new();
     let mut source_required_kinds: BTreeSet<ConventionKind> = BTreeSet::new();
@@ -154,26 +160,43 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                     severity,
                     enforcement_mode,
                 };
-                let mut findings = materialize_direct_data_access_findings(&facts, &rule)
-                    .into_iter()
-                    .map(|finding| PendingFinding {
-                        fingerprint: finding.fingerprint.clone(),
-                        convention_id: finding.convention_id.clone(),
-                        rule_id: "api_route_no_direct_data_access".to_string(),
-                        title: finding.title,
-                        message: finding.message,
-                        severity: finding.severity,
-                        enforcement_result: finding.enforcement_result,
-                        file_path: finding.file_path,
-                        import_name: finding.import_name,
-                        import_source: finding.import_source,
-                        line: finding.line,
-                        evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
-                        symbol: PendingFinding::no_symbol(),
-                        legacy_fingerprints: Vec::new(),
-                        related_node_ids: Vec::new(),
-                    })
-                    .collect::<Vec<_>>();
+                // D5.2 (TDD §5.5) classifies each specifier's use over the importing file's AST,
+                // because the fact stream cannot answer the question. `new PrismaClient()` emits no
+                // fact at all - `walk_node` dispatches on `call_expression`, and a `new_expression`
+                // is not one - and a member READ (`LinkType.GROUP`) emits no fact either. To a
+                // classifier reading facts alone those two are the same nothing, so suppressing on
+                // "no facts" would silently drop the one genuine violation shape §5.5 names.
+                // Reading the source at check time is how five security rules in this file already
+                // resolve questions the fact stream does not carry; `read_repo_file` is the same
+                // door.
+                //
+                // No `repo_root` means no source, which means every specifier is Unresolved and
+                // every finding is retained - D5.1 grouping only, and no suppression on a path that
+                // cannot prove inertness.
+                let mut findings = materialize_direct_data_access_findings_with_sources(
+                    &facts,
+                    &rule,
+                    &|file_path| read_repo_file(repo_root.as_deref(), file_path),
+                )
+                .into_iter()
+                .map(|finding| PendingFinding {
+                    fingerprint: finding.fingerprint.clone(),
+                    convention_id: finding.convention_id.clone(),
+                    rule_id: "api_route_no_direct_data_access".to_string(),
+                    title: finding.title,
+                    message: finding.message,
+                    severity: finding.severity,
+                    enforcement_result: finding.enforcement_result,
+                    file_path: finding.file_path,
+                    import_name: finding.import_name,
+                    import_source: finding.import_source,
+                    line: finding.line,
+                    evidence_id: format!("evidence_{}", &finding.fingerprint[..16]),
+                    symbol: PendingFinding::no_symbol(),
+                    legacy_fingerprints: finding.legacy_fingerprints,
+                    related_node_ids: Vec::new(),
+                })
+                .collect::<Vec<_>>();
                 findings.extend(graph_direct_data_access_findings(&request.graph, &rule));
                 findings
             }
@@ -269,6 +292,10 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
                 phase6_result.findings
             }
             ConventionKind::ApiRouteForbidsSensitiveResponseFields => {
+                config_diagnostics.extend(sensitive_response_field_config_diagnostics(
+                    &convention.id,
+                    convention.requires.as_ref(),
+                ));
                 let has_phase5_inputs = convention
                     .requires
                     .as_ref()
@@ -463,6 +490,8 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             file_path: None,
             import_source: None,
         })
+        .chain(config_diagnostics)
+        .take(request.limits.max_diagnostics)
         .collect::<Vec<_>>();
 
     CheckResult {
@@ -706,9 +735,11 @@ impl From<PendingFinding> for drift_engine::RuleFinding {
             severity: value.severity,
             enforcement_result: value.enforcement_result,
             file_path: value.file_path,
+            import_names: vec![value.import_name.clone()],
             import_name: value.import_name,
             import_source: value.import_source,
             line: value.line,
+            legacy_fingerprints: value.legacy_fingerprints,
         }
     }
 }
@@ -1654,6 +1685,78 @@ fn security_phase4_findings_and_proofs(
     }
 
     SecurityPhase4Evaluation { findings, proofs }
+}
+
+/// TDD §5.1.4 — the dead-config diagnostic, defence in depth for the D1 class of defect.
+///
+/// The two ways an accepted `api_route_forbids_sensitive_response_fields` convention can enforce
+/// nothing while reporting a clean pass, both of which were silent before this existed:
+///
+/// 1. **The parser could not read an entry.** `accepted_sensitive_response_field` fails closed via
+///    `filter_map`, so an unknown `classification` or `source` vanishes with no error. This is the
+///    trap that would have made D1's first proposed fix a total no-op: it promoted `source` to a
+///    value the allowlist rejected, and the check would have gone on never firing, silently.
+/// 2. **Every entry parsed, and the proof then discarded all of them.** `source: "candidate"` is
+///    an unreviewed guess and `sensitive_field_source_is_trusted` drops it. A convention made
+///    entirely of those has no enforceable field left — which is precisely the state every
+///    convention accepted before D1's fix is in, and the non-destructive alternative to migrating
+///    those users' state DBs (see docs/decisions/d1-sensitive-field-source-migration.md).
+///
+/// Either way the user's remedy is the same and is named in the message: re-run
+/// `drift conventions accept` on the candidate so provenance is recorded correctly.
+fn sensitive_response_field_config_diagnostics(
+    convention_id: &str,
+    requires: Option<&serde_json::Value>,
+) -> Vec<crate::protocol::EngineDiagnostic> {
+    let Some(requires) = requires else {
+        return Vec::new();
+    };
+    let mut diagnostics = Vec::new();
+
+    let rejections = sensitive_response_field_rejections(requires);
+    if !rejections.is_empty() {
+        diagnostics.push(crate::protocol::EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "convention_config_unreadable".to_string(),
+            message: format!(
+                "Accepted convention {convention_id} has {} sensitive_response_fields entr{} the \
+                 engine cannot read, so they are not being checked: {}. Re-run `drift conventions \
+                 accept` for this candidate to record them in a form the check understands.",
+                rejections.len(),
+                if rejections.len() == 1 { "y" } else { "ies" },
+                rejections.join("; ")
+            ),
+            file_path: None,
+            import_source: None,
+        });
+    }
+
+    let parsed = accepted_phase5_contract_from_requires(requires);
+    let fields = parsed
+        .as_ref()
+        .map(|accepted| accepted.sensitive_response_fields.as_slice())
+        .unwrap_or_default();
+    if !fields.is_empty()
+        && !fields
+            .iter()
+            .any(|field| sensitive_field_source_is_trusted(&field.source))
+    {
+        diagnostics.push(crate::protocol::EngineDiagnostic {
+            severity: "warning".to_string(),
+            code: "convention_config_unenforceable".to_string(),
+            message: format!(
+                "Accepted convention {convention_id} enforces nothing: all {} of its \
+                 sensitive_response_fields carry source \"candidate\", an unreviewed name-heuristic \
+                 guess the proof will not enforce on. Re-run `drift conventions accept` for this \
+                 candidate to record the fields as reviewed.",
+                fields.len()
+            ),
+            file_path: None,
+            import_source: None,
+        });
+    }
+
+    diagnostics
 }
 
 fn security_phase5_findings_and_proofs(
@@ -2664,26 +2767,110 @@ fn phase5_route_path_from_file(file_path: &str) -> Option<String> {
     next_api_route_identity(file_path).map(|identity| identity.route_path)
 }
 
+/// Path-glob matching for security-convention scopes, with globstar semantics.
+///
+/// **Third dead-path component of D1, and not one the audit named.** This was a pile of
+/// suffix special-cases that never implemented `**/` as *zero or more* segments. The consequence
+/// is stated verbatim in `packages/core/src/globs.ts`, which fixed the identical bug on the
+/// TypeScript side and left this copy untouched:
+///
+/// > `**/pages/api/**/*.ts` never matched a handler sitting directly in `pages/api/`, at any
+/// > depth.
+///
+/// Every scope the candidate proposer emits is `**/`-prefixed (`candidate_command.rs`'s
+/// `route_scope`), and a repo whose routes sit at the root — the default `create-next-app`
+/// layout — has zero leading segments for it to match. So `phase5_file_scope_matches` rejected
+/// every file of every proposer-produced convention, and the check could not fire on any repo
+/// even once its `source` provenance was correct. The three existing tests of the kind all
+/// hand-write a scope without the `**/` prefix, so none of them could see it.
+///
+/// Semantics are `globs.ts`'s, so the two sides of the process boundary agree:
+///   `**/`  zero or more complete path segments
+///   `/**`  (trailing) the directory itself or anything beneath it
+///   `**`   any run of characters, including `/`
+///   `*`    any run of characters except `/`
+///   `?`    exactly one character except `/`
 fn path_glob_matches(pattern: &str, file_path: &str) -> bool {
-    if pattern == file_path {
+    // Deliberately kept from the old matcher, not an oversight: a trailing `/*` also matches the
+    // directory itself. `phase5_file_scope_matches` tests these patterns against a *route path*
+    // (`/api/users`), and scopes are written as `/api/users/*` to mean that route and anything
+    // under it. Strict globstar would drop the bare-directory case, which
+    // `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
+    // pins. Widening only, and only for this one shape.
+    if let Some(prefix) = pattern.strip_suffix("/*")
+        && file_path == prefix
+    {
         return true;
     }
-    if let Some(prefix) = pattern.strip_suffix("/**/route.ts") {
-        return file_path.starts_with(prefix) && file_path.ends_with("/route.ts");
+    glob_matches_from(pattern.as_bytes(), 0, file_path.as_bytes(), 0)
+}
+
+fn glob_matches_from(pattern: &[u8], mut pi: usize, path: &[u8], mut si: usize) -> bool {
+    loop {
+        if pi >= pattern.len() {
+            return si >= path.len();
+        }
+
+        // `**/` — zero or more complete segments. The zero case is the whole bug.
+        if pattern[pi..].starts_with(b"**/") {
+            let rest = pi + 3;
+            if glob_matches_from(pattern, rest, path, si) {
+                return true;
+            }
+            for index in si..path.len() {
+                if path[index] == b'/' && glob_matches_from(pattern, rest, path, index + 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Trailing `/**` — this directory, or anything beneath it.
+        if pi + 3 == pattern.len() && pattern[pi..] == *b"/**" {
+            return si >= path.len() || path[si] == b'/';
+        }
+
+        // Bare `**` — any run of characters, separators included.
+        if pattern[pi..].starts_with(b"**") {
+            let rest = pi + 2;
+            for index in si..=path.len() {
+                if glob_matches_from(pattern, rest, path, index) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        match pattern[pi] {
+            b'*' => {
+                let rest = pi + 1;
+                let mut index = si;
+                loop {
+                    if glob_matches_from(pattern, rest, path, index) {
+                        return true;
+                    }
+                    if index >= path.len() || path[index] == b'/' {
+                        return false;
+                    }
+                    index += 1;
+                }
+            }
+            b'?' => {
+                if si >= path.len() || path[si] == b'/' {
+                    return false;
+                }
+                pi += 1;
+                si += 1;
+            }
+            literal => {
+                if si >= path.len() || path[si] != literal {
+                    return false;
+                }
+                pi += 1;
+                si += 1;
+            }
+        }
     }
-    if let Some(prefix) = pattern.strip_suffix("/*") {
-        return file_path == prefix || file_path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some(prefix) = pattern.strip_suffix("/**") {
-        return file_path == prefix || file_path.starts_with(&format!("{prefix}/"));
-    }
-    if let Some((prefix, suffix)) = pattern.split_once("**") {
-        return file_path.starts_with(prefix) && file_path.ends_with(suffix);
-    }
-    if let Some(prefix) = pattern.strip_suffix('*') {
-        return file_path.starts_with(prefix);
-    }
-    false
 }
 
 fn request_validation_missing_code(proof: &SecurityBoundaryProof) -> String {
@@ -4038,6 +4225,78 @@ fn diff_status_to_str(status: drift_engine::DiffStatus) -> &'static str {
         drift_engine::DiffStatus::NewInDiff => "new_in_diff",
         drift_engine::DiffStatus::TouchedExisting => "touched_existing",
         drift_engine::DiffStatus::OutsideDiff => "outside_diff",
+    }
+}
+
+#[cfg(test)]
+mod path_glob_boundary_tests {
+    use super::path_glob_matches;
+
+    /// The globstar port (TDD §5.1, discovered during D1).
+    ///
+    /// The previous matcher was a pile of prefix/suffix special cases that never implemented
+    /// `**/` as *zero or more* segments. `packages/core/src/globs.ts:13-14` documents the
+    /// identical bug, fixed on the TypeScript side and never ported here; a comment at
+    /// `presence_file_in_scope` recorded it as still live and deliberately did not change it.
+    ///
+    /// The zero-segment rows are the whole defect: every scope the candidate proposer emits is
+    /// `**/`-prefixed, and a repo whose routes sit at the root — the default create-next-app
+    /// layout — has no leading segments to consume. Both the app-router and pages-router forms
+    /// failed, so no proposer-produced convention of an affected kind could match any file.
+    #[test]
+    fn globstar_prefixes_match_zero_leading_segments() {
+        // The exact patterns `candidate_command.rs`'s `route_scope` emits.
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "app/api/users/route.ts"),
+            ("**/app/api/**/route.ts", "app/api/route.ts"),
+            ("**/pages/api/**/*.ts", "pages/api/route-leak.ts"),
+            ("**/pages/api/**/*.ts", "pages/api/nested/handler.ts"),
+        ] {
+            assert!(
+                path_glob_matches(pattern, path),
+                "{pattern} must match root-level {path} — `**/` is zero or more segments"
+            );
+        }
+
+        // And still match when the leading segments are actually there (a monorepo mount).
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "apps/web/app/api/users/route.ts"),
+            ("**/pages/api/**/*.ts", "apps/web/pages/api/handler.ts"),
+        ] {
+            assert!(path_glob_matches(pattern, path), "{pattern} vs {path}");
+        }
+    }
+
+    #[test]
+    fn globstar_patterns_still_reject_what_they_should() {
+        for (pattern, path) in [
+            ("**/app/api/**/route.ts", "app/api/users/handler.ts"),
+            ("**/pages/api/**/*.ts", "pages/app/handler.ts"),
+            // `*` does not cross a separator.
+            ("app/api/*/route.ts", "app/api/a/b/route.ts"),
+            // The old matcher answered true here: it reduced this to
+            // `starts_with("app/api") && ends_with("/route.ts")`, so a sibling directory whose
+            // name merely began with "api" matched. Tightening, and worth pinning.
+            ("app/api/**/route.ts", "app/apixyz/route.ts"),
+        ] {
+            assert!(
+                !path_glob_matches(pattern, path),
+                "{pattern} must not match {path}"
+            );
+        }
+    }
+
+    /// Deliberately kept from the old matcher: a trailing `/*` also matches the directory
+    /// itself, because `phase5_file_scope_matches` tests these patterns against a *route path*
+    /// and scopes are written as `/api/users/*` to mean that route and anything under it.
+    /// Strict globstar would drop the bare-directory case, which
+    /// `security_check_repo_phase5.rs::security_phase5_scope_filtering_and_blocking_are_engine_owned`
+    /// pins — it went red without this and is the reason the shim exists.
+    #[test]
+    fn a_trailing_star_still_matches_the_directory_itself() {
+        assert!(path_glob_matches("/api/users/*", "/api/users"));
+        assert!(path_glob_matches("/api/users/*", "/api/users/detail"));
+        assert!(!path_glob_matches("/api/users/*", "/api/admin"));
     }
 }
 

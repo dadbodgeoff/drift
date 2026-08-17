@@ -807,11 +807,10 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
 
     // EW-4: `export default <expression>;` where the expression is not a declaration.
     //
-    // The declaration branch below handles `export default function f() {}` and friends. It cannot
-    // see `export default prisma;` - the identifier was declared on an earlier line, so this
-    // statement has no declaration child and `first_named_declaration_identifier` returns None,
-    // skipping the whole branch. The module then reports no `default` export, and every
-    // `import x from "./m"` against it raises `unresolved_import_symbol`.
+    // `export default prisma;` has no declaration child - the identifier was declared on an
+    // earlier line, so `first_named_declaration_identifier` returns None. Before EW-4 the module
+    // reported no `default` export at all, and every `import x from "./m"` against it raised
+    // `unresolved_import_symbol`.
     //
     // Measured on cal.com: 242 such diagnostics against `packages/prisma/index.ts`, whose line 112
     // is exactly `export default prisma;`. Because that is the *data layer*, every route importing
@@ -822,19 +821,36 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
     // export a module does not have would turn a missing-symbol gap into a wrong answer. Type-only
     // default exports (`export type { X as default }`) are erased and are excluded, matching how
     // every other type-only export is treated here.
-    if statement
+    //
+    // D2 (ground-truth remediation §5.2): ONE declaration produces ONE fact.
+    //
+    // This branch used to be gated on the statement having no declaration child, and the branch
+    // below emitted a second `(name = <local identifier>, value = None)` fact for the declaration
+    // form. That second fact was wrong. `export default function handler()` does not create a
+    // named export `handler` - nothing can write `import { handler } from "./orders"` - and
+    // `exported_symbols_by_file` (main.rs:2174) keys purely on `fact.name`, so the engine resolved
+    // that import against a module exporting no such name. A false resolution, not a duplicate.
+    //
+    // Canonical model: `name = "default"` (what importers actually bind), `value = <local
+    // identifier or None>` (metadata for following the default back to what it names). The gate is
+    // gone, so `export default function f() {}`, `export default class C {}`, `export default
+    // prisma;` and `export default () => 1` are all one fact of the same shape.
+    let default_export_local_name = first_named_declaration_identifier(node, source)
+        .or_else(|| default_export_identifier(node, source));
+    let is_runtime_default_export = statement
         .as_deref()
-        .is_some_and(is_runtime_default_export_statement)
-        && first_named_declaration_identifier(node, source).is_none()
-    {
+        .is_some_and(is_runtime_default_export_statement);
+
+    if is_runtime_default_export {
         facts.push(Fact {
             kind: FactKind::ExportedSymbol,
             file_path: file_path.to_string(),
             name: "default".to_string(),
-            // The local binding when there is one (`export default prisma`), so consumers can
-            // follow the default back to what it names. Absent for an anonymous expression, where
-            // there is nothing to follow - `default` is the whole of what the module exports.
-            value: default_export_identifier(node, source),
+            // The local binding when there is one (`export default prisma`, `export default
+            // function handler()`), so consumers can follow the default back to what it names.
+            // Absent for an anonymous expression, where there is nothing to follow - `default` is
+            // the whole of what the module exports.
+            value: default_export_local_name,
             imported_name: None,
             runtime_use: None,
             start_line: node.start_position().row + 1,
@@ -851,22 +867,24 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
         let end_line = node.end_position().row + 1;
         let start_column = node.start_position().column + 1;
         let end_column = node.end_position().column + 1;
-        facts.push(Fact {
-            kind: FactKind::ExportedSymbol,
-            file_path: file_path.to_string(),
-            name: name.clone(),
-            value: None,
-            imported_name: None,
-            runtime_use: None,
-            start_line,
-            end_line,
-            start_column,
-            end_column,
-        });
+        // D2: only a NAMED export declares a symbol under its own identifier. The default form's
+        // fact was emitted above, under the name importers actually bind.
+        if !is_runtime_default_export {
+            facts.push(Fact {
+                kind: FactKind::ExportedSymbol,
+                file_path: file_path.to_string(),
+                name: name.clone(),
+                value: None,
+                imported_name: None,
+                runtime_use: None,
+                start_line,
+                end_line,
+                start_column,
+                end_column,
+            });
+        }
 
-        let is_default_export = statement
-            .as_deref()
-            .is_some_and(|value| value.trim_start().starts_with("export default"));
+        let is_default_export = is_runtime_default_export;
 
         // In a Next.js pages/api module the request handler is the *default* export.
         // Named exports are not handlers: `export const config = { api: { bodyParser:
@@ -909,20 +927,9 @@ fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Ve
                 end_column,
             });
         }
-        if is_default_export {
-            facts.push(Fact {
-                kind: FactKind::ExportedSymbol,
-                file_path: file_path.to_string(),
-                name: "default".to_string(),
-                value: Some(name),
-                imported_name: None,
-                runtime_use: None,
-                start_line,
-                end_line,
-                start_column,
-                end_column,
-            });
-        }
+        // D2: the `default` fact for this declaration was emitted above, once, with `name` as its
+        // `value`. It used to be emitted a second time from here, alongside the bare-identifier
+        // fact - the pair the canonical model replaces.
     }
 }
 

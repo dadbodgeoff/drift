@@ -1,0 +1,216 @@
+{
+  "response_schema": "drift.start.result.v1",
+  "repo": {
+    "id": "repo_cd4e0ed7c929aeaa",
+    "root_path": "/tmp/gt-audit/fixtures/sensitive-fields-schema",
+    "fingerprint": "5818f013e835ae3c",
+    "vcs_provider": "git",
+    "remote_url_hash": null,
+    "package_manager": "unknown",
+    "lockfile_hashes": {},
+    "resolver_input_hash": "b1ce61ad120fb26464e4fb946d8bd86b4e8066b127e51fe5769714c7d4d9734e",
+    "created_at": "2026-08-16T02:14:09.025Z",
+    "updated_at": "2026-08-16T02:14:09.025Z"
+  },
+  "scan": {
+    "id": "scan_cddf4976c3a07ac5",
+    "repo_id": "repo_cd4e0ed7c929aeaa",
+    "branch": "main",
+    "commit": "5347e9fbab3af04fff49572aa3b0d672758b38ca",
+    "dirty": false,
+    "scanner_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "97a8a831f98f6d3575943263e482ca30304a635d5be67336c8dce0b5ac468cb7",
+      "engine": "0.1.0"
+    },
+    "rule_engine_version": "0.1.0",
+    "status": "completed",
+    "file_count": 1,
+    "fact_count": 10,
+    "finding_count": 0,
+    "started_at": "2026-08-16T02:14:09.025Z",
+    "completed_at": "2026-08-16T02:14:09.025Z"
+  },
+  "candidates": [
+    {
+      "id": "candidate_1b614b793376372f",
+      "repo_id": "repo_cd4e0ed7c929aeaa",
+      "scan_id": "scan_cddf4976c3a07ac5",
+      "kind": "api_route_forbids_sensitive_response_fields",
+      "statement": "API responses appear to include sensitive fields that need an accepted policy.",
+      "rationale": "Detected candidate sensitive response field facts.",
+      "scope": {
+        "path_globs": [
+          "**/app/api/**/route.ts",
+          "**/app/api/**/route.tsx",
+          "**/pages/api/**/*.ts"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_forbids_sensitive_response_fields",
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "requires": {
+        "sensitive_response_fields": [
+          {
+            "classification": "credential",
+            "field_path": "password",
+            "source": "candidate"
+          }
+        ]
+      },
+      "suggested_severity": "warning",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "confidence_label": "low",
+      "scoring": {
+        "supporting_examples_count": 1,
+        "counterexamples_count": 0,
+        "scope_files_count": 1,
+        "coverage_ratio": 1,
+        "heuristic_id": "security-sensitive-field-v1"
+      },
+      "evidence_refs": [
+        {
+          "id": "evidence_ref_6e488933fb760e0e",
+          "kind": "supporting",
+          "file_path": "pages/api/route-leak.ts",
+          "start_line": 4,
+          "end_line": 4,
+          "symbol": "password",
+          "fact_ids": [
+            "fact:sensitive_field_declared:pages/api/route-leak.ts:password:4-4"
+          ],
+          "scan_id": "scan_cddf4976c3a07ac5",
+          "file_hash": "8b1e66e052b1c96a519f7fae865af1af5c14461e5a5ef98d5273003ce016afa3",
+          "redaction_state": "none"
+        }
+      ],
+      "counterexample_refs": [],
+      "matcher_fingerprint": "6dec0c9b3a101bd18efb08b6bbee966405e017e347f033f1aaa017d3791a82d9",
+      "scope_fingerprint": "0cdd79250cbbddc9664ea726a09348b5dbd87687d2bfa7e0f94161034f2a0d27",
+      "graph_fingerprint": "68bd269b26628a9d1aa3e505715d8a36880f0c302822da54035750783f655d83",
+      "evidence_fingerprint": "6d26ead0cd79cfbb9dacad515168ef1923be2031e3f4682b6dd311b74a437f9e",
+      "required_capabilities": [
+        "syntax_facts",
+        "sensitive_response"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-16T02:14:09.025Z",
+      "provenance": "inferred"
+    }
+  ],
+  "summary": {
+    "files_indexed": 1,
+    "facts_count": 10,
+    "diagnostics_count": 0,
+    "candidates_count": 1,
+    "engine_source": "rust",
+    "files_skipped": 0,
+    "incremental_changes": {
+      "added": 1,
+      "modified": 0,
+      "deleted": 0,
+      "unchanged": 0,
+      "total": 1
+    },
+    "incremental_plan": {
+      "previous_scan_id": null,
+      "execution_mode": "full_scan",
+      "reuse_applied": false,
+      "reusable_file_count": 0,
+      "changed_file_count": 1,
+      "blocked_reasons": [
+        "previous_scan_missing"
+      ]
+    }
+  },
+  "onboarding": {
+    "status": "needs_more_signal",
+    "accepted_default": false,
+    "contract_ready": false,
+    "baselined_count": 0,
+    "candidate_count": 1
+  },
+  "state": {
+    "repo_id": "repo_cd4e0ed7c929aeaa",
+    "repo_root": "/tmp/gt-audit/fixtures/sensitive-fields-schema",
+    "database_path": "/tmp/gt-audit/state/sensitive-fields-schema/repo_cd4e0ed7c929aeaa/drift.sqlite"
+  },
+  "baselined_count": 0,
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 34,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "97a8a831f98f6d3575943263e482ca30304a635d5be67336c8dce0b5ac468cb7",
+      "engine": "0.1.0"
+    }
+  },
+  "engine": {
+    "status": "available",
+    "source": "env_override",
+    "path": "/Users/geoffreyfernald/drift-falsification/drift/target/release/drift-engine",
+    "command": "/Users/geoffreyfernald/drift-falsification/drift/target/release/drift-engine",
+    "args": [],
+    "cwd": null,
+    "package_name": null,
+    "package_version": null,
+    "target_triple": null,
+    "sha256": "0254f9f54fb008b94a1fe75c45069c254a56cb20ebecce7387cdae8848b13289",
+    "expected_sha256": "0254f9f54fb008b94a1fe75c45069c254a56cb20ebecce7387cdae8848b13289",
+    "checksum_matches": true,
+    "override_active": true,
+    "error": null
+  },
+  "v1_scope": {
+    "product_mode": "local_first_cli",
+    "primary_wedge": "typescript_api_route_layering",
+    "mutation_model": "human_confirmed_governance_only",
+    "source_mutation": false,
+    "language_adapters": [
+      "typescript"
+    ],
+    "deferred": [
+      "desktop_ui",
+      "cloud_sync",
+      "python_adapter",
+      "duplicate_helper_detection"
+    ]
+  },
+  "next_commands": [
+    "drift conventions list --repo repo_cd4e0ed7c929aeaa --status candidate",
+    "drift scan",
+    "drift check --diff main...HEAD --repo repo_cd4e0ed7c929aeaa --scope changed-hunks"
+  ],
+  "database_path": "/tmp/gt-audit/state/sensitive-fields-schema/repo_cd4e0ed7c929aeaa/drift.sqlite",
+  "data_layer_discovery": {
+    "inferred_data_access_convention": false,
+    "declared_packages": [],
+    "suggestions": [],
+    "reason": "no_data_dependency_declared"
+  }
+}
