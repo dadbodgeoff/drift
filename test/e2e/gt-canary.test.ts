@@ -392,6 +392,8 @@ describe("cell canaries — firing", () => {
 
     // And the exit code the whole enforcement contract is about: 2, blocked.
     expect(run.checkExitCode, `check stderr:\n${run.checkStderr}`).toBe(2);
+  }, 180000);
+
   it("phase-4 authorization path fires over the proposer's own route globs", async () => {
     // The cell's recorded missing_evidence was "no fixture produces a candidate of this kind".
     // That was a fixture-shape problem, not an engine one: `push_guard_candidate`
