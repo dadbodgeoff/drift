@@ -259,6 +259,12 @@ function onboard(root, cfg) {
  *
  * Taken from a check rather than a stored scan because that is the number a user is exposed to, and
  * because the check's own collection is what the coverage report (EW-3) describes.
+ *
+ * The same payload also carries how many findings that full-scope check reported, and it was thrown
+ * away. That number is the bench's only measure of whether Drift found anything at all on this repo,
+ * and without it every ratchet term below could be satisfied by a build that detected nothing:
+ * parser gaps at zero and refusals at zero both read as improvements. It is recorded here and
+ * floored in beta-bench-ratchet.mjs.
  */
 function parserGapCount(root, session, repoId) {
   const result = drift(
@@ -279,10 +285,11 @@ function parserGapCount(root, session, repoId) {
     const payload = JSON.parse(result.stdout);
     return {
       parser_gap_count: payload.readiness?.parser_gap_count ?? null,
-      import_resolution_rate: payload.summary?.import_coverage?.local_import_resolution_rate ?? null
+      import_resolution_rate: payload.summary?.import_coverage?.local_import_resolution_rate ?? null,
+      findings_count: Array.isArray(payload.findings) ? payload.findings.length : null
     };
   } catch {
-    return { parser_gap_count: null, import_resolution_rate: null };
+    return { parser_gap_count: null, import_resolution_rate: null, findings_count: null };
   }
 }
 
@@ -420,6 +427,8 @@ function evaluateRepo(cfg) {
       error: null,
       parser_gap_count: coverage.parser_gap_count,
       import_resolution_rate: coverage.import_resolution_rate,
+      // The floor term. May rise freely; a fall is the check going quiet.
+      findings_count: coverage.findings_count,
       fact_count_manifest: factCounts.manifest,
       fact_count_stored: factCounts.stored,
       fact_counts_agree: factCounts.agrees,
@@ -454,6 +463,7 @@ for (const cfg of selected) {
   }
   console.log(
     `  ${row.repo.padEnd(11)} refused ${row.refused}/${row.applicable} ordinary edits, ` +
+      `${row.findings_count ?? "?"} full-scope findings, ` +
       `${row.parser_gap_count ?? "?"} parser gaps, ` +
       `resolution ${row.import_resolution_rate === null ? "n/a" : `${(row.import_resolution_rate * 100).toFixed(1)}%`}`
   );

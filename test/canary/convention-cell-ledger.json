@@ -100,16 +100,11 @@
       "kind": "api_route_requires_request_validation",
       "enforcement_path": "presence_findings",
       "dispatch": "check_command.rs:220 (guard arm `_ if is_presence_convention`, intercepts before the request-validation arm)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "Corrected 2026-08-16 on branch glob-revival/safeparse. The old text said no fixture can produce ANY candidate of this kind; that is now false - test/fixtures/gt-request-validation produces the per-symbol candidate, and the sibling request_validation_proof cell is `firing` on it. The presence half remains blocked, and for a reason that no fixture can lift: FAMILY_SPECS (candidate_command.rs:891-908) sources the request-validation family from the `request_validation_called` fact kind ONLY - `symbol_called` is deliberately excluded, because including it produced an 89-member family on dub. But `request_validation_called` facts are produced by extract_security_facts only when accepted validators are already passed in, and the scan path calls the 3-arg `extract_security_facts` (main.rs:663), whose wrapper hard-codes the empty validator slice when it delegates (security_facts.rs:20) - the `&[]` at the call site is `accepted_auth_helpers`, not the validators. So at scan time - the only time the proposer reads facts - zero `request_validation_called` facts exist in any repo, and the family can never form. This is a code gap, not a corpus gap: no fixture can supply a fact kind the scanner never emits. Fixing main.rs:663 to feed the accepted validators into the scan was explicitly out of scope for the glob-revival sprint.",
-      "citation": null,
-      "receipt_evidence": {
-        "reached": null,
-        "source": "test/e2e/ledger-needs-review.test.ts",
-        "note": "The proposer emits the per-symbol candidate for gt-request-validation, not a presence family, so no convention of this (kind x path) pair is ever accepted and `drift check` emits no receipt for it at all."
-      }
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > request-validation presence family fires per handler",
+      "evidence": "gt-presence-request-validation: the proposer emits exactly one presence family of this kind (members validateBody, validateQuery, conditioned on applies_to_route_flavors [api_route]), accepted in block mode at severity error through `conventions accept`, checked with --scope changed-hunks + --diff-file. Result: exactly 3 presence findings - app/api/imports/route.ts POST, app/api/mixed/route.ts PUT, app/api/shipments/route.ts POST - each at its own handler's line (11, 15, 4), enforcement_result block, diff_status new_in_diff, blocking_count 3, exit 2. Zero on the four conforming routes, zero on mixed's validated POST (the per-handler half), and zero on the inverse fixture gt-presence-request-validation-clean, which exits 0. Reaching `firing` required one code fix: the scan path passed no validators, so `request_validation_called` had zero instances in every repo ever scanned and the family could never form. `scan_time_request_validators` (security_facts.rs), fed in at the scan call site (main.rs), derives the registry from the file's own calls using the same shape table as the proposer's is_validation_candidate_symbol. Acceptance is not weakened: it still binds at check time, where build_request_validation_proof_with_scope re-extracts from source with the convention's real validators and never reads a scanned fact. Mutation-proved: restoring the empty slice makes the proposer emit zero presence families and both halves of the canary fail.",
+      "missing_evidence": null,
+      "citation": null
     },
     {
       "id": "api_route_requires_rate_limit::presence_findings",

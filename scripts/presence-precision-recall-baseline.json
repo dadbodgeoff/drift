@@ -189,7 +189,17 @@
       },
       {
         "kind": "data-access",
-        "status": "NO_CONVENTION"
+        "status": "MEASURED",
+        "convention_kind": "api_route_no_direct_data_access",
+        "members": 0,
+        "flavors": [],
+        "compliant_fixtures": 50,
+        "violating_fixtures": 50,
+        "true_positives": 50,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1,
+        "recall": 1
       }
     ]
   },

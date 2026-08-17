@@ -15,7 +15,7 @@ use candidate_command::infer_candidates;
 use check_command::check_repo;
 use drift_engine::{
     Fact, FactExtractError, FactKind, GraphEdgeKind, GraphNodeKind, PrismaFactKind, ScanCapability,
-    dynamic_middleware_matcher_line, extract_prisma_facts, extract_security_facts,
+    dynamic_middleware_matcher_line, extract_prisma_facts, extract_scan_security_facts,
     extract_typescript_facts_with_report, should_index_path, static_middleware_coverage,
 };
 use frameworks::{EndpointShape, collect_framework_scan_data, endpoint_shape};
@@ -660,7 +660,22 @@ fn scan_file_with_reuse(
             import_source: None,
         });
     }
-    facts.extend(extract_security_facts(file_path, &source, &[])?);
+    // Delegated to the library, deliberately, rather than assembled here.
+    //
+    // What stood here was a call passing `&[]` for the accepted validators. Since
+    // `request_validation_called` is emitted only for calls matching an accepted validator, and
+    // since this is the only place the scanner extracts security facts, that empty slice gave the
+    // kind zero instances in every repo ever scanned - which left the proposer's request-validation
+    // family, and the `presence_findings` path behind it, structurally unreachable.
+    //
+    // The fix is not just the argument: it is that the argument now lives somewhere a test can
+    // reach. `main.rs` is the binary, so nothing in `cargo test -p drift-engine` could see this
+    // line, and reintroducing the empty slice here left the entire Rust suite green.
+    // `extract_scan_security_facts` is the library seam that makes the wiring testable, and
+    // `main_rs_delegates_its_security_facts_to_the_library` pins this call site so the seam cannot
+    // be quietly bypassed.
+    let security_facts = extract_scan_security_facts(file_path, &source, &facts)?;
+    facts.extend(security_facts);
     let facts = facts.into_iter().map(engine_fact).collect();
     Ok(Some((file, facts, false)))
 }
