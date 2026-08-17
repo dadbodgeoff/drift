@@ -224,10 +224,10 @@
       "kind": "api_route_requires_authorization",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:352 (three-variant phase-4 arm, shared)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "No fixture produces a candidate of this kind (security-role-guard-present, security-role-missing, security-role-branch-bypass all yield zero). Emission code exists at candidate_command.rs:555,571.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 authorization path fires over the proposer's own route globs",
+      "evidence": "gt-authorization: the proposer emits exactly one candidate of this kind, required_calls [requirePermission], scoped to its own glob set. The three security-role-* fixtures yielded zero because push_guard_candidate needs the same symbol in >= 2 route facts and each is a single route with a single call; this fixture calls one helper from three route files. Accepted in block mode it yields 3 findings - projects/route.ts:7 and reports/route.ts:14 authorization_guard_missing, audits/route.ts:10 authorization_guard_not_dominating_sink - check exits 2, and 0 findings on members/ and invoices/, each of which carries an authorization proof with required=true, proven=true in the same run.",
+      "missing_evidence": null,
       "citation": null
     },
     {
