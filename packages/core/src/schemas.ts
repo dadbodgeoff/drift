@@ -955,17 +955,20 @@ export const ChangeImpactSchema = z.object({
 });
 
 export const TestIntelligenceSchema = z.object({
-  schema_version: z.literal("drift.test_intelligence.v1"),
+  schema_version: z.literal("drift.test_intelligence.v2"),
   test_subject: z.string().min(1),
   test_type: z.enum(["unit", "integration", "e2e", "unknown"]),
   test_framework: z.enum(["vitest", "jest", "playwright", "unknown"]),
   test_file_for: z.array(z.string().min(1)),
   covered_symbols: z.array(z.string().min(1)),
   covered_routes: z.array(z.string().min(1)),
-  mocked_dependencies: z.array(z.string().min(1)),
-  fixture_usage: z.array(z.string().min(1)),
-  snapshot_usage: z.boolean(),
-  missing_test_candidate: z.boolean(),
+  // Nullable: read from the test file's source, and null when there was no source to read. See
+  // the TestIntelligence interface for why that is not the same answer as `[]` or `false`.
+  mocked_dependencies: z.array(z.string().min(1)).nullable(),
+  fixture_usage: z.array(z.string().min(1)).nullable(),
+  snapshot_usage: z.boolean().nullable(),
+  // `missing_test_candidate` is deliberately absent - false by construction for every entry that
+  // can exist. RelevantTestsSelection carries the one that varies.
   stale_test_candidate: z.boolean()
 });
 

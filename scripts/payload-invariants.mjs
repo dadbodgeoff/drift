@@ -97,6 +97,34 @@ const FIXTURES = [
   },
   {
     name: "next-api-direct-db",
+    as: "next-api-direct-db+snapshot-test",
+    // The counterpart to +matching-test, and both are needed. `snapshot_usage`,
+    // `mocked_dependencies` and `fixture_usage` are read from the matched test's own source, and
+    // the only cells that produce a `test_intelligence` entry AT ALL are the ones with a matching
+    // test. With just the plain test above, every entry in the matrix would report `false`/`[]` -
+    // correctly, having actually looked - and the fields would still read as frozen. This is the
+    // cell where the answer is yes, and it is what moves them off the baseline.
+    async seed(repoRoot) {
+      await mkdir(join(repoRoot, "apps/web/app/api/users/__fixtures__"), { recursive: true });
+      await writeFile(
+        join(repoRoot, "apps/web/app/api/users/__fixtures__/users.ts"),
+        "export const userRows = [];\n"
+      );
+      await writeFile(
+        join(repoRoot, "apps/web/app/api/users/route.test.ts"),
+        [
+          'import { expect, it, vi } from "vitest";',
+          'import { GET } from "./route";',
+          'import { userRows } from "./__fixtures__/users";',
+          'vi.mock("@/lib/db");',
+          'it("renders", () => { expect(GET(userRows)).toMatchSnapshot(); });',
+          ""
+        ].join("\n")
+      );
+    }
+  },
+  {
+    name: "next-api-direct-db",
     as: "next-api-direct-db+unrelated-test",
     // Tests exist and none of them is about the change: the `no_tests_matched_change` half.
     async seed(repoRoot) {
@@ -124,6 +152,11 @@ const DISCRIMINATOR_NAMES = new Set(["decision", "reason", "status", "stale", "c
 const DISCRIMINATOR_PARENTS = new Set(["truncated", "redactions", "readiness", "capability_completeness"]);
 
 export function isTrustDiscriminator(path, value) {
+  // An EMPTY list, wherever it sits. Only empty arrays ever reach here as leaves - a populated one
+  // recurses into its elements - so this reads "this list was empty in the cell that produced it".
+  // `covered_symbols: []` in every cell is the same defect as `snapshot_usage: false` in every
+  // cell, declared shape with nothing computing it, and it is the half this gate could not see.
+  if (Array.isArray(value)) return true;
   if (typeof value === "boolean") return true;
   const segments = path.split(".");
   const name = segments.at(-1) ?? "";
@@ -145,24 +178,57 @@ export function isTrustDiscriminator(path, value) {
  * Collapsed because `conventions.0.enforcement_mode` and `conventions.1.enforcement_mode` are the
  * same field, and keeping them apart would let a field look varying because two array elements
  * differ while the field itself is a literal.
+ *
+ * An EMPTY array is a leaf in its own right, valued `[]`. Without that, an array had no path
+ * unless it had elements, so a field that is `[]` in every cell emitted nothing and this gate
+ * evaluated it zero times - reporting success over the exact shape it exists to catch. Three of
+ * `test_intelligence`'s hardcoded fields are lists, and they sat next to two hardcoded booleans
+ * the gate did catch; only the type told them apart.
  */
 export function leafFields(value, path = "", out = new Map()) {
+  const record = (leaf) => {
+    if (!path) return;
+    const existing = out.get(path);
+    if (existing) existing.push(leaf);
+    else out.set(path, [leaf]);
+  };
   if (value === null || typeof value !== "object") {
-    if (path) {
-      const existing = out.get(path);
-      if (existing) existing.push(value);
-      else out.set(path, [value]);
-    }
+    record(value);
     return out;
   }
   if (Array.isArray(value)) {
-    for (const entry of value) leafFields(entry, `${path}[]`, out);
+    // Populated arrays still RECURSE and emit no leaf of their own, which is what keeps
+    // `conventions[].mode` gathering values across elements.
+    if (value.length === 0) record([]);
+    else for (const entry of value) leafFields(entry, `${path}[]`, out);
     return out;
   }
   for (const [key, entry] of Object.entries(value)) {
     leafFields(entry, path ? `${path}.${key}` : key, out);
   }
   return out;
+}
+
+/**
+ * Every array path that some cell filled, read back off the collapsed leaf keys.
+ *
+ * A list that is empty HERE and populated THERE is working, not frozen, and the two states land
+ * under different keys: the empty cells contribute `[]` at `conventions`, the populated ones
+ * contribute `conventions[].mode`. Without this, every conditionally-populated list in the payload
+ * reads as a hardcoded literal - 208 of them on the first run of this gate, swamping the 12 real
+ * ones. The `[]` segment appearing anywhere in a key IS the proof that something filled that array.
+ *
+ * Prefix-wise, not key-wise: an array of OBJECTS never produces the bare key `conventions[]`, only
+ * `conventions[].<field>`, so an exact-match test misses precisely the populated arrays that matter.
+ */
+export function populatedArrayPaths(keys) {
+  const populated = new Set();
+  for (const key of keys) {
+    for (let index = key.indexOf("[]"); index !== -1; index = key.indexOf("[]", index + 2)) {
+      populated.add(key.slice(0, index));
+    }
+  }
+  return populated;
 }
 
 /**
@@ -248,24 +314,28 @@ export function classifyConstant(path, value) {
         "same state throughout. A failed or dirty scan is a different harness."
     };
   }
-  if (/test_intelligence\[\]\.(snapshot_usage|stale_test_candidate|covered_symbols|mocked_dependencies|fixture_usage)$/.test(path)) {
+  if (/test_intelligence\[\]\.covered_symbols$/.test(path)) {
     return {
       kind: "unimplemented_placeholder",
       reason:
-        "Hardcoded in query/src/test-intelligence.ts and never computed - nothing inspects a test " +
-        "for snapshots or staleness, so these are declared shape rather than measurement. Recorded " +
-        "as a placeholder rather than as an invariant, because `false` here reads to an agent as " +
-        "`checked, and no` when it means `never looked`. This is the EW-3 shape and the honest fix " +
-        "is to compute them or drop them, not to baseline them as properties."
+        "Still hardcoded `[]` in query/src/test-intelligence.ts. Answering it means resolving the " +
+        "call sites inside a test file against the symbol graph - the engine emits symbol " +
+        "identities, but nothing links a test's calls to them - so this is engine work rather than " +
+        "a read of the test's source, which is why it did not land with the three fields beside it. " +
+        "Recorded as a placeholder, not an invariant: `[]` here reads to an agent as `this test " +
+        "covers nothing` when it means `never looked`."
     };
   }
-  if (/test_intelligence\[\]\.missing_test_candidate$/.test(path)) {
+  if (/test_intelligence\[\]\.stale_test_candidate$/.test(path)) {
     return {
-      kind: "product_invariant",
+      kind: "unimplemented_placeholder",
       reason:
-        "False by construction: an entry exists in this array only because a test was FOUND for the " +
-        "subject, so a per-entry `missing` flag can never be true. The real signal is the sibling " +
-        "`missing_test_candidate` on the selection itself, which does vary."
+        "Still hardcoded `false`, and deliberately so: it has no DEFINITION yet, and a wrong one is " +
+        "worse than an honest gap. Stale relative to what - the subject's mtime, a content hash " +
+        "across two scans, the last scan of the test itself? Those disagree on real repos, and each " +
+        "would make `stale_test_candidate: true` mean something different to an agent deciding " +
+        "whether to trust a passing test. Recorded as a placeholder rather than an invariant: it " +
+        "needs the definition settled before it needs code."
     };
   }
   if (/required_capabilities\[\]$/.test(path)) {
@@ -310,6 +380,126 @@ export function classifyConstant(path, value) {
         "trust reports `none`/`unknown` throughout. These are exactly the D-A2 fields the CLI used " +
         "to omit, so the hole is worth naming: they are present and correct, and only one of their " +
         "values is exercised."
+    };
+  }
+  // ---- EMPTY LISTS ----
+  //
+  // Everything below is an array that was `[]` in every cell. None of it could be classified
+  // before, because none of it was visible before: an array had no leaf unless it had elements, so
+  // the gate evaluated every always-empty list exactly zero times. The first run that could see
+  // them found 143, of which 12 are the `test_intelligence` placeholders this class was opened for
+  // and the rest are lists the matrix never fills.
+  //
+  // Grouped rather than enumerated. 131 copies of "constant, and not yet explained" is the
+  // several-hundred-entry unreadable baseline the SCOPE note at the top of this file refuses, and
+  // it would bury the 12 that are a defect. Guarded on `Array.isArray` so none of these can shadow
+  // a scalar rule above.
+  if (Array.isArray(value)) {
+    if (
+      /(active_exceptions|active_waivers|import_boundaries|placement_guidance|required_flows|selected_contracts|selected_helpers|safe_commands)$/.test(path) ||
+      /(selected_conventions|conventions|accepted_conventions)\[\]\.(exceptions|counterexample_ref_ids)$/.test(path) ||
+      /agent_contract_packet\.required_checks$/.test(path)
+    ) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "The default materialized contract declares none of these. Every fixture accepts the same " +
+          "generated contract, so its optional lists - waivers, exceptions, import boundaries, " +
+          "placement guidance, safe commands - are empty throughout. Closing it needs a fixture " +
+          "carrying a hand-written contract, not a bigger repo."
+      };
+    }
+    if (/(missing_capabilities|partial_capabilities|unsupported_capabilities|unsupported_pattern_ids|security_capabilities)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "The engine supports every capability these fixtures exercise, so the shortfall lists stay " +
+          "empty. NOT a claim that coverage is total: it is the same absence `semantic_coverage` " +
+          "exists to report, observed on a matrix small enough never to produce one."
+      };
+    }
+    if (/change_impact\.(affected_tests|changed_symbols|changed_tests)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Change impact is computed against `relevant_files`, which this matrix derives from a task " +
+          "string rather than from a diff, so no cell presents a CHANGED symbol or test. Closing it " +
+          "needs a fixture scanned twice with an edit in between."
+      };
+    }
+    if (/(audit_integrity\.reasons|invalidation_reasons)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Reason lists that fill only on failure. The audit chain verifies and the scan is never " +
+          "invalidated in this matrix, so both stay empty - the list form of the same hole recorded " +
+          "for `audit_integrity.valid`. Corrupting a hash-linked log on purpose is the storage " +
+          "suite's job, not this one's."
+      };
+    }
+    if (/changes\.(deleted|modified)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Every cell scans a fresh copy of a fixture, so the first scan reports additions only and " +
+          "the deleted/modified deltas are structurally empty. A second scan over an edited tree " +
+          "would move them; this matrix edits only to make a scan STALE, then never rescans."
+      };
+    }
+    if (/(sample_gaps\[\]\.(affected_capabilities|affected_contract_kinds)|parser_gaps\.records(\[\]\.evidence_refs)?)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "The engine reports THAT a construct defeated the parser, not which capability or contract " +
+          "kind the gap costs, and attaches no evidence refs to a gap record. These are declared " +
+          "attribution the engine does not currently supply - adjacent to the placeholder class " +
+          "below, and recorded as a hole so that stays visible rather than reading as `nothing " +
+          "affected`."
+      };
+    }
+    if (/(diagnostics|risk_reasons|dynamic_params|unresolved_imports|parser_gap_codes)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Per-node trouble lists. These fixtures parse cleanly and resolve their imports, so the " +
+          "route flows and reachable data access carry no diagnostics - even in the parser-gap " +
+          "fixture, where the gap is recorded on the scan rather than on a graph node. An unparseable " +
+          "route is what fills them."
+      };
+    }
+    if (/(findings|waivers|baseline\.by_convention|open_finding_ids|finding_ids)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Nothing in this matrix records a finding. Conventions are accepted, but no cell runs " +
+          "`check`, which is what materializes violations, waivers and the per-convention baseline. " +
+          "Closing it needs the check step in the matrix, not a different fixture."
+      };
+    }
+    if (/(topology\.(configs|external_systems|generated_zones)|topology\.areas\[\]\.external_systems)$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "Repo topology beyond the source tree. These fixtures are hand-built directories with no " +
+          "config files, no generated zones and no external systems to detect, so the lists naming " +
+          "them are empty by fixture size rather than by any property of the detector."
+      };
+    }
+    if (/role_layer_proof$/.test(path)) {
+      return {
+        kind: "matrix_gap",
+        reason:
+          "The role/layer proof is emitted only for files whose role the ontology resolves with " +
+          "enough confidence to defend; no fixture in this matrix produces one. Present and correct, " +
+          "and entirely unexercised here."
+      };
+    }
+    return {
+      kind: "matrix_gap",
+      reason:
+        "An empty list in every cell, and not yet explained. Either the matrix lacks the state that " +
+        "fills it, or nothing computes it and this gate has found the list-typed form of the " +
+        "hardcoded-literal defect."
     };
   }
   if (path.includes("truncated")) {
@@ -637,11 +827,14 @@ function main({ cells, pointerResults }) {
   }
 
   // Check A.
+  const populated = populatedArrayPaths(byPayload.keys());
   const evaluated = [];
   const constants = [];
   for (const [path, values] of byPayload) {
     if (values.length < 2) continue;
     if (!isTrustDiscriminator(path, values[0])) continue;
+    // Empty in every cell, or merely empty in this one? See populatedArrayPaths.
+    if (Array.isArray(values[0]) && populated.has(path)) continue;
     evaluated.push(path);
     const distinct = new Set(values.map((value) => JSON.stringify(value)));
     if (distinct.size === 1) {
