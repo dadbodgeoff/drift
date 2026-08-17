@@ -21,3 +21,6 @@ main-*.js
 # scripts/build-engine-artifacts.mjs writes them; engine-manifest.json records the checksum
 # and is committed so the release job can verify what CI produced.
 packages/engine-*/bin/drift-engine
+
+# Written by the drift-check-self workflow (and by anyone simulating it locally).
+drift-check.json

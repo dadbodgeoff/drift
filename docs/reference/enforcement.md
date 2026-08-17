@@ -42,6 +42,13 @@ is the supported way to tell them apart:
 | `contract_stale_under_strict` | `--strict-contract`, and the contract's forbidden specifiers match nothing in the repo |
 | `typescript_fallback_used` | The Rust engine was unavailable; the degraded scanner cannot make an enforcement claim |
 | `engine_timeout` | The engine exceeded `DRIFT_ENGINE_TIMEOUT_MS` (default 15 minutes) and was killed, so no scan completed |
+| `empty_diff_scope` | A diff-derived scope named no file, so nothing was examined and there is no verdict to report |
+| `stale_diff_scope` | Every file the diff named is absent from the working tree: the diff and the checkout disagree about what exists |
+| `unindexed_contract_target` | An agent contract named a file the scan does not index (today, any non-TypeScript path), so the rule could not be evaluated |
+
+The three above reach `failure.code` by being thrown rather than returned, which is not a distinction
+a consumer can see: `run-cli.ts` puts `failure` beside `error` in the JSON envelope, so one field
+answers "why did this refuse?" on both paths.
 
 The key is **absent on a pass and on a block**: its presence is the signal. `summary.blocked_reasons`
 still carries the per-file detail — the code says what class of thing happened, the reasons name the
