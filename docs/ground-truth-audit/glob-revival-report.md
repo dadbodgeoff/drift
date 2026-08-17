@@ -228,9 +228,12 @@ mutation experiment lives, and exactly why it bit there and nowhere else.
 Fixed by `withDebugEngine()` in `test/e2e/gt-harness.ts`, which pins and restores around any
 post-workflow CLI call; every such call site now goes through it. **With the fix, session-trust fails
 under the mutation as originally reported** — reproduced independently by a third reviewer. All five
-glob-scoped canaries now die in isolation. A standing source-level guard,
-`ledger integrity > every CLI call in this file runs the engine binary under test`, now fails if any
-`runCli([` in the canary file is left unwrapped; without it, deleting the fix leaves the suite green.
+glob-scoped canaries now die in isolation. A standing guard,
+`ledger integrity > every CLI call in this file runs the engine binary under test`, now covers both
+partial reverts: it fails if any `runCli([` in the canary file is left unwrapped, **and** if the
+harness's returned `check` closure — the very call this section root-causes — loses its wrapper.
+Each direction was proved by performing the unwrap and watching the guard fail. Without the guard,
+deleting the fix leaves the suite green.
 
 Two lessons this leaves behind, both cheap and both real:
 
@@ -336,9 +339,11 @@ value), so it needs its own decision.
    functions it serves are re-exported at `lib.rs:95-96` and called only from
    `crates/drift-engine/tests/security_rules.rs`. So it is a test-only parallel implementation of
    logic production reaches by another route — worth deciding about on its own.
-4. **`crates/drift-engine/src/main.rs:663`** passes an empty validator slice to
-   `extract_security_facts`, so **no `request_validation_called` fact exists at scan time in any
-   repo**. `FAMILY_SPECS` sources the request-validation family from that fact kind only, so
+4. **No `request_validation_called` fact exists at scan time in any repo.** Scan calls the 3-arg
+   `extract_security_facts` (`crates/drift-engine/src/main.rs:663`), whose wrapper hard-codes the
+   empty validator slice when it delegates (`security_facts.rs:20`). Note the `&[]` visible at
+   `main.rs:663` is `accepted_auth_helpers`, NOT the validators — the fix is to call
+   `extract_security_facts_with_validation` there, not to change that argument. `FAMILY_SPECS` sources the request-validation family from that fact kind only, so
    `api_route_requires_request_validation::presence_findings` can never be promoted by any fixture:
    a code gap, not a corpus gap. That cell stays `needs-review`, with `missing_evidence` rewritten to
    record this rather than the previous (incorrect) corpus explanation.
