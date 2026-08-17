@@ -181,6 +181,12 @@ export function checkExitCodeFor(input: {
    * mandatory means a new call site has to answer the question rather than omit it.
    */
   contractStaleRefusal: boolean;
+  /**
+   * W8-1: a block-mode contract was asked to enforce through `--scope full`, which cannot block.
+   *
+   * Mandatory for the same reason as `contractStaleRefusal` above.
+   */
+  fullScopeCannotBlockRefusal: boolean;
   // The return type is the narrow union rather than `number` on purpose. `checkStatusFor` switches
   // on this value, and while it was typed `number` its `default:` arm swallowed anything that was
   // not 2 or 3 - so CHECK_EXIT_ERROR would have been reported as `status: "pass"`, an operational
@@ -191,7 +197,7 @@ export function checkExitCodeFor(input: {
   if (input.blockingCount > 0) {
     return CHECK_EXIT_BLOCKED;
   }
-  return input.enforcementDegraded || input.contractStaleRefusal
+  return input.enforcementDegraded || input.contractStaleRefusal || input.fullScopeCannotBlockRefusal
     ? CHECK_EXIT_REFUSED
     : CHECK_EXIT_PASS;
 }
@@ -208,6 +214,7 @@ export function checkStatusFor(input: {
   blockingCount: number;
   enforcementDegraded: boolean;
   contractStaleRefusal: boolean;
+  fullScopeCannotBlockRefusal: boolean;
 }): "pass" | "fail" | "refused" {
   const exitCode = checkExitCodeFor(input);
   switch (exitCode) {
@@ -226,6 +233,140 @@ export function checkStatusFor(input: {
       throw new Error(`Unmapped check exit code: ${String(unreachable)}`);
     }
   }
+}
+
+/**
+ * W8-2: the machine-readable cause of a refusal, in the field CI already reads.
+ *
+ * Exit 3 says "Drift declined to answer". It does not say why, and the reason decides what the
+ * operator does next: a stale contract is a configuration problem in the pipeline, a coverage gap
+ * is a repo shape Drift half-understands, an unavailable engine is an install problem. Drift's own
+ * reference workflow (.github/workflows/drift-check-self.yml) already branches on
+ * `.failure.code` - and for the two refusals `check` returns rather than throws, that key was
+ * absent, so the workflow printed "refusal, not a pass: unknown" and the operator learned nothing.
+ *
+ * Named `failure` and shaped like the top-level handler's own failure envelope
+ * (packages/cli/src/app/failure-classification.ts) on purpose: a consumer reads one path whether
+ * the refusal was thrown or returned. `type: "refusal"` is stated rather than implied, because
+ * exit 3 is the only other thing carrying it and a payload read out of context has no exit code.
+ */
+export interface CheckFailure {
+  code: string;
+  type: "refusal";
+  message: string;
+  /** What the operator should do about it, in one sentence. */
+  remediation: string;
+  /** Commands that address it, in the order worth trying. */
+  recovery_commands: string[];
+}
+
+/**
+ * W8-1: `--scope full` structurally cannot block, so a block-mode contract must not be checked
+ * through it.
+ *
+ * `diffStatusFor` answers `touched_existing` for every finding when the scope is `full`
+ * (diff.ts), and `fullRepoDiff` marks every file `isAdded: false`, so the added-file rule that
+ * would otherwise say `new_in_diff` never fires either. Only `new_in_diff` findings reach
+ * `blocking_count`. Exit 2 is therefore unreachable under `--scope full` - not rare, unreachable -
+ * while every doc lists the flag as an ordinary option and `drift check --scope full` on a repo
+ * with a block-mode convention and a real violation exits 0.
+ *
+ * A gate that is green by construction is worse than no gate, so this refuses instead. Refusing
+ * rather than teaching `full` to block is deliberate: whole-repo blocking is a design question
+ * (what is "new" when there is no diff?) and the wrong answer would block a repo's entire
+ * pre-existing debt on the first run. Failing closed states the limitation without inventing a
+ * verdict.
+ *
+ * Warn-mode contracts are unaffected: they never claimed to block, `--scope full` reports their
+ * findings honestly, and refusing them would remove the one scope in which a repo-wide inventory
+ * is available.
+ */
+export function blockModeConventionsUnenforceableAtFullScope(input: {
+  scope: string;
+  conventions: Array<{ id: string; enforcement_mode?: string; expires_at?: string | null }>;
+  now: string;
+}): string[] {
+  if (input.scope !== "full") {
+    return [];
+  }
+  return input.conventions
+    .filter(
+      (convention) =>
+        convention.enforcement_mode === "block" &&
+        // An expired convention enforces nothing in any scope, so it is not what is being
+        // silently disabled here and must not trigger the refusal.
+        (!convention.expires_at || convention.expires_at > input.now)
+    )
+    .map((convention) => convention.id)
+    .sort();
+}
+
+/**
+ * The refusal's own code, from the same inputs that decided the exit code.
+ *
+ * Returns `undefined` when the run is not a refusal, so the key's presence in the payload is
+ * itself the signal - the house pattern for `contract_staleness` and `enforcement_demotions`.
+ *
+ * The order matters and is not alphabetical. `full_scope_cannot_block` is a property of the
+ * invocation and holds no matter what the run found, so it is named first; the other two describe
+ * what happened during a run that was at least capable of blocking.
+ */
+export function checkRefusalFailureFor(input: {
+  blockingCount: number;
+  fullScopeCannotBlockRefusal: boolean;
+  blockModeConventionIds: string[];
+  enforcementDegraded: boolean;
+  coverageGapReasons: string[];
+  contractStaleRefusal: boolean;
+  repoId: string;
+}): CheckFailure | undefined {
+  // A real block outranks a refusal (checkExitCodeFor), so a blocking run has no refusal to
+  // explain. Emitting one here would contradict exit 2.
+  if (input.blockingCount > 0) {
+    return undefined;
+  }
+  if (input.fullScopeCannotBlockRefusal) {
+    return {
+      code: "full_scope_cannot_block",
+      type: "refusal",
+      message:
+        `--scope full cannot block: it attributes every finding to touched_existing, and only new_in_diff findings count toward blocking_count, so exit 2 is unreachable. ` +
+        `${input.blockModeConventionIds.length} block-mode convention(s) would have been enforced and were not: ${input.blockModeConventionIds.join(", ")}.`,
+      remediation:
+        "Run the check with --scope changed-hunks (or --scope changed-files) and a --diff range or --diff-file, which is the scope in which a block-mode convention can actually block.",
+      recovery_commands: [
+        `drift check --diff <range> --scope changed-hunks --repo ${input.repoId} --json`,
+        `drift conventions list --repo ${input.repoId} --json`
+      ]
+    };
+  }
+  if (input.enforcementDegraded) {
+    return {
+      code: "enforcement_degraded_by_incomplete_coverage",
+      type: "refusal",
+      message:
+        "A finding under an enforcing convention came back with enforcement_result \"none\", which means coverage gaps zeroed it. No pass claim is made over a check whose enforcement was silently withdrawn." +
+        (input.coverageGapReasons.length > 0 ? ` Coverage gaps: ${input.coverageGapReasons.join(", ")}.` : ""),
+      remediation:
+        "Resolve the imports named in summary.blocked_reasons - usually a path alias Drift cannot follow or a file written before the module it imports - then rerun the check.",
+      recovery_commands: [
+        `drift doctor --repo ${input.repoId} --json`,
+        `drift scan status --repo ${input.repoId} --json`
+      ]
+    };
+  }
+  if (input.contractStaleRefusal) {
+    return {
+      code: "contract_stale_under_strict",
+      type: "refusal",
+      message:
+        "--strict-contract was passed and this contract's forbidden specifiers no longer match anything in the repo, so the gate enforces nothing.",
+      remediation:
+        "Update or retire the dead conventions named in summary.contract_staleness, or drop --strict-contract to accept a contract whose trigger is unplugged.",
+      recovery_commands: [`drift conventions list --repo ${input.repoId} --json`]
+    };
+  }
+  return undefined;
 }
 
 export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs): Promise<CommandPayload> {
@@ -254,6 +395,15 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   }
 
   const now = stringFlag(parsed, "now") ?? new Date().toISOString();
+  // W8-1: decided here, once, from the invocation and the contract - both of which are known
+  // before anything is scanned. Consumed by the exit code, the status and the failure object from
+  // this one variable, so they cannot disagree.
+  const blockModeConventionIds = blockModeConventionsUnenforceableAtFullScope({
+    scope,
+    conventions: contract.conventions,
+    now
+  });
+  const fullScopeCannotBlockRefusal = blockModeConventionIds.length > 0;
   const { checkId, checkScanId } = checkRunIdsFor(repoId, scope, now);
   const contractFingerprintValue = contractFingerprint(contract);
   const machineContractVersions = currentMachineContractVersions();
@@ -440,6 +590,18 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     const payload = {
       response_schema: "drift.check.result.v1",
       check,
+      // W8-2: this refusal already named its cause in `blocked_reasons`, but not in the field a
+      // consumer reads first. Every path that returns CHECK_EXIT_REFUSED now carries one, so
+      // "refusal with no stated cause" is not a state this command can reach.
+      failure: {
+        code: "typescript_fallback_used",
+        type: "refusal",
+        message:
+          `The Rust engine could not be used and the degraded TypeScript scanner answered instead, so deterministic enforcement was unavailable: ${checkData.fallbackStatus.engine_error_message ?? "no engine error recorded"}`,
+        remediation:
+          "Install or point Drift at a trusted drift-engine binary (DRIFT_ENGINE_BIN), then rerun. The TypeScript scanner cannot make an enforcement claim.",
+        recovery_commands: ["drift doctor --json", `drift scan status --repo ${repoId} --json`]
+      } satisfies CheckFailure,
       readiness,
       machine_contract_versions: machineContractVersions,
       policy,
@@ -901,7 +1063,21 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const checkStatus: CheckRun["status"] = checkStatusFor({
     blockingCount,
     enforcementDegraded,
-    contractStaleRefusal
+    contractStaleRefusal,
+    fullScopeCannotBlockRefusal
+  });
+
+  // W8-2: the refusal's cause, derived from the same terms as the status and the exit code so a
+  // refusal can never arrive without one - which is what made the reference workflow print
+  // "unknown".
+  const refusalFailure = checkRefusalFailureFor({
+    blockingCount,
+    fullScopeCannotBlockRefusal,
+    blockModeConventionIds,
+    enforcementDegraded,
+    coverageGapReasons,
+    contractStaleRefusal,
+    repoId
   });
 
   const fallbackStatus = fallbackStatusForCheck(checkData);
@@ -976,6 +1152,9 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const payload = {
     response_schema: "drift.check.result.v1",
     check,
+    // W8-2: present exactly when this run refused, so its presence is the signal and a consumer
+    // that finds it never has to guess the cause from prose.
+    ...(refusalFailure ? { failure: refusalFailure } : {}),
     readiness,
     machine_contract_versions: machineContractVersions,
     policy,
@@ -991,9 +1170,20 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
       // rather than paraphrasing - a refusal a user cannot act on is barely better than a false pass.
       // Why enforcement was withheld. Populated only when it actually was - a finding that
       // blocked was not blocked "despite" these, it simply did not depend on them.
-      blocked_reasons: enforcementDegraded
-        ? ["enforcement_degraded_by_incomplete_coverage", ...coverageGapReasons]
-        : [],
+      // W8-1 adds its own reason here rather than reusing the degradation vocabulary: nothing was
+      // degraded, the scope simply cannot express a block. Each block-mode convention that went
+      // unenforced is named, because "which rule did not run" is the actionable half.
+      blocked_reasons: [
+        ...(fullScopeCannotBlockRefusal
+          ? [
+              "full_scope_cannot_block",
+              ...blockModeConventionIds.map((id) => `block_mode_convention_unenforced:${id}`)
+            ]
+          : []),
+        ...(enforcementDegraded
+          ? ["enforcement_degraded_by_incomplete_coverage", ...coverageGapReasons]
+          : [])
+      ],
       // EW-2: what Drift could not see, whether or not that cost anyone an enforcement. This is
       // the explicit signal chosen over a distinct exit code, because the blocking exit code
       // (2) has to keep winning and cannot carry a second meaning. Documented in
@@ -1059,7 +1249,12 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     // refusal must never mask a violation Drift did manage to prove - which `checkExitCodeFor`
     // already guarantees by answering blockingCount first, so the explicit `blockingCount === 0`
     // this expression used to carry is redundant rather than lost.
-    exitCode: checkExitCodeFor({ blockingCount, enforcementDegraded, contractStaleRefusal }),
+    exitCode: checkExitCodeFor({
+      blockingCount,
+      enforcementDegraded,
+      contractStaleRefusal,
+      fullScopeCannotBlockRefusal
+    }),
     payload: parsed.flags.has("json") ? payload : formatCheckText(payload)
   };
 }
