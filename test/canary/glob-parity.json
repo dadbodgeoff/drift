@@ -1,0 +1,60 @@
+{
+  "note": "Cross-process parity fixture for Drift's two glob engines: `matchesGlob` (packages/core/src/globs.ts) and `path_glob_matches` (crates/drift-engine/src/check_command.rs). They share no code across the CLI/engine process boundary, so this differential is the only thing holding them together. `selected` is the actual output of the Rust matcher over `globs` x `files`, in `files` order; it was generated, never hand-written. Both sides recompute it from scratch: crates/drift-engine/src/check_command.rs::glob_engine_parity_tests and packages/core/test/glob-parity.test.ts. A change to either matcher alone turns its own side red. There is deliberately no regeneration flag - if this goes red, decide which matcher is wrong from the semantics documented above `path_glob_matches`, and fix that matcher.",
+  "globs": [
+    "**/app/api/**/route.ts",
+    "**/app/api/**/route.tsx",
+    "**/pages/api/**/*.ts"
+  ],
+  "files": [
+    "app/api/route.ts",
+    "app/api/route.tsx",
+    "pages/api/handler.ts",
+    "app/api/users/route.ts",
+    "app/api/users/route.tsx",
+    "app/api/users/[id]/route.ts",
+    "src/app/api/users/route.ts",
+    "apps/web/app/api/users/route.ts",
+    "app/api/(admin)/users/route.ts",
+    "pages/api/nested/deep/handler.ts",
+    "apps/web/pages/api/handler.ts",
+    "app/apixyz/route.ts",
+    "app/api/users/handler.ts",
+    "app/api/users/route.js",
+    "app/api/users/route.ts.bak",
+    "notapp/api/route.ts",
+    "pages/apix/handler.ts",
+    "pages/api/handler.tsx",
+    "app/api/users/route.ts/nested.ts",
+    "papp/api/route.ts",
+    "app/api",
+    "pages/api/a.b.ts"
+  ],
+  "selected": [
+    "app/api/route.ts",
+    "app/api/route.tsx",
+    "pages/api/handler.ts",
+    "app/api/users/route.ts",
+    "app/api/users/route.tsx",
+    "app/api/users/[id]/route.ts",
+    "src/app/api/users/route.ts",
+    "apps/web/app/api/users/route.ts",
+    "app/api/(admin)/users/route.ts",
+    "pages/api/nested/deep/handler.ts",
+    "apps/web/pages/api/handler.ts",
+    "pages/api/a.b.ts"
+  ],
+  "pattern_cases_note": "Single-pattern rows for the semantics the proposer's glob set does not exercise, `matches` generated the same way. The `/api/users/*` rows are the one input on which the two engines were ever measured to disagree: `path_glob_matches` carried a widening that also matched the bare directory, and `matchesGlob` did not. The widening was real but belonged to phase5's route-path domain, so it moved to `phase5_scope_pattern_matches` and the general matcher is strict globstar on both sides now.",
+  "pattern_cases": [
+    { "pattern": "/api/users/*", "path": "/api/users", "matches": false },
+    { "pattern": "/api/users/*", "path": "/api/users/detail", "matches": true },
+    { "pattern": "/api/users/*", "path": "/api/users/a/b", "matches": false },
+    { "pattern": "/api/users/**", "path": "/api/users", "matches": true },
+    { "pattern": "/api/users/**", "path": "/api/users/a/b", "matches": true },
+    { "pattern": "app/api/*/route.ts", "path": "app/api/a/b/route.ts", "matches": false },
+    { "pattern": "app/api/**/route.ts", "path": "app/apixyz/route.ts", "matches": false },
+    { "pattern": "app/api/?/route.ts", "path": "app/api/x/route.ts", "matches": true },
+    { "pattern": "app/api/?/route.ts", "path": "app/api/xy/route.ts", "matches": false },
+    { "pattern": "**/*.pem", "path": "server.pem", "matches": true },
+    { "pattern": "a**b", "path": "a/x/y/b", "matches": true }
+  ]
+}

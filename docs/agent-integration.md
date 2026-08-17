@@ -47,17 +47,28 @@ Tracked as T44, blocked on T45.
 
 ## CI
 
+Drift is not published to npm, so CI builds it the way the [quickstart](./quickstart.md#install)
+does — clone, `pnpm build && pnpm build:engine`, and call `packages/cli/dist/main.js`. `npx
+@drift/cli` resolves to nothing.
+
+CI adopts the committed contract; it does **not** onboard itself:
+
 ```yaml
-- run: npx @drift/cli check --diff origin/main...HEAD --scope changed-hunks --json
+- run: drift contract import drift.lock --repo "$DRIFT_REPO_ID" --confirm --json
+- run: drift check --diff origin/main...HEAD --scope changed-hunks --json
 ```
 
 Branch on the exit code: `0` pass, `2` the diff violates the contract, `3` Drift refused to
 answer, `1` Drift broke. Treat `3` as a failure — it means no enforcement claim was made.
 
-**Caveat that matters.** A committed contract cannot currently be imported by CI or by a
-teammate. Repo identity is derived from the **absolute path**, so every checkout is a different
-repo and `contract import` refuses with `repo_id_mismatch`. Until that changes, each environment
-must onboard for itself. Tracked as T19b.
+**Import, do not re-onboard.** Running `drift start` in CI produces a *different* contract from
+the one your team reviewed: convention ids are content hashes over the evidence a scan happened to
+find, so a CI checkout infers its own candidates and its own fingerprints, and enforces something
+nobody approved. The lock file is the single instruction — see
+[Sharing a contract](#sharing-a-contract-driftlock) below for exporting and committing it.
+
+Use `--scope changed-hunks`. `--scope full` classifies every finding as pre-existing, so it never
+exits `2` and a job gated on it gates on nothing.
 
 ## What an agent should be told
 
@@ -78,7 +89,8 @@ drift contract export --repo <repo_id> --output drift.lock --confirm
 git add drift.lock && git commit -m "pin drift conventions"
 ```
 
-A teammate, or CI, then adopts it:
+A teammate, or CI, then adopts it — this is the only supported way for a second environment to get
+your conventions:
 
 ```bash
 drift contract import drift.lock --repo <repo_id> --confirm

@@ -2,7 +2,7 @@
 
 Start here:
 
-- [`quickstart.md`](quickstart.md) — install through to a first blocked change
+- [`quickstart.md`](quickstart.md) — building from source through to a first check, and why it probably only warns
 - [`concepts.md`](concepts.md) — facts → contract → baseline → check
 - [`agent-integration.md`](agent-integration.md) — MCP, hooks, CI
 - [`ci-integration.md`](ci-integration.md) — wiring Drift into your own CI

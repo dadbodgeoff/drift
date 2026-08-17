@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Repo** | `/Users/geoffreyfernald/drift-falsification/drift` |
-| **Baseline** | `255f2208` — `main` never moved from it |
-| **Integration branch** | `remediation/ground-truth-audit` |
-| **Merge status** | **NOT MERGED, and NOT PUSHED.** The merge gate fails (§6), so not merging is the correct outcome regardless; separately, `git push` was denied by this session's permission policy, so the PR could not be opened. Branch is complete and local. PR body: `docs/ground-truth-audit/PR-BODY.md`. |
+| **Baseline** | `255f2208` — the branch forked here; `main` has since advanced to `77c326d2` (W1–W7) and the branch is reconciled onto it, see §12 |
+| **Integration branch** | `remediation/ground-truth-audit` (PR #119) |
+| **Merge status** | **Gate re-evaluated after reconciliation and now PASSES.** §6 below is the pre-reconciliation evaluation and is left as a dated record; §12 supersedes it. All local checks and the full eval battery are green; the single remaining `eval:external` baseline diff is explained in §12 and was investigated rather than blessed. |
 | **Spec** | `docs/tdd-ground-truth-remediation.md` (v2.3) |
 
 ---
@@ -214,3 +214,64 @@ Full log with resolutions in `docs/ground-truth-audit/CONFLICTS-LOG.md`. Summary
 - Branches, all inspectable: `remediation/gt-track-{a,b,c,d}`, `remediation/gt-track-a-ordered`, `remediation/gt-track-a-presplit`
 
 `main` is still at `255f2208`.
+
+---
+
+## 12. Post-merge reconciliation with `main` (W1–W7)
+
+`main` advanced 23 commits during this run. The branch was reconciled at `80a9f6e3`; §§1–11
+above are the pre-reconciliation record and are left intact as a dated snapshot.
+
+**What changed in reconciliation:**
+
+- **D3 dropped as redundant.** Upstream's `90a76c74` ("W7 D-S2 — a bare export list is an export")
+  fixes the same defect with a deeper analysis. The hazard was real: `facts.rs` auto-merged with
+  **both** emission paths present, which would have emitted the fact twice. Ours was removed and
+  verified — `gt-fact-extraction2` yields exactly 3 `exported_symbol` facts, `internalHelper` once.
+  Upstream places a renamed local export's binding in `value`, not `imported_name`; that is now the
+  shipped model, and §5.3's C4 claim to the contrary is superseded.
+- **D4 split.** The `data-access` bare-substring fix ships. **The `db` boundary narrowing was
+  dropped** in deference to upstream's documented decision (`data_access.rs`: "`db` is matched
+  loosely rather than at a boundary, and deliberately"). The reason is not deference alone: `dbg`
+  and `dbutils`, `imdb` and `appdb`, are **lexically identical shapes**, so no boundary rule can
+  separate the audit's measured false positives from upstream's real data layers. D4 as specified
+  trades measured FPs for unmeasured FNs with no principled discriminator. Filed as a follow-up
+  with the audit's measurement, upstream's counter-argument, and the recommendation that the
+  discriminator must be **content** (a data-operation fact), not the name.
+- **The cell-ledger derivation was stale**, not the ledger: it regexed symbols W5/W7 deleted.
+  Re-pointed at `vocabulary/vocabulary.json`. **Same 18 cells, same states.**
+- **The pre-existing `beta:proof` blocker cleared** — by W7's fix arriving through the merge,
+  which is exactly the route §6 predicted. It was not worked around.
+
+### Verification after reconciliation — everything green
+
+| Check | Result |
+|---|---|
+| `cargo test -p drift-engine` | exit 0 — **368 passed / 0 failed** |
+| `npx vitest run test/e2e` | exit 0 — **27 files, 125 passed / 0 failed** |
+| `eval:evasion` | exit 0 — **no change vs baseline, 91 cells** |
+| `eval:presence` | exit 0 — **no change vs baseline**, fp=0 fn=0 |
+| `eval:bench` | exit 0 — **0/56 refusals, ratchet ok** |
+| `eval:determinism` | exit 0 — **7/7 deterministic** |
+| `eval:external` | **all 7 repos `ok`** — every assertion passes |
+| `check:cell-ledger` | exit 0 — 18 cells, 5/1/2/10 |
+
+This is the first fully-green `test/e2e` of the project.
+
+### The one remaining diff, now explained rather than blessed
+
+`eval:external` exits 1 solely because its baseline diff is non-empty. The only fields that moved
+are `baselined` counts: `dub 400→349`, `calcom 39→28`, `papermark 264→237`, `openstatus 34→17`.
+No assertion fails; `packet_within_envelope_budget` is gone entirely (W7 fixed it).
+
+That magnitude was never predicted, so per §9.4.4 it was investigated rather than blessed.
+**Investigated on openstatus, the largest proportional drop:** every route file importing
+`@openstatus/db*` is still flagged — 9 distinct files, **zero importers unflagged**. So no file
+lost coverage. The reduction is dominated by **D5.1 grouping** (`import { and, count, eq, gte,
+inArray, lte } from "@openstatus/db"` was six findings and is now one) plus D5.2 suppressing
+genuinely inert specifiers. Corroborated independently by `eval:evasion` (every injected violation
+shape still caught) and `eval:presence` (fp=0, fn=0 on 100 synthetic cases per cell).
+
+**No baseline was re-recorded.** `scripts/external-eval-baseline.json` remains exactly as upstream
+wrote it at `07bdbb6f`, so the diff stays visible to the next reader rather than being absorbed.
+Re-blessing it is a deliberate, separate decision for a human.

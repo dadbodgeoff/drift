@@ -4,16 +4,18 @@ import type { SqliteDriftStorage } from "@drift/storage";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { doctorCommand } from "../args/doctor-commands.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
+import { parseArgs } from "../args/parse-args.js";
 import { requiredDatabasePath,resolveRepoRoot } from "../args/repo-flags.js";
 import { runCheck } from "../check/run-check.js";
 import { createBaselineForFindings } from "../domain/baselines.js";
 import { betaStartResponse } from "../domain/beta-surfaces.js";
 import { materializeRepoContract } from "../domain/contract-materialization.js";
-import { acceptanceDisclosure,acceptanceDisclosureLines } from "../domain/acceptance-disclosure.js";
+import { acceptanceDisclosure,acceptanceDisclosureLines,type AcceptanceDisclosure } from "../domain/acceptance-disclosure.js";
 import { acceptDefaultCandidate,declaredDataModulesCandidate } from "../domain/convention-candidates.js";
 import { engineProvenance } from "../domain/engine-provenance.js";
 import { discoverDataLayer,packageManifestPathsFromFiles } from "../domain/data-layer-discovery.js";
 import { contractIdForRepo } from "../domain/identifiers.js";
+import { isApiRoutePath } from "../domain/repo-paths.js";
 import { checkDiskSpace,checkHeadroom,insufficientDiskMessage,insufficientHeapMessage } from "../domain/disk-space.js";
 import { walkIndexableFiles } from "../engine/ts-fallback-scanner.js";
 import { workingTreeChangedFiles } from "../io/git.js";
@@ -191,17 +193,27 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
   const inferredDataAccess = result.candidates.some(
     (candidate) => candidate.kind === "api_route_no_direct_data_access"
   );
+  // Read once and shared: the discovery pass and the route-boundary message both need the scanned
+  // file list, and on a large repo this is the expensive half of building either message.
+  let cachedScannedPaths: string[] | undefined;
+  const scannedFilePaths = (): string[] =>
+    (cachedScannedPaths ??= storage
+      .listFileSnapshots(result.repo.id, result.scan.id)
+      .map((snapshot) => snapshot.file_path));
   const dataLayerDiscovery = inferredDataAccess
     ? undefined
     : discoverDataLayer(
         result.repo.root_path,
-        packageManifestPathsFromFiles(
-          storage.listFileSnapshots(result.repo.id, result.scan.id).map((snapshot) => snapshot.file_path)
-        ),
+        packageManifestPathsFromFiles(scannedFilePaths()),
         storage
           .listFacts(result.scan.id, { kind: "import_used" })
           .map((fact) => ({ file_path: fact.file_path, value: fact.value, name: fact.name }))
       );
+
+  // How many indexed files Drift recognises as API routes, by the same predicate the check path
+  // uses to decide scope. Zero is the whole explanation on a non-Next repo, and it is the one
+  // thing the output never said.
+  const apiRouteFileCount = (): number => scannedFilePaths().filter(isApiRoutePath).length;
 
   // T-07: ready means ENFORCEABLE, not "a row exists".
   //
@@ -268,7 +280,7 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
         nonBlockableConventionIds: acceptedPresenceFamilies.map((entry) => entry.id)
       })
     : undefined;
-  const nextCommands = contractReady
+  const nextCommands = (contractReady
     ? [
         doctorCommand(result.repo.root_path, parsed),
         `drift scan status --repo ${result.repo.id}`,
@@ -284,7 +296,8 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           ? `drift conventions accept ${candidate.id} --severity error --mode block --confirm`
           : "drift scan",
         `drift check --diff main...HEAD --repo ${result.repo.id} --scope changed-hunks`
-      ];
+      ]
+  ).map((command) => selfContainedCommand(command, result.database_path));
   const onboardingPayload = {
     response_schema: BETA_START_RESPONSE_SCHEMA,
     ...result,
@@ -357,7 +370,7 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
       // BB-3: replaces "Accepted default convention." - a line that was identical for dub (warn,
       // enforces nothing new by itself) and cal.com (block, exits 2).
       ...acceptanceDisclosureLines(acceptance),
-      "Ready for AI-assisted work."
+      readinessLine(acceptance)
     ] : []),
     "",
     candidate
@@ -367,7 +380,7 @@ export async function startRepo(storage: SqliteDriftStorage, parsed: ParsedArgs)
           `  ${candidate.statement}`,
           `  Evidence: ${candidate.scoring.supporting_examples_count} matching import${candidate.scoring.supporting_examples_count === 1 ? "" : "s"}.`
         ].join("\n")
-      : noCandidateText(dataLayerDiscovery),
+      : noCandidateText(dataLayerDiscovery, { apiRouteFileCount: apiRouteFileCount() }),
     // Surface the data-layer gap even when some *other* convention was inferred. Gating
     // this on "no candidates at all" hid it on every real repo that infers an auth-helper
     // or validation candidate, which is most of them - the F4 gap stayed silent exactly
@@ -392,6 +405,63 @@ function betaStartEngineSource(engineSource: "rust" | "typescript"): "rust" | "t
 }
 
 /**
+ * The closing line of an acceptance, which must not contradict the disclosure above it.
+ *
+ * "Ready for AI-assisted work." printed unconditionally, including directly beneath BB-3's own
+ * warn-mode sentence - `new violations will be reported but will NOT block`. Measured on the
+ * warn-shaped fixture, onboarding said both things four lines apart. BB-3 exists because ten agent
+ * trials (Q9/Q19) showed agents read warn mode as "not a real rule" and defect from it; a closing
+ * line that announces readiness is the same overstatement BB-3 removed, put back after it.
+ *
+ * `blocks_new_violations` across every accepted convention, not just the primary: from CV-5 on a
+ * repo can onboard with several, and one blocking convention is enough for the check to gate.
+ */
+function readinessLine(acceptance: AcceptanceDisclosure): string {
+  const gates =
+    acceptance.blocks_new_violations ||
+    acceptance.also_accepted.some((also) => also.blocks_new_violations);
+  return gates
+    ? "Ready for AI-assisted work."
+    : "Nothing accepted here blocks yet, so `drift check` will report a new violation and still " +
+      "exit 0. Drift can give an agent this repo's conventions; it will not stop one from " +
+      "breaking them until a convention is in block mode.";
+}
+
+/** Exported for tests - see packages/cli/test/start-readiness-line.test.ts. */
+export const readinessLineForTest = readinessLine;
+
+/**
+ * A printed command, made runnable exactly as printed.
+ *
+ * `resolveDatabasePath` derives the default state path only for the commands that create it
+ * (`init`, `scan`, `start`), for the two readers the quickstart runs (`check`, `prepare`), and for
+ * anything carrying `--repo-root`/`--state-root`. Onboarding printed seven commands and three of
+ * them - `contract show`, `baseline status`, `backup create` - sat outside every one of those
+ * cases, so pasting them back answered `Missing --db <path> or DRIFT_DB. Run drift --help.` and
+ * exited 1, while the database was sitting exactly where `start` had just said it was. The
+ * candidate-review list is worse: 2 of its 3 commands are `conventions ...`, which is the entire
+ * point of that branch.
+ *
+ * Fixed here rather than by widening the derivation, deliberately. The comment on
+ * `resolveDatabasePath` records what widening it costs: a command like `contract show --repo <id>`
+ * would resolve to whatever state happens to exist for the current directory, turning a
+ * well-formed `missing_database` failure - which carries a user action and recovery commands -
+ * into a generic `cli_error` about an unknown repo. Naming the path in the printed command buys
+ * the same result with none of that, and it makes the commands work from any directory rather
+ * than only from the repo root.
+ *
+ * `--repo-root` commands are left alone: they already locate their own state from the repo root,
+ * so they are directory-independent, and `--db` beside `--repo-root` would say the same thing
+ * twice.
+ */
+function selfContainedCommand(command: string, databasePath: string): string {
+  const parsed = parseArgs(command.split(" ").slice(1));
+  return parsed.flags.has("db") || parsed.flags.has("repo-root")
+    ? command
+    : `${command} --db ${databasePath}`;
+}
+
+/**
  * What to say when inference produced no enforceable data-access convention.
  *
  * "No enforceable convention candidates found yet." was indistinguishable from "this
@@ -399,10 +469,37 @@ function betaStartEngineSource(engineSource: "rust" | "typescript"): "rust" | "t
  * with a route calling the database directly got the same message as a perfectly layered
  * one. If a data layer was found structurally, name it and give the command to declare it.
  */
-function noCandidateText(discovery?: {
-  declaredPackages: string[];
-  suggestions: Array<{ filePath: string; packageName: string; importedAs: string[]; routeImporterCount: number }>;
-}): string {
+function noCandidateText(
+  discovery?: {
+    declaredPackages: string[];
+    suggestions: Array<{ filePath: string; packageName: string; importedAs: string[]; routeImporterCount: number }>;
+  },
+  routeScope?: { apiRouteFileCount: number }
+): string {
+  // Checked first, and ahead of the data-layer branch on purpose.
+  //
+  // Every message below this point tells the user to try something: declare your data modules,
+  // rescan, review candidates. On a repo with no recognised routes none of them can work, because
+  // the convention families onboarding proposes are all scoped to API routes and the scope is
+  // empty. An Express repo with Prisma hits the discovery branch and is handed
+  // `--data-modules "db"`, which reruns the scan and produces zero candidates again - advice that
+  // costs the user a scan to learn nothing. The JSON says `needs_more_signal`, which reads as
+  // "scan harder", and scanning harder is exactly what does not help.
+  //
+  // Route detection is `isNextApiRoutePath`, shared with the engine (crates/drift-engine/src/
+  // next_routes.rs) and with `conventionScopeFiles`, so this boundary is the real one rather than
+  // a restatement of it.
+  if (routeScope?.apiRouteFileCount === 0) {
+    return [
+      "No API routes were found, so there was nothing to propose a route convention about.",
+      "",
+      "Route-convention proposals currently recognise Next.js API routes only: app-router",
+      "`**/app/**/route.{ts,tsx,js,jsx}` and pages-router `**/pages/api/**`. Routes declared by",
+      "Express, Fastify, NestJS or SvelteKit are indexed and their facts stored, but they are not",
+      "recognised as routes - so this repo will keep producing zero candidates however often it is",
+      "rescanned. That is a scope limit, not a property of your repo."
+    ].join("\n");
+  }
   if (!discovery) {
     return "No enforceable convention candidates found yet.";
   }

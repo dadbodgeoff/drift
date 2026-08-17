@@ -1193,9 +1193,25 @@ fn build_tenant_proof_from_facts(
             reason: "tenant_predicate_missing".to_string(),
         });
     }
+    // A tenant predicate only has a *source* to distrust when the route itself supplies the tenant
+    // value - `where: { tenantId: <expr> }`, recorded as `predicate_kind: "equality"`. A
+    // `scoped_helper` predicate is the accepted helper applying the scope, and the helper's own
+    // tenant value never appears in the route, so there is nothing here to trace back to a session.
+    //
+    // Treating the two alike made every proposer-produced convention of this kind unfalsifiable.
+    // `push_guard_candidate` (candidate_command.rs:539) emits `requires: { tenant_helpers: [...] }`
+    // and nothing else - no `auth_helpers` - so `accepted_auth_helpers` is empty, so no
+    // `SessionRead` is ever stamped `source: "auth_result"`, so `trusted_sessions` is empty for
+    // every route in the repo. With `!predicates.is_empty()` on both sides of the conjunction, a
+    // route that called the accepted helper produced a predicate and was then failed for
+    // `tenant_source_untrusted` naming a source it does not have. The kind could report a
+    // violation but never a pass, which is not enforcement - it is a constant.
+    let route_supplied_predicates = predicates
+        .iter()
+        .any(|predicate| predicate.predicate_kind != "scoped_helper");
     let has_untrusted_session_use = (!session_trust.missing_trust.is_empty()
-        || (session_trust.trusted_sessions.is_empty() && !predicates.is_empty()))
-        && (!predicates.is_empty()
+        || (session_trust.trusted_sessions.is_empty() && route_supplied_predicates))
+        && (route_supplied_predicates
             || tenant_sources
                 .iter()
                 .any(|source| !source.trusted && source.source != "path_param"));
