@@ -852,7 +852,6 @@ describe("cell canaries — firing", () => {
     // ...at the sink line, not at a default. `sink_id` is `sink:{file}:{line}:{symbol}` while every
     // other id is `...:{line}`, so the shared parser read "create" as the line, failed, and every
     // request-validation finding ever emitted reported line 1.
-
     const findings = (run.checkPayload.findings ?? []).filter(
       (finding: any) => finding.title === "API route uses unvalidated request input"
     );
@@ -1197,15 +1196,28 @@ describe("ledger integrity", () => {
     // `cargo run`). That is a false green no assertion can see, so it is pinned at the source level
     // instead: `assertEngineIdentity` only ever runs on `start --json` inside the two workflows and
     // never reaches a call a test makes afterwards.
-    const source = readFileSync(resolve("test/e2e/gt-canary.test.ts"), "utf8").split("\n");
+    const unpinned: string[] = [];
     // Built at runtime so this detector does not match its own source line.
     const callForm = `runCli` + `([`;
-    const unpinned: string[] = [];
+    const source = readFileSync(resolve("test/e2e/gt-canary.test.ts"), "utf8").split("\n");
     source.forEach((line, index) => {
       if (!line.includes(callForm)) return;
       const window = source.slice(Math.max(0, index - 2), index + 1).join("\n");
-      if (!window.includes("withDebugEngine(")) unpinned.push(`${index + 1}: ${line.trim()}`);
+      if (!window.includes("withDebugEngine(")) unpinned.push(`gt-canary.test.ts:${index + 1}: ${line.trim()}`);
     });
+
+    // The other post-workflow call is the `check` closure `runGtContractImportWorkflow` RETURNS.
+    // It is defined inside the workflow but invoked by the test afterwards, so its position in the
+    // harness source says nothing about whether the env var is still pinned when it runs — a
+    // positional scan cannot see it. It is pinned by name instead: this is the exact call whose
+    // unpinning produced the original false green (§4.1 of the report), so a partial revert of the
+    // fix that touched only the harness would otherwise slip through.
+    expect(
+      readFileSync(resolve("test/e2e/gt-harness.ts"), "utf8"),
+      "the contract-import workflow's returned `check` closure must run the engine under test; " +
+        "it is called after the workflow restored DRIFT_ENGINE_BIN, so it has to re-pin"
+    ).toContain("await withDebugEngine(() => runCli(args))");
+
     expect(
       unpinned,
       `Every runCli call in this file must be wrapped in withDebugEngine(), or it runs an engine ` +

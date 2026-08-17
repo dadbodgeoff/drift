@@ -115,7 +115,7 @@ Every revert below was actually performed, the named test observed failing, and 
 | 3 | `check_command.rs` — the bare-directory widening moved out of `path_glob_matches` into a phase5-only `phase5_scope_pattern_matches`, making the Rust matcher byte-equivalent to `matchesGlob` | `a_trailing_star_still_matches_the_directory_itself` + `rust_matcher_reproduces_the_shared_parity_selection` |
 | 4 | `security_patterns.rs` + `security_facts.rs` + `check_command.rs` + `lib.rs` — new `RequestValidatorKind::SchemaMethod`, plus `defaulted_request_validator_kind` retagging any validator that names a `SCHEMA_METHOD_VALIDATOR_SYMBOLS` symbol (currently only `safeParse`) with no explicit `kind` from Helper to SchemaMethod, so a proposer-shaped `safeParse` validator can prove | `gt-canary > request-validation safeParse proof path fires`; `security_check_repo_request_validation.rs > proposer_shaped_safe_parse_validator_proves_a_guarded_schema_call` |
 | 5 | `check_command.rs` — `sink_line_from_sink_id`: sink ids are `sink:{file}:{line}:{symbol}`, so reading the last `:`-segment as the line failed and the call site's `unwrap_or(1)` (`check_command.rs:1124`, itself unchanged) then invented line 1 on **every** request-validation finding | `security_check_repo_request_validation.rs > request_validation_finding_points_at_the_unvalidated_sink_line` |
-| 6 | `test/e2e/gt-harness.ts` — `withDebugEngine()`, pinning `DRIFT_ENGINE_BIN` around every CLI call a test makes *after* a workflow returns. Without it those calls resolved to `target/release/drift-engine`, which nothing in the e2e suite builds (§4.1) | `gt-canary > ledger integrity > every CLI call in this file runs the engine binary under test` — a standing source-level guard that fails on any unwrapped `runCli([`. (The behavioural proof is the mutation itself: reverted, `phase-4 session-trust …` stops failing under it — but that is a one-off falsification, so the standing guard was added too, because deleting the fix otherwise leaves the suite green.) |
+| 6 | `test/e2e/gt-harness.ts` — `withDebugEngine()`, pinning `DRIFT_ENGINE_BIN` around every CLI call a test makes *after* a workflow returns. Without it those calls resolved to `target/release/drift-engine`, which nothing in the e2e suite builds (§4.1) | `gt-canary > ledger integrity > every CLI call in this file runs the engine binary under test` — a standing guard that fails on any unwrapped `runCli([` in the canary file AND on the harness's returned `check` closure losing its wrapper — the two partial reverts that matter, each proved by actually performing it. (The behavioural proof is the mutation itself: reverted, `phase-4 session-trust …` stops failing under it — but that is a one-off falsification, so the standing guard was added too, because deleting the fix otherwise leaves the suite green.) |
 | 7 | `test/e2e/gt-canary.test.ts` — sensitive-fields gained the block-mode half it was missing, and lost a false claim that block mode was impossible for the kind (§3, "one assertion that was wrong") | `gt-canary > phase-5 sensitive-response-fields path fires, on both provenance routes` — its exit-2 block-mode assertions |
 
 ### One assertion that was wrong, and what replaced it
@@ -124,7 +124,7 @@ The first attempt to strengthen the sensitive-fields canary asserted that a cand
 sensitive-fields convention **cannot** be accepted in block mode, citing
 `packages/engine-contract/src/index.ts:412-420`. That was false. The reject keys on
 `source === "candidate"`, and `conventions accept` deliberately restamps `candidate` to
-`accepted_inference` (`packages/cli/src/domain/convention-candidates.ts:214`) exactly because a
+`accepted_inference` (`packages/cli/src/domain/convention-candidates.ts:216`) exactly because a
 reviewed field is no longer an unreviewed guess — so the reject cannot fire on the accept path, and
 for `gt-sensitive-fields-schema` it is doubly inapplicable (`source: "schema"`). Measured: accept
 with `--severity error --mode block` exits 0, and `check --scope changed-hunks --diff-file` exits
@@ -158,8 +158,8 @@ Neither was on the known list, and both made a kind unable to report a *pass*:
 
 ### The three known fallout items
 
-- **D1-style source-provenance filter** — not hit. The phase5 allowlist (`security_patterns.rs:272`)
-  already admits `candidate`.
+- **D1-style source-provenance filter** — not hit. The phase5 allowlist (`SENSITIVE_FIELD_SOURCES`,
+  `security_patterns.rs:302-303`, enforced at `:316`) already admits `candidate`.
 - **Block-mode schema reject** (`packages/engine-contract/src/index.ts:412-420`, *not* `:439-452`; the
   line numbers had drifted) — **not hit, and deliberately not "fixed."** It is scoped to
   `api_route_forbids_sensitive_response_fields` with candidate-sourced fields, and its message
@@ -282,7 +282,7 @@ The suite was gated three times in total (baseline, post-merge, post-fixes); the
 | `cargo clippy -p drift-engine --all-targets -- -D warnings` | 0 (inside `verify:ci`) |
 | `pnpm typecheck` | 0 |
 | `DRIFT_LEDGER_ENFORCE=1 node scripts/convention-cell-ledger.mjs` | 0 — 18 cells: firing 10, quarantined 1, unimplemented 0, needs-review 7 |
-| `vitest run test/e2e/gt-canary.test.ts` ×3 (determinism) | 14 passed / 14, identical each run |
+| `vitest run test/e2e/gt-canary.test.ts` ×3 (determinism) | 15 passed / 15, identical each run |
 
 `verify:ci` covers `check:cell-ledger`, `check:surface-parity`, `check:payload-invariants`,
 `validate:claims`, `beta:proof` and `git diff --check`. **No baseline or eval baseline was blessed;
@@ -357,10 +357,14 @@ value), so it needs its own decision.
    (`security_proof.rs:1186-1194`) pushes `tenant_predicate_missing` whenever data operations exist
    with no predicate, which is true of all three flagged `gt-authorization` routes, so the tenant arm
    above returns `Some` and short-circuits it — and that arm is where the canary's asserted lines
-   (7, 10, 14, the `db.*` lines) actually come from. **The consequence is undiscovered elsewhere:** a
-   route whose data operation IS tenant-scoped but whose authorization guard is missing gets nothing
-   from the tenant arm and `None` from this one, so the finding falls through to `unwrap_or(1)`
-   (`check_command.rs:1653`) and reports at line 1. No fixture has that shape.
+   (7, 10, 14, the `db.*` lines) actually come from. **The consequence is undiscovered elsewhere,** and it is
+   broader than a single fallthrough: for an authorization finding, *no* arm of
+   `phase4_finding_line` that can succeed points at the unguarded sink. On a route whose data
+   operation IS tenant-scoped but whose authorization guard is missing, the tenant arm yields
+   nothing and this one yields `None`; the next arm (`check_command.rs:3598-3605`, reading
+   `session_trust.missing_trust[0].fact_id`, which does end in a line) then reports the
+   **session-read** line, and only a route with no untrusted session read falls all the way through
+   to `unwrap_or(1)` (`check_command.rs:1653`) and reports line 1. No fixture has either shape.
 8. **`security_facts.rs:1648`** `is_session_like_variable` matches any variable containing `user`, so
    `const userAgent = request.headers.get("user-agent")` would read as an untrusted session read.
    Suspected false positive, **not measured**, and deliberately not exercised by any fixture.
@@ -392,7 +396,7 @@ value), so it needs its own decision.
 
 - **`api_route_requires_tenant_scope` and `api_route_requires_authorization` DO have proposers.**
   They are emitted dynamically via `push_guard_candidate(... candidate_kind: ...)` at
-  `candidate_command.rs:507,523,539,555`, so a literal-string grep for the wire name in that file
+  `candidate_command.rs:508,524,540,556`, so a literal-string grep for the wire name in that file
   finds nothing. Their ledger blocker was never the glob — it was that **no fixture in the corpus
   induced a candidate at all**. `push_guard_candidate` needs the *same* symbol in ≥2 route facts, and
   every `security-role-*` / `security-tenant-*` fixture is a single route making a single call.
