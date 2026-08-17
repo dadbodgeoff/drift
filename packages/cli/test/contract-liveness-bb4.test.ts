@@ -231,15 +231,36 @@ describe("BB-4 contract liveness", () => {
     it("does not change the exit code by itself", async () => {
       // A removed data layer is a legitimate refactor. Blocking it would be a false positive on a
       // repo that did nothing wrong.
+      //
+      // W8-1 changed what "by itself" has to be measured against, not the claim. This helper checks
+      // at `--scope full`, which cannot block - it attributes every finding to existing code, so
+      // exit 2 is unreachable - and a block-mode contract checked that way now refuses. So the
+      // verdict here is a refusal, and the assertion that matters is WHICH one: staleness still
+      // contributed nothing, which is what the code below pins. Asserting the exit code alone would
+      // no longer distinguish "staleness did not escalate" from "staleness escalated", because both
+      // are exit 3.
       const { repoId, databasePath, repoRoot } = await fixture({ violatingRoutes: 1, cleanRoutes: 3 });
       await renameDataLayer(repoRoot);
       await runCli(["--db", databasePath, "scan", "--repo-root", repoRoot, "--json"]);
 
       const result = await check(databasePath, repoId);
-      expect(result.exitCode).toBe(0);
-      expect(JSON.parse(result.stdout).check.status).toBe("pass");
+      const payload = JSON.parse(result.stdout);
+      expect(result.exitCode).toBe(3);
+      expect(
+        payload.failure?.code,
+        "a dead contract must not be the reason a check refuses without --strict-contract"
+      ).toBe("full_scope_cannot_block");
+      expect(payload.summary.contract_staleness).toHaveLength(1);
     });
 
+    // COVERAGE GAP, stated rather than left implicit: since W8-1 this fixture's block-mode contract
+    // refuses at `--scope full` with or without `--strict-contract`, so the two tests below no longer
+    // isolate the flag's effect on the exit code - they would pass with the flag removed. They still
+    // cover the staleness detection and the payload/exit-code agreement E-1 was written for, and the
+    // negative control above ("stays silent under --strict-contract too, when the contract is alive")
+    // still separates a live contract from a dead one. Isolating the flag again needs a warn-mode
+    // fixture, or a diff-derived scope, which is a change to this suite's setup rather than to these
+    // two cases.
     it("refuses under --strict-contract", async () => {
       const { repoId, databasePath, repoRoot } = await fixture({ violatingRoutes: 1, cleanRoutes: 3 });
       await renameDataLayer(repoRoot);
