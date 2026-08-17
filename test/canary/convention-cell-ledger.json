@@ -213,10 +213,10 @@
       "kind": "api_route_requires_tenant_scope",
       "enforcement_path": "phase4_proof",
       "dispatch": "check_command.rs:351 (three-variant phase-4 arm, shared)",
-      "state": "needs-review",
-      "canary": null,
-      "evidence": null,
-      "missing_evidence": "No fixture produces a candidate of this kind (security-tenant-bound-to-query, security-tenant-missing, security-tenant-param-unused, security-tenant-parser-gap, security-tenant-untrusted-source all yield zero candidates). Emission code exists at candidate_command.rs:587,603, so `unimplemented` is unavailable.",
+      "state": "firing",
+      "canary": "test/e2e/gt-canary.test.ts > phase-4 tenant-scope path fires, and the helper-scoped siblings pass",
+      "evidence": "gt-tenant-scope: the proposer emits exactly one candidate of this kind (required_calls [requireTenantScope]; scope.path_globs the literal proposer set, **/app/api/**/route.ts included), accepted through `conventions accept --severity error --mode block`. 3 findings — app/api/projects/route.ts:4 with actual_layer tenant_predicate_missing and enforcement_result block, plus the two §4.3 near-miss routes that call throwIfTenantScopeMismatch. 0 findings on the two routes that call the accepted helper, and those two carry phase-4 proofs with tenant.required=true and tenant.proven=true, so they were evaluated and passed rather than skipped. Exit 2 over a diff of all five routes; exit 0 over a diff of the two scoped routes. Required one engine fix: security_proof.rs's untrusted-tenant-source clause counted a scoped_helper predicate as a route-supplied tenant value, which made this kind able to report a violation but never a pass.",
+      "missing_evidence": null,
       "citation": null
     },
     {

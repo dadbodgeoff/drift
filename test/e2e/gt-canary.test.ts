@@ -12,8 +12,10 @@
 // convention kind, so a test that injects its convention cannot be evidence for `firing`.
 
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { runCli } from "../../packages/cli/src/index.js";
 import { cleanupGtTempDirs, flaggedPaths, readFindings, runGtWorkflow } from "./gt-harness.js";
 
 afterEach(cleanupGtTempDirs);
@@ -35,6 +37,28 @@ const AUTH_HELPER = "api_route_requires_auth_helper";
 const CORS = "api_route_cors_must_match_policy";
 const MIDDLEWARE = "middleware_must_cover_routes";
 const SENSITIVE_FIELDS = "api_route_forbids_sensitive_response_fields";
+const TENANT_SCOPE = "api_route_requires_tenant_scope";
+
+/**
+ * `runGtWorkflow`'s own `check` runs `--scope full`, which is the right default for "which routes
+ * does this convention flag" but can never exit 2: `blockingCount` only counts findings whose
+ * `diff_status` is `new_in_diff` (run-check.ts:821), and a full-scope run has no diff. The
+ * blocking exit code is a property of the diff, so asserting it needs one.
+ */
+async function wholeFileDiff(repoRoot: string, paths: readonly string[]): Promise<string> {
+  const parts: string[] = [];
+  for (const path of paths) {
+    const body = (await readFile(join(repoRoot, path), "utf8")).trimEnd().split(/\r?\n/);
+    parts.push(
+      `diff --git a/${path} b/${path}`,
+      "--- /dev/null",
+      `+++ b/${path}`,
+      `@@ -0,0 +1,${body.length} @@`,
+      ...body.map((line) => `+${line}`)
+    );
+  }
+  return `${parts.join("\n")}\n`;
+}
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
 const CELLS_COVERED_HERE: Record<string, string> = {
@@ -51,7 +75,9 @@ const CELLS_COVERED_HERE: Record<string, string> = {
   "middleware_must_cover_routes::no_dispatch_arm":
     "middleware_must_cover_routes is refused at acceptance, by name",
   "api_route_forbids_sensitive_response_fields::phase5_proof":
-    "phase-5 sensitive-response-fields path fires, on both provenance routes"
+    "phase-5 sensitive-response-fields path fires, on both provenance routes",
+  "api_route_requires_tenant_scope::phase4_proof":
+    "phase-4 tenant-scope path fires, and the helper-scoped siblings pass"
 };
 
 describe("cell canaries — firing", () => {
@@ -188,6 +214,125 @@ describe("cell canaries — firing", () => {
     const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), CORS);
     expect(flagged).toEqual(["app/api/public/route.ts"]);
     expect(flagged).not.toContain("app/api/partners/route.ts");
+  }, 180000);
+
+  it("phase-4 tenant-scope path fires, and the helper-scoped siblings pass", async () => {
+    // The cell the ledger recorded as unreachable: "No fixture produces a candidate of this kind".
+    // That was true and it was a fixture problem, not a proposer problem. `push_guard_candidate`
+    // (candidate_command.rs:539/555) needs the SAME symbol called in >= 2 api-route facts and the
+    // symbol has to survive `is_tenant_candidate_symbol`; every `security-tenant-*` fixture is one
+    // route calling `requireUser`, which satisfies neither half.
+    const run = await runGtWorkflow({
+      fixture: "gt-tenant-scope",
+      acceptKinds: [TENANT_SCOPE],
+      severity: "error",
+      mode: "block"
+    });
+
+    // Obtained from the proposer, never injected, and exactly one — the near-miss below did not
+    // also become a helper.
+    const candidates = (run.startPayload.candidates ?? []).filter((c: any) => c.kind === TENANT_SCOPE);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].matcher.required_calls).toEqual(["requireTenantScope"]);
+    expect(run.acceptPayloads, "the convention must come from the proposer").toHaveLength(1);
+
+    // THE GLOB. This is the literal set the proposer emits, `**/` prefix and all, and it is what
+    // phase 4 hands to `path_glob_matches` (check_command.rs:1614). Every assertion below is
+    // downstream of that call returning true for `app/api/<x>/route.ts`; when the glob engine
+    // reduced `**/app/api/**/route.ts` to `starts_with("**/app/api")` it returned false for all
+    // five routes and this cell reported a clean pass over a rule that matched nothing.
+    expect(candidates[0].scope.path_globs).toEqual([
+      "**/app/api/**/route.ts",
+      "**/app/api/**/route.tsx",
+      "**/pages/api/**/*.ts"
+    ]);
+
+    // Violation half. `projects` does an unscoped `findMany`; `audits` and `exports` are the §4.3
+    // near-miss — they call `throwIfTenantScopeMismatch`, whose name hits every substring
+    // `is_tenant_candidate_symbol` tests for and which narrows nothing, so they must still be
+    // flagged. Conformance half: the two routes that call the accepted helper are absent.
+    const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), TENANT_SCOPE);
+    expect(flagged).toEqual([
+      "app/api/audits/route.ts",
+      "app/api/exports/route.ts",
+      "app/api/projects/route.ts"
+    ]);
+
+    // ...and absent because they were PROVEN, not because they were skipped. Both siblings carry a
+    // phase-4 proof with `required: true`, so the arm ran on them and decided; a scope that failed
+    // to match would have produced no proof at all.
+    const tenantProofs = new Map<string, any>(
+      (run.checkPayload.security_boundary_proofs ?? []).map((proof: any) => [
+        proof.route.file_path,
+        proof.tenant
+      ])
+    );
+    for (const safe of ["app/api/invoices/route.ts", "app/api/reports/route.ts"]) {
+      expect(tenantProofs.get(safe), `${safe} was never evaluated`).toMatchObject({
+        required: true,
+        proven: true
+      });
+    }
+    expect(tenantProofs.get("app/api/projects/route.ts")).toMatchObject({
+      required: true,
+      proven: false
+    });
+
+    // The blocking exit code and the finding's file:line, over a diff (see `wholeFileDiff`).
+    const routes = [
+      "app/api/projects/route.ts",
+      "app/api/invoices/route.ts",
+      "app/api/reports/route.ts",
+      "app/api/audits/route.ts",
+      "app/api/exports/route.ts"
+    ];
+    const violatingDiff = join(run.stateRoot, "..", "violating.patch");
+    await writeFile(violatingDiff, await wholeFileDiff(run.repoRoot, routes));
+    const blocked = await runCli([
+      "--db", run.databasePath,
+      "check",
+      "--repo", run.repoId,
+      "--scope", "changed-hunks",
+      "--diff-file", violatingDiff,
+      "--now", "2026-08-16T00:01:00.000Z",
+      "--json"
+    ]);
+    expect(blocked.exitCode, `check stderr:\n${blocked.stderr}`).toBe(2);
+    const blockedPayload = JSON.parse(blocked.stdout);
+    const projects = (blockedPayload.findings ?? []).filter(
+      (finding: any) => finding.evidence_refs?.[0]?.file_path === "app/api/projects/route.ts"
+    );
+    expect(projects).toHaveLength(1);
+    expect(projects[0].title).toBe("API route missing required tenant scope proof");
+    expect(projects[0].actual_layer).toBe("tenant_predicate_missing");
+    expect(projects[0].enforcement_result).toBe("block");
+    // app/api/projects/route.ts:4 — `const projects = await db.project.findMany();`, the one
+    // unscoped sink in the fixture.
+    expect(projects[0].evidence_refs[0].start_line).toBe(4);
+
+    // Inverse half, as its own run: a diff touching ONLY the two helper-scoped routes, same repo,
+    // same accepted convention, same CLI. Zero findings of this kind, exit 0.
+    const safeDiff = join(run.stateRoot, "..", "safe.patch");
+    await writeFile(
+      safeDiff,
+      await wholeFileDiff(run.repoRoot, ["app/api/invoices/route.ts", "app/api/reports/route.ts"])
+    );
+    const clean = await runCli([
+      "--db", run.databasePath,
+      "check",
+      "--repo", run.repoId,
+      "--scope", "changed-hunks",
+      "--diff-file", safeDiff,
+      "--now", "2026-08-16T00:02:00.000Z",
+      "--json"
+    ]);
+    expect(clean.exitCode, `check stderr:\n${clean.stderr}`).toBe(0);
+    const cleanPayload = JSON.parse(clean.stdout);
+    expect(
+      (cleanPayload.findings ?? []).filter(
+        (finding: any) => finding.title === "API route missing required tenant scope proof"
+      )
+    ).toEqual([]);
   }, 180000);
 });
 
