@@ -41,14 +41,41 @@ unreachable. (b) does not follow from (a) and is false: import reaches the arm a
 `it(...)` cases stay in that test deliberately; the no-candidate half is what makes import the *only*
 route, and so what makes the exception legitimate rather than a shortcut.
 
+### The documented review surface hides every one of these kinds
+
+The brief's workflow was `scan → conventions list → conventions accept → check`. The harness reads
+candidates from `start --json`, which emits them **unfiltered**. `drift conventions list` — the
+command a human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,86-89` drops
+every `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed, and
+`EXPERIMENTAL_SECURITY_CONVENTION_KINDS` is the entire security-contract set
+(`packages/core/src/capabilities.ts:187`).
+
+Measured, not inferred: for `gt-sensitive-fields`, `conventions list --json` returns
+`candidates: []`; the same command with `--experimental-security` returns the accepted
+sensitive-fields convention. **So a user following the documented review command sees zero candidates
+for every kind this sprint proves.** The brief anticipated exactly this ("if hidden behind
+`--experimental-security` … use the flag and note it"), and the first pass of this work substituted
+`start --json` without noting it. That is now pinned: `assertListVisibility` asserts both halves —
+hidden by default, reachable with the flag — on all four proposer-path canaries. Inverting it makes
+exactly those four fail, so it is load-bearing rather than decorative.
+
+This is a **product** limitation, not a harness one, and it bounds what "these kinds now fire" means:
+the engine fires, and the default review surface will not show a user the candidate that gets them
+there.
+
 ### Receipts
 
 **N/A — not implemented.** `reached`, `inputs_considered`, `findings_emitted` and `skip_reason` do not
 exist in `packages/cli/src/check/run-check.ts` or `crates/drift-engine/src/check_command.rs` (verified
 by grep). Implementing them was out of scope. The "evaluated, not skipped" half of every canary is
-therefore asserted against the **proof payload** instead: each conformance route carries a
-`security_boundary_proofs` entry with `required: true, proven: true` (or a named `conforming_examples`
-entry), which a scope that failed to match could not have produced.
+therefore asserted against the **proof payload** instead — for all six, one of two shapes: a
+`security_boundary_proofs` entry for the conformance route with `required: true, proven: true`
+(tenant-scope, authorization, session-trust, request-validation), or the engine naming the compliant
+sibling in the finding's `conforming_examples` (secret-exposure, sensitive-fields). Either is
+something a scope that failed to match could not have produced. A completeness audit found the
+sensitive-fields canary originally asserted neither — only that its safe route was *absent* from the
+flagged list, which is satisfied by never evaluating it — and it was strengthened rather than
+excused.
 
 ---
 
@@ -82,10 +109,18 @@ Every revert below was actually performed, the named test observed failing, and 
 | # | Change | Test that fails when reverted |
 |---|---|---|
 | 1 | `security_proof.rs` — the untrusted-tenant-source clause counted a `scoped_helper` predicate as a route-supplied tenant value | `gt-canary > phase-4 tenant-scope path fires, and the helper-scoped siblings pass` |
-| 2 | `check_command.rs` — phase6 migrated from the weak `path_matches_globs` to `path_glob_matches`; the weak matcher had no other caller and is deleted | `security_check_repo_phase6.rs > phase6_narrows_with_the_proposers_globstar_scope` |
+| 2 | `check_command.rs` — phase6 migrated from the weak `path_matches_globs` to `path_glob_matches`; the weak matcher had no other caller and is deleted. **Correct but inert on real conventions** — phase6 reads `matcher.path_globs`, which the proposer never sets (§6.2), so today it narrows nothing; the test sets that field explicitly | `security_check_repo_phase6.rs > phase6_narrows_with_the_proposers_globstar_scope` |
 | 3 | `check_command.rs` — the bare-directory widening moved out of `path_glob_matches` into a phase5-only `phase5_scope_pattern_matches`, making the Rust matcher byte-equivalent to `matchesGlob` | `a_trailing_star_still_matches_the_directory_itself` + `rust_matcher_reproduces_the_shared_parity_selection` |
-| 4 | `security_patterns.rs` + `security_facts.rs` + `check_command.rs` + `lib.rs` — new `RequestValidatorKind::SchemaMethod` so a proposer-shaped `safeParse` validator can prove | `gt-canary > request-validation safeParse proof path fires`; `security_check_repo_request_validation.rs > proposer_shaped_safe_parse_validator_proves_a_guarded_schema_call` |
-| 5 | `check_command.rs` — `sink_line_from_sink_id`: sink ids are `sink:{file}:{line}:{symbol}`, so reading the last `:`-segment as the line failed and `unwrap_or(1)` invented a line on **every** request-validation finding | `security_check_repo_request_validation.rs > request_validation_finding_points_at_the_unvalidated_sink_line` |
+| 4 | `security_patterns.rs` + `security_facts.rs` + `check_command.rs` + `lib.rs` — new `RequestValidatorKind::SchemaMethod`, plus `defaulted_request_validator_kind` retagging any validator that names a `SCHEMA_METHOD_VALIDATOR_SYMBOLS` symbol (currently only `safeParse`) with no explicit `kind` from Helper to SchemaMethod, so a proposer-shaped `safeParse` validator can prove | `gt-canary > request-validation safeParse proof path fires`; `security_check_repo_request_validation.rs > proposer_shaped_safe_parse_validator_proves_a_guarded_schema_call` |
+| 5 | `check_command.rs` — `sink_line_from_sink_id`: sink ids are `sink:{file}:{line}:{symbol}`, so reading the last `:`-segment as the line failed and the call site's `unwrap_or(1)` (`check_command.rs:1124`, itself unchanged) then invented line 1 on **every** request-validation finding | `security_check_repo_request_validation.rs > request_validation_finding_points_at_the_unvalidated_sink_line` |
+
+### One change made and then withdrawn
+
+Change 5 originally also added an input-fact fallback to `request_validation_finding_line`. A
+verification pass found it was **unreachable and uncovered** — deleting it left the whole suite green.
+`sink_line_from_sink_id` returns 0 only for an id with fewer than two `:`-segments or a non-numeric
+line, and `security_control_flow.rs:745-747` emits neither. Shipping a new path no test can hold down
+is the exact shape this sprint exists to remove, so it was withdrawn rather than documented.
 
 ### Two new dead-path mechanisms, beyond the three known fallout items
 
@@ -205,7 +240,7 @@ no `--update` was run in any form.** Working tree clean at the final sha.
 Out of scope for this sprint. Not fixed, listed with `file:line`.
 
 **P0 — `drift check` hard-fails on a common route shape.**
-`crates/drift-engine/src/security_proof.rs:1449` emits `reason: "session_not_trusted"` for a
+`crates/drift-engine/src/security_proof.rs:1465` emits `reason: "session_not_trusted"` for a
 `SessionRead` whose source is `unknown_helper`, but the wire schema does not permit that value in that
 field: `packages/engine-contract/src/index.ts:937` and `packages/core/src/security.ts:323` type
 `session_trust.missing_trust[].reason` as `enum(["derived_from_request", "unknown_helper",
@@ -250,13 +285,22 @@ value), so it needs its own decision.
 7. **Dead branch:** `check_command.rs:3509-3517` parses a line out of `sink_fact_id` in the
    authorization arm, but sink ids put the symbol last, so it always returns `None`. Currently masked
    by the tenant branch above it. Unreachable, so no test could fail on its revert.
-8. **`security_facts.rs:1642`** `is_session_like_variable` matches any variable containing `user`, so
+8. **`security_facts.rs:1648`** `is_session_like_variable` matches any variable containing `user`, so
    `const userAgent = request.headers.get("user-agent")` would read as an untrusted session read.
    Suspected false positive, **not measured**, and deliberately not exercised by any fixture.
 9. **Backslash normalization diverges**: `matchesGlob` normalizes (`globs.ts:106`), `path_glob_matches`
    does not. Both files' stated contract is forward-slash repo-relative paths, so the input is
    undefined on both sides; the engine normalizes upstream in `next_api_route_identity`.
-10. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
+10. **`request_validator_kind_from_str` accepts `"schema_method"`, and no test passes that string.**
+    `crates/drift-engine/src/check_command.rs` — the variant is exercised only via the defaulting
+    path; the explicit wire value is reachable solely from a hand-authored contract and is uncovered.
+11. **Reproducing the revert-proofs needs a relink, or the result is meaningless.**
+    `check_command.rs` is a module of the *binary* (`crates/drift-engine/src/main.rs:10`), and the
+    integration tests spawn `CARGO_BIN_EXE_drift-engine`, whose path is baked in at compile time.
+    Reverting a change and re-running can rebuild the binary without relinking the test target, which
+    then silently exercises the OLD binary and reports a false pass. Force it with
+    `touch crates/drift-engine/tests/*.rs`. Every revert-proof in §3 was confirmed with the relink.
+12. **Pre-existing banned practices in `test/e2e/security-tenant-authorization.test.ts:153,217`** —
     uses `storage.upsertAcceptedConvention` and the de-globbed `app/api/**/route.ts`. Left untouched
     under the no-weakening rule; it is the exact pattern this sprint's canaries exist to replace.
 

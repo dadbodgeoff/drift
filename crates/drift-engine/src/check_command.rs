@@ -2968,13 +2968,12 @@ fn request_validation_finding_line(proof: &SecurityBoundaryProof) -> Option<usiz
         .first()
         .map(|use_proof| sink_line_from_sink_id(&use_proof.sink_fact_id))
         .filter(|line| *line > 0)
-        .or_else(|| {
-            proof
-                .request_validation
-                .unvalidated_uses
-                .first()
-                .map(|use_proof| input_line_from_fact_id(&use_proof.input_fact_id))
-        })
+        // No input-fact fallback here, deliberately. One was added alongside the sink-id parser fix
+        // and is removed again: `sink_line_from_sink_id` yields 0 only for an id with fewer than
+        // two `:`-segments or a non-numeric line, and `security_control_flow.rs:745-747` emits
+        // neither, so the arm was unreachable. Deleting it leaves the whole suite green — the
+        // definition of a path no test can hold down, which is the shape this work exists to
+        // remove rather than add.
         .or_else(|| {
             proof
                 .parser_gaps

@@ -5,11 +5,12 @@
 // backed by a test here, and the last test in this file asserts that correspondence both ways, so a
 // state cannot be edited into the ledger without the artifact its state requires.
 //
-// THE ONE HARD RULE (§4.1). Nothing here calls `storage.upsertAcceptedConvention` and nothing hand-
-// writes a `requires` block. Every convention is obtained from the proposer and accepted through
-// `drift conventions accept`. Three existing tests of D1's kind inject their contract, and that is
-// precisely why a P0 shipped under their coverage: a hand-built contract is not coverage for a
-// convention kind, so a test that injects its convention cannot be evidence for `firing`.
+// THE ONE HARD RULE (§4.1). Nothing here calls `storage.upsertAcceptedConvention`. Every
+// convention on the proposer path is obtained from the proposer and accepted through
+// `drift conventions accept`, and hand-writes no `requires` block. Three existing tests of D1's
+// kind inject their contract, and that is precisely why a P0 shipped under their coverage: a
+// hand-built contract is not coverage for a convention kind, so a test that injects its convention
+// cannot be evidence for `firing`.
 //
 // THE ONE EXCEPTION, and it is narrow. Two kinds have no proposer at all —
 // `candidate_command.rs` contains zero occurrences of `SessionObjectMustComeFromTrustedHelper` or
@@ -20,7 +21,7 @@
 // will import one. That is a different claim from the proposer path and the ledger evidence says so.
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "../../packages/cli/src/index.js";
@@ -138,6 +139,45 @@ function addedFilesPatch(repoRoot: string, paths: readonly string[]): string {
     })
     .join("\n")
     .concat("\n");
+}
+
+/**
+ * The documented review surface, asserted for what it ACTUALLY shows.
+ *
+ * `runGtWorkflow` reads candidates from `start --json`, which emits `result.candidates`
+ * unfiltered (`packages/cli/src/commands/start.ts`). `drift conventions list` — the command a
+ * human actually runs — does not: `packages/cli/src/commands/conventions.ts:76,86-89` drops every
+ * `isExperimentalSecurityKind` candidate unless `--experimental-security` is passed, and
+ * `EXPERIMENTAL_SECURITY_CONVENTION_KINDS` is the whole security-contract set
+ * (`packages/core/src/capabilities.ts:187`).
+ *
+ * So every kind this file proves is INVISIBLE on the default review surface. That is a real
+ * property of the product, not a harness artifact, and pinning it here is the difference between
+ * "the engine can fire" and "a user can get here". If the gate is ever lifted, this fails and the
+ * canary must be re-read rather than adjusted.
+ */
+async function assertListVisibility(
+  databasePath: string,
+  repoId: string,
+  kind: string
+): Promise<void> {
+  const plain = await runCli(["--db", databasePath, "conventions", "list", "--repo", repoId, "--json"]);
+  expect(plain.exitCode, `conventions list stderr:\n${plain.stderr}`).toBe(0);
+  expect(
+    (JSON.parse(plain.stdout).candidates ?? []).map((candidate: any) => candidate.kind),
+    `${kind} must be HIDDEN from the default \`conventions list\` — it is an experimental security ` +
+      `kind. If this now appears, the experimental gate moved and the claim that only ` +
+      `--experimental-security reaches it is stale.`
+  ).not.toContain(kind);
+
+  const gated = await runCli([
+    "--db", databasePath, "conventions", "list", "--repo", repoId, "--experimental-security", "--json"
+  ]);
+  expect(gated.exitCode, `conventions list --experimental-security stderr:\n${gated.stderr}`).toBe(0);
+  expect(
+    (JSON.parse(gated.stdout).candidates ?? []).map((candidate: any) => candidate.kind),
+    `${kind} must be reachable on the documented review surface with --experimental-security`
+  ).toContain(kind);
 }
 
 /** Cell ids this file claims to be the canary for. Kept beside the tests it names. */
@@ -284,10 +324,42 @@ describe("cell canaries — firing", () => {
       // Obtained from the proposer, never injected — the property that makes this evidence.
       expect(run.acceptPayloads, `${fixture}: convention must come from the proposer`).toHaveLength(1);
 
+      // The documented review surface hides this kind unless --experimental-security is passed.
+      await assertListVisibility(run.databasePath, run.repoId, SENSITIVE_FIELDS);
+
       const flagged = flaggedPaths(readFindings(run.databasePath, run.repoId), SENSITIVE_FIELDS);
       expect(flagged, `${fixture}: the leaking route and only the leaking route`).toEqual([
         "pages/api/route-leak.ts"
       ]);
+
+      // The finding in the CLI's own JSON payload, at its line — not just a row in the state DB.
+      const findings = (run.checkPayload.findings ?? []).filter(
+        (finding: any) => finding.title === "API route emits sensitive response field"
+      );
+      expect(findings, `${fixture}: exactly one finding, in the JSON output`).toHaveLength(1);
+      expect(findings[0].evidence_refs[0].file_path).toBe("pages/api/route-leak.ts");
+      // pages/api/route-leak.ts:9 — the response that carries the accepted sensitive field.
+      expect(findings[0].evidence_refs[0].start_line).toBe(9);
+      expect(findings[0].actual_layer).toBe("sensitive_response_field_unfiltered");
+
+      // Evaluated, not skipped. The compliant sibling is NAMED by the engine as a conforming
+      // example — a scope that failed to match could not have produced that. Asserting only that
+      // route-safe.ts is absent from `flagged` would be satisfied by never evaluating it at all,
+      // which is exactly the failure mode this whole file exists to rule out.
+      expect(
+        (findings[0].conforming_examples ?? []).map((example: any) => example.file_path),
+        `${fixture}: the compliant sibling must be evaluated, not merely absent`
+      ).toContain("pages/api/route-safe.ts");
+
+      // KIND-SPECIFIC LIMIT, and not the `--scope full` one the other canaries hit: a
+      // candidate-sourced sensitive-fields convention cannot be accepted in block mode at all
+      // (`packages/engine-contract/src/index.ts:412-420` — "candidate sensitive fields cannot back
+      // blocking enforcement"). It lands on `warn`, so exit 2 is unreachable for this kind by
+      // design rather than by the diff-scope accident. That reject is deliberate policy — a
+      // name-heuristic guess should not block a merge — so it is asserted, not worked around.
+      expect(findings[0].severity).toBe("warning");
+      expect(findings[0].enforcement_result).toBe("warn");
+      expect(run.checkExitCode, `${fixture}: warn-mode findings do not block`).toBe(0);
     }
   }, 180000);
 
@@ -311,6 +383,12 @@ describe("cell canaries — firing", () => {
     // The scope is the proposer's own glob set rather than a de-globbed convenience, so this is
     // still a test of `phase5_file_scope_matches` -> `path_glob_matches` and still dies if the
     // globstar matcher regresses.
+    // The imported scope below claims to be the proposer's own. Pin it, exactly as the
+    // session-trust import canary does — without this the claim is unenforced and a change to
+    // `candidate_command.rs`'s route_scope would silently turn this into a test of a glob set
+    // nothing emits.
+    assertProposerScopeGlobs();
+
     // Built from the SOURCE fixture, not the copied repo: this patch is an input to the workflow,
     // so it has to exist before the temp repo does. Reading the real files still beats eliding the
     // bodies — the hunk headers cannot drift from the fixture they describe.
@@ -412,6 +490,8 @@ describe("cell canaries — firing", () => {
     });
 
     // --- the candidate came from the proposer, and carries the glob scope --------------------
+    await assertListVisibility(run.databasePath, run.repoId, AUTHORIZATION);
+
     const candidates = (run.startPayload.candidates ?? []).filter(
       (candidate: any) => candidate.kind === AUTHORIZATION
     );
@@ -733,6 +813,8 @@ describe("cell canaries — firing", () => {
     // ...at the sink line, not at a default. `sink_id` is `sink:{file}:{line}:{symbol}` while every
     // other id is `...:{line}`, so the shared parser read "create" as the line, failed, and every
     // request-validation finding ever emitted reported line 1.
+    await assertListVisibility(run.databasePath, run.repoId, REQUEST_VALIDATION);
+
     const findings = (run.checkPayload.findings ?? []).filter(
       (finding: any) => finding.title === "API route uses unvalidated request input"
     );
@@ -777,16 +859,47 @@ describe("cell canaries — firing", () => {
       schemas: []
     });
 
-    // Exit code is 0, and that is NOT this cell's doing. `--scope full` counts a finding as
-    // blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the harness
-    // copies the fixture to a temp repo with no diff, so every full-scope finding in this suite is
-    // `touched_existing`. Every other canary in this file lands on 0 for the same reason. Pinned so
-    // that if full-scope blocking is ever fixed, this assertion is one of the places that says so.
+    // The full-scope run exits 0, and that is NOT this cell's doing: `--scope full` counts a
+    // finding as blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the
+    // harness copies the fixture to a temp repo with no diff, so every full-scope finding is
+    // `touched_existing`. Pinned so that if full-scope blocking is ever fixed, this says so.
     expect(run.checkExitCode).toBe(0);
     expect(run.checkPayload.summary.outcome.non_blocking_reasons).toContainEqual({
       reason: "full_scope_reports_existing_violations_without_blocking",
       count: 1
     });
+
+    // ...and then take the blocking verdict properly, over the diff a pull request adding these
+    // routes would produce. The convention was accepted `--mode block` and the finding already
+    // carries `enforcement_result: block`, so exit 2 IS reachable for this kind — it just needs a
+    // diff. Asserting only the 0 above would have been the weaker claim.
+    const patchPath = join(run.stateRoot, "..", "request-validation.patch");
+    writeFileSync(
+      patchPath,
+      addedFilesPatch(run.repoRoot, [
+        "app/api/projects/route.ts",
+        "app/api/tasks/route.ts",
+        "app/api/notes/route.ts"
+      ]),
+      "utf8"
+    );
+    const blocked = await runCli([
+      "--db", run.databasePath,
+      "check",
+      "--repo", run.repoId,
+      "--scope", "changed-hunks",
+      "--diff-file", patchPath,
+      "--now", "2026-08-16T00:02:00.000Z",
+      "--json"
+    ]);
+    expect(blocked.exitCode, `check stderr:\n${blocked.stderr}`).toBe(2);
+    const blockedFindings = (JSON.parse(blocked.stdout).findings ?? []).filter(
+      (finding: any) => finding.title === "API route uses unvalidated request input"
+    );
+    expect(blockedFindings).toHaveLength(1);
+    expect(blockedFindings[0].evidence_refs[0].file_path).toBe("app/api/projects/route.ts");
+    expect(blockedFindings[0].evidence_refs[0].start_line).toBe(7);
+    expect(blockedFindings[0].diff_status).toBe("new_in_diff");
   }, 180000);
 
   it("phase-6 CORS policy path fires", async () => {
@@ -814,6 +927,9 @@ describe("cell canaries — firing", () => {
       severity: "error",
       mode: "block"
     });
+
+    // The documented review surface hides this kind unless --experimental-security is passed.
+    await assertListVisibility(run.databasePath, run.repoId, TENANT_SCOPE);
 
     // Obtained from the proposer, never injected, and exactly one — the near-miss below did not
     // also become a helper.

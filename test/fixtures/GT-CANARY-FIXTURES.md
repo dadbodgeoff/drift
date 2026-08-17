@@ -1,13 +1,9 @@
 # Canary fixtures — the cells the audit corpus could not reach
 
-`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The ones
+`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The seven
 below were added for cells that no fixture in `test/fixtures/` could enter — the first two by phase
-0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
-`GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The three
-below were added by phase 0b (TDD §4.2) for cells that no fixture in `test/fixtures/` could enter.
-They are not audit artifacts and carry no audit numbers.
-below were added for cells that no fixture in `test/fixtures/` could enter — the first two by
-phase 0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
+0b (TDD §4.2), the rest by the glob-revival sprint. They are not audit artifacts and carry no audit
+numbers.
 
 | Fixture | Cell it exists for | Why a new fixture was needed |
 |---|---|---|
@@ -16,6 +12,8 @@ phase 0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
 | `gt-tenant-scope` | `api_route_requires_tenant_scope` × `phase4_proof` | The ledger recorded this cell as unreachable because "no fixture produces a candidate of this kind". Every `security-tenant-*` fixture is a single route calling `requireUser`, and `push_guard_candidate` (`candidate_command.rs:539`/`:555`) needs the **same** symbol in ≥2 api-route facts **and** a symbol that survives `is_tenant_candidate_symbol` (`:1897`) — `requireUser` fails both halves. Two routes calling `requireTenantScope` supply the candidate; a third unscoped route supplies the violation. |
 | `gt-secret-exposure` | `api_route_forbids_secret_exposure` × `phase5_proof` | `security-secret-leak` is one route, is entirely the violation, and sits at `app/api/users/route.ts` with a key (`API_KEY`) that happens to classify — but it offers no conformance half and no log-sink case. This fixture supplies a response-sink violation, a log-sink violation and a compliant sibling in one repo, all under `app/api/**/route.ts` so the proposer's `**/`-prefixed scope has **zero leading segments** to match, which is the case D1 killed. |
 | `gt-authorization` | `api_route_requires_authorization` × `phase4_proof` | The cell was `needs-review` on the evidence that no fixture produces a candidate of this kind. That is a fixture-shape problem, not an engine one: `push_guard_candidate` (`candidate_command.rs`) nominates a symbol only when it appears in **≥2** route facts, and `security-role-guard-present`, `security-role-missing` and `security-role-branch-bypass` are each a single route making a single `requireRole` call, so the group never reaches the threshold and the kind was unreachable from the documented workflow. This fixture calls one helper, `requirePermission`, from three of its five `app/api/.../route.ts` files, which is what makes it a convention rather than a one-off. |
+| `gt-session-trust` | `session_object_must_come_from_trusted_helper` × `phase4_proof` | The two fixtures that already exist for this kind (`security-session-from-request-untrusted`, `security-session-trusted-helper`) are one route each — one entirely the violation, one entirely the conformance — in *separate repos*, so neither can show the check discriminating between siblings in a single run, and neither carries a near-miss. `firing` needs all three in one repo. Reached by `drift contract import` rather than `conventions accept`, because `candidate_command.rs` contains zero occurrences of `ConventionKind::SessionObjectMustComeFromTrustedHelper` — see the note below. |
+| `gt-request-validation` | `api_route_requires_request_validation` × `request_validation_proof` | The proposer needs the **same** validation symbol in ≥2 api-route facts (`push_request_validation_candidates`, `facts.len() >= 2`). `security-validation-before-data` is one route with one `parse` call and `security-validation-missing` is the violation with no validation call at all, so neither reaches the floor and no fixture in the tree produced a candidate of this kind. This fixture carries two conforming `safeParse` routes — which is what makes the candidate exist at all — plus one violating route. |
 
 ## Why `gt-authorization`'s guard takes no arguments
 
@@ -33,7 +31,6 @@ subject argument makes the proof fail. A guard called with no arguments has no `
 check is skipped, and the conformance half is expressible. See the report accompanying this fixture:
 the false positive is real and is deliberately left unfixed here, because fixing it means changing
 shared phase-4 proof semantics.
-| `gt-session-trust` | `session_object_must_come_from_trusted_helper` × `phase4_proof` | The two fixtures that already exist for this kind (`security-session-from-request-untrusted`, `security-session-trusted-helper`) are one route each — one entirely the violation, one entirely the conformance — in *separate repos*, so neither can show the check discriminating between siblings in a single run, and neither carries a near-miss. `firing` needs all three in one repo. Reached by `drift contract import` rather than `conventions accept`, because `candidate_command.rs` contains zero occurrences of `ConventionKind::SessionObjectMustComeFromTrustedHelper` — see the note below. |
 
 ## Why `gt-session-trust` is imported rather than accepted
 
@@ -50,7 +47,6 @@ becomes proposable the import canary fails and has to move to `runGtWorkflow`. T
 contract's `scope.path_globs` is the proposer's own literal glob set, pinned against
 `candidate_command.rs` by the canary itself — a de-globbed scope would pass even under the historical
 `path_glob_matches` and would prove nothing.
-| `gt-request-validation` | `api_route_requires_request_validation` × `request_validation_proof` | The proposer needs the **same** validation symbol in ≥2 api-route facts (`push_request_validation_candidates`, `facts.len() >= 2`). `security-validation-before-data` is one route with one `parse` call and `security-validation-missing` is the violation with no validation call at all, so neither reaches the floor and no fixture in the tree produced a candidate of this kind. This fixture carries two conforming `safeParse` routes — which is what makes the candidate exist at all — plus one violating route. |
 
 ## Near-miss content, per §4.3
 
@@ -79,28 +75,10 @@ value against an inferred one and is not name-driven, so a lookalike name would 
 only on its `throwif` prefix. Two routes call it and nothing else, so the canary asserts the
 proposer emits exactly **one** candidate and that both of those routes are still flagged. Drop them
 and a detector that simply matched `/tenant.*scope/i` would score identically to the real one.
+
 `gt-secret-exposure/app/api/status/route.ts` reads the **same** `process.env.STRIPE_API_KEY` as both
 violating routes — same key, same `classify_secret` result, same variable name — and genuinely uses
 it, passing it as an outbound request header. The flow simply never reaches a response or an accepted
 log sink. A detector reduced to "this route reads a secret-looking env var" scores identically to a
 correct one until this route exists, and the canary asserts the engine names it as a *conforming
 example* rather than merely failing to flag it.
-
-## The one contract-import canary
-
-`api_route_forbids_secret_exposure` has no proposer at all, so `gt-secret-exposure` is driven through
-`drift contract import` rather than `drift conventions accept` — the single exception in
-`gt-canary.test.ts`, argued at the test and at `WorkflowOptions.importConventions` in `gt-harness.ts`.
-The imported scope is the proposer's own literal glob set, not a de-globbed convenience, so the canary
-still dies if the globstar matcher regresses.
-`gt-session-trust/app/api/trace/route.ts` reads from the *same* untrusted source as the violating
-route — `request.headers.get(...)` — into `traceId`, which is not a session object. A check reduced
-to "this route reads a request header" would flag it. The real discriminator is
-`is_session_like_variable` (`security_facts.rs:1642`) applied to the assigned variable, and without
-this route a detector that dropped that half would score identically to the correct one.
-`gt-request-validation` carries its near-miss inside the conforming routes rather than beside them.
-`safeParse` returns a result object, not the parsed value, so a check that merely saw the accepted
-symbol get called would pass a route that reads `result` directly and never checks `result.success`.
-The canary's conformance half therefore asserts `proven: true` on routes that DO guard and DO use
-`result.data` — the shapes `security_control_flow.rs::safe_parse_success_guard_dominates` already
-separates in unit tests, now driven through the real workflow.
