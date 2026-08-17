@@ -137,14 +137,20 @@ export class EvaluationReceiptLedger {
     if (this.receipts.has(conventionId)) {
       return;
     }
+    const dispatch = conventionDispatchFor(kind);
     this.receipts.set(conventionId, {
       convention_id: conventionId,
       kind,
-      dispatch: conventionDispatchFor(kind),
+      dispatch,
       reached: false,
       inputs_considered: 0,
       findings_emitted: 0,
-      skip_reason: "not_dispatched_to_this_evaluator"
+      // A `none`-dispatch kind has no evaluator to skip it, so `skipped()` is never called for it
+      // and the seeded reason is the only one it will ever get. Seeding it as
+      // `not_dispatched_to_this_evaluator` said "not mine" from an evaluator that was never going
+      // to own it regardless - the exact collapse SKIP_REASON_RANK exists to prevent, just done at
+      // seed time instead of at skip time.
+      skip_reason: dispatch === "none" ? "no_evaluator_for_kind" : "not_dispatched_to_this_evaluator"
     });
   }
 

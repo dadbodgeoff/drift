@@ -36,6 +36,24 @@ describe("evaluation receipt ledger", () => {
     });
   });
 
+  it("seeds the correct reason immediately for a kind no evaluator will ever claim", () => {
+    // A `none`-dispatch kind - e.g. a legacy accepted `middleware_must_cover_routes` or
+    // `api_route_requires_service_delegation` convention from before acceptance-time refusal
+    // existed (packages/cli/src/domain/convention-candidates.ts) - has no evaluator to call
+    // `skipped()` on it, so the seeded reason is the only one it will ever get. Seeding it as
+    // `not_dispatched_to_this_evaluator` said "not mine" from an evaluator that was never going
+    // to own it regardless of what ran - the exact collapse SKIP_REASON_RANK exists to prevent,
+    // just reintroduced one step earlier, at seed time instead of skip time.
+    const ledger = new EvaluationReceiptLedger();
+    ledger.seed("convention_legacy", "middleware_must_cover_routes");
+
+    const receipts = ledger.list();
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0].dispatch).toBe("none");
+    expect(receipts[0].reached).toBe(false);
+    expect(receipts[0].skip_reason).toBe("no_evaluator_for_kind");
+  });
+
   it("does not let a later evaluator's 'not mine' erase the reason an earlier one gave", () => {
     // THE DEFECT THIS FILE EXISTS FOR, found by reading the receipts the mechanism produced. A
     // convention is offered to every evaluator and declined by all but at most one, and the last
