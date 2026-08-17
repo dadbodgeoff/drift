@@ -16,6 +16,19 @@ export function formatConventionCandidatesText(payload: {
     next_offset: number | null;
   };
   next_commands: string[];
+  // A7/T25: the two withholding decisions, rendered rather than reported only in JSON.
+  low_confidence: {
+    hidden_count: number;
+    included: boolean;
+    floor: { min_coverage_ratio: number };
+    reveal_command: string;
+  };
+  experimental_security: {
+    hidden_count: number;
+    included: boolean;
+    reason: string;
+    reveal_command: string;
+  };
   candidates: ConventionCandidate[];
 }): string {
   const rows = payload.candidates.length > 0
@@ -42,6 +55,7 @@ export function formatConventionCandidatesText(payload: {
     `Kind: ${payload.filters.kind ?? "all"}`,
     `Capability: ${payload.filters.capability ?? "all"}`,
     `Candidates: ${payload.summary.listed_count} returned, ${payload.summary.filtered_count} filtered, ${payload.summary.total_count} total`,
+    ...withheldCandidateLines(payload),
     `Page: offset ${payload.pagination.offset}, returned ${payload.pagination.returned_count}, next offset ${payload.pagination.next_offset ?? "none"}`,
     `Governance: ${payload.governance.read_only ? "read-only" : "mutable"}; human approval required for mutations`,
     "",
@@ -51,6 +65,45 @@ export function formatConventionCandidatesText(payload: {
     "",
     ""
   ].join("\n");
+}
+
+/**
+ * The candidates this listing withheld, and how to see them.
+ *
+ * A7 gave `conventions list` a coverage floor and T25 quarantined the experimental security kinds.
+ * Both wrote their count and their exact reveal command into the JSON payload and neither reached
+ * the human formatter, so on a real repo the text surface printed
+ * `Candidates: 0 returned, 0 filtered, 35 total` and stopped - a reader could see that 35 existed
+ * and had no way to learn why none of them were shown or what to type next. The withholding is
+ * defensible; withholding it silently is not, and "never truncate silently" was A7's own rule.
+ *
+ * Printed directly under the counts rather than at the end, because the line it explains is the
+ * count, and an explanation a page away from the number it explains is one a reader has to go
+ * looking for.
+ */
+function withheldCandidateLines(payload: {
+  low_confidence: { hidden_count: number; floor: { min_coverage_ratio: number }; reveal_command: string };
+  experimental_security: { hidden_count: number; reveal_command: string };
+}): string[] {
+  const lines: string[] = [];
+  const lowConfidence = payload.low_confidence.hidden_count;
+  if (lowConfidence > 0) {
+    const floor = `${Math.round(payload.low_confidence.floor.min_coverage_ratio * 100)}%`;
+    lines.push(
+      `Hidden: ${lowConfidence} low-confidence candidate${lowConfidence === 1 ? "" : "s"} ` +
+        `below the ${floor} coverage floor.`,
+      `  Show them: ${payload.low_confidence.reveal_command}`
+    );
+  }
+  const security = payload.experimental_security.hidden_count;
+  if (security > 0) {
+    lines.push(
+      `Hidden: ${security} experimental security candidate${security === 1 ? "" : "s"}; ` +
+        "the security heuristics are experimental and are not proofs.",
+      `  Show them: ${payload.experimental_security.reveal_command}`
+    );
+  }
+  return lines;
 }
 
 export function formatConventionCandidateText(payload: {

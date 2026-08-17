@@ -3,10 +3,25 @@
 Drift learns one convention from your repository, records the code that already violates it, and
 blocks new violations in changed code. It runs entirely on your machine.
 
-## Install and onboard
+## Install
+
+**Nothing is published to npm yet.** `npm install -g @drift/cli` fails with `E404`, and the
+`driftdetect` package on npm is an unrelated v1 from January. Until a release exists, the install
+is a build from source, which needs a Rust toolchain ([rustup](https://rustup.rs)) because the scan
+engine is Rust.
 
 ```bash
-npm install -g @drift/cli
+git clone https://github.com/dadbodgeoff/drift.git && cd drift
+pnpm install --frozen-lockfile
+pnpm build && pnpm build:engine
+
+# There is no `drift` binary yet; the entry point is the built CLI.
+alias drift="node $PWD/packages/cli/dist/main.js"
+```
+
+## Onboard
+
+```bash
 cd your-repo
 drift doctor --repo-root .
 ```
@@ -22,16 +37,24 @@ drift start --repo-root . --accept-defaults
 On a 5,000-file monorepo this takes around 35 seconds. It scans, infers a candidate convention,
 accepts the strongest one, and baselines every existing violation.
 
-The output tells you three things worth reading:
+The output tells you what was decided, in the mode it was decided in:
 
 ```
 Stored 107276 facts.
-Accepted default convention.
-Baselined 417 existing violations.
+Found 21 convention candidates.
+
+Accepted "api_route_no_direct_data_access" in WARN mode (417 existing violations baselined —
+new violations will be reported but will NOT block).
+To make this a gate: drift conventions accept convention_… --repo repo_… --severity error --mode block --confirm
 ```
 
 **417 baselined violations is not a backlog.** It is the code Drift will *not* complain about.
 New code is held to the convention; existing code is grandfathered until you choose otherwise.
+
+**Read the mode word.** In `WARN` mode nothing blocks: a new violation is reported and `drift
+check` still exits `0`. Onboarding says so rather than announcing readiness, because the two are
+different states and only one of them stops an agent. Why your repo probably lands in warn mode is
+[below](#why-your-repo-might-only-warn).
 
 ## Check a change
 
@@ -90,5 +113,17 @@ thing to run. [reference/errors.md](./reference/errors.md) lists every code.
 
 It enforces **one** convention kind well — API routes not importing data-access clients directly,
 in TypeScript and JavaScript. It does not review code generally, support other languages, or
-modify your source. The security heuristics are behind `--experimental-security` and are not
+modify your source.
+
+**Routes mean Next.js routes.** Route detection recognises app-router
+`**/app/**/route.{ts,tsx,js,jsx}` and pages-router `**/pages/api/**`, and nothing else. On an
+Express, Fastify, NestJS or SvelteKit repo the scan still indexes files and stores facts, but no
+file is recognised as a route, so onboarding proposes zero candidates and there is nothing to
+accept. `drift start` says so; rescanning does not change it.
+
+The security heuristics are behind `--experimental-security` and are not
 proofs; see [architecture/security-heuristic-audit.md](../internal/architecture/security-heuristic-audit.md).
+
+`drift conventions list` also hides candidates below a coverage floor by default. It reports how
+many it withheld and prints the command that shows them — `--include-low-confidence` for the
+floor, `--experimental-security` for the quarantined security kinds.
