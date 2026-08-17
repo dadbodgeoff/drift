@@ -340,10 +340,18 @@ function measureRepo(cfg) {
     const stateRoot = join("/tmp", `drift-cv4-${cfg.name}-${kind.label}`);
     rmSync(stateRoot, { recursive: true, force: true });
     try {
-      const started = drift(
-        root, "start", "--repo-root", root, "--state-root", stateRoot,
-        "--accept-defaults", "--json"
-      );
+      // `--data-modules` where the repo declares one, matching every other harness that onboards
+      // this corpus (external-eval, beta-bench, determinism all pass it).
+      //
+      // Omitting it made midday the only repo whose data-access cell read NO_CONVENTION, and that
+      // status is not a measurement - it is the harness saying it had nothing to score. midday is
+      // in the corpus precisely because `@midday/supabase/server` defeats the substring whitelist in
+      // is_data_access_source, so the one repo where data-access inference cannot rely on the name
+      // was also the one repo where this harness never measured data-access. The cell that would
+      // have caught a whitelist-only implementation was the cell reporting nothing.
+      const startArgs = ["start", "--repo-root", root, "--state-root", stateRoot, "--accept-defaults"];
+      if (cfg.declaredDataModules) startArgs.push("--data-modules", cfg.declaredDataModules);
+      const started = drift(root, ...startArgs, "--json");
       const startPayload = started.exit === 0 ? parseJson(started.stdout) : null;
       if (!startPayload) {
         rows.push({ kind: kind.label, status: "ONBOARD_FAILED" });

@@ -14,19 +14,31 @@
  *
  *   node scripts/determinism.mjs                      # every eval repo, 3 runs each
  *   node scripts/determinism.mjs --only calcom -n 10  # the repo the flap was seen on
+ *   node scripts/determinism.mjs --update             # re-record the committed digest baseline
  *
  * A run's digest covers what a user would notice change: the exit code, the check status, the number
  * of findings, and every finding's fingerprint and enforcement result. Timings and ids that
  * legitimately vary per invocation are excluded - a digest that changes every run proves nothing.
+ *
+ * That digest is also compared against `determinism-baseline.json`, which is the point of computing
+ * it across the whole corpus at `--scope full`. Three runs agreeing says nothing about whether they
+ * agreed on anything: a check that stops firing is perfectly deterministic, and until this
+ * comparison existed the harness would have printed "7/7 repo(s) deterministic" while every
+ * fingerprint quietly went missing. See determinism-predicate.mjs for both directions.
  */
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  REBASELINE_COMMAND,
+  digestArtifact,
+  digestRegressions
+} from "./determinism-predicate.mjs";
 import { EVAL_REPOS } from "./eval-repos.mjs";
 import { contaminationAllowed, contaminationRefusal } from "./worktree-contamination.mjs";
 
@@ -34,9 +46,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..");
 const CLI = join(REPO_ROOT, "packages/cli/dist/main.js");
 const ENGINE = join(REPO_ROOT, "target/release/drift-engine");
+const BASELINE = join(HERE, "determinism-baseline.json");
 const REPOS_DIR = process.env.DRIFT_EVAL_REPOS || join(homedir(), "drift-falsification/repos");
 
 const args = process.argv.slice(2);
+const UPDATE = args.includes("--update");
 const onlyIndex = args.indexOf("--only");
 const only =
   onlyIndex >= 0 && args[onlyIndex + 1]
@@ -166,6 +180,9 @@ function measureRepo(cfg) {
       runs: RUNS,
       digest: unique[0],
       distinct_digests: unique.length,
+      // Kept, not discarded. The digest answers "did the runs agree"; the observation behind it is
+      // what answers "agreed on what", and it is the only thing the baseline can compare.
+      observable: digests[0].observable,
       // On a flap, keep every distinct observation. A flap that is not reproducible is exactly the
       // situation this exists to make investigable, so throwing the evidence away is not an option.
       observations:
@@ -214,6 +231,54 @@ const failures = rows.filter((row) => row.status !== "DETERMINISTIC");
 console.log(
   `\n${rows.filter((row) => row.status === "DETERMINISTIC").length}/${rows.length} repo(s) deterministic over ${RUNS} runs`
 );
+
+// The anti-silence half. Everything above proves the runs agreed; this proves they agreed on
+// something, by pinning the findings count and every fingerprint against a committed artifact.
+const artifact = digestArtifact(rows);
+
+if (UPDATE) {
+  if (only) {
+    // A subset run rewriting the whole baseline would delete the rows it did not measure, which is
+    // a drop recorded as an intention. Merging is not offered either: this baseline's whole value is
+    // that it was produced by one run of the full corpus.
+    console.error("--update requires the full corpus; drop --only and re-run.");
+    process.exit(1);
+  }
+  if (failures.length > 0) {
+    // Nothing is written. A repo that flapped or was missing contributes no artifact row, so
+    // recording this run would commit a baseline shorter than the corpus - and the next run would
+    // compare against it and pass. That is a drop laundered into an intention, which is the one
+    // thing a baseline must never be able to do.
+    console.error(
+      `\nRefusing to record a baseline from a run with ${failures.length} unmeasured repo(s): ` +
+        `${failures.map((row) => `${row.repo} (${row.status})`).join(", ")}. Fix those first.`
+    );
+    process.exit(1);
+  }
+  writeFileSync(BASELINE, `${JSON.stringify(artifact, null, 2)}\n`);
+  console.log(`digest baseline written to ${BASELINE} (${artifact.length} repo(s))`);
+  process.exit(0);
+}
+
+if (!existsSync(BASELINE)) {
+  console.error(
+    `\nNo digest baseline at ${BASELINE}. Without it this harness cannot tell a clean run from a ` +
+      `silent one, so it refuses rather than passing. Record one with \`${REBASELINE_COMMAND}\`.`
+  );
+  process.exit(1);
+}
+const baselineArtifact = JSON.parse(readFileSync(BASELINE, "utf8"));
+// A subset run compares the subset. It must never conclude that the repos it skipped disappeared.
+const scoped = only
+  ? baselineArtifact.filter((row) => only.includes(row.repo))
+  : baselineArtifact;
+const digestFailures = digestRegressions(artifact, scoped);
+if (digestFailures.length > 0) {
+  console.error(`\ndigest baseline failed:\n- ${digestFailures.join("\n- ")}`);
+  process.exit(1);
+}
+console.log(`digest baseline ok - ${artifact.length} repo(s) match`);
+
 if (failures.length > 0) {
   process.exit(1);
 }

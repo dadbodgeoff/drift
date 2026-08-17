@@ -902,21 +902,40 @@ describe("cell canaries — firing", () => {
       schemas: []
     });
 
-    // The full-scope run REFUSES, and that is not this cell's doing either. `--scope full` counts a
-    // finding as blocking only when its `diff_status` is `new_in_diff` (run-check.ts:821), and the
-    // harness copies the fixture to a temp repo with no diff, so every full-scope finding is
-    // `touched_existing` and exit 2 is unreachable.
+    // The full-scope run REFUSES, and that is not this cell's doing either. `--scope full` counts
+    // a finding as blocking only when its `diff_status` is `new_in_diff` (`diffStatusFor` answers
+    // `touched_existing` for every finding at full scope), and the harness copies the fixture to a
+    // temp repo with no diff — so exit 2 is unreachable here no matter what this cell finds.
     //
     // This assertion used to pin exit 0 and said "if full-scope blocking is ever fixed, this says
-    // so". It did say so: #121 (remediation/check-pipeline-honesty) turned that silence into a
-    // first-class refusal, so a block-mode convention that CANNOT block now reports
-    // `full_scope_cannot_block` and exits 3 rather than reporting green. That merge left this
-    // assertion stale and `main` red on `pnpm test:e2e`; this is the repair, and it is the stronger
-    // claim — exit 0 said only "nothing blocked", exit 3 names the convention that went unenforced.
-    expect(run.checkExitCode).toBe(3);
+    // so". It was fixed, in the other direction: W8-1
+    // (`blockModeConventionsUnenforceableAtFullScope`, run-check.ts) decided that a gate green by
+    // construction is worse than no gate, so a block-mode convention asked to enforce through
+    // `--scope full` now fails closed at exit 3 rather than passing. This cell accepts its
+    // convention `--mode block`, so it is squarely in that set, and the refusal must name it.
+    //
+    // Pinned on the refusal ENVELOPE, not the exit code alone: B-3's shape was exit 3 beside
+    // `status: "pass"`, and the consumers Drift is built for read the payload rather than `$?`.
+    expect(run.checkExitCode, `check stderr:\n${run.checkStderr}`).toBe(3);
     expect(run.checkPayload.check.status).toBe("refused");
     expect(run.checkPayload.failure.code).toBe("full_scope_cannot_block");
-    expect(run.checkPayload.summary.blocked_reasons).toContain("full_scope_cannot_block");
+    expect(run.checkPayload.failure.type).toBe("refusal");
+    // The refusal names the convention it withheld enforcement for — the actionable half, and the
+    // one that would have gone missing had this been pinned on the code alone.
+    const refusedConventionId = run.acceptPayloads[0].accepted.id;
+    expect(run.checkPayload.failure.message).toContain(refusedConventionId);
+    expect(run.checkPayload.summary.blocked_reasons).toEqual(
+      expect.arrayContaining([
+        "full_scope_cannot_block",
+        `block_mode_convention_unenforced:${refusedConventionId}`
+      ])
+    );
+    // Refusing is not the same as finding nothing: the violation this cell exists to prove is
+    // still in the payload, still carrying `enforcement_result: block`. Both assertions above
+    // depend on that, and a refusal that had also swallowed the finding would satisfy neither.
+    expect(run.checkPayload.summary.findings_count).toBe(1);
+    // Unchanged, and the reason it still holds: a refusal reports what it saw. The findings are
+    // withheld from enforcement, not hidden.
     expect(run.checkPayload.summary.outcome.non_blocking_reasons).toContainEqual({
       reason: "full_scope_reports_existing_violations_without_blocking",
       count: 1
