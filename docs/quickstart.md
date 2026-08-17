@@ -1,7 +1,8 @@
 # Quickstart
 
 Drift learns one convention from your repository, records the code that already violates it, and
-blocks new violations in changed code. It runs entirely on your machine.
+reports new violations in changed code — blocking them once the convention is in block mode, which
+[most repos have to opt into](#why-your-repo-might-only-warn). It runs entirely on your machine.
 
 ## Install
 
