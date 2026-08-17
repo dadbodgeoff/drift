@@ -18,6 +18,7 @@ import { existsSync,readFileSync } from "node:fs";
 import { join } from "node:path";
 import { conformingExemplars,migrationSentence } from "@drift/core";
 import { contractStaleness,contractStalenessWarnings } from "./contract-liveness.js";
+import { EvaluationReceiptLedger,silentConventionReceipts } from "./evaluation-receipts.js";
 import { CommandPayload,ParsedArgs } from "../app/command-types.js";
 import { DriftError } from "../app/drift-error.js";
 import { actorFlag,stringFlag } from "../args/flag-readers.js";
@@ -683,12 +684,29 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   const unenforceableConventions: string[] = [];
   let waivedFindingsCount = 0;
 
+  // Seeded from the CONTRACT, before any evaluator runs, and that ordering is the mechanism.
+  //
+  // Every accepted convention and every agent contract gets a receipt here saying it was not
+  // reached. An evaluator that runs replaces it; an evaluator that drops the convention on the
+  // floor - which is what `fileSet.size === 0` did to twelve security kinds - leaves the seeded
+  // truth standing. Assembling the list from what the evaluators reported instead would put the
+  // silence one level up: a convention nothing mentions would have no receipt rather than a
+  // damning one.
+  const receipts = new EvaluationReceiptLedger();
+  for (const convention of contract.conventions) {
+    receipts.seed(convention.id, convention.kind);
+  }
+  for (const agentContract of contract.agent_contracts ?? []) {
+    receipts.seed(agentContract.id, agentContract.kind);
+  }
+
   // W8-3: the second engine invocation of a check, and the same rule applies to it. Two call
   // sites, one refusal, so a cap that fires here cannot surface differently from one that fires
   // during collection.
   let engineOwned: Awaited<ReturnType<typeof runEngineOwnedDirectDataAccessCheck>>;
   try {
     engineOwned = await runEngineOwnedDirectDataAccessCheck({
+      receipts,
       repoId,
       repoRoot: repo.root_path,
       contract,
@@ -855,6 +873,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   }
 
   const engineOwnedAuth = await runEngineOwnedAuthCheck({
+      receipts,
     repoId,
     repoRoot: repo.root_path,
     contract,
@@ -878,6 +897,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
   }
 
   const helperReuseFindings = runCanonicalHelperReuseCheck({
+      receipts,
     repoId,
     contract,
     now,
@@ -897,6 +917,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
   const modulePlacementFindings = runModulePlacementCheck({
+      receipts,
     repoId,
     contract,
     now,
@@ -914,6 +935,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
   const importBoundaryFindings = runImportBoundaryCheck({
+      receipts,
     repoId,
     contract,
     now,
@@ -931,6 +953,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
   const fileRoleFindings = runFileRoleCheck({
+      receipts,
     repoId,
     contract,
     now,
@@ -948,6 +971,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
   const entrypointFlowFindings = runEntrypointFlowCheck({
+      receipts,
     repoId,
     contract,
     now,
@@ -965,6 +989,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     storage.upsertFinding(finding);
   }
   const requiredCheckProofFindings = runRequiredCheckProofCheck({
+      receipts,
     repoId,
     contract,
     storage,
@@ -1194,6 +1219,7 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
     ).size
   });
 
+  const evaluationReceipts = receipts.list();
   const openNewCount = findings.filter((finding) => finding.status === "new").length;
   const outcome = checkOutcomeSummary(findings, {
     waivedFindingsCount,
@@ -1252,6 +1278,20 @@ export async function runCheck(storage: SqliteDriftStorage, parsed: ParsedArgs):
           ...unindexedContractTargets.map((filePath) => `contract_target_not_indexed:${filePath}`)
         ]
       },
+      // One receipt per convention, on every run, always present.
+      //
+      // Deliberately NOT the house "present only when something is wrong" pattern that
+      // `contract_staleness` and `unenforceable_conventions` below follow. Those say "something
+      // broke"; this says "here is what each rule did", and a coverage account that appears only
+      // when Drift already knows it has a problem is not an account. A consumer has to be able to
+      // ask "did convention X run on this check" and get an answer without knowing in advance that
+      // the answer is bad - which is exactly what nobody could do for the eight dead conventions.
+      //
+      // Beside `partial_coverage` rather than inside it, because the two answer different
+      // questions. `partial_coverage.reasons` are keyed on file paths and say which FILES Drift
+      // could not read; no value it has ever taken reflects which CONVENTIONS ran. A contract of
+      // twelve accepted conventions, none of them reached, is `complete: true` by that measure.
+      evaluation_receipts: evaluationReceipts,
       // EW-3: the coverage number travels with the verdict. A verdict read without it invites
       // exactly the mistake open beta will produce most - a clean check on a repo shape Drift
       // half-understands, taken as proof the repo is clean.
@@ -1807,6 +1847,7 @@ function runCanonicalHelperReuseCheck(input: {
   checkScanId: string;
   contractFingerprintValue: string;
   diffHash: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
@@ -1821,8 +1862,10 @@ function runCanonicalHelperReuseCheck(input: {
 
   for (const contract of input.contract.agent_contracts ?? []) {
     if (contract.kind !== "canonical_helper_reuse") {
+      input.receipts.skipped(contract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
 
     for (const helper of contract.canonical_helpers) {
       const forbiddenSymbols = new Set(helper.avoid_new_symbols_matching ?? []);
@@ -1891,6 +1934,14 @@ function runCanonicalHelperReuseCheck(input: {
         });
       }
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(contract.id, {
+      inputsConsidered: exportedFacts.length,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2011,14 +2062,17 @@ function runModulePlacementCheck(input: {
   snapshotsByPath: Map<string, ScanData["snapshots"][number]>;
   checkId: string;
   checkScanId: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
 
   for (const contract of input.contract.agent_contracts ?? []) {
     if (contract.kind !== "module_placement") {
+      input.receipts.skipped(contract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
 
     const roleFacts = input.checkData.facts.filter((fact) =>
       fact.kind === "file_role_detected" &&
@@ -2078,6 +2132,14 @@ function runModulePlacementCheck(input: {
         created_at: input.now
       });
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(contract.id, {
+      inputsConsidered: roleFacts.length,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2095,14 +2157,17 @@ function runImportBoundaryCheck(input: {
   snapshotsByPath: Map<string, ScanData["snapshots"][number]>;
   checkId: string;
   checkScanId: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
 
   for (const contract of input.contract.agent_contracts ?? []) {
     if (contract.kind !== "import_boundary") {
+      input.receipts.skipped(contract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
 
     const sourceFiles = filesWithRoles(input.checkData.facts, changedFiles, contract.source_roles);
     for (const importUsed of input.checkData.facts.filter((fact) =>
@@ -2167,6 +2232,14 @@ function runImportBoundaryCheck(input: {
         created_at: input.now
       });
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(contract.id, {
+      inputsConsidered: sourceFiles.size,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2226,14 +2299,20 @@ function runFileRoleCheck(input: {
   snapshotsByPath: Map<string, ScanData["snapshots"][number]>;
   checkId: string;
   checkScanId: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
 
   for (const contract of input.contract.agent_contracts ?? []) {
     if (contract.kind !== "file_role") {
+      input.receipts.skipped(contract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
+    // Summed across roles rather than measured once: a file_role contract declares several roles
+    // with independent globs, and "this contract examined 4 files" is the claim a reader checks.
+    let filesConsidered = 0;
 
     for (const role of contract.roles) {
       // Scoped off the parsed diff, which carries no extension filter, so a glob like
@@ -2248,6 +2327,7 @@ function runFileRoleCheck(input: {
         // "does it export X" from absence and report a violation where Drift simply has not read.
         input.snapshotsByPath.get(filePath)?.indexed === true
       );
+      filesConsidered += files.length;
       for (const filePath of files) {
         const imports = input.checkData.facts.filter((fact) =>
           fact.kind === "import_used" &&
@@ -2327,6 +2407,14 @@ function runFileRoleCheck(input: {
         }
       }
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(contract.id, {
+      inputsConsidered: filesConsidered,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2344,14 +2432,17 @@ function runEntrypointFlowCheck(input: {
   snapshotsByPath: Map<string, ScanData["snapshots"][number]>;
   checkId: string;
   checkScanId: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
 
   for (const contract of input.contract.agent_contracts ?? []) {
     if (contract.kind !== "entrypoint_flow") {
+      input.receipts.skipped(contract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
 
     const entryFiles = filesWithRoles(input.checkData.facts, changedFiles, contract.entry_roles);
     for (const filePath of entryFiles) {
@@ -2480,6 +2571,14 @@ function runEntrypointFlowCheck(input: {
         }));
       }
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(contract.id, {
+      inputsConsidered: entryFiles.size,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2500,6 +2599,7 @@ function runRequiredCheckProofCheck(input: {
   checkScanId: string;
   contractFingerprintValue: string;
   diffHash: string;
+  receipts: EvaluationReceiptLedger;
 }): Finding[] {
   const findings: Finding[] = [];
   const changedFiles = new Set(input.parsedDiff.files.map((file) => file.path));
@@ -2514,8 +2614,10 @@ function runRequiredCheckProofCheck(input: {
 
   for (const agentContract of input.contract.agent_contracts ?? []) {
     if (agentContract.kind !== "required_change_checks") {
+      input.receipts.skipped(agentContract.id, "not_dispatched_to_this_evaluator");
       continue;
     }
+    const emittedBefore = findings.length;
     for (const rule of agentContract.rules) {
       const pathMatch = !rule.applies_to.path_globs?.length ||
         [...changedFiles].some((file) =>
@@ -2588,6 +2690,14 @@ function runRequiredCheckProofCheck(input: {
         }));
       }
     }
+    // Every path out of this contract's body lands here, so the receipt records what the
+    // evaluator saw whether or not it found anything - which is the whole distinction:
+    // `findings_emitted: 0` beside `inputs_considered: 0` is a rule that never ran on
+    // anything, and beside a positive count it is a rule that ran and was satisfied.
+    input.receipts.ran(agentContract.id, {
+      inputsConsidered: changedFiles.size,
+      findingsEmitted: findings.length - emittedBefore
+    });
   }
 
   return findings;
@@ -2961,18 +3071,29 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
   checkScanId: string;
   contractFingerprintValue: string;
   diffHash: string;
+  receipts: EvaluationReceiptLedger;
 }): Promise<{ findings: Finding[]; waivedFindings: WaivedFinding[]; waivedFindingsCount: number }> {
   const findings: Finding[] = [];
   const waivedFindings: WaivedFinding[] = [];
   let waivedFindingsCount = 0;
 
   for (const convention of input.contract.conventions) {
-    if (
-      convention.kind !== "api_route_no_direct_data_access" ||
-      convention.enforcement_mode === "off" ||
-      convention.enforcement_capability !== "deterministic_check" ||
-      !isActiveConvention(convention, input.now)
-    ) {
+    // Split from one four-cause `continue` for the reason given on
+    // ENGINE_OWNED_AUTH_CONVENTION_KINDS: a receipt can only name the cause the code distinguished.
+    if (convention.kind !== "api_route_no_direct_data_access") {
+      input.receipts.skipped(convention.id, "not_dispatched_to_this_evaluator");
+      continue;
+    }
+    if (convention.enforcement_mode === "off") {
+      input.receipts.skipped(convention.id, "enforcement_mode_off");
+      continue;
+    }
+    if (convention.enforcement_capability !== "deterministic_check") {
+      input.receipts.skipped(convention.id, "capability_not_deterministic");
+      continue;
+    }
+    if (!isActiveConvention(convention, input.now)) {
+      input.receipts.skipped(convention.id, "convention_expired");
       continue;
     }
 
@@ -3074,6 +3195,15 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
       diff: input.parsedDiff,
       scope: input.scope
     });
+    // Unlike the auth loop below, this one does NOT skip an empty file set - it hands the engine
+    // whatever it has, because the graph half of this rule can flag a route through an import the
+    // diff never touched. So the receipt records a genuine zero rather than a skip: the evaluator
+    // ran, on nothing, which is the state (b) this mechanism exists to separate from (a).
+    input.receipts.ran(convention.id, {
+      inputsConsidered: fileSet.size,
+      findingsEmitted: result.findings.length
+    });
+    input.receipts.applyEngineReceipts(result.evaluation_receipts ?? []);
     for (const engineFinding of result.findings) {
       const evidence = engineFinding.evidence[0];
       if (!evidence) {
@@ -3127,6 +3257,30 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
   return { findings, waivedFindings, waivedFindingsCount };
 }
 
+/**
+ * The twelve kinds this evaluator dispatches, as a set rather than a twelve-clause negation.
+ *
+ * Extracted so the loop can ask "is this mine?" before it asks anything else, which is what lets
+ * every other outcome carry its own receipt reason. As a negated chain the twelve kind tests, the
+ * mode test, the capability test and the expiry test were one `continue` with four unrelated
+ * causes behind it, and a receipt cannot say which one applied if the code never distinguished
+ * them either.
+ */
+const ENGINE_OWNED_AUTH_CONVENTION_KINDS = new Set([
+  "api_route_requires_auth_helper",
+  "api_route_requires_request_validation",
+  "api_route_forbids_untrusted_ssrf",
+  "api_route_forbids_raw_sql_without_params",
+  "api_route_cors_must_match_policy",
+  "api_route_requires_csrf_for_mutation",
+  "api_route_requires_rate_limit",
+  "api_route_forbids_sensitive_response_fields",
+  "api_route_forbids_secret_exposure",
+  "session_object_must_come_from_trusted_helper",
+  "api_route_requires_authorization",
+  "api_route_requires_tenant_scope"
+]);
+
 async function runEngineOwnedAuthCheck(input: {
   repoId: string;
   repoRoot: string;
@@ -3140,6 +3294,7 @@ async function runEngineOwnedAuthCheck(input: {
   snapshotsByPath: Map<string, ScanData["snapshots"][number]>;
   checkId: string;
   checkScanId: string;
+  receipts: EvaluationReceiptLedger;
 }): Promise<{
   findings: Finding[];
   waivedFindings: WaivedFinding[];
@@ -3155,32 +3310,42 @@ async function runEngineOwnedAuthCheck(input: {
   const unenforceableConventions: string[] = [];
 
   for (const convention of input.contract.conventions) {
-    if (
-      (
-        convention.kind !== "api_route_requires_auth_helper" &&
-        convention.kind !== "api_route_requires_request_validation" &&
-        convention.kind !== "api_route_forbids_untrusted_ssrf" &&
-        convention.kind !== "api_route_forbids_raw_sql_without_params" &&
-        convention.kind !== "api_route_cors_must_match_policy" &&
-        convention.kind !== "api_route_requires_csrf_for_mutation" &&
-        convention.kind !== "api_route_requires_rate_limit" &&
-        convention.kind !== "api_route_forbids_sensitive_response_fields" &&
-        convention.kind !== "api_route_forbids_secret_exposure" &&
-        convention.kind !== "session_object_must_come_from_trusted_helper" &&
-        convention.kind !== "api_route_requires_authorization" &&
-        convention.kind !== "api_route_requires_tenant_scope"
-      ) ||
-      convention.enforcement_mode === "off" ||
-      convention.enforcement_capability !== "deterministic_check" ||
-      !isActiveConvention(convention, input.now)
-    ) {
-        continue;
+    const dispatchedHere = ENGINE_OWNED_AUTH_CONVENTION_KINDS.has(convention.kind);
+    if (!dispatchedHere) {
+      // Another evaluator's convention. Recorded rather than passed over in silence so that a kind
+      // no evaluator claims ends the run with `not_dispatched_to_this_evaluator` still on its
+      // receipt - the seeded default surviving every loop is exactly the signal.
+      input.receipts.skipped(convention.id, "not_dispatched_to_this_evaluator");
+      continue;
     }
-
+    if (convention.enforcement_mode === "off") {
+      input.receipts.skipped(convention.id, "enforcement_mode_off");
+      continue;
+    }
+    if (convention.enforcement_capability !== "deterministic_check") {
+      // The arm below requires `deterministic_check`, so this convention cannot reach it whatever
+      // the repo contains. That is the api_route_requires_service_delegation shape, and naming it
+      // on the receipt is how it stops being invisible.
+      input.receipts.skipped(convention.id, "capability_not_deterministic");
+      continue;
+    }
+    if (!isActiveConvention(convention, input.now)) {
+      input.receipts.skipped(convention.id, "convention_expired");
+      continue;
+    }
     const files = filesForConvention(input.parsedDiff, convention, input.scope)
       .filter((filePath) => isApiRoutePath(filePath) && !isExceptedPath(filePath, convention, input.now));
     const fileSet = new Set(files);
     if (fileSet.size === 0) {
+      // THE COLLAPSE POINT. Twelve security kinds are dispatched from this one loop, and this
+      // `continue` dropped every one of them - accepted, in scope, never evaluated - leaving the
+      // run indistinguishable from one that evaluated them and found nothing. `findings: 0`,
+      // `partial_coverage.complete: true`, `status: pass`, exit 0. Nothing downstream could tell
+      // the difference, because nothing downstream was told.
+      //
+      // Still a `continue`: calling the engine with an empty file set would cost a process launch
+      // to be handed nothing. What changes is that the run now says so.
+      input.receipts.skipped(convention.id, "no_matching_files");
       continue;
     }
 
@@ -3198,6 +3363,14 @@ async function runEngineOwnedAuthCheck(input: {
       diff: input.parsedDiff,
       scope: input.scope
     });
+    // The convention was evaluated. Recorded from the engine's own answer rather than from the
+    // fact that we called it: the engine has skips of its own (an unreadable route source, a kind
+    // it does not own) and reports them as receipts, which `applyEngineReceipts` folds in below.
+    input.receipts.ran(convention.id, {
+      inputsConsidered: fileSet.size,
+      findingsEmitted: result.findings.length
+    });
+    input.receipts.applyEngineReceipts(result.evaluation_receipts ?? []);
     securityBoundaryProofs.push(
       ...result.security_boundary_proofs.map((proof) => SecurityBoundaryProofSchema.parse(proof))
     );

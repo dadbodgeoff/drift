@@ -1,5 +1,7 @@
 import { createContractParityLedger,type ContractParityLedger } from "./contract-ledger.js";
-import { SECURITY_CONTRACT_CONVENTION_KINDS, UNEVALUATED_CONVENTION_KINDS } from "@drift/vocabulary";
+import { CONVENTION_DISPATCH, SECURITY_CONTRACT_CONVENTION_KINDS, UNEVALUATED_CONVENTION_KINDS, type ConventionDispatch } from "@drift/vocabulary";
+
+export type { ConventionDispatch };
 
 export interface DriftCapabilities {
   read_only_cli: string[];
@@ -219,6 +221,27 @@ export const UNIMPLEMENTED_CONVENTION_KINDS = UNEVALUATED_CONVENTION_KINDS;
 
 export function hasConventionEvaluator(kind: string): boolean {
   return !(UNIMPLEMENTED_CONVENTION_KINDS as readonly string[]).includes(kind);
+}
+
+/**
+ * Where the vocabulary sends this kind, for a consumer that needs the target rather than the
+ * yes/no above.
+ *
+ * `hasConventionEvaluator` collapses four dispatch targets into a boolean, which is the right
+ * answer for acceptance - "can this be enforced at all" - and the wrong one for an evaluation
+ * receipt, where `reached: false` on a `none` kind and `reached: false` on an `engine_direct` kind
+ * are different problems. The first is a kind nothing implements; the second is an implemented
+ * kind this run did not enter.
+ *
+ * Reads CONVENTION_DISPATCH, which is generated from vocabulary/vocabulary.json - the same table
+ * the engine's exhaustive match compiles against and the parity gate checks against both
+ * evaluators' sources. So a receipt cannot claim a dispatch target the code does not have.
+ *
+ * Unknown kinds answer `"none"`, which is the honest reading: the schema rejects them before they
+ * reach an evaluator, and nothing evaluates what does not exist.
+ */
+export function conventionDispatchFor(kind: string): ConventionDispatch {
+  return CONVENTION_DISPATCH[kind as keyof typeof CONVENTION_DISPATCH] ?? "none";
 }
 
 /**

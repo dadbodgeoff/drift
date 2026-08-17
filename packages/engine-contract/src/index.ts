@@ -747,6 +747,31 @@ const EngineSecurityPhase6GuardProofSchema = z.object({
   missing_proof: z.array(EngineSecurityPhase6MissingProofSchema)
 });
 
+/**
+ * One convention's account of what the engine did with it.
+ *
+ * The engine's convention loop has several ways out and most of them were a bare `continue`,
+ * producing an empty findings list indistinguishable from an evaluator that ran and was satisfied.
+ * `completeness` does not close the gap - it reports capabilities and limits, not conventions - so
+ * this does.
+ *
+ * `skip_reason` is optional on the wire and absent exactly when `reached` is true, matching the
+ * engine's `skip_serializing_if`. Read as `null` on this side so consumers see one shape.
+ */
+const EngineEvaluationReceiptSchema = z.object({
+  convention_id: z.string().min(1),
+  kind: z.string().min(1),
+  // Not a z.enum over the four dispatch targets: an engine that grew a fifth would fail to parse
+  // here, and refusing to read a result because one field spells a target this CLI has not heard
+  // of would turn a reporting improvement into an outage. The parity gate is what holds the
+  // manifest and the evaluators together; this field only has to survive the trip.
+  dispatch: z.string().min(1),
+  reached: z.boolean(),
+  inputs_considered: z.number().int().nonnegative(),
+  findings_emitted: z.number().int().nonnegative(),
+  skip_reason: z.string().min(1).nullish().transform((value) => value ?? null)
+});
+
 const EngineSecurityBoundaryProofSchema = z.object({
   proof_id: z.string().min(1),
   proof_version: z.literal("security-boundary-proof/v1"),
@@ -1221,6 +1246,11 @@ export const EngineCheckResultSchema = z.object({
   diff_mode: DiffModeSchema,
   findings: z.array(EngineFindingSchema),
   security_boundary_proofs: z.array(EngineSecurityBoundaryProofSchema).default([]),
+  // What the engine did with each convention it was handed. Defaulted rather than required so a
+  // newer CLI still reads an older engine's result - and defaulted to EMPTY rather than to a
+  // synthesised "everything ran", because "this engine did not say" and "every convention ran"
+  // are different claims and only the first is true of a binary that predates the field.
+  evaluation_receipts: z.array(EngineEvaluationReceiptSchema).default([]),
   diagnostics: z.array(EngineDiagnosticSchema),
   stats: EngineStatsSchema,
   completeness: z.array(EngineCompletenessSchema)

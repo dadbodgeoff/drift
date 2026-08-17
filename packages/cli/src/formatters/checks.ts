@@ -34,6 +34,17 @@ export function formatCheckText(payload: {
     }>;
     /** BB-4: one line per forbidden module the repo no longer contains. */
     contract_staleness_warnings?: string[];
+    /**
+     * What each accepted convention actually did on this run. Optional so an older payload still
+     * formats; absent means "this run did not say", not "every convention ran".
+     */
+    evaluation_receipts?: Array<{
+      convention_id: string;
+      kind: string;
+      reached: boolean;
+      inputs_considered: number;
+      skip_reason: string | null;
+    }>;
   };
   findings: Finding[];
   security_boundary_proofs?: SecurityBoundaryProof[];
@@ -76,6 +87,7 @@ export function formatCheckText(payload: {
         `Enforcement demoted: ${demotion.convention_id} ${demotion.from} -> ${demotion.to} at ${demotion.at}`
     ),
     `Skipped deleted files: ${payload.summary.skipped_deleted_files.length}`,
+    ...silentConventionDisclosure(payload.summary),
     ...nonBlockingDisclosure(payload),
     "",
     "Findings:",
@@ -126,6 +138,59 @@ function checkedFilesLine(summary: {
   ];
   const suffix = parts.length > 0 ? ` (${parts.join(", ")})` : "";
   return `Checked ${plural(checked, "file")}${suffix}`;
+}
+
+/**
+ * Say, in the human output, which accepted conventions enforced nothing on this run.
+ *
+ * The JSON carries a receipt per convention unconditionally, because a machine reading a verdict
+ * should be able to ask "did rule X run" without knowing the answer first. A human reading a
+ * terminal cannot scan twenty receipts, so this is the one line that matters: `Findings: 0` above
+ * is compatible with every convention having run and been satisfied, AND with none of them having
+ * run at all, and those two runs deserve different reactions.
+ *
+ * Only when there is something to say - a clean run where everything was evaluated prints nothing
+ * extra, on the same terms as `nonBlockingDisclosure` below.
+ *
+ * Two states, kept apart because their fixes are different. `reached: false` is a rule that never
+ * executed, which is a Drift or contract problem. `inputs_considered: 0` is a rule that executed
+ * against nothing in scope, which is usually an ordinary property of the diff and occasionally a
+ * glob that matches nothing. Collapsing them into "did not enforce" would hide the first behind
+ * the second, and the first is the one that shipped eight dead conventions.
+ */
+function silentConventionDisclosure(summary: {
+  evaluation_receipts?: Array<{
+    convention_id: string;
+    kind: string;
+    reached: boolean;
+    inputs_considered: number;
+    skip_reason: string | null;
+  }>;
+}): string[] {
+  const receipts = summary.evaluation_receipts;
+  if (!receipts || receipts.length === 0) {
+    return [];
+  }
+  const unreached = receipts.filter((receipt) => !receipt.reached);
+  const ranOnNothing = receipts.filter((receipt) => receipt.reached && receipt.inputs_considered === 0);
+  if (unreached.length === 0 && ranOnNothing.length === 0) {
+    return [];
+  }
+  const lines = [
+    `Enforced nothing: ${unreached.length} of ${receipts.length} convention(s) did not run` +
+      (ranOnNothing.length > 0 ? `, ${ranOnNothing.length} ran on 0 inputs` : "") +
+      " - this run's 0 findings do not cover them."
+  ];
+  // The reason, not just the count: "no evaluator for this kind" and "nothing in the diff matched"
+  // are the same silence with opposite remedies, and a bare count sends the reader to the JSON to
+  // find out which they have.
+  for (const receipt of unreached.slice(0, 3)) {
+    lines.push(`  ${receipt.convention_id} (${receipt.kind}): ${receipt.skip_reason ?? "unknown"}`);
+  }
+  if (unreached.length > 3) {
+    lines.push(`  ...and ${unreached.length - 3} more - see summary.evaluation_receipts in --json`);
+  }
+  return lines;
 }
 
 function securityBlocks(payload: {
@@ -237,26 +302,56 @@ export function formatChecksText(payload: {
  * 0, and nothing there connected the two: a reader scanning CI output sees a green step and a
  * finding, and has to already know that warn mode is why.
  *
- * Only when there is something to say: findings exist and none of them blocks. A clean run stays
- * clean, and a run that blocks does not need telling.
+ * A run that blocks does not need telling. A run that found nothing DOES, which is the correction
+ * here: the guard used to be `findings.length === 0 || blocking_count > 0`, so the disclosure was
+ * suppressed exactly when it mattered most. "0 findings, exit 0" from a contract that cannot fail
+ * a build is the single most misreadable output Drift produces - it is indistinguishable, in a CI
+ * log, from "0 findings, exit 0" from a contract that would have failed the build had there been
+ * anything to fail on. The first is a green step that proves nothing; the second is a gate.
+ *
+ * So the trigger is the CONTRACT's posture, not the finding count. With findings, the sentence
+ * says how many were reported and did not block. Without them, it says the run could not have
+ * blocked whatever it found - and that is only claimed when the receipts establish it, because
+ * "no finding blocked" and "no finding could have blocked" are different statements and only the
+ * second is worth interrupting a clean run for.
  */
-function nonBlockingDisclosure(payload: { summary: { repo_id: string; blocking_count: number }; findings: Finding[] }): string[] {
-  if (payload.findings.length === 0 || payload.summary.blocking_count > 0) {
+function nonBlockingDisclosure(payload: {
+  summary: {
+    repo_id: string;
+    blocking_count: number;
+    evaluation_receipts?: Array<{ convention_id: string; reached: boolean }>;
+  };
+  findings: Finding[];
+}): string[] {
+  if (payload.summary.blocking_count > 0) {
     return [];
   }
-  const conventionIds = [...new Set(payload.findings.map((finding) => finding.convention_id))].filter(
-    Boolean
-  );
-  if (conventionIds.length === 0) {
-    return [];
-  }
-  const lines = [
-    `Not blocking: ${payload.findings.length} finding${payload.findings.length === 1 ? "" : "s"} reported, 0 blocking - this run exits 0 and will not fail CI.`
-  ];
-  for (const conventionId of conventionIds.slice(0, 3)) {
-    lines.push(
-      `  To make it a gate: drift conventions accept ${conventionId} --repo ${payload.summary.repo_id} --severity error --mode block --confirm`
+  if (payload.findings.length > 0) {
+    const conventionIds = [...new Set(payload.findings.map((finding) => finding.convention_id))].filter(
+      Boolean
     );
+    if (conventionIds.length === 0) {
+      return [];
+    }
+    return [
+      `Not blocking: ${payload.findings.length} finding${payload.findings.length === 1 ? "" : "s"} reported, 0 blocking - this run exits 0 and will not fail CI.`,
+      ...conventionIds.slice(0, 3).map((conventionId) =>
+        `  To make it a gate: drift conventions accept ${conventionId} --repo ${payload.summary.repo_id} --severity error --mode block --confirm`
+      )
+    ];
   }
-  return lines;
+  // Zero findings. Worth a word only when the receipts show at least one convention actually ran -
+  // a run where nothing ran is already covered, in stronger terms, by the line above this one, and
+  // saying both would be two warnings about one silence.
+  const receipts = payload.summary.evaluation_receipts ?? [];
+  const reached = receipts.filter((receipt) => receipt.reached);
+  if (reached.length === 0) {
+    return [];
+  }
+  return [
+    `Not blocking: 0 findings from ${reached.length} convention(s) that ran - this run exits 0 and will not fail CI.`,
+    ...reached.slice(0, 3).map((receipt) =>
+      `  To make it a gate: drift conventions accept ${receipt.convention_id} --repo ${payload.summary.repo_id} --severity error --mode block --confirm`
+    )
+  ];
 }

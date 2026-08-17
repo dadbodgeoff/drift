@@ -95,15 +95,50 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
     let mut required_capabilities = BTreeSet::from([ScanCapability::DirectDataAccessCheck]);
     let mut missing_capabilities: BTreeSet<ScanCapability> = BTreeSet::new();
     let mut source_required_kinds: BTreeSet<ConventionKind> = BTreeSet::new();
+    // One receipt per convention handed to this engine, pushed on every path out of the loop
+    // below. Five of those paths were a bare `continue` producing an empty findings list that no
+    // consumer could tell from an evaluator that ran and found nothing.
+    let mut evaluation_receipts: Vec<crate::protocol::CheckEvaluationReceipt> = Vec::new();
     for convention in request.contract.conventions {
         let _convention_metadata = (
             &convention.scope,
             &convention.exceptions,
             &convention.governance,
         );
-        if convention.enforcement_capability != "deterministic_check"
-            || convention.enforcement_mode == "off"
-        {
+        // Resolved before the capability gate, so even a convention this engine refuses on sight
+        // carries the vocabulary's verdict on where its kind belongs. `reached: false` with
+        // `dispatch: "none"` is a kind nothing implements; `reached: false` with
+        // `dispatch: "engine_direct"` is an implemented kind this run did not enter. Different
+        // problems, different fixes, and a bare `continue` said neither.
+        let dispatch_target = ConventionKind::from_wire(&convention.kind)
+            .map(|kind| dispatch_wire(kind.dispatch()))
+            .unwrap_or("none");
+        let receipt_for = |reached: bool, inputs: usize, emitted: usize, skip: Option<&str>| {
+            crate::protocol::CheckEvaluationReceipt {
+                convention_id: convention.id.clone(),
+                kind: convention.kind.clone(),
+                dispatch: dispatch_target.to_string(),
+                reached,
+                inputs_considered: inputs,
+                findings_emitted: emitted,
+                skip_reason: skip.map(ToOwned::to_owned),
+            }
+        };
+        if convention.enforcement_mode == "off" {
+            evaluation_receipts.push(receipt_for(false, 0, 0, Some("enforcement_mode_off")));
+            continue;
+        }
+        if convention.enforcement_capability != "deterministic_check" {
+            // Every arm below requires `deterministic_check`, so a convention declaring anything
+            // weaker cannot reach one whatever the repo contains: accepted, stored, structurally
+            // inert. That is the shape docs/decisions/service-delegation-capability.md is about,
+            // and this is where it stops being invisible.
+            evaluation_receipts.push(receipt_for(
+                false,
+                0,
+                0,
+                Some("capability_not_deterministic"),
+            ));
             continue;
         }
         // D-P3a: the vocabulary decides which evaluator owns this kind.
@@ -119,13 +154,25 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
         let Some(kind) = ConventionKind::from_wire(&convention.kind) else {
             // Not in the vocabulary at all. The schema rejects these before they reach the engine;
             // reaching here means the two disagree, which is the parity gate's business, not a
-            // finding.
+            // finding. It is still a convention that enforced nothing, so it still gets a receipt.
+            evaluation_receipts.push(receipt_for(false, 0, 0, Some("no_evaluator_for_kind")));
             continue;
         };
         if !matches!(
             kind.dispatch(),
             ConventionDispatch::EngineDirect | ConventionDispatch::EnginePhase6
         ) {
+            evaluation_receipts.push(receipt_for(
+                false,
+                0,
+                0,
+                Some(match kind.dispatch() {
+                    // Nothing evaluates it anywhere: accepting it enforces nothing, which is a
+                    // strictly worse state than "someone else's evaluator owns it".
+                    ConventionDispatch::None => "no_evaluator_for_kind",
+                    _ => "not_dispatched_to_this_evaluator",
+                }),
+            ));
             continue;
         }
         // D-F1, the part the fact-kind drop was hiding. Every security evaluator below re-reads the
@@ -144,8 +191,13 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
         {
             missing_capabilities.extend(phase6_required_capabilities(kind));
             source_required_kinds.insert(kind);
+            evaluation_receipts.push(receipt_for(false, 0, 0, Some("engine_source_unavailable")));
             continue;
         }
+        // Facts in scope for this convention, counted before the arms run so that an evaluator
+        // that produced nothing is still distinguishable from one that was handed nothing. The
+        // caller has already scoped `facts` to this convention's file set.
+        let inputs_considered = facts.len();
         let severity = severity_from_str(&convention.severity);
         let enforcement_mode = enforcement_mode_from_str(&convention.enforcement_mode);
         let mut rule_findings = match kind {
@@ -372,6 +424,12 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             // Evaluated elsewhere, or by nobody. `dispatch()` above already skipped every one of
             // these, so this arm exists to make the match exhaustive: a kind added to the
             // vocabulary must be named here, which is the compile error D-P3a is for.
+            //
+            // Unreachable in practice and still receipted. If the dispatch guard above and this
+            // arm ever disagree - a kind whose manifest says `engine_direct` while its arm lands
+            // here - the run must say so rather than fall through to a silent clean pass, which is
+            // the failure mode the whole exhaustive-match design exists to prevent. A receipt is
+            // the only thing standing between a bare `continue` and that pass.
             ConventionKind::MiddlewareMustCoverRoutes
             | ConventionKind::TestExpectedForChangedModule
             | ConventionKind::CustomBriefing
@@ -380,9 +438,27 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
             | ConventionKind::ImportBoundary
             | ConventionKind::EntrypointFlow
             | ConventionKind::CanonicalHelperReuse
-            | ConventionKind::RequiredChangeChecks => continue,
+            | ConventionKind::RequiredChangeChecks => {
+                evaluation_receipts.push(receipt_for(
+                    false,
+                    inputs_considered,
+                    0,
+                    Some("not_dispatched_to_this_evaluator"),
+                ));
+                continue;
+            }
         };
         dedupe_pending_findings(&mut rule_findings);
+        // The convention was evaluated. Counted after dedupe and before the diff classification
+        // below, so `findings_emitted` is what the RULE produced rather than what survived scope
+        // filtering - a rule that fired and was then filtered by `--scope` did run, and a receipt
+        // reporting 0 for it would answer the wrong question.
+        evaluation_receipts.push(receipt_for(
+            true,
+            inputs_considered,
+            rule_findings.len(),
+            None,
+        ));
         let pending_by_fingerprint = rule_findings
             .iter()
             .map(|finding| (finding.fingerprint.clone(), finding.clone()))
@@ -505,6 +581,7 @@ pub fn check_repo(request: CheckRequest) -> CheckResult {
         stats,
         findings,
         security_boundary_proofs,
+        evaluation_receipts,
         diagnostics,
         completeness: vec![EngineCompleteness {
             scope: "repo".to_string(),
@@ -3889,6 +3966,20 @@ fn security_auth_files(
         .into_iter()
         .filter(|file| changed_files.contains(file))
         .collect()
+}
+
+/// The wire spelling of a dispatch target, for the receipt.
+///
+/// Hand-written rather than generated because `ConventionDispatch` carries no `as_wire` - and
+/// exhaustive, so a target added to vocabulary/vocabulary.json fails this match rather than
+/// serialising as something plausible. The strings are the manifest's own `dispatch` values.
+fn dispatch_wire(dispatch: ConventionDispatch) -> &'static str {
+    match dispatch {
+        ConventionDispatch::EngineDirect => "engine_direct",
+        ConventionDispatch::EnginePhase6 => "engine_phase6",
+        ConventionDispatch::Cli => "cli",
+        ConventionDispatch::None => "none",
+    }
 }
 
 fn graph_service_delegation_findings(
