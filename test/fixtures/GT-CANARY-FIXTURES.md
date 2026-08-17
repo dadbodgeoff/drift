@@ -6,6 +6,8 @@ below were added for cells that no fixture in `test/fixtures/` could enter — t
 `GT-CORPUS.md` documents the six `gt-` directories the falsification audit hand-built. The three
 below were added by phase 0b (TDD §4.2) for cells that no fixture in `test/fixtures/` could enter.
 They are not audit artifacts and carry no audit numbers.
+below were added for cells that no fixture in `test/fixtures/` could enter — the first two by
+phase 0b (TDD §4.2). They are not audit artifacts and carry no audit numbers.
 
 | Fixture | Cell it exists for | Why a new fixture was needed |
 |---|---|---|
@@ -48,6 +50,7 @@ becomes proposable the import canary fails and has to move to `runGtWorkflow`. T
 contract's `scope.path_globs` is the proposer's own literal glob set, pinned against
 `candidate_command.rs` by the canary itself — a de-globbed scope would pass even under the historical
 `path_glob_matches` and would prove nothing.
+| `gt-request-validation` | `api_route_requires_request_validation` × `request_validation_proof` | The proposer needs the **same** validation symbol in ≥2 api-route facts (`push_request_validation_candidates`, `facts.len() >= 2`). `security-validation-before-data` is one route with one `parse` call and `security-validation-missing` is the violation with no validation call at all, so neither reaches the floor and no fixture in the tree produced a candidate of this kind. This fixture carries two conforming `safeParse` routes — which is what makes the candidate exist at all — plus one violating route. |
 
 ## Near-miss content, per §4.3
 
@@ -95,3 +98,9 @@ route — `request.headers.get(...)` — into `traceId`, which is not a session 
 to "this route reads a request header" would flag it. The real discriminator is
 `is_session_like_variable` (`security_facts.rs:1642`) applied to the assigned variable, and without
 this route a detector that dropped that half would score identically to the correct one.
+`gt-request-validation` carries its near-miss inside the conforming routes rather than beside them.
+`safeParse` returns a result object, not the parsed value, so a check that merely saw the accepted
+symbol get called would pass a route that reads `result` directly and never checks `result.success`.
+The canary's conformance half therefore asserts `proven: true` on routes that DO guard and DO use
+`result.data` — the shapes `security_control_flow.rs::safe_parse_success_guard_dominates` already
+separates in unit tests, now driven through the real workflow.

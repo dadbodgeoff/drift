@@ -2523,7 +2523,13 @@ fn insert_request_validator_value(
     default_behavior: RequestValidatorBehavior,
 ) {
     if let Some(symbol) = value.as_str() {
-        insert_request_validator(validators, symbol, default_kind, default_behavior, None);
+        insert_request_validator(
+            validators,
+            symbol,
+            defaulted_request_validator_kind(symbol, default_kind),
+            default_behavior,
+            None,
+        );
         return;
     }
     let Some(symbol) = value
@@ -2537,7 +2543,7 @@ fn insert_request_validator_value(
         .get("kind")
         .and_then(|kind| kind.as_str())
         .map(request_validator_kind_from_str)
-        .unwrap_or(default_kind);
+        .unwrap_or_else(|| defaulted_request_validator_kind(symbol, default_kind));
     let behavior = value
         .get("behavior")
         .and_then(|behavior| behavior.as_str())
@@ -2568,9 +2574,34 @@ fn insert_request_validator(
     );
 }
 
+/// Picks the kind for a validator entry that did not say one.
+///
+/// The candidate proposer never writes a `kind`: `push_request_validation_candidates`
+/// (`candidate_command.rs`) emits every inferred symbol under `requires.validators` with
+/// `requires.schemas` left empty, so everything it produces defaulted to `Helper`. That is right
+/// for `validateEmail` and wrong for `safeParse`, which is only ever reached as
+/// `SomeSchema.safeParse(body)` - and `Helper` requires a call with no receiver. The result was a
+/// convention that could be inferred and accepted but could never prove anything, and that
+/// therefore flagged the very routes whose `safeParse` calls it had been inferred from.
+///
+/// An entry that DOES carry an explicit `kind` is left alone, so a hand-authored contract can still
+/// pin a symbol to `helper` and get the old matching.
+fn defaulted_request_validator_kind(
+    symbol: &str,
+    default_kind: RequestValidatorKind,
+) -> RequestValidatorKind {
+    if default_kind == RequestValidatorKind::Helper
+        && drift_engine::is_schema_method_validator_symbol(symbol)
+    {
+        return RequestValidatorKind::SchemaMethod;
+    }
+    default_kind
+}
+
 fn request_validator_kind_from_str(kind: &str) -> RequestValidatorKind {
     match kind {
         "schema" => RequestValidatorKind::Schema,
+        "schema_method" => RequestValidatorKind::SchemaMethod,
         _ => RequestValidatorKind::Helper,
     }
 }
@@ -2913,12 +2944,37 @@ fn request_validation_missing_code(proof: &SecurityBoundaryProof) -> String {
         .unwrap_or_else(|| "request_input_not_validated".to_string())
 }
 
+/// Reads the line out of a sink id.
+///
+/// Sink ids are `sink:{file}:{line}:{symbol}` (`security_control_flow.rs::sink_id`), NOT the
+/// `...:{line}` shape every other id in this file uses (`security_proof.rs::fact_id`). Feeding one
+/// to `input_line_from_fact_id` therefore parses the *symbol* as the line, fails, and yields 0 -
+/// which `request_validation_finding_line` then filters away, so every request-validation finding
+/// ever emitted reported line 1 regardless of where the unvalidated sink actually was. The line was
+/// a default, not a measurement.
+fn sink_line_from_sink_id(sink_fact_id: &str) -> usize {
+    let mut segments = sink_fact_id.rsplit(':');
+    segments.next();
+    segments
+        .next()
+        .and_then(|line| line.parse::<usize>().ok())
+        .unwrap_or(0)
+}
+
 fn request_validation_finding_line(proof: &SecurityBoundaryProof) -> Option<usize> {
     proof
         .request_validation
         .unvalidated_uses
         .first()
-        .map(|use_proof| input_line_from_fact_id(&use_proof.sink_fact_id))
+        .map(|use_proof| sink_line_from_sink_id(&use_proof.sink_fact_id))
+        .filter(|line| *line > 0)
+        .or_else(|| {
+            proof
+                .request_validation
+                .unvalidated_uses
+                .first()
+                .map(|use_proof| input_line_from_fact_id(&use_proof.input_fact_id))
+        })
         .or_else(|| {
             proof
                 .parser_gaps
