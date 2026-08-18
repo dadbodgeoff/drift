@@ -1,8 +1,8 @@
 use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
     AuthorizationHelperBehavior, AuthorizationHelperKind, FactKind, Phase4SecurityPolicy,
-    RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus, build_auth_boundary_proof,
-    build_middleware_coverage_proof, build_phase4_security_proof,
+    RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus, SessionTrustReason,
+    build_auth_boundary_proof, build_middleware_coverage_proof, build_phase4_security_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof,
     extract_security_facts,
 };
@@ -110,9 +110,8 @@ export async function GET(request: Request) {
             .session_trust
             .missing_trust
             .iter()
-            .any(
-                |missing| missing.variable == "session" && missing.reason == "derived_from_request"
-            ),
+            .any(|missing| missing.variable == "session"
+                && missing.reason == SessionTrustReason::DerivedFromRequest),
         "missing derived_from_request trust failure: {untrusted_proof:#?}"
     );
 }

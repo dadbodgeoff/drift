@@ -305,6 +305,14 @@
         { "wire": "graph_evidence", "engine_certified": false, "security": false },
         { "wire": "deterministic_enforcement", "engine_certified": false, "security": false }
       ]
+    },
+
+    "session_trust_reason": {
+      "doc": "Why a session object could not be proven trusted. PROOF-LEVEL vocabulary: it says why the proof failed. The FINDING-level code a user sees (SecurityMissingProofCodeSchema) is separate and is derived from this by the phase4 finding-reason mapping in check_command.rs. The two are deliberately different vocabularies; mapping between them must be total.",
+      "rust_enum": "SessionTrustReason",
+      "ts_const": "SESSION_TRUST_REASONS",
+      "ts_schema": "SessionTrustReasonSchema",
+      "members": ["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"]
     }
   }
 }

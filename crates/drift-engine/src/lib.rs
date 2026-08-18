@@ -105,7 +105,7 @@ pub use security_rules::{
 };
 pub use vocabulary::{
     ConventionDispatch, ConventionKind, FactKind, FileRole, GraphEdgeKind, GraphNodeKind,
-    RouteFlavor, ScanCapability,
+    RouteFlavor, ScanCapability, SessionTrustReason,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

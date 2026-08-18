@@ -76,7 +76,7 @@ export const SecurityParserGapCodeSchema = z.enum([
 // The kinds that carry a security boundary proof, from the one convention vocabulary. This list,
 // the identical one in @drift/engine-contract, and EXPERIMENTAL_SECURITY_CONVENTION_KINDS all claim
 // to be the same set; the third had twelve entries to these thirteen.
-import { SecurityContractKindSchema } from "@drift/vocabulary";
+import { SecurityContractKindSchema, SessionTrustReasonSchema } from "@drift/vocabulary";
 
 const Phase5SensitiveFieldSchema = z.object({
   field_path: z.string().min(1),
@@ -320,7 +320,9 @@ const SecuritySessionTrustProofSchema = z.object({
   missing_trust: z.array(z.object({
     fact_id: z.string().min(1),
     variable: z.string().min(1),
-    reason: z.enum(["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"])
+    // PROOF-level, from the one session_trust_reason vocabulary. This was a fourth
+    // hand-written copy of a list the engine emitted a non-member of (S1-01).
+    reason: SessionTrustReasonSchema
   }))
 });
 

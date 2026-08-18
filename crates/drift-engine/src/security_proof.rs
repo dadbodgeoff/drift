@@ -11,6 +11,7 @@ use crate::{
         unsupported_dynamic_control_flow,
     },
     security_patterns::dynamic_middleware_matcher_line,
+    vocabulary::SessionTrustReason,
 };
 use serde_json::Value;
 
@@ -104,7 +105,16 @@ pub struct SessionTrustBoundaryProof {
 pub struct SessionMissingTrustProof {
     pub fact_id: String,
     pub variable: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one vocabulary that declares them.
+    ///
+    /// This was a `String`, and S1-01 is what that cost: the builder wrote
+    /// `session_not_trusted` here - a FINDING-level code, a non-member of the proof-level
+    /// enum the CLI parses this field with - and the engine's own output failed
+    /// `SecurityBoundaryProofSchema`. Nothing in Rust could have caught it, because every
+    /// string is a valid `String`.
+    ///
+    /// Typed, the same mistake does not compile.
+    pub reason: SessionTrustReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1461,16 +1471,14 @@ fn build_session_trust_proof_from_facts(facts: &[Fact]) -> SessionTrustProof {
                 missing_trust.push(SessionMissingTrustProof {
                     fact_id: fact_id(fact),
                     variable,
-                    // PROOF-level vocabulary (core/src/security.ts SecurityBoundaryProof
-                    // session_trust enum), NOT the finding-level code a user sees. The
+                    // PROOF-level vocabulary, NOT the finding-level code a user sees. The
                     // finding-level `session_not_trusted` is derived from this by the
                     // phase4 finding-reason mapper in check_command.rs.
                     reason: if source == Some("unknown_helper") {
-                        "unknown_helper"
+                        SessionTrustReason::UnknownHelper
                     } else {
-                        "derived_from_request"
-                    }
-                    .to_string(),
+                        SessionTrustReason::DerivedFromRequest
+                    },
                 });
             }
             _ => {}
@@ -2098,8 +2106,11 @@ mod tests {
     /// `missing_trust[].reason` is PROOF-level vocabulary, and an unrecognized helper
     /// is `unknown_helper` -- never the finding-level `session_not_trusted`.
     ///
-    /// Verified non-vacuous: reverting the emission site to "session_not_trusted"
-    /// fails this test with left: "session_not_trusted", right: "unknown_helper".
+    /// Verified non-vacuous: reverting the emission site to
+    /// `SessionTrustReason::DerivedFromRequest` fails this test with
+    /// left: DerivedFromRequest, right: UnknownHelper. Since S2-02 the ORIGINAL
+    /// regression - writing the finding-level `session_not_trusted` here - can no longer
+    /// be expressed: it is not a member of the enum, so it does not compile.
     #[test]
     fn unknown_helper_source_maps_to_unknown_helper_reason() {
         let source = concat!(
@@ -2116,6 +2127,6 @@ mod tests {
             .missing_trust
             .first()
             .expect("an unrecognized session helper must produce a missing_trust entry");
-        assert_eq!(missing.reason, "unknown_helper");
+        assert_eq!(missing.reason, SessionTrustReason::UnknownHelper);
     }
 }

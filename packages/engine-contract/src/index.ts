@@ -3,7 +3,8 @@ import {
   CandidateConventionKindSchema,
   FactKindSchema,
   SecurityCapabilityNameSchema,
-  SecurityContractKindSchema
+  SecurityContractKindSchema,
+  SessionTrustReasonSchema
 } from "@drift/vocabulary";
 import {
   GraphEdgeSchema,
@@ -959,7 +960,9 @@ const EngineSecurityBoundaryProofSchema = z.object({
     missing_trust: z.array(z.object({
       fact_id: z.string().min(1),
       variable: z.string().min(1),
-      reason: z.enum(["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"])
+      // PROOF-level, from the one session_trust_reason vocabulary. This was a fourth
+      // hand-written copy of a list the engine emitted a non-member of (S1-01).
+      reason: SessionTrustReasonSchema
     }))
   }).optional().default({
     required: false,

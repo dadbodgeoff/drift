@@ -448,3 +448,17 @@ export const SECURITY_SCAN_CAPABILITIES = [
 export const SecurityCapabilityNameSchema = z.enum(SECURITY_SCAN_CAPABILITIES);
 
 export type SecurityCapabilityName = (typeof SECURITY_SCAN_CAPABILITIES)[number];
+
+/**
+ * Why a session object could not be proven trusted. PROOF-LEVEL vocabulary: it says why the proof failed. The FINDING-level code a user sees (SecurityMissingProofCodeSchema) is separate and is derived from this by the phase4 finding-reason mapping in check_command.rs. The two are deliberately different vocabularies; mapping between them must be total.
+ */
+export const SESSION_TRUST_REASONS = [
+  "derived_from_request",
+  "unknown_helper",
+  "missing_auth_guard",
+  "parser_gap",
+] as const;
+
+export const SessionTrustReasonSchema = z.enum(SESSION_TRUST_REASONS);
+
+export type SessionTrustReason = (typeof SESSION_TRUST_REASONS)[number];

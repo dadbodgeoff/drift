@@ -15,7 +15,7 @@ use drift_engine::{
     Phase6AcceptedHelper, Phase6CorsContract, Phase6RawSqlContract, Phase6SecurityContract,
     Phase6SecurityProof, Phase6SsrfContract, RequestValidatorBehavior, RequestValidatorKind,
     RouteSecurityBoundaryProof, RuleFinding, ScanCapability, SecurityBoundaryProof,
-    SecurityProofStatus, Severity, accepted_phase5_contract_from_requires,
+    SecurityProofStatus, SessionTrustReason, Severity, accepted_phase5_contract_from_requires,
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
     materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
@@ -3639,20 +3639,37 @@ fn phase4_missing_code(proof: &SecurityBoundaryProof, convention_kind: &str) -> 
             .session_trust
             .missing_trust
             .first()
-            // Proof-level reasons and finding-level codes are separate vocabularies.
-            // This mapping must be TOTAL over the proof-level enum. A reason that falls
-            // through lands in SecurityMissingProofCodeSchema, and the consequence is NOT
-            // a soft one: engine-contract normalizes an unknown code to
-            // `unknown_reason_code` via a z.preprocess, but packages/core's copy is a
-            // plain hard z.enum, so it THROWS on the CLI's own read path and on all four
-            // storage parses. An unmapped reason is a second F1-class crash, not a
-            // degraded string.
+            // Proof-level reasons and finding-level codes are separate vocabularies, and
+            // this is the only bridge between them. The mapping must be TOTAL over the
+            // proof-level enum, and the consequence of a gap is NOT a soft one:
+            // engine-contract normalizes an unknown code to `unknown_reason_code` via a
+            // z.preprocess, but packages/core's copy is a plain hard z.enum, so it THROWS
+            // on the CLI's own read path and on all four storage parses. An unmapped
+            // reason is a second F1-class crash, not a degraded string.
             //
-            // NOTE the `.unwrap_or_else` below is a separate, live defect -- see
-            // `an_empty_missing_list_can_state_the_opposite_of_the_proof` in the tests.
-            .map(|missing| match missing.reason.as_str() {
-                "derived_from_request" | "unknown_helper" => "session_not_trusted".to_string(),
-                _ => missing.reason.clone(),
+            // S2-02 made `reason` a typed enum, so this match has NO catch-all arm and
+            // totality is now the compiler's problem rather than a reviewer's: adding a
+            // member to session_trust_reason fails to build until someone decides where it
+            // lands. That is the whole point of typing the field.
+            //
+            // The last arm is a characterization, not an endorsement. `missing_auth_guard`
+            // is a member of both vocabularies, so passing it through is correct.
+            // `parser_gap` is NOT a finding-level member - unreachable today, because the
+            // builder emits neither, and left unfixed on purpose: choosing a finding-level
+            // code for a parser-gapped session-trust proof is a product decision, not a
+            // mechanical one. A parser gap travels on the separate `parser_gaps` surface
+            // and drives `proof_status == ParserGap`, so answering `session_not_trusted`
+            // here would assert a trust failure that was never established.
+            //
+            // NOTE the `.unwrap_or_else` below is a separate, LIVE defect (issue #129) --
+            // see `an_empty_missing_list_can_state_the_opposite_of_the_proof` in the tests.
+            .map(|missing| match missing.reason {
+                SessionTrustReason::DerivedFromRequest | SessionTrustReason::UnknownHelper => {
+                    "session_not_trusted".to_string()
+                }
+                SessionTrustReason::MissingAuthGuard | SessionTrustReason::ParserGap => {
+                    missing.reason.as_wire().to_string()
+                }
             })
             .unwrap_or_else(|| "session_not_trusted".to_string()),
         _ => "missing_proof".to_string(),
@@ -3831,7 +3848,7 @@ fn phase4_proof_json(
             "missing_trust": proof.session_trust.missing_trust.iter().map(|missing| json!({
                 "fact_id": missing.fact_id,
                 "variable": missing.variable,
-                "reason": missing.reason
+                "reason": missing.reason.as_wire()
             })).collect::<Vec<_>>()
         },
         "authorization": {
@@ -4517,22 +4534,27 @@ mod finding_fingerprint_dc3_tests {
 mod phase4_missing_code_tests {
     use super::phase4_missing_code;
     use drift_engine::{
-        AcceptedAuthHelper, AuthGuardBehavior, SecurityBoundaryProof, build_phase4_security_proof,
+        AcceptedAuthHelper, AuthGuardBehavior, SecurityBoundaryProof, SessionTrustReason,
+        build_phase4_security_proof,
     };
 
     const SESSION_TRUST: &str = "session_object_must_come_from_trusted_helper";
 
     /// The PROOF-level session-trust reasons `build_session_trust_proof_from_facts` can
-    /// actually emit. The wire enum in packages/core/src/security.ts also declares
+    /// actually emit. The `session_trust_reason` vocabulary also declares
     /// `missing_auth_guard` and `parser_gap`, but neither has a producer -- see the
-    /// unreachable-member pin below.
-    const REACHABLE_REASONS: [&str; 2] = ["derived_from_request", "unknown_helper"];
+    /// unreachable-member pin below, and their reserved entries in
+    /// scripts/vocabulary-parity-baseline.json.
+    const REACHABLE_REASONS: [SessionTrustReason; 2] = [
+        SessionTrustReason::DerivedFromRequest,
+        SessionTrustReason::UnknownHelper,
+    ];
 
     /// The FINDING-level codes (SecurityMissingProofCodeSchema) this mapper may produce
     /// for a session-trust convention.
     const FINDING_LEVEL_CODES: [&str; 2] = ["session_not_trusted", "missing_auth_guard"];
 
-    fn proof_with_session_reason(reason: &str) -> SecurityBoundaryProof {
+    fn proof_with_session_reason(reason: SessionTrustReason) -> SecurityBoundaryProof {
         let source = concat!(
             "export async function GET(request: Request) {\n",
             "  const session = await getSession(request);\n",
@@ -4546,7 +4568,7 @@ mod phase4_missing_code_tests {
             .missing_trust
             .first_mut()
             .expect("fixture must produce a missing_trust entry")
-            .reason = reason.to_string();
+            .reason = reason;
         proof
     }
 
@@ -4561,7 +4583,7 @@ mod phase4_missing_code_tests {
             let code = phase4_missing_code(&proof_with_session_reason(reason), SESSION_TRUST);
             assert!(
                 FINDING_LEVEL_CODES.contains(&code.as_str()),
-                "proof-level reason {reason:?} mapped to {code:?}, which is not a \
+                "proof-level reason {reason} mapped to {code:?}, which is not a \
                  member of the finding-level vocabulary {FINDING_LEVEL_CODES:?}"
             );
         }
@@ -4577,7 +4599,7 @@ mod phase4_missing_code_tests {
             assert_eq!(
                 phase4_missing_code(&proof_with_session_reason(reason), SESSION_TRUST),
                 "session_not_trusted",
-                "proof-level reason {reason:?}"
+                "proof-level reason {reason}"
             );
         }
     }
@@ -4661,14 +4683,17 @@ mod phase4_missing_code_tests {
     fn the_unproduced_reasons_are_pinned_where_they_currently_land() {
         assert_eq!(
             phase4_missing_code(
-                &proof_with_session_reason("missing_auth_guard"),
+                &proof_with_session_reason(SessionTrustReason::MissingAuthGuard),
                 SESSION_TRUST
             ),
             "missing_auth_guard",
             "a member of both vocabularies survives the fall-through"
         );
         assert_eq!(
-            phase4_missing_code(&proof_with_session_reason("parser_gap"), SESSION_TRUST),
+            phase4_missing_code(
+                &proof_with_session_reason(SessionTrustReason::ParserGap),
+                SESSION_TRUST
+            ),
             "parser_gap",
             "not a finding-level member; would normalize to unknown_reason_code downstream"
         );

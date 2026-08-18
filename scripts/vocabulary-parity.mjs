@@ -58,6 +58,7 @@ const SECURITY_FACTS_SOURCE = join(repoRoot, "crates/drift-engine/src/security_f
 const PRISMA_SOURCE = join(repoRoot, "crates/drift-engine/src/prisma.rs");
 const MAIN_SOURCE = join(repoRoot, "crates/drift-engine/src/main.rs");
 const FACTGRAPH_SOURCE = join(repoRoot, "packages/factgraph/src/index.ts");
+const SECURITY_PROOF_SOURCE = join(repoRoot, "crates/drift-engine/src/security_proof.rs");
 
 /**
  * The comment that opens the arm in `check_repo`'s match which skips kinds the engine does not own.
@@ -311,8 +312,60 @@ const PRODUCER_PATTERNS = {
   graph_edge_kind: (variant, member) => [
     { file: MAIN_SOURCE, pattern: new RegExp(`GraphEdgeKind::${variant}\\b`) },
     { file: FACTGRAPH_SOURCE, pattern: new RegExp(`edge\\(\\s*"${member}"`) }
+  ],
+  // The proof-level session trust reason has exactly one construction site:
+  // `build_session_trust_proof_from_facts` in security_proof.rs. That makes the producer
+  // question decidable here in the strong sense, unlike the vocabularies that fall through
+  // to the reference check - so this one is asked precisely, and two of its four members
+  // answer "nobody", which is the honest answer and is baselined as such.
+  //
+  // Deliberately NOT a repo-wide search for the variant. `phase4_missing_code` matches on
+  // every member exhaustively, so a whole-repo search would report all four as produced and
+  // the gate would assert the opposite of what it means to - the same shape as the skip-arm
+  // problem in rule 3.
+  session_trust_reason: (variant) => [
+    { file: SECURITY_PROOF_SOURCE, pattern: new RegExp(`SessionTrustReason::${variant}\\b`) }
   ]
 };
+
+/**
+ * A Rust source with its `#[cfg(test)]` modules removed.
+ *
+ * A test that CONSTRUCTS a vocabulary member is not a producer of it. Without this, the producer
+ * question answers itself: `security_proof.rs` asserts on `SessionTrustReason::UnknownHelper` in its
+ * own test module, so deleting the real emission site left the gate still reporting the member as
+ * produced - a gate that cannot fail, which is the artefact this whole file exists to not be. It is
+ * the same shape as the skip-arm exclusion in rule 3, and it is excluded for the same reason.
+ *
+ * Brace-matched rather than "everything after the first #[cfg(test)]", because a test module is only
+ * conventionally last, and a gate that silently stops reading the second half of a file when someone
+ * moves one is worse than one that never read it.
+ */
+function withoutTestModules(source) {
+  let result = "";
+  let index = 0;
+  for (;;) {
+    const marker = source.indexOf("#[cfg(test)]", index);
+    if (marker === -1) {
+      return result + source.slice(index);
+    }
+    const open = source.indexOf("{", marker);
+    if (open === -1) {
+      return result + source.slice(index);
+    }
+    let depth = 0;
+    let cursor = open;
+    for (; cursor < source.length; cursor += 1) {
+      if (source[cursor] === "{") depth += 1;
+      else if (source[cursor] === "}") {
+        depth -= 1;
+        if (depth === 0) break;
+      }
+    }
+    result += source.slice(index, marker);
+    index = cursor === source.length ? cursor : cursor + 1;
+  }
+}
 
 function rustVariantOf(member) {
   return member
@@ -323,10 +376,10 @@ function rustVariantOf(member) {
 }
 
 function coverageOffenders(vocabularies) {
-  const sources = [...sourceFiles()].map((file) => ({
-    path: file,
-    text: readFileSync(file, "utf8")
-  }));
+  const sources = [...sourceFiles()].map((file) => {
+    const raw = readFileSync(file, "utf8");
+    return { path: file, text: file.endsWith(".rs") ? withoutTestModules(raw) : raw };
+  });
   const byPath = new Map(sources.map((entry) => [entry.path, entry.text]));
   const offenders = [];
 

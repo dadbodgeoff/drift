@@ -12,12 +12,19 @@ const GENERATED_RS = join(repoRoot, "crates/drift-engine/src/vocabulary.rs");
 const MCP_TOOLS = join(repoRoot, "packages/mcp/src/tools.ts");
 const SEMANTIC_CAPABILITIES = join(repoRoot, "packages/core/src/semantic-capabilities.ts");
 const CHECK_COMMAND = join(repoRoot, "crates/drift-engine/src/check_command.rs");
+const SECURITY_PROOF = join(repoRoot, "crates/drift-engine/src/security_proof.rs");
 
 const originals = new Map(
-  [BASELINE, MANIFEST, GENERATED_TS, GENERATED_RS, MCP_TOOLS, SEMANTIC_CAPABILITIES, CHECK_COMMAND].map((path) => [
-    path,
-    readFileSync(path, "utf8")
-  ])
+  [
+    BASELINE,
+    MANIFEST,
+    GENERATED_TS,
+    GENERATED_RS,
+    MCP_TOOLS,
+    SEMANTIC_CAPABILITIES,
+    CHECK_COMMAND,
+    SECURITY_PROOF
+  ].map((path) => [path, readFileSync(path, "utf8")])
 );
 
 function runGate() {
@@ -211,6 +218,60 @@ describe("vocabulary parity gate", () => {
     const result = runGate();
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain("STALE baseline entry: fact_kind:file_detected is now referenced");
+  });
+
+  /**
+   * S2-02: every member of the PROOF-LEVEL session trust vocabulary is produced, or reserved.
+   *
+   * `session_trust.missing_trust[].reason` is a different vocabulary from the FINDING-level code the
+   * user reads, and the two overlap enough to be confused for one. S1-01 is what that confusion
+   * costs: the builder wrote `session_not_trusted` - a finding-level code, a non-member of the
+   * proof-level enum - into the proof-level field, and the CLI's parse threw on the engine's own
+   * output.
+   *
+   * Two things have to hold for that class to be closed rather than the instance.
+   *
+   * FIRST, the split has to be written down: exactly two of the four members are produced today, and
+   * the other two are reserved with a reason. `missing_auth_guard` and `parser_gap` were widened
+   * into this enum from the finding-level list and never given a producer here. They are held, not
+   * deleted - the schema is applied on read, and scripts/stored-proof-census.mjs found no rows that
+   * would license shrinking it (18 databases, 0 proof rows: an absence of evidence on one machine,
+   * not evidence of absence).
+   *
+   * SECOND, the producer analysis has to be REAL. A gate that reports "produced" from a text search
+   * that cannot fail is the two-hand-written-lists problem with a green tick on it. Removing the one
+   * emission site must make the gate say so by name.
+   */
+  it("session_trust_reason_members_all_have_producers", () => {
+    const manifest = JSON.parse(originals.get(MANIFEST));
+    const members = manifest.vocabularies.session_trust_reason.members;
+    const reserved = JSON.parse(originals.get(BASELINE)).reserved_members.filter(
+      (entry) => entry.vocabulary === "session_trust_reason"
+    );
+
+    expect(reserved.map((entry) => entry.member).sort()).toEqual(["missing_auth_guard", "parser_gap"]);
+    for (const entry of reserved) {
+      expect(entry.gap).toBe("no_producer");
+      // A reserved member with a one-word reason is an unexplained member with extra steps.
+      expect(entry.reason.length).toBeGreaterThan(80);
+    }
+    expect(members.filter((member) => !reserved.some((entry) => entry.member === member))).toEqual([
+      "derived_from_request",
+      "unknown_helper"
+    ]);
+
+    writeFileSync(
+      SECURITY_PROOF,
+      originals
+        .get(SECURITY_PROOF)
+        .replace("SessionTrustReason::UnknownHelper", "SessionTrustReason::DerivedFromRequest")
+    );
+
+    const result = runGate();
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain(
+      "NEW vocabulary member with no producer: session_trust_reason.unknown_helper"
+    );
   });
 
   /**

@@ -75,6 +75,18 @@
       "member": "reflection_or_magic_detected",
       "gap": "unreferenced",
       "reason": "Declared in the parser-gap vocabulary and referenced nowhere in either language: no diagnostic maps to it, no capability contract names it, nothing filters on it. Reserved for the reflection case the TypeScript adapter does not attempt."
+    },
+    {
+      "vocabulary": "session_trust_reason",
+      "member": "missing_auth_guard",
+      "gap": "no_producer",
+      "reason": "S2-02. A FINDING-level code (SecurityMissingProofCodeSchema) copied into the PROOF-level enum when the two vocabularies were confused for one - the same confusion that produced S1-01, seen from the other side. `build_session_trust_proof_from_facts` emits only derived_from_request and unknown_helper, so nothing constructs this. RETAINED, not deleted, for stored-row compatibility: SecurityBoundaryProofSchema is applied ON READ in listSecurityBoundaryProofs, so narrowing this enum makes any row already holding the member unparseable, and there is no migration back. scripts/stored-proof-census.mjs reports 18 of 18 databases opened and 0 proof rows on the machine this was written on - an absence of evidence, not evidence of absence, and not a licence to shrink. CONSUMED by phase4_missing_code in check_command.rs, which names it in an explicit arm and passes it through unchanged; it is a member of the finding-level vocabulary too, so that pass-through is correct rather than accidental. Adding a producer closes this entry."
+    },
+    {
+      "vocabulary": "session_trust_reason",
+      "member": "parser_gap",
+      "gap": "no_producer",
+      "reason": "S2-02, and the sharper of the pair. No producer for the same reason as missing_auth_guard, but unlike it this member is NOT in the finding-level vocabulary, so if it were ever emitted the finding would normalize to `unknown_reason_code` at the engine parse boundary and stop saying why the proof failed. It is named explicitly in phase4_missing_code's exhaustive match, pinned by phase4_missing_code_tests, and left unfixed on purpose: choosing a finding-level code for a parser-gapped session-trust proof is a product decision, not a mechanical one - a parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap, so answering session_not_trusted would assert a trust failure that was never established. Retained for the same stored-row reason as its sibling. If a producer is ever added, decide the finding-level mapping FIRST."
     }
   ]
 }
