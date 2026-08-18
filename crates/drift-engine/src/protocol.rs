@@ -549,6 +549,30 @@ pub struct CheckMatcher {
     /// re-export of the same module through (T93).
     #[serde(default)]
     pub forbidden_module_files: Option<Vec<String>>,
+    /// What each accepted security helper's import specifier actually resolves to.
+    ///
+    /// S3-03: computed CLI-side for the same structural reason as `forbidden_module_files` above -
+    /// the engine's graph is scoped to the changed files, so it cannot resolve a specifier whose
+    /// meaning is established by imports outside the diff. The CLI has the whole graph.
+    ///
+    /// It arrives on the matcher rather than inside `requires` deliberately. `requires` is the
+    /// stored contract - what a human accepted - and it crosses this boundary as an untyped
+    /// `Option<Value>`, so a CLI derivation placed there would both blur contract with derivation
+    /// and lose its shape on the way. Typed here, a rename fails the build instead of shipping.
+    ///
+    /// Accepted and ignored as of this sprint: nothing reads it, and no engine behaviour depends on
+    /// it. It exists so the next sprint can replace name-only and specifier-string helper matching
+    /// with resolved module identity.
+    ///
+    /// `allow(dead_code)` is load-bearing rather than lazy, and it is temporary. `lint:engine` runs
+    /// clippy with `-D warnings`, so an unread field fails the build - correctly, in general. Here
+    /// the field is deliberately inert for exactly one sprint: shipping the wire shape first means
+    /// the consumer lands against a field the CLI is already populating and the round trip is
+    /// already proven, rather than both arriving together untested. Delete this attribute when
+    /// helper matching starts reading it; if it is still here after that, the consumer never landed.
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub accepted_helper_module_files: Option<Vec<AcceptedHelperModuleFiles>>,
     // `allowed_delegate_imports` was here, read by nothing. It was the only configurable field
     // of api_route_requires_service_delegation's matcher, and that kind's evaluator took it as
     // `_allowed_delegate_imports` and never looked at it - so an author who narrowed their
@@ -569,6 +593,36 @@ pub struct CheckMatcher {
     /// CV-2: the route flavours this convention is about. Absent or empty means all of them.
     #[serde(default)]
     pub applies_to_route_flavors: Option<Vec<String>>,
+}
+
+/// One accepted security helper's resolved module identity, and how that answer was reached.
+///
+/// `mode` carries as much of the answer as `files` does, and a consumer that reads one without the
+/// other will be wrong in the common case:
+///
+///   - `repo_resolved` - the specifier resolved inside the repo; `files` is the identity, re-export
+///     chains already followed. Match on resolved file.
+///   - `external` - a bare package specifier that resolved to nothing, which is not a failure:
+///     `resolve_import` filters to paths inside the scan snapshot, so `next-auth` and everything
+///     else under `node_modules` never produces an edge. `files` is empty and always will be.
+///     Match on the exact specifier, plus a local-shadow check.
+///   - `unresolved` - a repo-relative specifier that resolved to nothing. Also empty `files`, but
+///     this one is a degradation and belongs in the proof as one.
+///
+/// Reading an empty `files` as "this helper matches nothing" would therefore flag every route that
+/// correctly uses an external auth helper - the most common real-world contract there is.
+/// Inert for one sprint by design - see `CheckMatcher::accepted_helper_module_files`.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+pub struct AcceptedHelperModuleFiles {
+    pub symbol: String,
+    pub mode: String,
+    #[serde(default)]
+    pub files: Vec<String>,
+    /// The tsconfig-paths hijack shape: the contract names a package and the repo has pointed that
+    /// name at a file it controls. Present only when true, and never to be silently accepted.
+    #[serde(default)]
+    pub external_specifier_resolves_in_repo: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

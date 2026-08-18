@@ -3182,12 +3182,16 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
     );
     const snapshots = input.checkData.snapshots.filter((snapshot) => fileSet.has(snapshot.file_path));
     const graph = graphForEngineCheck(input.checkData, fileSet, allowedGraphImportFacts);
-    // Computed from the full graph, before it is scoped to the diff.
+    // Computed from the full graph, before it is scoped to the diff. That ordering is the whole
+    // point of computing them here: `graph` above is already narrowed to the changed files, and the
+    // imports that establish what a specifier MEANS routinely live outside the diff.
     const forbiddenModuleFiles = [
       ...forbiddenModuleFiles_(input.checkData, convention.matcher.forbidden_imports ?? [])
     ];
+    const acceptedHelperModuleFiles = resolvedHelperIdentities(input.checkData, convention);
     const result = await runEngineCheck({
       forbiddenModuleFiles,
+      acceptedHelperModuleFiles,
       repoId: input.repoId,
       repoRoot: input.repoRoot,
       scanId: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
