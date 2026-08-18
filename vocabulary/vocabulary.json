@@ -305,6 +305,146 @@
         { "wire": "graph_evidence", "engine_certified": false, "security": false },
         { "wire": "deterministic_enforcement", "engine_certified": false, "security": false }
       ]
+    },
+
+    "session_trust_reason": {
+      "doc": "Why a session object could not be proven trusted. PROOF-LEVEL vocabulary: it says why the proof failed. The FINDING-level code a user sees (SecurityMissingProofCodeSchema) is separate and is derived from this by the phase4 finding-reason mapping in check_command.rs. The two are deliberately different vocabularies; mapping between them must be total.",
+      "rust_enum": "SessionTrustReason",
+      "ts_const": "SESSION_TRUST_REASONS",
+      "ts_schema": "SessionTrustReasonSchema",
+      "members": ["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"]
+    },
+
+    "authorization_missing_reason": {
+      "doc": "Why an authorization proof could not be completed. PROOF-LEVEL vocabulary, on `authorization.missing[].reason`. The list carries two spellings of the same three concepts - an older `no_authorization_guard`/`guard_not_dominating_sink` pair and the newer `authorization_guard_missing`/`authorization_guard_not_dominating_sink` - because the enum was WIDENED rather than migrated when the engine's wording changed. Only the newer spelling has a producer today; the older one is reserved, because the schema is applied on read and stored rows may still hold it.",
+      "rust_enum": "AuthorizationMissingReason",
+      "ts_const": "AUTHORIZATION_MISSING_REASONS",
+      "ts_schema": "AuthorizationMissingReasonSchema",
+      "members": [
+        "no_authorization_guard",
+        "guard_not_dominating_sink",
+        "unknown_policy_helper",
+        "session_not_trusted",
+        "authorization_guard_missing",
+        "authorization_guard_not_dominating_sink"
+      ]
+    },
+
+    "tenant_missing_reason": {
+      "doc": "Why a tenant-scope proof could not be completed. PROOF-LEVEL vocabulary, on `tenant.missing[].reason`. Widened the same way authorization_missing_reason was: the first three members are the spelling the original design named, the last three are the spelling the engine emits, and `parser_gap` is a fourth concept with no producer at all. Only the newer three are constructed; the rest are reserved rather than deleted, because the schema is applied on read.",
+      "rust_enum": "TenantMissingReason",
+      "ts_const": "TENANT_MISSING_REASONS",
+      "ts_schema": "TenantMissingReasonSchema",
+      "members": [
+        "no_tenant_predicate",
+        "untrusted_tenant_source",
+        "predicate_not_bound_to_query",
+        "parser_gap",
+        "tenant_predicate_missing",
+        "tenant_source_untrusted",
+        "tenant_predicate_not_bound_to_query"
+      ]
+    },
+
+    "undominated_sink_reason": {
+      "doc": "Why an auth guard does not dominate a sink. PROOF-LEVEL vocabulary, on `auth.undominated_sinks[].reason`. Unlike the other proof reason vocabularies this one has TWO producers: the straight-line and dynamic-control-flow cases are decided in security_proof.rs, and the path-sensitive ones - a guard in only one branch, a guard behind a callback boundary - in security_control_flow.rs. Every member is produced.",
+      "rust_enum": "UndominatedSinkReason",
+      "ts_const": "UNDOMINATED_SINK_REASONS",
+      "ts_schema": "UndominatedSinkReasonSchema",
+      "members": [
+        "guard_after_sink",
+        "guard_only_in_one_branch",
+        "callback_boundary",
+        "unsupported_dynamic_control_flow",
+        "no_guard_call"
+      ]
+    },
+
+    "middleware_mismatch_reason": {
+      "doc": "Why a middleware does not cover a route. PROOF-LEVEL vocabulary, on `middleware.mismatches[].reason`, produced by static_middleware_coverage in security_control_flow.rs. `dynamic_matcher` has no producer: a dynamic matcher is reported as a parser gap and drives proof_status == ParserGap rather than as a coverage mismatch, so the mismatch spelling of it was declared and never built.",
+      "rust_enum": "MiddlewareMismatchReason",
+      "ts_const": "MIDDLEWARE_MISMATCH_REASONS",
+      "ts_schema": "MiddlewareMismatchReasonSchema",
+      "members": ["path_not_matched", "method_not_matched", "dynamic_matcher", "unknown_framework"]
+    },
+
+    "request_unvalidated_reason": {
+      "doc": "Why a request input reaching a sink is not covered by a validation proof. PROOF-LEVEL vocabulary, on `request_validation.unvalidated_uses[].reason`. Every member is produced by request_unvalidated_uses in security_proof.rs, and all three are also members of the finding-level SecurityMissingProofCodeSchema, so the two vocabularies agree here and need no bridge.",
+      "rust_enum": "RequestUnvalidatedReason",
+      "ts_const": "REQUEST_UNVALIDATED_REASONS",
+      "ts_schema": "RequestUnvalidatedReasonSchema",
+      "members": ["request_input_not_validated", "validation_result_not_used", "unknown_validator"]
+    },
+
+    "security_missing_proof_code": {
+      "doc": [
+        "The FINDING-level code a user reads: why this proof could not be completed. Distinct from every PROOF-level reason vocabulary above, which say why a particular sub-proof failed; the proof-level reasons are mapped onto these codes by phase4_missing_code and missing_proof_code, and the two sets deliberately do not match.",
+        "",
+        "DELIBERATELY TYPESCRIPT-ONLY: there is no rust_enum, and adding one would be wrong. `unknown_reason_code` is not an engine-emittable code at all - it is what the engine-contract parse boundary NORMALIZES an unrecognized code to, so that an engine newer than its CLI degrades the one convention that produced it instead of failing the whole run. Giving Rust a variant for it would make the engine able to emit \"this build does not recognise the code\" about its own output, which inverts the meaning. The engine builds these codes from several places - security_phase6.rs, security_proof.rs, check_command.rs - by mapping proof-level reasons, and those reason vocabularies ARE typed, which is where the compile-time guarantee belongs."
+      ],
+      "ts_const": "SECURITY_MISSING_PROOF_CODES",
+      "ts_schema": "SecurityMissingProofCodeSchema",
+      "members": [
+        "missing_auth_guard",
+        "auth_guard_not_dominating_sink",
+        "middleware_not_covering_route",
+        "middleware_dynamic_matcher",
+        "request_input_not_validated",
+        "validation_result_not_used",
+        "unknown_validator",
+        "request_controlled_url",
+        "raw_sql_unparameterized",
+        "wildcard_origin_with_credentials",
+        "disallowed_origin",
+        "credentials_not_allowed",
+        "unsupported_dynamic_outbound_url",
+        "unsupported_dynamic_cors_origin",
+        "missing_csrf_guard",
+        "csrf_guard_not_dominating_sink",
+        "missing_rate_limit_guard",
+        "rate_limit_guard_not_dominating_sink",
+        "sensitive_response_field_unfiltered",
+        "dynamic_response_shape_missing_proof",
+        "secret_exposure_not_excluded",
+        "session_not_trusted",
+        "authorization_guard_missing",
+        "authorization_guard_not_dominating_sink",
+        "tenant_predicate_missing",
+        "tenant_source_untrusted",
+        "tenant_predicate_not_bound_to_query",
+        "unsupported_callback_boundary",
+        "unsupported_dynamic_control_flow",
+        "route_binding_unresolved",
+        "handler_unresolved",
+        "unknown_reason_code"
+      ]
+    },
+
+    "security_parser_gap_code": {
+      "doc": [
+        "Why a SECURITY proof could not be completed because a construct could not be analysed. Carried on `parser_gaps[].code` inside a security boundary proof, and produced by build_phase4_security_proof, the phase5/phase6 builders and phase4_parser_gap.",
+        "",
+        "NOT the same vocabulary as `parser_gap_kind`, despite the name. That one is the repo-wide taxonomy of why a REGION of the repo could not be understood - unresolved_import, parser_error, partial_parse - derived CLI-side from engine diagnostic codes and named by the semantic capability contracts. This one is the set of specific TypeScript constructs a security proof gives up on. The two lists are disjoint and the collision is in the English word `parser gap`, not in the concept; merging them would put `unresolved_import` where a security proof expects `unsupported_request_input_spread`."
+      ],
+      "rust_enum": "SecurityParserGapCode",
+      "ts_const": "SECURITY_PARSER_GAP_CODES",
+      "ts_schema": "SecurityParserGapCodeSchema",
+      "members": [
+        "route_binding_unresolved",
+        "handler_unresolved",
+        "unsupported_dynamic_control_flow",
+        "unsupported_dynamic_middleware_matcher",
+        "unsupported_request_input_spread",
+        "unsupported_request_input_destructure",
+        "unsupported_dynamic_outbound_url",
+        "unsupported_dynamic_cors_origin",
+        "dynamic_response_shape",
+        "unsupported_destructuring_or_spread",
+        "unsupported_tenant_dynamic_property",
+        "unsupported_tenant_query_object_alias",
+        "unsupported_session_nested_destructure",
+        "unsupported_callback_boundary"
+      ]
     }
   }
 }

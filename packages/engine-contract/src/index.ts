@@ -1,9 +1,17 @@
 import { z } from "zod";
 import {
+  AuthorizationMissingReasonSchema,
   CandidateConventionKindSchema,
   FactKindSchema,
+  MiddlewareMismatchReasonSchema,
+  RequestUnvalidatedReasonSchema,
+  SecurityMissingProofCodeSchema,
+  SecurityParserGapCodeSchema,
   SecurityCapabilityNameSchema,
-  SecurityContractKindSchema
+  SecurityContractKindSchema,
+  SessionTrustReasonSchema,
+  TenantMissingReasonSchema,
+  UndominatedSinkReasonSchema
 } from "@drift/vocabulary";
 import {
   GraphEdgeSchema,
@@ -599,40 +607,10 @@ export const EngineFindingSchema = z.object({
  * the convention that produced it instead of the entire run. Never to a pass: an unknown code
  * means Drift does not understand why the proof failed, which is a refusal.
  */
-const EngineSecurityKnownMissingProofCodeSchema = z.enum([
-  "missing_auth_guard",
-  "auth_guard_not_dominating_sink",
-  "middleware_not_covering_route",
-  "middleware_dynamic_matcher",
-  "request_input_not_validated",
-  "validation_result_not_used",
-  "unknown_validator",
-  "request_controlled_url",
-  "raw_sql_unparameterized",
-  "wildcard_origin_with_credentials",
-  "disallowed_origin",
-  "credentials_not_allowed",
-  "unsupported_dynamic_outbound_url",
-  "unsupported_dynamic_cors_origin",
-  "missing_csrf_guard",
-  "csrf_guard_not_dominating_sink",
-  "missing_rate_limit_guard",
-  "rate_limit_guard_not_dominating_sink",
-  "sensitive_response_field_unfiltered",
-  "dynamic_response_shape_missing_proof",
-  "secret_exposure_not_excluded",
-  "session_not_trusted",
-  "authorization_guard_missing",
-  "authorization_guard_not_dominating_sink",
-  "tenant_predicate_missing",
-  "tenant_source_untrusted",
-  "tenant_predicate_not_bound_to_query",
-  "unsupported_callback_boundary",
-  "unsupported_dynamic_control_flow",
-  "route_binding_unresolved",
-  "handler_unresolved"
-  ,"unknown_reason_code"
-]);
+// The known finding-level codes, from the one security_missing_proof_code vocabulary. This
+// was a byte-identical copy of the list in @drift/core; the preprocess below is the part
+// that is genuinely engine-contract's, and it survives unchanged.
+const EngineSecurityKnownMissingProofCodeSchema = SecurityMissingProofCodeSchema;
 
 /**
  * A known code, or any other non-empty string. Unknown codes survive parsing so the surrounding
@@ -658,22 +636,9 @@ const EngineSecurityContractKindSchema = SecurityContractKindSchema;
 const EngineSecurityParserGapSchema = z.object({
   parser_gap_id: z.string().min(1),
   capability: z.string().min(1),
-  code: z.enum([
-    "route_binding_unresolved",
-    "handler_unresolved",
-    "unsupported_dynamic_control_flow",
-    "unsupported_dynamic_middleware_matcher",
-    "unsupported_request_input_spread",
-    "unsupported_request_input_destructure",
-    "unsupported_dynamic_outbound_url",
-    "unsupported_dynamic_cors_origin",
-    "dynamic_response_shape",
-    "unsupported_destructuring_or_spread",
-    "unsupported_tenant_dynamic_property",
-    "unsupported_tenant_query_object_alias",
-    "unsupported_session_nested_destructure",
-    "unsupported_callback_boundary"
-  ]),
+  // The SECURITY parser gap codes, from the one security_parser_gap_code vocabulary.
+  // Deliberately NOT merged with parser_gap_kind - disjoint concepts, coincidental name.
+  code: SecurityParserGapCodeSchema,
   file_path: z.string().min(1),
   start_line: z.number().int().positive().optional(),
   end_line: z.number().int().positive().optional(),
@@ -824,13 +789,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
     undominated_sinks: z.array(z.object({
       sink_id: z.string().min(1),
       sink_kind: z.string().min(1),
-      reason: z.enum([
-        "guard_after_sink",
-        "guard_only_in_one_branch",
-        "callback_boundary",
-        "unsupported_dynamic_control_flow",
-        "no_guard_call"
-      ]),
+      // PROOF-level, from the one undominated_sink_reason vocabulary.
+      reason: UndominatedSinkReasonSchema,
       fact_ids: z.array(z.string().min(1))
     }))
   }),
@@ -845,7 +805,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
     })),
     mismatches: z.array(z.object({
       middleware_id: z.string().min(1).optional(),
-      reason: z.enum(["path_not_matched", "method_not_matched", "dynamic_matcher", "unknown_framework"]),
+      // PROOF-level, from the one middleware_mismatch_reason vocabulary.
+      reason: MiddlewareMismatchReasonSchema,
       parser_gap_id: z.string().min(1).optional()
     }))
   }).optional().default({
@@ -881,7 +842,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
       input_fact_id: z.string().min(1),
       sink_fact_id: z.string().min(1),
       sink_kind: z.enum(["data_operation", "response", "outbound_request", "raw_sql"]),
-      reason: z.enum(["request_input_not_validated", "validation_result_not_used", "unknown_validator"])
+      // PROOF-level, from the one request_unvalidated_reason vocabulary.
+      reason: RequestUnvalidatedReasonSchema
     }))
   }).optional().default({
     required: false,
@@ -959,7 +921,9 @@ const EngineSecurityBoundaryProofSchema = z.object({
     missing_trust: z.array(z.object({
       fact_id: z.string().min(1),
       variable: z.string().min(1),
-      reason: z.enum(["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"])
+      // PROOF-level, from the one session_trust_reason vocabulary. This was a fourth
+      // hand-written copy of a list the engine emitted a non-member of (S1-01).
+      reason: SessionTrustReasonSchema
     }))
   }).optional().default({
     required: false,
@@ -979,7 +943,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
       subject_var: z.string().min(1).optional()
     })),
     missing: z.array(z.object({
-      reason: z.enum(["no_authorization_guard", "guard_not_dominating_sink", "unknown_policy_helper", "session_not_trusted", "authorization_guard_missing", "authorization_guard_not_dominating_sink"]),
+      // PROOF-level, from the one authorization_missing_reason vocabulary.
+      reason: AuthorizationMissingReasonSchema,
       sink_fact_id: z.string().min(1).optional()
     }))
   }).optional().default({
@@ -1005,7 +970,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
     })),
     missing: z.array(z.object({
       data_operation_fact_id: z.string().min(1),
-      reason: z.enum(["no_tenant_predicate", "untrusted_tenant_source", "predicate_not_bound_to_query", "parser_gap", "tenant_predicate_missing", "tenant_source_untrusted", "tenant_predicate_not_bound_to_query"])
+      // PROOF-level, from the one tenant_missing_reason vocabulary.
+      reason: TenantMissingReasonSchema
     }))
   }).optional().default({
     required: false,

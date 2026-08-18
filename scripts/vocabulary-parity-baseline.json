@@ -75,6 +75,84 @@
       "member": "reflection_or_magic_detected",
       "gap": "unreferenced",
       "reason": "Declared in the parser-gap vocabulary and referenced nowhere in either language: no diagnostic maps to it, no capability contract names it, nothing filters on it. Reserved for the reflection case the TypeScript adapter does not attempt."
+    },
+    {
+      "vocabulary": "session_trust_reason",
+      "member": "missing_auth_guard",
+      "gap": "no_producer",
+      "reason": "S2-02. A FINDING-level code (SecurityMissingProofCodeSchema) copied into the PROOF-level enum when the two vocabularies were confused for one - the same confusion that produced S1-01, seen from the other side. `build_session_trust_proof_from_facts` emits only derived_from_request and unknown_helper, so nothing constructs this. RETAINED, not deleted, for stored-row compatibility: SecurityBoundaryProofSchema is applied ON READ in listSecurityBoundaryProofs, so narrowing this enum makes any row already holding the member unparseable, and there is no migration back. scripts/stored-proof-census.mjs reports 18 of 18 databases opened and 0 proof rows on the machine this was written on - an absence of evidence, not evidence of absence, and not a licence to shrink. CONSUMED by phase4_missing_code in check_command.rs, which names it in an explicit arm and passes it through unchanged; it is a member of the finding-level vocabulary too, so that pass-through is correct rather than accidental. Adding a producer closes this entry."
+    },
+    {
+      "vocabulary": "session_trust_reason",
+      "member": "parser_gap",
+      "gap": "no_producer",
+      "reason": "S2-02, and the sharper of the pair. No producer for the same reason as missing_auth_guard, but unlike it this member is NOT in the finding-level vocabulary, so if it were ever emitted the finding would normalize to `unknown_reason_code` at the engine parse boundary and stop saying why the proof failed. It is named explicitly in phase4_missing_code's exhaustive match, pinned by phase4_missing_code_tests, and left unfixed on purpose: choosing a finding-level code for a parser-gapped session-trust proof is a product decision, not a mechanical one - a parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap, so answering session_not_trusted would assert a trust failure that was never established. Retained for the same stored-row reason as its sibling. If a producer is ever added, decide the finding-level mapping FIRST."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "no_authorization_guard",
+      "gap": "no_producer",
+      "reason": "S2-03. The ORIGINAL spelling, from the design this feature was built to: docs/internal/architecture/security-boundary-enforcement-100-tdd.md:950 declares this field as exactly `no_authorization_guard | guard_not_dominating_sink | unknown_policy_helper`. The engine shipped different words - authorization_guard_missing, authorization_guard_not_dominating_sink - and the enum was WIDENED to hold both rather than migrated, so six spellings of three concepts sit in one list and only three have a producer. This one has no producer and no consumer beyond the schema. RETAINED because SecurityBoundaryProofSchema is applied ON READ: a row written by an engine that emitted the design-doc spelling stops parsing if this is removed, and scripts/stored-proof-census.mjs cannot prove no such row exists - 18 databases, 0 proof rows, which is one machine's silence and not a licence. Removing the trio is a migration, not a cleanup."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "guard_not_dominating_sink",
+      "gap": "no_producer",
+      "reason": "S2-03, the second of the design-doc trio. `authorization_guard_not_dominating_sink` is the spelling the engine actually emits for this concept; this is the one the design named. Same widening, same stored-row reason for keeping it - see no_authorization_guard."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "unknown_policy_helper",
+      "gap": "no_producer",
+      "reason": "S2-03, the third of the design-doc trio, and the one with no newer counterpart at all: no reason in this vocabulary means 'the policy helper was not recognised'. The engine has no such arm - an unrecognised authorization helper simply fails to produce a guard, which surfaces as authorization_guard_missing instead. So this is a concept the design declared and the engine never implemented, not a renamed one. Kept for the same stored-row reason and because deleting it would erase the record that the case is unhandled."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "no_tenant_predicate",
+      "gap": "no_producer",
+      "reason": "S2-03, and the same widening as authorization_missing_reason, from the same document: docs/internal/architecture/security-boundary-enforcement-100-tdd.md:957 declares this field as `no_tenant_predicate | untrusted_tenant_source | predicate_not_bound_to_query | parser_gap`. The engine emits tenant_predicate_missing, tenant_source_untrusted and tenant_predicate_not_bound_to_query instead, and the enum was WIDENED to hold both sets rather than migrated. Seven members, three producers. No consumer beyond the schema. RETAINED because SecurityBoundaryProofSchema is applied ON READ and a row written by an engine that used the design-doc spelling stops parsing if this is removed; the stored-proof census cannot prove no such row exists (18 databases, 0 proof rows here). Removing the set is a migration, not a cleanup."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "untrusted_tenant_source",
+      "gap": "no_producer",
+      "reason": "S2-03, the design-doc spelling of what the engine now emits as tenant_source_untrusted. Same widening, same stored-row reason - see no_tenant_predicate."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "predicate_not_bound_to_query",
+      "gap": "no_producer",
+      "reason": "S2-03, the design-doc spelling of what the engine now emits as tenant_predicate_not_bound_to_query. Same widening, same stored-row reason - see no_tenant_predicate."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "parser_gap",
+      "gap": "no_producer",
+      "reason": "S2-03, and the one member here that is NOT a renamed sibling. The design gave the tenant proof a way to say 'the tenant scope could not be analysed', and the engine never built it: a tenant parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap instead, so this reason has no construction site and no path to one. It is also not a member of the finding-level SecurityMissingProofCodeSchema, so if it were ever emitted it would normalize to unknown_reason_code and the finding would stop saying why the proof failed - the same latent shape as session_trust_reason.parser_gap. Retained for the stored-row reason and because deleting it would erase the record that the case is unhandled. If a producer is ever added, decide the finding-level mapping FIRST."
+    },
+    {
+      "vocabulary": "middleware_mismatch_reason",
+      "member": "dynamic_matcher",
+      "gap": "no_producer",
+      "reason": "S2-03. Declared as a coverage mismatch and never built as one. `static_middleware_coverage` in security_control_flow.rs emits path_not_matched, method_not_matched and unknown_framework; a dynamic middleware matcher is handled somewhere else entirely - build_middleware_coverage_proof in security_proof.rs turns it into a SecurityParserGap with code `unsupported_dynamic_middleware_matcher`, which drives proof_status == ParserGap. So the concept is covered and this spelling of it is not, which is a real distinction rather than a gap: a parser gap says the matcher could not be analysed, and a mismatch would say it was analysed and does not cover the route. Answering the second when only the first is known would be a claim the engine cannot support. RETAINED because SecurityBoundaryProofSchema is applied ON READ and the stored-proof census cannot prove no row holds it. If a producer is ever added, it must be a case where the matcher IS understood and genuinely does not match."
+    },
+    {
+      "vocabulary": "security_missing_proof_code",
+      "member": "unsupported_callback_boundary",
+      "gap": "unreferenced",
+      "reason": "S2-03, and found BY generating this vocabulary rather than before it. The member existed only inside the two byte-identical hand-written copies of this list - one in @drift/core, one in @drift/engine-contract - and in docs/internal/architecture/security-boundary-enforcement-100-tdd.md:1012. Nothing in either language produces it and nothing reads it, which nothing could see while the only two places it appeared were copies of each other. The CONCEPT is handled: a guard behind a callback boundary produces the proof-level undominated_sink_reason `callback_boundary`, which missing_proof_code maps to `auth_guard_not_dominating_sink` - the honest answer, since a guard does exist and does not dominate the sink. So this finding-level code is a second, unused way of saying it. Retained rather than removed because SecurityBoundaryProofSchema is applied ON READ and the stored-proof census cannot prove no row holds it."
+    },
+    {
+      "vocabulary": "security_parser_gap_code",
+      "member": "unsupported_callback_boundary",
+      "gap": "unreferenced",
+      "reason": "S2-03, the parser-gap half of the same discovery, and the same shape: declared in both hand-written copies and in the design document, produced and consumed by nothing. A callback boundary is not a parser gap in this engine - it is analysed successfully and reported as a dominance failure - so a producer here would be claiming the construct could not be understood when it was. Retained for the stored-row reason."
+    },
+    {
+      "vocabulary": "security_parser_gap_code",
+      "member": "dynamic_response_shape",
+      "gap": "unreferenced",
+      "reason": "S2-03, found the same way. Declared in both hand-written copies and at docs/internal/architecture/security-boundary-enforcement-100-tdd.md:1030, and emitted by nothing. The response-shape proof does have a code for the dynamic case - `dynamic_response_shape_missing_proof` - but that is a FINDING-level code in security_missing_proof_code, produced by security_rules.rs and read by run-check.ts. The parser-gap spelling was declared alongside it and never built, so the two look like one mechanism and only one of them exists. Retained for the stored-row reason."
     }
   ]
 }

@@ -104,8 +104,10 @@ pub use security_rules::{
     evaluate_api_route_requires_tenant_scope, evaluate_middleware_must_cover_routes,
 };
 pub use vocabulary::{
-    ConventionDispatch, ConventionKind, FactKind, FileRole, GraphEdgeKind, GraphNodeKind,
-    RouteFlavor, ScanCapability,
+    AuthorizationMissingReason, ConventionDispatch, ConventionKind, FactKind, FileRole,
+    GraphEdgeKind, GraphNodeKind, MiddlewareMismatchReason, RequestUnvalidatedReason, RouteFlavor,
+    ScanCapability, SecurityParserGapCode, SessionTrustReason, TenantMissingReason,
+    UndominatedSinkReason,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

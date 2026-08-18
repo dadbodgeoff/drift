@@ -11,6 +11,10 @@ use crate::{
         unsupported_dynamic_control_flow,
     },
     security_patterns::dynamic_middleware_matcher_line,
+    vocabulary::{
+        AuthorizationMissingReason, RequestUnvalidatedReason, SecurityParserGapCode,
+        SessionTrustReason, TenantMissingReason, UndominatedSinkReason,
+    },
 };
 use serde_json::Value;
 
@@ -54,7 +58,8 @@ pub struct TrustedGuardCallProof {
 pub struct UndominatedSinkProof {
     pub sink_id: String,
     pub sink_kind: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `undominated_sink_reason` vocabulary.
+    pub reason: UndominatedSinkReason,
     pub fact_ids: Vec<String>,
 }
 
@@ -63,7 +68,8 @@ pub struct AuthBoundaryProof {
     pub required: bool,
     pub proven: bool,
     pub dominated_sinks: Vec<DominatedSink>,
-    pub undominated_sinks: Vec<String>,
+    /// The PROOF-level reasons, from the one `undominated_sink_reason` vocabulary.
+    pub undominated_sinks: Vec<UndominatedSinkReason>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,7 +110,16 @@ pub struct SessionTrustBoundaryProof {
 pub struct SessionMissingTrustProof {
     pub fact_id: String,
     pub variable: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one vocabulary that declares them.
+    ///
+    /// This was a `String`, and S1-01 is what that cost: the builder wrote
+    /// `session_not_trusted` here - a FINDING-level code, a non-member of the proof-level
+    /// enum the CLI parses this field with - and the engine's own output failed
+    /// `SecurityBoundaryProofSchema`. Nothing in Rust could have caught it, because every
+    /// string is a valid `String`.
+    ///
+    /// Typed, the same mistake does not compile.
+    pub reason: SessionTrustReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -128,7 +143,8 @@ pub struct AuthorizationGuardProof {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthorizationMissingProof {
-    pub reason: String,
+    /// The PROOF-level reason, from the one `authorization_missing_reason` vocabulary.
+    pub reason: AuthorizationMissingReason,
     pub sink_fact_id: Option<String>,
 }
 
@@ -161,7 +177,8 @@ pub struct TenantPredicateProof {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TenantMissingProof {
     pub data_operation_fact_id: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `tenant_missing_reason` vocabulary.
+    pub reason: TenantMissingReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -195,7 +212,8 @@ pub struct RequestUnvalidatedUseProof {
     pub input_fact_id: String,
     pub sink_fact_id: String,
     pub sink_kind: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `request_unvalidated_reason` vocabulary.
+    pub reason: RequestUnvalidatedReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -236,7 +254,8 @@ pub struct SecurityProofResult {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecurityParserGap {
     pub parser_gap_id: String,
-    pub code: String,
+    /// From the one `security_parser_gap_code` vocabulary.
+    pub code: SecurityParserGapCode,
     pub file_path: String,
     pub reason: String,
     pub blocks_enforcement: bool,
@@ -265,7 +284,7 @@ pub fn build_auth_boundary_proof(
     undominated_sinks.extend(callback_boundary_reasons(source, &facts));
     let dynamic_control_flow = unsupported_dynamic_control_flow(source);
     if dynamic_control_flow {
-        undominated_sinks.push("unsupported_dynamic_control_flow".to_string());
+        undominated_sinks.push(UndominatedSinkReason::UnsupportedDynamicControlFlow);
     }
     let parser_gaps = if dynamic_control_flow {
         vec![SecurityParserGap {
@@ -276,7 +295,7 @@ pub fn build_auth_boundary_proof(
                     .map(|fact| fact.file_path.as_str())
                     .unwrap_or("unknown")
             ),
-            code: "unsupported_dynamic_control_flow".to_string(),
+            code: SecurityParserGapCode::UnsupportedDynamicControlFlow,
             file_path: facts
                 .first()
                 .map(|fact| fact.file_path.clone())
@@ -404,19 +423,19 @@ fn build_route_auth_boundary_proof(
         let sink_kind = sink_kind(sink).to_string();
         let fact_ids = vec![fact_id(sink)];
         if dynamic_control_flow {
-            undominated_sinks.push("unsupported_dynamic_control_flow".to_string());
+            undominated_sinks.push(UndominatedSinkReason::UnsupportedDynamicControlFlow);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "unsupported_dynamic_control_flow".to_string(),
+                reason: UndominatedSinkReason::UnsupportedDynamicControlFlow,
                 fact_ids,
             });
         } else if let Some(reason) = path_sensitive_reasons.first() {
-            undominated_sinks.push(reason.clone());
+            undominated_sinks.push(*reason);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: reason.clone(),
+                reason: *reason,
                 fact_ids,
             });
         } else if first_guard_line.is_some_and(|line| line < sink.start_line) {
@@ -426,34 +445,35 @@ fn build_route_auth_boundary_proof(
                 edge_id: format!("edge:auth-dominates:{}:{}", sink.file_path, sink.start_line),
             });
         } else if first_guard_line.is_some_and(|line| line > sink.start_line) {
-            undominated_sinks.push("guard_after_sink".to_string());
+            undominated_sinks.push(UndominatedSinkReason::GuardAfterSink);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "guard_after_sink".to_string(),
+                reason: UndominatedSinkReason::GuardAfterSink,
                 fact_ids,
             });
         } else {
-            undominated_sinks.push("no_guard_call".to_string());
+            undominated_sinks.push(UndominatedSinkReason::NoGuardCall);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "no_guard_call".to_string(),
+                reason: UndominatedSinkReason::NoGuardCall,
                 fact_ids,
             });
         }
     }
     undominated_sinks.sort();
     undominated_sinks.dedup();
-    undominated_sink_proofs
-        .sort_by(|left, right| (&left.reason, &left.sink_id).cmp(&(&right.reason, &right.sink_id)));
+    undominated_sink_proofs.sort_by(|left, right| {
+        (left.reason.as_wire(), &left.sink_id).cmp(&(right.reason.as_wire(), &right.sink_id))
+    });
     undominated_sink_proofs
         .dedup_by(|left, right| left.reason == right.reason && left.sink_id == right.sink_id);
 
     let parser_gaps = if dynamic_control_flow {
         vec![SecurityParserGap {
             parser_gap_id: format!("{route_id}:parser_gap:unsupported_dynamic_control_flow"),
-            code: "unsupported_dynamic_control_flow".to_string(),
+            code: SecurityParserGapCode::UnsupportedDynamicControlFlow,
             file_path: file_path.clone(),
             reason: "Dynamic control flow could not be analysed, so auth coverage for this route is unknown".to_string(),
             blocks_enforcement: true,
@@ -471,7 +491,7 @@ fn build_route_auth_boundary_proof(
     } else {
         undominated_sinks
             .iter()
-            .map(|reason| missing_proof_code(reason).to_string())
+            .map(|reason| missing_proof_code(*reason).to_string())
             .collect()
     };
 
@@ -501,11 +521,20 @@ fn build_route_auth_boundary_proof(
     }
 }
 
-fn missing_proof_code(reason: &str) -> &'static str {
+/// The PROOF-level undominated-sink reason, as the FINDING-level code a user reads.
+///
+/// Exhaustive over the enum since S2-03, with no catch-all: a member added to
+/// `undominated_sink_reason` does not compile until somebody decides what the finding says.
+/// The three that collapse to `auth_guard_not_dominating_sink` do so because that is what
+/// they mean - a guard exists and does not cover the sink - which is a different statement
+/// from `missing_auth_guard`, where there is no guard at all.
+fn missing_proof_code(reason: UndominatedSinkReason) -> &'static str {
     match reason {
-        "no_guard_call" => "missing_auth_guard",
-        "unsupported_dynamic_control_flow" => "unsupported_dynamic_control_flow",
-        _ => "auth_guard_not_dominating_sink",
+        UndominatedSinkReason::NoGuardCall => "missing_auth_guard",
+        UndominatedSinkReason::UnsupportedDynamicControlFlow => "unsupported_dynamic_control_flow",
+        UndominatedSinkReason::GuardAfterSink
+        | UndominatedSinkReason::GuardOnlyInOneBranch
+        | UndominatedSinkReason::CallbackBoundary => "auth_guard_not_dominating_sink",
     }
 }
 
@@ -584,7 +613,7 @@ pub fn build_middleware_coverage_proof(
                     "parser_gap:{}:{}:unsupported_dynamic_middleware_matcher",
                     middleware_file_path_string, line
                 ),
-                code: "unsupported_dynamic_middleware_matcher".to_string(),
+                code: SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher,
                 file_path: middleware_file_path_string.clone(),
                 reason: "Dynamic middleware matcher prevents deterministic route coverage proof"
                     .to_string(),
@@ -909,7 +938,9 @@ pub fn build_secret_exposure_proof(
             .map(|gap| SecurityParserGap {
                 parser_gap_id: format!(
                     "parser_gap:{}:{}:{}",
-                    file_path_string, gap.source_line, gap.code
+                    file_path_string,
+                    gap.source_line,
+                    gap.code.as_wire()
                 ),
                 code: gap.code,
                 file_path: file_path_string.clone(),
@@ -1028,7 +1059,7 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
             gaps.push(phase4_parser_gap(
                 file_path,
                 line_number,
-                "unsupported_tenant_dynamic_property",
+                SecurityParserGapCode::UnsupportedTenantDynamicProperty,
                 "Computed tenant predicate key prevents deterministic tenant proof",
             ));
         }
@@ -1047,7 +1078,7 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
                 gaps.push(phase4_parser_gap(
                     file_path,
                     line_number,
-                    "unsupported_tenant_query_object_alias",
+                    SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
                     "Tenant query object alias prevents deterministic tenant proof",
                 ));
             }
@@ -1056,13 +1087,14 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
             gaps.push(phase4_parser_gap(
                 file_path,
                 line_number,
-                "unsupported_session_nested_destructure",
+                SecurityParserGapCode::UnsupportedSessionNestedDestructure,
                 "Nested session destructuring prevents deterministic session trust proof",
             ));
         }
     }
     gaps.sort_by(|left, right| {
-        (&left.code, &left.parser_gap_id).cmp(&(&right.code, &right.parser_gap_id))
+        (left.code.as_wire(), &left.parser_gap_id)
+            .cmp(&(right.code.as_wire(), &right.parser_gap_id))
     });
     gaps.dedup_by(|left, right| {
         left.code == right.code && left.parser_gap_id == right.parser_gap_id
@@ -1073,12 +1105,12 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
 fn phase4_parser_gap(
     file_path: &str,
     line_number: usize,
-    code: &str,
+    code: SecurityParserGapCode,
     reason: &str,
 ) -> SecurityParserGap {
     SecurityParserGap {
-        parser_gap_id: format!("parser_gap:{file_path}:{line_number}:{code}"),
-        code: code.to_string(),
+        parser_gap_id: format!("parser_gap:{file_path}:{line_number}:{}", code.as_wire()),
+        code,
         file_path: file_path.to_string(),
         reason: reason.to_string(),
         blocks_enforcement: true,
@@ -1109,7 +1141,7 @@ fn build_authorization_proof_from_facts(
     let mut missing = Vec::new();
     if !data_operations.is_empty() && guards.is_empty() {
         missing.push(AuthorizationMissingProof {
-            reason: "authorization_guard_missing".to_string(),
+            reason: AuthorizationMissingReason::AuthorizationGuardMissing,
             sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
         });
     }
@@ -1120,19 +1152,27 @@ fn build_authorization_proof_from_facts(
             .is_some_and(|subject| !subject_uses_trusted_session(subject, session_trust))
         {
             missing.push(AuthorizationMissingProof {
-                reason: "session_not_trusted".to_string(),
+                reason: AuthorizationMissingReason::SessionNotTrusted,
                 sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
             });
         }
         if !guard.dominates_sinks {
             missing.push(AuthorizationMissingProof {
-                reason: "authorization_guard_not_dominating_sink".to_string(),
+                reason: AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
                 sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
             });
         }
     }
+    // Sort on the WIRE STRING, not the enum. Deriving Ord orders variants by their
+    // position in vocabulary/vocabulary.json, which is not the lexicographic order these
+    // lists were sorted in while `reason` was a String. That difference is not cosmetic:
+    // consumers read `.first()` -- `phase4_missing_code` for the finding's missing_code,
+    // and security_rules.rs for `actual_layer` -- so a reordering silently changes which
+    // reason a user is shown. Proven here: `session_not_trusted` is declared before
+    // `authorization_guard_not_dominating_sink` but sorts after it as a string.
     missing.sort_by(|left, right| {
-        (&left.reason, &left.sink_fact_id).cmp(&(&right.reason, &right.sink_fact_id))
+        (left.reason.as_wire(), &left.sink_fact_id)
+            .cmp(&(right.reason.as_wire(), &right.sink_fact_id))
     });
     missing.dedup();
     let required = !data_operations.is_empty();
@@ -1190,7 +1230,7 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_predicate_missing".to_string(),
+            reason: TenantMissingReason::TenantPredicateMissing,
         });
     }
     // A tenant predicate only has a *source* to distrust when the route itself supplies the tenant
@@ -1221,7 +1261,7 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_source_untrusted".to_string(),
+            reason: TenantMissingReason::TenantSourceUntrusted,
         });
     }
     if protected_operation_count > 0 && predicates.is_empty() && !tenant_sources.is_empty() {
@@ -1230,12 +1270,12 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_predicate_not_bound_to_query".to_string(),
+            reason: TenantMissingReason::TenantPredicateNotBoundToQuery,
         });
     }
     missing.sort_by(|left, right| {
-        (&left.reason, &left.data_operation_fact_id)
-            .cmp(&(&right.reason, &right.data_operation_fact_id))
+        (left.reason.as_wire(), &left.data_operation_fact_id)
+            .cmp(&(right.reason.as_wire(), &right.data_operation_fact_id))
     });
     missing.dedup();
     let required = protected_operation_count > 0;
@@ -1461,16 +1501,14 @@ fn build_session_trust_proof_from_facts(facts: &[Fact]) -> SessionTrustProof {
                 missing_trust.push(SessionMissingTrustProof {
                     fact_id: fact_id(fact),
                     variable,
-                    // PROOF-level vocabulary (core/src/security.ts SecurityBoundaryProof
-                    // session_trust enum), NOT the finding-level code a user sees. The
+                    // PROOF-level vocabulary, NOT the finding-level code a user sees. The
                     // finding-level `session_not_trusted` is derived from this by the
                     // phase4 finding-reason mapper in check_command.rs.
                     reason: if source == Some("unknown_helper") {
-                        "unknown_helper"
+                        SessionTrustReason::UnknownHelper
                     } else {
-                        "derived_from_request"
-                    }
-                    .to_string(),
+                        SessionTrustReason::DerivedFromRequest
+                    },
                 });
             }
             _ => {}
@@ -1614,7 +1652,7 @@ fn response_shape_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityPars
                 file_path,
                 index + 1
             ),
-            code: "unsupported_destructuring_or_spread".to_string(),
+            code: SecurityParserGapCode::UnsupportedDestructuringOrSpread,
             file_path: file_path.to_string(),
             reason: "Dynamic response spread prevents deterministic response-shape proof"
                 .to_string(),
@@ -1754,7 +1792,7 @@ fn request_input_parser_gaps(
                         file_path,
                         index + 1
                     ),
-                    code: "unsupported_request_input_spread".to_string(),
+                    code: SecurityParserGapCode::UnsupportedRequestInputSpread,
                     file_path: file_path.to_string(),
                     reason:
                         "Object spread from request input prevents deterministic validation proof"
@@ -1770,7 +1808,7 @@ fn request_input_parser_gaps(
                         file_path,
                         index + 1
                     ),
-                    code: "unsupported_request_input_destructure".to_string(),
+                    code: SecurityParserGapCode::UnsupportedRequestInputDestructure,
                     file_path: file_path.to_string(),
                     reason:
                         "Destructuring from request input prevents deterministic validation proof"
@@ -1898,7 +1936,7 @@ fn request_unvalidated_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id,
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "validation_result_not_used".to_string(),
+                    reason: RequestUnvalidatedReason::ValidationResultNotUsed,
                 });
                 continue;
             }
@@ -1910,7 +1948,7 @@ fn request_unvalidated_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id,
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "request_input_not_validated".to_string(),
+                    reason: RequestUnvalidatedReason::RequestInputNotValidated,
                 });
             }
         }
@@ -1986,7 +2024,7 @@ fn unknown_validator_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id: sink_id(sink),
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "unknown_validator".to_string(),
+                    reason: RequestUnvalidatedReason::UnknownValidator,
                 });
             }
         }
@@ -2098,8 +2136,11 @@ mod tests {
     /// `missing_trust[].reason` is PROOF-level vocabulary, and an unrecognized helper
     /// is `unknown_helper` -- never the finding-level `session_not_trusted`.
     ///
-    /// Verified non-vacuous: reverting the emission site to "session_not_trusted"
-    /// fails this test with left: "session_not_trusted", right: "unknown_helper".
+    /// Verified non-vacuous: reverting the emission site to
+    /// `SessionTrustReason::DerivedFromRequest` fails this test with
+    /// left: DerivedFromRequest, right: UnknownHelper. Since S2-02 the ORIGINAL
+    /// regression - writing the finding-level `session_not_trusted` here - can no longer
+    /// be expressed: it is not a member of the enum, so it does not compile.
     #[test]
     fn unknown_helper_source_maps_to_unknown_helper_reason() {
         let source = concat!(
@@ -2116,6 +2157,61 @@ mod tests {
             .missing_trust
             .first()
             .expect("an unrecognized session helper must produce a missing_trust entry");
-        assert_eq!(missing.reason, "unknown_helper");
+        assert_eq!(missing.reason, SessionTrustReason::UnknownHelper);
+    }
+}
+
+#[cfg(test)]
+mod reason_ordering_tests {
+    use super::*;
+
+    /// Typing these fields changed how they SORT, which changed what a user is told.
+    ///
+    /// While `reason` was a `String` these lists sorted lexicographically by wire value.
+    /// Deriving `Ord` on the generated enum orders by position in
+    /// vocabulary/vocabulary.json instead. Consumers read `.first()` --
+    /// `phase4_missing_code` for a finding's missing_code, `security_rules.rs` for its
+    /// `actual_layer` -- so the two orders disagreeing silently changes which of several
+    /// true reasons gets shown.
+    ///
+    /// `session_not_trusted` is declared BEFORE `authorization_guard_not_dominating_sink`
+    /// and sorts AFTER it as a string, so a route carrying both flips on the enum order.
+    /// Nothing else pins this: every affected sort is textually unchanged by the typing,
+    /// and the whole engine suite stayed green while the output moved.
+    #[test]
+    fn authorization_reasons_sort_by_wire_string_not_declaration_order() {
+        let mut missing = [
+            AuthorizationMissingProof {
+                reason: AuthorizationMissingReason::SessionNotTrusted,
+                sink_fact_id: Some("sink:1".to_string()),
+            },
+            AuthorizationMissingProof {
+                reason: AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+                sink_fact_id: Some("sink:1".to_string()),
+            },
+        ];
+        missing.sort_by(|left, right| {
+            (left.reason.as_wire(), &left.sink_fact_id)
+                .cmp(&(right.reason.as_wire(), &right.sink_fact_id))
+        });
+
+        assert_eq!(
+            missing
+                .iter()
+                .map(|entry| entry.reason.as_wire())
+                .collect::<Vec<_>>(),
+            [
+                "authorization_guard_not_dominating_sink",
+                "session_not_trusted"
+            ],
+            "sorted on the enum's derived Ord instead of the wire string"
+        );
+
+        // The two orders genuinely disagree -- if they ever agree this test is vacuous.
+        assert!(
+            AuthorizationMissingReason::SessionNotTrusted
+                < AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+            "declaration order no longer differs; this test has stopped proving anything"
+        );
     }
 }

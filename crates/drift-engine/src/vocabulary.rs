@@ -1246,3 +1246,634 @@ impl ScanCapability {
         ScanCapability::TenantScope,
     ];
 }
+
+/// Why a session object could not be proven trusted. PROOF-LEVEL vocabulary: it says why the proof failed. The FINDING-level code a user sees (SecurityMissingProofCodeSchema) is separate and is derived from this by the phase4 finding-reason mapping in check_command.rs. The two are deliberately different vocabularies; mapping between them must be total.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SessionTrustReason {
+    DerivedFromRequest,
+    UnknownHelper,
+    MissingAuthGuard,
+    ParserGap,
+}
+
+impl SessionTrustReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [SessionTrustReason] = &[
+        SessionTrustReason::DerivedFromRequest,
+        SessionTrustReason::UnknownHelper,
+        SessionTrustReason::MissingAuthGuard,
+        SessionTrustReason::ParserGap,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            SessionTrustReason::DerivedFromRequest => "derived_from_request",
+            SessionTrustReason::UnknownHelper => "unknown_helper",
+            SessionTrustReason::MissingAuthGuard => "missing_auth_guard",
+            SessionTrustReason::ParserGap => "parser_gap",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "derived_from_request" => Some(SessionTrustReason::DerivedFromRequest),
+            "unknown_helper" => Some(SessionTrustReason::UnknownHelper),
+            "missing_auth_guard" => Some(SessionTrustReason::MissingAuthGuard),
+            "parser_gap" => Some(SessionTrustReason::ParserGap),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for SessionTrustReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for SessionTrustReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SessionTrustReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        SessionTrustReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown session_trust_reason \"{raw}\": this engine and its caller disagree about the session_trust_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why an authorization proof could not be completed. PROOF-LEVEL vocabulary, on `authorization.missing[].reason`. The list carries two spellings of the same three concepts - an older `no_authorization_guard`/`guard_not_dominating_sink` pair and the newer `authorization_guard_missing`/`authorization_guard_not_dominating_sink` - because the enum was WIDENED rather than migrated when the engine's wording changed. Only the newer spelling has a producer today; the older one is reserved, because the schema is applied on read and stored rows may still hold it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuthorizationMissingReason {
+    NoAuthorizationGuard,
+    GuardNotDominatingSink,
+    UnknownPolicyHelper,
+    SessionNotTrusted,
+    AuthorizationGuardMissing,
+    AuthorizationGuardNotDominatingSink,
+}
+
+impl AuthorizationMissingReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [AuthorizationMissingReason] = &[
+        AuthorizationMissingReason::NoAuthorizationGuard,
+        AuthorizationMissingReason::GuardNotDominatingSink,
+        AuthorizationMissingReason::UnknownPolicyHelper,
+        AuthorizationMissingReason::SessionNotTrusted,
+        AuthorizationMissingReason::AuthorizationGuardMissing,
+        AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            AuthorizationMissingReason::NoAuthorizationGuard => "no_authorization_guard",
+            AuthorizationMissingReason::GuardNotDominatingSink => "guard_not_dominating_sink",
+            AuthorizationMissingReason::UnknownPolicyHelper => "unknown_policy_helper",
+            AuthorizationMissingReason::SessionNotTrusted => "session_not_trusted",
+            AuthorizationMissingReason::AuthorizationGuardMissing => "authorization_guard_missing",
+            AuthorizationMissingReason::AuthorizationGuardNotDominatingSink => {
+                "authorization_guard_not_dominating_sink"
+            }
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "no_authorization_guard" => Some(AuthorizationMissingReason::NoAuthorizationGuard),
+            "guard_not_dominating_sink" => Some(AuthorizationMissingReason::GuardNotDominatingSink),
+            "unknown_policy_helper" => Some(AuthorizationMissingReason::UnknownPolicyHelper),
+            "session_not_trusted" => Some(AuthorizationMissingReason::SessionNotTrusted),
+            "authorization_guard_missing" => {
+                Some(AuthorizationMissingReason::AuthorizationGuardMissing)
+            }
+            "authorization_guard_not_dominating_sink" => {
+                Some(AuthorizationMissingReason::AuthorizationGuardNotDominatingSink)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for AuthorizationMissingReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for AuthorizationMissingReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for AuthorizationMissingReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        AuthorizationMissingReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown authorization_missing_reason \"{raw}\": this engine and its caller disagree about the authorization_missing_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why a tenant-scope proof could not be completed. PROOF-LEVEL vocabulary, on `tenant.missing[].reason`. Widened the same way authorization_missing_reason was: the first three members are the spelling the original design named, the last three are the spelling the engine emits, and `parser_gap` is a fourth concept with no producer at all. Only the newer three are constructed; the rest are reserved rather than deleted, because the schema is applied on read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum TenantMissingReason {
+    NoTenantPredicate,
+    UntrustedTenantSource,
+    PredicateNotBoundToQuery,
+    ParserGap,
+    TenantPredicateMissing,
+    TenantSourceUntrusted,
+    TenantPredicateNotBoundToQuery,
+}
+
+impl TenantMissingReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [TenantMissingReason] = &[
+        TenantMissingReason::NoTenantPredicate,
+        TenantMissingReason::UntrustedTenantSource,
+        TenantMissingReason::PredicateNotBoundToQuery,
+        TenantMissingReason::ParserGap,
+        TenantMissingReason::TenantPredicateMissing,
+        TenantMissingReason::TenantSourceUntrusted,
+        TenantMissingReason::TenantPredicateNotBoundToQuery,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            TenantMissingReason::NoTenantPredicate => "no_tenant_predicate",
+            TenantMissingReason::UntrustedTenantSource => "untrusted_tenant_source",
+            TenantMissingReason::PredicateNotBoundToQuery => "predicate_not_bound_to_query",
+            TenantMissingReason::ParserGap => "parser_gap",
+            TenantMissingReason::TenantPredicateMissing => "tenant_predicate_missing",
+            TenantMissingReason::TenantSourceUntrusted => "tenant_source_untrusted",
+            TenantMissingReason::TenantPredicateNotBoundToQuery => {
+                "tenant_predicate_not_bound_to_query"
+            }
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "no_tenant_predicate" => Some(TenantMissingReason::NoTenantPredicate),
+            "untrusted_tenant_source" => Some(TenantMissingReason::UntrustedTenantSource),
+            "predicate_not_bound_to_query" => Some(TenantMissingReason::PredicateNotBoundToQuery),
+            "parser_gap" => Some(TenantMissingReason::ParserGap),
+            "tenant_predicate_missing" => Some(TenantMissingReason::TenantPredicateMissing),
+            "tenant_source_untrusted" => Some(TenantMissingReason::TenantSourceUntrusted),
+            "tenant_predicate_not_bound_to_query" => {
+                Some(TenantMissingReason::TenantPredicateNotBoundToQuery)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for TenantMissingReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for TenantMissingReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for TenantMissingReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        TenantMissingReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown tenant_missing_reason \"{raw}\": this engine and its caller disagree about the tenant_missing_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why an auth guard does not dominate a sink. PROOF-LEVEL vocabulary, on `auth.undominated_sinks[].reason`. Unlike the other proof reason vocabularies this one has TWO producers: the straight-line and dynamic-control-flow cases are decided in security_proof.rs, and the path-sensitive ones - a guard in only one branch, a guard behind a callback boundary - in security_control_flow.rs. Every member is produced.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum UndominatedSinkReason {
+    GuardAfterSink,
+    GuardOnlyInOneBranch,
+    CallbackBoundary,
+    UnsupportedDynamicControlFlow,
+    NoGuardCall,
+}
+
+impl UndominatedSinkReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [UndominatedSinkReason] = &[
+        UndominatedSinkReason::GuardAfterSink,
+        UndominatedSinkReason::GuardOnlyInOneBranch,
+        UndominatedSinkReason::CallbackBoundary,
+        UndominatedSinkReason::UnsupportedDynamicControlFlow,
+        UndominatedSinkReason::NoGuardCall,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            UndominatedSinkReason::GuardAfterSink => "guard_after_sink",
+            UndominatedSinkReason::GuardOnlyInOneBranch => "guard_only_in_one_branch",
+            UndominatedSinkReason::CallbackBoundary => "callback_boundary",
+            UndominatedSinkReason::UnsupportedDynamicControlFlow => {
+                "unsupported_dynamic_control_flow"
+            }
+            UndominatedSinkReason::NoGuardCall => "no_guard_call",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "guard_after_sink" => Some(UndominatedSinkReason::GuardAfterSink),
+            "guard_only_in_one_branch" => Some(UndominatedSinkReason::GuardOnlyInOneBranch),
+            "callback_boundary" => Some(UndominatedSinkReason::CallbackBoundary),
+            "unsupported_dynamic_control_flow" => {
+                Some(UndominatedSinkReason::UnsupportedDynamicControlFlow)
+            }
+            "no_guard_call" => Some(UndominatedSinkReason::NoGuardCall),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for UndominatedSinkReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for UndominatedSinkReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for UndominatedSinkReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        UndominatedSinkReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown undominated_sink_reason \"{raw}\": this engine and its caller disagree about the undominated_sink_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why a middleware does not cover a route. PROOF-LEVEL vocabulary, on `middleware.mismatches[].reason`, produced by static_middleware_coverage in security_control_flow.rs. `dynamic_matcher` has no producer: a dynamic matcher is reported as a parser gap and drives proof_status == ParserGap rather than as a coverage mismatch, so the mismatch spelling of it was declared and never built.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum MiddlewareMismatchReason {
+    PathNotMatched,
+    MethodNotMatched,
+    DynamicMatcher,
+    UnknownFramework,
+}
+
+impl MiddlewareMismatchReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [MiddlewareMismatchReason] = &[
+        MiddlewareMismatchReason::PathNotMatched,
+        MiddlewareMismatchReason::MethodNotMatched,
+        MiddlewareMismatchReason::DynamicMatcher,
+        MiddlewareMismatchReason::UnknownFramework,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            MiddlewareMismatchReason::PathNotMatched => "path_not_matched",
+            MiddlewareMismatchReason::MethodNotMatched => "method_not_matched",
+            MiddlewareMismatchReason::DynamicMatcher => "dynamic_matcher",
+            MiddlewareMismatchReason::UnknownFramework => "unknown_framework",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "path_not_matched" => Some(MiddlewareMismatchReason::PathNotMatched),
+            "method_not_matched" => Some(MiddlewareMismatchReason::MethodNotMatched),
+            "dynamic_matcher" => Some(MiddlewareMismatchReason::DynamicMatcher),
+            "unknown_framework" => Some(MiddlewareMismatchReason::UnknownFramework),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for MiddlewareMismatchReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for MiddlewareMismatchReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for MiddlewareMismatchReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        MiddlewareMismatchReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown middleware_mismatch_reason \"{raw}\": this engine and its caller disagree about the middleware_mismatch_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why a request input reaching a sink is not covered by a validation proof. PROOF-LEVEL vocabulary, on `request_validation.unvalidated_uses[].reason`. Every member is produced by request_unvalidated_uses in security_proof.rs, and all three are also members of the finding-level SecurityMissingProofCodeSchema, so the two vocabularies agree here and need no bridge.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RequestUnvalidatedReason {
+    RequestInputNotValidated,
+    ValidationResultNotUsed,
+    UnknownValidator,
+}
+
+impl RequestUnvalidatedReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [RequestUnvalidatedReason] = &[
+        RequestUnvalidatedReason::RequestInputNotValidated,
+        RequestUnvalidatedReason::ValidationResultNotUsed,
+        RequestUnvalidatedReason::UnknownValidator,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            RequestUnvalidatedReason::RequestInputNotValidated => "request_input_not_validated",
+            RequestUnvalidatedReason::ValidationResultNotUsed => "validation_result_not_used",
+            RequestUnvalidatedReason::UnknownValidator => "unknown_validator",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "request_input_not_validated" => {
+                Some(RequestUnvalidatedReason::RequestInputNotValidated)
+            }
+            "validation_result_not_used" => Some(RequestUnvalidatedReason::ValidationResultNotUsed),
+            "unknown_validator" => Some(RequestUnvalidatedReason::UnknownValidator),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for RequestUnvalidatedReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for RequestUnvalidatedReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for RequestUnvalidatedReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        RequestUnvalidatedReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown request_unvalidated_reason \"{raw}\": this engine and its caller disagree about the request_unvalidated_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why a SECURITY proof could not be completed because a construct could not be analysed. Carried on `parser_gaps[].code` inside a security boundary proof, and produced by build_phase4_security_proof, the phase5/phase6 builders and phase4_parser_gap.
+///
+/// NOT the same vocabulary as `parser_gap_kind`, despite the name. That one is the repo-wide taxonomy of why a REGION of the repo could not be understood - unresolved_import, parser_error, partial_parse - derived CLI-side from engine diagnostic codes and named by the semantic capability contracts. This one is the set of specific TypeScript constructs a security proof gives up on. The two lists are disjoint and the collision is in the English word `parser gap`, not in the concept; merging them would put `unresolved_import` where a security proof expects `unsupported_request_input_spread`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SecurityParserGapCode {
+    RouteBindingUnresolved,
+    HandlerUnresolved,
+    UnsupportedDynamicControlFlow,
+    UnsupportedDynamicMiddlewareMatcher,
+    UnsupportedRequestInputSpread,
+    UnsupportedRequestInputDestructure,
+    UnsupportedDynamicOutboundUrl,
+    UnsupportedDynamicCorsOrigin,
+    DynamicResponseShape,
+    UnsupportedDestructuringOrSpread,
+    UnsupportedTenantDynamicProperty,
+    UnsupportedTenantQueryObjectAlias,
+    UnsupportedSessionNestedDestructure,
+    UnsupportedCallbackBoundary,
+}
+
+impl SecurityParserGapCode {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [SecurityParserGapCode] = &[
+        SecurityParserGapCode::RouteBindingUnresolved,
+        SecurityParserGapCode::HandlerUnresolved,
+        SecurityParserGapCode::UnsupportedDynamicControlFlow,
+        SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher,
+        SecurityParserGapCode::UnsupportedRequestInputSpread,
+        SecurityParserGapCode::UnsupportedRequestInputDestructure,
+        SecurityParserGapCode::UnsupportedDynamicOutboundUrl,
+        SecurityParserGapCode::UnsupportedDynamicCorsOrigin,
+        SecurityParserGapCode::DynamicResponseShape,
+        SecurityParserGapCode::UnsupportedDestructuringOrSpread,
+        SecurityParserGapCode::UnsupportedTenantDynamicProperty,
+        SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
+        SecurityParserGapCode::UnsupportedSessionNestedDestructure,
+        SecurityParserGapCode::UnsupportedCallbackBoundary,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            SecurityParserGapCode::RouteBindingUnresolved => "route_binding_unresolved",
+            SecurityParserGapCode::HandlerUnresolved => "handler_unresolved",
+            SecurityParserGapCode::UnsupportedDynamicControlFlow => {
+                "unsupported_dynamic_control_flow"
+            }
+            SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher => {
+                "unsupported_dynamic_middleware_matcher"
+            }
+            SecurityParserGapCode::UnsupportedRequestInputSpread => {
+                "unsupported_request_input_spread"
+            }
+            SecurityParserGapCode::UnsupportedRequestInputDestructure => {
+                "unsupported_request_input_destructure"
+            }
+            SecurityParserGapCode::UnsupportedDynamicOutboundUrl => {
+                "unsupported_dynamic_outbound_url"
+            }
+            SecurityParserGapCode::UnsupportedDynamicCorsOrigin => {
+                "unsupported_dynamic_cors_origin"
+            }
+            SecurityParserGapCode::DynamicResponseShape => "dynamic_response_shape",
+            SecurityParserGapCode::UnsupportedDestructuringOrSpread => {
+                "unsupported_destructuring_or_spread"
+            }
+            SecurityParserGapCode::UnsupportedTenantDynamicProperty => {
+                "unsupported_tenant_dynamic_property"
+            }
+            SecurityParserGapCode::UnsupportedTenantQueryObjectAlias => {
+                "unsupported_tenant_query_object_alias"
+            }
+            SecurityParserGapCode::UnsupportedSessionNestedDestructure => {
+                "unsupported_session_nested_destructure"
+            }
+            SecurityParserGapCode::UnsupportedCallbackBoundary => "unsupported_callback_boundary",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "route_binding_unresolved" => Some(SecurityParserGapCode::RouteBindingUnresolved),
+            "handler_unresolved" => Some(SecurityParserGapCode::HandlerUnresolved),
+            "unsupported_dynamic_control_flow" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicControlFlow)
+            }
+            "unsupported_dynamic_middleware_matcher" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher)
+            }
+            "unsupported_request_input_spread" => {
+                Some(SecurityParserGapCode::UnsupportedRequestInputSpread)
+            }
+            "unsupported_request_input_destructure" => {
+                Some(SecurityParserGapCode::UnsupportedRequestInputDestructure)
+            }
+            "unsupported_dynamic_outbound_url" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicOutboundUrl)
+            }
+            "unsupported_dynamic_cors_origin" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicCorsOrigin)
+            }
+            "dynamic_response_shape" => Some(SecurityParserGapCode::DynamicResponseShape),
+            "unsupported_destructuring_or_spread" => {
+                Some(SecurityParserGapCode::UnsupportedDestructuringOrSpread)
+            }
+            "unsupported_tenant_dynamic_property" => {
+                Some(SecurityParserGapCode::UnsupportedTenantDynamicProperty)
+            }
+            "unsupported_tenant_query_object_alias" => {
+                Some(SecurityParserGapCode::UnsupportedTenantQueryObjectAlias)
+            }
+            "unsupported_session_nested_destructure" => {
+                Some(SecurityParserGapCode::UnsupportedSessionNestedDestructure)
+            }
+            "unsupported_callback_boundary" => {
+                Some(SecurityParserGapCode::UnsupportedCallbackBoundary)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for SecurityParserGapCode {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for SecurityParserGapCode {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SecurityParserGapCode {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        SecurityParserGapCode::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown security_parser_gap_code \"{raw}\": this engine and its caller disagree about the security_parser_gap_code vocabulary"
+            ))
+        })
+    }
+}

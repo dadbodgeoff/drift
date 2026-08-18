@@ -1,8 +1,9 @@
 use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
-    AuthorizationHelperBehavior, AuthorizationHelperKind, FactKind, Phase4SecurityPolicy,
-    RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus, build_auth_boundary_proof,
-    build_middleware_coverage_proof, build_phase4_security_proof,
+    AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason, FactKind,
+    Phase4SecurityPolicy, RequestUnvalidatedReason, RequestValidatorBehavior, RequestValidatorKind,
+    SecurityParserGapCode, SecurityProofStatus, SessionTrustReason, UndominatedSinkReason,
+    build_auth_boundary_proof, build_middleware_coverage_proof, build_phase4_security_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof,
     extract_security_facts,
 };
@@ -33,7 +34,10 @@ export async function GET() {
 
     assert!(proof.auth.required);
     assert!(proof.auth.proven, "proof should prove auth: {proof:#?}");
-    assert_eq!(proof.auth.undominated_sinks, Vec::<String>::new());
+    assert_eq!(
+        proof.auth.undominated_sinks,
+        Vec::<UndominatedSinkReason>::new()
+    );
     assert!(
         proof
             .auth
@@ -110,9 +114,8 @@ export async function GET(request: Request) {
             .session_trust
             .missing_trust
             .iter()
-            .any(
-                |missing| missing.variable == "session" && missing.reason == "derived_from_request"
-            ),
+            .any(|missing| missing.variable == "session"
+                && missing.reason == SessionTrustReason::DerivedFromRequest),
         "missing derived_from_request trust failure: {untrusted_proof:#?}"
     );
 }
@@ -179,7 +182,8 @@ export async function DELETE(request: Request) {
                 .authorization
                 .missing
                 .iter()
-                .any(|missing| missing.reason == "authorization_guard_not_dominating_sink"),
+                .any(|missing| missing.reason
+                    == AuthorizationMissingReason::AuthorizationGuardNotDominatingSink),
             "missing dominance failure proof: {proof:#?}"
         );
     }
@@ -227,9 +231,18 @@ export async function GET(request: Request) {
     }];
 
     let cases = [
-        (dynamic_property, "unsupported_tenant_dynamic_property"),
-        (query_object_alias, "unsupported_tenant_query_object_alias"),
-        (nested_destructure, "unsupported_session_nested_destructure"),
+        (
+            dynamic_property,
+            SecurityParserGapCode::UnsupportedTenantDynamicProperty,
+        ),
+        (
+            query_object_alias,
+            SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
+        ),
+        (
+            nested_destructure,
+            SecurityParserGapCode::UnsupportedSessionNestedDestructure,
+        ),
     ];
     for (source, expected_code) in cases {
         let proof = build_phase4_security_proof("app/api/projects/route.ts", source, &helpers)
@@ -274,7 +287,7 @@ export async function GET() {
         proof
             .auth
             .undominated_sinks
-            .contains(&"guard_after_sink".to_string()),
+            .contains(&UndominatedSinkReason::GuardAfterSink),
         "missing guard_after_sink reason: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::MissingProof);
@@ -313,7 +326,7 @@ export async function GET(request: Request) {
         proof
             .auth
             .undominated_sinks
-            .contains(&"guard_only_in_one_branch".to_string()),
+            .contains(&UndominatedSinkReason::GuardOnlyInOneBranch),
         "missing guard_only_in_one_branch reason: {proof:#?}"
     );
 }
@@ -349,7 +362,7 @@ export async function GET() {
         proof
             .auth
             .undominated_sinks
-            .contains(&"callback_boundary".to_string()),
+            .contains(&UndominatedSinkReason::CallbackBoundary),
         "missing callback_boundary reason: {proof:#?}"
     );
 
@@ -406,14 +419,13 @@ export async function GET(request: Request) {
         proof
             .auth
             .undominated_sinks
-            .contains(&"unsupported_dynamic_control_flow".to_string()),
+            .contains(&UndominatedSinkReason::UnsupportedDynamicControlFlow),
         "missing unsupported_dynamic_control_flow reason: {proof:#?}"
     );
     assert!(
-        proof
-            .parser_gaps
-            .iter()
-            .any(|gap| gap.code == "unsupported_dynamic_control_flow" && gap.blocks_enforcement),
+        proof.parser_gaps.iter().any(|gap| gap.code
+            == SecurityParserGapCode::UnsupportedDynamicControlFlow
+            && gap.blocks_enforcement),
         "missing parser gap: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
@@ -519,11 +531,9 @@ export async function GET() {
         "dynamic matcher should not prove coverage: {proof:#?}"
     );
     assert!(
-        proof
-            .parser_gaps
-            .iter()
-            .any(|gap| gap.code == "unsupported_dynamic_middleware_matcher"
-                && gap.blocks_enforcement),
+        proof.parser_gaps.iter().any(|gap| gap.code
+            == SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher
+            && gap.blocks_enforcement),
         "missing dynamic middleware parser gap: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
@@ -612,8 +622,10 @@ export async function POST(request: Request) {
             .request_validation
             .unvalidated_uses
             .iter()
-            .any(|use_proof| use_proof.reason == "validation_result_not_used"
-                || use_proof.reason == "request_input_not_validated")
+            .any(
+                |use_proof| use_proof.reason == RequestUnvalidatedReason::ValidationResultNotUsed
+                    || use_proof.reason == RequestUnvalidatedReason::RequestInputNotValidated
+            )
     );
 }
 
@@ -708,7 +720,7 @@ export async function POST(request: Request) {
             .request_validation
             .unvalidated_uses
             .iter()
-            .any(|use_proof| use_proof.reason == "request_input_not_validated")
+            .any(|use_proof| use_proof.reason == RequestUnvalidatedReason::RequestInputNotValidated)
     );
 }
 
@@ -728,7 +740,8 @@ export async function POST(request: Request) {
 
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
     assert!(proof.parser_gaps.iter().any(|gap| {
-        gap.code == "unsupported_request_input_destructure" && gap.blocks_enforcement
+        gap.code == SecurityParserGapCode::UnsupportedRequestInputDestructure
+            && gap.blocks_enforcement
     }));
 }
 
@@ -757,7 +770,8 @@ export async function POST(request: Request) {
 
     assert!(
         proof.parser_gaps.iter().any(|gap| {
-            gap.code == "unsupported_request_input_spread" && gap.blocks_enforcement
+            gap.code == SecurityParserGapCode::UnsupportedRequestInputSpread
+                && gap.blocks_enforcement
         }),
         "missing unsupported request input spread parser gap: {proof:#?}"
     );

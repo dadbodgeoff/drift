@@ -27,9 +27,11 @@
  *
  *   1. The generated files match vocabulary/vocabulary.json. Editing one side of a mirror is what
  *      this whole change exists to make impossible, and a stale generated file restores it.
- *   2. No hand-written list anywhere is a proper subset of a vocabulary. This is the D-M4 / D-M4b /
- *      GraphNodeRecordSchema shape: a closed enum written from memory, always short, always stale.
- *      A legitimate subset is baselined WITH ITS REASON.
+ *   2. No hand-written list anywhere is drawn entirely from a vocabulary - subset OR exact copy.
+ *      The subset case is the D-M4 / D-M4b / GraphNodeRecordSchema shape: a closed enum written
+ *      from memory, always short, always stale. The exact-copy case was excluded until S2-04 and
+ *      is how two thirty-and-fourteen-member security code lists sat duplicated across two
+ *      packages under a green gate. A legitimate subset is baselined WITH ITS REASON.
  *   3. The convention dispatch table matches the two evaluators' source. `engine_direct` and
  *      `engine_phase6` kinds must appear in check_command.rs, `cli` kinds in run-check.ts, and
  *      `none` kinds in neither - which is what makes "accepted and enforcing nothing" detectable.
@@ -58,6 +60,8 @@ const SECURITY_FACTS_SOURCE = join(repoRoot, "crates/drift-engine/src/security_f
 const PRISMA_SOURCE = join(repoRoot, "crates/drift-engine/src/prisma.rs");
 const MAIN_SOURCE = join(repoRoot, "crates/drift-engine/src/main.rs");
 const FACTGRAPH_SOURCE = join(repoRoot, "packages/factgraph/src/index.ts");
+const SECURITY_PROOF_SOURCE = join(repoRoot, "crates/drift-engine/src/security_proof.rs");
+const SECURITY_CONTROL_FLOW_SOURCE = join(repoRoot, "crates/drift-engine/src/security_control_flow.rs");
 
 /**
  * The comment that opens the arm in `check_repo`'s match which skips kinds the engine does not own.
@@ -129,11 +133,20 @@ function checkGeneratedFilesAreCurrent(manifest, failures) {
 }
 
 /**
- * 2. Hand-written enum literals that are proper subsets of a vocabulary.
+ * 2. Hand-written enum literals drawn entirely from a vocabulary.
  *
  * Matches TypeScript `z.enum([...])`, JSON-schema `enum: [...]` and Rust `matches!(x, "a" | "b")`.
  * Three or more members, because a two-member list is as likely to be an unrelated pair as a stale
  * copy, and a gate that cries wolf gets muted.
+ *
+ * SUBSETS AND EXACT COPIES BOTH FIRE. Until S2-04 this excluded a list the same size as the
+ * vocabulary (`members.length !== set.size`), on the reasoning that a complete copy is at least not
+ * STALE. That reasoning was wrong, and it cost two of the seven vocabularies S2 generated: the
+ * thirty-two-member `security_missing_proof_code` and the fourteen-member
+ * `security_parser_gap_code` each existed as two byte-identical hand-written copies, one in
+ * @drift/core and one in @drift/engine-contract, and this gate stayed green across both of them for
+ * as long as they agreed. A complete copy is not a smaller problem than a stale one, it is the same
+ * problem before anybody has edited one side - which is the moment to catch it.
  */
 function subsetOffenders(vocabularies) {
   const offenders = [];
@@ -149,7 +162,7 @@ function subsetOffenders(vocabularies) {
           continue;
         }
         for (const [name, set] of vocabularies) {
-          if (members.every((member) => set.has(member)) && members.length !== set.size) {
+          if (members.every((member) => set.has(member))) {
             offenders.push({
               key: `${relative(repoRoot, file)}:${name}`,
               file: relative(repoRoot, file),
@@ -311,8 +324,97 @@ const PRODUCER_PATTERNS = {
   graph_edge_kind: (variant, member) => [
     { file: MAIN_SOURCE, pattern: new RegExp(`GraphEdgeKind::${variant}\\b`) },
     { file: FACTGRAPH_SOURCE, pattern: new RegExp(`edge\\(\\s*"${member}"`) }
+  ],
+  // The proof-level session trust reason has exactly one construction site:
+  // `build_session_trust_proof_from_facts` in security_proof.rs. That makes the producer
+  // question decidable here in the strong sense, unlike the vocabularies that fall through
+  // to the reference check - so this one is asked precisely, and two of its four members
+  // answer "nobody", which is the honest answer and is baselined as such.
+  //
+  // Deliberately NOT a repo-wide search for the variant. `phase4_missing_code` matches on
+  // every member exhaustively, so a whole-repo search would report all four as produced and
+  // the gate would assert the opposite of what it means to - the same shape as the skip-arm
+  // problem in rule 3.
+  session_trust_reason: (variant) => [
+    { file: SECURITY_PROOF_SOURCE, pattern: new RegExp(`SessionTrustReason::${variant}\\b`) }
+  ],
+  authorization_missing_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`AuthorizationMissingProof\\s*\\{\\s*reason:\\s*AuthorizationMissingReason::${variant}\\b`)
+    }
+  ],
+  tenant_missing_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`TenantMissingProof\\s*\\{[^}]*?reason:\\s*TenantMissingReason::${variant}\\b`)
+    }
+  ],
+  // The only vocabulary here with two construction sites. The straight-line and
+  // dynamic-control-flow reasons are decided in security_proof.rs; the path-sensitive ones
+  // - guard in one branch only, guard behind a callback boundary - in
+  // security_control_flow.rs, which returns them rather than building the proof itself.
+  // Both files are searched, and only these two: naming the variant in a match arm
+  // elsewhere is a consumer, not a producer.
+  undominated_sink_reason: (variant) => [
+    { file: SECURITY_PROOF_SOURCE, pattern: new RegExp(`UndominatedSinkReason::${variant}\\b`) },
+    {
+      file: SECURITY_CONTROL_FLOW_SOURCE,
+      pattern: new RegExp(`UndominatedSinkReason::${variant}\\b`)
+    }
+  ],
+  middleware_mismatch_reason: (variant) => [
+    {
+      file: SECURITY_CONTROL_FLOW_SOURCE,
+      pattern: new RegExp(`MiddlewareMismatch\\s*\\{[^}]*?reason:\\s*MiddlewareMismatchReason::${variant}\\b`)
+    }
+  ],
+  request_unvalidated_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`RequestUnvalidatedUseProof\\s*\\{[^}]*?reason:\\s*RequestUnvalidatedReason::${variant}\\b`)
+    }
   ]
 };
+
+/**
+ * A Rust source with its `#[cfg(test)]` modules removed.
+ *
+ * A test that CONSTRUCTS a vocabulary member is not a producer of it. Without this, the producer
+ * question answers itself: `security_proof.rs` asserts on `SessionTrustReason::UnknownHelper` in its
+ * own test module, so deleting the real emission site left the gate still reporting the member as
+ * produced - a gate that cannot fail, which is the artefact this whole file exists to not be. It is
+ * the same shape as the skip-arm exclusion in rule 3, and it is excluded for the same reason.
+ *
+ * Brace-matched rather than "everything after the first #[cfg(test)]", because a test module is only
+ * conventionally last, and a gate that silently stops reading the second half of a file when someone
+ * moves one is worse than one that never read it.
+ */
+function withoutTestModules(source) {
+  let result = "";
+  let index = 0;
+  for (;;) {
+    const marker = source.indexOf("#[cfg(test)]", index);
+    if (marker === -1) {
+      return result + source.slice(index);
+    }
+    const open = source.indexOf("{", marker);
+    if (open === -1) {
+      return result + source.slice(index);
+    }
+    let depth = 0;
+    let cursor = open;
+    for (; cursor < source.length; cursor += 1) {
+      if (source[cursor] === "{") depth += 1;
+      else if (source[cursor] === "}") {
+        depth -= 1;
+        if (depth === 0) break;
+      }
+    }
+    result += source.slice(index, marker);
+    index = cursor === source.length ? cursor : cursor + 1;
+  }
+}
 
 function rustVariantOf(member) {
   return member
@@ -323,10 +425,10 @@ function rustVariantOf(member) {
 }
 
 function coverageOffenders(vocabularies) {
-  const sources = [...sourceFiles()].map((file) => ({
-    path: file,
-    text: readFileSync(file, "utf8")
-  }));
+  const sources = [...sourceFiles()].map((file) => {
+    const raw = readFileSync(file, "utf8");
+    return { path: file, text: file.endsWith(".rs") ? withoutTestModules(raw) : raw };
+  });
   const byPath = new Map(sources.map((entry) => [entry.path, entry.text]));
   const offenders = [];
 
@@ -379,10 +481,15 @@ function main() {
   for (const offender of subsets) {
     if (!baselinedSubsets.has(offender.key)) {
       failures.push(
-        `NEW hand-written vocabulary subset: ${offender.file}:${offender.line} declares ` +
-          `${offender.declared} of the ${offender.total} ${offender.vocabulary} members, missing ` +
-          `${offender.missing.join(", ")}. Build it from the generated list, or baseline it with the ` +
-          "reason the subset is deliberate."
+        offender.declared === offender.total
+          ? `NEW hand-written vocabulary COPY: ${offender.file}:${offender.line} declares all ` +
+              `${offender.total} ${offender.vocabulary} members by hand. Import the generated ` +
+              "schema. A complete copy is not a smaller problem than a stale one - it is the same " +
+              "problem, caught before either side has been edited."
+          : `NEW hand-written vocabulary subset: ${offender.file}:${offender.line} declares ` +
+              `${offender.declared} of the ${offender.total} ${offender.vocabulary} members, missing ` +
+              `${offender.missing.join(", ")}. Build it from the generated list, or baseline it with ` +
+              "the reason the subset is deliberate."
       );
     }
   }
