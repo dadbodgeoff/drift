@@ -464,8 +464,9 @@ fn build_route_auth_boundary_proof(
     }
     undominated_sinks.sort();
     undominated_sinks.dedup();
-    undominated_sink_proofs
-        .sort_by(|left, right| (&left.reason, &left.sink_id).cmp(&(&right.reason, &right.sink_id)));
+    undominated_sink_proofs.sort_by(|left, right| {
+        (left.reason.as_wire(), &left.sink_id).cmp(&(right.reason.as_wire(), &right.sink_id))
+    });
     undominated_sink_proofs
         .dedup_by(|left, right| left.reason == right.reason && left.sink_id == right.sink_id);
 
@@ -1092,7 +1093,8 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
         }
     }
     gaps.sort_by(|left, right| {
-        (&left.code, &left.parser_gap_id).cmp(&(&right.code, &right.parser_gap_id))
+        (left.code.as_wire(), &left.parser_gap_id)
+            .cmp(&(right.code.as_wire(), &right.parser_gap_id))
     });
     gaps.dedup_by(|left, right| {
         left.code == right.code && left.parser_gap_id == right.parser_gap_id
@@ -1161,8 +1163,16 @@ fn build_authorization_proof_from_facts(
             });
         }
     }
+    // Sort on the WIRE STRING, not the enum. Deriving Ord orders variants by their
+    // position in vocabulary/vocabulary.json, which is not the lexicographic order these
+    // lists were sorted in while `reason` was a String. That difference is not cosmetic:
+    // consumers read `.first()` -- `phase4_missing_code` for the finding's missing_code,
+    // and security_rules.rs for `actual_layer` -- so a reordering silently changes which
+    // reason a user is shown. Proven here: `session_not_trusted` is declared before
+    // `authorization_guard_not_dominating_sink` but sorts after it as a string.
     missing.sort_by(|left, right| {
-        (&left.reason, &left.sink_fact_id).cmp(&(&right.reason, &right.sink_fact_id))
+        (left.reason.as_wire(), &left.sink_fact_id)
+            .cmp(&(right.reason.as_wire(), &right.sink_fact_id))
     });
     missing.dedup();
     let required = !data_operations.is_empty();
@@ -1264,8 +1274,8 @@ fn build_tenant_proof_from_facts(
         });
     }
     missing.sort_by(|left, right| {
-        (&left.reason, &left.data_operation_fact_id)
-            .cmp(&(&right.reason, &right.data_operation_fact_id))
+        (left.reason.as_wire(), &left.data_operation_fact_id)
+            .cmp(&(right.reason.as_wire(), &right.data_operation_fact_id))
     });
     missing.dedup();
     let required = protected_operation_count > 0;
@@ -2148,5 +2158,60 @@ mod tests {
             .first()
             .expect("an unrecognized session helper must produce a missing_trust entry");
         assert_eq!(missing.reason, SessionTrustReason::UnknownHelper);
+    }
+}
+
+#[cfg(test)]
+mod reason_ordering_tests {
+    use super::*;
+
+    /// Typing these fields changed how they SORT, which changed what a user is told.
+    ///
+    /// While `reason` was a `String` these lists sorted lexicographically by wire value.
+    /// Deriving `Ord` on the generated enum orders by position in
+    /// vocabulary/vocabulary.json instead. Consumers read `.first()` --
+    /// `phase4_missing_code` for a finding's missing_code, `security_rules.rs` for its
+    /// `actual_layer` -- so the two orders disagreeing silently changes which of several
+    /// true reasons gets shown.
+    ///
+    /// `session_not_trusted` is declared BEFORE `authorization_guard_not_dominating_sink`
+    /// and sorts AFTER it as a string, so a route carrying both flips on the enum order.
+    /// Nothing else pins this: every affected sort is textually unchanged by the typing,
+    /// and the whole engine suite stayed green while the output moved.
+    #[test]
+    fn authorization_reasons_sort_by_wire_string_not_declaration_order() {
+        let mut missing = [
+            AuthorizationMissingProof {
+                reason: AuthorizationMissingReason::SessionNotTrusted,
+                sink_fact_id: Some("sink:1".to_string()),
+            },
+            AuthorizationMissingProof {
+                reason: AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+                sink_fact_id: Some("sink:1".to_string()),
+            },
+        ];
+        missing.sort_by(|left, right| {
+            (left.reason.as_wire(), &left.sink_fact_id)
+                .cmp(&(right.reason.as_wire(), &right.sink_fact_id))
+        });
+
+        assert_eq!(
+            missing
+                .iter()
+                .map(|entry| entry.reason.as_wire())
+                .collect::<Vec<_>>(),
+            [
+                "authorization_guard_not_dominating_sink",
+                "session_not_trusted"
+            ],
+            "sorted on the enum's derived Ord instead of the wire string"
+        );
+
+        // The two orders genuinely disagree -- if they ever agree this test is vacuous.
+        assert!(
+            AuthorizationMissingReason::SessionNotTrusted
+                < AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+            "declaration order no longer differs; this test has stopped proving anything"
+        );
     }
 }
