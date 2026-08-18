@@ -4426,6 +4426,76 @@ storage_schema_version: MIGRATIONS.length
     }
   });
 
+  /**
+   * S3-04: a characterization lock, not a red test. It passes today, and its job is to keep passing.
+   *
+   * Accepted-helper resolution classifies a specifier `repo_resolved` on the strength of an
+   * `IMPORT_RESOLVES_TO_MODULE` edge in `checkData`, and trusts that edge came from the Rust
+   * resolver. Nothing in `resolvedHelperIdentities` verifies that, and nothing needs to - but only
+   * because of a guarantee established somewhere else entirely.
+   *
+   * There are two graphs in this codebase. The engine-streamed edges collected in
+   * `collect-scan-data.ts` are what every check sees. A separate TypeScript-derived graph in
+   * `packages/factgraph/src/index.ts` also emits `IMPORT_RESOLVES_TO_MODULE`, via a WEAKER
+   * resolver - but it is built from one call site (`scan-status.ts`), for a stored artifact, and
+   * only when the Rust engine produced no graph. In that state `run-check.ts` exits
+   * `CHECK_EXIT_REFUSED` with `blocked_reasons: ["typescript_fallback_used"]` BEFORE any check
+   * runs, at the refusal site in `runCheck` that builds the `status: "refused"` envelope and the
+   * `typescript_fallback_used` failure. So the weaker edges can never reach helper resolution.
+   *
+   * That ordering is the entire warrant for trusting `repo_resolved`. Softening the refusal - so
+   * that a degraded scan proceeds to evaluate conventions - would quietly feed a weaker resolver's
+   * edges into accepted-helper identity, and every helper it mis-resolved would still report
+   * `mode: "repo_resolved"` as though the Rust resolver had answered. This fails loudly instead.
+   *
+   * The `blocked_reasons` and exit-code assertions are shared with the enforcement test above; what
+   * is pinned HERE is that nothing was evaluated - no findings, no security boundary proofs, and no
+   * evaluation receipts, which a convention that had actually been checked would have produced.
+   */
+  it("a_typescript_fallback_scan_refuses_before_any_helper_resolution_runs", async () => {
+    const { databasePath, repoRoot } = await seedAcceptedDatabase();
+    const diffFile = join(repoRoot, "..", "diff.patch");
+    const previousBin = process.env.DRIFT_ENGINE_BIN;
+    const previousFallback = process.env.DRIFT_ALLOW_TYPESCRIPT_ENGINE_FALLBACK;
+    try {
+      process.env.DRIFT_ENGINE_BIN = join(repoRoot, "..", "missing-engine");
+      process.env.DRIFT_ALLOW_TYPESCRIPT_ENGINE_FALLBACK = "1";
+
+      const result = await runCli([
+        "--db", databasePath,
+        "check",
+        "--repo", "repo_abc",
+        "--diff-file", diffFile,
+        "--scope", "changed-hunks",
+        "--now", "2026-05-10T00:00:30.000Z",
+        "--json"
+      ]);
+
+      // CHECK_EXIT_REFUSED.
+      expect(result.exitCode).toBe(3);
+      const payload = JSON.parse(result.stdout);
+      expect(payload.summary.blocked_reasons).toContain("typescript_fallback_used");
+
+      // The refusal came first: the seeded convention was never evaluated, so no resolver of any
+      // strength was consulted about any specifier on this run.
+      expect(payload.findings).toEqual([]);
+      expect(payload.security_boundary_proofs).toEqual([]);
+      expect(payload.summary.evaluation_receipts).toBeUndefined();
+      expect(payload.check.status).toBe("refused");
+    } finally {
+      if (previousBin === undefined) {
+        delete process.env.DRIFT_ENGINE_BIN;
+      } else {
+        process.env.DRIFT_ENGINE_BIN = previousBin;
+      }
+      if (previousFallback === undefined) {
+        delete process.env.DRIFT_ALLOW_TYPESCRIPT_ENGINE_FALLBACK;
+      } else {
+        process.env.DRIFT_ALLOW_TYPESCRIPT_ENGINE_FALLBACK = previousFallback;
+      }
+    }
+  });
+
   it("expires existing findings when their accepted convention has expired", async () => {
     const { databasePath } = await seedAcceptedDatabase();
     const storage = openDriftStorage({ databasePath });
