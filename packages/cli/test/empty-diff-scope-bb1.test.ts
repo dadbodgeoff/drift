@@ -195,7 +195,17 @@ describe("BB-1 empty diff scope", () => {
     expect(JSON.parse(result.stdout).check.status).toBe("pass");
   });
 
-  it("says a rename is why it examined nothing", async () => {
+  it("examines the renamed file rather than reporting that it examined nothing", async () => {
+    // CHANGED BY R2a, deliberately. This previously asserted
+    // `Checked 0 files (1 renamed file unchanged)`.
+    //
+    // BB-1 correctly stopped a pure rename from tripping the empty-scope refusal, but it did so by
+    // treating the moved file as outside the scope and then explaining the emptiness. The file was
+    // never examined - which is right up until the moved file is the one carrying a violation, and
+    // then it is an enforcement bypass (see "a moved violation is still examined" below).
+    //
+    // BB-1's principle is preserved and strengthened: the scope is still reported honestly, and it
+    // is no longer empty, because there is genuinely something in it.
     const { repoId, databasePath, repoRoot } = await onboardGitRepo();
     await mkdir(join(repoRoot, "apps/web/app/api/moved"), { recursive: true });
     git(repoRoot, "mv", "apps/web/app/api/status/route.ts", "apps/web/app/api/moved/route.ts");
@@ -204,9 +214,29 @@ describe("BB-1 empty diff scope", () => {
       "--db", databasePath, "check", "--repo", repoId, "--diff", "HEAD"
     ]);
 
-    // Still visible that nothing was examined, and why - which is BB-1's whole point. Silence here
-    // would be the original bug wearing a different hat.
-    expect(result.stdout).toContain("Checked 0 files (1 renamed file unchanged)");
+    expect(result.stdout).toContain("Checked 1 file");
+  });
+
+  it("a moved violation is still examined - the bypass R2a closes", async () => {
+    // The reason R2a exists. `users/route.ts` is the VIOLATING fixture. Before R2a a pure rename
+    // emitted only rename metadata, so the parser produced no file entry, `filesForConvention`
+    // never saw the route, and the check reported a clean scope of zero files - renaming a
+    // violating route made it invisible.
+    //
+    // Reachable from the documented workflow: `git diff --unified=0 <range>` (run-check.ts:495) has
+    // rename detection on by default.
+    const { repoId, databasePath, repoRoot } = await onboardGitRepo();
+    await mkdir(join(repoRoot, "apps/web/app/api/relocated"), { recursive: true });
+    git(repoRoot, "mv", "apps/web/app/api/users/route.ts", "apps/web/app/api/relocated/route.ts");
+
+    const result = await runCli([
+      "--db", databasePath, "check", "--repo", repoId, "--diff", "HEAD", "--json"
+    ]);
+
+    const payload = JSON.parse(result.stdout);
+    expect(payload.summary.affected_scope.changed_file_count).toBe(1);
+    // The moved route is in scope at its new path, not silently dropped.
+    expect(JSON.stringify(payload)).toContain("apps/web/app/api/relocated/route.ts");
   });
 
   it("refuses an entirely empty diff with exit 3 and a named cause", async () => {
