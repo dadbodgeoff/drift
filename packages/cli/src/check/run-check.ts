@@ -3835,6 +3835,14 @@ interface GraphIndex {
   endpointNodesByFile: Map<string, ScanData["graph_nodes"]>;
   dataOperationNodesByFile: Map<string, ScanData["graph_nodes"]>;
   reexportTargets: Map<string, string[]>;
+  /**
+   * Re-export edges WITH the name each one carries: a symbol for `export { x } from "./m"`, `"*"`
+   * for a flattening `export * from "./m"`. `reexportTargets` above drops that name, which is
+   * exactly what made the accepted-helper closure symbol-blind.
+   */
+  reexportEdgesByFrom: Map<string, Array<{ to: string; exportedName: string | undefined }>>;
+  /** module node id -> the symbol names it directly exports, from `MODULE_EXPORTS_SYMBOL`. */
+  exportedSymbolsByModule: Map<string, Set<string>>;
   /** Specifiers joined by NUL -> the files they resolve to. Shared by every specifier list. */
   resolvedModuleFilesByKey: Map<string, Set<string>>;
   /** Specifiers joined by NUL -> the module NODES they resolve to, before re-export walking. */
@@ -3907,6 +3915,8 @@ function graphIndexFor(checkData: ScanData): GraphIndex {
     endpointNodesByFile,
     dataOperationNodesByFile,
     reexportTargets: moduleReexportTargets(checkData),
+    reexportEdgesByFrom: moduleReexportEdges(checkData),
+    exportedSymbolsByModule: exportedSymbolsByModule(checkData),
     resolvedModuleFilesByKey: new Map(),
     resolvedModuleNodesByKey: new Map()
   };
@@ -4104,7 +4114,18 @@ export interface AcceptedHelperIdentity {
   /** The specifier as the contract typed it - what `external` and `unresolved` fall back to. */
   specifier: string;
   mode: AcceptedHelperResolutionMode;
-  /** Repo-relative, sorted, deduped. Empty for every mode but `repo_resolved`. */
+  /**
+   * Repo-relative, sorted, deduped. Empty for every mode but `repo_resolved`.
+   *
+   * The module the specifier names, plus the modules a re-export chain carries this helper's SYMBOL
+   * to. Not every module the barrel touches: a barrel re-exporting both `./auth` and
+   * `./attacker-controlled` contributes only the one that exports the symbol.
+   *
+   * The residual limit, stated so it is not assumed away: the closure tests symbol NAMES, not
+   * symbol identity. A barrel re-exporting the same name from two modules - ambiguous in JavaScript
+   * itself - yields both. Treat this as "the modules that plausibly supply this helper", not as
+   * proof that each one is the helper.
+   */
   files: string[];
   /**
    * The tsconfig-paths hijack shape: the contract names what looks like a package, and the repo has
@@ -4231,6 +4252,7 @@ function helperIdentityFor(
   // what the repo actually re-exports, which is a fact about the code rather than about spelling.
   const reachable = reexportClosureFor(
     resolvedModuleNodeIdsFor(checkData, [specifier], "exact_specifier"),
+    symbol,
     index
   );
   const files = moduleFilesForNodeIds(reachable, index);
@@ -4258,8 +4280,64 @@ function helperIdentityFor(
   };
 }
 
-/** Every module reachable from `startNodeIds` by `MODULE_REEXPORTS_MODULE`, the starts included. */
-function reexportClosureFor(startNodeIds: Set<string>, index: GraphIndex): Set<string> {
+/**
+ * The modules a helper's identity extends to through re-exports - and ONLY those that carry the
+ * helper's symbol.
+ *
+ * The starts are always kept: they are what the specifier literally names, which is not a claim
+ * about any symbol. Everything beyond them is a claim - "the barrel re-exports this helper from
+ * there" - and is admitted only on evidence, because that claim is what an attacker edits a barrel
+ * to forge. A barrel re-exporting both `./auth` and `./attacker-controlled` used to put both inside
+ * the accepted helper's identity.
+ *
+ * Two kinds of evidence, matching the two shapes a re-export takes:
+ *   - a NAMED edge (`export { requireUser } from "./auth"`) names the symbol itself, so the edge is
+ *     its own proof and an edge naming any other symbol cannot deliver ours;
+ *   - a STAR edge (`export * from "./auth"`) names nothing, so the target must be shown to provide
+ *     the symbol - by exporting it directly, or by re-exporting it onward from something that does.
+ *     The recursive half matters: in `barrel -> mid -> leaf` where `mid` only passes things along,
+ *     a route importing `mid` really does get the symbol, so `mid` belongs to the identity.
+ *
+ * KNOWN LIMIT, deliberately not papered over: this is a symbol-NAME test, not a symbol-identity
+ * one. A barrel that re-exports the same name from two modules is ambiguous in JavaScript itself,
+ * and both modules land here. That is a strictly smaller surface than before - the sibling has to
+ * export the helper's exact name rather than merely sit next to it - but it is not zero, and
+ * `files` should not be read as proof that every listed file is the helper.
+ */
+function reexportClosureFor(
+  startNodeIds: Set<string>,
+  symbol: string,
+  index: GraphIndex
+): Set<string> {
+  const provides = new Map<string, boolean>();
+
+  /** Does this module supply `symbol`, directly or by re-exporting it onward? */
+  const providesSymbol = (moduleId: string, onPath: Set<string>): boolean => {
+    const memo = provides.get(moduleId);
+    if (memo !== undefined) {
+      return memo;
+    }
+    // A re-export cycle is not evidence of anything; treat the revisit as "no" without memoising,
+    // so a different path to the same module can still answer honestly.
+    if (onPath.has(moduleId)) {
+      return false;
+    }
+    if (index.exportedSymbolsByModule.get(moduleId)?.has(symbol)) {
+      provides.set(moduleId, true);
+      return true;
+    }
+    onPath.add(moduleId);
+    const answer = (index.reexportEdgesByFrom.get(moduleId) ?? []).some(
+      (edge) =>
+        (edge.exportedName === symbol && edge.to !== moduleId) ||
+        (edge.exportedName === "*" && providesSymbol(edge.to, onPath))
+    );
+    onPath.delete(moduleId);
+    provides.set(moduleId, answer);
+    return answer;
+  };
+
+  const kept = new Set(startNodeIds);
   const seen = new Set<string>();
   const queue = [...startNodeIds];
   while (queue.length > 0) {
@@ -4268,11 +4346,26 @@ function reexportClosureFor(startNodeIds: Set<string>, index: GraphIndex): Set<s
       continue;
     }
     seen.add(current);
-    for (const next of index.reexportTargets.get(current) ?? []) {
-      queue.push(next);
+    for (const edge of index.reexportEdgesByFrom.get(current) ?? []) {
+      if (edge.exportedName === symbol) {
+        // The edge names our symbol: the target supplies it, by construction.
+        kept.add(edge.to);
+        queue.push(edge.to);
+        continue;
+      }
+      if (edge.exportedName !== "*") {
+        // A named re-export of some other symbol. Whatever is over there, it is not this helper.
+        continue;
+      }
+      if (providesSymbol(edge.to, new Set())) {
+        kept.add(edge.to);
+      }
+      // Still traversed even when it does not itself provide the symbol, so a longer star chain
+      // behind it is not cut off.
+      queue.push(edge.to);
     }
   }
-  return seen;
+  return kept;
 }
 
 /**
@@ -4310,6 +4403,60 @@ function firstStringValue(
     }
   }
   return undefined;
+}
+
+/**
+ * module id -> its re-export edges, each with the name it re-exports.
+ *
+ * Separate from `moduleReexportTargets` because that map feeds the forbidden-import path, which
+ * asks a different question: a barrel that re-exports a forbidden module is a dependency on it
+ * whatever name it re-exports under, so dropping the name there is correct. An ACCEPTED helper is
+ * a claim about one symbol, so dropping the name there is a hole.
+ */
+function moduleReexportEdges(
+  checkData: ScanData
+): Map<string, Array<{ to: string; exportedName: string | undefined }>> {
+  const edges = new Map<string, Array<{ to: string; exportedName: string | undefined }>>();
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "MODULE_REEXPORTS_MODULE") {
+      continue;
+    }
+    const entry = { to: edge.to, exportedName: stringMetadata(edge.metadata, "exported_name") };
+    const existing = edges.get(edge.from);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      edges.set(edge.from, [entry]);
+    }
+  }
+  return edges;
+}
+
+/**
+ * module id -> the symbol names it directly exports.
+ *
+ * The name lives in the symbol node's LABEL, which is where the engine puts it
+ * (`insert_node(..., GraphNodeKind::Symbol, &fact.name, ...)`).
+ */
+function exportedSymbolsByModule(checkData: ScanData): Map<string, Set<string>> {
+  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
+  const exported = new Map<string, Set<string>>();
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "MODULE_EXPORTS_SYMBOL") {
+      continue;
+    }
+    const symbol = nodesById.get(edge.to)?.label;
+    if (!symbol) {
+      continue;
+    }
+    const existing = exported.get(edge.from);
+    if (existing) {
+      existing.add(symbol);
+    } else {
+      exported.set(edge.from, new Set([symbol]));
+    }
+  }
+  return exported;
 }
 
 /** module id -> modules it re-exports, for chain walking. */

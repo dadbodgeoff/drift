@@ -27,6 +27,11 @@ export interface AcceptedHelperModuleFile {
   /** The specifier as the contract typed it; what the non-`repo_resolved` modes fall back to. */
   specifier: string;
   mode: "repo_resolved" | "external" | "unresolved";
+  /**
+   * The module the specifier names, plus modules a re-export chain carries the helper's SYMBOL to.
+   * A barrel sibling that does not export the symbol is not in here. The closure matches symbol
+   * NAMES, so a barrel re-exporting one name from two modules still yields both.
+   */
   files: string[];
   /** The tsconfig-paths hijack shape: a package-shaped specifier that resolves repo-locally. */
   external_specifier_resolves_in_repo?: true;

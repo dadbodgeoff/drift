@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AcceptedConvention } from "@drift/core";
 import type { GraphEdge, GraphNode } from "@drift/factgraph";
 import { resolvedHelperIdentities } from "../src/check/run-check.js";
-import { graphEdge, graphScanData, importNode, moduleNode } from "./helpers/scan-data.js";
+import { graphEdge, graphScanData, importNode, moduleNode, symbolNode } from "./helpers/scan-data.js";
 
 /**
  * S3-02: what an accepted security helper's import specifier actually resolves to, and how we know.
@@ -64,22 +64,15 @@ describe("resolvedHelperIdentities", () => {
     moduleNode({ id: "module:barrel", filePath: "src/lib/index.ts" }),
     moduleNode({ id: "module:auth", filePath: "src/lib/auth.ts" }),
     moduleNode({ id: "module:attacker", filePath: "src/lib/attacker-controlled.ts" }),
-    {
+    symbolNode({
       id: "symbol:attacker-assertCsrf",
-      kind: "symbol",
-      label: "assertCsrf",
-      stable: true,
-      evidence_ids: [],
-      metadata: { file_path: "src/lib/attacker-controlled.ts", name: "assertCsrf" }
-    },
-    {
-      id: "symbol:auth-assertCsrf",
-      kind: "symbol",
-      label: "assertCsrf",
-      stable: true,
-      evidence_ids: [],
-      metadata: { file_path: "src/lib/auth.ts", name: "assertCsrf" }
-    }
+      filePath: "src/lib/attacker-controlled.ts",
+      name: "assertCsrf"
+    }),
+    symbolNode({ id: "symbol:auth-assertCsrf", filePath: "src/lib/auth.ts", name: "assertCsrf" }),
+    symbolNode({ id: "symbol:auth-requireUser", filePath: "src/lib/auth.ts", name: "requireUser" }),
+    symbolNode({ id: "symbol:auth-parseBody", filePath: "src/lib/auth.ts", name: "parseBody" }),
+    symbolNode({ id: "symbol:auth-toDto", filePath: "src/lib/auth.ts", name: "toDto" })
   ];
 
   const edges: GraphEdge[] = [
@@ -87,8 +80,15 @@ describe("resolvedHelperIdentities", () => {
     graphEdge({ id: "r2", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:auth", to: "module:auth" }),
     graphEdge({ id: "r3", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:auth-relative", to: "module:auth" }),
     graphEdge({ id: "r4", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:attacker", to: "module:attacker" }),
-    // The barrel is what makes `@/lib` mean `src/lib/auth.ts` as well as `src/lib/index.ts`.
-    graphEdge({ id: "x1", kind: "MODULE_REEXPORTS_MODULE", from: "module:barrel", to: "module:auth" }),
+    // The barrel is what makes `@/lib` mean `src/lib/auth.ts` as well as `src/lib/index.ts` - but
+    // only for the symbols it actually re-exports, which is why the edge carries a name and the
+    // target declares what it exports. `export * from "./auth"`.
+    graphEdge({ id: "x1", kind: "MODULE_REEXPORTS_MODULE", from: "module:barrel", to: "module:auth", exportedName: "*" }),
+    graphEdge({ id: "x2", kind: "MODULE_EXPORTS_SYMBOL", from: "module:auth", to: "symbol:auth-requireUser" }),
+    graphEdge({ id: "x3", kind: "MODULE_EXPORTS_SYMBOL", from: "module:auth", to: "symbol:auth-assertCsrf" }),
+    graphEdge({ id: "x4", kind: "MODULE_EXPORTS_SYMBOL", from: "module:auth", to: "symbol:auth-parseBody" }),
+    graphEdge({ id: "x5", kind: "MODULE_EXPORTS_SYMBOL", from: "module:auth", to: "symbol:auth-toDto" }),
+    graphEdge({ id: "x6", kind: "MODULE_EXPORTS_SYMBOL", from: "module:attacker", to: "symbol:attacker-assertCsrf" }),
     // Symbol-level edges the laundering control needs: both modules really do export `assertCsrf`,
     // so name matching genuinely cannot separate them and only module identity can.
     graphEdge({ id: "s1", kind: "IMPORT_RESOLVES_TO_SYMBOL", from: "import:attacker", to: "symbol:attacker-assertCsrf" }),
@@ -126,8 +126,10 @@ describe("resolvedHelperIdentities", () => {
      * accepted helper's identity and gets a passing auth proof - the laundering shape, reintroduced
      * by the very mechanism meant to close it. Acceptance matches exactly.
      *
-     * `src/lib/auth.ts` is still here, because it arrives through the barrel's re-export chain -
-     * a fact about what the repo exports, not about how the specifier is spelled.
+     * `src/lib/auth.ts` is still here, because it arrives through the barrel's re-export chain AND
+     * genuinely exports `requireUser` - facts about what the repo exports, not about how the
+     * specifier is spelled. The attacker module now fails both tests: it is not named exactly by
+     * the specifier, and it does not export the symbol.
      */
     const identities = resolvedHelperIdentities(
       checkData,
@@ -228,14 +230,16 @@ describe("resolvedHelperIdentities", () => {
         importNode({ id: "import:two", filePath: "app/api/two/route.ts", source: "@/lib" }),
         moduleNode({ id: "module:zzz", filePath: "src/lib/zzz.ts" }),
         moduleNode({ id: "module:aaa", filePath: "src/lib/aaa.ts" }),
-        moduleNode({ id: "module:mmm", filePath: "src/lib/mmm.ts" })
+        moduleNode({ id: "module:mmm", filePath: "src/lib/mmm.ts" }),
+        symbolNode({ id: "symbol:aaa-requireUser", filePath: "src/lib/aaa.ts", name: "requireUser" })
       ],
       edges: [
         graphEdge({ id: "u1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:one", to: "module:zzz" }),
         // Same specifier, same target file: one entry, not two.
         graphEdge({ id: "u2", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:two", to: "module:zzz" }),
-        graphEdge({ id: "u3", kind: "MODULE_REEXPORTS_MODULE", from: "module:zzz", to: "module:mmm" }),
-        graphEdge({ id: "u4", kind: "MODULE_REEXPORTS_MODULE", from: "module:mmm", to: "module:aaa" })
+        graphEdge({ id: "u3", kind: "MODULE_REEXPORTS_MODULE", from: "module:zzz", to: "module:mmm", exportedName: "*" }),
+        graphEdge({ id: "u4", kind: "MODULE_REEXPORTS_MODULE", from: "module:mmm", to: "module:aaa", exportedName: "*" }),
+        graphEdge({ id: "u5", kind: "MODULE_EXPORTS_SYMBOL", from: "module:aaa", to: "symbol:aaa-requireUser" })
       ]
     });
 
@@ -347,5 +351,154 @@ describe("resolvedHelperIdentities", () => {
         ["response_serializers", "toDto", "repo_resolved"],
         ["validators", "parseBody", "repo_resolved"]
       ]);
+  });
+});
+
+/**
+ * B4: the barrel is the other half of the laundering surface, and the more powerful half.
+ *
+ * Bounding the SPECIFIER relation to exact match stopped an attacker dropping a module under an
+ * accepted prefix. It did nothing about the re-export closure, which followed every
+ * `MODULE_REEXPORTS_MODULE` edge out of the resolved module without regard to which SYMBOL the
+ * helper is. A barrel that re-exports both the real helper and an attacker module put the attacker
+ * module inside the accepted helper's own identity - and editing the barrel is strictly more
+ * powerful than adding a file beside it, because the barrel is what the contract points at.
+ *
+ * The graph already distinguishes them. `MODULE_REEXPORTS_MODULE` carries `exported_name` - the
+ * re-exported symbol, or `"*"` for a flattening `export *` - and `MODULE_EXPORTS_SYMBOL` says what
+ * a module actually exports. Both were present and unread.
+ */
+describe("resolvedHelperIdentities re-export closure", () => {
+  /**
+   * A barrel over two modules:
+   *   `export * from "./auth"`                -> defines `requireUser`
+   *   `export * from "./attacker-controlled"` -> defines `pwn`, and NOT `requireUser`
+   *
+   * Star re-exports both ways, which is the hard case: the edge itself names no symbol, so only
+   * what the target module exports can separate them.
+   */
+  const barrel = graphScanData({
+    nodes: [
+      importNode({ id: "import:barrel", filePath: ROUTE, source: "@/lib" }),
+      moduleNode({ id: "module:index", filePath: "src/lib/index.ts" }),
+      moduleNode({ id: "module:auth", filePath: "src/lib/auth.ts" }),
+      moduleNode({ id: "module:attacker", filePath: "src/lib/attacker-controlled.ts" }),
+      symbolNode({ id: "sym:requireUser", filePath: "src/lib/auth.ts", name: "requireUser" }),
+      symbolNode({ id: "sym:pwn", filePath: "src/lib/attacker-controlled.ts", name: "pwn" })
+    ],
+    edges: [
+      graphEdge({ id: "b1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:barrel", to: "module:index" }),
+      graphEdge({ id: "b2", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:auth", exportedName: "*" }),
+      graphEdge({ id: "b3", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:attacker", exportedName: "*" }),
+      graphEdge({ id: "b4", kind: "MODULE_EXPORTS_SYMBOL", from: "module:auth", to: "sym:requireUser" }),
+      graphEdge({ id: "b5", kind: "MODULE_EXPORTS_SYMBOL", from: "module:attacker", to: "sym:pwn" })
+    ]
+  });
+
+  it("a_barrel_sibling_that_lacks_the_symbol_is_not_the_helper", () => {
+    const identities = resolvedHelperIdentities(
+      barrel,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib" }]
+      })
+    );
+
+    // `src/lib/index.ts` is what the specifier literally names, so it stays. `src/lib/auth.ts` is
+    // reached because the barrel really does re-export `requireUser` from it. The attacker's
+    // module is re-exported by the same barrel and exports no such symbol, so it is not the helper.
+    expect(identityFor(identities, "requireUser")?.files)
+      .toEqual(["src/lib/auth.ts", "src/lib/index.ts"]);
+  });
+
+  it("follows a named re-export only for the symbol it actually names", () => {
+    const named = graphScanData({
+      nodes: [
+        importNode({ id: "import:barrel", filePath: ROUTE, source: "@/lib" }),
+        moduleNode({ id: "module:index", filePath: "src/lib/index.ts" }),
+        moduleNode({ id: "module:auth", filePath: "src/lib/auth.ts" }),
+        moduleNode({ id: "module:attacker", filePath: "src/lib/attacker-controlled.ts" })
+      ],
+      edges: [
+        graphEdge({ id: "n1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:barrel", to: "module:index" }),
+        // `export { requireUser } from "./auth"` - the edge itself is the evidence.
+        graphEdge({ id: "n2", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:auth", exportedName: "requireUser" }),
+        // `export { pwn } from "./attacker-controlled"` - a different symbol entirely.
+        graphEdge({ id: "n3", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:attacker", exportedName: "pwn" })
+      ]
+    });
+
+    const identities = resolvedHelperIdentities(
+      named,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib" }]
+      })
+    );
+
+    expect(identityFor(identities, "requireUser")?.files)
+      .toEqual(["src/lib/auth.ts", "src/lib/index.ts"]);
+  });
+
+  it("follows a star chain through a module that only passes the symbol along", () => {
+    // barrel -> mid -> leaf, both hops `export *`. `mid` exports nothing of its own, but a route
+    // importing `mid` really would get `requireUser`, so it belongs to the identity too.
+    const chain = graphScanData({
+      nodes: [
+        importNode({ id: "import:barrel", filePath: ROUTE, source: "@/lib" }),
+        moduleNode({ id: "module:index", filePath: "src/lib/index.ts" }),
+        moduleNode({ id: "module:mid", filePath: "src/lib/mid.ts" }),
+        moduleNode({ id: "module:leaf", filePath: "src/lib/leaf.ts" }),
+        moduleNode({ id: "module:other", filePath: "src/lib/other.ts" }),
+        symbolNode({ id: "sym:requireUser", filePath: "src/lib/leaf.ts", name: "requireUser" }),
+        symbolNode({ id: "sym:unrelated", filePath: "src/lib/other.ts", name: "unrelated" })
+      ],
+      edges: [
+        graphEdge({ id: "c1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:barrel", to: "module:index" }),
+        graphEdge({ id: "c2", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:mid", exportedName: "*" }),
+        graphEdge({ id: "c3", kind: "MODULE_REEXPORTS_MODULE", from: "module:mid", to: "module:leaf", exportedName: "*" }),
+        graphEdge({ id: "c4", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:other", exportedName: "*" }),
+        graphEdge({ id: "c5", kind: "MODULE_EXPORTS_SYMBOL", from: "module:leaf", to: "sym:requireUser" }),
+        graphEdge({ id: "c6", kind: "MODULE_EXPORTS_SYMBOL", from: "module:other", to: "sym:unrelated" })
+      ]
+    });
+
+    const identities = resolvedHelperIdentities(
+      chain,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib" }]
+      })
+    );
+
+    expect(identityFor(identities, "requireUser")?.files)
+      .toEqual(["src/lib/index.ts", "src/lib/leaf.ts", "src/lib/mid.ts"]);
+  });
+
+  it("keeps the module the specifier names even when nothing proves the symbol", () => {
+    /**
+     * The documented degradation. With no `MODULE_EXPORTS_SYMBOL` evidence anywhere - a language or
+     * file the extractor did not produce export facts for - the transitive claims cannot be
+     * checked, so they are dropped. What the specifier LITERALLY names is not a symbol claim and
+     * stays, so this narrows rather than empties: a route importing the barrel still matches, and
+     * no compliant route is turned into a violation.
+     */
+    const noSymbols = graphScanData({
+      nodes: [
+        importNode({ id: "import:barrel", filePath: ROUTE, source: "@/lib" }),
+        moduleNode({ id: "module:index", filePath: "src/lib/index.ts" }),
+        moduleNode({ id: "module:auth", filePath: "src/lib/auth.ts" })
+      ],
+      edges: [
+        graphEdge({ id: "s1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:barrel", to: "module:index" }),
+        graphEdge({ id: "s2", kind: "MODULE_REEXPORTS_MODULE", from: "module:index", to: "module:auth", exportedName: "*" })
+      ]
+    });
+
+    const identities = resolvedHelperIdentities(
+      noSymbols,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib" }]
+      })
+    );
+
+    expect(identityFor(identities, "requireUser")?.files).toEqual(["src/lib/index.ts"]);
   });
 });

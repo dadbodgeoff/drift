@@ -75,11 +75,31 @@ export function moduleNode(input: { id: string; filePath: string }): GraphNode {
   };
 }
 
+/**
+ * A `symbol` node. The engine puts the symbol's name in the node LABEL (`insert_node(..., Symbol,
+ * &fact.name, ...)`), not in metadata, so that is where the name lives here too.
+ */
+export function symbolNode(input: { id: string; filePath: string; name: string }): GraphNode {
+  return {
+    id: input.id,
+    kind: "symbol",
+    label: input.name,
+    stable: true,
+    evidence_ids: [],
+    metadata: { file_path: input.filePath, symbol_kind: "function", exported: true }
+  };
+}
+
 export function graphEdge(input: {
   id: string;
   kind: GraphEdge["kind"];
   from: string;
   to: string;
+  /**
+   * `MODULE_REEXPORTS_MODULE` carries the re-exported name here - a symbol name for
+   * `export { x } from "./m"`, or `"*"` for a flattening `export * from "./m"`.
+   */
+  exportedName?: string;
 }): GraphEdge {
   return {
     id: input.id,
@@ -87,6 +107,6 @@ export function graphEdge(input: {
     from: input.from,
     to: input.to,
     evidence_ids: [],
-    metadata: {}
+    metadata: input.exportedName === undefined ? {} : { exported_name: input.exportedName }
   };
 }

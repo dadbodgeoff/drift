@@ -605,7 +605,11 @@ pub struct CheckMatcher {
 /// other will be wrong in the common case:
 ///
 ///   - `repo_resolved` - the specifier resolved inside the repo; `files` is the identity, re-export
-///     chains already followed. Match on resolved file.
+///     chains already followed. Match on resolved file. The chain is filtered by the helper's
+///     symbol, so a barrel that re-exports both the helper and an unrelated module contributes only
+///     the module that exports the symbol - but the filter compares symbol NAMES, so a barrel
+///     re-exporting one name from two modules yields both. `files` means "modules that plausibly
+///     supply this helper", not "modules proven to be it".
 ///   - `external` - a bare package specifier that resolved to nothing, which is not a failure:
 ///     `resolve_import` filters to paths inside the scan snapshot, so `next-auth` and everything
 ///     else under `node_modules` never produces an edge. `files` is empty and always will be.
