@@ -1461,8 +1461,12 @@ fn build_session_trust_proof_from_facts(facts: &[Fact]) -> SessionTrustProof {
                 missing_trust.push(SessionMissingTrustProof {
                     fact_id: fact_id(fact),
                     variable,
+                    // PROOF-level vocabulary (core/src/security.ts SecurityBoundaryProof
+                    // session_trust enum), NOT the finding-level code a user sees. The
+                    // finding-level `session_not_trusted` is derived from this by the
+                    // phase4 finding-reason mapper in check_command.rs.
                     reason: if source == Some("unknown_helper") {
-                        "session_not_trusted"
+                        "unknown_helper"
                     } else {
                         "derived_from_request"
                     }

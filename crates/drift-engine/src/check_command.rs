@@ -3639,12 +3639,13 @@ fn phase4_missing_code(proof: &SecurityBoundaryProof, convention_kind: &str) -> 
             .session_trust
             .missing_trust
             .first()
-            .map(|missing| {
-                if missing.reason == "derived_from_request" {
-                    "session_not_trusted".to_string()
-                } else {
-                    missing.reason.clone()
-                }
+            // Proof-level reasons and finding-level codes are separate vocabularies.
+            // This mapping must be TOTAL over the proof-level enum: any reason that
+            // falls through lands in SecurityMissingProofCodeSchema, where a non-member
+            // normalizes to `unknown_reason_code` and the finding degrades silently.
+            .map(|missing| match missing.reason.as_str() {
+                "derived_from_request" | "unknown_helper" => "session_not_trusted".to_string(),
+                _ => missing.reason.clone(),
             })
             .unwrap_or_else(|| "session_not_trusted".to_string()),
         _ => "missing_proof".to_string(),
