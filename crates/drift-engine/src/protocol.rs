@@ -633,13 +633,33 @@ pub struct AcceptedHelperModuleFiles {
     pub symbol: String,
     /// The specifier as the contract typed it. `external` and `unresolved` match on this.
     pub specifier: String,
-    pub mode: String,
+    /// Typed, so that a mode this engine does not know fails the request instead of being read as
+    /// some default. The placement rationale above promises that a rename fails the build rather
+    /// than shipping; that promise is worth nothing if the VALUES stay free-form strings.
+    pub mode: AcceptedHelperResolutionMode,
     #[serde(default)]
     pub files: Vec<String>,
-    /// The tsconfig-paths hijack shape: the contract names a package and the repo has pointed that
-    /// name at a file it controls. Present only when true, and never to be silently accepted.
+    /// A package-shaped specifier that resolves to a repo file.
+    ///
+    /// A fact, not a verdict. It is the tsconfig-paths hijack shape, and equally the shape of a
+    /// pnpm workspace package or a scoped path alias (`"@app/*": ["src/*"]`) - the same mechanism,
+    /// different intent, and nothing available here separates them. Input to the local-shadow check
+    /// the `External` mode calls for, never a finding on its own.
     #[serde(default)]
-    pub external_specifier_resolves_in_repo: Option<bool>,
+    pub package_specifier_resolves_in_repo: Option<bool>,
+}
+
+/// How a helper's module identity was arrived at. See `AcceptedHelperModuleFiles::mode`.
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
+pub enum AcceptedHelperResolutionMode {
+    /// Resolved inside the repo; `files` is the identity.
+    RepoResolved,
+    /// A bare package specifier that resolved to nothing - by design, not by failure.
+    External,
+    /// A repo-relative specifier that resolved to nothing. A degradation, and belongs in the proof.
+    Unresolved,
 }
 
 #[derive(Debug, Deserialize)]

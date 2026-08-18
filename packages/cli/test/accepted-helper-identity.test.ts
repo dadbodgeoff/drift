@@ -215,7 +215,51 @@ describe("resolvedHelperIdentities", () => {
       mode: "repo_resolved",
       files: ["src/shim/next-auth.ts"]
     });
-    expect(identities[0]).toHaveProperty("external_specifier_resolves_in_repo", true);
+    expect(identities[0]).toHaveProperty("package_specifier_resolves_in_repo", true);
+  });
+
+  it("states the package-shadowing fact for ordinary aliases too, without calling them attacks", () => {
+    /**
+     * The flag was named for the tsconfig-paths hijack, but it cannot tell a hijack from a
+     * perfectly ordinary config: a scoped path alias (`"@app/*": ["src/*"]`) and a pnpm workspace
+     * package both resolve a package-shaped specifier to a repo file, and both would have raised
+     * an "external specifier resolves in repo" alarm. An alarm named for an attack that fires on
+     * routine setups is an alarm that gets ignored, and ignoring it is how the real one gets
+     * through.
+     *
+     * So the field states the FACT and claims no intent. It is the input to the local-shadow check
+     * Sprint 4 applies, not a verdict.
+     */
+    const workspace = graphScanData({
+      nodes: [
+        importNode({ id: "import:ws", filePath: ROUTE, source: "@app/auth" }),
+        moduleNode({ id: "module:ws", filePath: "packages/auth/src/index.ts" }),
+        symbolNode({
+          id: "sym:ws",
+          filePath: "packages/auth/src/index.ts",
+          name: "requireUser"
+        })
+      ],
+      edges: [
+        graphEdge({ id: "w1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:ws", to: "module:ws" }),
+        graphEdge({ id: "w2", kind: "MODULE_EXPORTS_SYMBOL", from: "module:ws", to: "sym:ws" })
+      ]
+    });
+
+    const identities = resolvedHelperIdentities(
+      workspace,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@app/auth" }]
+      })
+    );
+
+    // Resolving really is the better answer here - a workspace package has a genuine file identity.
+    expect(identities[0]).toMatchObject({
+      mode: "repo_resolved",
+      files: ["packages/auth/src/index.ts"],
+      package_specifier_resolves_in_repo: true
+    });
+    expect(identities[0]).not.toHaveProperty("external_specifier_resolves_in_repo");
   });
 
   it("resolved_file_lists_are_sorted_and_deduped", () => {

@@ -110,4 +110,32 @@ describe("resolvedModuleFilesFor", () => {
     expect([...resolvedModuleFilesFor(checkData, ["next-auth"])]).toEqual([]);
   });
 
+  /**
+   * The memo key joined the specifiers with NUL, which is an ambiguous encoding: a two-specifier
+   * list and a one-specifier list whose single entry contains the separator produce the same key,
+   * so the second call to arrive silently receives the first one's answer.
+   *
+   * Defensive rather than observed - no real specifier contains a NUL byte. But the key is derived
+   * from caller-supplied contract data, the cache is memoised for the lifetime of a ScanData, and
+   * a wrong answer here is a wrong verdict about a forbidden import. A structural encoding costs
+   * one function call and removes the question.
+   */
+  it("does not let two different specifier lists share one cache entry", () => {
+    const collide = graphScanData({
+      nodes: [
+        importNode({ id: "import:x", filePath: "app/api/x/route.ts", source: "@/a" }),
+        moduleNode({ id: "module:x", filePath: "src/a.ts" })
+      ],
+      edges: [
+        graphEdge({ id: "j1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:x", to: "module:x" })
+      ]
+    });
+
+    // Populates the cache under a key the next call must not reuse.
+    expect([...resolvedModuleFilesFor(collide, ["@/a", "@/b"])]).toEqual(["src/a.ts"]);
+    // One specifier, spelled with the old separator inside it. It matches no import, so the honest
+    // answer is empty; the ambiguous key handed back the previous list's answer instead.
+    expect([...resolvedModuleFilesFor(collide, ["@/a\u0000@/b"])]).toEqual([]);
+  });
+
 });

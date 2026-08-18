@@ -4004,7 +4004,12 @@ export function resolvedModuleFilesFor(
   // convention when building the engine request, and once per accepted helper. Same specifier set
   // means same answer, so forbidden and accepted callers can share one cache without interfering -
   // as long as the relation is part of the key, because the two relations give different answers.
-  const cacheKey = `${match}\0${specifiers.join("\0")}`;
+  //
+  // Encoded structurally rather than joined. A NUL join is ambiguous: `["a", "b"]` and the single
+  // specifier `"a\0b"` produce one key, and the second caller silently receives the first one's
+  // answer. No real specifier contains a NUL, but the key is built from caller-supplied contract
+  // data and a wrong answer here is a wrong verdict about an import.
+  const cacheKey = cacheKeyFor(match, specifiers);
   const cached = index.resolvedModuleFilesByKey.get(cacheKey);
   if (cached) {
     return cached;
@@ -4030,6 +4035,11 @@ export function resolvedModuleFilesFor(
  */
 export type SpecifierMatch = "specifier_or_subpath" | "exact_specifier";
 
+/** An encoding no specifier list can forge, unlike a separator join. */
+function cacheKeyFor(match: SpecifierMatch, specifiers: string[]): string {
+  return JSON.stringify([match, specifiers]);
+}
+
 function specifierMatches(source: string, specifiers: string[], match: SpecifierMatch): boolean {
   return match === "exact_specifier"
     ? specifiers.includes(source)
@@ -4050,7 +4060,7 @@ function resolvedModuleNodeIdsFor(
   match: SpecifierMatch
 ): Set<string> {
   const index = graphIndexFor(checkData);
-  const cacheKey = `${match}\0${specifiers.join("\0")}`;
+  const cacheKey = cacheKeyFor(match, specifiers);
   const cached = index.resolvedModuleNodesByKey.get(cacheKey);
   if (cached) {
     return cached;
@@ -4128,12 +4138,19 @@ export interface AcceptedHelperIdentity {
    */
   files: string[];
   /**
-   * The tsconfig-paths hijack shape: the contract names what looks like a package, and the repo has
-   * quietly pointed that name at a file it controls. Present only when true, and never silently
-   * accepted - a resolution-based matcher that swallowed this would be worse than the string one it
-   * replaces.
+   * The contract names something package-shaped, and it resolves to a file in this repo.
+   *
+   * A FACT, not a verdict, and deliberately not named for one. This is the tsconfig-paths hijack
+   * shape - a package name quietly pointed at a file the repo controls - but it is equally the
+   * shape of a pnpm workspace package and of an ordinary scoped path alias like
+   * `"@app/*": ["src/*"]`. Nothing here can tell those apart, because they are the same mechanism
+   * used with different intent. Naming this after the attack would have fired an "attack" alarm on
+   * routine configurations, and an alarm that cries wolf is one nobody reads when it is right.
+   *
+   * Present only when true. It is the input to the local-shadow check the matching rule for
+   * `external` calls for - not a finding on its own.
    */
-  external_specifier_resolves_in_repo?: true;
+  package_specifier_resolves_in_repo?: true;
 }
 
 /**
@@ -4276,7 +4293,7 @@ function helperIdentityFor(
     specifier,
     mode: "repo_resolved",
     files: [...files].sort(),
-    ...(bare ? { external_specifier_resolves_in_repo: true as const } : {})
+    ...(bare ? { package_specifier_resolves_in_repo: true as const } : {})
   };
 }
 

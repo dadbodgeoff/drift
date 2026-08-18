@@ -660,6 +660,54 @@ describe("engine scan data bridge", () => {
     expect(JSON.stringify(sent.requires)).toBe(JSON.stringify(storedRequires));
   });
 
+  it("sorts forbidden_module_files, which the graph produced in edge order", () => {
+    /**
+     * The sibling field one line above `accepted_helper_module_files` in the same request object.
+     * It is built from a Set filled in graph-edge order, so the same repo could hand the engine the
+     * same files in different orders across runs - twelve edge permutations produced four distinct
+     * orderings.
+     *
+     * The determinism digest covers findings and never the request, so nothing downstream would
+     * notice. That was the stated reason for sorting the new field; it applies here verbatim, and
+     * the two fields should not disagree about whether order is meaningful.
+     */
+    const request = engineCheckRequest({
+      repoId: "repo_abc",
+      repoRoot: "/repo",
+      scanId: "scan_check_abc",
+      snapshots: [],
+      facts: [],
+      forbiddenModuleFiles: ["src/z.ts", "src/a.ts", "src/m.ts"],
+      conventions: [{
+        id: "convention_no_direct_db",
+        repo_id: "repo_abc",
+        contract_id: "contract_abc",
+        kind: "api_route_no_direct_data_access",
+        statement: "API routes should not import data-access clients directly.",
+        scope: { path_globs: ["app/api/**/route.ts"] },
+        matcher: {
+          kind: "api_route_no_direct_data_access",
+          forbidden_imports: ["@/lib/prisma"]
+        },
+        severity: "error",
+        enforcement_mode: "block",
+        enforcement_capability: "deterministic_check",
+        exceptions: [],
+        evidence_refs: [],
+        counterexample_refs: [],
+        accepted_by: "human",
+        accepted_at: "2026-05-10T00:00:00.000Z",
+        updated_at: "2026-05-10T00:00:00.000Z"
+      } as unknown as Parameters<typeof engineCheckRequest>[0]["conventions"][number]],
+      baseline: [],
+      diff: { files: [], deletedFiles: [] },
+      scope: "changed-hunks"
+    });
+
+    expect(request.contract.conventions[0]!.matcher.forbidden_module_files)
+      .toEqual(["src/a.ts", "src/m.ts", "src/z.ts"]);
+  });
+
   it("builds a stable fact graph artifact from snapshots and facts", () => {
     const artifact = buildFactGraphArtifact({
       repoId: "repo_abc",

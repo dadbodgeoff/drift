@@ -33,8 +33,12 @@ export interface AcceptedHelperModuleFile {
    * NAMES, so a barrel re-exporting one name from two modules still yields both.
    */
   files: string[];
-  /** The tsconfig-paths hijack shape: a package-shaped specifier that resolves repo-locally. */
-  external_specifier_resolves_in_repo?: true;
+  /**
+   * A package-shaped specifier that resolves to a repo file. States the fact and claims no intent:
+   * it is the tsconfig-paths hijack shape, and equally the shape of a workspace package or a scoped
+   * path alias. Input to a local-shadow check, not a finding.
+   */
+  package_specifier_resolves_in_repo?: true;
 }
 
 export interface EngineCheckInput {
@@ -132,8 +136,14 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
         // ships silently.
         matcher: {
           ...(convention.matcher as unknown as Record<string, unknown>),
+          // Sorted here, at the last point before the wire. It is built from a Set filled in
+          // graph-edge order, so the same repo could otherwise hand the engine the same files in
+          // different orders across runs. The determinism digest covers findings and never the
+          // request, so nothing downstream would catch it - the same reason
+          // `accepted_helper_module_files` is sorted, and the two should not disagree about
+          // whether order carries meaning. It does not.
           ...(input.forbiddenModuleFiles?.length
-            ? { forbidden_module_files: input.forbiddenModuleFiles }
+            ? { forbidden_module_files: [...input.forbiddenModuleFiles].sort() }
             : {}),
           ...(input.acceptedHelperModuleFiles?.length
             ? { accepted_helper_module_files: input.acceptedHelperModuleFiles }
