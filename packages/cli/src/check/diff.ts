@@ -166,6 +166,33 @@ export function parseUnifiedDiff(input: string): ParsedDiff {
   if (current) {
     files.push(current);
   }
+
+  // R2a: a purely renamed file is IN scope, at its new path.
+  //
+  // BB-1 recorded these so an ordinary `git mv` would stop tripping the empty-scope refusal
+  // (run-check.ts:432-441), but recording is not scoping: `filesForConvention` maps over `files`
+  // and `diffStatusFor` looks the path up in the same array, so a file that appeared only in
+  // `renamedFiles` was never examined. Renaming a violating route made it invisible and the check
+  // reported clean - an enforcement bypass reachable from the documented workflow, because
+  // `git diff --unified=0` has rename detection on by default.
+  //
+  // `isAdded: false` and no changed lines, deliberately. The content did not change, so the move
+  // classifies `touched_existing` and the baseline still shields it. Marking it added would make
+  // every moved file's pre-existing violations block, which is the punishing-a-refactor failure the
+  // rename cases above exist to prevent - and it would land before finding fingerprints can survive
+  // a path change (finding-fingerprint.ts:45 hashes the path), so the debt would return as `new`
+  // with nothing to match it against.
+  //
+  // A rename that also carries an edit already entered `files` through its own `+++` header; the
+  // guard keeps it from being counted twice and preserves the changed lines it parsed.
+  const scoped = new Set(files.map((file) => file.path));
+  for (const renamed of [...renamedFiles].sort()) {
+    if (scoped.has(renamed)) {
+      continue;
+    }
+    files.push({ path: renamed, changedLines: new Set<number>(), isAdded: false });
+  }
+
   return {
     files,
     deletedFiles: [...deletedFiles].sort(),
