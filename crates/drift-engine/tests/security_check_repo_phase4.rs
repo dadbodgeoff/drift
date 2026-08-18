@@ -168,7 +168,10 @@ fn engine_does_not_accept_phase4_legacy_matcher_required_calls_as_session_trust(
         .iter()
         .find(|missing| missing["capability"] == "session_trust")
         .expect("session_trust missing_proof entry");
-    assert_eq!(session_missing["code"], "session_not_trusted", "{session_missing:#?}");
+    assert_eq!(
+        session_missing["code"], "session_not_trusted",
+        "{session_missing:#?}"
+    );
 }
 
 #[test]

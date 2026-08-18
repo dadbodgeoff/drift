@@ -2109,8 +2109,7 @@ mod tests {
             "}\n"
         );
 
-        let proof =
-            build_phase4_security_proof("app/api/x/route.ts", source, &[]).expect("proof");
+        let proof = build_phase4_security_proof("app/api/x/route.ts", source, &[]).expect("proof");
 
         let missing = proof
             .session_trust

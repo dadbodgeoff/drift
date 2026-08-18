@@ -4505,3 +4505,101 @@ mod finding_fingerprint_dc3_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod phase4_missing_code_tests {
+    use super::phase4_missing_code;
+    use drift_engine::{SecurityBoundaryProof, build_phase4_security_proof};
+
+    const SESSION_TRUST: &str = "session_object_must_come_from_trusted_helper";
+
+    /// The PROOF-level session-trust reasons `build_session_trust_proof_from_facts` can
+    /// actually emit. The wire enum in packages/core/src/security.ts also declares
+    /// `missing_auth_guard` and `parser_gap`, but neither has a producer -- see the
+    /// unreachable-member pin below.
+    const REACHABLE_REASONS: [&str; 2] = ["derived_from_request", "unknown_helper"];
+
+    /// The FINDING-level codes (SecurityMissingProofCodeSchema) this mapper may produce
+    /// for a session-trust convention.
+    const FINDING_LEVEL_CODES: [&str; 2] = ["session_not_trusted", "missing_auth_guard"];
+
+    fn proof_with_session_reason(reason: &str) -> SecurityBoundaryProof {
+        let source = concat!(
+            "export async function GET(request: Request) {\n",
+            "  const session = await getSession(request);\n",
+            "  return Response.json({ ok: Boolean(session) });\n",
+            "}\n"
+        );
+        let mut proof =
+            build_phase4_security_proof("app/api/x/route.ts", source, &[]).expect("proof");
+        proof
+            .session_trust
+            .missing_trust
+            .first_mut()
+            .expect("fixture must produce a missing_trust entry")
+            .reason = reason.to_string();
+        proof
+    }
+
+    /// S1-03: the proof-level reason and the finding-level code are separate
+    /// vocabularies, and this mapper is the only bridge between them. A reason that falls
+    /// through unmapped lands in SecurityMissingProofCodeSchema, where a non-member
+    /// normalizes to `unknown_reason_code`: the finding stops saying why the proof failed,
+    /// and nothing fails loudly. That silent degradation is what this test prevents.
+    #[test]
+    fn the_mapper_is_total_over_every_reason_the_builder_can_emit() {
+        for reason in REACHABLE_REASONS {
+            let code = phase4_missing_code(&proof_with_session_reason(reason), SESSION_TRUST);
+            assert!(
+                FINDING_LEVEL_CODES.contains(&code.as_str()),
+                "proof-level reason {reason:?} mapped to {code:?}, which is not a \
+                 member of the finding-level vocabulary {FINDING_LEVEL_CODES:?}"
+            );
+        }
+    }
+
+    /// Both reasons a session-trust proof can emit today collapse to the single
+    /// user-facing code. This is the half of the S1-01 fix that keeps the mapper honest:
+    /// without the `unknown_helper` arm, correcting the emitted proof value would have
+    /// traded a hard parse failure for a silently degraded finding.
+    #[test]
+    fn both_live_session_trust_reasons_map_to_session_not_trusted() {
+        for reason in REACHABLE_REASONS {
+            assert_eq!(
+                phase4_missing_code(&proof_with_session_reason(reason), SESSION_TRUST),
+                "session_not_trusted",
+                "proof-level reason {reason:?}"
+            );
+        }
+    }
+
+    /// The two declared-but-unproduced members, pinned as they behave today.
+    ///
+    /// `missing_auth_guard` happens to be a member of BOTH vocabularies, so it survives
+    /// the fall-through. `parser_gap` does not: it would reach the engine parse boundary
+    /// and normalize to `unknown_reason_code`, losing the reason. That is latent, not
+    /// live -- the builder cannot emit either one.
+    ///
+    /// This is deliberately a characterization pin, not a fix. Choosing the finding-level
+    /// code for a parser-gapped session-trust proof is a product decision: a parser gap
+    /// is carried by the separate `parser_gaps` surface and drives
+    /// `proof_status == ParserGap`, so claiming `session_not_trusted` here would assert a
+    /// trust failure that was never established. If a producer is ever added for either
+    /// member, decide the mapping and update this test -- do not let it fall through.
+    #[test]
+    fn the_unproduced_reasons_are_pinned_where_they_currently_land() {
+        assert_eq!(
+            phase4_missing_code(
+                &proof_with_session_reason("missing_auth_guard"),
+                SESSION_TRUST
+            ),
+            "missing_auth_guard",
+            "a member of both vocabularies survives the fall-through"
+        );
+        assert_eq!(
+            phase4_missing_code(&proof_with_session_reason("parser_gap"), SESSION_TRUST),
+            "parser_gap",
+            "not a finding-level member; would normalize to unknown_reason_code downstream"
+        );
+    }
+}
