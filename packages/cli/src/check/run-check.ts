@@ -3823,8 +3823,8 @@ interface GraphIndex {
   endpointNodesByFile: Map<string, ScanData["graph_nodes"]>;
   dataOperationNodesByFile: Map<string, ScanData["graph_nodes"]>;
   reexportTargets: Map<string, string[]>;
-  /** Forbidden specifiers joined by NUL -> the files they resolve to. */
-  forbiddenModuleFilesByKey: Map<string, Set<string>>;
+  /** Specifiers joined by NUL -> the files they resolve to. Shared by every specifier list. */
+  resolvedModuleFilesByKey: Map<string, Set<string>>;
 }
 
 const graphIndexes = new WeakMap<ScanData, GraphIndex>();
@@ -3893,7 +3893,7 @@ function graphIndexFor(checkData: ScanData): GraphIndex {
     endpointNodesByFile,
     dataOperationNodesByFile,
     reexportTargets: moduleReexportTargets(checkData),
-    forbiddenModuleFilesByKey: new Map()
+    resolvedModuleFilesByKey: new Map()
   };
   graphIndexes.set(checkData, index);
   return index;
@@ -3947,22 +3947,37 @@ function graphImportResolvesToForbidden(
 }
 
 /**
- * Files that the convention's forbidden specifiers actually resolve to.
+ * Repo files that a set of import specifiers actually resolve to.
  *
  * Derived from the repo's own resolved imports rather than by re-resolving, so it needs no second
- * resolver and cannot disagree with the one that built the graph. Empty when nothing imports a
- * forbidden specifier resolvably, in which case matching falls back to specifiers exactly as
- * before - a repo that never exercised the resolver cannot regress.
+ * resolver and cannot disagree with the one that built the graph.
+ *
+ * This is the general form of what `forbiddenModuleFiles_` used to be on its own. The question -
+ * "what does this specifier MEAN, as opposed to how is it spelled" - is not specific to forbidden
+ * imports; the accepted-security-helper side needs the identical answer about a different specifier
+ * list. A second walk over `IMPORT_RESOLVES_TO_MODULE` written for that caller could drift out of
+ * agreement with this one, and two resolvers that disagree about module identity is precisely the
+ * defect this pipeline already has at the string level.
+ *
+ * Empty is a real and common answer, not a failure: the Rust `resolve_import` filters to paths
+ * inside the scan snapshot, so a bare package name (`next-auth`, anything under `node_modules`)
+ * produces no edge by design. Callers must classify that emptiness themselves rather than read it
+ * as "no such module" - see `resolvedHelperIdentities`.
  *
  * A lookalike module (`@/lib/prisma-legacy`) resolves to its own distinct file and never lands
  * here, which is what keeps the T03 negative control green.
+ *
+ * `isForbiddenImport` is the specifier-match predicate, kept under its original name: it is exact
+ * match plus a `/`-bounded subpath match, which is the right relation for a module specifier
+ * regardless of whether the list it came from is a forbidden one or an accepted one.
  */
-function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
+export function resolvedModuleFilesFor(checkData: ScanData, specifiers: string[]): Set<string> {
   const index = graphIndexFor(checkData);
-  // Memoised per specifier set: called once per import via graphImportResolvesToForbidden, and
-  // again per convention at :2575, always with the same forbidden list within one convention.
-  const cacheKey = forbiddenImports.join("\0");
-  const cached = index.forbiddenModuleFilesByKey.get(cacheKey);
+  // Memoised per specifier set: called once per import via graphImportResolvesToForbidden, once per
+  // convention when building the engine request, and once per accepted helper. Same specifier set
+  // means same answer, so forbidden and accepted callers can share one cache without interfering.
+  const cacheKey = specifiers.join("\0");
+  const cached = index.resolvedModuleFilesByKey.get(cacheKey);
   if (cached) {
     return cached;
   }
@@ -3974,7 +3989,7 @@ function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]):
     }
     const importNode = nodesById.get(edge.from);
     const source = importNode ? stringMetadata(importNode.metadata, "source") : undefined;
-    if (!source || !isForbiddenImport(source, forbiddenImports)) {
+    if (!source || !isForbiddenImport(source, specifiers)) {
       continue;
     }
     const target = nodesById.get(edge.to);
@@ -3983,8 +3998,18 @@ function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]):
       files.add(targetPath);
     }
   }
-  index.forbiddenModuleFilesByKey.set(cacheKey, files);
+  index.resolvedModuleFilesByKey.set(cacheKey, files);
   return files;
+}
+
+/**
+ * Files that the convention's forbidden specifiers actually resolve to.
+ *
+ * Exported for the S3-01 characterization lock, which pins that generalising the resolver did not
+ * move the answer the T93 bypass closures ride on.
+ */
+export function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
+  return resolvedModuleFilesFor(checkData, forbiddenImports);
 }
 
 /** module id -> modules it re-exports, for chain walking. */
