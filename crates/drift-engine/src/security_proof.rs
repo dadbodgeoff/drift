@@ -1461,8 +1461,12 @@ fn build_session_trust_proof_from_facts(facts: &[Fact]) -> SessionTrustProof {
                 missing_trust.push(SessionMissingTrustProof {
                     fact_id: fact_id(fact),
                     variable,
+                    // PROOF-level vocabulary (core/src/security.ts SecurityBoundaryProof
+                    // session_trust enum), NOT the finding-level code a user sees. The
+                    // finding-level `session_not_trusted` is derived from this by the
+                    // phase4 finding-reason mapper in check_command.rs.
                     reason: if source == Some("unknown_helper") {
-                        "session_not_trusted"
+                        "unknown_helper"
                     } else {
                         "derived_from_request"
                     }
@@ -2081,4 +2085,37 @@ fn line_uses_identifier(line: &str, identifier: &str) -> bool {
         character != '_' && character != '$' && !character.is_ascii_alphanumeric()
     })
     .any(|token| token == identifier)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// S1-02: a unit-level guard on the proof builder itself.
+    ///
+    /// The end-to-end test in tests/security_check_repo_phase4.rs pins the same
+    /// invariant, but this one fails in milliseconds and names the cause directly:
+    /// `missing_trust[].reason` is PROOF-level vocabulary, and an unrecognized helper
+    /// is `unknown_helper` -- never the finding-level `session_not_trusted`.
+    ///
+    /// Verified non-vacuous: reverting the emission site to "session_not_trusted"
+    /// fails this test with left: "session_not_trusted", right: "unknown_helper".
+    #[test]
+    fn unknown_helper_source_maps_to_unknown_helper_reason() {
+        let source = concat!(
+            "export async function GET(request: Request) {\n",
+            "  const session = await getSession(request);\n",
+            "  return Response.json({ ok: Boolean(session) });\n",
+            "}\n"
+        );
+
+        let proof = build_phase4_security_proof("app/api/x/route.ts", source, &[]).expect("proof");
+
+        let missing = proof
+            .session_trust
+            .missing_trust
+            .first()
+            .expect("an unrecognized session helper must produce a missing_trust entry");
+        assert_eq!(missing.reason, "unknown_helper");
+    }
 }

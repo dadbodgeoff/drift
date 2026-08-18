@@ -87,7 +87,16 @@ describe("release hygiene", () => {
       // (convention kind x enforcement path) cell is declared with the evidence its state requires,
       // the structural guardrail against the D1 class of defect - a cell that cannot fire while
       // looking covered.
-      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && pnpm check:cell-ledger && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
+      //
+      // And `pnpm check:engine-schema-parity`: the engine emitted `session_not_trusted` into
+      // `session_trust.missing_trust[].reason`, whose Zod enum does not contain it, so the parse
+      // threw on a payload both test suites called green. The Rust suite asserted Rust values and
+      // agreed with the engine; the TypeScript suite asserted TS schemas and agreed with the
+      // schema; nothing ran the engine and parsed its real output with the real schema. A contract
+      // with a producer test and a consumer test and nothing across the seam is two opinions. This
+      // gate is the seam, and it builds the engine rather than trusting whichever binary is on
+      // disk - a stale one does not weaken it, it inverts it.
+      "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && pnpm check:cell-ledger && pnpm check:engine-schema-parity && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
     );
     expect(manifest.scripts["check:storage-invariants"]).toBe("node scripts/storage-invariants.mjs");
     expect(manifest.scripts["check:error-contract"]).toBe("node scripts/error-contract.mjs");

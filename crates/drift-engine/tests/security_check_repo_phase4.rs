@@ -148,13 +148,27 @@ fn engine_does_not_accept_phase4_legacy_matcher_required_calls_as_session_trust(
         findings[0]["rule_id"],
         "session_object_must_come_from_trusted_helper"
     );
+    // PROOF-level reason: a member of the session_trust wire enum.
     assert!(
         payload["security_boundary_proofs"][0]["session_trust"]["missing_trust"]
             .as_array()
             .expect("missing trust")
             .iter()
-            .any(|missing| missing["reason"] == "session_not_trusted"),
+            .any(|missing| missing["reason"] == "unknown_helper"),
         "{payload:#?}"
+    );
+    // FINDING-level code: the separate user-facing vocabulary, surfaced through the
+    // layer's missing_proof_ids. Asserting BOTH surfaces is what proves the phase4
+    // finding-reason mapper was widened rather than the bug merely being relocated.
+    let session_missing = payload["security_boundary_proofs"][0]["missing_proof"]
+        .as_array()
+        .expect("missing_proof")
+        .iter()
+        .find(|missing| missing["capability"] == "session_trust")
+        .expect("session_trust missing_proof entry");
+    assert_eq!(
+        session_missing["code"], "session_not_trusted",
+        "{session_missing:#?}"
     );
 }
 
@@ -514,4 +528,87 @@ fn temp_repo(name: &str) -> std::path::PathBuf {
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("create temp repo");
     path
+}
+
+/// S1-01 RED: the engine emits `session_trust.missing_trust[].reason` onto the wire,
+/// where `SecurityBoundaryProofSchema` (packages/core/src/security.ts) parses it with a
+/// four-member enum. This test pins that every emitted value is a member of that enum.
+///
+/// This is the PROOF-level vocabulary — why the proof failed. The FINDING-level code a
+/// user sees (`session_not_trusted`) is a separate vocabulary, derived from this one by
+/// the phase4 finding-reason mapper in check_command.rs. The two are deliberately
+/// different; conflating them is what F1 was.
+#[test]
+fn session_trust_reason_is_a_member_of_the_wire_enum() {
+    let repo_root = temp_repo("phase4_reason_vocabulary");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '@/server/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": {
+            "repo_id": "repo_phase4",
+            "repo_root": repo_root.to_string_lossy()
+        },
+        "scan": {
+            "scan_id": "scan_phase4",
+            "facts": [
+                fact("file_role_detected", "api_route", 1, 5, None, None),
+                fact("import_used", "requireUser", 1, 1, Some("@/server/auth"), Some("requireUser")),
+                fact("route_declared", "GET", 2, 5, None, None),
+                fact("symbol_called", "requireUser", 3, 3, None, None),
+                fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+            ]
+        },
+        "contract": {
+            "contract_id": "contract_phase4",
+            "contract_schema_version": 1,
+            "conventions": [{
+                "id": "security_session_trust",
+                "kind": "session_object_must_come_from_trusted_helper",
+                "matcher": {
+                    "applies_to_file_roles": ["api_route"],
+                    "required_calls": ["requireUser"]
+                },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    // The four members of the enum at packages/core/src/security.ts, the schema that
+    // parses this exact field. Keep in sync until S2 generates both sides.
+    const LEGAL: [&str; 4] = [
+        "derived_from_request",
+        "unknown_helper",
+        "missing_auth_guard",
+        "parser_gap",
+    ];
+
+    let missing_trust = payload["security_boundary_proofs"][0]["session_trust"]["missing_trust"]
+        .as_array()
+        .expect("missing_trust");
+    assert!(
+        !missing_trust.is_empty(),
+        "fixture must produce a missing_trust entry to be a meaningful test: {payload:#?}"
+    );
+    for missing in missing_trust {
+        let reason = missing["reason"].as_str().expect("reason");
+        assert!(
+            LEGAL.contains(&reason),
+            "proof-level reason {reason:?} is not a member of the wire enum {LEGAL:?}"
+        );
+    }
 }
