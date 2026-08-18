@@ -116,6 +116,25 @@ export const AdapterGraphNodeSchema = z.object({
 
 export const AdapterGraphEdgeSchema = z.object({
   id: z.string().min(1),
+  /**
+   * S3-05, latent: this is any non-empty string, NOT the `graph_edge_kind` vocabulary.
+   *
+   * Harmless today only because `@drift/adapters` has zero dependents - nothing can inject an edge
+   * into a scan through this schema, so the looseness costs nothing yet.
+   *
+   * It stops being harmless the moment adapters are wired into the scan path. The check path treats
+   * `IMPORT_RESOLVES_TO_MODULE` as ground truth about what an import specifier MEANS: accepted
+   * security helper identity reports `mode: "repo_resolved"` on the strength of one
+   * (`resolvedHelperIdentities` in `packages/cli/src/check/run-check.ts`), and forbidden-import
+   * matching decides violations on them. That trust rests on those edges coming from the Rust
+   * resolver, which the TypeScript-fallback refusal is what guarantees. An adapter free to emit a
+   * string spelled `IMPORT_RESOLVES_TO_MODULE` would route around that guarantee entirely, and
+   * would be choosing what the pipeline believes a specifier resolves to.
+   *
+   * So: whoever wires adapters into the scan path types this against the generated vocabulary
+   * (`GraphEdgeKindSchema`) FIRST, before the first adapter-sourced edge reaches a check. Same for
+   * `AdapterGraphNodeSchema.kind` above.
+   */
   kind: z.string().min(1),
   from: z.string().min(1),
   to: z.string().min(1),
