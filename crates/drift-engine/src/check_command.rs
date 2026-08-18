@@ -19,8 +19,8 @@ use drift_engine::{
     TenantMissingReason, accepted_phase5_contract_from_requires,
     build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
     build_phase6_security_proofs_for_file, classify_findings_against_diff,
-    materialize_direct_data_access_findings, materialize_direct_data_access_findings_with_sources,
-    phase6_proof_to_json, sensitive_field_source_is_trusted, sensitive_response_field_rejections,
+    materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
+    sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
 
