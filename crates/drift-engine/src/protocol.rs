@@ -619,7 +619,16 @@ pub struct CheckMatcher {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 pub struct AcceptedHelperModuleFiles {
+    /// Which `requires` list this helper came from - `auth_helpers`, `csrf_helpers`, and so on.
+    ///
+    /// Part of the identity. `symbol` is unique WITHIN a list and not across them, and this engine
+    /// already reads the lists separately (`accepted_auth_helpers_for_convention`,
+    /// `phase6_helpers_from_requires`, `security_helpers_from_requires` each build their own map),
+    /// so a name reused by an auth helper and a response serializer is two helpers here too.
+    pub requires_key: String,
     pub symbol: String,
+    /// The specifier as the contract typed it. `external` and `unresolved` match on this.
+    pub specifier: String,
     pub mode: String,
     #[serde(default)]
     pub files: Vec<String>,

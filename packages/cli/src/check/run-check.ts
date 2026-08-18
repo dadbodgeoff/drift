@@ -4090,7 +4090,19 @@ function moduleFilesForNodeIds(nodeIds: Set<string>, index: GraphIndex): Set<str
 export type AcceptedHelperResolutionMode = "repo_resolved" | "external" | "unresolved";
 
 export interface AcceptedHelperIdentity {
+  /**
+   * Which `requires` list this helper came from - `auth_helpers`, `csrf_helpers`, and so on.
+   *
+   * Part of the identity, not a label. `symbol` is unique WITHIN a list and not across them, and
+   * the engine keeps the lists apart: `accepted_auth_helpers_for_convention`,
+   * `phase6_helpers_from_requires` and `security_helpers_from_requires` each build their own map.
+   * A name reused by an auth helper and a response serializer is two helpers there, so it must be
+   * two here, and a consumer needs this to join them back up.
+   */
+  requires_key: string;
   symbol: string;
+  /** The specifier as the contract typed it - what `external` and `unresolved` fall back to. */
+  specifier: string;
   mode: AcceptedHelperResolutionMode;
   /** Repo-relative, sorted, deduped. Empty for every mode but `repo_resolved`. */
   files: string[];
@@ -4162,11 +4174,16 @@ export function resolvedHelperIdentities(
     return [];
   }
   const index = graphIndexFor(checkData);
-  // Keyed by symbol because that is the join key the engine itself uses - both
-  // `accepted_auth_helpers_for_convention` and `phase4_policy_for_convention` normalise into a
-  // BTreeMap keyed by symbol, last write winning. Mirroring that keeps this from disagreeing with
-  // the reader it is computed for.
-  const bySymbol = new Map<string, AcceptedHelperIdentity>();
+  // Keyed by LIST AND SYMBOL. Keying by symbol alone collapsed a name that two requires lists both
+  // use - and collapsed it destructively, because the surviving entry carried the loser's mode: an
+  // auth helper with a resolved file identity, overwritten by an `external` serializer of the same
+  // name, leaves Sprint 4 applying specifier matching to a helper that had resolved. Which list won
+  // depended on the order of `ACCEPTED_HELPER_REQUIRES_KEYS`.
+  //
+  // The engine's own maps ARE keyed by symbol, but each is built per list, so symbol is unique
+  // within one of them and never across them. Mirroring "keyed by symbol" without mirroring
+  // "per list" was the error.
+  const byListAndSymbol = new Map<string, AcceptedHelperIdentity>();
   for (const key of ACCEPTED_HELPER_REQUIRES_KEYS) {
     const entries = (requires as Record<string, unknown>)[key];
     if (!Array.isArray(entries)) {
@@ -4182,15 +4199,25 @@ export function resolvedHelperIdentities(
       if (!symbol || !specifier) {
         continue;
       }
-      bySymbol.set(symbol, helperIdentityFor(checkData, index, symbol, specifier));
+      // Within one list a repeated symbol IS a duplicate entry, so last-wins there matches the
+      // engine's own per-list normalisation.
+      byListAndSymbol.set(
+        JSON.stringify([key, symbol]),
+        helperIdentityFor(checkData, index, key, symbol, specifier)
+      );
     }
   }
-  return [...bySymbol.values()].sort((left, right) => (left.symbol < right.symbol ? -1 : 1));
+  return [...byListAndSymbol.values()].sort((left, right) =>
+    left.requires_key === right.requires_key
+      ? (left.symbol < right.symbol ? -1 : 1)
+      : (left.requires_key < right.requires_key ? -1 : 1)
+  );
 }
 
 function helperIdentityFor(
   checkData: ScanData,
   index: GraphIndex,
+  requiresKey: string,
   symbol: string,
   specifier: string
 ): AcceptedHelperIdentity {
@@ -4213,10 +4240,18 @@ function helperIdentityFor(
   // `repo_resolved` would hand Sprint 4 an empty file list to enforce - turning a silent miss into
   // a false alarm on every compliant route, which is the one direction this refactor must not move.
   if (files.size === 0) {
-    return { symbol, mode: bare ? "external" : "unresolved", files: [] };
+    return {
+      requires_key: requiresKey,
+      symbol,
+      specifier,
+      mode: bare ? "external" : "unresolved",
+      files: []
+    };
   }
   return {
+    requires_key: requiresKey,
     symbol,
+    specifier,
     mode: "repo_resolved",
     files: [...files].sort(),
     ...(bare ? { external_specifier_resolves_in_repo: true as const } : {})

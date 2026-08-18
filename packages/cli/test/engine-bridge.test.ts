@@ -628,7 +628,13 @@ describe("engine scan data bridge", () => {
     };
 
     const acceptedHelperModuleFiles = [
-      { symbol: "requireUser", mode: "repo_resolved" as const, files: ["src/lib/auth.ts"] }
+      {
+        requires_key: "auth_helpers",
+        symbol: "requireUser",
+        specifier: "@/lib/auth",
+        mode: "repo_resolved" as const,
+        files: ["src/lib/auth.ts"]
+      }
     ];
 
     const request = engineCheckRequest({

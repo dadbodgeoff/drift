@@ -17,7 +17,15 @@ import { runRustEngineWithInput } from "./rust-engine.js";
  * would treat every external auth helper as matching nothing.
  */
 export interface AcceptedHelperModuleFile {
+  /**
+   * The `requires` list this helper came from. `symbol` is unique within a list, not across them,
+   * and the engine reads each list separately - so this is what lets a consumer join an identity
+   * back to the helper it describes.
+   */
+  requires_key: string;
   symbol: string;
+  /** The specifier as the contract typed it; what the non-`repo_resolved` modes fall back to. */
+  specifier: string;
   mode: "repo_resolved" | "external" | "unresolved";
   files: string[];
   /** The tsconfig-paths hijack shape: a package-shaped specifier that resolves repo-locally. */

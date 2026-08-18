@@ -109,7 +109,9 @@ describe("resolvedHelperIdentities", () => {
     // Tier 1 fails this outright: the contract says `@/lib` and the helper lives in
     // `src/lib/auth.ts`, so the strings never meet. Resolution plus the re-export chain does.
     expect(identityFor(identities, "requireUser")).toEqual({
+      requires_key: "auth_helpers",
       symbol: "requireUser",
+      specifier: "@/lib",
       mode: "repo_resolved",
       files: ["src/lib/auth.ts", "src/lib/index.ts"]
     });
@@ -149,7 +151,9 @@ describe("resolvedHelperIdentities", () => {
     const identity = identityFor(identities, "assertCsrf");
     // Both spellings of the accepted module collapse onto one file...
     expect(identity).toEqual({
+      requires_key: "csrf_helpers",
       symbol: "assertCsrf",
+      specifier: "@/lib/auth",
       mode: "repo_resolved",
       files: ["src/lib/auth.ts"]
     });
@@ -173,7 +177,9 @@ describe("resolvedHelperIdentities", () => {
     // once Sprint 4 matches on it. `external` says the opposite: the answer is unavailable here by
     // design, so match the specifier and say so.
     expect(identityFor(identities, "getServerSession")).toEqual({
+      requires_key: "auth_helpers",
       symbol: "getServerSession",
+      specifier: "next-auth",
       mode: "external",
       files: []
     });
@@ -259,10 +265,55 @@ describe("resolvedHelperIdentities", () => {
     );
 
     expect(identityFor(identities, "requireUser")).toEqual({
+      requires_key: "auth_helpers",
       symbol: "requireUser",
+      specifier: "@/lib/gone",
       mode: "unresolved",
       files: []
     });
+  });
+
+  it("a_symbol_used_by_two_requires_lists_keeps_both_identities", () => {
+    /**
+     * B3: `symbol` is unique WITHIN a requires list, never across them. The engine keeps the lists
+     * apart - `accepted_auth_helpers_for_convention`, `phase6_helpers_from_requires` and
+     * `security_helpers_from_requires` each build their own map - so a name reused by an auth
+     * helper and a response serializer is two helpers there and must be two here.
+     *
+     * Keying by symbol alone collapsed them, last list read winning. The damage is not cosmetic:
+     * below, the auth helper resolves (`repo_resolved`, a real file identity) and the serializer
+     * does not (`external`). Collapsing yielded the single entry
+     * `{"symbol":"dup","mode":"external","files":[]}`, destroying the auth identity - so Sprint 4
+     * would apply exact-specifier matching to an auth helper that had a resolved file. That is the
+     * silent tier-1 retention this sprint exists to prevent, manufactured by the design itself,
+     * and which list won depended on the order of a literal.
+     */
+    const identities = resolvedHelperIdentities(
+      checkData,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:dup", symbol: "dup", import: "@/lib/auth" }],
+        response_serializers: [
+          { serializer_id: "serializer:dup", imported_name: "dup", import_source: "next-auth" }
+        ]
+      })
+    );
+
+    expect(identities).toEqual([
+      {
+        requires_key: "auth_helpers",
+        symbol: "dup",
+        specifier: "@/lib/auth",
+        mode: "repo_resolved",
+        files: ["src/lib/auth.ts"]
+      },
+      {
+        requires_key: "response_serializers",
+        symbol: "dup",
+        specifier: "next-auth",
+        mode: "external",
+        files: []
+      }
+    ]);
   });
 
   it("reads every accepted security helper list, whichever key its module hides under", () => {
@@ -285,13 +336,16 @@ describe("resolvedHelperIdentities", () => {
       })
     );
 
-    expect(identities.map((identity) => [identity.symbol, identity.mode])).toEqual([
-      ["allowOutbound", "unresolved"],
-      ["assertCsrf", "repo_resolved"],
-      ["parseBody", "repo_resolved"],
-      ["ratelimit", "external"],
-      ["requireUser", "repo_resolved"],
-      ["toDto", "repo_resolved"]
-    ]);
+    // Ordered by requires list, then symbol - so the grouping a consumer joins on is the grouping
+    // the array already has.
+    expect(identities.map((identity) => [identity.requires_key, identity.symbol, identity.mode]))
+      .toEqual([
+        ["auth_helpers", "requireUser", "repo_resolved"],
+        ["csrf_helpers", "assertCsrf", "repo_resolved"],
+        ["outbound_url_allowlist_helpers", "allowOutbound", "unresolved"],
+        ["rate_limit_helpers", "ratelimit", "external"],
+        ["response_serializers", "toDto", "repo_resolved"],
+        ["validators", "parseBody", "repo_resolved"]
+      ]);
   });
 });

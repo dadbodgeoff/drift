@@ -192,8 +192,20 @@ describe("accepted helper identity reaches the engine on a real run", () => {
     // spellings (`@/lib/auth` and `../../../lib/auth`), which is what Sprint 4 will match against
     // this file identity instead of against the specifier strings that disagree.
     expect(auth[0]!.matcher.accepted_helper_module_files).toEqual([
-      { symbol: "withSession", mode: "repo_resolved", files: ["lib/auth.ts"] },
-      { symbol: "withWorkspace", mode: "repo_resolved", files: ["lib/auth.ts"] }
+      {
+        requires_key: "auth_helpers",
+        symbol: "withSession",
+        specifier: "@/lib/auth",
+        mode: "repo_resolved",
+        files: ["lib/auth.ts"]
+      },
+      {
+        requires_key: "auth_helpers",
+        symbol: "withWorkspace",
+        specifier: "@/lib/auth",
+        mode: "repo_resolved",
+        files: ["lib/auth.ts"]
+      }
     ]);
   }, TEST_TIMEOUT_MS);
 });
