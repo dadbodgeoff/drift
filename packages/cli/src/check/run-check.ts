@@ -3186,7 +3186,7 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
     // point of computing them here: `graph` above is already narrowed to the changed files, and the
     // imports that establish what a specifier MEANS routinely live outside the diff.
     const forbiddenModuleFiles = [
-      ...forbiddenModuleFiles_(input.checkData, convention.matcher.forbidden_imports ?? [])
+      ...resolvedModuleFilesFor(input.checkData, convention.matcher.forbidden_imports ?? [])
     ];
     const acceptedHelperModuleFiles = resolvedHelperIdentities(input.checkData, convention);
     const result = await runEngineCheck({
@@ -3813,7 +3813,7 @@ function graphForEngineCheck(
  * repo size at fixed route density: openstatus (2,185 files, 37 in scope) ran 3x faster than
  * papermark (1,346 files, 283 in scope) despite a 78% larger graph.
  *
- * `forbiddenModuleFiles_` was already hoisted per convention at its other call site (:2575); this
+ * `resolvedModuleFilesFor` was already hoisted per convention at its other call site; this
  * gives the same treatment to the rest.
  *
  * Keyed on ScanData identity. The arrays indexed here are read-only for the lifetime of a check -
@@ -3933,7 +3933,7 @@ function graphImportResolvesToForbidden(
   //
   // The repository tells us what a specifier means: wherever any file imports a forbidden
   // specifier and the resolver placed that edge, the target is the file it names.
-  const forbiddenFiles = forbiddenModuleFiles_(checkData, forbiddenImports);
+  const forbiddenFiles = resolvedModuleFilesFor(checkData, forbiddenImports);
 
   return (resolvedModuleEdgesByFrom.get(importNode.id) ?? [])
     .some((edge) => {
@@ -3960,7 +3960,7 @@ function graphImportResolvesToForbidden(
  * Derived from the repo's own resolved imports rather than by re-resolving, so it needs no second
  * resolver and cannot disagree with the one that built the graph.
  *
- * This is the general form of what `forbiddenModuleFiles_` used to be on its own. The question -
+ * This began as `forbiddenModuleFiles_`, which answered only for forbidden lists. The question -
  * "what does this specifier MEAN, as opposed to how is it spelled" - is not specific to forbidden
  * imports; the accepted-security-helper side needs the identical answer about a different specifier
  * list. A second walk over `IMPORT_RESOLVES_TO_MODULE` written for that caller could drift out of
@@ -4024,8 +4024,8 @@ function specifierMatches(source: string, specifiers: string[], match: Specifier
  *
  * `resolvedModuleFilesFor` is the answer nearly every caller wants, but a re-export chain is walked
  * over node ids, and a file path cannot be walked back to a node without a second index. Splitting
- * here keeps one walk over `IMPORT_RESOLVES_TO_MODULE` behind both answers - the S3-01
- * characterization lock is what says the split did not move the file-level answer.
+ * here keeps one walk over `IMPORT_RESOLVES_TO_MODULE` behind both answers. The file-level answer is
+ * pinned literally, list by list, in `resolved-module-files.test.ts`.
  */
 function resolvedModuleNodeIdsFor(
   checkData: ScanData,
@@ -4065,16 +4065,6 @@ function moduleFilesForNodeIds(nodeIds: Set<string>, index: GraphIndex): Set<str
     }
   }
   return files;
-}
-
-/**
- * Files that the convention's forbidden specifiers actually resolve to.
- *
- * Exported for the S3-01 characterization lock, which pins that generalising the resolver did not
- * move the answer the T93 bypass closures ride on.
- */
-export function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
-  return resolvedModuleFilesFor(checkData, forbiddenImports);
 }
 
 /**

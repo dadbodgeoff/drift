@@ -9,7 +9,7 @@ import { runCli } from "../src/index.js";
 /**
  * BB-4: a forbidden import that resolves to nothing is a warning, not a silence.
  *
- * `forbiddenModuleFiles_` derives a forbidden module's identity from the repo's own resolved import
+ * `resolvedModuleFilesFor` derives a forbidden module's identity from the repo's own resolved import
  * edges, falling back to specifier-string matching. That design is right - it is what closed the
  * `../../../lib/prisma` and barrel-re-export bypasses (T93) - but it fails silently: rename the data
  * module and update every import, as any refactor would, and the accepted convention matches nothing
