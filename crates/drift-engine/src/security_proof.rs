@@ -11,7 +11,7 @@ use crate::{
         unsupported_dynamic_control_flow,
     },
     security_patterns::dynamic_middleware_matcher_line,
-    vocabulary::SessionTrustReason,
+    vocabulary::{AuthorizationMissingReason, SessionTrustReason},
 };
 use serde_json::Value;
 
@@ -138,7 +138,8 @@ pub struct AuthorizationGuardProof {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthorizationMissingProof {
-    pub reason: String,
+    /// The PROOF-level reason, from the one `authorization_missing_reason` vocabulary.
+    pub reason: AuthorizationMissingReason,
     pub sink_fact_id: Option<String>,
 }
 
@@ -1119,7 +1120,7 @@ fn build_authorization_proof_from_facts(
     let mut missing = Vec::new();
     if !data_operations.is_empty() && guards.is_empty() {
         missing.push(AuthorizationMissingProof {
-            reason: "authorization_guard_missing".to_string(),
+            reason: AuthorizationMissingReason::AuthorizationGuardMissing,
             sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
         });
     }
@@ -1130,13 +1131,13 @@ fn build_authorization_proof_from_facts(
             .is_some_and(|subject| !subject_uses_trusted_session(subject, session_trust))
         {
             missing.push(AuthorizationMissingProof {
-                reason: "session_not_trusted".to_string(),
+                reason: AuthorizationMissingReason::SessionNotTrusted,
                 sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
             });
         }
         if !guard.dominates_sinks {
             missing.push(AuthorizationMissingProof {
-                reason: "authorization_guard_not_dominating_sink".to_string(),
+                reason: AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
                 sink_fact_id: data_operations.first().map(|fact| sink_id(fact)),
             });
         }

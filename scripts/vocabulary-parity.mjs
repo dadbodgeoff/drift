@@ -325,6 +325,12 @@ const PRODUCER_PATTERNS = {
   // problem in rule 3.
   session_trust_reason: (variant) => [
     { file: SECURITY_PROOF_SOURCE, pattern: new RegExp(`SessionTrustReason::${variant}\\b`) }
+  ],
+  authorization_missing_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`AuthorizationMissingProof\\s*\\{\\s*reason:\\s*AuthorizationMissingReason::${variant}\\b`)
+    }
   ]
 };
 

@@ -1,10 +1,10 @@
 use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
-    AuthorizationHelperBehavior, AuthorizationHelperKind, FactKind, Phase4SecurityPolicy,
-    RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus, SessionTrustReason,
-    build_auth_boundary_proof, build_middleware_coverage_proof, build_phase4_security_proof,
-    build_phase4_security_proof_with_policy, build_request_validation_proof,
-    extract_security_facts,
+    AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason, FactKind,
+    Phase4SecurityPolicy, RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus,
+    SessionTrustReason, build_auth_boundary_proof, build_middleware_coverage_proof,
+    build_phase4_security_proof, build_phase4_security_proof_with_policy,
+    build_request_validation_proof, extract_security_facts,
 };
 
 #[test]
@@ -178,7 +178,8 @@ export async function DELETE(request: Request) {
                 .authorization
                 .missing
                 .iter()
-                .any(|missing| missing.reason == "authorization_guard_not_dominating_sink"),
+                .any(|missing| missing.reason
+                    == AuthorizationMissingReason::AuthorizationGuardNotDominatingSink),
             "missing dominance failure proof: {proof:#?}"
         );
     }

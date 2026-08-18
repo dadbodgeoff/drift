@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  AuthorizationMissingReasonSchema,
   CandidateConventionKindSchema,
   FactKindSchema,
   SecurityCapabilityNameSchema,
@@ -982,7 +983,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
       subject_var: z.string().min(1).optional()
     })),
     missing: z.array(z.object({
-      reason: z.enum(["no_authorization_guard", "guard_not_dominating_sink", "unknown_policy_helper", "session_not_trusted", "authorization_guard_missing", "authorization_guard_not_dominating_sink"]),
+      // PROOF-level, from the one authorization_missing_reason vocabulary.
+      reason: AuthorizationMissingReasonSchema,
       sink_fact_id: z.string().min(1).optional()
     }))
   }).optional().default({

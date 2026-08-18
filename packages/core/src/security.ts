@@ -76,7 +76,11 @@ export const SecurityParserGapCodeSchema = z.enum([
 // The kinds that carry a security boundary proof, from the one convention vocabulary. This list,
 // the identical one in @drift/engine-contract, and EXPERIMENTAL_SECURITY_CONVENTION_KINDS all claim
 // to be the same set; the third had twelve entries to these thirteen.
-import { SecurityContractKindSchema, SessionTrustReasonSchema } from "@drift/vocabulary";
+import {
+  AuthorizationMissingReasonSchema,
+  SecurityContractKindSchema,
+  SessionTrustReasonSchema
+} from "@drift/vocabulary";
 
 const Phase5SensitiveFieldSchema = z.object({
   field_path: z.string().min(1),
@@ -338,7 +342,10 @@ const SecurityAuthorizationProofSchema = z.object({
     subject_var: z.string().min(1).optional()
   })),
   missing: z.array(z.object({
-    reason: z.enum(["no_authorization_guard", "guard_not_dominating_sink", "unknown_policy_helper", "session_not_trusted", "authorization_guard_missing", "authorization_guard_not_dominating_sink"]),
+    // PROOF-level, from the one authorization_missing_reason vocabulary. Two spellings of
+    // three concepts, because this enum was widened rather than migrated; only the newer
+    // one has a producer, and the older one is held for stored rows.
+    reason: AuthorizationMissingReasonSchema,
     sink_fact_id: z.string().min(1).optional()
   }))
 });

@@ -87,6 +87,24 @@
       "member": "parser_gap",
       "gap": "no_producer",
       "reason": "S2-02, and the sharper of the pair. No producer for the same reason as missing_auth_guard, but unlike it this member is NOT in the finding-level vocabulary, so if it were ever emitted the finding would normalize to `unknown_reason_code` at the engine parse boundary and stop saying why the proof failed. It is named explicitly in phase4_missing_code's exhaustive match, pinned by phase4_missing_code_tests, and left unfixed on purpose: choosing a finding-level code for a parser-gapped session-trust proof is a product decision, not a mechanical one - a parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap, so answering session_not_trusted would assert a trust failure that was never established. Retained for the same stored-row reason as its sibling. If a producer is ever added, decide the finding-level mapping FIRST."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "no_authorization_guard",
+      "gap": "no_producer",
+      "reason": "S2-03. The ORIGINAL spelling, from the design this feature was built to: docs/internal/architecture/security-boundary-enforcement-100-tdd.md:950 declares this field as exactly `no_authorization_guard | guard_not_dominating_sink | unknown_policy_helper`. The engine shipped different words - authorization_guard_missing, authorization_guard_not_dominating_sink - and the enum was WIDENED to hold both rather than migrated, so six spellings of three concepts sit in one list and only three have a producer. This one has no producer and no consumer beyond the schema. RETAINED because SecurityBoundaryProofSchema is applied ON READ: a row written by an engine that emitted the design-doc spelling stops parsing if this is removed, and scripts/stored-proof-census.mjs cannot prove no such row exists - 18 databases, 0 proof rows, which is one machine's silence and not a licence. Removing the trio is a migration, not a cleanup."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "guard_not_dominating_sink",
+      "gap": "no_producer",
+      "reason": "S2-03, the second of the design-doc trio. `authorization_guard_not_dominating_sink` is the spelling the engine actually emits for this concept; this is the one the design named. Same widening, same stored-row reason for keeping it - see no_authorization_guard."
+    },
+    {
+      "vocabulary": "authorization_missing_reason",
+      "member": "unknown_policy_helper",
+      "gap": "no_producer",
+      "reason": "S2-03, the third of the design-doc trio, and the one with no newer counterpart at all: no reason in this vocabulary means 'the policy helper was not recognised'. The engine has no such arm - an unrecognised authorization helper simply fails to produce a guard, which surfaces as authorization_guard_missing instead. So this is a concept the design declared and the engine never implemented, not a renamed one. Kept for the same stored-row reason and because deleting it would erase the record that the case is unhandled."
     }
   ]
 }

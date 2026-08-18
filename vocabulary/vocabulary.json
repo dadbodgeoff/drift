@@ -313,6 +313,21 @@
       "ts_const": "SESSION_TRUST_REASONS",
       "ts_schema": "SessionTrustReasonSchema",
       "members": ["derived_from_request", "unknown_helper", "missing_auth_guard", "parser_gap"]
+    },
+
+    "authorization_missing_reason": {
+      "doc": "Why an authorization proof could not be completed. PROOF-LEVEL vocabulary, on `authorization.missing[].reason`. The list carries two spellings of the same three concepts - an older `no_authorization_guard`/`guard_not_dominating_sink` pair and the newer `authorization_guard_missing`/`authorization_guard_not_dominating_sink` - because the enum was WIDENED rather than migrated when the engine's wording changed. Only the newer spelling has a producer today; the older one is reserved, because the schema is applied on read and stored rows may still hold it.",
+      "rust_enum": "AuthorizationMissingReason",
+      "ts_const": "AUTHORIZATION_MISSING_REASONS",
+      "ts_schema": "AuthorizationMissingReasonSchema",
+      "members": [
+        "no_authorization_guard",
+        "guard_not_dominating_sink",
+        "unknown_policy_helper",
+        "session_not_trusted",
+        "authorization_guard_missing",
+        "authorization_guard_not_dominating_sink"
+      ]
     }
   }
 }

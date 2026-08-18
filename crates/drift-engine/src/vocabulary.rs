@@ -1319,3 +1319,90 @@ impl<'de> serde::Deserialize<'de> for SessionTrustReason {
         })
     }
 }
+
+/// Why an authorization proof could not be completed. PROOF-LEVEL vocabulary, on `authorization.missing[].reason`. The list carries two spellings of the same three concepts - an older `no_authorization_guard`/`guard_not_dominating_sink` pair and the newer `authorization_guard_missing`/`authorization_guard_not_dominating_sink` - because the enum was WIDENED rather than migrated when the engine's wording changed. Only the newer spelling has a producer today; the older one is reserved, because the schema is applied on read and stored rows may still hold it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuthorizationMissingReason {
+    NoAuthorizationGuard,
+    GuardNotDominatingSink,
+    UnknownPolicyHelper,
+    SessionNotTrusted,
+    AuthorizationGuardMissing,
+    AuthorizationGuardNotDominatingSink,
+}
+
+impl AuthorizationMissingReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [AuthorizationMissingReason] = &[
+        AuthorizationMissingReason::NoAuthorizationGuard,
+        AuthorizationMissingReason::GuardNotDominatingSink,
+        AuthorizationMissingReason::UnknownPolicyHelper,
+        AuthorizationMissingReason::SessionNotTrusted,
+        AuthorizationMissingReason::AuthorizationGuardMissing,
+        AuthorizationMissingReason::AuthorizationGuardNotDominatingSink,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            AuthorizationMissingReason::NoAuthorizationGuard => "no_authorization_guard",
+            AuthorizationMissingReason::GuardNotDominatingSink => "guard_not_dominating_sink",
+            AuthorizationMissingReason::UnknownPolicyHelper => "unknown_policy_helper",
+            AuthorizationMissingReason::SessionNotTrusted => "session_not_trusted",
+            AuthorizationMissingReason::AuthorizationGuardMissing => "authorization_guard_missing",
+            AuthorizationMissingReason::AuthorizationGuardNotDominatingSink => {
+                "authorization_guard_not_dominating_sink"
+            }
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "no_authorization_guard" => Some(AuthorizationMissingReason::NoAuthorizationGuard),
+            "guard_not_dominating_sink" => Some(AuthorizationMissingReason::GuardNotDominatingSink),
+            "unknown_policy_helper" => Some(AuthorizationMissingReason::UnknownPolicyHelper),
+            "session_not_trusted" => Some(AuthorizationMissingReason::SessionNotTrusted),
+            "authorization_guard_missing" => {
+                Some(AuthorizationMissingReason::AuthorizationGuardMissing)
+            }
+            "authorization_guard_not_dominating_sink" => {
+                Some(AuthorizationMissingReason::AuthorizationGuardNotDominatingSink)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for AuthorizationMissingReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for AuthorizationMissingReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for AuthorizationMissingReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        AuthorizationMissingReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown authorization_missing_reason \"{raw}\": this engine and its caller disagree about the authorization_missing_reason vocabulary"
+            ))
+        })
+    }
+}

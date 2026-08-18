@@ -462,3 +462,19 @@ export const SESSION_TRUST_REASONS = [
 export const SessionTrustReasonSchema = z.enum(SESSION_TRUST_REASONS);
 
 export type SessionTrustReason = (typeof SESSION_TRUST_REASONS)[number];
+
+/**
+ * Why an authorization proof could not be completed. PROOF-LEVEL vocabulary, on `authorization.missing[].reason`. The list carries two spellings of the same three concepts - an older `no_authorization_guard`/`guard_not_dominating_sink` pair and the newer `authorization_guard_missing`/`authorization_guard_not_dominating_sink` - because the enum was WIDENED rather than migrated when the engine's wording changed. Only the newer spelling has a producer today; the older one is reserved, because the schema is applied on read and stored rows may still hold it.
+ */
+export const AUTHORIZATION_MISSING_REASONS = [
+  "no_authorization_guard",
+  "guard_not_dominating_sink",
+  "unknown_policy_helper",
+  "session_not_trusted",
+  "authorization_guard_missing",
+  "authorization_guard_not_dominating_sink",
+] as const;
+
+export const AuthorizationMissingReasonSchema = z.enum(AUTHORIZATION_MISSING_REASONS);
+
+export type AuthorizationMissingReason = (typeof AUTHORIZATION_MISSING_REASONS)[number];

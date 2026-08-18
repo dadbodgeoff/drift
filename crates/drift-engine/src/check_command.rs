@@ -9,15 +9,16 @@ use drift_engine::next_routes::next_api_route_identity;
 use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedHelperImport,
     AcceptedRequestValidator, AcceptedSecurityHelper, AcceptedTenantHelper, AuthGuardBehavior,
-    AuthorizationHelperBehavior, AuthorizationHelperKind, BaselineStatus, BaselineViolation,
-    ConventionDispatch, ConventionKind, DiffFile, DiffScope, DirectDataAccessRule, EnforcementMode,
-    Fact, FactKind, FindingStatus, GraphEdgeKind, GraphNodeKind, ParsedDiff, Phase4SecurityPolicy,
-    Phase6AcceptedHelper, Phase6CorsContract, Phase6RawSqlContract, Phase6SecurityContract,
-    Phase6SecurityProof, Phase6SsrfContract, RequestValidatorBehavior, RequestValidatorKind,
-    RouteSecurityBoundaryProof, RuleFinding, ScanCapability, SecurityBoundaryProof,
-    SecurityProofStatus, SessionTrustReason, Severity, accepted_phase5_contract_from_requires,
-    build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
-    build_phase6_security_proofs_for_file, classify_findings_against_diff,
+    AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason,
+    BaselineStatus, BaselineViolation, ConventionDispatch, ConventionKind, DiffFile, DiffScope,
+    DirectDataAccessRule, EnforcementMode, Fact, FactKind, FindingStatus, GraphEdgeKind,
+    GraphNodeKind, ParsedDiff, Phase4SecurityPolicy, Phase6AcceptedHelper, Phase6CorsContract,
+    Phase6RawSqlContract, Phase6SecurityContract, Phase6SecurityProof, Phase6SsrfContract,
+    RequestValidatorBehavior, RequestValidatorKind, RouteSecurityBoundaryProof, RuleFinding,
+    ScanCapability, SecurityBoundaryProof, SecurityProofStatus, SessionTrustReason, Severity,
+    accepted_phase5_contract_from_requires, build_auth_boundary_proofs_for_file,
+    build_phase4_security_proof_with_policy, build_phase6_security_proofs_for_file,
+    classify_findings_against_diff, materialize_direct_data_access_findings,
     materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
     sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
@@ -3629,12 +3630,22 @@ fn phase4_missing_code(proof: &SecurityBoundaryProof, convention_kind: &str) -> 
             .first()
             .map(|missing| missing.reason.clone())
             .unwrap_or_else(|| "tenant_predicate_missing".to_string()),
+        // Passed through unmapped, as it always was: every reason this builder emits
+        // (authorization_guard_missing, session_not_trusted,
+        // authorization_guard_not_dominating_sink) is also a member of the finding-level
+        // SecurityMissingProofCodeSchema, so the two vocabularies agree here rather than
+        // needing a bridge. The three older spellings that are NOT finding-level members
+        // have no producer - see their reserved entries in the parity baseline.
         "api_route_requires_authorization" => proof
             .authorization
             .missing
             .first()
-            .map(|missing| missing.reason.clone())
-            .unwrap_or_else(|| "authorization_guard_missing".to_string()),
+            .map(|missing| missing.reason.as_wire().to_string())
+            .unwrap_or_else(|| {
+                AuthorizationMissingReason::AuthorizationGuardMissing
+                    .as_wire()
+                    .to_string()
+            }),
         "session_object_must_come_from_trusted_helper" => proof
             .session_trust
             .missing_trust
@@ -3871,7 +3882,7 @@ fn phase4_proof_json(
                 serde_json::Value::Object(object)
             }).collect::<Vec<_>>(),
             "missing": proof.authorization.missing.iter().map(|missing| json!({
-                "reason": missing.reason,
+                "reason": missing.reason.as_wire(),
                 "sink_fact_id": missing.sink_fact_id
             })).collect::<Vec<_>>()
         },
