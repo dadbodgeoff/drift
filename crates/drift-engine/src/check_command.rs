@@ -3012,7 +3012,7 @@ fn request_validation_missing_code(proof: &SecurityBoundaryProof) -> String {
                 .request_validation
                 .unvalidated_uses
                 .first()
-                .map(|use_proof| use_proof.reason.clone())
+                .map(|use_proof| use_proof.reason.as_wire().to_string())
         })
         .unwrap_or_else(|| "request_input_not_validated".to_string())
 }
@@ -3434,7 +3434,7 @@ fn request_validation_proof_json(
             .request_validation
             .unvalidated_uses
             .iter()
-            .map(|use_proof| use_proof.reason.clone())
+            .map(|use_proof| use_proof.reason.as_wire().to_string())
             .collect::<Vec<_>>()
     } else {
         vec![request_validation_missing_code(proof)]

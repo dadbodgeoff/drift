@@ -1576,3 +1576,147 @@ impl<'de> serde::Deserialize<'de> for UndominatedSinkReason {
         })
     }
 }
+
+/// Why a middleware does not cover a route. PROOF-LEVEL vocabulary, on `middleware.mismatches[].reason`, produced by static_middleware_coverage in security_control_flow.rs. `dynamic_matcher` has no producer: a dynamic matcher is reported as a parser gap and drives proof_status == ParserGap rather than as a coverage mismatch, so the mismatch spelling of it was declared and never built.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum MiddlewareMismatchReason {
+    PathNotMatched,
+    MethodNotMatched,
+    DynamicMatcher,
+    UnknownFramework,
+}
+
+impl MiddlewareMismatchReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [MiddlewareMismatchReason] = &[
+        MiddlewareMismatchReason::PathNotMatched,
+        MiddlewareMismatchReason::MethodNotMatched,
+        MiddlewareMismatchReason::DynamicMatcher,
+        MiddlewareMismatchReason::UnknownFramework,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            MiddlewareMismatchReason::PathNotMatched => "path_not_matched",
+            MiddlewareMismatchReason::MethodNotMatched => "method_not_matched",
+            MiddlewareMismatchReason::DynamicMatcher => "dynamic_matcher",
+            MiddlewareMismatchReason::UnknownFramework => "unknown_framework",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "path_not_matched" => Some(MiddlewareMismatchReason::PathNotMatched),
+            "method_not_matched" => Some(MiddlewareMismatchReason::MethodNotMatched),
+            "dynamic_matcher" => Some(MiddlewareMismatchReason::DynamicMatcher),
+            "unknown_framework" => Some(MiddlewareMismatchReason::UnknownFramework),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for MiddlewareMismatchReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for MiddlewareMismatchReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for MiddlewareMismatchReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        MiddlewareMismatchReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown middleware_mismatch_reason \"{raw}\": this engine and its caller disagree about the middleware_mismatch_reason vocabulary"
+            ))
+        })
+    }
+}
+
+/// Why a request input reaching a sink is not covered by a validation proof. PROOF-LEVEL vocabulary, on `request_validation.unvalidated_uses[].reason`. Every member is produced by request_unvalidated_uses in security_proof.rs, and all three are also members of the finding-level SecurityMissingProofCodeSchema, so the two vocabularies agree here and need no bridge.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RequestUnvalidatedReason {
+    RequestInputNotValidated,
+    ValidationResultNotUsed,
+    UnknownValidator,
+}
+
+impl RequestUnvalidatedReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [RequestUnvalidatedReason] = &[
+        RequestUnvalidatedReason::RequestInputNotValidated,
+        RequestUnvalidatedReason::ValidationResultNotUsed,
+        RequestUnvalidatedReason::UnknownValidator,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            RequestUnvalidatedReason::RequestInputNotValidated => "request_input_not_validated",
+            RequestUnvalidatedReason::ValidationResultNotUsed => "validation_result_not_used",
+            RequestUnvalidatedReason::UnknownValidator => "unknown_validator",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "request_input_not_validated" => {
+                Some(RequestUnvalidatedReason::RequestInputNotValidated)
+            }
+            "validation_result_not_used" => Some(RequestUnvalidatedReason::ValidationResultNotUsed),
+            "unknown_validator" => Some(RequestUnvalidatedReason::UnknownValidator),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for RequestUnvalidatedReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for RequestUnvalidatedReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for RequestUnvalidatedReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        RequestUnvalidatedReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown request_unvalidated_reason \"{raw}\": this engine and its caller disagree about the request_unvalidated_reason vocabulary"
+            ))
+        })
+    }
+}

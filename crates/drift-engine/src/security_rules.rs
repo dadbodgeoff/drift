@@ -280,7 +280,7 @@ pub fn evaluate_middleware_must_cover_routes(
             .middleware
             .mismatches
             .first()
-            .map(|mismatch| mismatch.reason.clone())
+            .map(|mismatch| mismatch.reason.as_wire().to_string())
             .unwrap_or_else(|| "middleware_not_covering_route".to_string()),
         enforcement_result: match contract.enforcement_mode {
             SecurityEnforcementMode::Brief => SecurityFindingResult::Brief,
@@ -334,7 +334,7 @@ pub fn evaluate_api_route_requires_request_validation(
             .request_validation
             .unvalidated_uses
             .first()
-            .map(|use_proof| use_proof.reason.clone())
+            .map(|use_proof| use_proof.reason.as_wire().to_string())
             .unwrap_or_else(|| "request_input_not_validated".to_string()),
         enforcement_result: match contract.enforcement_mode {
             SecurityEnforcementMode::Brief => SecurityFindingResult::Brief,

@@ -105,8 +105,8 @@ pub use security_rules::{
 };
 pub use vocabulary::{
     AuthorizationMissingReason, ConventionDispatch, ConventionKind, FactKind, FileRole,
-    GraphEdgeKind, GraphNodeKind, RouteFlavor, ScanCapability, SessionTrustReason,
-    TenantMissingReason, UndominatedSinkReason,
+    GraphEdgeKind, GraphNodeKind, MiddlewareMismatchReason, RequestUnvalidatedReason, RouteFlavor,
+    ScanCapability, SessionTrustReason, TenantMissingReason, UndominatedSinkReason,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

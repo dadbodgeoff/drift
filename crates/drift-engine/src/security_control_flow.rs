@@ -1,5 +1,7 @@
 use crate::{
-    Fact, FactKind, next_routes::next_api_route_identity, vocabulary::UndominatedSinkReason,
+    Fact, FactKind,
+    next_routes::next_api_route_identity,
+    vocabulary::{MiddlewareMismatchReason, UndominatedSinkReason},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -20,7 +22,8 @@ pub struct MatchedMiddleware {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MiddlewareMismatch {
     pub middleware_id: Option<String>,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `middleware_mismatch_reason` vocabulary.
+    pub reason: MiddlewareMismatchReason,
     pub parser_gap_id: Option<String>,
 }
 
@@ -613,7 +616,7 @@ pub fn static_middleware_coverage(
             Vec::new(),
             vec![MiddlewareMismatch {
                 middleware_id: None,
-                reason: "unknown_framework".to_string(),
+                reason: MiddlewareMismatchReason::UnknownFramework,
                 parser_gap_id: None,
             }],
         );
@@ -657,7 +660,7 @@ pub fn static_middleware_coverage(
                 Vec::new(),
                 vec![MiddlewareMismatch {
                     middleware_id: middleware_id.clone(),
-                    reason: "path_not_matched".to_string(),
+                    reason: MiddlewareMismatchReason::PathNotMatched,
                     parser_gap_id: None,
                 }],
             );
@@ -680,13 +683,13 @@ pub fn static_middleware_coverage(
         } else if !static_matcher_covers_path(&pattern, &route_path) {
             mismatches.push(MiddlewareMismatch {
                 middleware_id: middleware_id.clone(),
-                reason: "path_not_matched".to_string(),
+                reason: MiddlewareMismatchReason::PathNotMatched,
                 parser_gap_id: None,
             });
         } else {
             mismatches.push(MiddlewareMismatch {
                 middleware_id: middleware_id.clone(),
-                reason: "method_not_matched".to_string(),
+                reason: MiddlewareMismatchReason::MethodNotMatched,
                 parser_gap_id: None,
             });
         }

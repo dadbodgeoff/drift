@@ -351,6 +351,18 @@ const PRODUCER_PATTERNS = {
       file: SECURITY_CONTROL_FLOW_SOURCE,
       pattern: new RegExp(`UndominatedSinkReason::${variant}\\b`)
     }
+  ],
+  middleware_mismatch_reason: (variant) => [
+    {
+      file: SECURITY_CONTROL_FLOW_SOURCE,
+      pattern: new RegExp(`MiddlewareMismatch\\s*\\{[^}]*?reason:\\s*MiddlewareMismatchReason::${variant}\\b`)
+    }
+  ],
+  request_unvalidated_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`RequestUnvalidatedUseProof\\s*\\{[^}]*?reason:\\s*RequestUnvalidatedReason::${variant}\\b`)
+    }
   ]
 };
 

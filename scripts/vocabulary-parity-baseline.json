@@ -129,6 +129,12 @@
       "member": "parser_gap",
       "gap": "no_producer",
       "reason": "S2-03, and the one member here that is NOT a renamed sibling. The design gave the tenant proof a way to say 'the tenant scope could not be analysed', and the engine never built it: a tenant parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap instead, so this reason has no construction site and no path to one. It is also not a member of the finding-level SecurityMissingProofCodeSchema, so if it were ever emitted it would normalize to unknown_reason_code and the finding would stop saying why the proof failed - the same latent shape as session_trust_reason.parser_gap. Retained for the stored-row reason and because deleting it would erase the record that the case is unhandled. If a producer is ever added, decide the finding-level mapping FIRST."
+    },
+    {
+      "vocabulary": "middleware_mismatch_reason",
+      "member": "dynamic_matcher",
+      "gap": "no_producer",
+      "reason": "S2-03. Declared as a coverage mismatch and never built as one. `static_middleware_coverage` in security_control_flow.rs emits path_not_matched, method_not_matched and unknown_framework; a dynamic middleware matcher is handled somewhere else entirely - build_middleware_coverage_proof in security_proof.rs turns it into a SecurityParserGap with code `unsupported_dynamic_middleware_matcher`, which drives proof_status == ParserGap. So the concept is covered and this spelling of it is not, which is a real distinction rather than a gap: a parser gap says the matcher could not be analysed, and a mismatch would say it was analysed and does not cover the route. Answering the second when only the first is known would be a claim the engine cannot support. RETAINED because SecurityBoundaryProofSchema is applied ON READ and the stored-proof census cannot prove no row holds it. If a producer is ever added, it must be a case where the matcher IS understood and genuinely does not match."
     }
   ]
 }

@@ -358,6 +358,22 @@
         "unsupported_dynamic_control_flow",
         "no_guard_call"
       ]
+    },
+
+    "middleware_mismatch_reason": {
+      "doc": "Why a middleware does not cover a route. PROOF-LEVEL vocabulary, on `middleware.mismatches[].reason`, produced by static_middleware_coverage in security_control_flow.rs. `dynamic_matcher` has no producer: a dynamic matcher is reported as a parser gap and drives proof_status == ParserGap rather than as a coverage mismatch, so the mismatch spelling of it was declared and never built.",
+      "rust_enum": "MiddlewareMismatchReason",
+      "ts_const": "MIDDLEWARE_MISMATCH_REASONS",
+      "ts_schema": "MiddlewareMismatchReasonSchema",
+      "members": ["path_not_matched", "method_not_matched", "dynamic_matcher", "unknown_framework"]
+    },
+
+    "request_unvalidated_reason": {
+      "doc": "Why a request input reaching a sink is not covered by a validation proof. PROOF-LEVEL vocabulary, on `request_validation.unvalidated_uses[].reason`. Every member is produced by request_unvalidated_uses in security_proof.rs, and all three are also members of the finding-level SecurityMissingProofCodeSchema, so the two vocabularies agree here and need no bridge.",
+      "rust_enum": "RequestUnvalidatedReason",
+      "ts_const": "REQUEST_UNVALIDATED_REASONS",
+      "ts_schema": "RequestUnvalidatedReasonSchema",
+      "members": ["request_input_not_validated", "validation_result_not_used", "unknown_validator"]
     }
   }
 }

@@ -78,6 +78,8 @@ export const SecurityParserGapCodeSchema = z.enum([
 // to be the same set; the third had twelve entries to these thirteen.
 import {
   AuthorizationMissingReasonSchema,
+  MiddlewareMismatchReasonSchema,
+  RequestUnvalidatedReasonSchema,
   SecurityContractKindSchema,
   SessionTrustReasonSchema,
   TenantMissingReasonSchema,
@@ -275,7 +277,8 @@ const SecurityMiddlewareProofSchema = z.object({
   })),
   mismatches: z.array(z.object({
     middleware_id: z.string().min(1).optional(),
-    reason: z.enum(["path_not_matched", "method_not_matched", "dynamic_matcher", "unknown_framework"]),
+    // PROOF-level, from the one middleware_mismatch_reason vocabulary.
+    reason: MiddlewareMismatchReasonSchema,
     parser_gap_id: z.string().min(1).optional()
   }))
 });
@@ -307,7 +310,8 @@ const SecurityRequestValidationProofSchema = z.object({
     input_fact_id: z.string().min(1),
     sink_fact_id: z.string().min(1),
     sink_kind: z.enum(["data_operation", "response", "outbound_request", "raw_sql"]),
-    reason: z.enum(["request_input_not_validated", "validation_result_not_used", "unknown_validator"])
+    // PROOF-level, from the one request_unvalidated_reason vocabulary.
+    reason: RequestUnvalidatedReasonSchema
   }))
 });
 

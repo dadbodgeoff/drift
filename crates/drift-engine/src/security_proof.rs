@@ -12,7 +12,8 @@ use crate::{
     },
     security_patterns::dynamic_middleware_matcher_line,
     vocabulary::{
-        AuthorizationMissingReason, SessionTrustReason, TenantMissingReason, UndominatedSinkReason,
+        AuthorizationMissingReason, RequestUnvalidatedReason, SessionTrustReason,
+        TenantMissingReason, UndominatedSinkReason,
     },
 };
 use serde_json::Value;
@@ -211,7 +212,8 @@ pub struct RequestUnvalidatedUseProof {
     pub input_fact_id: String,
     pub sink_fact_id: String,
     pub sink_kind: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `request_unvalidated_reason` vocabulary.
+    pub reason: RequestUnvalidatedReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1921,7 +1923,7 @@ fn request_unvalidated_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id,
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "validation_result_not_used".to_string(),
+                    reason: RequestUnvalidatedReason::ValidationResultNotUsed,
                 });
                 continue;
             }
@@ -1933,7 +1935,7 @@ fn request_unvalidated_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id,
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "request_input_not_validated".to_string(),
+                    reason: RequestUnvalidatedReason::RequestInputNotValidated,
                 });
             }
         }
@@ -2009,7 +2011,7 @@ fn unknown_validator_uses(
                     input_fact_id: input.fact_id.clone(),
                     sink_fact_id: sink_id(sink),
                     sink_kind: sink_kind(sink).to_string(),
-                    reason: "unknown_validator".to_string(),
+                    reason: RequestUnvalidatedReason::UnknownValidator,
                 });
             }
         }

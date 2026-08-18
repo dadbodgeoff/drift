@@ -1,8 +1,8 @@
 use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
     AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason, FactKind,
-    Phase4SecurityPolicy, RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus,
-    SessionTrustReason, UndominatedSinkReason, build_auth_boundary_proof,
+    Phase4SecurityPolicy, RequestUnvalidatedReason, RequestValidatorBehavior, RequestValidatorKind,
+    SecurityProofStatus, SessionTrustReason, UndominatedSinkReason, build_auth_boundary_proof,
     build_middleware_coverage_proof, build_phase4_security_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof,
     extract_security_facts,
@@ -616,8 +616,10 @@ export async function POST(request: Request) {
             .request_validation
             .unvalidated_uses
             .iter()
-            .any(|use_proof| use_proof.reason == "validation_result_not_used"
-                || use_proof.reason == "request_input_not_validated")
+            .any(
+                |use_proof| use_proof.reason == RequestUnvalidatedReason::ValidationResultNotUsed
+                    || use_proof.reason == RequestUnvalidatedReason::RequestInputNotValidated
+            )
     );
 }
 
@@ -712,7 +714,7 @@ export async function POST(request: Request) {
             .request_validation
             .unvalidated_uses
             .iter()
-            .any(|use_proof| use_proof.reason == "request_input_not_validated")
+            .any(|use_proof| use_proof.reason == RequestUnvalidatedReason::RequestInputNotValidated)
     );
 }
 

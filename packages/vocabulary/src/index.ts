@@ -510,3 +510,30 @@ export const UNDOMINATED_SINK_REASONS = [
 export const UndominatedSinkReasonSchema = z.enum(UNDOMINATED_SINK_REASONS);
 
 export type UndominatedSinkReason = (typeof UNDOMINATED_SINK_REASONS)[number];
+
+/**
+ * Why a middleware does not cover a route. PROOF-LEVEL vocabulary, on `middleware.mismatches[].reason`, produced by static_middleware_coverage in security_control_flow.rs. `dynamic_matcher` has no producer: a dynamic matcher is reported as a parser gap and drives proof_status == ParserGap rather than as a coverage mismatch, so the mismatch spelling of it was declared and never built.
+ */
+export const MIDDLEWARE_MISMATCH_REASONS = [
+  "path_not_matched",
+  "method_not_matched",
+  "dynamic_matcher",
+  "unknown_framework",
+] as const;
+
+export const MiddlewareMismatchReasonSchema = z.enum(MIDDLEWARE_MISMATCH_REASONS);
+
+export type MiddlewareMismatchReason = (typeof MIDDLEWARE_MISMATCH_REASONS)[number];
+
+/**
+ * Why a request input reaching a sink is not covered by a validation proof. PROOF-LEVEL vocabulary, on `request_validation.unvalidated_uses[].reason`. Every member is produced by request_unvalidated_uses in security_proof.rs, and all three are also members of the finding-level SecurityMissingProofCodeSchema, so the two vocabularies agree here and need no bridge.
+ */
+export const REQUEST_UNVALIDATED_REASONS = [
+  "request_input_not_validated",
+  "validation_result_not_used",
+  "unknown_validator",
+] as const;
+
+export const RequestUnvalidatedReasonSchema = z.enum(REQUEST_UNVALIDATED_REASONS);
+
+export type RequestUnvalidatedReason = (typeof REQUEST_UNVALIDATED_REASONS)[number];
