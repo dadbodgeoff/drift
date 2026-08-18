@@ -549,6 +549,34 @@ pub struct CheckMatcher {
     /// re-export of the same module through (T93).
     #[serde(default)]
     pub forbidden_module_files: Option<Vec<String>>,
+    /// What each accepted security helper's import specifier actually resolves to.
+    ///
+    /// S3-03: computed CLI-side for the same structural reason as `forbidden_module_files` above -
+    /// the engine's graph is scoped to the changed files, so it cannot resolve a specifier whose
+    /// meaning is established by imports outside the diff. The CLI has the whole graph.
+    ///
+    /// It arrives on the matcher rather than inside `requires` deliberately. `requires` is the
+    /// stored contract - what a human accepted - and it crosses this boundary as an untyped
+    /// `Option<Value>`, so a CLI derivation placed there would both blur contract with derivation
+    /// and lose its shape on the way. Typed here, a rename fails the build instead of shipping.
+    ///
+    /// Accepted and ignored as of this sprint: nothing reads it, and no engine behaviour depends on
+    /// it. It exists so the next sprint can replace name-only and specifier-string helper matching
+    /// with resolved module identity.
+    ///
+    /// `allow(dead_code)` is load-bearing rather than lazy, and it is temporary. `lint:engine` runs
+    /// clippy with `-D warnings`, so an unread field fails the build - correctly, in general. Here
+    /// the field is deliberately inert for exactly one sprint: shipping the wire shape first means
+    /// the consumer lands against a field the CLI already populates over a round trip that is
+    /// already exercised, rather than both arriving together untested. That the CLI really does
+    /// populate it on a real run is pinned by `accepted-helper-identity-dispatch.test.ts`, which
+    /// reads the JSON that actually crossed this boundary - the first wiring of this field went to
+    /// a dispatch loop whose only kind carries no helpers, so it was never emitted at all, and no
+    /// unit test of the request builder could see that. Delete this attribute when helper matching
+    /// starts reading the field; if it is still here after that, the consumer never landed.
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub accepted_helper_module_files: Option<Vec<AcceptedHelperModuleFiles>>,
     // `allowed_delegate_imports` was here, read by nothing. It was the only configurable field
     // of api_route_requires_service_delegation's matcher, and that kind's evaluator took it as
     // `_allowed_delegate_imports` and never looked at it - so an author who narrowed their
@@ -569,6 +597,69 @@ pub struct CheckMatcher {
     /// CV-2: the route flavours this convention is about. Absent or empty means all of them.
     #[serde(default)]
     pub applies_to_route_flavors: Option<Vec<String>>,
+}
+
+/// One accepted security helper's resolved module identity, and how that answer was reached.
+///
+/// `mode` carries as much of the answer as `files` does, and a consumer that reads one without the
+/// other will be wrong in the common case:
+///
+///   - `repo_resolved` - the specifier resolved inside the repo; `files` is the identity, re-export
+///     chains already followed. Match on resolved file. The chain is filtered by the helper's
+///     symbol, so a barrel that re-exports both the helper and an unrelated module contributes only
+///     the module that exports the symbol - but the filter compares symbol NAMES, so a barrel
+///     re-exporting one name from two modules yields both. `files` means "modules that plausibly
+///     supply this helper", not "modules proven to be it".
+///   - `external` - a bare package specifier that resolved to nothing, which is not a failure:
+///     `resolve_import` filters to paths inside the scan snapshot, so `next-auth` and everything
+///     else under `node_modules` never produces an edge. `files` is empty and always will be.
+///     Match on the exact specifier, plus a local-shadow check.
+///   - `unresolved` - a repo-relative specifier that resolved to nothing. Also empty `files`, but
+///     this one is a degradation and belongs in the proof as one.
+///
+/// Reading an empty `files` as "this helper matches nothing" would therefore flag every route that
+/// correctly uses an external auth helper - the most common real-world contract there is.
+/// Inert for one sprint by design - see `CheckMatcher::accepted_helper_module_files`.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+pub struct AcceptedHelperModuleFiles {
+    /// Which `requires` list this helper came from - `auth_helpers`, `csrf_helpers`, and so on.
+    ///
+    /// Part of the identity. `symbol` is unique WITHIN a list and not across them, and this engine
+    /// already reads the lists separately (`accepted_auth_helpers_for_convention`,
+    /// `phase6_helpers_from_requires`, `security_helpers_from_requires` each build their own map),
+    /// so a name reused by an auth helper and a response serializer is two helpers here too.
+    pub requires_key: String,
+    pub symbol: String,
+    /// The specifier as the contract typed it. `external` and `unresolved` match on this.
+    pub specifier: String,
+    /// Typed, so that a mode this engine does not know fails the request instead of being read as
+    /// some default. The placement rationale above promises that a rename fails the build rather
+    /// than shipping; that promise is worth nothing if the VALUES stay free-form strings.
+    pub mode: AcceptedHelperResolutionMode,
+    #[serde(default)]
+    pub files: Vec<String>,
+    /// A package-shaped specifier that resolves to a repo file.
+    ///
+    /// A fact, not a verdict. It is the tsconfig-paths hijack shape, and equally the shape of a
+    /// pnpm workspace package or a scoped path alias (`"@app/*": ["src/*"]`) - the same mechanism,
+    /// different intent, and nothing available here separates them. Input to the local-shadow check
+    /// the `External` mode calls for, never a finding on its own.
+    #[serde(default)]
+    pub package_specifier_resolves_in_repo: Option<bool>,
+}
+
+/// How a helper's module identity was arrived at. See `AcceptedHelperModuleFiles::mode`.
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
+pub enum AcceptedHelperResolutionMode {
+    /// Resolved inside the repo; `files` is the identity.
+    RepoResolved,
+    /// A bare package specifier that resolved to nothing - by design, not by failure.
+    External,
+    /// A repo-relative specifier that resolved to nothing. A degradation, and belongs in the proof.
+    Unresolved,
 }
 
 #[derive(Debug, Deserialize)]

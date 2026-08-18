@@ -6,6 +6,41 @@ import { gitOutput } from "../io/git.js";
 import type { ParsedDiff } from "../check/diff.js";
 import { runRustEngineWithInput } from "./rust-engine.js";
 
+/**
+ * One accepted security helper's resolved module identity, as it travels to the engine.
+ *
+ * Structurally the CLI-side `AcceptedHelperIdentity`, restated here because this is the wire shape
+ * rather than the computation's. `mode` is not decoration: `external` means the specifier resolved
+ * to nothing BY DESIGN (the Rust resolver filters to paths inside the scan snapshot, so anything in
+ * `node_modules` never produces an edge), while `unresolved` means a repo specifier resolved to
+ * nothing, which is a degradation. A consumer that read an empty `files` without reading `mode`
+ * would treat every external auth helper as matching nothing.
+ */
+export interface AcceptedHelperModuleFile {
+  /**
+   * The `requires` list this helper came from. `symbol` is unique within a list, not across them,
+   * and the engine reads each list separately - so this is what lets a consumer join an identity
+   * back to the helper it describes.
+   */
+  requires_key: string;
+  symbol: string;
+  /** The specifier as the contract typed it; what the non-`repo_resolved` modes fall back to. */
+  specifier: string;
+  mode: "repo_resolved" | "external" | "unresolved";
+  /**
+   * The module the specifier names, plus modules a re-export chain carries the helper's SYMBOL to.
+   * A barrel sibling that does not export the symbol is not in here. The closure matches symbol
+   * NAMES, so a barrel re-exporting one name from two modules still yields both.
+   */
+  files: string[];
+  /**
+   * A package-shaped specifier that resolves to a repo file. States the fact and claims no intent:
+   * it is the tsconfig-paths hijack shape, and equally the shape of a workspace package or a scoped
+   * path alias. Input to a local-shadow check, not a finding.
+   */
+  package_specifier_resolves_in_repo?: true;
+}
+
 export interface EngineCheckInput {
   repoId: string;
   repoRoot: string;
@@ -22,6 +57,12 @@ export interface EngineCheckInput {
   graphDiagnostics?: EngineDiagnostic[];
   /** Files the forbidden specifiers resolve to; see the matcher note below. */
   forbiddenModuleFiles?: string[];
+  /**
+   * S3-03: what each accepted security helper's import specifier actually resolves to, and the mode
+   * that answer came from. Computed CLI-side for the same reason `forbiddenModuleFiles` is - see
+   * the matcher note below. The engine accepts and ignores it; Sprint 4 consumes it.
+   */
+  acceptedHelperModuleFiles?: AcceptedHelperModuleFile[];
   conventions: AcceptedConvention[];
   baseline: BaselineViolation[];
   diff: ParsedDiff;
@@ -85,10 +126,27 @@ export function engineCheckRequest(input: EngineCheckInput): EngineCheckRequest 
         // T100: the engine receives a graph scoped to the changed files, so it cannot derive
         // what a forbidden specifier resolves to - the imports establishing that live in files
         // outside the diff. The caller computes it from the whole graph and passes it here.
+        //
+        // S3-03: `accepted_helper_module_files` is the same derivation for the other direction -
+        // what an ACCEPTED security helper's specifier resolves to - and rides the same surface for
+        // the same reason. It belongs here rather than in `requires` because `requires` is the
+        // stored contract returned verbatim below: mixing a CLI derivation into it would blur what
+        // a human accepted with what this process computed, and would bypass typing, since
+        // `requires` crosses the protocol as an untyped `Option<Value>` where a typo-shaped key
+        // ships silently.
         matcher: {
           ...(convention.matcher as unknown as Record<string, unknown>),
+          // Sorted here, at the last point before the wire. It is built from a Set filled in
+          // graph-edge order, so the same repo could otherwise hand the engine the same files in
+          // different orders across runs. The determinism digest covers findings and never the
+          // request, so nothing downstream would catch it - the same reason
+          // `accepted_helper_module_files` is sorted, and the two should not disagree about
+          // whether order carries meaning. It does not.
           ...(input.forbiddenModuleFiles?.length
-            ? { forbidden_module_files: input.forbiddenModuleFiles }
+            ? { forbidden_module_files: [...input.forbiddenModuleFiles].sort() }
+            : {}),
+          ...(input.acceptedHelperModuleFiles?.length
+            ? { accepted_helper_module_files: input.acceptedHelperModuleFiles }
             : {})
         },
         scope: convention.scope as unknown as Record<string, unknown>,

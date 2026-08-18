@@ -6,7 +6,7 @@ import { isForbiddenImport } from "./rule-evaluation.js";
 /**
  * BB-4: is this contract's trigger still connected to anything?
  *
- * `forbiddenModuleFiles_` derives a forbidden module's identity from the repo's own resolved import
+ * `resolvedModuleFilesFor` derives a forbidden module's identity from the repo's own resolved import
  * edges, falling back to specifier-string matching when resolution yields nothing. That is the right
  * design - it is what closed the `../../../lib/prisma` and barrel-re-export bypasses (T93) - but it
  * has a silent failure mode. Rename `apps/web/lib/prisma` to `apps/web/lib/database` and update every

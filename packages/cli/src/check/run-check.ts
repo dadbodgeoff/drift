@@ -7,6 +7,7 @@ import {
   type FactRecord,
   type FileRole,
   type Finding,
+  type AcceptedConvention,
   type MachineContractVersions,
   type RequiredCheckExecution,
   type RepoContract,
@@ -3181,9 +3182,11 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
     );
     const snapshots = input.checkData.snapshots.filter((snapshot) => fileSet.has(snapshot.file_path));
     const graph = graphForEngineCheck(input.checkData, fileSet, allowedGraphImportFacts);
-    // Computed from the full graph, before it is scoped to the diff.
+    // Computed from the full graph, before it is scoped to the diff. That ordering is the whole
+    // point of computing them here: `graph` above is already narrowed to the changed files, and the
+    // imports that establish what a specifier MEANS routinely live outside the diff.
     const forbiddenModuleFiles = [
-      ...forbiddenModuleFiles_(input.checkData, convention.matcher.forbidden_imports ?? [])
+      ...resolvedModuleFilesFor(input.checkData, convention.matcher.forbidden_imports ?? [])
     ];
     const result = await runEngineCheck({
       forbiddenModuleFiles,
@@ -3367,6 +3370,15 @@ async function runEngineOwnedAuthCheck(input: {
       contractWaivers: input.contract.waivers,
       facts: input.checkData.facts.filter((fact) => fileSet.has(fact.file_path)),
       snapshots: input.checkData.snapshots.filter((snapshot) => fileSet.has(snapshot.file_path)),
+      // Computed from `input.checkData` - the WHOLE graph - not from the per-convention file set
+      // just narrowed above. The imports that establish what an accepted helper's specifier means
+      // live in the helper's own module, which is virtually never one of the routes in scope.
+      //
+      // This is the loop that dispatches all twelve helper-bearing security kinds, and therefore
+      // the only loop where this field is ever non-empty. It was first wired into the
+      // direct-data-access loop, which evaluates one kind that carries no `requires` helpers at
+      // all - so it was computed where there was nothing to compute and omitted where there was.
+      acceptedHelperModuleFiles: resolvedHelperIdentities(input.checkData, convention),
       conventions: [convention],
       baseline: input.baseline,
       diff: input.parsedDiff,
@@ -3808,7 +3820,7 @@ function graphForEngineCheck(
  * repo size at fixed route density: openstatus (2,185 files, 37 in scope) ran 3x faster than
  * papermark (1,346 files, 283 in scope) despite a 78% larger graph.
  *
- * `forbiddenModuleFiles_` was already hoisted per convention at its other call site (:2575); this
+ * `resolvedModuleFilesFor` was already hoisted per convention at its other call site; this
  * gives the same treatment to the rest.
  *
  * Keyed on ScanData identity. The arrays indexed here are read-only for the lifetime of a check -
@@ -3823,8 +3835,18 @@ interface GraphIndex {
   endpointNodesByFile: Map<string, ScanData["graph_nodes"]>;
   dataOperationNodesByFile: Map<string, ScanData["graph_nodes"]>;
   reexportTargets: Map<string, string[]>;
-  /** Forbidden specifiers joined by NUL -> the files they resolve to. */
-  forbiddenModuleFilesByKey: Map<string, Set<string>>;
+  /**
+   * Re-export edges WITH the name each one carries: a symbol for `export { x } from "./m"`, `"*"`
+   * for a flattening `export * from "./m"`. `reexportTargets` above drops that name, which is
+   * exactly what made the accepted-helper closure symbol-blind.
+   */
+  reexportEdgesByFrom: Map<string, Array<{ to: string; exportedName: string | undefined }>>;
+  /** module node id -> the symbol names it directly exports, from `MODULE_EXPORTS_SYMBOL`. */
+  exportedSymbolsByModule: Map<string, Set<string>>;
+  /** Specifiers joined by NUL -> the files they resolve to. Shared by every specifier list. */
+  resolvedModuleFilesByKey: Map<string, Set<string>>;
+  /** Specifiers joined by NUL -> the module NODES they resolve to, before re-export walking. */
+  resolvedModuleNodesByKey: Map<string, Set<string>>;
 }
 
 const graphIndexes = new WeakMap<ScanData, GraphIndex>();
@@ -3893,7 +3915,10 @@ function graphIndexFor(checkData: ScanData): GraphIndex {
     endpointNodesByFile,
     dataOperationNodesByFile,
     reexportTargets: moduleReexportTargets(checkData),
-    forbiddenModuleFilesByKey: new Map()
+    reexportEdgesByFrom: moduleReexportEdges(checkData),
+    exportedSymbolsByModule: exportedSymbolsByModule(checkData),
+    resolvedModuleFilesByKey: new Map(),
+    resolvedModuleNodesByKey: new Map()
   };
   graphIndexes.set(checkData, index);
   return index;
@@ -3925,7 +3950,7 @@ function graphImportResolvesToForbidden(
   //
   // The repository tells us what a specifier means: wherever any file imports a forbidden
   // specifier and the resolver placed that edge, the target is the file it names.
-  const forbiddenFiles = forbiddenModuleFiles_(checkData, forbiddenImports);
+  const forbiddenFiles = resolvedModuleFilesFor(checkData, forbiddenImports);
 
   return (resolvedModuleEdgesByFrom.get(importNode.id) ?? [])
     .some((edge) => {
@@ -3947,26 +3972,100 @@ function graphImportResolvesToForbidden(
 }
 
 /**
- * Files that the convention's forbidden specifiers actually resolve to.
+ * Repo files that a set of import specifiers actually resolve to.
  *
  * Derived from the repo's own resolved imports rather than by re-resolving, so it needs no second
- * resolver and cannot disagree with the one that built the graph. Empty when nothing imports a
- * forbidden specifier resolvably, in which case matching falls back to specifiers exactly as
- * before - a repo that never exercised the resolver cannot regress.
+ * resolver and cannot disagree with the one that built the graph.
+ *
+ * This began as `forbiddenModuleFiles_`, which answered only for forbidden lists. The question -
+ * "what does this specifier MEAN, as opposed to how is it spelled" - is not specific to forbidden
+ * imports; the accepted-security-helper side needs the identical answer about a different specifier
+ * list. A second walk over `IMPORT_RESOLVES_TO_MODULE` written for that caller could drift out of
+ * agreement with this one, and two resolvers that disagree about module identity is precisely the
+ * defect this pipeline already has at the string level.
+ *
+ * Empty is a real and common answer, not a failure: the Rust `resolve_import` filters to paths
+ * inside the scan snapshot, so a bare package name (`next-auth`, anything under `node_modules`)
+ * produces no edge by design. Callers must classify that emptiness themselves rather than read it
+ * as "no such module" - see `resolvedHelperIdentities`.
  *
  * A lookalike module (`@/lib/prisma-legacy`) resolves to its own distinct file and never lands
  * here, which is what keeps the T03 negative control green.
+ *
+ * Two specifier relations, and they are NOT interchangeable - see `SpecifierMatch`.
  */
-function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]): Set<string> {
+export function resolvedModuleFilesFor(
+  checkData: ScanData,
+  specifiers: string[],
+  match: SpecifierMatch = "specifier_or_subpath"
+): Set<string> {
   const index = graphIndexFor(checkData);
-  // Memoised per specifier set: called once per import via graphImportResolvesToForbidden, and
-  // again per convention at :2575, always with the same forbidden list within one convention.
-  const cacheKey = forbiddenImports.join("\0");
-  const cached = index.forbiddenModuleFilesByKey.get(cacheKey);
+  // Memoised per specifier set: called once per import via graphImportResolvesToForbidden, once per
+  // convention when building the engine request, and once per accepted helper. Same specifier set
+  // means same answer, so forbidden and accepted callers can share one cache without interfering -
+  // as long as the relation is part of the key, because the two relations give different answers.
+  //
+  // Encoded structurally rather than joined. A NUL join is ambiguous: `["a", "b"]` and the single
+  // specifier `"a\0b"` produce one key, and the second caller silently receives the first one's
+  // answer. No real specifier contains a NUL, but the key is built from caller-supplied contract
+  // data and a wrong answer here is a wrong verdict about an import.
+  const cacheKey = cacheKeyFor(match, specifiers);
+  const cached = index.resolvedModuleFilesByKey.get(cacheKey);
   if (cached) {
     return cached;
   }
-  const files = new Set<string>();
+  const files = moduleFilesForNodeIds(resolvedModuleNodeIdsFor(checkData, specifiers, match), index);
+  index.resolvedModuleFilesByKey.set(cacheKey, files);
+  return files;
+}
+
+/**
+ * How a resolved import's specifier is compared against a convention's specifier list.
+ *
+ * `specifier_or_subpath` is `isForbiddenImport`: the specifier, or anything beneath it at a `/`
+ *   boundary. Right for a PROHIBITION, where `@/lib/prisma` is meant to cover `@/lib/prisma/edge`
+ *   as well - broadening a ban only ever bans more.
+ * `exact_specifier` is equality. Right for an ACCEPTANCE, where the specifier names one module.
+ *
+ * Using the first relation on an accepted-helper list is a laundering bug, not a nuance. A helper
+ * accepted at `@/lib` would silently absorb `@/lib/attacker-controlled`, so any module a caller can
+ * add under that prefix becomes the accepted helper's module and produces a passing auth proof.
+ * Broadening a ban is safe; broadening an acceptance is the exact failure this sprint exists to
+ * stop shipping.
+ */
+export type SpecifierMatch = "specifier_or_subpath" | "exact_specifier";
+
+/** An encoding no specifier list can forge, unlike a separator join. */
+function cacheKeyFor(match: SpecifierMatch, specifiers: string[]): string {
+  return JSON.stringify([match, specifiers]);
+}
+
+function specifierMatches(source: string, specifiers: string[], match: SpecifierMatch): boolean {
+  return match === "exact_specifier"
+    ? specifiers.includes(source)
+    : isForbiddenImport(source, specifiers);
+}
+
+/**
+ * The same resolution, stopped one step earlier: the module NODES the specifiers reach.
+ *
+ * `resolvedModuleFilesFor` is the answer nearly every caller wants, but a re-export chain is walked
+ * over node ids, and a file path cannot be walked back to a node without a second index. Splitting
+ * here keeps one walk over `IMPORT_RESOLVES_TO_MODULE` behind both answers. The file-level answer is
+ * pinned literally, list by list, in `resolved-module-files.test.ts`.
+ */
+function resolvedModuleNodeIdsFor(
+  checkData: ScanData,
+  specifiers: string[],
+  match: SpecifierMatch
+): Set<string> {
+  const index = graphIndexFor(checkData);
+  const cacheKey = cacheKeyFor(match, specifiers);
+  const cached = index.resolvedModuleNodesByKey.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const nodeIds = new Set<string>();
   const { nodesById } = index;
   for (const edge of checkData.graph_edges) {
     if (edge.kind !== "IMPORT_RESOLVES_TO_MODULE") {
@@ -3974,17 +4073,407 @@ function forbiddenModuleFiles_(checkData: ScanData, forbiddenImports: string[]):
     }
     const importNode = nodesById.get(edge.from);
     const source = importNode ? stringMetadata(importNode.metadata, "source") : undefined;
-    if (!source || !isForbiddenImport(source, forbiddenImports)) {
+    if (!source || !specifierMatches(source, specifiers, match)) {
       continue;
     }
-    const target = nodesById.get(edge.to);
-    const targetPath = target ? stringMetadata(target.metadata, "file_path") : undefined;
-    if (targetPath) {
-      files.add(targetPath);
+    nodeIds.add(edge.to);
+  }
+  index.resolvedModuleNodesByKey.set(cacheKey, nodeIds);
+  return nodeIds;
+}
+
+function moduleFilesForNodeIds(nodeIds: Set<string>, index: GraphIndex): Set<string> {
+  const files = new Set<string>();
+  for (const nodeId of nodeIds) {
+    const node = index.nodesById.get(nodeId);
+    const filePath = node ? stringMetadata(node.metadata, "file_path") : undefined;
+    if (filePath) {
+      files.add(filePath);
     }
   }
-  index.forbiddenModuleFilesByKey.set(cacheKey, files);
   return files;
+}
+
+/**
+ * How the answer about a helper's module was arrived at - which is as much of the answer as the
+ * files are.
+ *
+ * `repo_resolved` - the specifier produced resolution edges, so the helper has a file identity and
+ *   matching can compare resolved files, re-export chains included.
+ * `external` - a bare package specifier that resolved to nothing. NOT a failure: the Rust
+ *   `resolve_import` filters to paths inside the scan snapshot, so anything in `node_modules`
+ *   resolves to nothing by design. Matching stays on the specifier, plus a local-shadow check.
+ * `unresolved` - a repo-relative specifier that resolved to nothing. Matching stays on the
+ *   specifier too, but this one is a degradation and has to be recorded as one, because a repo
+ *   specifier that resolves to nothing means the graph could not answer.
+ */
+export type AcceptedHelperResolutionMode = "repo_resolved" | "external" | "unresolved";
+
+export interface AcceptedHelperIdentity {
+  /**
+   * Which `requires` list this helper came from - `auth_helpers`, `csrf_helpers`, and so on.
+   *
+   * Part of the identity, not a label. `symbol` is unique WITHIN a list and not across them, and
+   * the engine keeps the lists apart: `accepted_auth_helpers_for_convention`,
+   * `phase6_helpers_from_requires` and `security_helpers_from_requires` each build their own map.
+   * A name reused by an auth helper and a response serializer is two helpers there, so it must be
+   * two here, and a consumer needs this to join them back up.
+   */
+  requires_key: string;
+  symbol: string;
+  /** The specifier as the contract typed it - what `external` and `unresolved` fall back to. */
+  specifier: string;
+  mode: AcceptedHelperResolutionMode;
+  /**
+   * Repo-relative, sorted, deduped. Empty for every mode but `repo_resolved`.
+   *
+   * The module the specifier names, plus the modules a re-export chain carries this helper's SYMBOL
+   * to. Not every module the barrel touches: a barrel re-exporting both `./auth` and
+   * `./attacker-controlled` contributes only the one that exports the symbol.
+   *
+   * The residual limit, stated so it is not assumed away: the closure tests symbol NAMES, not
+   * symbol identity. A barrel re-exporting the same name from two modules - ambiguous in JavaScript
+   * itself - yields both. Treat this as "the modules that plausibly supply this helper", not as
+   * proof that each one is the helper.
+   */
+  files: string[];
+  /**
+   * The contract names something package-shaped, and it resolves to a file in this repo.
+   *
+   * A FACT, not a verdict, and deliberately not named for one. This is the tsconfig-paths hijack
+   * shape - a package name quietly pointed at a file the repo controls - but it is equally the
+   * shape of a pnpm workspace package and of an ordinary scoped path alias like
+   * `"@app/*": ["src/*"]`. Nothing here can tell those apart, because they are the same mechanism
+   * used with different intent. Naming this after the attack would have fired an "attack" alarm on
+   * routine configurations, and an alarm that cries wolf is one nobody reads when it is right.
+   *
+   * Present only when true. It is the input to the local-shadow check the matching rule for
+   * `external` calls for - not a finding on its own.
+   */
+  package_specifier_resolves_in_repo?: true;
+}
+
+/**
+ * The `requires` keys that carry accepted security helpers, and the three different names the
+ * module field goes by underneath them.
+ *
+ * `auth_helpers` and `validators` spell it `import`; the Phase 6 kinds (`csrf_helpers`,
+ * `rate_limit_helpers`, `outbound_url_allowlist_helpers`) spell it `module`; `response_serializers`
+ * spells it `import_source`. Those are the spellings `check_command.rs` emits and reads back -
+ * `phase6_helpers_from_requires` and `security_helpers_from_requires` take `module`,
+ * `accepted_auth_helpers_for_convention` takes the auth shape. A resolver that knew only one
+ * spelling would return a confident, silently partial answer, which is the failure mode this whole
+ * sprint exists to stop reproducing.
+ */
+const ACCEPTED_HELPER_REQUIRES_KEYS = [
+  "auth_helpers",
+  "validators",
+  "csrf_helpers",
+  "rate_limit_helpers",
+  "outbound_url_allowlist_helpers",
+  "response_serializers"
+] as const;
+
+const HELPER_SYMBOL_KEYS = ["symbol", "name", "imported_name", "local_name"] as const;
+const HELPER_MODULE_KEYS = ["import", "module", "import_source"] as const;
+
+/**
+ * What each accepted security helper's import specifier actually resolves to, and how we know.
+ *
+ * This is tier-2 identity: resolved module, not imported name (tier 0, which accepts any module
+ * exporting the right symbol - the laundering shape) and not the specifier as typed (tier 1, which
+ * makes `../../lib/auth` and `@/lib/auth` disagree about one file and fails every barrel and every
+ * renamed import). Tier 1 is not a stronger tier 0; only this dominates both.
+ *
+ * It lives in TypeScript because it structurally cannot live in Rust. The engine receives a graph
+ * scoped to the CHANGED FILES, so it cannot derive what a specifier means - the imports that
+ * establish the meaning live in files outside the diff. The CLI has the whole graph.
+ *
+ * The mode is per HELPER, never per convention, and that is the load-bearing decision. A
+ * per-convention "the table came back empty, fall back to strings" would permanently and silently
+ * retain tier-1 semantics for every external auth helper - `next-auth`, `@clerk/nextjs`, the most
+ * common real-world contract there is - because those resolve to nothing by design and always will.
+ * Recording the mode is what makes that degradation visible instead of assumed.
+ *
+ * Helpers with no module specifier at all (the engine accepts a bare string in `auth_helpers`) are
+ * absent from the result rather than reported as `unresolved`. There is no specifier to resolve, so
+ * there is no tier-2 answer to give, and saying `unresolved` would misrepresent "never asked" as
+ * "asked and got nothing".
+ *
+ * `files` is sorted and deduped here. The repo's determinism digest covers findings and never
+ * proofs, so nothing downstream would catch an unstable order.
+ */
+export function resolvedHelperIdentities(
+  checkData: ScanData,
+  convention: AcceptedConvention
+): AcceptedHelperIdentity[] {
+  const requires = (convention as AcceptedConvention & { requires?: unknown }).requires;
+  if (!requires || typeof requires !== "object" || Array.isArray(requires)) {
+    return [];
+  }
+  const index = graphIndexFor(checkData);
+  // Keyed by LIST AND SYMBOL. Keying by symbol alone collapsed a name that two requires lists both
+  // use - and collapsed it destructively, because the surviving entry carried the loser's mode: an
+  // auth helper with a resolved file identity, overwritten by an `external` serializer of the same
+  // name, leaves Sprint 4 applying specifier matching to a helper that had resolved. Which list won
+  // depended on the order of `ACCEPTED_HELPER_REQUIRES_KEYS`.
+  //
+  // The engine's own maps ARE keyed by symbol, but each is built per list, so symbol is unique
+  // within one of them and never across them. Mirroring "keyed by symbol" without mirroring
+  // "per list" was the error.
+  const byListAndSymbol = new Map<string, AcceptedHelperIdentity>();
+  for (const key of ACCEPTED_HELPER_REQUIRES_KEYS) {
+    const entries = (requires as Record<string, unknown>)[key];
+    if (!Array.isArray(entries)) {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        continue;
+      }
+      const record = entry as Record<string, unknown>;
+      const symbol = firstStringValue(record, HELPER_SYMBOL_KEYS);
+      const specifier = firstStringValue(record, HELPER_MODULE_KEYS);
+      if (!symbol || !specifier) {
+        continue;
+      }
+      // Within one list a repeated symbol IS a duplicate entry, so last-wins there matches the
+      // engine's own per-list normalisation.
+      byListAndSymbol.set(
+        JSON.stringify([key, symbol]),
+        helperIdentityFor(checkData, index, key, symbol, specifier)
+      );
+    }
+  }
+  return [...byListAndSymbol.values()].sort((left, right) =>
+    left.requires_key === right.requires_key
+      ? (left.symbol < right.symbol ? -1 : 1)
+      : (left.requires_key < right.requires_key ? -1 : 1)
+  );
+}
+
+function helperIdentityFor(
+  checkData: ScanData,
+  index: GraphIndex,
+  requiresKey: string,
+  symbol: string,
+  specifier: string
+): AcceptedHelperIdentity {
+  // A barrel is a module that re-exports the helper's real module, so the chain is part of the
+  // identity: `import { requireUser } from "@/lib"` reaches `src/lib/auth.ts` and the contract
+  // naming either one is describing the same helper.
+  //
+  // `exact_specifier`, never the subpath relation the forbidden path uses: an accepted helper at
+  // `@/lib` must not absorb `@/lib/attacker-controlled` just because it sits beneath it. Widening
+  // an acceptance is laundering. The re-export chain is a different thing entirely - it follows
+  // what the repo actually re-exports, which is a fact about the code rather than about spelling.
+  const reachable = reexportClosureFor(
+    resolvedModuleNodeIdsFor(checkData, [specifier], "exact_specifier"),
+    symbol,
+    index
+  );
+  const files = moduleFilesForNodeIds(reachable, index);
+  const bare = isBarePackageSpecifier(specifier);
+  // Classified on whether a usable FILE identity came back, not merely on whether an edge existed.
+  // An edge to a node carrying no `file_path` leaves nothing to match against, and calling that
+  // `repo_resolved` would hand Sprint 4 an empty file list to enforce - turning a silent miss into
+  // a false alarm on every compliant route, which is the one direction this refactor must not move.
+  if (files.size === 0) {
+    return {
+      requires_key: requiresKey,
+      symbol,
+      specifier,
+      mode: bare ? "external" : "unresolved",
+      files: []
+    };
+  }
+  return {
+    requires_key: requiresKey,
+    symbol,
+    specifier,
+    mode: "repo_resolved",
+    files: [...files].sort(),
+    ...(bare ? { package_specifier_resolves_in_repo: true as const } : {})
+  };
+}
+
+/**
+ * The modules a helper's identity extends to through re-exports - and ONLY those that carry the
+ * helper's symbol.
+ *
+ * The starts are always kept: they are what the specifier literally names, which is not a claim
+ * about any symbol. Everything beyond them is a claim - "the barrel re-exports this helper from
+ * there" - and is admitted only on evidence, because that claim is what an attacker edits a barrel
+ * to forge. A barrel re-exporting both `./auth` and `./attacker-controlled` used to put both inside
+ * the accepted helper's identity.
+ *
+ * Two kinds of evidence, matching the two shapes a re-export takes:
+ *   - a NAMED edge (`export { requireUser } from "./auth"`) names the symbol itself, so the edge is
+ *     its own proof and an edge naming any other symbol cannot deliver ours;
+ *   - a STAR edge (`export * from "./auth"`) names nothing, so the target must be shown to provide
+ *     the symbol - by exporting it directly, or by re-exporting it onward from something that does.
+ *     The recursive half matters: in `barrel -> mid -> leaf` where `mid` only passes things along,
+ *     a route importing `mid` really does get the symbol, so `mid` belongs to the identity.
+ *
+ * KNOWN LIMIT, deliberately not papered over: this is a symbol-NAME test, not a symbol-identity
+ * one. A barrel that re-exports the same name from two modules is ambiguous in JavaScript itself,
+ * and both modules land here. That is a strictly smaller surface than before - the sibling has to
+ * export the helper's exact name rather than merely sit next to it - but it is not zero, and
+ * `files` should not be read as proof that every listed file is the helper.
+ */
+function reexportClosureFor(
+  startNodeIds: Set<string>,
+  symbol: string,
+  index: GraphIndex
+): Set<string> {
+  const provides = new Map<string, boolean>();
+
+  /** Does this module supply `symbol`, directly or by re-exporting it onward? */
+  const providesSymbol = (moduleId: string, onPath: Set<string>): boolean => {
+    const memo = provides.get(moduleId);
+    if (memo !== undefined) {
+      return memo;
+    }
+    // A re-export cycle is not evidence of anything; treat the revisit as "no" without memoising,
+    // so a different path to the same module can still answer honestly.
+    if (onPath.has(moduleId)) {
+      return false;
+    }
+    if (index.exportedSymbolsByModule.get(moduleId)?.has(symbol)) {
+      provides.set(moduleId, true);
+      return true;
+    }
+    onPath.add(moduleId);
+    const answer = (index.reexportEdgesByFrom.get(moduleId) ?? []).some(
+      (edge) =>
+        (edge.exportedName === symbol && edge.to !== moduleId) ||
+        (edge.exportedName === "*" && providesSymbol(edge.to, onPath))
+    );
+    onPath.delete(moduleId);
+    provides.set(moduleId, answer);
+    return answer;
+  };
+
+  const kept = new Set(startNodeIds);
+  const seen = new Set<string>();
+  const queue = [...startNodeIds];
+  while (queue.length > 0) {
+    const current = queue.pop()!;
+    if (seen.has(current)) {
+      continue;
+    }
+    seen.add(current);
+    for (const edge of index.reexportEdgesByFrom.get(current) ?? []) {
+      if (edge.exportedName === symbol) {
+        // The edge names our symbol: the target supplies it, by construction.
+        kept.add(edge.to);
+        queue.push(edge.to);
+        continue;
+      }
+      if (edge.exportedName !== "*") {
+        // A named re-export of some other symbol. Whatever is over there, it is not this helper.
+        continue;
+      }
+      if (providesSymbol(edge.to, new Set())) {
+        kept.add(edge.to);
+      }
+      // Still traversed even when it does not itself provide the symbol, so a longer star chain
+      // behind it is not cut off.
+      queue.push(edge.to);
+    }
+  }
+  return kept;
+}
+
+/**
+ * Whether a specifier names a package rather than something inside this repo.
+ *
+ * Node resolution semantics: `./`, `../` and `/` are paths, everything else is a package name.
+ * `@/` is excluded because it is not a valid npm scope (scopes cannot be empty) and is the near
+ * universal tsconfig alias for the repo root; `~` and `#` are the other two common repo-internal
+ * prefixes, the latter being Node's own subpath imports.
+ *
+ * A repo whose alias has no sigil at all (`src/lib/auth` via `baseUrl`) reads as a package here and
+ * is classified `external` rather than `unresolved` when it resolves to nothing. Both modes match on
+ * the exact specifier, so the practical difference is only whether the degradation is recorded - and
+ * if such a specifier DOES resolve repo-locally, `external_specifier_resolves_in_repo` fires and it
+ * is visible rather than silent.
+ */
+function isBarePackageSpecifier(specifier: string): boolean {
+  return !(
+    specifier.startsWith(".") ||
+    specifier.startsWith("/") ||
+    specifier.startsWith("@/") ||
+    specifier.startsWith("~") ||
+    specifier.startsWith("#")
+  );
+}
+
+function firstStringValue(
+  record: Record<string, unknown>,
+  keys: readonly string[]
+): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * module id -> its re-export edges, each with the name it re-exports.
+ *
+ * Separate from `moduleReexportTargets` because that map feeds the forbidden-import path, which
+ * asks a different question: a barrel that re-exports a forbidden module is a dependency on it
+ * whatever name it re-exports under, so dropping the name there is correct. An ACCEPTED helper is
+ * a claim about one symbol, so dropping the name there is a hole.
+ */
+function moduleReexportEdges(
+  checkData: ScanData
+): Map<string, Array<{ to: string; exportedName: string | undefined }>> {
+  const edges = new Map<string, Array<{ to: string; exportedName: string | undefined }>>();
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "MODULE_REEXPORTS_MODULE") {
+      continue;
+    }
+    const entry = { to: edge.to, exportedName: stringMetadata(edge.metadata, "exported_name") };
+    const existing = edges.get(edge.from);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      edges.set(edge.from, [entry]);
+    }
+  }
+  return edges;
+}
+
+/**
+ * module id -> the symbol names it directly exports.
+ *
+ * The name lives in the symbol node's LABEL, which is where the engine puts it
+ * (`insert_node(..., GraphNodeKind::Symbol, &fact.name, ...)`).
+ */
+function exportedSymbolsByModule(checkData: ScanData): Map<string, Set<string>> {
+  const nodesById = new Map(checkData.graph_nodes.map((node) => [node.id, node]));
+  const exported = new Map<string, Set<string>>();
+  for (const edge of checkData.graph_edges) {
+    if (edge.kind !== "MODULE_EXPORTS_SYMBOL") {
+      continue;
+    }
+    const symbol = nodesById.get(edge.to)?.label;
+    if (!symbol) {
+      continue;
+    }
+    const existing = exported.get(edge.from);
+    if (existing) {
+      existing.add(symbol);
+    } else {
+      exported.set(edge.from, new Set([symbol]));
+    }
+  }
+  return exported;
 }
 
 /** module id -> modules it re-exports, for chain walking. */

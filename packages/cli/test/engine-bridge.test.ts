@@ -576,6 +576,138 @@ describe("engine scan data bridge", () => {
     });
   });
 
+  it("accepted_helper_module_files_is_a_typed_matcher_field_not_inside_requires", () => {
+    /**
+     * S3-03: where a CLI-computed field lands is a correctness question, not a style one.
+     *
+     * `requires` is the stored convention's contract, returned verbatim by `securityRequires` -
+     * what a human accepted. Injecting a CLI derivation into it mixes contract with derivation, and
+     * bypasses typing on the way: the protocol field is an untyped `Option<Value>` on the Rust
+     * side, so a typo-shaped key would ship silently and be read by nothing forever.
+     *
+     * `matcher` is the surface that already carries exactly this kind of derivation, typed:
+     * `forbidden_module_files` sits in `CheckMatcher`, computed CLI-side for the same structural
+     * reason - the engine sees a graph scoped to the changed files and cannot resolve a specifier
+     * whose meaning is established outside the diff.
+     *
+     * So this test pins both halves. The identities land under `matcher`, and `requires` comes out
+     * byte-identical to what was stored.
+     *
+     * PLACEMENT ONLY. This calls `engineCheckRequest` directly and hands it the identities, so it
+     * says nothing about whether any caller ever passes them - the first wiring went to a dispatch
+     * loop whose only kind has no helpers, and this test was green throughout. That the field is
+     * emitted on a real run is `accepted-helper-identity-dispatch.test.ts`, which drives the actual
+     * dispatch loop and reads the JSON that crossed the process boundary.
+     */
+    const storedRequires = {
+      auth_helpers: [
+        { guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib/auth" }
+      ]
+    };
+    const convention = {
+      id: "convention_auth_helper",
+      repo_id: "repo_abc",
+      contract_id: "contract_abc",
+      kind: "api_route_requires_auth_helper",
+      statement: "API routes must call an accepted auth helper.",
+      scope: { path_globs: ["app/api/**/route.ts"] },
+      matcher: {
+        kind: "api_route_requires_auth_helper",
+        required_calls: ["requireUser"]
+      },
+      requires: storedRequires,
+      severity: "error",
+      enforcement_mode: "block",
+      enforcement_capability: "deterministic_check",
+      exceptions: [],
+      evidence_refs: [],
+      counterexample_refs: [],
+      accepted_by: "human",
+      accepted_at: "2026-05-10T00:00:00.000Z",
+      updated_at: "2026-05-10T00:00:00.000Z"
+    };
+
+    const acceptedHelperModuleFiles = [
+      {
+        requires_key: "auth_helpers",
+        symbol: "requireUser",
+        specifier: "@/lib/auth",
+        mode: "repo_resolved" as const,
+        files: ["src/lib/auth.ts"]
+      }
+    ];
+
+    const request = engineCheckRequest({
+      repoId: "repo_abc",
+      repoRoot: "/repo",
+      scanId: "scan_check_abc",
+      snapshots: [],
+      facts: [],
+      acceptedHelperModuleFiles,
+      conventions: [convention as unknown as Parameters<typeof engineCheckRequest>[0]["conventions"][number]],
+      baseline: [],
+      diff: { files: [], deletedFiles: [] },
+      scope: "changed-hunks"
+    });
+
+    const sent = request.contract.conventions[0];
+    expect(sent.matcher).toMatchObject({
+      accepted_helper_module_files: acceptedHelperModuleFiles
+    });
+    // Not smuggled into the contract surface.
+    expect(sent.requires).not.toHaveProperty("accepted_helper_module_files");
+    // And the contract surface is untouched, byte for byte.
+    expect(JSON.stringify(sent.requires)).toBe(JSON.stringify(storedRequires));
+  });
+
+  it("sorts forbidden_module_files, which the graph produced in edge order", () => {
+    /**
+     * The sibling field one line above `accepted_helper_module_files` in the same request object.
+     * It is built from a Set filled in graph-edge order, so the same repo could hand the engine the
+     * same files in different orders across runs - twelve edge permutations produced four distinct
+     * orderings.
+     *
+     * The determinism digest covers findings and never the request, so nothing downstream would
+     * notice. That was the stated reason for sorting the new field; it applies here verbatim, and
+     * the two fields should not disagree about whether order is meaningful.
+     */
+    const request = engineCheckRequest({
+      repoId: "repo_abc",
+      repoRoot: "/repo",
+      scanId: "scan_check_abc",
+      snapshots: [],
+      facts: [],
+      forbiddenModuleFiles: ["src/z.ts", "src/a.ts", "src/m.ts"],
+      conventions: [{
+        id: "convention_no_direct_db",
+        repo_id: "repo_abc",
+        contract_id: "contract_abc",
+        kind: "api_route_no_direct_data_access",
+        statement: "API routes should not import data-access clients directly.",
+        scope: { path_globs: ["app/api/**/route.ts"] },
+        matcher: {
+          kind: "api_route_no_direct_data_access",
+          forbidden_imports: ["@/lib/prisma"]
+        },
+        severity: "error",
+        enforcement_mode: "block",
+        enforcement_capability: "deterministic_check",
+        exceptions: [],
+        evidence_refs: [],
+        counterexample_refs: [],
+        accepted_by: "human",
+        accepted_at: "2026-05-10T00:00:00.000Z",
+        updated_at: "2026-05-10T00:00:00.000Z"
+      } as unknown as Parameters<typeof engineCheckRequest>[0]["conventions"][number]],
+      baseline: [],
+      diff: { files: [], deletedFiles: [] },
+      scope: "changed-hunks"
+    });
+
+    expect(request.contract.conventions[0]!.matcher.forbidden_module_files)
+      .toEqual(["src/a.ts", "src/m.ts", "src/z.ts"]);
+  });
+
   it("builds a stable fact graph artifact from snapshots and facts", () => {
     const artifact = buildFactGraphArtifact({
       repoId: "repo_abc",
