@@ -135,6 +135,24 @@
       "member": "dynamic_matcher",
       "gap": "no_producer",
       "reason": "S2-03. Declared as a coverage mismatch and never built as one. `static_middleware_coverage` in security_control_flow.rs emits path_not_matched, method_not_matched and unknown_framework; a dynamic middleware matcher is handled somewhere else entirely - build_middleware_coverage_proof in security_proof.rs turns it into a SecurityParserGap with code `unsupported_dynamic_middleware_matcher`, which drives proof_status == ParserGap. So the concept is covered and this spelling of it is not, which is a real distinction rather than a gap: a parser gap says the matcher could not be analysed, and a mismatch would say it was analysed and does not cover the route. Answering the second when only the first is known would be a claim the engine cannot support. RETAINED because SecurityBoundaryProofSchema is applied ON READ and the stored-proof census cannot prove no row holds it. If a producer is ever added, it must be a case where the matcher IS understood and genuinely does not match."
+    },
+    {
+      "vocabulary": "security_missing_proof_code",
+      "member": "unsupported_callback_boundary",
+      "gap": "unreferenced",
+      "reason": "S2-03, and found BY generating this vocabulary rather than before it. The member existed only inside the two byte-identical hand-written copies of this list - one in @drift/core, one in @drift/engine-contract - and in docs/internal/architecture/security-boundary-enforcement-100-tdd.md:1012. Nothing in either language produces it and nothing reads it, which nothing could see while the only two places it appeared were copies of each other. The CONCEPT is handled: a guard behind a callback boundary produces the proof-level undominated_sink_reason `callback_boundary`, which missing_proof_code maps to `auth_guard_not_dominating_sink` - the honest answer, since a guard does exist and does not dominate the sink. So this finding-level code is a second, unused way of saying it. Retained rather than removed because SecurityBoundaryProofSchema is applied ON READ and the stored-proof census cannot prove no row holds it."
+    },
+    {
+      "vocabulary": "security_parser_gap_code",
+      "member": "unsupported_callback_boundary",
+      "gap": "unreferenced",
+      "reason": "S2-03, the parser-gap half of the same discovery, and the same shape: declared in both hand-written copies and in the design document, produced and consumed by nothing. A callback boundary is not a parser gap in this engine - it is analysed successfully and reported as a dominance failure - so a producer here would be claiming the construct could not be understood when it was. Retained for the stored-row reason."
+    },
+    {
+      "vocabulary": "security_parser_gap_code",
+      "member": "dynamic_response_shape",
+      "gap": "unreferenced",
+      "reason": "S2-03, found the same way. Declared in both hand-written copies and at docs/internal/architecture/security-boundary-enforcement-100-tdd.md:1030, and emitted by nothing. The response-shape proof does have a code for the dynamic case - `dynamic_response_shape_missing_proof` - but that is a FINDING-level code in security_missing_proof_code, produced by security_rules.rs and read by run-check.ts. The parser-gap spelling was declared alongside it and never built, so the two look like one mechanism and only one of them exists. Retained for the stored-row reason."
     }
   ]
 }

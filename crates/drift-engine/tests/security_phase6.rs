@@ -2,11 +2,12 @@ use drift_engine::{
     AcceptedOutboundUrlHelper, AcceptedSecurityHelper, Phase6AcceptedHelper, Phase6CorsContract,
     Phase6RawSqlContract, Phase6SecurityContract, Phase6SecurityProof, Phase6SsrfContract,
     Phase6UrlSource, SecurityContractCapability, SecurityCorsContract, SecurityCsrfContract,
-    SecurityEnforcementMode, SecurityFindingResult, SecurityProofStatus, SecurityRateLimitContract,
-    SecurityRawSqlContract, SecuritySsrfContract, build_phase6_security_proof,
-    evaluate_api_route_cors_must_match_policy, evaluate_api_route_forbids_raw_sql_without_params,
-    evaluate_api_route_forbids_untrusted_ssrf, evaluate_api_route_requires_csrf_for_mutation,
-    evaluate_api_route_requires_rate_limit, phase6_proof_to_json,
+    SecurityEnforcementMode, SecurityFindingResult, SecurityParserGapCode, SecurityProofStatus,
+    SecurityRateLimitContract, SecurityRawSqlContract, SecuritySsrfContract,
+    build_phase6_security_proof, evaluate_api_route_cors_must_match_policy,
+    evaluate_api_route_forbids_raw_sql_without_params, evaluate_api_route_forbids_untrusted_ssrf,
+    evaluate_api_route_requires_csrf_for_mutation, evaluate_api_route_requires_rate_limit,
+    phase6_proof_to_json,
 };
 
 #[test]
@@ -299,7 +300,7 @@ export async function GET(request: Request) {
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
     assert_eq!(
         proof.parser_gaps[0].code,
-        "unsupported_dynamic_outbound_url"
+        SecurityParserGapCode::UnsupportedDynamicOutboundUrl
     );
     assert!(proof.parser_gaps[0].blocks_enforcement);
     assert_eq!(proof.ssrf.missing_proof[0].code, "request_controlled_url");
@@ -393,7 +394,10 @@ export async function GET(request: Request) {
     let proof = phase6_proof("app/api/public/route.ts", source, phase6_cors_contract());
 
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
-    assert_eq!(proof.parser_gaps[0].code, "unsupported_dynamic_cors_origin");
+    assert_eq!(
+        proof.parser_gaps[0].code,
+        SecurityParserGapCode::UnsupportedDynamicCorsOrigin
+    );
 }
 
 #[test]

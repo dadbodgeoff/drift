@@ -5,6 +5,8 @@ import {
   FactKindSchema,
   MiddlewareMismatchReasonSchema,
   RequestUnvalidatedReasonSchema,
+  SecurityMissingProofCodeSchema,
+  SecurityParserGapCodeSchema,
   SecurityCapabilityNameSchema,
   SecurityContractKindSchema,
   SessionTrustReasonSchema,
@@ -605,40 +607,10 @@ export const EngineFindingSchema = z.object({
  * the convention that produced it instead of the entire run. Never to a pass: an unknown code
  * means Drift does not understand why the proof failed, which is a refusal.
  */
-const EngineSecurityKnownMissingProofCodeSchema = z.enum([
-  "missing_auth_guard",
-  "auth_guard_not_dominating_sink",
-  "middleware_not_covering_route",
-  "middleware_dynamic_matcher",
-  "request_input_not_validated",
-  "validation_result_not_used",
-  "unknown_validator",
-  "request_controlled_url",
-  "raw_sql_unparameterized",
-  "wildcard_origin_with_credentials",
-  "disallowed_origin",
-  "credentials_not_allowed",
-  "unsupported_dynamic_outbound_url",
-  "unsupported_dynamic_cors_origin",
-  "missing_csrf_guard",
-  "csrf_guard_not_dominating_sink",
-  "missing_rate_limit_guard",
-  "rate_limit_guard_not_dominating_sink",
-  "sensitive_response_field_unfiltered",
-  "dynamic_response_shape_missing_proof",
-  "secret_exposure_not_excluded",
-  "session_not_trusted",
-  "authorization_guard_missing",
-  "authorization_guard_not_dominating_sink",
-  "tenant_predicate_missing",
-  "tenant_source_untrusted",
-  "tenant_predicate_not_bound_to_query",
-  "unsupported_callback_boundary",
-  "unsupported_dynamic_control_flow",
-  "route_binding_unresolved",
-  "handler_unresolved"
-  ,"unknown_reason_code"
-]);
+// The known finding-level codes, from the one security_missing_proof_code vocabulary. This
+// was a byte-identical copy of the list in @drift/core; the preprocess below is the part
+// that is genuinely engine-contract's, and it survives unchanged.
+const EngineSecurityKnownMissingProofCodeSchema = SecurityMissingProofCodeSchema;
 
 /**
  * A known code, or any other non-empty string. Unknown codes survive parsing so the surrounding
@@ -664,22 +636,9 @@ const EngineSecurityContractKindSchema = SecurityContractKindSchema;
 const EngineSecurityParserGapSchema = z.object({
   parser_gap_id: z.string().min(1),
   capability: z.string().min(1),
-  code: z.enum([
-    "route_binding_unresolved",
-    "handler_unresolved",
-    "unsupported_dynamic_control_flow",
-    "unsupported_dynamic_middleware_matcher",
-    "unsupported_request_input_spread",
-    "unsupported_request_input_destructure",
-    "unsupported_dynamic_outbound_url",
-    "unsupported_dynamic_cors_origin",
-    "dynamic_response_shape",
-    "unsupported_destructuring_or_spread",
-    "unsupported_tenant_dynamic_property",
-    "unsupported_tenant_query_object_alias",
-    "unsupported_session_nested_destructure",
-    "unsupported_callback_boundary"
-  ]),
+  // The SECURITY parser gap codes, from the one security_parser_gap_code vocabulary.
+  // Deliberately NOT merged with parser_gap_kind - disjoint concepts, coincidental name.
+  code: SecurityParserGapCodeSchema,
   file_path: z.string().min(1),
   start_line: z.number().int().positive().optional(),
   end_line: z.number().int().positive().optional(),

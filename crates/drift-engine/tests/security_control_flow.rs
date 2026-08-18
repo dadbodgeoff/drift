@@ -2,8 +2,8 @@ use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
     AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason, FactKind,
     Phase4SecurityPolicy, RequestUnvalidatedReason, RequestValidatorBehavior, RequestValidatorKind,
-    SecurityProofStatus, SessionTrustReason, UndominatedSinkReason, build_auth_boundary_proof,
-    build_middleware_coverage_proof, build_phase4_security_proof,
+    SecurityParserGapCode, SecurityProofStatus, SessionTrustReason, UndominatedSinkReason,
+    build_auth_boundary_proof, build_middleware_coverage_proof, build_phase4_security_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof,
     extract_security_facts,
 };
@@ -231,9 +231,18 @@ export async function GET(request: Request) {
     }];
 
     let cases = [
-        (dynamic_property, "unsupported_tenant_dynamic_property"),
-        (query_object_alias, "unsupported_tenant_query_object_alias"),
-        (nested_destructure, "unsupported_session_nested_destructure"),
+        (
+            dynamic_property,
+            SecurityParserGapCode::UnsupportedTenantDynamicProperty,
+        ),
+        (
+            query_object_alias,
+            SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
+        ),
+        (
+            nested_destructure,
+            SecurityParserGapCode::UnsupportedSessionNestedDestructure,
+        ),
     ];
     for (source, expected_code) in cases {
         let proof = build_phase4_security_proof("app/api/projects/route.ts", source, &helpers)
@@ -414,10 +423,9 @@ export async function GET(request: Request) {
         "missing unsupported_dynamic_control_flow reason: {proof:#?}"
     );
     assert!(
-        proof
-            .parser_gaps
-            .iter()
-            .any(|gap| gap.code == "unsupported_dynamic_control_flow" && gap.blocks_enforcement),
+        proof.parser_gaps.iter().any(|gap| gap.code
+            == SecurityParserGapCode::UnsupportedDynamicControlFlow
+            && gap.blocks_enforcement),
         "missing parser gap: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
@@ -523,11 +531,9 @@ export async function GET() {
         "dynamic matcher should not prove coverage: {proof:#?}"
     );
     assert!(
-        proof
-            .parser_gaps
-            .iter()
-            .any(|gap| gap.code == "unsupported_dynamic_middleware_matcher"
-                && gap.blocks_enforcement),
+        proof.parser_gaps.iter().any(|gap| gap.code
+            == SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher
+            && gap.blocks_enforcement),
         "missing dynamic middleware parser gap: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
@@ -734,7 +740,8 @@ export async function POST(request: Request) {
 
     assert_eq!(proof.result.proof_status, SecurityProofStatus::ParserGap);
     assert!(proof.parser_gaps.iter().any(|gap| {
-        gap.code == "unsupported_request_input_destructure" && gap.blocks_enforcement
+        gap.code == SecurityParserGapCode::UnsupportedRequestInputDestructure
+            && gap.blocks_enforcement
     }));
 }
 
@@ -763,7 +770,8 @@ export async function POST(request: Request) {
 
     assert!(
         proof.parser_gaps.iter().any(|gap| {
-            gap.code == "unsupported_request_input_spread" && gap.blocks_enforcement
+            gap.code == SecurityParserGapCode::UnsupportedRequestInputSpread
+                && gap.blocks_enforcement
         }),
         "missing unsupported request input spread parser gap: {proof:#?}"
     );

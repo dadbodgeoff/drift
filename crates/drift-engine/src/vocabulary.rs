@@ -1720,3 +1720,160 @@ impl<'de> serde::Deserialize<'de> for RequestUnvalidatedReason {
         })
     }
 }
+
+/// Why a SECURITY proof could not be completed because a construct could not be analysed. Carried on `parser_gaps[].code` inside a security boundary proof, and produced by build_phase4_security_proof, the phase5/phase6 builders and phase4_parser_gap.
+///
+/// NOT the same vocabulary as `parser_gap_kind`, despite the name. That one is the repo-wide taxonomy of why a REGION of the repo could not be understood - unresolved_import, parser_error, partial_parse - derived CLI-side from engine diagnostic codes and named by the semantic capability contracts. This one is the set of specific TypeScript constructs a security proof gives up on. The two lists are disjoint and the collision is in the English word `parser gap`, not in the concept; merging them would put `unresolved_import` where a security proof expects `unsupported_request_input_spread`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SecurityParserGapCode {
+    RouteBindingUnresolved,
+    HandlerUnresolved,
+    UnsupportedDynamicControlFlow,
+    UnsupportedDynamicMiddlewareMatcher,
+    UnsupportedRequestInputSpread,
+    UnsupportedRequestInputDestructure,
+    UnsupportedDynamicOutboundUrl,
+    UnsupportedDynamicCorsOrigin,
+    DynamicResponseShape,
+    UnsupportedDestructuringOrSpread,
+    UnsupportedTenantDynamicProperty,
+    UnsupportedTenantQueryObjectAlias,
+    UnsupportedSessionNestedDestructure,
+    UnsupportedCallbackBoundary,
+}
+
+impl SecurityParserGapCode {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [SecurityParserGapCode] = &[
+        SecurityParserGapCode::RouteBindingUnresolved,
+        SecurityParserGapCode::HandlerUnresolved,
+        SecurityParserGapCode::UnsupportedDynamicControlFlow,
+        SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher,
+        SecurityParserGapCode::UnsupportedRequestInputSpread,
+        SecurityParserGapCode::UnsupportedRequestInputDestructure,
+        SecurityParserGapCode::UnsupportedDynamicOutboundUrl,
+        SecurityParserGapCode::UnsupportedDynamicCorsOrigin,
+        SecurityParserGapCode::DynamicResponseShape,
+        SecurityParserGapCode::UnsupportedDestructuringOrSpread,
+        SecurityParserGapCode::UnsupportedTenantDynamicProperty,
+        SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
+        SecurityParserGapCode::UnsupportedSessionNestedDestructure,
+        SecurityParserGapCode::UnsupportedCallbackBoundary,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            SecurityParserGapCode::RouteBindingUnresolved => "route_binding_unresolved",
+            SecurityParserGapCode::HandlerUnresolved => "handler_unresolved",
+            SecurityParserGapCode::UnsupportedDynamicControlFlow => {
+                "unsupported_dynamic_control_flow"
+            }
+            SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher => {
+                "unsupported_dynamic_middleware_matcher"
+            }
+            SecurityParserGapCode::UnsupportedRequestInputSpread => {
+                "unsupported_request_input_spread"
+            }
+            SecurityParserGapCode::UnsupportedRequestInputDestructure => {
+                "unsupported_request_input_destructure"
+            }
+            SecurityParserGapCode::UnsupportedDynamicOutboundUrl => {
+                "unsupported_dynamic_outbound_url"
+            }
+            SecurityParserGapCode::UnsupportedDynamicCorsOrigin => {
+                "unsupported_dynamic_cors_origin"
+            }
+            SecurityParserGapCode::DynamicResponseShape => "dynamic_response_shape",
+            SecurityParserGapCode::UnsupportedDestructuringOrSpread => {
+                "unsupported_destructuring_or_spread"
+            }
+            SecurityParserGapCode::UnsupportedTenantDynamicProperty => {
+                "unsupported_tenant_dynamic_property"
+            }
+            SecurityParserGapCode::UnsupportedTenantQueryObjectAlias => {
+                "unsupported_tenant_query_object_alias"
+            }
+            SecurityParserGapCode::UnsupportedSessionNestedDestructure => {
+                "unsupported_session_nested_destructure"
+            }
+            SecurityParserGapCode::UnsupportedCallbackBoundary => "unsupported_callback_boundary",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "route_binding_unresolved" => Some(SecurityParserGapCode::RouteBindingUnresolved),
+            "handler_unresolved" => Some(SecurityParserGapCode::HandlerUnresolved),
+            "unsupported_dynamic_control_flow" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicControlFlow)
+            }
+            "unsupported_dynamic_middleware_matcher" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher)
+            }
+            "unsupported_request_input_spread" => {
+                Some(SecurityParserGapCode::UnsupportedRequestInputSpread)
+            }
+            "unsupported_request_input_destructure" => {
+                Some(SecurityParserGapCode::UnsupportedRequestInputDestructure)
+            }
+            "unsupported_dynamic_outbound_url" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicOutboundUrl)
+            }
+            "unsupported_dynamic_cors_origin" => {
+                Some(SecurityParserGapCode::UnsupportedDynamicCorsOrigin)
+            }
+            "dynamic_response_shape" => Some(SecurityParserGapCode::DynamicResponseShape),
+            "unsupported_destructuring_or_spread" => {
+                Some(SecurityParserGapCode::UnsupportedDestructuringOrSpread)
+            }
+            "unsupported_tenant_dynamic_property" => {
+                Some(SecurityParserGapCode::UnsupportedTenantDynamicProperty)
+            }
+            "unsupported_tenant_query_object_alias" => {
+                Some(SecurityParserGapCode::UnsupportedTenantQueryObjectAlias)
+            }
+            "unsupported_session_nested_destructure" => {
+                Some(SecurityParserGapCode::UnsupportedSessionNestedDestructure)
+            }
+            "unsupported_callback_boundary" => {
+                Some(SecurityParserGapCode::UnsupportedCallbackBoundary)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for SecurityParserGapCode {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for SecurityParserGapCode {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SecurityParserGapCode {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        SecurityParserGapCode::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown security_parser_gap_code \"{raw}\": this engine and its caller disagree about the security_parser_gap_code vocabulary"
+            ))
+        })
+    }
+}

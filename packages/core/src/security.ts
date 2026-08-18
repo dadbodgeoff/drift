@@ -19,59 +19,30 @@ import { z } from "zod";
 export { SecurityCapabilityNameSchema } from "@drift/vocabulary";
 export type { SecurityCapabilityName } from "@drift/vocabulary";
 
-export const SecurityMissingProofCodeSchema = z.enum([
-  "missing_auth_guard",
-  "auth_guard_not_dominating_sink",
-  "middleware_not_covering_route",
-  "middleware_dynamic_matcher",
-  "request_input_not_validated",
-  "validation_result_not_used",
-  "unknown_validator",
-  "request_controlled_url",
-  "raw_sql_unparameterized",
-  "wildcard_origin_with_credentials",
-  "disallowed_origin",
-  "credentials_not_allowed",
-  "unsupported_dynamic_outbound_url",
-  "unsupported_dynamic_cors_origin",
-  "missing_csrf_guard",
-  "csrf_guard_not_dominating_sink",
-  "missing_rate_limit_guard",
-  "rate_limit_guard_not_dominating_sink",
-  "sensitive_response_field_unfiltered",
-  "dynamic_response_shape_missing_proof",
-  "secret_exposure_not_excluded",
-  "session_not_trusted",
-  "authorization_guard_missing",
-  "authorization_guard_not_dominating_sink",
-  "tenant_predicate_missing",
-  "tenant_source_untrusted",
-  "tenant_predicate_not_bound_to_query",
-  "unsupported_callback_boundary",
-  "unsupported_dynamic_control_flow",
-  "route_binding_unresolved",
-  "handler_unresolved"
-  ,// T-17: a code this build does not recognise, normalized at the engine parse boundary.
-  // Never readable as "proof satisfied" - not knowing why a proof failed is a refusal.
-  "unknown_reason_code"
-]);
+/**
+ * The FINDING-level codes, from the one security_missing_proof_code vocabulary.
+ *
+ * This was thirty-two members written out here and again, byte for byte, in
+ * @drift/engine-contract. Neither copy was reachable from the other, and the parity gate
+ * could not see the duplication: rule 2 catches a list that is a PROPER SUBSET of a
+ * vocabulary, and two identical full-size copies are not subsets of anything.
+ *
+ * `unknown_reason_code` is a member and is NOT an engine-emittable code. It is what the
+ * engine-contract parse boundary normalizes an unrecognized code to (T-17), so an engine
+ * newer than its CLI degrades the convention that produced it rather than failing the run.
+ * Never readable as "proof satisfied" - not knowing why a proof failed is a refusal.
+ */
+export { SecurityMissingProofCodeSchema };
 
-export const SecurityParserGapCodeSchema = z.enum([
-  "route_binding_unresolved",
-  "handler_unresolved",
-  "unsupported_dynamic_control_flow",
-  "unsupported_dynamic_middleware_matcher",
-  "unsupported_request_input_spread",
-  "unsupported_request_input_destructure",
-  "unsupported_dynamic_outbound_url",
-  "unsupported_dynamic_cors_origin",
-  "dynamic_response_shape",
-  "unsupported_destructuring_or_spread",
-  "unsupported_tenant_dynamic_property",
-  "unsupported_tenant_query_object_alias",
-  "unsupported_session_nested_destructure",
-  "unsupported_callback_boundary"
-]);
+/**
+ * The SECURITY parser gap codes, from the one security_parser_gap_code vocabulary.
+ *
+ * Not the same vocabulary as `parser_gap_kind`, despite the name. That one is the repo-wide
+ * taxonomy of why a REGION could not be understood; this one is the set of specific
+ * constructs a security proof gives up on. The lists are disjoint and the collision is in
+ * the English words, not the concept.
+ */
+export { SecurityParserGapCodeSchema };
 
 // The kinds that carry a security boundary proof, from the one convention vocabulary. This list,
 // the identical one in @drift/engine-contract, and EXPERIMENTAL_SECURITY_CONVENTION_KINDS all claim
@@ -80,6 +51,8 @@ import {
   AuthorizationMissingReasonSchema,
   MiddlewareMismatchReasonSchema,
   RequestUnvalidatedReasonSchema,
+  SecurityMissingProofCodeSchema,
+  SecurityParserGapCodeSchema,
   SecurityContractKindSchema,
   SessionTrustReasonSchema,
   TenantMissingReasonSchema,

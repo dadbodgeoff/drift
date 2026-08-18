@@ -537,3 +537,73 @@ export const REQUEST_UNVALIDATED_REASONS = [
 export const RequestUnvalidatedReasonSchema = z.enum(REQUEST_UNVALIDATED_REASONS);
 
 export type RequestUnvalidatedReason = (typeof REQUEST_UNVALIDATED_REASONS)[number];
+
+/**
+ * The FINDING-level code a user reads: why this proof could not be completed. Distinct from every PROOF-level reason vocabulary above, which say why a particular sub-proof failed; the proof-level reasons are mapped onto these codes by phase4_missing_code and missing_proof_code, and the two sets deliberately do not match.
+ *
+ * DELIBERATELY TYPESCRIPT-ONLY: there is no rust_enum, and adding one would be wrong. `unknown_reason_code` is not an engine-emittable code at all - it is what the engine-contract parse boundary NORMALIZES an unrecognized code to, so that an engine newer than its CLI degrades the one convention that produced it instead of failing the whole run. Giving Rust a variant for it would make the engine able to emit "this build does not recognise the code" about its own output, which inverts the meaning. The engine builds these codes from several places - security_phase6.rs, security_proof.rs, check_command.rs - by mapping proof-level reasons, and those reason vocabularies ARE typed, which is where the compile-time guarantee belongs.
+ */
+export const SECURITY_MISSING_PROOF_CODES = [
+  "missing_auth_guard",
+  "auth_guard_not_dominating_sink",
+  "middleware_not_covering_route",
+  "middleware_dynamic_matcher",
+  "request_input_not_validated",
+  "validation_result_not_used",
+  "unknown_validator",
+  "request_controlled_url",
+  "raw_sql_unparameterized",
+  "wildcard_origin_with_credentials",
+  "disallowed_origin",
+  "credentials_not_allowed",
+  "unsupported_dynamic_outbound_url",
+  "unsupported_dynamic_cors_origin",
+  "missing_csrf_guard",
+  "csrf_guard_not_dominating_sink",
+  "missing_rate_limit_guard",
+  "rate_limit_guard_not_dominating_sink",
+  "sensitive_response_field_unfiltered",
+  "dynamic_response_shape_missing_proof",
+  "secret_exposure_not_excluded",
+  "session_not_trusted",
+  "authorization_guard_missing",
+  "authorization_guard_not_dominating_sink",
+  "tenant_predicate_missing",
+  "tenant_source_untrusted",
+  "tenant_predicate_not_bound_to_query",
+  "unsupported_callback_boundary",
+  "unsupported_dynamic_control_flow",
+  "route_binding_unresolved",
+  "handler_unresolved",
+  "unknown_reason_code",
+] as const;
+
+export const SecurityMissingProofCodeSchema = z.enum(SECURITY_MISSING_PROOF_CODES);
+
+export type SecurityMissingProofCode = (typeof SECURITY_MISSING_PROOF_CODES)[number];
+
+/**
+ * Why a SECURITY proof could not be completed because a construct could not be analysed. Carried on `parser_gaps[].code` inside a security boundary proof, and produced by build_phase4_security_proof, the phase5/phase6 builders and phase4_parser_gap.
+ *
+ * NOT the same vocabulary as `parser_gap_kind`, despite the name. That one is the repo-wide taxonomy of why a REGION of the repo could not be understood - unresolved_import, parser_error, partial_parse - derived CLI-side from engine diagnostic codes and named by the semantic capability contracts. This one is the set of specific TypeScript constructs a security proof gives up on. The two lists are disjoint and the collision is in the English word `parser gap`, not in the concept; merging them would put `unresolved_import` where a security proof expects `unsupported_request_input_spread`.
+ */
+export const SECURITY_PARSER_GAP_CODES = [
+  "route_binding_unresolved",
+  "handler_unresolved",
+  "unsupported_dynamic_control_flow",
+  "unsupported_dynamic_middleware_matcher",
+  "unsupported_request_input_spread",
+  "unsupported_request_input_destructure",
+  "unsupported_dynamic_outbound_url",
+  "unsupported_dynamic_cors_origin",
+  "dynamic_response_shape",
+  "unsupported_destructuring_or_spread",
+  "unsupported_tenant_dynamic_property",
+  "unsupported_tenant_query_object_alias",
+  "unsupported_session_nested_destructure",
+  "unsupported_callback_boundary",
+] as const;
+
+export const SecurityParserGapCodeSchema = z.enum(SECURITY_PARSER_GAP_CODES);
+
+export type SecurityParserGapCode = (typeof SECURITY_PARSER_GAP_CODES)[number];

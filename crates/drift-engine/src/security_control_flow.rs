@@ -1,7 +1,7 @@
 use crate::{
     Fact, FactKind,
     next_routes::next_api_route_identity,
-    vocabulary::{MiddlewareMismatchReason, UndominatedSinkReason},
+    vocabulary::{MiddlewareMismatchReason, SecurityParserGapCode, UndominatedSinkReason},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,7 +41,8 @@ pub struct ValidatedInputUse {
 pub struct SecretFlowParserGap {
     pub source_line: usize,
     pub sink_line: usize,
-    pub code: String,
+    /// From the one `security_parser_gap_code` vocabulary.
+    pub code: SecurityParserGapCode,
 }
 
 pub fn guard_dominates_straight_line_sinks(facts: &[Fact]) -> Vec<DominatedSink> {
@@ -273,7 +274,7 @@ pub fn indirect_secret_flow_parser_gaps(
                     gaps.push(SecretFlowParserGap {
                         source_line,
                         sink_line: sink_index + 1,
-                        code: "unsupported_dynamic_control_flow".to_string(),
+                        code: SecurityParserGapCode::UnsupportedDynamicControlFlow,
                     });
                 }
             }

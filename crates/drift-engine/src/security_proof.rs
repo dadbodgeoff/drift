@@ -12,8 +12,8 @@ use crate::{
     },
     security_patterns::dynamic_middleware_matcher_line,
     vocabulary::{
-        AuthorizationMissingReason, RequestUnvalidatedReason, SessionTrustReason,
-        TenantMissingReason, UndominatedSinkReason,
+        AuthorizationMissingReason, RequestUnvalidatedReason, SecurityParserGapCode,
+        SessionTrustReason, TenantMissingReason, UndominatedSinkReason,
     },
 };
 use serde_json::Value;
@@ -254,7 +254,8 @@ pub struct SecurityProofResult {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecurityParserGap {
     pub parser_gap_id: String,
-    pub code: String,
+    /// From the one `security_parser_gap_code` vocabulary.
+    pub code: SecurityParserGapCode,
     pub file_path: String,
     pub reason: String,
     pub blocks_enforcement: bool,
@@ -294,7 +295,7 @@ pub fn build_auth_boundary_proof(
                     .map(|fact| fact.file_path.as_str())
                     .unwrap_or("unknown")
             ),
-            code: "unsupported_dynamic_control_flow".to_string(),
+            code: SecurityParserGapCode::UnsupportedDynamicControlFlow,
             file_path: facts
                 .first()
                 .map(|fact| fact.file_path.clone())
@@ -471,7 +472,7 @@ fn build_route_auth_boundary_proof(
     let parser_gaps = if dynamic_control_flow {
         vec![SecurityParserGap {
             parser_gap_id: format!("{route_id}:parser_gap:unsupported_dynamic_control_flow"),
-            code: "unsupported_dynamic_control_flow".to_string(),
+            code: SecurityParserGapCode::UnsupportedDynamicControlFlow,
             file_path: file_path.clone(),
             reason: "Dynamic control flow could not be analysed, so auth coverage for this route is unknown".to_string(),
             blocks_enforcement: true,
@@ -611,7 +612,7 @@ pub fn build_middleware_coverage_proof(
                     "parser_gap:{}:{}:unsupported_dynamic_middleware_matcher",
                     middleware_file_path_string, line
                 ),
-                code: "unsupported_dynamic_middleware_matcher".to_string(),
+                code: SecurityParserGapCode::UnsupportedDynamicMiddlewareMatcher,
                 file_path: middleware_file_path_string.clone(),
                 reason: "Dynamic middleware matcher prevents deterministic route coverage proof"
                     .to_string(),
@@ -936,7 +937,9 @@ pub fn build_secret_exposure_proof(
             .map(|gap| SecurityParserGap {
                 parser_gap_id: format!(
                     "parser_gap:{}:{}:{}",
-                    file_path_string, gap.source_line, gap.code
+                    file_path_string,
+                    gap.source_line,
+                    gap.code.as_wire()
                 ),
                 code: gap.code,
                 file_path: file_path_string.clone(),
@@ -1055,7 +1058,7 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
             gaps.push(phase4_parser_gap(
                 file_path,
                 line_number,
-                "unsupported_tenant_dynamic_property",
+                SecurityParserGapCode::UnsupportedTenantDynamicProperty,
                 "Computed tenant predicate key prevents deterministic tenant proof",
             ));
         }
@@ -1074,7 +1077,7 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
                 gaps.push(phase4_parser_gap(
                     file_path,
                     line_number,
-                    "unsupported_tenant_query_object_alias",
+                    SecurityParserGapCode::UnsupportedTenantQueryObjectAlias,
                     "Tenant query object alias prevents deterministic tenant proof",
                 ));
             }
@@ -1083,7 +1086,7 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
             gaps.push(phase4_parser_gap(
                 file_path,
                 line_number,
-                "unsupported_session_nested_destructure",
+                SecurityParserGapCode::UnsupportedSessionNestedDestructure,
                 "Nested session destructuring prevents deterministic session trust proof",
             ));
         }
@@ -1100,12 +1103,12 @@ fn phase4_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityParserGap> {
 fn phase4_parser_gap(
     file_path: &str,
     line_number: usize,
-    code: &str,
+    code: SecurityParserGapCode,
     reason: &str,
 ) -> SecurityParserGap {
     SecurityParserGap {
-        parser_gap_id: format!("parser_gap:{file_path}:{line_number}:{code}"),
-        code: code.to_string(),
+        parser_gap_id: format!("parser_gap:{file_path}:{line_number}:{}", code.as_wire()),
+        code,
         file_path: file_path.to_string(),
         reason: reason.to_string(),
         blocks_enforcement: true,
@@ -1639,7 +1642,7 @@ fn response_shape_parser_gaps(file_path: &str, source: &str) -> Vec<SecurityPars
                 file_path,
                 index + 1
             ),
-            code: "unsupported_destructuring_or_spread".to_string(),
+            code: SecurityParserGapCode::UnsupportedDestructuringOrSpread,
             file_path: file_path.to_string(),
             reason: "Dynamic response spread prevents deterministic response-shape proof"
                 .to_string(),
@@ -1779,7 +1782,7 @@ fn request_input_parser_gaps(
                         file_path,
                         index + 1
                     ),
-                    code: "unsupported_request_input_spread".to_string(),
+                    code: SecurityParserGapCode::UnsupportedRequestInputSpread,
                     file_path: file_path.to_string(),
                     reason:
                         "Object spread from request input prevents deterministic validation proof"
@@ -1795,7 +1798,7 @@ fn request_input_parser_gaps(
                         file_path,
                         index + 1
                     ),
-                    code: "unsupported_request_input_destructure".to_string(),
+                    code: SecurityParserGapCode::UnsupportedRequestInputDestructure,
                     file_path: file_path.to_string(),
                     reason:
                         "Destructuring from request input prevents deterministic validation proof"

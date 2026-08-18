@@ -1575,7 +1575,7 @@ fn phase6_missing_code(proof: &Phase6SecurityProof, kind: &str) -> String {
     proof
         .parser_gaps
         .first()
-        .map(|gap| gap.code.clone())
+        .map(|gap| gap.code.as_wire().to_string())
         .or_else(|| missing.first().map(|missing| missing.code.clone()))
         .unwrap_or_else(|| "missing_phase6_proof".to_string())
 }
@@ -3006,7 +3006,7 @@ fn request_validation_missing_code(proof: &SecurityBoundaryProof) -> String {
     proof
         .parser_gaps
         .first()
-        .map(|gap| gap.code.clone())
+        .map(|gap| gap.code.as_wire().to_string())
         .or_else(|| {
             proof
                 .request_validation
@@ -3203,7 +3203,7 @@ fn phase5_proof_json(
                 } else {
                     "secret_exposure"
                 },
-                "code": gap.code,
+                "code": gap.code.as_wire(),
                 "file_path": gap.file_path,
                 "reason": gap.reason,
                 "affected_contract_kinds": [convention.kind.clone()],
@@ -3308,7 +3308,7 @@ fn route_security_proof_json(
             json!({
                 "parser_gap_id": gap.parser_gap_id,
                 "capability": "control_flow_guard_dominance",
-                "code": gap.code,
+                "code": gap.code.as_wire(),
                 "file_path": gap.file_path,
                 "reason": gap.reason,
                 "affected_contract_kinds": ["api_route_requires_auth_helper"],
@@ -3482,7 +3482,7 @@ fn request_validation_proof_json(
             json!({
                 "parser_gap_id": gap.parser_gap_id,
                 "capability": "request_validation_facts",
-                "code": gap.code,
+                "code": gap.code.as_wire(),
                 "file_path": gap.file_path,
                 "reason": gap.reason,
                 "affected_contract_kinds": ["api_route_requires_request_validation"],
@@ -3765,7 +3765,7 @@ fn phase4_proof_json(
             json!({
                 "parser_gap_id": gap.parser_gap_id,
                 "capability": phase4_expected_layer(&convention.kind),
-                "code": gap.code,
+                "code": gap.code.as_wire(),
                 "file_path": gap.file_path,
                 "reason": gap.reason,
                 "affected_contract_kinds": [convention.kind.clone()],

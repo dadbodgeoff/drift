@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::{
     AcceptedSecurityHelper, Fact, FactExtractError, FactKind, SecurityParserGap,
-    SecurityProofResult, SecurityProofStatus, extract_typescript_facts,
+    SecurityParserGapCode, SecurityProofResult, SecurityProofStatus, extract_typescript_facts,
     next_routes::next_api_route_identity,
 };
 
@@ -366,7 +366,7 @@ fn build_ssrf_proof(
                         parser_gap_id: format!(
                             "parser_gap:{file_path}:{line_number}:unsupported_dynamic_outbound_url"
                         ),
-                        code: "unsupported_dynamic_outbound_url".to_string(),
+                        code: SecurityParserGapCode::UnsupportedDynamicOutboundUrl,
                         file_path: file_path.to_string(),
                         reason: "Unsupported dynamic outbound URL prevents deterministic allowlist proof"
                             .to_string(),
@@ -382,7 +382,7 @@ fn build_ssrf_proof(
         && missing_codes.is_empty()
         && !parser_gaps
             .iter()
-            .any(|gap| gap.code == "unsupported_dynamic_outbound_url");
+            .any(|gap| gap.code == SecurityParserGapCode::UnsupportedDynamicOutboundUrl);
     Phase6SsrfProof {
         required: true,
         proven,
@@ -505,7 +505,7 @@ fn build_cors_proof(
                 parser_gap_id: format!(
                     "parser_gap:{file_path}:{line_number}:unsupported_dynamic_cors_origin"
                 ),
-                code: "unsupported_dynamic_cors_origin".to_string(),
+                code: SecurityParserGapCode::UnsupportedDynamicCorsOrigin,
                 file_path: file_path.to_string(),
                 reason: "Dynamic CORS origin prevents deterministic policy proof".to_string(),
                 blocks_enforcement: true,

@@ -5,10 +5,10 @@ use drift_engine::{
     AuthorizationMissingReason, Phase4SecurityPolicy, RequestValidatorBehavior,
     RequestValidatorKind, ResponseSerializerPolicy, SecurityAuthContract,
     SecurityAuthorizationContract, SecurityContractCapability, SecurityEnforcementMode,
-    SecurityFindingResult, SecurityMiddlewareContract, SecurityPhase5Contract, SecurityProofStatus,
-    SecurityRequestValidationContract, SecurityTenantScopeContract, TenantMissingReason,
-    build_phase4_security_proof_with_policy, build_request_validation_proof,
-    build_response_shape_proof, build_secret_exposure_proof,
+    SecurityFindingResult, SecurityMiddlewareContract, SecurityParserGapCode,
+    SecurityPhase5Contract, SecurityProofStatus, SecurityRequestValidationContract,
+    SecurityTenantScopeContract, TenantMissingReason, build_phase4_security_proof_with_policy,
+    build_request_validation_proof, build_response_shape_proof, build_secret_exposure_proof,
     evaluate_api_route_forbids_secret_exposure,
     evaluate_api_route_forbids_sensitive_response_fields, evaluate_api_route_requires_auth_helper,
     evaluate_api_route_requires_auth_helper_with_middleware,
@@ -209,7 +209,7 @@ export async function GET() {
         proof
             .parser_gaps
             .iter()
-            .any(|gap| gap.code == "unsupported_destructuring_or_spread"),
+            .any(|gap| gap.code == SecurityParserGapCode::UnsupportedDestructuringOrSpread),
         "{proof:#?}"
     );
 }
