@@ -13,6 +13,35 @@ const MCP_TOOLS = join(repoRoot, "packages/mcp/src/tools.ts");
 const SEMANTIC_CAPABILITIES = join(repoRoot, "packages/core/src/semantic-capabilities.ts");
 const CHECK_COMMAND = join(repoRoot, "crates/drift-engine/src/check_command.rs");
 const SECURITY_PROOF = join(repoRoot, "crates/drift-engine/src/security_proof.rs");
+const CORE_SECURITY = join(repoRoot, "packages/core/src/security.ts");
+const ENGINE_CONTRACT = join(repoRoot, "packages/engine-contract/src/index.ts");
+
+/**
+ * The eight proof reason/code vocabularies S2 generated, and the schema each field now imports.
+ *
+ * Every one of these was an inline `z.enum([...])` in BOTH files below, written out twice and
+ * agreeing by hand. The list is spelled out rather than derived from the manifest on purpose: the
+ * manifest is what this asserts ABOUT, so deriving the expectation from it would let a vocabulary
+ * be renamed out of both files and still pass.
+ */
+const PROOF_VOCABULARIES = [
+  ["session_trust_reason", "SessionTrustReasonSchema"],
+  ["authorization_missing_reason", "AuthorizationMissingReasonSchema"],
+  ["tenant_missing_reason", "TenantMissingReasonSchema"],
+  ["undominated_sink_reason", "UndominatedSinkReasonSchema"],
+  ["middleware_mismatch_reason", "MiddlewareMismatchReasonSchema"],
+  ["request_unvalidated_reason", "RequestUnvalidatedReasonSchema"],
+  ["security_missing_proof_code", "SecurityMissingProofCodeSchema"],
+  ["security_parser_gap_code", "SecurityParserGapCodeSchema"]
+];
+
+/** Every `z.enum([...])` literal in a source, as its member list. */
+function inlineEnums(source) {
+  return [...source.matchAll(/z\.enum\(\[([^\]]*)\]/g)].map((match) => ({
+    line: source.slice(0, match.index).split("\n").length,
+    members: [...match[1].matchAll(/"([^"]+)"/g)].map((entry) => entry[1])
+  }));
+}
 
 const originals = new Map(
   [
@@ -280,6 +309,75 @@ describe("vocabulary parity gate", () => {
    * the file without excluding that arm would report every unimplemented kind as implemented, which
    * is the failure this gate exists to catch, produced by the gate itself.
    */
+  /**
+   * S2-04: the duplication is gone, and stays gone.
+   *
+   * Eight closed vocabularies crossed the engine boundary as `z.enum([...])` literals written out
+   * twice - once in @drift/core's SecurityBoundaryProofSchema and once in @drift/engine-contract's
+   * parse boundary - and agreeing only because somebody kept them agreeing. S1-01 is what that
+   * costs: the engine emitted a word neither copy contained, and the failure was a runtime parse
+   * error in a user's terminal.
+   *
+   * This is asserted here rather than left to the gate because the gate could not see it. Rule 2
+   * compares hand-written lists against vocabularies, and until S2-04 it excluded a list the same
+   * SIZE as the vocabulary on the reasoning that a complete copy is at least not stale. Two of
+   * these eight - the thirty-two-member missing-proof codes and the fourteen-member parser-gap
+   * codes - were exactly that: complete, duplicated, and invisible. Rule 2 now fires on exact
+   * copies too; this test is the direct statement of the property, so a future loosening of rule 2
+   * cannot quietly take it away.
+   */
+  it("neither security schema file declares a proof reason or code enum by hand", () => {
+    const manifest = JSON.parse(originals.get(MANIFEST));
+
+    for (const [path, label] of [
+      [CORE_SECURITY, "packages/core/src/security.ts"],
+      [ENGINE_CONTRACT, "packages/engine-contract/src/index.ts"]
+    ]) {
+      const source = readFileSync(path, "utf8");
+      const enums = inlineEnums(source);
+
+      for (const [vocabulary, schema] of PROOF_VOCABULARIES) {
+        const members = new Set(manifest.vocabularies[vocabulary].members);
+
+        // No inline list may be drawn from this vocabulary - not a copy, not a subset.
+        for (const declared of enums) {
+          if (declared.members.length === 0) {
+            continue;
+          }
+          const drawnFrom = declared.members.every((member) => members.has(member));
+          expect(
+            drawnFrom,
+            `${label}:${declared.line} declares ${declared.members.length} of the ${members.size} ` +
+              `${vocabulary} members inline. Import ${schema} from @drift/vocabulary instead.`
+          ).toBe(false);
+        }
+
+        // And the field is actually wired to the generated schema, so the absence above is
+        // because the vocabulary is imported and not because the field was deleted.
+        expect(source, `${label} does not reference ${schema}`).toContain(schema);
+      }
+    }
+  });
+
+  /**
+   * The `unknown_reason_code` normalization is engine-contract's own and must survive the move to
+   * a generated enum.
+   *
+   * It is the reason an engine newer than its CLI degrades the one convention that produced an
+   * unrecognized code, instead of failing the whole run - and it is NEVER readable as "proof
+   * satisfied", because not knowing why a proof failed is a refusal. Generating the enum it wraps
+   * is exactly the kind of change that quietly takes a wrapper with it.
+   */
+  it("keeps the unknown-code normalization at the engine parse boundary", () => {
+    const source = readFileSync(ENGINE_CONTRACT, "utf8");
+
+    expect(source).toContain("z.preprocess(");
+    expect(source).toContain('? "unknown_reason_code"');
+    expect(source).toContain("EngineSecurityKnownMissingProofCodeSchema.safeParse(value).success");
+    expect(JSON.parse(originals.get(MANIFEST)).vocabularies.security_missing_proof_code.members)
+      .toContain("unknown_reason_code");
+  });
+
   it("fails loudly when it can no longer find the engine's skip arm", () => {
     writeFileSync(
       CHECK_COMMAND,

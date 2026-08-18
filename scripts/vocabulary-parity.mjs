@@ -27,9 +27,11 @@
  *
  *   1. The generated files match vocabulary/vocabulary.json. Editing one side of a mirror is what
  *      this whole change exists to make impossible, and a stale generated file restores it.
- *   2. No hand-written list anywhere is a proper subset of a vocabulary. This is the D-M4 / D-M4b /
- *      GraphNodeRecordSchema shape: a closed enum written from memory, always short, always stale.
- *      A legitimate subset is baselined WITH ITS REASON.
+ *   2. No hand-written list anywhere is drawn entirely from a vocabulary - subset OR exact copy.
+ *      The subset case is the D-M4 / D-M4b / GraphNodeRecordSchema shape: a closed enum written
+ *      from memory, always short, always stale. The exact-copy case was excluded until S2-04 and
+ *      is how two thirty-and-fourteen-member security code lists sat duplicated across two
+ *      packages under a green gate. A legitimate subset is baselined WITH ITS REASON.
  *   3. The convention dispatch table matches the two evaluators' source. `engine_direct` and
  *      `engine_phase6` kinds must appear in check_command.rs, `cli` kinds in run-check.ts, and
  *      `none` kinds in neither - which is what makes "accepted and enforcing nothing" detectable.
@@ -131,11 +133,20 @@ function checkGeneratedFilesAreCurrent(manifest, failures) {
 }
 
 /**
- * 2. Hand-written enum literals that are proper subsets of a vocabulary.
+ * 2. Hand-written enum literals drawn entirely from a vocabulary.
  *
  * Matches TypeScript `z.enum([...])`, JSON-schema `enum: [...]` and Rust `matches!(x, "a" | "b")`.
  * Three or more members, because a two-member list is as likely to be an unrelated pair as a stale
  * copy, and a gate that cries wolf gets muted.
+ *
+ * SUBSETS AND EXACT COPIES BOTH FIRE. Until S2-04 this excluded a list the same size as the
+ * vocabulary (`members.length !== set.size`), on the reasoning that a complete copy is at least not
+ * STALE. That reasoning was wrong, and it cost two of the seven vocabularies S2 generated: the
+ * thirty-two-member `security_missing_proof_code` and the fourteen-member
+ * `security_parser_gap_code` each existed as two byte-identical hand-written copies, one in
+ * @drift/core and one in @drift/engine-contract, and this gate stayed green across both of them for
+ * as long as they agreed. A complete copy is not a smaller problem than a stale one, it is the same
+ * problem before anybody has edited one side - which is the moment to catch it.
  */
 function subsetOffenders(vocabularies) {
   const offenders = [];
@@ -151,7 +162,7 @@ function subsetOffenders(vocabularies) {
           continue;
         }
         for (const [name, set] of vocabularies) {
-          if (members.every((member) => set.has(member)) && members.length !== set.size) {
+          if (members.every((member) => set.has(member))) {
             offenders.push({
               key: `${relative(repoRoot, file)}:${name}`,
               file: relative(repoRoot, file),
@@ -470,10 +481,15 @@ function main() {
   for (const offender of subsets) {
     if (!baselinedSubsets.has(offender.key)) {
       failures.push(
-        `NEW hand-written vocabulary subset: ${offender.file}:${offender.line} declares ` +
-          `${offender.declared} of the ${offender.total} ${offender.vocabulary} members, missing ` +
-          `${offender.missing.join(", ")}. Build it from the generated list, or baseline it with the ` +
-          "reason the subset is deliberate."
+        offender.declared === offender.total
+          ? `NEW hand-written vocabulary COPY: ${offender.file}:${offender.line} declares all ` +
+              `${offender.total} ${offender.vocabulary} members by hand. Import the generated ` +
+              "schema. A complete copy is not a smaller problem than a stale one - it is the same " +
+              "problem, caught before either side has been edited."
+          : `NEW hand-written vocabulary subset: ${offender.file}:${offender.line} declares ` +
+              `${offender.declared} of the ${offender.total} ${offender.vocabulary} members, missing ` +
+              `${offender.missing.join(", ")}. Build it from the generated list, or baseline it with ` +
+              "the reason the subset is deliberate."
       );
     }
   }
