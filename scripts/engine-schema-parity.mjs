@@ -31,9 +31,17 @@
  *
  * SCENARIOS are check-repo requests, not fixture repos. The engine is spawned directly rather
  * than driven through the CLI, so a rejection names the engine's own output with nothing in
- * between to normalize, default, or swallow it. Each scenario exists to reach a proof surface
- * that emits a vocabulary-constrained field; a scenario producing no proof is itself a failure,
- * because a gate that silently checks nothing is worse than no gate.
+ * between to normalize, default, or swallow it.
+ *
+ * Each scenario declares `mustPopulate`: the field paths it exists to reach. A gate that checks
+ * a vocabulary it never actually read reports success for the same reason the two suites did
+ * before it -- nothing looked. Requiring only that SOME proof came back is one level too
+ * shallow: the engine can answer with a well-formed document in which every constrained list is
+ * empty, and an emptiness check on the document as a whole cannot tell that from a real answer.
+ * These requests are hand-built fact lists that duplicate the engine's fact vocabulary and
+ * matcher shape with no cross-check, so the surfaces are individually fragile -- changing a
+ * source line from `await helper(request)` to a non-await form is enough to empty
+ * `missing_trust`. `mustPopulate` is what makes that a failure instead of a silent pass.
  *
  * BASELINE AND RATCHET, matching scripts/vocabulary-parity.mjs. A rejection already present may
  * be recorded with a written reason; a new one fails. There is no path where a rejection is
@@ -65,6 +73,7 @@ const UPDATE = process.argv.includes("--update");
 const SCENARIOS = [
   {
     name: "session_trust_unknown_helper",
+    mustPopulate: ["session_trust.missing_trust", "missing_proof"],
     // The F1 reproducer. An unrecognized session helper drives the
     // `(source, Some("untrusted"))` arm of build_session_trust_proof_from_facts, which is the
     // arm that emitted a finding-level word into a proof-level field.
@@ -99,6 +108,7 @@ const SCENARIOS = [
   },
   {
     name: "session_trust_derived_from_request",
+    mustPopulate: ["session_trust.missing_trust", "missing_proof"],
     // The other reachable arm of the same match. Both proof-level reasons the builder can emit
     // are driven, so neither can regress unobserved.
     why: "session read straight off the request - the sibling reason on the same field",
@@ -129,6 +139,7 @@ const SCENARIOS = [
   },
   {
     name: "tenant_scope_missing_predicate",
+    mustPopulate: ["tenant.missing", "missing_proof"],
     // tenant.missing[].reason - a different vocabulary on the same proof document.
     why: "data operation with no tenant predicate - the tenant reason vocabulary",
     files: {
@@ -174,6 +185,7 @@ const SCENARIOS = [
   },
   {
     name: "authorization_guard_missing",
+    mustPopulate: ["authorization.missing", "missing_proof"],
     // authorization.missing[].reason - the surface whose enum legitimately DOES contain
     // `session_not_trusted`. Driving it alongside session_trust is what keeps the two
     // vocabularies from being conflated again by whoever reads only one of them.
@@ -341,18 +353,30 @@ async function main() {
   );
 
   const rejections = [];
-  const emptyScenarios = [];
+  const unpopulated = [];
   let proofsChecked = 0;
+  let fieldsChecked = 0;
 
   for (const scenario of SCENARIOS) {
     const payload = runScenario(binary, scenario);
     const proofs = payload.security_boundary_proofs ?? [];
 
     if (proofs.length === 0) {
-      emptyScenarios.push(scenario);
+      unpopulated.push({ scenario, path: "security_boundary_proofs" });
       continue;
     }
     proofsChecked += proofs.length;
+
+    // The liveness contract. A scenario that stopped reaching its surface still parses clean,
+    // so without this the gate would report success having read no constrained value at all.
+    for (const path of scenario.mustPopulate) {
+      const populated = proofs.some((proof) => {
+        const value = path.split(".").reduce((node, key) => node?.[key], proof);
+        return Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null;
+      });
+      if (populated) fieldsChecked += 1;
+      else unpopulated.push({ scenario, path });
+    }
 
     // Consumer 1: the engine boundary, on the whole document. This is the parse the CLI
     // performs, so it catches a bad value anywhere in the result, not only in a proof.
@@ -373,11 +397,14 @@ async function main() {
     }
   }
 
-  if (emptyScenarios.length > 0) {
-    console.error("engine schema parity: a scenario produced no security_boundary_proofs.");
-    console.error("  A scenario that emits nothing parses clean and checks nothing.");
-    for (const scenario of emptyScenarios) {
-      console.error(`  ${scenario.name} - ${scenario.why}`);
+  if (unpopulated.length > 0) {
+    console.error("engine schema parity: a scenario no longer reaches the field it exists to check.");
+    console.error("  An empty surface parses clean, so this would otherwise report success");
+    console.error("  having read no vocabulary-constrained value at all.");
+    console.error("");
+    for (const { scenario, path } of unpopulated) {
+      console.error(`  ${scenario.name} :: ${path} is empty`);
+      console.error(`    ${scenario.why}`);
     }
     process.exit(1);
   }
@@ -427,8 +454,9 @@ async function main() {
   }
 
   console.log(
-    `engine schema parity: ${proofsChecked} proofs from ${SCENARIOS.length} scenarios parsed ` +
-      `by 2 consumers${seen.size > 0 ? `, ${seen.size} baselined` : ""}.`
+    `engine schema parity: ${proofsChecked} proofs from ${SCENARIOS.length} scenarios, ` +
+      `${fieldsChecked} populated surfaces, parsed by 2 consumers` +
+      `${seen.size > 0 ? `, ${seen.size} baselined` : ""}.`
   );
 }
 

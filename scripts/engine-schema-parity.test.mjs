@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,21 +23,19 @@ function runGate(args = []) {
 }
 
 /**
- * A proxy that is the real engine with one word changed.
- *
- * It forwards the request to the real binary and rewrites `unknown_helper` to
- * `session_not_trusted` in the session-trust proof on the way back -- which is exactly the
- * defect that shipped: a finding-level word written into a proof-level field.
+ * A stand-in engine: the real binary, with `mutate` applied to its parsed output on the way back.
  *
  * The alternative was to corrupt crates/drift-engine/src/security_proof.rs and let the gate
- * recompile it. That is a truer reproduction and it is what was used to verify this gate by
- * hand, but it cannot live in the harness: vitest runs test files in parallel, and
- * engine-handshake.test.mjs builds and executes the same target/release/drift-engine. A test
- * that corrupts shared source mid-run can hand a different test a corrupted engine. Proxying
- * keeps the real engine, the real request, and the real schemas, and mutates only the bytes in
- * flight.
+ * recompile it. That is a truer reproduction and it is what verified this gate by hand. It is not
+ * used here for two reasons: it costs a release rebuild per case, and it mutates shared source
+ * that other harness tests compile against. (`test:harness` now runs with --no-file-parallelism,
+ * so the race that originally ruled it out no longer applies -- but a test that edits tracked
+ * source still leaves the tree dirty if it dies partway, and the proxy has neither problem.)
+ *
+ * What the proxy preserves is what matters: the real engine, the real request, the real schemas.
+ * Only the bytes between them are touched.
  */
-function badEngineProxy(realEngine) {
+function proxyEngine(realEngine, mutate) {
   const dir = mkdtempSync(join(tmpdir(), "drift-schema-parity-proxy-"));
   const script = join(dir, "proxy.mjs");
   writeFileSync(
@@ -45,11 +43,12 @@ function badEngineProxy(realEngine) {
     [
       'import { execFileSync } from "node:child_process";',
       'import { readFileSync } from "node:fs";',
-      'const request = readFileSync(0, "utf8");',
       `const out = execFileSync(${JSON.stringify(realEngine)}, ["check-repo"], {`,
-      '  input: request, encoding: "utf8", maxBuffer: 64 * 1024 * 1024',
+      '  input: readFileSync(0, "utf8"), encoding: "utf8", maxBuffer: 64 * 1024 * 1024',
       "});",
-      "process.stdout.write(out.replaceAll('\"unknown_helper\"', '\"session_not_trusted\"'));"
+      "const payload = JSON.parse(out);",
+      mutate,
+      "process.stdout.write(JSON.stringify(payload));"
     ].join("\n")
   );
   const shim = join(dir, "engine.sh");
@@ -57,6 +56,23 @@ function badEngineProxy(realEngine) {
   chmodSync(shim, 0o755);
   return shim;
 }
+
+/** Reproduces F1: a finding-level word written into the proof-level reason field. */
+const EMIT_ILLEGAL_REASON = `
+for (const pr of payload.security_boundary_proofs ?? []) {
+  for (const m of pr.session_trust?.missing_trust ?? []) {
+    if (m.reason === "unknown_helper") m.reason = "session_not_trusted";
+  }
+}`;
+
+/** Empties every vocabulary-constrained list. The document stays schema-valid. */
+const EMPTY_EVERY_SURFACE = `
+for (const pr of payload.security_boundary_proofs ?? []) {
+  if (pr.session_trust) pr.session_trust.missing_trust = [];
+  if (pr.authorization) pr.authorization.missing = [];
+  if (pr.tenant) pr.tenant.missing = [];
+  pr.missing_proof = [];
+}`;
 
 /**
  * This gate exists because a contract with a producer test and a consumer test and nothing
@@ -70,13 +86,14 @@ describe("engine schema parity gate", () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("engine schema parity:");
     expect(result.output).toContain("parsed by 2 consumers");
+    // The count of surfaces actually read, so a shrinking check is visible in the pass line.
+    expect(result.output).toMatch(/\d+ populated surfaces/);
   }, 300_000);
 
   it("fails, and names the field, when the engine emits a word the schema rejects (F1)", () => {
-    // Build once through the gate's own path, then proxy that binary.
     expect(runGate().exitCode).toBe(0);
     const realEngine = join(repoRoot, "target/release/drift-engine");
-    const result = runGate(["--engine", badEngineProxy(realEngine)]);
+    const result = runGate(["--engine", proxyEngine(realEngine, EMIT_ILLEGAL_REASON)]);
 
     expect(result.exitCode).toBe(1);
     // The field, so the message points at the defect rather than at the gate.
@@ -89,20 +106,36 @@ describe("engine schema parity gate", () => {
     expect(result.output).toContain("parseEngineCheckResult");
   }, 300_000);
 
+  /**
+   * The liveness contract, driven rather than grepped.
+   *
+   * This test used to read the gate's own source and assert two English sentences appeared in it.
+   * That is not a test of behaviour: it would have passed just as happily with the check deleted
+   * and the message left behind, and it did in fact pass while the check was one level too
+   * shallow -- requiring only that SOME proof came back, never that the constrained field the
+   * scenario exists to reach was populated. An engine can answer with a well-formed document in
+   * which every constrained list is empty, and the gate called that success while reading
+   * nothing, which is the same "green suite that looked at nothing" it was written to end.
+   *
+   * The payload here stays schema-valid on purpose: the gate must refuse it for being vacuous,
+   * not for being malformed.
+   */
+  it("refuses a well-formed payload whose constrained surfaces are all empty", () => {
+    expect(runGate().exitCode).toBe(0);
+    const realEngine = join(repoRoot, "target/release/drift-engine");
+    const result = runGate(["--engine", proxyEngine(realEngine, EMPTY_EVERY_SURFACE)]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("no longer reaches the field it exists to check");
+    // Names the surface, per scenario, so the message points at what stopped being reached.
+    expect(result.output).toContain("session_trust.missing_trust is empty");
+    expect(result.output).toContain("tenant.missing is empty");
+    expect(result.output).toContain("authorization.missing is empty");
+  }, 300_000);
+
   it("refuses an --engine path that does not exist", () => {
     const result = runGate(["--engine", join(repoRoot, "target/release/no-such-engine")]);
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain("does not exist");
   }, 60_000);
-
-  /**
-   * A scenario that stops producing proofs would parse clean and check nothing, which is how a
-   * gate rots into decoration. The gate treats an empty scenario as a failure; this pins that
-   * the check is still there to be relied on.
-   */
-  it("treats a scenario that produces no proofs as a failure", () => {
-    const gateSource = readFileSync(join(repoRoot, "scripts/engine-schema-parity.mjs"), "utf8");
-    expect(gateSource).toContain("a scenario produced no security_boundary_proofs");
-    expect(gateSource).toContain("parses clean and checks nothing");
-  });
 });
