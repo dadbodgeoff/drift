@@ -567,9 +567,13 @@ pub struct CheckMatcher {
     /// `allow(dead_code)` is load-bearing rather than lazy, and it is temporary. `lint:engine` runs
     /// clippy with `-D warnings`, so an unread field fails the build - correctly, in general. Here
     /// the field is deliberately inert for exactly one sprint: shipping the wire shape first means
-    /// the consumer lands against a field the CLI is already populating and the round trip is
-    /// already proven, rather than both arriving together untested. Delete this attribute when
-    /// helper matching starts reading it; if it is still here after that, the consumer never landed.
+    /// the consumer lands against a field the CLI already populates over a round trip that is
+    /// already exercised, rather than both arriving together untested. That the CLI really does
+    /// populate it on a real run is pinned by `accepted-helper-identity-dispatch.test.ts`, which
+    /// reads the JSON that actually crossed this boundary - the first wiring of this field went to
+    /// a dispatch loop whose only kind carries no helpers, so it was never emitted at all, and no
+    /// unit test of the request builder could see that. Delete this attribute when helper matching
+    /// starts reading the field; if it is still here after that, the consumer never landed.
     #[serde(default)]
     #[allow(dead_code)]
     pub accepted_helper_module_files: Option<Vec<AcceptedHelperModuleFiles>>,

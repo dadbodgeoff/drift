@@ -3188,10 +3188,8 @@ async function runEngineOwnedDirectDataAccessCheck(input: {
     const forbiddenModuleFiles = [
       ...resolvedModuleFilesFor(input.checkData, convention.matcher.forbidden_imports ?? [])
     ];
-    const acceptedHelperModuleFiles = resolvedHelperIdentities(input.checkData, convention);
     const result = await runEngineCheck({
       forbiddenModuleFiles,
-      acceptedHelperModuleFiles,
       repoId: input.repoId,
       repoRoot: input.repoRoot,
       scanId: input.checkData.snapshots[0]?.scan_id ?? input.checkScanId,
@@ -3372,6 +3370,15 @@ async function runEngineOwnedAuthCheck(input: {
       contractWaivers: input.contract.waivers,
       facts: input.checkData.facts.filter((fact) => fileSet.has(fact.file_path)),
       snapshots: input.checkData.snapshots.filter((snapshot) => fileSet.has(snapshot.file_path)),
+      // Computed from `input.checkData` - the WHOLE graph - not from the per-convention file set
+      // just narrowed above. The imports that establish what an accepted helper's specifier means
+      // live in the helper's own module, which is virtually never one of the routes in scope.
+      //
+      // This is the loop that dispatches all twelve helper-bearing security kinds, and therefore
+      // the only loop where this field is ever non-empty. It was first wired into the
+      // direct-data-access loop, which evaluates one kind that carries no `requires` helpers at
+      // all - so it was computed where there was nothing to compute and omitted where there was.
+      acceptedHelperModuleFiles: resolvedHelperIdentities(input.checkData, convention),
       conventions: [convention],
       baseline: input.baseline,
       diff: input.parsedDiff,

@@ -592,6 +592,12 @@ describe("engine scan data bridge", () => {
      *
      * So this test pins both halves. The identities land under `matcher`, and `requires` comes out
      * byte-identical to what was stored.
+     *
+     * PLACEMENT ONLY. This calls `engineCheckRequest` directly and hands it the identities, so it
+     * says nothing about whether any caller ever passes them - the first wiring went to a dispatch
+     * loop whose only kind has no helpers, and this test was green throughout. That the field is
+     * emitted on a real run is `accepted-helper-identity-dispatch.test.ts`, which drives the actual
+     * dispatch loop and reads the JSON that crossed the process boundary.
      */
     const storedRequires = {
       auth_helpers: [
