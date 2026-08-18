@@ -3,7 +3,7 @@ use crate::{
     AcceptedRequestValidator, AcceptedTenantHelper, AuthorizationHelperBehavior,
     AuthorizationHelperKind, AuthorizationMissingReason, Fact, FactExtractError, FactKind,
     Phase4SecurityPolicy, RequestValidationProofScope, SecurityProofStatus, TenantMissingReason,
-    build_auth_boundary_proof, build_middleware_coverage_proof,
+    UndominatedSinkReason, build_auth_boundary_proof, build_middleware_coverage_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof_with_scope,
     build_response_shape_proof, build_secret_exposure_proof,
     extract_security_facts_with_validation, extract_typescript_facts,
@@ -178,14 +178,12 @@ pub fn evaluate_api_route_requires_auth_helper(
         contract_id: contract.contract_id.clone(),
         title: "API route missing required auth proof".to_string(),
         expected_layer: "auth_guard".to_string(),
-        actual_layer: normalize_auth_actual_layer(
-            &proof
-                .auth
-                .undominated_sinks
-                .first()
-                .cloned()
-                .unwrap_or_else(|| "missing_auth_guard".to_string()),
-        ),
+        actual_layer: proof
+            .auth
+            .undominated_sinks
+            .first()
+            .map(|reason| normalize_auth_actual_layer(*reason))
+            .unwrap_or_else(|| "missing_auth_guard".to_string()),
         enforcement_result: match contract.enforcement_mode {
             SecurityEnforcementMode::Brief => SecurityFindingResult::Brief,
             SecurityEnforcementMode::Warn => SecurityFindingResult::Warn,
@@ -224,11 +222,18 @@ pub fn evaluate_api_route_requires_auth_helper_with_middleware(
     evaluate_api_route_requires_auth_helper(route_file_path, route_source, contract)
 }
 
-fn normalize_auth_actual_layer(reason: &str) -> String {
-    if reason == "no_guard_call" {
-        "missing_auth_guard".to_string()
-    } else {
-        reason.to_string()
+/// The proof-level reason, as the layer name a finding reports.
+///
+/// Only `no_guard_call` is renamed - "there is no guard" reads as `missing_auth_guard` to a
+/// user. Every other reason already says what it means. Exhaustive over the enum with no
+/// catch-all, so a new member forces the choice rather than inheriting this one.
+fn normalize_auth_actual_layer(reason: UndominatedSinkReason) -> String {
+    match reason {
+        UndominatedSinkReason::NoGuardCall => "missing_auth_guard".to_string(),
+        UndominatedSinkReason::GuardAfterSink
+        | UndominatedSinkReason::GuardOnlyInOneBranch
+        | UndominatedSinkReason::CallbackBoundary
+        | UndominatedSinkReason::UnsupportedDynamicControlFlow => reason.as_wire().to_string(),
     }
 }
 

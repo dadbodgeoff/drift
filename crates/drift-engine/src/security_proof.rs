@@ -11,7 +11,9 @@ use crate::{
         unsupported_dynamic_control_flow,
     },
     security_patterns::dynamic_middleware_matcher_line,
-    vocabulary::{AuthorizationMissingReason, SessionTrustReason, TenantMissingReason},
+    vocabulary::{
+        AuthorizationMissingReason, SessionTrustReason, TenantMissingReason, UndominatedSinkReason,
+    },
 };
 use serde_json::Value;
 
@@ -55,7 +57,8 @@ pub struct TrustedGuardCallProof {
 pub struct UndominatedSinkProof {
     pub sink_id: String,
     pub sink_kind: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `undominated_sink_reason` vocabulary.
+    pub reason: UndominatedSinkReason,
     pub fact_ids: Vec<String>,
 }
 
@@ -64,7 +67,8 @@ pub struct AuthBoundaryProof {
     pub required: bool,
     pub proven: bool,
     pub dominated_sinks: Vec<DominatedSink>,
-    pub undominated_sinks: Vec<String>,
+    /// The PROOF-level reasons, from the one `undominated_sink_reason` vocabulary.
+    pub undominated_sinks: Vec<UndominatedSinkReason>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -277,7 +281,7 @@ pub fn build_auth_boundary_proof(
     undominated_sinks.extend(callback_boundary_reasons(source, &facts));
     let dynamic_control_flow = unsupported_dynamic_control_flow(source);
     if dynamic_control_flow {
-        undominated_sinks.push("unsupported_dynamic_control_flow".to_string());
+        undominated_sinks.push(UndominatedSinkReason::UnsupportedDynamicControlFlow);
     }
     let parser_gaps = if dynamic_control_flow {
         vec![SecurityParserGap {
@@ -416,19 +420,19 @@ fn build_route_auth_boundary_proof(
         let sink_kind = sink_kind(sink).to_string();
         let fact_ids = vec![fact_id(sink)];
         if dynamic_control_flow {
-            undominated_sinks.push("unsupported_dynamic_control_flow".to_string());
+            undominated_sinks.push(UndominatedSinkReason::UnsupportedDynamicControlFlow);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "unsupported_dynamic_control_flow".to_string(),
+                reason: UndominatedSinkReason::UnsupportedDynamicControlFlow,
                 fact_ids,
             });
         } else if let Some(reason) = path_sensitive_reasons.first() {
-            undominated_sinks.push(reason.clone());
+            undominated_sinks.push(*reason);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: reason.clone(),
+                reason: *reason,
                 fact_ids,
             });
         } else if first_guard_line.is_some_and(|line| line < sink.start_line) {
@@ -438,19 +442,19 @@ fn build_route_auth_boundary_proof(
                 edge_id: format!("edge:auth-dominates:{}:{}", sink.file_path, sink.start_line),
             });
         } else if first_guard_line.is_some_and(|line| line > sink.start_line) {
-            undominated_sinks.push("guard_after_sink".to_string());
+            undominated_sinks.push(UndominatedSinkReason::GuardAfterSink);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "guard_after_sink".to_string(),
+                reason: UndominatedSinkReason::GuardAfterSink,
                 fact_ids,
             });
         } else {
-            undominated_sinks.push("no_guard_call".to_string());
+            undominated_sinks.push(UndominatedSinkReason::NoGuardCall);
             undominated_sink_proofs.push(UndominatedSinkProof {
                 sink_id,
                 sink_kind,
-                reason: "no_guard_call".to_string(),
+                reason: UndominatedSinkReason::NoGuardCall,
                 fact_ids,
             });
         }
@@ -483,7 +487,7 @@ fn build_route_auth_boundary_proof(
     } else {
         undominated_sinks
             .iter()
-            .map(|reason| missing_proof_code(reason).to_string())
+            .map(|reason| missing_proof_code(*reason).to_string())
             .collect()
     };
 
@@ -513,11 +517,20 @@ fn build_route_auth_boundary_proof(
     }
 }
 
-fn missing_proof_code(reason: &str) -> &'static str {
+/// The PROOF-level undominated-sink reason, as the FINDING-level code a user reads.
+///
+/// Exhaustive over the enum since S2-03, with no catch-all: a member added to
+/// `undominated_sink_reason` does not compile until somebody decides what the finding says.
+/// The three that collapse to `auth_guard_not_dominating_sink` do so because that is what
+/// they mean - a guard exists and does not cover the sink - which is a different statement
+/// from `missing_auth_guard`, where there is no guard at all.
+fn missing_proof_code(reason: UndominatedSinkReason) -> &'static str {
     match reason {
-        "no_guard_call" => "missing_auth_guard",
-        "unsupported_dynamic_control_flow" => "unsupported_dynamic_control_flow",
-        _ => "auth_guard_not_dominating_sink",
+        UndominatedSinkReason::NoGuardCall => "missing_auth_guard",
+        UndominatedSinkReason::UnsupportedDynamicControlFlow => "unsupported_dynamic_control_flow",
+        UndominatedSinkReason::GuardAfterSink
+        | UndominatedSinkReason::GuardOnlyInOneBranch
+        | UndominatedSinkReason::CallbackBoundary => "auth_guard_not_dominating_sink",
     }
 }
 

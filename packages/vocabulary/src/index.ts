@@ -495,3 +495,18 @@ export const TENANT_MISSING_REASONS = [
 export const TenantMissingReasonSchema = z.enum(TENANT_MISSING_REASONS);
 
 export type TenantMissingReason = (typeof TENANT_MISSING_REASONS)[number];
+
+/**
+ * Why an auth guard does not dominate a sink. PROOF-LEVEL vocabulary, on `auth.undominated_sinks[].reason`. Unlike the other proof reason vocabularies this one has TWO producers: the straight-line and dynamic-control-flow cases are decided in security_proof.rs, and the path-sensitive ones - a guard in only one branch, a guard behind a callback boundary - in security_control_flow.rs. Every member is produced.
+ */
+export const UNDOMINATED_SINK_REASONS = [
+  "guard_after_sink",
+  "guard_only_in_one_branch",
+  "callback_boundary",
+  "unsupported_dynamic_control_flow",
+  "no_guard_call",
+] as const;
+
+export const UndominatedSinkReasonSchema = z.enum(UNDOMINATED_SINK_REASONS);
+
+export type UndominatedSinkReason = (typeof UNDOMINATED_SINK_REASONS)[number];

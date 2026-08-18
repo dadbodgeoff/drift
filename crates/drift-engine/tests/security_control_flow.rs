@@ -2,9 +2,10 @@ use drift_engine::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedRequestValidator, AuthGuardBehavior,
     AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason, FactKind,
     Phase4SecurityPolicy, RequestValidatorBehavior, RequestValidatorKind, SecurityProofStatus,
-    SessionTrustReason, build_auth_boundary_proof, build_middleware_coverage_proof,
-    build_phase4_security_proof, build_phase4_security_proof_with_policy,
-    build_request_validation_proof, extract_security_facts,
+    SessionTrustReason, UndominatedSinkReason, build_auth_boundary_proof,
+    build_middleware_coverage_proof, build_phase4_security_proof,
+    build_phase4_security_proof_with_policy, build_request_validation_proof,
+    extract_security_facts,
 };
 
 #[test]
@@ -33,7 +34,10 @@ export async function GET() {
 
     assert!(proof.auth.required);
     assert!(proof.auth.proven, "proof should prove auth: {proof:#?}");
-    assert_eq!(proof.auth.undominated_sinks, Vec::<String>::new());
+    assert_eq!(
+        proof.auth.undominated_sinks,
+        Vec::<UndominatedSinkReason>::new()
+    );
     assert!(
         proof
             .auth
@@ -274,7 +278,7 @@ export async function GET() {
         proof
             .auth
             .undominated_sinks
-            .contains(&"guard_after_sink".to_string()),
+            .contains(&UndominatedSinkReason::GuardAfterSink),
         "missing guard_after_sink reason: {proof:#?}"
     );
     assert_eq!(proof.result.proof_status, SecurityProofStatus::MissingProof);
@@ -313,7 +317,7 @@ export async function GET(request: Request) {
         proof
             .auth
             .undominated_sinks
-            .contains(&"guard_only_in_one_branch".to_string()),
+            .contains(&UndominatedSinkReason::GuardOnlyInOneBranch),
         "missing guard_only_in_one_branch reason: {proof:#?}"
     );
 }
@@ -349,7 +353,7 @@ export async function GET() {
         proof
             .auth
             .undominated_sinks
-            .contains(&"callback_boundary".to_string()),
+            .contains(&UndominatedSinkReason::CallbackBoundary),
         "missing callback_boundary reason: {proof:#?}"
     );
 
@@ -406,7 +410,7 @@ export async function GET(request: Request) {
         proof
             .auth
             .undominated_sinks
-            .contains(&"unsupported_dynamic_control_flow".to_string()),
+            .contains(&UndominatedSinkReason::UnsupportedDynamicControlFlow),
         "missing unsupported_dynamic_control_flow reason: {proof:#?}"
     );
     assert!(

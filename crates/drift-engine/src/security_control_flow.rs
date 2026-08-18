@@ -1,4 +1,6 @@
-use crate::{Fact, FactKind, next_routes::next_api_route_identity};
+use crate::{
+    Fact, FactKind, next_routes::next_api_route_identity, vocabulary::UndominatedSinkReason,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DominatedSink {
@@ -60,7 +62,7 @@ pub fn guard_dominates_straight_line_sinks(facts: &[Fact]) -> Vec<DominatedSink>
         .collect()
 }
 
-pub fn undominated_straight_line_reasons(facts: &[Fact]) -> Vec<String> {
+pub fn undominated_straight_line_reasons(facts: &[Fact]) -> Vec<UndominatedSinkReason> {
     let first_guard_line = facts
         .iter()
         .filter(|fact| fact.kind == FactKind::AuthGuardCalled)
@@ -70,14 +72,14 @@ pub fn undominated_straight_line_reasons(facts: &[Fact]) -> Vec<String> {
     protected_sinks(facts)
         .into_iter()
         .filter_map(|sink| match first_guard_line {
-            Some(line) if line > sink.start_line => Some("guard_after_sink".to_string()),
+            Some(line) if line > sink.start_line => Some(UndominatedSinkReason::GuardAfterSink),
             Some(_) => None,
-            None => Some("no_guard_call".to_string()),
+            None => Some(UndominatedSinkReason::NoGuardCall),
         })
         .collect()
 }
 
-pub fn branch_bypass_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
+pub fn branch_bypass_reasons(source: &str, facts: &[Fact]) -> Vec<UndominatedSinkReason> {
     let lines: Vec<&str> = source.lines().collect();
     for (index, line) in lines.iter().enumerate() {
         if !line.contains("if") || !line.contains('{') {
@@ -104,13 +106,16 @@ pub fn branch_bypass_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
         if (then_has_guard && else_has_sink && !else_has_guard)
             || (else_has_guard && then_has_sink && !then_has_guard)
         {
-            return vec!["guard_only_in_one_branch".to_string()];
+            return vec![UndominatedSinkReason::GuardOnlyInOneBranch];
         }
     }
     Vec::new()
 }
 
-pub fn conditional_guard_without_else_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
+pub fn conditional_guard_without_else_reasons(
+    source: &str,
+    facts: &[Fact],
+) -> Vec<UndominatedSinkReason> {
     let lines: Vec<&str> = source.lines().collect();
     for (index, line) in lines.iter().enumerate() {
         if !line.contains("if") || !line.contains('{') {
@@ -139,13 +144,13 @@ pub fn conditional_guard_without_else_reasons(source: &str, facts: &[Fact]) -> V
             .iter()
             .any(|fact| fact.start_line > block_end);
         if guard_inside_if && sink_after_if {
-            return vec!["guard_only_in_one_branch".to_string()];
+            return vec![UndominatedSinkReason::GuardOnlyInOneBranch];
         }
     }
     Vec::new()
 }
 
-pub fn callback_boundary_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
+pub fn callback_boundary_reasons(source: &str, facts: &[Fact]) -> Vec<UndominatedSinkReason> {
     let lines: Vec<&str> = source.lines().collect();
     let guard_in_callback = facts
         .iter()
@@ -153,7 +158,7 @@ pub fn callback_boundary_reasons(source: &str, facts: &[Fact]) -> Vec<String> {
         .any(|fact| line_is_inside_callback(&lines, fact.start_line));
 
     if guard_in_callback {
-        vec!["callback_boundary".to_string()]
+        vec![UndominatedSinkReason::CallbackBoundary]
     } else {
         Vec::new()
     }

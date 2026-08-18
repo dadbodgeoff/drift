@@ -3395,7 +3395,7 @@ fn route_security_proof_json(
             "undominated_sinks": proof.undominated_sinks.iter().map(|sink| json!({
                 "sink_id": sink.sink_id,
                 "sink_kind": sink.sink_kind,
-                "reason": sink.reason,
+                "reason": sink.reason.as_wire(),
                 "fact_ids": sink.fact_ids
             })).collect::<Vec<_>>()
         },

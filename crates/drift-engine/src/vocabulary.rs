@@ -1495,3 +1495,84 @@ impl<'de> serde::Deserialize<'de> for TenantMissingReason {
         })
     }
 }
+
+/// Why an auth guard does not dominate a sink. PROOF-LEVEL vocabulary, on `auth.undominated_sinks[].reason`. Unlike the other proof reason vocabularies this one has TWO producers: the straight-line and dynamic-control-flow cases are decided in security_proof.rs, and the path-sensitive ones - a guard in only one branch, a guard behind a callback boundary - in security_control_flow.rs. Every member is produced.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum UndominatedSinkReason {
+    GuardAfterSink,
+    GuardOnlyInOneBranch,
+    CallbackBoundary,
+    UnsupportedDynamicControlFlow,
+    NoGuardCall,
+}
+
+impl UndominatedSinkReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [UndominatedSinkReason] = &[
+        UndominatedSinkReason::GuardAfterSink,
+        UndominatedSinkReason::GuardOnlyInOneBranch,
+        UndominatedSinkReason::CallbackBoundary,
+        UndominatedSinkReason::UnsupportedDynamicControlFlow,
+        UndominatedSinkReason::NoGuardCall,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            UndominatedSinkReason::GuardAfterSink => "guard_after_sink",
+            UndominatedSinkReason::GuardOnlyInOneBranch => "guard_only_in_one_branch",
+            UndominatedSinkReason::CallbackBoundary => "callback_boundary",
+            UndominatedSinkReason::UnsupportedDynamicControlFlow => {
+                "unsupported_dynamic_control_flow"
+            }
+            UndominatedSinkReason::NoGuardCall => "no_guard_call",
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "guard_after_sink" => Some(UndominatedSinkReason::GuardAfterSink),
+            "guard_only_in_one_branch" => Some(UndominatedSinkReason::GuardOnlyInOneBranch),
+            "callback_boundary" => Some(UndominatedSinkReason::CallbackBoundary),
+            "unsupported_dynamic_control_flow" => {
+                Some(UndominatedSinkReason::UnsupportedDynamicControlFlow)
+            }
+            "no_guard_call" => Some(UndominatedSinkReason::NoGuardCall),
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for UndominatedSinkReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for UndominatedSinkReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for UndominatedSinkReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        UndominatedSinkReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown undominated_sink_reason \"{raw}\": this engine and its caller disagree about the undominated_sink_reason vocabulary"
+            ))
+        })
+    }
+}

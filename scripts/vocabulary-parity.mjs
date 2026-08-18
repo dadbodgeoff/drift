@@ -59,6 +59,7 @@ const PRISMA_SOURCE = join(repoRoot, "crates/drift-engine/src/prisma.rs");
 const MAIN_SOURCE = join(repoRoot, "crates/drift-engine/src/main.rs");
 const FACTGRAPH_SOURCE = join(repoRoot, "packages/factgraph/src/index.ts");
 const SECURITY_PROOF_SOURCE = join(repoRoot, "crates/drift-engine/src/security_proof.rs");
+const SECURITY_CONTROL_FLOW_SOURCE = join(repoRoot, "crates/drift-engine/src/security_control_flow.rs");
 
 /**
  * The comment that opens the arm in `check_repo`'s match which skips kinds the engine does not own.
@@ -336,6 +337,19 @@ const PRODUCER_PATTERNS = {
     {
       file: SECURITY_PROOF_SOURCE,
       pattern: new RegExp(`TenantMissingProof\\s*\\{[^}]*?reason:\\s*TenantMissingReason::${variant}\\b`)
+    }
+  ],
+  // The only vocabulary here with two construction sites. The straight-line and
+  // dynamic-control-flow reasons are decided in security_proof.rs; the path-sensitive ones
+  // - guard in one branch only, guard behind a callback boundary - in
+  // security_control_flow.rs, which returns them rather than building the proof itself.
+  // Both files are searched, and only these two: naming the variant in a match arm
+  // elsewhere is a consumer, not a producer.
+  undominated_sink_reason: (variant) => [
+    { file: SECURITY_PROOF_SOURCE, pattern: new RegExp(`UndominatedSinkReason::${variant}\\b`) },
+    {
+      file: SECURITY_CONTROL_FLOW_SOURCE,
+      pattern: new RegExp(`UndominatedSinkReason::${variant}\\b`)
     }
   ]
 };

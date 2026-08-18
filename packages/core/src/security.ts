@@ -80,7 +80,8 @@ import {
   AuthorizationMissingReasonSchema,
   SecurityContractKindSchema,
   SessionTrustReasonSchema,
-  TenantMissingReasonSchema
+  TenantMissingReasonSchema,
+  UndominatedSinkReasonSchema
 } from "@drift/vocabulary";
 
 const Phase5SensitiveFieldSchema = z.object({
@@ -255,13 +256,10 @@ const SecurityAuthProofSchema = z.object({
   undominated_sinks: z.array(z.object({
     sink_id: z.string().min(1),
     sink_kind: z.string().min(1),
-    reason: z.enum([
-      "guard_after_sink",
-      "guard_only_in_one_branch",
-      "callback_boundary",
-      "unsupported_dynamic_control_flow",
-      "no_guard_call"
-    ]),
+    // PROOF-level, from the one undominated_sink_reason vocabulary. Two producers:
+    // security_proof.rs for the straight-line and dynamic cases, security_control_flow.rs
+    // for the path-sensitive ones.
+    reason: UndominatedSinkReasonSchema,
     fact_ids: z.array(z.string().min(1))
   }))
 });
