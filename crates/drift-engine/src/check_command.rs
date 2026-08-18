@@ -16,11 +16,11 @@ use drift_engine::{
     Phase6RawSqlContract, Phase6SecurityContract, Phase6SecurityProof, Phase6SsrfContract,
     RequestValidatorBehavior, RequestValidatorKind, RouteSecurityBoundaryProof, RuleFinding,
     ScanCapability, SecurityBoundaryProof, SecurityProofStatus, SessionTrustReason, Severity,
-    accepted_phase5_contract_from_requires, build_auth_boundary_proofs_for_file,
-    build_phase4_security_proof_with_policy, build_phase6_security_proofs_for_file,
-    classify_findings_against_diff, materialize_direct_data_access_findings,
-    materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
-    sensitive_field_source_is_trusted, sensitive_response_field_rejections,
+    TenantMissingReason, accepted_phase5_contract_from_requires,
+    build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
+    build_phase6_security_proofs_for_file, classify_findings_against_diff,
+    materialize_direct_data_access_findings, materialize_direct_data_access_findings_with_sources,
+    phase6_proof_to_json, sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
 
@@ -3624,12 +3624,20 @@ fn request_validation_proof_json(
 
 fn phase4_missing_code(proof: &SecurityBoundaryProof, convention_kind: &str) -> String {
     match convention_kind {
+        // Passed through unmapped, as it always was: every reason this builder emits is
+        // also a member of the finding-level SecurityMissingProofCodeSchema, so the two
+        // vocabularies agree here and need no bridge. The four members with no producer
+        // are recorded in the parity baseline.
         "api_route_requires_tenant_scope" => proof
             .tenant
             .missing
             .first()
-            .map(|missing| missing.reason.clone())
-            .unwrap_or_else(|| "tenant_predicate_missing".to_string()),
+            .map(|missing| missing.reason.as_wire().to_string())
+            .unwrap_or_else(|| {
+                TenantMissingReason::TenantPredicateMissing
+                    .as_wire()
+                    .to_string()
+            }),
         // Passed through unmapped, as it always was: every reason this builder emits
         // (authorization_guard_missing, session_not_trusted,
         // authorization_guard_not_dominating_sink) is also a member of the finding-level
@@ -3903,7 +3911,7 @@ fn phase4_proof_json(
             })).collect::<Vec<_>>(),
             "missing": proof.tenant.missing.iter().map(|missing| json!({
                 "data_operation_fact_id": missing.data_operation_fact_id,
-                "reason": missing.reason
+                "reason": missing.reason.as_wire()
             })).collect::<Vec<_>>()
         },
         "missing_proof": missing_proof,

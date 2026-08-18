@@ -2,7 +2,7 @@ use crate::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedPhase5Contract,
     AcceptedRequestValidator, AcceptedTenantHelper, AuthorizationHelperBehavior,
     AuthorizationHelperKind, AuthorizationMissingReason, Fact, FactExtractError, FactKind,
-    Phase4SecurityPolicy, RequestValidationProofScope, SecurityProofStatus,
+    Phase4SecurityPolicy, RequestValidationProofScope, SecurityProofStatus, TenantMissingReason,
     build_auth_boundary_proof, build_middleware_coverage_proof,
     build_phase4_security_proof_with_policy, build_request_validation_proof_with_scope,
     build_response_shape_proof, build_secret_exposure_proof,
@@ -536,8 +536,12 @@ pub fn evaluate_api_route_requires_tenant_scope(
             .tenant
             .missing
             .first()
-            .map(|missing| missing.reason.clone())
-            .unwrap_or_else(|| "tenant_predicate_missing".to_string()),
+            .map(|missing| missing.reason.as_wire().to_string())
+            .unwrap_or_else(|| {
+                TenantMissingReason::TenantPredicateMissing
+                    .as_wire()
+                    .to_string()
+            }),
         enforcement_result: match contract.enforcement_mode {
             SecurityEnforcementMode::Brief => SecurityFindingResult::Brief,
             SecurityEnforcementMode::Warn => SecurityFindingResult::Warn,

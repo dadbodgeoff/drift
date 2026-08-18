@@ -1406,3 +1406,92 @@ impl<'de> serde::Deserialize<'de> for AuthorizationMissingReason {
         })
     }
 }
+
+/// Why a tenant-scope proof could not be completed. PROOF-LEVEL vocabulary, on `tenant.missing[].reason`. Widened the same way authorization_missing_reason was: the first three members are the spelling the original design named, the last three are the spelling the engine emits, and `parser_gap` is a fourth concept with no producer at all. Only the newer three are constructed; the rest are reserved rather than deleted, because the schema is applied on read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum TenantMissingReason {
+    NoTenantPredicate,
+    UntrustedTenantSource,
+    PredicateNotBoundToQuery,
+    ParserGap,
+    TenantPredicateMissing,
+    TenantSourceUntrusted,
+    TenantPredicateNotBoundToQuery,
+}
+
+impl TenantMissingReason {
+    /// Every member, in manifest order.
+    pub const ALL: &'static [TenantMissingReason] = &[
+        TenantMissingReason::NoTenantPredicate,
+        TenantMissingReason::UntrustedTenantSource,
+        TenantMissingReason::PredicateNotBoundToQuery,
+        TenantMissingReason::ParserGap,
+        TenantMissingReason::TenantPredicateMissing,
+        TenantMissingReason::TenantSourceUntrusted,
+        TenantMissingReason::TenantPredicateNotBoundToQuery,
+    ];
+
+    /// The string this member takes on the wire.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            TenantMissingReason::NoTenantPredicate => "no_tenant_predicate",
+            TenantMissingReason::UntrustedTenantSource => "untrusted_tenant_source",
+            TenantMissingReason::PredicateNotBoundToQuery => "predicate_not_bound_to_query",
+            TenantMissingReason::ParserGap => "parser_gap",
+            TenantMissingReason::TenantPredicateMissing => "tenant_predicate_missing",
+            TenantMissingReason::TenantSourceUntrusted => "tenant_source_untrusted",
+            TenantMissingReason::TenantPredicateNotBoundToQuery => {
+                "tenant_predicate_not_bound_to_query"
+            }
+        }
+    }
+
+    /// Parse a wire string. `None` is an unknown member, never a silently dropped one.
+    pub fn from_wire(value: &str) -> Option<Self> {
+        match value {
+            "no_tenant_predicate" => Some(TenantMissingReason::NoTenantPredicate),
+            "untrusted_tenant_source" => Some(TenantMissingReason::UntrustedTenantSource),
+            "predicate_not_bound_to_query" => Some(TenantMissingReason::PredicateNotBoundToQuery),
+            "parser_gap" => Some(TenantMissingReason::ParserGap),
+            "tenant_predicate_missing" => Some(TenantMissingReason::TenantPredicateMissing),
+            "tenant_source_untrusted" => Some(TenantMissingReason::TenantSourceUntrusted),
+            "tenant_predicate_not_bound_to_query" => {
+                Some(TenantMissingReason::TenantPredicateNotBoundToQuery)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every member's wire string, sorted, for the engine/CLI vocabulary handshake.
+    pub fn all_wire_names() -> Vec<String> {
+        let mut names: Vec<String> = Self::ALL
+            .iter()
+            .map(|member| member.as_wire().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+}
+
+impl std::fmt::Display for TenantMissingReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_wire())
+    }
+}
+
+impl serde::Serialize for TenantMissingReason {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_wire())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for TenantMissingReason {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = <String as serde::Deserialize>::deserialize(deserializer)?;
+        TenantMissingReason::from_wire(&raw).ok_or_else(|| {
+            serde::de::Error::custom(format!(
+                "unknown tenant_missing_reason \"{raw}\": this engine and its caller disagree about the tenant_missing_reason vocabulary"
+            ))
+        })
+    }
+}

@@ -11,7 +11,7 @@ use crate::{
         unsupported_dynamic_control_flow,
     },
     security_patterns::dynamic_middleware_matcher_line,
-    vocabulary::{AuthorizationMissingReason, SessionTrustReason},
+    vocabulary::{AuthorizationMissingReason, SessionTrustReason, TenantMissingReason},
 };
 use serde_json::Value;
 
@@ -172,7 +172,8 @@ pub struct TenantPredicateProof {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TenantMissingProof {
     pub data_operation_fact_id: String,
-    pub reason: String,
+    /// The PROOF-level reason, from the one `tenant_missing_reason` vocabulary.
+    pub reason: TenantMissingReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1201,7 +1202,7 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_predicate_missing".to_string(),
+            reason: TenantMissingReason::TenantPredicateMissing,
         });
     }
     // A tenant predicate only has a *source* to distrust when the route itself supplies the tenant
@@ -1232,7 +1233,7 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_source_untrusted".to_string(),
+            reason: TenantMissingReason::TenantSourceUntrusted,
         });
     }
     if protected_operation_count > 0 && predicates.is_empty() && !tenant_sources.is_empty() {
@@ -1241,7 +1242,7 @@ fn build_tenant_proof_from_facts(
                 .first()
                 .map(|fact| fact_id(fact))
                 .unwrap_or_default(),
-            reason: "tenant_predicate_not_bound_to_query".to_string(),
+            reason: TenantMissingReason::TenantPredicateNotBoundToQuery,
         });
     }
     missing.sort_by(|left, right| {

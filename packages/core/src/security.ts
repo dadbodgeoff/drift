@@ -79,7 +79,8 @@ export const SecurityParserGapCodeSchema = z.enum([
 import {
   AuthorizationMissingReasonSchema,
   SecurityContractKindSchema,
-  SessionTrustReasonSchema
+  SessionTrustReasonSchema,
+  TenantMissingReasonSchema
 } from "@drift/vocabulary";
 
 const Phase5SensitiveFieldSchema = z.object({
@@ -367,7 +368,10 @@ const SecurityTenantProofSchema = z.object({
   })),
   missing: z.array(z.object({
     data_operation_fact_id: z.string().min(1),
-    reason: z.enum(["no_tenant_predicate", "untrusted_tenant_source", "predicate_not_bound_to_query", "parser_gap", "tenant_predicate_missing", "tenant_source_untrusted", "tenant_predicate_not_bound_to_query"])
+    // PROOF-level, from the one tenant_missing_reason vocabulary. Widened the same way
+    // authorization_missing_reason was: three design-doc spellings, three engine
+    // spellings, and a parser_gap member with no producer at all.
+    reason: TenantMissingReasonSchema
   }))
 });
 

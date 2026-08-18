@@ -6,7 +6,7 @@ use drift_engine::{
     RequestValidatorKind, ResponseSerializerPolicy, SecurityAuthContract,
     SecurityAuthorizationContract, SecurityContractCapability, SecurityEnforcementMode,
     SecurityFindingResult, SecurityMiddlewareContract, SecurityPhase5Contract, SecurityProofStatus,
-    SecurityRequestValidationContract, SecurityTenantScopeContract,
+    SecurityRequestValidationContract, SecurityTenantScopeContract, TenantMissingReason,
     build_phase4_security_proof_with_policy, build_request_validation_proof,
     build_response_shape_proof, build_secret_exposure_proof,
     evaluate_api_route_forbids_secret_exposure,
@@ -696,7 +696,7 @@ export async function GET(request: Request) {
             .tenant
             .missing
             .iter()
-            .any(|missing| missing.reason == "tenant_source_untrusted"),
+            .any(|missing| missing.reason == TenantMissingReason::TenantSourceUntrusted),
         "tenant missing proof must include tenant_source_untrusted: {proof:#?}"
     );
 }
@@ -1074,7 +1074,7 @@ export async function GET(request: Request) {
             .tenant
             .missing
             .iter()
-            .any(|missing| missing.reason == "tenant_source_untrusted"),
+            .any(|missing| missing.reason == TenantMissingReason::TenantSourceUntrusted),
         "candidate tenant evidence must remain missing proof, not deterministic proof: {proof:#?}"
     );
 }

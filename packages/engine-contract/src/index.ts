@@ -5,7 +5,8 @@ import {
   FactKindSchema,
   SecurityCapabilityNameSchema,
   SecurityContractKindSchema,
-  SessionTrustReasonSchema
+  SessionTrustReasonSchema,
+  TenantMissingReasonSchema
 } from "@drift/vocabulary";
 import {
   GraphEdgeSchema,
@@ -1010,7 +1011,8 @@ const EngineSecurityBoundaryProofSchema = z.object({
     })),
     missing: z.array(z.object({
       data_operation_fact_id: z.string().min(1),
-      reason: z.enum(["no_tenant_predicate", "untrusted_tenant_source", "predicate_not_bound_to_query", "parser_gap", "tenant_predicate_missing", "tenant_source_untrusted", "tenant_predicate_not_bound_to_query"])
+      // PROOF-level, from the one tenant_missing_reason vocabulary.
+      reason: TenantMissingReasonSchema
     }))
   }).optional().default({
     required: false,

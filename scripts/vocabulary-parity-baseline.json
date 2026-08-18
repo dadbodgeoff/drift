@@ -105,6 +105,30 @@
       "member": "unknown_policy_helper",
       "gap": "no_producer",
       "reason": "S2-03, the third of the design-doc trio, and the one with no newer counterpart at all: no reason in this vocabulary means 'the policy helper was not recognised'. The engine has no such arm - an unrecognised authorization helper simply fails to produce a guard, which surfaces as authorization_guard_missing instead. So this is a concept the design declared and the engine never implemented, not a renamed one. Kept for the same stored-row reason and because deleting it would erase the record that the case is unhandled."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "no_tenant_predicate",
+      "gap": "no_producer",
+      "reason": "S2-03, and the same widening as authorization_missing_reason, from the same document: docs/internal/architecture/security-boundary-enforcement-100-tdd.md:957 declares this field as `no_tenant_predicate | untrusted_tenant_source | predicate_not_bound_to_query | parser_gap`. The engine emits tenant_predicate_missing, tenant_source_untrusted and tenant_predicate_not_bound_to_query instead, and the enum was WIDENED to hold both sets rather than migrated. Seven members, three producers. No consumer beyond the schema. RETAINED because SecurityBoundaryProofSchema is applied ON READ and a row written by an engine that used the design-doc spelling stops parsing if this is removed; the stored-proof census cannot prove no such row exists (18 databases, 0 proof rows here). Removing the set is a migration, not a cleanup."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "untrusted_tenant_source",
+      "gap": "no_producer",
+      "reason": "S2-03, the design-doc spelling of what the engine now emits as tenant_source_untrusted. Same widening, same stored-row reason - see no_tenant_predicate."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "predicate_not_bound_to_query",
+      "gap": "no_producer",
+      "reason": "S2-03, the design-doc spelling of what the engine now emits as tenant_predicate_not_bound_to_query. Same widening, same stored-row reason - see no_tenant_predicate."
+    },
+    {
+      "vocabulary": "tenant_missing_reason",
+      "member": "parser_gap",
+      "gap": "no_producer",
+      "reason": "S2-03, and the one member here that is NOT a renamed sibling. The design gave the tenant proof a way to say 'the tenant scope could not be analysed', and the engine never built it: a tenant parser gap travels on the separate parser_gaps surface and drives proof_status == ParserGap instead, so this reason has no construction site and no path to one. It is also not a member of the finding-level SecurityMissingProofCodeSchema, so if it were ever emitted it would normalize to unknown_reason_code and the finding would stop saying why the proof failed - the same latent shape as session_trust_reason.parser_gap. Retained for the stored-row reason and because deleting it would erase the record that the case is unhandled. If a producer is ever added, decide the finding-level mapping FIRST."
     }
   ]
 }

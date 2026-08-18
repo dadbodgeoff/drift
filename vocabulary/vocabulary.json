@@ -328,6 +328,22 @@
         "authorization_guard_missing",
         "authorization_guard_not_dominating_sink"
       ]
+    },
+
+    "tenant_missing_reason": {
+      "doc": "Why a tenant-scope proof could not be completed. PROOF-LEVEL vocabulary, on `tenant.missing[].reason`. Widened the same way authorization_missing_reason was: the first three members are the spelling the original design named, the last three are the spelling the engine emits, and `parser_gap` is a fourth concept with no producer at all. Only the newer three are constructed; the rest are reserved rather than deleted, because the schema is applied on read.",
+      "rust_enum": "TenantMissingReason",
+      "ts_const": "TENANT_MISSING_REASONS",
+      "ts_schema": "TenantMissingReasonSchema",
+      "members": [
+        "no_tenant_predicate",
+        "untrusted_tenant_source",
+        "predicate_not_bound_to_query",
+        "parser_gap",
+        "tenant_predicate_missing",
+        "tenant_source_untrusted",
+        "tenant_predicate_not_bound_to_query"
+      ]
     }
   }
 }

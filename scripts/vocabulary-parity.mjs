@@ -331,6 +331,12 @@ const PRODUCER_PATTERNS = {
       file: SECURITY_PROOF_SOURCE,
       pattern: new RegExp(`AuthorizationMissingProof\\s*\\{\\s*reason:\\s*AuthorizationMissingReason::${variant}\\b`)
     }
+  ],
+  tenant_missing_reason: (variant) => [
+    {
+      file: SECURITY_PROOF_SOURCE,
+      pattern: new RegExp(`TenantMissingProof\\s*\\{[^}]*?reason:\\s*TenantMissingReason::${variant}\\b`)
+    }
   ]
 };
 

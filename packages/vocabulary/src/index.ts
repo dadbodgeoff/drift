@@ -478,3 +478,20 @@ export const AUTHORIZATION_MISSING_REASONS = [
 export const AuthorizationMissingReasonSchema = z.enum(AUTHORIZATION_MISSING_REASONS);
 
 export type AuthorizationMissingReason = (typeof AUTHORIZATION_MISSING_REASONS)[number];
+
+/**
+ * Why a tenant-scope proof could not be completed. PROOF-LEVEL vocabulary, on `tenant.missing[].reason`. Widened the same way authorization_missing_reason was: the first three members are the spelling the original design named, the last three are the spelling the engine emits, and `parser_gap` is a fourth concept with no producer at all. Only the newer three are constructed; the rest are reserved rather than deleted, because the schema is applied on read.
+ */
+export const TENANT_MISSING_REASONS = [
+  "no_tenant_predicate",
+  "untrusted_tenant_source",
+  "predicate_not_bound_to_query",
+  "parser_gap",
+  "tenant_predicate_missing",
+  "tenant_source_untrusted",
+  "tenant_predicate_not_bound_to_query",
+] as const;
+
+export const TenantMissingReasonSchema = z.enum(TENANT_MISSING_REASONS);
+
+export type TenantMissingReason = (typeof TENANT_MISSING_REASONS)[number];
