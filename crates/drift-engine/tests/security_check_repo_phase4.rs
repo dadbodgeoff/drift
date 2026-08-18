@@ -157,8 +157,6 @@ fn engine_does_not_accept_phase4_legacy_matcher_required_calls_as_session_trust(
             .any(|missing| missing["reason"] == "unknown_helper"),
         "{payload:#?}"
     );
-    // FINDING-level code: the separate user-facing vocabulary. Asserting both is what
-    // proves the mapper was widened rather than the bug merely being moved.
     // FINDING-level code: the separate user-facing vocabulary, surfaced through the
     // layer's missing_proof_ids. Asserting BOTH surfaces is what proves the phase4
     // finding-reason mapper was widened rather than the bug merely being relocated.

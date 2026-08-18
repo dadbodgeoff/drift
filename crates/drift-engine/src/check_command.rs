@@ -3640,9 +3640,16 @@ fn phase4_missing_code(proof: &SecurityBoundaryProof, convention_kind: &str) -> 
             .missing_trust
             .first()
             // Proof-level reasons and finding-level codes are separate vocabularies.
-            // This mapping must be TOTAL over the proof-level enum: any reason that
-            // falls through lands in SecurityMissingProofCodeSchema, where a non-member
-            // normalizes to `unknown_reason_code` and the finding degrades silently.
+            // This mapping must be TOTAL over the proof-level enum. A reason that falls
+            // through lands in SecurityMissingProofCodeSchema, and the consequence is NOT
+            // a soft one: engine-contract normalizes an unknown code to
+            // `unknown_reason_code` via a z.preprocess, but packages/core's copy is a
+            // plain hard z.enum, so it THROWS on the CLI's own read path and on all four
+            // storage parses. An unmapped reason is a second F1-class crash, not a
+            // degraded string.
+            //
+            // NOTE the `.unwrap_or_else` below is a separate, live defect -- see
+            // `an_empty_missing_list_can_state_the_opposite_of_the_proof` in the tests.
             .map(|missing| match missing.reason.as_str() {
                 "derived_from_request" | "unknown_helper" => "session_not_trusted".to_string(),
                 _ => missing.reason.clone(),
@@ -4509,7 +4516,9 @@ mod finding_fingerprint_dc3_tests {
 #[cfg(test)]
 mod phase4_missing_code_tests {
     use super::phase4_missing_code;
-    use drift_engine::{SecurityBoundaryProof, build_phase4_security_proof};
+    use drift_engine::{
+        AcceptedAuthHelper, AuthGuardBehavior, SecurityBoundaryProof, build_phase4_security_proof,
+    };
 
     const SESSION_TRUST: &str = "session_object_must_come_from_trusted_helper";
 
@@ -4571,6 +4580,68 @@ mod phase4_missing_code_tests {
                 "proof-level reason {reason:?}"
             );
         }
+    }
+
+    /// B1, pinned: the default arm can state the OPPOSITE of what the proof found.
+    ///
+    /// A finding is emitted when `!proven || proof_status == ParserGap`. The second
+    /// disjunct is reachable with `proven == true` and an EMPTY `missing_trust` -- a
+    /// route whose session the engine proved trusted, that also tripped a parser gap.
+    /// `.first()` then yields None and the default fabricates `session_not_trusted`,
+    /// so the user is told the session is untrusted about a session that was proven
+    /// trusted. Reproduced end to end against the real binary:
+    ///
+    ///     const session = await requireUser(request);
+    ///     const { user: { tenantId } } = session;   // unsupported_session_nested_destructure
+    ///
+    ///     session_trust.proven : true      missing_trust : []
+    ///     proof_status         : parser_gap
+    ///     missing_proof codes  : ["session_not_trusted"]
+    ///     finding title        : "API route uses untrusted session object"
+    ///
+    /// This predates the fix that introduced this module, and the tenant and
+    /// authorization arms carry the identical shape (`tenant_predicate_missing`,
+    /// `authorization_guard_missing`). It is NOT fixed here: the honest code for a
+    /// parser-gapped proof has no member in SecurityMissingProofCodeSchema, the finding
+    /// TITLE is a per-kind constant that lies too, and `missing_code` feeds the finding
+    /// fingerprint, so correcting it moves fingerprints and breaks baseline continuity
+    /// for exactly these findings. That is a vocabulary and migration change with its
+    /// own release note, not a rider on a parse fix.
+    ///
+    /// Tracked as issue #129.
+    ///
+    /// The value of pinning it is that this arm was the one branch of
+    /// `phase4_missing_code` no test covered, while the module around it asserted the
+    /// mapper was total. The claim now stops at what is actually true.
+    #[test]
+    fn an_empty_missing_list_can_state_the_opposite_of_the_proof() {
+        let source = concat!(
+            "import { requireUser } from '@/server/auth';\n",
+            "export async function GET(request: Request) {\n",
+            "  const session = await requireUser(request);\n",
+            "  const { user: { tenantId } } = session;\n",
+            "  return Response.json({ ok: Boolean(tenantId) });\n",
+            "}\n"
+        );
+        let helpers = [AcceptedAuthHelper {
+            guard_id: "g".to_string(),
+            symbol: "requireUser".to_string(),
+            behavior: AuthGuardBehavior::ReturnsSession,
+        }];
+        let proof =
+            build_phase4_security_proof("app/api/x/route.ts", source, &helpers).expect("proof");
+
+        // The proof itself is sound: nothing failed on trust.
+        assert!(proof.session_trust.proven, "{:#?}", proof.session_trust);
+        assert!(proof.session_trust.missing_trust.is_empty());
+
+        // The code handed to the user says otherwise. This assertion documents the
+        // defect; when it is fixed, this test must be updated, not deleted.
+        assert_eq!(
+            phase4_missing_code(&proof, SESSION_TRUST),
+            "session_not_trusted",
+            "known defect: the default arm asserts a trust failure the proof did not find"
+        );
     }
 
     /// The two declared-but-unproduced members, pinned as they behave today.
