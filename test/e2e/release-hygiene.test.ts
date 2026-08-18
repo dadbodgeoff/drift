@@ -97,7 +97,13 @@ describe("release hygiene", () => {
       // W7 added `pnpm eval:breadth`, the detection-breadth ratchet. Pinned whole for the same
       // reason as verify:ci above: an eval silently dropped is indistinguishable from one that
       // never existed.
-      "pnpm eval:external && pnpm eval:breadth && pnpm eval:evasion && pnpm eval:bench && pnpm eval:determinism"
+      //
+      // CV-4 then added `pnpm eval:presence` (the presence precision/recall measurement,
+      // scripts/presence-precision-recall.mjs) to package.json without updating this pin, so the
+      // pin has been failing on every branch since. Left unfixed it inverts its own purpose: a
+      // guard that is always red stops being read, and the next eval genuinely dropped would land
+      // in a test everyone has learned to skip.
+      "pnpm eval:external && pnpm eval:breadth && pnpm eval:evasion && pnpm eval:bench && pnpm eval:presence && pnpm eval:determinism"
     );
     expect(manifest.scripts["verify:full"]).toBe("pnpm verify:ci && pnpm verify:evals");
     expect(manifest.scripts["eval:evasion"]).toBe("node scripts/evasion-matrix.mjs");
