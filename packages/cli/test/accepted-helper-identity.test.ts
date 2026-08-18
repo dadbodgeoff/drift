@@ -502,3 +502,58 @@ describe("resolvedHelperIdentities re-export closure", () => {
     expect(identityFor(identities, "requireUser")?.files).toEqual(["src/lib/index.ts"]);
   });
 });
+
+/**
+ * The classifier the whole design turns on, branch by branch.
+ *
+ * `external` and `unresolved` are both "resolved to nothing", and the ONLY thing that separates
+ * them is the shape of the specifier. Get that wrong and a repo-relative helper whose module the
+ * graph could not resolve is reported as a package that legitimately lives outside the snapshot -
+ * a real degradation, silently relabelled as normal.
+ *
+ * Four of the five exclusion branches had no test at all: dropping `~`, `#`, `/` or `.` from
+ * `isBarePackageSpecifier` killed nothing, so `./lib/auth` and `../../lib/auth` - the two commonest
+ * repo-relative forms in any codebase - could have started reporting `external` with no signal.
+ * One case per branch now.
+ */
+describe("isBarePackageSpecifier, through the mode it decides", () => {
+  /** No resolution edges at all, so mode is decided by specifier shape alone. */
+  const nothingResolves = graphScanData({ nodes: [], edges: [] });
+
+  const mode = (specifier: string): string | undefined =>
+    resolvedHelperIdentities(
+      nothingResolves,
+      conventionRequiring({
+        auth_helpers: [{ guard_id: "auth:h", symbol: "h", import: specifier }]
+      })
+    )[0]?.mode;
+
+  it.each([
+    ["./lib/auth", "a same-directory relative import"],
+    ["../../lib/auth", "a parent-directory relative import"],
+    ["/abs/lib/auth", "an absolute path"],
+    ["@/lib/auth", "the conventional tsconfig root alias"],
+    ["~/lib/auth", "a tilde alias"],
+    ["#internal/auth", "a Node subpath import"]
+  ])("classifies %s as unresolved (%s)", (specifier) => {
+    expect(mode(specifier)).toBe("unresolved");
+  });
+
+  it.each([
+    ["next-auth", "a bare package"],
+    ["@clerk/nextjs", "a scoped package"],
+    ["next-auth/react", "a package subpath"]
+  ])("classifies %s as external (%s)", (specifier) => {
+    expect(mode(specifier)).toBe("external");
+  });
+
+  /**
+   * `@/` is not a valid npm scope - scopes cannot be empty - which is what makes it separable from
+   * `@clerk/nextjs`. Pinned as a pair, because a naive `startsWith("@")` would swallow both and a
+   * naive `startsWith("@/")` removal would swallow neither.
+   */
+  it("separates the empty-scope alias from a real scoped package", () => {
+    expect(mode("@/lib/auth")).toBe("unresolved");
+    expect(mode("@clerk/nextjs")).toBe("external");
+  });
+});
