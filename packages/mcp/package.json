@@ -28,6 +28,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@drift/cli": "workspace:*",
     "@drift/core": "workspace:*",
     "@drift/engine-contract": "workspace:*",
     "@drift/factgraph": "workspace:*",
