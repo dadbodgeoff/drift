@@ -987,4 +987,124 @@ mod tests {
         assert_eq!(serializer.serializer_id, "serializePublicUser");
         assert_eq!(serializer.filtered_fields, ["user.email"]);
     }
+
+    fn identity(mode: HelperResolutionMode, files: &[&str]) -> HelperModuleIdentity {
+        HelperModuleIdentity {
+            specifier: "@/lib/auth".to_string(),
+            mode,
+            files: files.iter().map(|file| (*file).to_string()).collect(),
+            package_specifier_resolves_in_repo: false,
+        }
+    }
+
+    /// S4-02: the guarantee that makes this sprint revertible by reverting the CLI field alone.
+    ///
+    /// With no table, matching is byte-for-byte what it was before Sprint 4: the exact specifier
+    /// and nothing else. Every spelling the resolved path accepts is refused here, so a repo whose
+    /// CLI stops sending the field goes back to the old answers rather than to some third
+    /// behaviour that exists in neither version.
+    ///
+    /// `Unresolved` is the same fallback, said out loud rather than inferred. The two cases with a
+    /// deliberately NON-empty `files` are the important half of this test: they are contradictory
+    /// input - a mode that resolved nothing, carrying resolved files - and they are here because
+    /// dispatching on `files.is_empty()` instead of on `mode` would pass every other assertion in
+    /// this suite while silently retaining tier-1 matching for every external helper. Only a case
+    /// where the two disagree can tell those implementations apart.
+    #[test]
+    fn unresolved_mode_falls_back_and_says_so() {
+        let route = "app/api/projects/route.ts";
+        for (label, supplied) in [
+            ("no table at all", None),
+            (
+                "unresolved, with files it has no business having",
+                Some(identity(HelperResolutionMode::Unresolved, &["lib/auth.ts"])),
+            ),
+            (
+                "external, with files it has no business having",
+                Some(identity(HelperResolutionMode::External, &["lib/auth.ts"])),
+            ),
+        ] {
+            assert!(
+                helper_module_matches(route, Some("@/lib/auth"), "@/lib/auth", supplied.as_ref()),
+                "{label}: the exact specifier must still match"
+            );
+            assert!(
+                !helper_module_matches(route, Some("@/lib"), "@/lib/auth", supplied.as_ref()),
+                "{label}: a barrel must not match without a repo_resolved identity"
+            );
+            assert!(
+                !helper_module_matches(
+                    route,
+                    Some("../../../lib/auth"),
+                    "@/lib/auth",
+                    supplied.as_ref()
+                ),
+                "{label}: a relative spelling must not match without a repo_resolved identity"
+            );
+        }
+    }
+
+    /// The same three spellings, with the identity that licenses two of them. Without this the
+    /// test above passes trivially on an implementation that never matches anything.
+    #[test]
+    fn repo_resolved_identity_is_what_licenses_the_other_spellings() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        assert!(helper_module_matches(
+            route,
+            Some("@/lib/auth"),
+            "@/lib/auth",
+            Some(&resolved)
+        ));
+        assert!(helper_module_matches(
+            route,
+            Some("@/lib"),
+            "@/lib/auth",
+            Some(&resolved)
+        ));
+        assert!(helper_module_matches(
+            route,
+            Some("../../../lib/auth"),
+            "@/lib/auth",
+            Some(&resolved)
+        ));
+    }
+
+    /// The acceptance is not widened downwards, in any mode.
+    ///
+    /// A helper accepted at `@/lib/auth` covers `@/lib/auth`. It does not cover
+    /// `@/lib/auth/attacker-controlled`, and it does not cover a sibling that merely shares a
+    /// parent. That relation - the specifier plus everything beneath it - belongs to the FORBIDDEN
+    /// import path, where widening only ever bans more. Reused here it would mean any module a
+    /// caller can add under an accepted prefix becomes an accepted auth helper.
+    #[test]
+    fn an_accepted_helper_does_not_absorb_the_modules_beneath_it() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        for spelling in [
+            "@/lib/auth/attacker-controlled",
+            "../../../lib/auth/attacker-controlled",
+            "@/lib/auth-lookalike",
+            "../../../lib/authorization",
+        ] {
+            assert!(
+                !helper_module_matches(route, Some(spelling), "@/lib/auth", Some(&resolved)),
+                "{spelling} must not satisfy a helper accepted at @/lib/auth"
+            );
+        }
+    }
+
+    /// A spelling that climbs out of the repo cannot denote a file the CLI resolved inside it, and
+    /// a spelling in a namespace the contract never demonstrated has nothing to be read against.
+    #[test]
+    fn spellings_the_repo_cannot_account_for_do_not_match() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        for spelling in ["../../../../../lib/auth", "~/lib/auth", "some-package/auth"] {
+            assert!(
+                !helper_module_matches(route, Some(spelling), "@/lib/auth", Some(&resolved)),
+                "{spelling} must not match"
+            );
+        }
+    }
 }
