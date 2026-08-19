@@ -821,6 +821,88 @@ fn external_mode_records_its_degradation_in_the_proof() {
     );
 }
 
+/// B1 RED: a contract that names a barrel must match the module the barrel re-exports.
+///
+/// `files` is a re-export CLOSURE. When the contract names `@/lib`, the CLI resolves that to
+/// `lib/index.ts` and then follows the re-exports that carry `requireUser` onward, so `files` is
+/// `["lib/auth.ts", "lib/index.ts"]` - and `lib/auth.ts`, the entry that matters, shares no
+/// trailing path segment with the specifier `@/lib` at all. Deriving the alias mapping from each
+/// candidate file in turn therefore fails on exactly the closure members the closure exists to
+/// supply: `shared_path_suffix("@/lib", "lib/auth")` compares `lib` against `auth`, finds nothing,
+/// and gives up.
+///
+/// The two spellings below denote one file and are asserted together, because the whole claim of
+/// this sprint is that one module cannot have two verdicts. Before the fix the relative spelling
+/// was proven and the aliased one - naming a file literally present in `files` - was not.
+#[test]
+fn barrel_contract_matches_the_module_it_reexports() {
+    for spelling in ["@/lib/auth", "../../../lib/auth"] {
+        let repo_root = temp_repo(&format!(
+            "phase4_barrel_contract_{}",
+            spelling.replace(['@', '/', '.'], "_")
+        ));
+        write_route(
+            &repo_root,
+            "app/api/projects/route.ts",
+            &[
+                &format!("import {{ requireUser }} from '{spelling}';"),
+                "export async function GET(request: Request) {",
+                "  const session = await requireUser(request);",
+                "  return Response.json({ ok: Boolean(session) });",
+                "}",
+                "",
+            ],
+        );
+
+        let payload = run_check_repo(json!({
+            "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+            "scan": { "scan_id": "scan_phase4", "facts": [
+                fact("file_role_detected", "api_route", 1, 5, None, None),
+                fact("import_used", "requireUser", 1, 1, Some(spelling), Some("requireUser")),
+                fact("route_declared", "GET", 2, 5, None, None),
+                fact("symbol_called", "requireUser", 3, 3, None, None),
+                fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+            ]},
+            "contract": session_trust_contract(
+                json!({ "symbol": "requireUser", "import": "@/lib", "behavior": "returns_session" }),
+                Some(json!([{
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib",
+                    "mode": "repo_resolved",
+                    // The closure, exactly as `resolvedHelperIdentities` builds it: the module the
+                    // specifier names, plus the module a re-export carries the symbol to.
+                    "files": ["lib/auth.ts", "lib/index.ts"]
+                }])),
+            ),
+            "baseline": [],
+            "diff": { "mode": "full", "files": [] }
+        }));
+
+        let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+        let trusted = session_trust["trusted_sessions"]
+            .as_array()
+            .expect("trusted_sessions");
+        assert_eq!(trusted.len(), 1, "spelling {spelling}: {payload:#?}");
+        assert_eq!(
+            payload["findings"].as_array().expect("findings").len(),
+            0,
+            "spelling {spelling}: {payload:#?}"
+        );
+        // The gap the first round left: `helper_resolution` was asserted for `external` only, so
+        // nothing pinned that a repo-resolved helper reports its files and mode at all.
+        assert_eq!(
+            trusted[0]["helper_resolution"]["mode"], "repo_resolved",
+            "spelling {spelling}: {payload:#?}"
+        );
+        assert_eq!(
+            trusted[0]["helper_resolution"]["files"],
+            json!(["lib/auth.ts", "lib/index.ts"]),
+            "spelling {spelling}: {payload:#?}"
+        );
+    }
+}
+
 /// A `session_object_must_come_from_trusted_helper` contract with one accepted auth helper, and
 /// optionally the resolved-identity table the CLI ships beside it.
 fn session_trust_contract(helper: Value, helper_module_files: Option<Value>) -> Value {

@@ -577,8 +577,23 @@ pub fn helper_module_matches(
     }
     match identity {
         Some(identity) if identity.mode == HelperResolutionMode::RepoResolved => {
+            // The mapping is derived ONCE, from the whole (specifier, files) pair, and then used
+            // to read the spelling. Deriving it per candidate file instead made the re-export
+            // closure unreachable: `files` for a contract naming `@/lib` is
+            // `["lib/auth.ts", "lib/index.ts"]`, and `lib/auth.ts` - the entry the closure exists
+            // to supply - shares no trailing segment with `@/lib`, so the per-file derivation
+            // found no mapping and refused a file it was literally holding in the list.
+            let Some(candidate) = candidate_module_path(
+                importing_file,
+                spelling,
+                expected_specifier,
+                &identity.files,
+            ) else {
+                return false;
+            };
             identity.files.iter().any(|file| {
-                spelling_denotes_module(importing_file, spelling, expected_specifier, file)
+                let target = module_key(file);
+                target == candidate || target.starts_with(&format!("{candidate}/"))
             })
         }
         _ => false,
@@ -615,24 +630,21 @@ pub fn helper_module_matches(
 ///     some OTHER `requireUser` - not the one in `lib/auth.ts` - this accepts it. A contract that
 ///     names the barrel itself does better, because then the CLI's re-export closure supplies the
 ///     real answer in `files` and the equality relation carries it.
-fn spelling_denotes_module(
+fn candidate_module_path(
     importing_file: &str,
     spelling: &str,
     expected_specifier: &str,
-    file: &str,
-) -> bool {
-    let target = module_key(file);
-    let Some(candidate) = (if is_relative_specifier(spelling) {
-        repo_path_for_relative_specifier(importing_file, spelling)
+    files: &[String],
+) -> Option<String> {
+    let candidate = if is_relative_specifier(spelling) {
+        repo_path_for_relative_specifier(importing_file, spelling)?
     } else {
-        rewrite_through_contract_alias(spelling, expected_specifier, &target)
-    }) else {
-        return false;
+        let (head, root) = contract_alias_mapping(expected_specifier, files)?;
+        module_key(spelling)
+            .strip_prefix(head.as_str())
+            .map(|tail| format!("{root}{tail}"))?
     };
-    if candidate.is_empty() {
-        return false;
-    }
-    candidate == target || target.starts_with(&format!("{candidate}/"))
+    (!candidate.is_empty()).then_some(candidate)
 }
 
 fn is_relative_specifier(specifier: &str) -> bool {
@@ -675,28 +687,49 @@ fn repo_path_for_relative_specifier(importing_file: &str, spelling: &str) -> Opt
     Some(module_key(&parts.join("/")))
 }
 
-/// Read `spelling` in repo-path space, using the contract's own specifier and the file it
-/// resolved to as the worked example of the alias mapping.
+/// What the contract's alias head corresponds to in repo-path space, as `(head, root)`.
 ///
-/// `@/lib/auth` beside `lib/auth` shares the suffix `lib/auth`, leaving `@/` against the empty
-/// string: that pairing is the mapping, derived from this repo rather than assumed. `@/lib` then
-/// reads as `lib`. A `spelling` outside the contract's namespace, or a contract specifier that
-/// shares no path segment with the file it resolved to, yields no mapping and no match.
-fn rewrite_through_contract_alias(
-    spelling: &str,
-    expected_specifier: &str,
-    target: &str,
-) -> Option<String> {
+/// The engine has no tsconfig and cannot resolve an alias. What it has is the contract's own
+/// specifier beside the files that specifier resolved to, which is a worked example of the
+/// mapping: `@/lib/auth` next to `lib/auth.ts` says `@/` and the repo root are the same place.
+///
+/// **One mapping, derived from the whole list, not one per candidate.** `files` is a re-export
+/// closure, and its members are chosen by what they EXPORT, not by what they are called - so for
+/// a contract naming `@/lib` the list is `["lib/auth.ts", "lib/index.ts"]` and only the second
+/// has anything in common with the specifier. Asking each file in turn to explain the alias, and
+/// refusing the ones that cannot, threw away every closure member: `@/lib/auth` denotes
+/// `lib/auth.ts`, `lib/auth.ts` is right there in `files`, and the route was still reported as
+/// using an unknown helper - while the same file spelled `../../../lib/auth` was accepted, which
+/// is the one-module-two-verdicts defect this sprint exists to remove, reintroduced one layer
+/// down.
+///
+/// The anchor is whichever file shares the LONGEST trailing run of segments with the specifier.
+/// Longest rather than first because a closure can contain a decoy: for `@/server/auth` over
+/// `["server/auth.ts", "vendor/auth.ts"]` both share `auth`, and only the first shares
+/// `server/auth`. Ties keep the earlier file, and `files` arrives sorted, so the answer is stable.
+///
+/// `None` when no file shares a segment with the specifier. That means the contract's spelling
+/// and the repo's paths have nothing in common - a bare package name against an unrelated path -
+/// and there is no example to reason from, so no non-relative spelling matches.
+fn contract_alias_mapping(expected_specifier: &str, files: &[String]) -> Option<(String, String)> {
     let specifier_key = module_key(expected_specifier);
-    let shared = shared_path_suffix(&specifier_key, target);
-    if shared.is_empty() {
-        return None;
+    let mut best: Option<(usize, String, String)> = None;
+    for file in files {
+        let target = module_key(file);
+        let shared = shared_path_suffix(&specifier_key, &target);
+        if shared.is_empty() {
+            continue;
+        }
+        let segments = shared.split('/').count();
+        if best.as_ref().is_none_or(|(best, _, _)| segments > *best) {
+            best = Some((
+                segments,
+                specifier_key[..specifier_key.len() - shared.len()].to_string(),
+                target[..target.len() - shared.len()].to_string(),
+            ));
+        }
     }
-    let head = &specifier_key[..specifier_key.len() - shared.len()];
-    let root = &target[..target.len() - shared.len()];
-    let tail = module_key(spelling);
-    let tail = tail.strip_prefix(head)?;
-    Some(format!("{root}{tail}"))
+    best.map(|(_, head, root)| (head, root))
 }
 
 /// The longest suffix the two paths share, cut at a `/` boundary.
@@ -989,12 +1022,59 @@ mod tests {
     }
 
     fn identity(mode: HelperResolutionMode, files: &[&str]) -> HelperModuleIdentity {
+        identity_for("@/lib/auth", mode, files)
+    }
+
+    fn identity_for(
+        specifier: &str,
+        mode: HelperResolutionMode,
+        files: &[&str],
+    ) -> HelperModuleIdentity {
         HelperModuleIdentity {
-            specifier: "@/lib/auth".to_string(),
+            specifier: specifier.to_string(),
             mode,
             files: files.iter().map(|file| (*file).to_string()).collect(),
             package_specifier_resolves_in_repo: false,
         }
+    }
+
+    /// B1: the alias mapping comes from the file that best explains the specifier, not from
+    /// whichever file happens to share a segment with it.
+    ///
+    /// `files` is a re-export closure and can hold a decoy: `vendor/auth.ts` shares `auth` with
+    /// `@/server/auth`, and `server/auth.ts` shares `server/auth`. Anchoring on the decoy makes
+    /// the head `@/server/` and the root `vendor/`, a mapping that explains the contract's own
+    /// specifier only by accident and refuses every other spelling in the namespace - including
+    /// `@/vendor/auth`, which names a file sitting in `files`.
+    ///
+    /// This is the assertion the `>`-to-`<` mutation on the anchor comparison survived when the
+    /// first round of these tests went in, which is why it is here.
+    #[test]
+    fn the_anchor_is_the_file_that_best_explains_the_specifier() {
+        let route = "app/api/projects/route.ts";
+        let decoyed = identity_for(
+            "@/server/auth",
+            HelperResolutionMode::RepoResolved,
+            &["server/auth.ts", "vendor/auth.ts"],
+        );
+        assert!(
+            helper_module_matches(
+                route,
+                Some("@/vendor/auth"),
+                "@/server/auth",
+                Some(&decoyed)
+            ),
+            "a closure member must be reachable through the mapping the specifier really licenses"
+        );
+        assert!(
+            helper_module_matches(
+                route,
+                Some("@/server/auth"),
+                "@/server/auth",
+                Some(&decoyed)
+            ),
+            "the contract's own specifier must still match"
+        );
     }
 
     /// S4-02: the guarantee that makes this sprint revertible by reverting the CLI field alone.
