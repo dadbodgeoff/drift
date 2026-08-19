@@ -17,6 +17,7 @@ use crate::{
     },
 };
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecurityBoundaryProof {
@@ -930,7 +931,8 @@ pub fn build_secret_exposure_proof(
         .iter()
         .filter_map(|secret| secret.variable.clone())
         .collect::<Vec<_>>();
-    let direct_exposures = secret_sink_exposures(source, &secret_reads, &accepted_phase5.log_sinks);
+    let direct_exposures =
+        secret_sink_exposures(&facts, source, &secret_reads, &accepted_phase5.log_sinks);
     let exposed_secrets = direct_exposures
         .into_iter()
         .map(|exposure| ExposedSecretProof {
@@ -1683,11 +1685,13 @@ fn response_spread_variables(lines: &[&str]) -> Vec<String> {
 }
 
 fn secret_sink_exposures(
+    facts: &[Fact],
     source: &str,
     secret_reads: &[SecretReadValue],
     log_sinks: &[String],
 ) -> Vec<SecretExposureCandidate> {
     let lines = source.lines().collect::<Vec<_>>();
+    let sink_kinds = sink_kinds_by_line(facts, log_sinks);
     let mut tainted = secret_reads
         .iter()
         .filter_map(|secret| {
@@ -1722,18 +1726,8 @@ fn secret_sink_exposures(
     }
 
     let mut exposures = Vec::new();
-    for (index, line) in lines.iter().enumerate() {
-        let line_number = index + 1;
-        let sink_kind = if is_response_sink_line(line) {
-            Some("response")
-        } else if log_sinks.iter().any(|sink| line.contains(sink)) {
-            Some("log")
-        } else {
-            None
-        };
-        let Some(sink_kind) = sink_kind else {
-            continue;
-        };
+    for sink in &sink_kinds {
+        let line_number = sink.line;
         if let Some(secret) = secret_reads
             .iter()
             .find(|secret| secret.line == line_number)
@@ -1741,16 +1735,19 @@ fn secret_sink_exposures(
             exposures.push(SecretExposureCandidate {
                 secret_fact_id: secret.fact_id.clone(),
                 secret_class: secret.secret_class.clone(),
-                sink_kind: sink_kind.to_string(),
+                sink_kind: sink.kind.to_string(),
                 sink_line: line_number,
             });
         }
         for (variable, fact_id, secret_class) in &tainted {
-            if line_uses_identifier(line, variable) {
+            // The identifiers the CALL references, not the tokens its line contains. This is the
+            // branch that kept `console.error("start"); // apiKey is never logged` a finding: the
+            // sink was real and the comment merely shared its line.
+            if sink.references(variable) {
                 exposures.push(SecretExposureCandidate {
                     secret_fact_id: fact_id.clone(),
                     secret_class: secret_class.clone(),
-                    sink_kind: sink_kind.to_string(),
+                    sink_kind: sink.kind.to_string(),
                     sink_line: line_number,
                 });
             }
@@ -1776,10 +1773,92 @@ fn secret_sink_exposures(
     exposures
 }
 
-fn is_response_sink_line(line: &str) -> bool {
-    line.contains("Response.json(")
-        || line.contains("NextResponse.json(")
-        || line.contains(".json(")
+/// F5, S6-02 and S6-06. The secret sinks in a file, decided from calls rather than from text.
+///
+/// This replaces `is_response_sink_line` - three `.contains()` calls on the raw line - and the
+/// matching `log_sinks.iter().any(|sink| line.contains(sink))` beside it. Between them they made
+///
+///     // console.error(apiKey);
+///
+/// a sink, so commenting a log call OUT flipped a route from `Proven` to `MissingProof`. A string
+/// literal naming a sink did the same. A call is a fact off the tree-sitter walk, and neither a
+/// comment nor a string produces one.
+///
+/// S6-02 read `symbol_called` for this and lost two classes of real finding, both because that
+/// fact cannot express what a sink needs - see `extract_sink_candidate` for the measurements. It
+/// now reads `sink_candidate_called`, which is positioned at the callee and carries a callee
+/// string whether or not there is a receiver.
+///
+/// The PREDICATES are otherwise unchanged. A response sink is still any member call named `json` -
+/// the old `.contains(".json(")` catch-all, which also matches `await request.json()` and did
+/// before any of this; narrowing it is a detection question, not this fix. It still requires a
+/// receiver, because `.json(` required a dot. A log sink is still a substring test against the
+/// contract's configured sink strings, applied to the callee rather than the whole line, and now
+/// including receiver-less callees because `log_sinks` is free text that never promised a dot.
+/// Response still wins over log where one line holds both.
+fn sink_kinds_by_line(facts: &[Fact], log_sinks: &[String]) -> Vec<SinkSite> {
+    let mut sinks: BTreeMap<usize, SinkSite> = BTreeMap::new();
+    for fact in facts
+        .iter()
+        .filter(|fact| fact.kind == crate::FactKind::SinkCandidateCalled)
+    {
+        let Some(candidate) = sink_candidate_value(fact) else {
+            continue;
+        };
+        let sink_kind = if fact.name == "json" && candidate.has_receiver {
+            "response"
+        } else if log_sinks.iter().any(|sink| candidate.callee.contains(sink)) {
+            "log"
+        } else {
+            continue;
+        };
+        let site = sinks.entry(fact.start_line).or_insert_with(|| SinkSite {
+            line: fact.start_line,
+            kind: sink_kind,
+            identifiers: Vec::new(),
+        });
+        if sink_kind == "response" {
+            site.kind = "response";
+        }
+        site.identifiers.extend(candidate.identifiers);
+    }
+    sinks.into_values().collect()
+}
+
+/// One line that holds at least one sink, and everything the sinks on it reference.
+///
+/// Several calls can share a line - `console.error(Response.json({ apiKey }))` is two - so the
+/// identifiers are the union across them, which is what a per-line sink decision means.
+struct SinkSite {
+    line: usize,
+    kind: &'static str,
+    identifiers: Vec<String>,
+}
+
+impl SinkSite {
+    fn references(&self, identifier: &str) -> bool {
+        self.identifiers.iter().any(|entry| entry == identifier)
+    }
+}
+
+struct SinkCandidateValue {
+    callee: String,
+    has_receiver: bool,
+    identifiers: Vec<String>,
+}
+
+fn sink_candidate_value(fact: &Fact) -> Option<SinkCandidateValue> {
+    let value: Value = serde_json::from_str(fact.value.as_deref()?).ok()?;
+    Some(SinkCandidateValue {
+        callee: value.get("callee")?.as_str()?.to_string(),
+        has_receiver: value.get("has_receiver")?.as_bool()?,
+        identifiers: value
+            .get("identifiers")?
+            .as_array()?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(str::to_string))
+            .collect(),
+    })
 }
 
 fn file_path_string(facts: &[Fact]) -> String {

@@ -959,5 +959,32 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       SELECT 1;
     `
+  },
+  {
+    // F5, S6-01. `secret_source_read` enters the vocabulary here.
+    //
+    // The tree-sitter walk now emits where a secret source is read, so that `secret_read` stops
+    // being decided by a line scan that cannot tell `process.env.API_KEY` from a comment about it.
+    // No column changes, and for exactly the reason 034 spells out it still has to be a migration:
+    // `FactRecordSchema.kind` is a closed enum, so a database holding rows of this kind throws on
+    // every `listFacts` in a build that does not know it. Bumping the count makes that an up-front
+    // refusal naming the version instead.
+    id: "035_secret_source_read_fact_kind",
+    sql: `
+      SELECT 1;
+    `
+  },
+  {
+    // F5, S6-06. `sink_candidate_called` enters the vocabulary here.
+    //
+    // Reusing `symbol_called` for sink detection dropped two classes of real security finding,
+    // because that fact carries the call expression's span rather than the callee's and cannot
+    // represent a receiver-less callee at all. Same reasoning as 034 and 035 for why a no-op
+    // migration is still a migration: `FactRecordSchema.kind` is a closed enum, and an older build
+    // opening a database that holds this kind throws on every `listFacts` for that scan.
+    id: "036_sink_candidate_fact_kind",
+    sql: `
+      SELECT 1;
+    `
   }
 ];

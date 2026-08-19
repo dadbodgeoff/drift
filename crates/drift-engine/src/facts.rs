@@ -52,6 +52,15 @@ pub const RUNTIME_USE_SIDE_EFFECT: &str = "side_effect";
 /// binding roots), and it must never collide with a real binding in any of them.
 pub const SIDE_EFFECT_IMPORT_BINDING: &str = "(side-effect)";
 
+/// F5, S6-01. The `name` of a `secret_source_read` fact: which source the read came from.
+///
+/// These are the three strings a phase-5 contract's `secret_sources` list is written in, so the
+/// walk names the source in the contract's own words and `security_facts.rs` can gate on it by
+/// equality rather than by re-deciding the shape.
+pub const SECRET_SOURCE_ENV: &str = "env";
+pub const SECRET_SOURCE_CONFIG: &str = "config";
+pub const SECRET_SOURCE_SECRET_MANAGER: &str = "secret_manager";
+
 struct ImportBinding {
     imported_name: String,
     local_name: String,
@@ -485,7 +494,13 @@ fn walk_node(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fac
         "lexical_declaration" | "variable_declaration" => {
             extract_runtime_imports(node, source, file_path, facts)
         }
-        "call_expression" => extract_call(node, source, file_path, facts),
+        "call_expression" => {
+            extract_call(node, source, file_path, facts);
+            extract_secret_source_read(node, source, file_path, facts);
+        }
+        "member_expression" | "subscript_expression" => {
+            extract_secret_source_read(node, source, file_path, facts)
+        }
         "export_statement" => extract_export(node, source, file_path, facts),
         _ => {}
     }
@@ -711,6 +726,276 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         start_column: node.start_position().column + 1,
         end_column: node.end_position().column + 1,
     });
+}
+
+/// Every sink candidate in a file, for callers that have a reason to want them.
+///
+/// NOT part of the base walk, and the reason is measured. One fact per call site is an enormous
+/// number of call sites: emitting these from `extract_typescript_facts` took a `packages/` scan
+/// from 33,808 facts to 63,951 (+89%) and from 1.80s to 3.05s (+69%), for a fact that only the
+/// secret-exposure proof reads. Nothing else consumes it and nothing needs it on the wire.
+///
+/// So it is gated exactly the way `secret_read` already is: produced only where an accepted
+/// phase-5 contract exists to give it a consumer. Scan mode passes `accepted_phase5: None` and
+/// gets none of these, which is why a scan stream holds zero `secret_read` facts today too.
+///
+/// The cost is a second parse of the file. That is paid only for files a phase-5 convention is
+/// actually scoped to, against a base walk that already parses every file in the repository.
+pub(crate) fn sink_candidate_facts(
+    file_path: &str,
+    source: &str,
+) -> Result<Vec<Fact>, FactExtractError> {
+    let (tree, _) = parse_with_best_grammar(file_path, source)?;
+    let root = tree.root_node();
+    if exceeds_max_depth(root, MAX_AST_DEPTH) {
+        return Err(FactExtractError::TooDeep {
+            depth_limit: MAX_AST_DEPTH,
+        });
+    }
+    let mut facts = Vec::new();
+    walk_sink_candidates(root, source.as_bytes(), file_path, &mut facts);
+    Ok(facts)
+}
+
+fn walk_sink_candidates(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {
+    if node.kind() == "call_expression" {
+        extract_sink_candidate(node, source, file_path, facts);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        walk_sink_candidates(child, source, file_path, facts);
+    }
+}
+
+/// F5, S6-06. A call, positioned at its CALLEE, with the identifiers it references.
+///
+/// WHY THIS IS NOT `symbol_called`. S6-02 reused `symbol_called` for sink detection on the
+/// reasoning that it already carries callee and receiver. It carries neither in the form a sink
+/// test needs, and both gaps cost real findings:
+///
+///   - its span is the CALL EXPRESSION's. Measured on `res\n .status(500)\n .json({ e: apiKey })`,
+///     `symbol_called` reports `name=json lines=3-5`: line 3 is where `res` is written, line 5 is
+///     where `.json` and the secret are. A sink keyed on that line lands nowhere near the secret,
+///     so the exposure vanished. Prettier breaks chains of three or more links by default, so this
+///     is the ordinary spelling of the shape, not an exotic one.
+///   - `callable_parts` returns `(name, None)` for an `identifier` callee, so `captureException(x)`
+///     has no receiver. A contract's `log_sinks` is free text with nothing requiring a dotted
+///     name, and a directly imported reporter is the common shape.
+///
+/// So this fact carries the callee NAME TOKEN's position - the `.json` property, not the head of
+/// the chain - and a `callee` string that is present with or without a receiver.
+///
+/// It also carries the identifiers the call REFERENCES, gathered from the call's own subtree. That
+/// is what finally closes the reported defect: `secret_sink_exposures` asked
+/// `line_uses_identifier(raw_line, variable)`, so `console.error("start"); // apiKey is never
+/// logged` was a real sink whose line happened to contain the token `apiKey` inside a comment.
+/// A comment contributes no `identifier` node, so it contributes no reference.
+fn extract_sink_candidate(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {
+    let Some(function) = node.child_by_field_name("function") else {
+        return;
+    };
+    // A callee that is neither an identifier nor a member expression - `wrap(console.error)(x)`,
+    // `handlers["error"](x)` - has no name node to stand at, but the raw line scan still matched a
+    // sink string anywhere inside it, and `wrap(console.error)(apiKey)` really does pass the secret
+    // to a wrapped reporter. So it falls back to the callee's own compacted text, which keeps the
+    // substring test finding what it used to find without inventing a name.
+    let (name, receiver, position) = match callee_name_node(function, source) {
+        Some((name_node, receiver)) => {
+            let Some(name) = node_text(name_node, source) else {
+                return;
+            };
+            (name, receiver, name_node)
+        }
+        None => {
+            let Some(text) = compacted_text(function, source) else {
+                return;
+            };
+            (text, None, function)
+        }
+    };
+    let callee = match receiver.as_deref() {
+        Some(receiver) => format!("{receiver}.{name}"),
+        None => name.clone(),
+    };
+    let mut identifiers = Vec::new();
+    collect_referenced_identifiers(node, source, &mut identifiers);
+    identifiers.sort();
+    identifiers.dedup();
+
+    facts.push(Fact {
+        kind: FactKind::SinkCandidateCalled,
+        file_path: file_path.to_string(),
+        name,
+        value: Some(
+            serde_json::json!({
+                "callee": callee,
+                "has_receiver": receiver.is_some(),
+                "identifiers": identifiers,
+            })
+            .to_string(),
+        ),
+        imported_name: None,
+        runtime_use: None,
+        // The CALLEE's position, deliberately, and the call's end. A sink is where the call is
+        // written, and for a wrapped chain that is the property line, not the receiver line.
+        start_line: position.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+        start_column: position.start_position().column + 1,
+        end_column: node.end_position().column + 1,
+    });
+}
+
+/// The callee's own name node, plus its receiver where it has one.
+///
+/// Unlike `callable_parts` this returns the NODE rather than the text, because the position is the
+/// whole point, and it reports the receiver as `Option` rather than folding a missing one into a
+/// dropped fact. The receiver text is compacted for the same reason `receiver_text` compacts:
+/// `logger\n  .error` is one callee however it is wrapped, and a sink test that disagreed with
+/// itself depending on line breaks is the bug this fact exists to fix.
+fn callee_name_node<'tree>(
+    node: Node<'tree>,
+    source: &[u8],
+) -> Option<(Node<'tree>, Option<String>)> {
+    match node.kind() {
+        "identifier" => Some((node, None)),
+        "member_expression" => {
+            let property = node.child_by_field_name("property")?;
+            let receiver = receiver_text(node, source);
+            Some((property, receiver))
+        }
+        _ => None,
+    }
+}
+
+/// Every identifier the subtree mentions.
+///
+/// `property_identifier` and the shorthand property kinds are included because the raw-line token
+/// test this replaces matched them too - `{ error: apiKey }` and `{ apiKey }` both put the token on
+/// the line - and dropping them would narrow detection while claiming not to.
+fn collect_referenced_identifiers(node: Node<'_>, source: &[u8], identifiers: &mut Vec<String>) {
+    if matches!(
+        node.kind(),
+        "identifier"
+            | "property_identifier"
+            | "shorthand_property_identifier"
+            | "shorthand_property_identifier_pattern"
+    ) && let Some(text) = node_text(node, source)
+    {
+        identifiers.push(text);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_referenced_identifiers(child, source, identifiers);
+    }
+}
+
+/// F5, S6-01. Where a secret source is *read*, as a position in the tree.
+///
+/// The phase-5 scanner used to find these by splitting the raw line on `"process.env."`,
+/// `"config."` and `"secretManager.get("`, which is why `// const shadow = process.env.KEY;`
+/// produced a `secret_read` fact indistinguishable from the real one. A read is a
+/// `member_expression`, a `subscript_expression` or a `.get()` call in the tree or it is not a
+/// read, and a comment is none of those.
+///
+/// The fact deliberately carries NO key text, hash or expression: only the source kind and the
+/// span. `secret_read`'s whole reason for hashing its key is that env key names should not travel
+/// in scan payloads, and a base fact is streamed on every scan of every repo. The redacted form is
+/// still built in `security_facts.rs`, from the source text under this span - which is code by
+/// construction now, rather than a line that merely contained it.
+fn extract_secret_source_read(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    facts: &mut Vec<Fact>,
+) {
+    let Some(source_kind) = secret_source_kind(node, source) else {
+        return;
+    };
+    facts.push(Fact {
+        kind: FactKind::SecretSourceRead,
+        file_path: file_path.to_string(),
+        name: source_kind.to_string(),
+        value: None,
+        imported_name: None,
+        runtime_use: None,
+        start_line: node.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+        start_column: node.start_position().column + 1,
+        end_column: node.end_position().column + 1,
+    });
+}
+
+/// Which accepted secret source this node reads, if any.
+///
+/// The three shapes are exactly the three the line scan recognised - `process.env.X`,
+/// `process.env["X"]`, `config.X` and `secretManager.get("X")` - so this narrows *where* a read can
+/// be found without widening *what* counts as one. `config["X"]` is left out for that reason: the
+/// scan required a literal `config.`, and admitting the subscript form here would be a detection
+/// change wearing a correctness fix's clothes.
+fn secret_source_kind(node: Node<'_>, source: &[u8]) -> Option<&'static str> {
+    match node.kind() {
+        "member_expression" => {
+            let receiver = receiver_text(node, source)?;
+            if receiver_is(&receiver, "process.env") {
+                Some(SECRET_SOURCE_ENV)
+            } else if receiver_is(&receiver, "config") {
+                Some(SECRET_SOURCE_CONFIG)
+            } else {
+                None
+            }
+        }
+        "subscript_expression" => {
+            receiver_is(&receiver_text(node, source)?, "process.env").then_some(SECRET_SOURCE_ENV)
+        }
+        "call_expression" => {
+            let function = node.child_by_field_name("function")?;
+            if function.kind() != "member_expression" {
+                return None;
+            }
+            let property = node_text(function.child_by_field_name("property")?, source)?;
+            if property != "get" {
+                return None;
+            }
+            let receiver = receiver_text(function, source)?;
+            (receiver_is(&receiver, "secretManager") || receiver_is(&receiver, "secret_manager"))
+                .then_some(SECRET_SOURCE_SECRET_MANAGER)
+        }
+        _ => None,
+    }
+}
+
+/// Whether a receiver names the given accessor, at any qualification.
+///
+/// B3. The line scan tested `line.contains("config.")`, so `this.config.apiKey` and
+/// `globalThis.process.env.API_KEY` matched: any prefix in front was irrelevant to a substring
+/// test. S6-01 replaced that with `receiver == "config"`, which silently stopped recognising both -
+/// and `this.config` is how every class-based service reads its configuration.
+///
+/// A SUFFIX on a dot boundary is the tree-shaped spelling of "any prefix is irrelevant". It is
+/// deliberately not `contains`, which would make `appConfig.password` a secret read because the
+/// letters happen to line up, and not equality, which is the narrowing this repairs.
+fn receiver_is(receiver: &str, accessor: &str) -> bool {
+    receiver == accessor || receiver.ends_with(&format!(".{accessor}"))
+}
+
+/// The `object` of a member or subscript expression with whitespace removed.
+///
+/// `process\n  .env.API_KEY` is one expression the moment it is parsed, but its object's source
+/// text carries the newline and the indentation. Comparing the compacted form is what lets the
+/// wrapped spelling be recognised as the same read - the same problem `data_operation_shape`
+/// solves by trimming its store segment.
+fn receiver_text(node: Node<'_>, source: &[u8]) -> Option<String> {
+    compacted_text(node.child_by_field_name("object")?, source)
+}
+
+/// A node's source text with all whitespace removed.
+fn compacted_text(node: Node<'_>, source: &[u8]) -> Option<String> {
+    Some(
+        node_text(node, source)?
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect(),
+    )
 }
 
 fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {

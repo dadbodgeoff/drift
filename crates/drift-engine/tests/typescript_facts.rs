@@ -1,4 +1,23 @@
-use drift_engine::{FactKind, extract_typescript_facts};
+use drift_engine::{
+    AcceptedPhase5Contract, FactKind, extract_security_facts_with_phase5, extract_typescript_facts,
+};
+
+/// A phase-5 contract that accepts every secret source and one log sink.
+///
+/// Sink candidates are gated on an accepted contract - see `sink_candidate_facts` - so an
+/// extractor test for them has to supply one, the same way the `secret_read` tests do.
+fn accepting_phase5() -> AcceptedPhase5Contract {
+    AcceptedPhase5Contract {
+        sensitive_response_fields: Vec::new(),
+        response_serializers: Vec::new(),
+        secret_sources: vec![
+            "env".to_string(),
+            "config".to_string(),
+            "secret_manager".to_string(),
+        ],
+        log_sinks: vec!["console.error".to_string()],
+    }
+}
 
 #[test]
 fn extracts_api_route_imports_exports_calls_and_roles() {
@@ -412,5 +431,244 @@ export async function GET() {
         facts
             .iter()
             .any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "db")
+    );
+}
+
+/// F5, S6-01. A comment cannot read a secret, and neither can a string.
+///
+/// `secret_read_facts` used to be a pure line scan - `line.split("process.env.")` - with nothing
+/// between it and a `//` two columns to the left. Every commented-out `process.env.API_KEY` and
+/// every documentation string that spells one out produced a `secret_read` fact, and a
+/// `secret_read` fact on a line that also reads as a sink line is a finding. A secret-source read
+/// is a `member_expression` or a `subscript_expression` in the AST or it is not a read at all, so
+/// this pins that the fact comes off the tree-sitter walk.
+///
+/// The three decoys are the three shapes the line scan could not tell from the real read: a line
+/// comment, a block comment, and a string literal.
+#[test]
+fn secret_read_facts_come_from_the_ast_not_the_line() {
+    let source = r#"
+export async function GET() {
+  const apiKey = process.env.API_KEY;
+  // const shadow = process.env.SHADOW_KEY;
+  /* const blocked = process.env.BLOCKED_KEY; */
+  const doc = "read process.env.DOC_KEY at boot";
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .collect::<Vec<_>>();
+
+    assert_eq!(reads.len(), 1, "one real secret source read: {facts:#?}");
+    assert_eq!(reads[0].name, "env", "{reads:#?}");
+    assert_eq!(reads[0].start_line, 3, "{reads:#?}");
+}
+
+/// B3, S6-07. A qualified secret source is still a secret source.
+///
+/// The line scan matched `line.contains("config.")`, `line.split("process.env.")` and
+/// `line.contains("secretManager.get(")` - substrings, so any prefix in front of them was
+/// irrelevant. S6-01 replaced that with an equality test on the receiver, which quietly stopped
+/// recognising `this.config.apiKey`, `globalThis.process.env.API_KEY` and
+/// `this.secretManager.get(...)`. All three are ordinary spellings - `this.config` in particular is
+/// how every class-based service reads config - and all three lost a real finding.
+///
+/// The receiver is therefore matched by SUFFIX, which is what "any prefix is irrelevant" means
+/// once you are working on a tree instead of a line.
+#[test]
+fn a_qualified_receiver_is_still_a_secret_source() {
+    let source = r#"
+export async function GET() {
+  const a = this.config.apiKey;
+  const b = globalThis.process.env.API_KEY;
+  const c = this.secretManager.get("PRIVATE_KEY");
+  const d = deps.config.password;
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        reads,
+        vec![
+            ("config", 3),
+            ("env", 4),
+            ("secret_manager", 5),
+            ("config", 6)
+        ],
+        "{facts:#?}"
+    );
+}
+
+/// A suffix match is not a substring match: `appConfig` does not end in `.config`.
+///
+/// Without this the fix for the test above would be free to reach for `contains`, which would make
+/// every identifier ending in the letters "config" a secret source.
+#[test]
+fn a_receiver_that_merely_ends_in_the_word_is_not_a_secret_source() {
+    let source = r#"
+export async function GET() {
+  const a = appConfig.password;
+  const b = myprocess.env.API_KEY;
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .collect::<Vec<_>>();
+
+    assert!(reads.is_empty(), "{reads:#?}");
+}
+
+/// F5, S6-06. A sink fact is positioned at its CALLEE, and does not need a receiver.
+///
+/// `symbol_called` cannot carry either. Measured on the chain below, it reports
+/// `name=json value=res\n    .status(500) lines=3-5` - the span of the whole call expression, so
+/// its `start_line` is where `res` is written, not where `.json` is. The secret is on the `.json`
+/// line, so a sink keyed on that fact lands one place and the secret another and they never meet.
+/// And `callable_parts` returns `(name, None)` for a plain `identifier` callee, so a receiver-less
+/// sink like `captureException(...)` has no receiver to match a contract's sink string against.
+///
+/// Neither is recoverable downstream of the fact, which is why this is a fact rather than a
+/// smarter reader of an existing one.
+#[test]
+fn sink_facts_are_positioned_at_the_callee_and_need_no_receiver() {
+    let source = r#"export async function GET(req, res) {
+  const apiKey = process.env.API_KEY;
+  captureException(apiKey);
+  return res
+    .status(500)
+    .json({ error: apiKey });
+}
+"#;
+
+    let facts = extract_security_facts_with_phase5(
+        "app/api/secrets/route.ts",
+        source,
+        &[],
+        &[],
+        Some(&accepting_phase5()),
+    )
+    .expect("security facts");
+    let sinks = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SinkCandidateCalled)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    // `.json` is on line 6 even though the call expression starts on line 4, and the
+    // receiver-less `captureException` is present at all.
+    assert!(
+        sinks.contains(&("captureException", 3)),
+        "receiver-less callee missing: {sinks:#?}"
+    );
+    assert!(
+        sinks.contains(&("json", 6)),
+        "callee position must be the property, not the call: {sinks:#?}"
+    );
+    assert!(
+        sinks.contains(&("status", 5)),
+        "every link in the chain is its own callee: {sinks:#?}"
+    );
+}
+
+/// The identifiers a sink references come from the call's subtree, so a comment or a string
+/// sharing the line contributes none of them.
+///
+/// This is the direct variable-on-sink-line branch of `secret_sink_exposures`, which used
+/// `line_uses_identifier` against the RAW LINE. That is why
+/// `console.error("start"); // apiKey is never logged` still produced a finding after S6-02: the
+/// sink was real, the comment merely shared its line, and a raw-line token test cannot tell.
+#[test]
+fn sink_identifiers_exclude_comments_and_strings_on_the_same_line() {
+    let source = r#"export async function GET() {
+  const apiKey = process.env.API_KEY;
+  console.error("start"); // apiKey is never logged
+  console.warn(apiKey);
+}
+"#;
+
+    let facts = extract_security_facts_with_phase5(
+        "app/api/secrets/route.ts",
+        source,
+        &[],
+        &[],
+        Some(&accepting_phase5()),
+    )
+    .expect("security facts");
+    let identifiers = |line: usize| -> Vec<String> {
+        facts
+            .iter()
+            .find(|fact| fact.kind == FactKind::SinkCandidateCalled && fact.start_line == line)
+            .and_then(|fact| fact.value.as_deref())
+            .and_then(|value| serde_json::from_str::<serde_json::Value>(value).ok())
+            .and_then(|value| {
+                value.get("identifiers").and_then(|identifiers| {
+                    identifiers.as_array().map(|entries| {
+                        entries
+                            .iter()
+                            .filter_map(|entry| entry.as_str().map(str::to_string))
+                            .collect()
+                    })
+                })
+            })
+            .unwrap_or_default()
+    };
+
+    assert!(
+        !identifiers(3).contains(&"apiKey".to_string()),
+        "a comment is not a reference: {:?}",
+        identifiers(3)
+    );
+    assert!(
+        identifiers(4).contains(&"apiKey".to_string()),
+        "a real argument is: {:?}",
+        identifiers(4)
+    );
+}
+
+/// The other two accepted secret sources reach the walk through different node kinds:
+/// `config.password` is a bare `member_expression` and `secretManager.get("K")` is a
+/// `call_expression`. Both are decoyed the same way.
+#[test]
+fn config_and_secret_manager_reads_also_come_from_the_ast() {
+    let source = r#"
+export async function GET() {
+  const password = config.password;
+  const key = secretManager.get("PRIVATE_KEY");
+  // const shadow = config.password;
+  const doc = "secretManager.get('PRIVATE_KEY') is the accessor";
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        reads,
+        vec![("config", 3), ("secret_manager", 4)],
+        "{facts:#?}"
     );
 }
