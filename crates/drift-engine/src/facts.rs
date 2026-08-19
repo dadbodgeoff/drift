@@ -497,6 +497,7 @@ fn walk_node(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fac
         "call_expression" => {
             extract_call(node, source, file_path, facts);
             extract_secret_source_read(node, source, file_path, facts);
+            extract_sink_candidate(node, source, file_path, facts);
         }
         "member_expression" | "subscript_expression" => {
             extract_secret_source_read(node, source, file_path, facts)
@@ -728,6 +729,128 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
     });
 }
 
+/// F5, S6-06. A call, positioned at its CALLEE, with the identifiers it references.
+///
+/// WHY THIS IS NOT `symbol_called`. S6-02 reused `symbol_called` for sink detection on the
+/// reasoning that it already carries callee and receiver. It carries neither in the form a sink
+/// test needs, and both gaps cost real findings:
+///
+///   - its span is the CALL EXPRESSION's. Measured on `res\n .status(500)\n .json({ e: apiKey })`,
+///     `symbol_called` reports `name=json lines=3-5`: line 3 is where `res` is written, line 5 is
+///     where `.json` and the secret are. A sink keyed on that line lands nowhere near the secret,
+///     so the exposure vanished. Prettier breaks chains of three or more links by default, so this
+///     is the ordinary spelling of the shape, not an exotic one.
+///   - `callable_parts` returns `(name, None)` for an `identifier` callee, so `captureException(x)`
+///     has no receiver. A contract's `log_sinks` is free text with nothing requiring a dotted
+///     name, and a directly imported reporter is the common shape.
+///
+/// So this fact carries the callee NAME TOKEN's position - the `.json` property, not the head of
+/// the chain - and a `callee` string that is present with or without a receiver.
+///
+/// It also carries the identifiers the call REFERENCES, gathered from the call's own subtree. That
+/// is what finally closes the reported defect: `secret_sink_exposures` asked
+/// `line_uses_identifier(raw_line, variable)`, so `console.error("start"); // apiKey is never
+/// logged` was a real sink whose line happened to contain the token `apiKey` inside a comment.
+/// A comment contributes no `identifier` node, so it contributes no reference.
+fn extract_sink_candidate(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {
+    let Some(function) = node.child_by_field_name("function") else {
+        return;
+    };
+    // A callee that is neither an identifier nor a member expression - `wrap(console.error)(x)`,
+    // `handlers["error"](x)` - has no name node to stand at, but the raw line scan still matched a
+    // sink string anywhere inside it, and `wrap(console.error)(apiKey)` really does pass the secret
+    // to a wrapped reporter. So it falls back to the callee's own compacted text, which keeps the
+    // substring test finding what it used to find without inventing a name.
+    let (name, receiver, position) = match callee_name_node(function, source) {
+        Some((name_node, receiver)) => {
+            let Some(name) = node_text(name_node, source) else {
+                return;
+            };
+            (name, receiver, name_node)
+        }
+        None => {
+            let Some(text) = compacted_text(function, source) else {
+                return;
+            };
+            (text, None, function)
+        }
+    };
+    let callee = match receiver.as_deref() {
+        Some(receiver) => format!("{receiver}.{name}"),
+        None => name.clone(),
+    };
+    let mut identifiers = Vec::new();
+    collect_referenced_identifiers(node, source, &mut identifiers);
+    identifiers.sort();
+    identifiers.dedup();
+
+    facts.push(Fact {
+        kind: FactKind::SinkCandidateCalled,
+        file_path: file_path.to_string(),
+        name,
+        value: Some(
+            serde_json::json!({
+                "callee": callee,
+                "has_receiver": receiver.is_some(),
+                "identifiers": identifiers,
+            })
+            .to_string(),
+        ),
+        imported_name: None,
+        runtime_use: None,
+        // The CALLEE's position, deliberately, and the call's end. A sink is where the call is
+        // written, and for a wrapped chain that is the property line, not the receiver line.
+        start_line: position.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+        start_column: position.start_position().column + 1,
+        end_column: node.end_position().column + 1,
+    });
+}
+
+/// The callee's own name node, plus its receiver where it has one.
+///
+/// Unlike `callable_parts` this returns the NODE rather than the text, because the position is the
+/// whole point, and it reports the receiver as `Option` rather than folding a missing one into a
+/// dropped fact. The receiver text is compacted for the same reason `receiver_text` compacts:
+/// `logger\n  .error` is one callee however it is wrapped, and a sink test that disagreed with
+/// itself depending on line breaks is the bug this fact exists to fix.
+fn callee_name_node<'tree>(
+    node: Node<'tree>,
+    source: &[u8],
+) -> Option<(Node<'tree>, Option<String>)> {
+    match node.kind() {
+        "identifier" => Some((node, None)),
+        "member_expression" => {
+            let property = node.child_by_field_name("property")?;
+            let receiver = receiver_text(node, source);
+            Some((property, receiver))
+        }
+        _ => None,
+    }
+}
+
+/// Every identifier the subtree mentions.
+///
+/// `property_identifier` and the shorthand property kinds are included because the raw-line token
+/// test this replaces matched them too - `{ error: apiKey }` and `{ apiKey }` both put the token on
+/// the line - and dropping them would narrow detection while claiming not to.
+fn collect_referenced_identifiers(node: Node<'_>, source: &[u8], identifiers: &mut Vec<String>) {
+    if matches!(
+        node.kind(),
+        "identifier"
+            | "property_identifier"
+            | "shorthand_property_identifier"
+            | "shorthand_property_identifier_pattern"
+    ) && let Some(text) = node_text(node, source)
+    {
+        identifiers.push(text);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_referenced_identifiers(child, source, identifiers);
+    }
+}
+
 /// F5, S6-01. Where a secret source is *read*, as a position in the tree.
 ///
 /// The phase-5 scanner used to find these by splitting the raw line on `"process.env."`,
@@ -807,9 +930,13 @@ fn secret_source_kind(node: Node<'_>, source: &[u8]) -> Option<&'static str> {
 /// wrapped spelling be recognised as the same read - the same problem `data_operation_shape`
 /// solves by trimming its store segment.
 fn receiver_text(node: Node<'_>, source: &[u8]) -> Option<String> {
-    let object = node_text(node.child_by_field_name("object")?, source)?;
+    compacted_text(node.child_by_field_name("object")?, source)
+}
+
+/// A node's source text with all whitespace removed.
+fn compacted_text(node: Node<'_>, source: &[u8]) -> Option<String> {
     Some(
-        object
+        node_text(node, source)?
             .chars()
             .filter(|character| !character.is_whitespace())
             .collect(),

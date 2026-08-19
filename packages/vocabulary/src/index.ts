@@ -43,6 +43,7 @@ export const FACT_KINDS = [
   "serializer_called",
   "secret_read",
   "secret_source_read",
+  "sink_candidate_called",
   "data_model_declared",
   "data_model_field_declared",
   "data_model_relation_declared",

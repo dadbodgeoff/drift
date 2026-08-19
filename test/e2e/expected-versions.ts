@@ -14,4 +14,4 @@
  * added, exactly two places change: the migration list pinned in
  * `packages/storage/test/sqlite-storage.test.ts`, and this constant.
  */
-export const EXPECTED_SQLITE_SCHEMA_VERSION = 35;
+export const EXPECTED_SQLITE_SCHEMA_VERSION = 36;

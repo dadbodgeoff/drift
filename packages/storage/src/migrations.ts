@@ -973,5 +973,18 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       SELECT 1;
     `
+  },
+  {
+    // F5, S6-06. `sink_candidate_called` enters the vocabulary here.
+    //
+    // Reusing `symbol_called` for sink detection dropped two classes of real security finding,
+    // because that fact carries the call expression's span rather than the callee's and cannot
+    // represent a receiver-less callee at all. Same reasoning as 034 and 035 for why a no-op
+    // migration is still a migration: `FactRecordSchema.kind` is a closed enum, and an older build
+    // opening a database that holds this kind throws on every `listFacts` for that scan.
+    id: "036_sink_candidate_fact_kind",
+    sql: `
+      SELECT 1;
+    `
   }
 ];

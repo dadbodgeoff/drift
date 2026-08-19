@@ -1726,11 +1726,8 @@ fn secret_sink_exposures(
     }
 
     let mut exposures = Vec::new();
-    for (index, line) in lines.iter().enumerate() {
-        let line_number = index + 1;
-        let Some(sink_kind) = sink_kinds.get(&line_number).copied() else {
-            continue;
-        };
+    for sink in &sink_kinds {
+        let line_number = sink.line;
         if let Some(secret) = secret_reads
             .iter()
             .find(|secret| secret.line == line_number)
@@ -1738,16 +1735,19 @@ fn secret_sink_exposures(
             exposures.push(SecretExposureCandidate {
                 secret_fact_id: secret.fact_id.clone(),
                 secret_class: secret.secret_class.clone(),
-                sink_kind: sink_kind.to_string(),
+                sink_kind: sink.kind.to_string(),
                 sink_line: line_number,
             });
         }
         for (variable, fact_id, secret_class) in &tainted {
-            if line_uses_identifier(line, variable) {
+            // The identifiers the CALL references, not the tokens its line contains. This is the
+            // branch that kept `console.error("start"); // apiKey is never logged` a finding: the
+            // sink was real and the comment merely shared its line.
+            if sink.references(variable) {
                 exposures.push(SecretExposureCandidate {
                     secret_fact_id: fact_id.clone(),
                     secret_class: secret_class.clone(),
-                    sink_kind: sink_kind.to_string(),
+                    sink_kind: sink.kind.to_string(),
                     sink_line: line_number,
                 });
             }
@@ -1773,7 +1773,7 @@ fn secret_sink_exposures(
     exposures
 }
 
-/// F5, S6-02. Which lines hold a secret sink, decided from calls rather than from text.
+/// F5, S6-02 and S6-06. The secret sinks in a file, decided from calls rather than from text.
 ///
 /// This replaces `is_response_sink_line` - three `.contains()` calls on the raw line - and the
 /// matching `log_sinks.iter().any(|sink| line.contains(sink))` beside it. Between them they made
@@ -1781,46 +1781,84 @@ fn secret_sink_exposures(
 ///     // console.error(apiKey);
 ///
 /// a sink, so commenting a log call OUT flipped a route from `Proven` to `MissingProof`. A string
-/// literal naming a sink did the same. A call is a `symbol_called` fact off the tree-sitter walk,
-/// and neither a comment nor a string produces one.
+/// literal naming a sink did the same. A call is a fact off the tree-sitter walk, and neither a
+/// comment nor a string produces one.
 ///
-/// The PREDICATES are deliberately unchanged, only what they are asked about. A response sink is
-/// still any member call named `json` - the old `.contains(".json(")` catch-all, which also
-/// matches `await request.json()` and has since before this change; narrowing it is a detection
-/// question, not this fix. A log sink is still a substring test against the contract's configured
-/// sink strings, now applied to the call's qualified callee (`console.error`) rather than to the
-/// whole line. Response wins over log where a line is both, as before.
+/// S6-02 read `symbol_called` for this and lost two classes of real finding, both because that
+/// fact cannot express what a sink needs - see `extract_sink_candidate` for the measurements. It
+/// now reads `sink_candidate_called`, which is positioned at the callee and carries a callee
+/// string whether or not there is a receiver.
 ///
-/// The one narrowing worth naming: a bare reference that names a sink without calling it -
-/// `wrap(console.error)` - is no longer a sink line. It has no call of its own for the walk to
-/// see. That is a consequence of asking about calls, and it is what asking about calls is for.
-///
-/// Receiver text is used raw, newlines and all. `logger\n  .error(x)` did not match the line scan
-/// and does not match here; compacting it would ADD findings on real repositories, which is a
-/// detection change and does not belong in a false-positive fix.
-fn sink_kinds_by_line(facts: &[Fact], log_sinks: &[String]) -> BTreeMap<usize, &'static str> {
-    let mut sinks: BTreeMap<usize, &'static str> = BTreeMap::new();
+/// The PREDICATES are otherwise unchanged. A response sink is still any member call named `json` -
+/// the old `.contains(".json(")` catch-all, which also matches `await request.json()` and did
+/// before any of this; narrowing it is a detection question, not this fix. It still requires a
+/// receiver, because `.json(` required a dot. A log sink is still a substring test against the
+/// contract's configured sink strings, applied to the callee rather than the whole line, and now
+/// including receiver-less callees because `log_sinks` is free text that never promised a dot.
+/// Response still wins over log where one line holds both.
+fn sink_kinds_by_line(facts: &[Fact], log_sinks: &[String]) -> Vec<SinkSite> {
+    let mut sinks: BTreeMap<usize, SinkSite> = BTreeMap::new();
     for fact in facts
         .iter()
-        .filter(|fact| fact.kind == crate::FactKind::SymbolCalled)
+        .filter(|fact| fact.kind == crate::FactKind::SinkCandidateCalled)
     {
-        let Some(receiver) = fact.value.as_deref() else {
+        let Some(candidate) = sink_candidate_value(fact) else {
             continue;
         };
-        let qualified = format!("{receiver}.{}", fact.name);
-        let sink_kind = if fact.name == "json" {
+        let sink_kind = if fact.name == "json" && candidate.has_receiver {
             "response"
-        } else if log_sinks.iter().any(|sink| qualified.contains(sink)) {
+        } else if log_sinks.iter().any(|sink| candidate.callee.contains(sink)) {
             "log"
         } else {
             continue;
         };
-        let entry = sinks.entry(fact.start_line).or_insert(sink_kind);
+        let site = sinks.entry(fact.start_line).or_insert_with(|| SinkSite {
+            line: fact.start_line,
+            kind: sink_kind,
+            identifiers: Vec::new(),
+        });
         if sink_kind == "response" {
-            *entry = "response";
+            site.kind = "response";
         }
+        site.identifiers.extend(candidate.identifiers);
     }
-    sinks
+    sinks.into_values().collect()
+}
+
+/// One line that holds at least one sink, and everything the sinks on it reference.
+///
+/// Several calls can share a line - `console.error(Response.json({ apiKey }))` is two - so the
+/// identifiers are the union across them, which is what a per-line sink decision means.
+struct SinkSite {
+    line: usize,
+    kind: &'static str,
+    identifiers: Vec<String>,
+}
+
+impl SinkSite {
+    fn references(&self, identifier: &str) -> bool {
+        self.identifiers.iter().any(|entry| entry == identifier)
+    }
+}
+
+struct SinkCandidateValue {
+    callee: String,
+    has_receiver: bool,
+    identifiers: Vec<String>,
+}
+
+fn sink_candidate_value(fact: &Fact) -> Option<SinkCandidateValue> {
+    let value: Value = serde_json::from_str(fact.value.as_deref()?).ok()?;
+    Some(SinkCandidateValue {
+        callee: value.get("callee")?.as_str()?.to_string(),
+        has_receiver: value.get("has_receiver")?.as_bool()?,
+        identifiers: value
+            .get("identifiers")?
+            .as_array()?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(str::to_string))
+            .collect(),
+    })
 }
 
 fn file_path_string(facts: &[Fact]) -> String {

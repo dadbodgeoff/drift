@@ -501,6 +501,111 @@ fn a_secret_returned_in_a_response_still_blocks() {
     );
 }
 
+/// B1, S6-06. A member chain broken across lines is still a response sink.
+///
+/// S6-02 keyed sinks on `symbol_called.start_line`, which is the CALL EXPRESSION's line - `res`,
+/// on line 3 - while the secret is on the `.json` line, line 5. So they never met and a secret
+/// returned in a response body silently stopped being reported. Prettier breaks chains of three or
+/// more links by default, so this is the ordinary spelling.
+///
+/// The sink line is asserted, not just the finding count: landing on line 3 and reporting a
+/// finding for some other reason would pass a count-only test.
+#[test]
+fn a_response_sink_split_across_lines_still_blocks() {
+    let repo_root = temp_repo("phase5_chain_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET(req, res) {\n  const apiKey = process.env.API_KEY;\n  return res\n    .status(500)\n    .json({ error: apiKey });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_chain_sink",
+        &repo_root,
+        6,
+        5,
+    ));
+
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        secret_sinks(&payload),
+        vec![("response".to_string(), 5)],
+        "the sink is where `.json` is written, not where the chain starts: {payload:#?}"
+    );
+}
+
+/// B2, S6-06. A log sink with no receiver still blocks.
+///
+/// `log_sinks` is free text in the contract with nothing requiring a dotted name, and a directly
+/// imported reporter is the common shape. S6-02 read `symbol_called`, whose `value` is `None` for
+/// an `identifier` callee, and dropped every one of them on a `let Some(receiver) else continue`.
+#[test]
+fn a_receiver_less_log_sink_still_blocks() {
+    let repo_root = temp_repo("phase5_bare_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "import { captureException } from \"@sentry/node\";\nexport async function GET() {\n  const apiKey = process.env.API_KEY;\n  captureException(apiKey);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request_with_sinks(
+        "repo_phase5_bare_sink",
+        &repo_root,
+        6,
+        5,
+        &["captureException"],
+    ));
+
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        secret_sinks(&payload),
+        vec![("log".to_string(), 4)],
+        "{payload:#?}"
+    );
+}
+
+/// The reported defect, in the shape that survived S6-02: a comment on a REAL sink line.
+///
+/// `secret_sink_exposures` asked `line_uses_identifier(raw_line, variable)`, so a genuine
+/// `console.error("start")` whose line happened to also contain the token `apiKey` inside a
+/// comment produced an exposure. The sink was never in doubt; the reference was. This involves no
+/// taint propagation - it is the direct variable-on-sink-line branch.
+#[test]
+fn a_comment_on_a_real_sink_line_is_not_a_reference() {
+    let repo_root = temp_repo("phase5_comment_on_sink_line");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(\"start\"); // apiKey is never logged\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_comment_on_sink",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a comment sharing a sink's line is not an argument to it: {payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+}
+
 /// S6-04. The parser-gap scanners stay text-based ON PURPOSE, and this pins that they did.
 ///
 /// S6-02 moved the SINK test off the line and onto the AST, which is why the commented-out
@@ -565,6 +670,44 @@ fn secret_exposure_request(
     line_count: usize,
     response_line: usize,
 ) -> Value {
+    secret_exposure_request_with_sinks(
+        repo_id,
+        repo_root,
+        line_count,
+        response_line,
+        &["console.error"],
+    )
+}
+
+/// The `(sink_kind, sink_line)` pairs the proof reports, which is where a sink LANDED rather than
+/// merely whether one was found.
+fn secret_sinks(payload: &Value) -> Vec<(String, u64)> {
+    payload["security_boundary_proofs"]
+        .as_array()
+        .expect("proofs")
+        .iter()
+        .find(|proof| proof["route"]["route_id"] == "route:app/api/secrets/route.ts:GET")
+        .expect("secrets route proof")["sinks"]["secrets"]
+        .as_array()
+        .expect("sinks")
+        .iter()
+        .map(|sink| {
+            (
+                sink["sink_kind"].as_str().expect("sink kind").to_string(),
+                sink["sink_line"].as_u64().expect("sink line"),
+            )
+        })
+        .collect()
+}
+
+fn secret_exposure_request_with_sinks(
+    repo_id: &str,
+    repo_root: &std::path::Path,
+    line_count: usize,
+    response_line: usize,
+    log_sinks: &[&str],
+) -> Value {
+    let log_sinks = log_sinks.iter().map(|sink| json!(sink)).collect::<Vec<_>>();
     json!({
         "repo": {
             "repo_id": repo_id,
@@ -593,7 +736,7 @@ fn secret_exposure_request(
                 },
                 "requires": {
                     "secret_sources": ["env"],
-                    "log_sinks": ["console.error"]
+                    "log_sinks": log_sinks
                 },
                 "severity": "error",
                 "enforcement_mode": "block",

@@ -450,6 +450,101 @@ export async function GET() {
     assert_eq!(reads[0].start_line, 3, "{reads:#?}");
 }
 
+/// F5, S6-06. A sink fact is positioned at its CALLEE, and does not need a receiver.
+///
+/// `symbol_called` cannot carry either. Measured on the chain below, it reports
+/// `name=json value=res\n    .status(500) lines=3-5` - the span of the whole call expression, so
+/// its `start_line` is where `res` is written, not where `.json` is. The secret is on the `.json`
+/// line, so a sink keyed on that fact lands one place and the secret another and they never meet.
+/// And `callable_parts` returns `(name, None)` for a plain `identifier` callee, so a receiver-less
+/// sink like `captureException(...)` has no receiver to match a contract's sink string against.
+///
+/// Neither is recoverable downstream of the fact, which is why this is a fact rather than a
+/// smarter reader of an existing one.
+#[test]
+fn sink_facts_are_positioned_at_the_callee_and_need_no_receiver() {
+    let source = r#"export async function GET(req, res) {
+  const apiKey = process.env.API_KEY;
+  captureException(apiKey);
+  return res
+    .status(500)
+    .json({ error: apiKey });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let sinks = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SinkCandidateCalled)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    // `.json` is on line 6 even though the call expression starts on line 4, and the
+    // receiver-less `captureException` is present at all.
+    assert!(
+        sinks.contains(&("captureException", 3)),
+        "receiver-less callee missing: {sinks:#?}"
+    );
+    assert!(
+        sinks.contains(&("json", 6)),
+        "callee position must be the property, not the call: {sinks:#?}"
+    );
+    assert!(
+        sinks.contains(&("status", 5)),
+        "every link in the chain is its own callee: {sinks:#?}"
+    );
+}
+
+/// The identifiers a sink references come from the call's subtree, so a comment or a string
+/// sharing the line contributes none of them.
+///
+/// This is the direct variable-on-sink-line branch of `secret_sink_exposures`, which used
+/// `line_uses_identifier` against the RAW LINE. That is why
+/// `console.error("start"); // apiKey is never logged` still produced a finding after S6-02: the
+/// sink was real, the comment merely shared its line, and a raw-line token test cannot tell.
+#[test]
+fn sink_identifiers_exclude_comments_and_strings_on_the_same_line() {
+    let source = r#"export async function GET() {
+  const apiKey = process.env.API_KEY;
+  console.error("start"); // apiKey is never logged
+  console.warn(apiKey);
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let identifiers = |line: usize| -> Vec<String> {
+        facts
+            .iter()
+            .find(|fact| fact.kind == FactKind::SinkCandidateCalled && fact.start_line == line)
+            .and_then(|fact| fact.value.as_deref())
+            .and_then(|value| serde_json::from_str::<serde_json::Value>(value).ok())
+            .and_then(|value| {
+                value.get("identifiers").and_then(|identifiers| {
+                    identifiers.as_array().map(|entries| {
+                        entries
+                            .iter()
+                            .filter_map(|entry| entry.as_str().map(str::to_string))
+                            .collect()
+                    })
+                })
+            })
+            .unwrap_or_default()
+    };
+
+    assert!(
+        !identifiers(3).contains(&"apiKey".to_string()),
+        "a comment is not a reference: {:?}",
+        identifiers(3)
+    );
+    assert!(
+        identifiers(4).contains(&"apiKey".to_string()),
+        "a real argument is: {:?}",
+        identifiers(4)
+    );
+}
+
 /// The other two accepted secret sources reach the walk through different node kinds:
 /// `config.password` is a bare `member_expression` and `secretManager.get("K")` is a
 /// `call_expression`. Both are decoyed the same way.
