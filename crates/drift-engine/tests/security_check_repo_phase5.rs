@@ -816,52 +816,69 @@ fn a_token_elsewhere_on_a_sink_line_is_not_an_exposure() {
 ///
 /// They are one test because they are one decision: a tree sees a call however it is spelled, and
 /// the alternative to accepting these is to reintroduce formatting sensitivity on purpose.
+struct DetectionCase {
+    name: &'static str,
+    source: &'static str,
+    line_count: usize,
+    response_line: usize,
+    log_sinks: &'static [&'static str],
+    secret_sources: &'static [&'static str],
+}
+
 #[test]
 fn detections_the_line_scan_missed_now_fire() {
-    let cases: &[(&str, &str, usize, usize, &[&str], &[&str])] = &[
-        (
-            "optional_chain",
-            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  logger?.error(apiKey);\n  return Response.json({ ok: true });\n}\n",
-            5,
-            4,
-            &["logger.error"],
-            &["env"],
-        ),
-        (
-            "space_before_paren",
-            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  return Response.json ({ apiKey });\n}\n",
-            4,
-            3,
-            &["console.error"],
-            &["env"],
-        ),
-        (
-            "second_statement_after_unknown",
-            "export async function GET() {\n  const port = process.env.PORT; const pw = config.password; console.error(pw);\n  return Response.json({ ok: true });\n}\n",
-            4,
-            3,
-            &["console.error"],
-            &["env", "config", "secret_manager"],
-        ),
-        (
-            "wrapped_secret_manager",
-            "export async function GET() {\n  const key = secretManager\n    .get(\"API_KEY\");\n  console.error(key);\n  return Response.json({ ok: true });\n}\n",
-            6,
-            5,
-            &["console.error"],
-            &["env", "config", "secret_manager"],
-        ),
-        (
-            "arguments_split_across_lines",
-            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(\n    apiKey\n  );\n  return Response.json({ ok: true });\n}\n",
-            7,
-            6,
-            &["console.error"],
-            &["env"],
-        ),
+    let cases: &[DetectionCase] = &[
+        DetectionCase {
+            name: "optional_chain",
+            source: "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  logger?.error(apiKey);\n  return Response.json({ ok: true });\n}\n",
+            line_count: 5,
+            response_line: 4,
+            log_sinks: &["logger.error"],
+            secret_sources: &["env"],
+        },
+        DetectionCase {
+            name: "space_before_paren",
+            source: "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  return Response.json ({ apiKey });\n}\n",
+            line_count: 4,
+            response_line: 3,
+            log_sinks: &["console.error"],
+            secret_sources: &["env"],
+        },
+        DetectionCase {
+            name: "second_statement_after_unknown",
+            source: "export async function GET() {\n  const port = process.env.PORT; const pw = config.password; console.error(pw);\n  return Response.json({ ok: true });\n}\n",
+            line_count: 4,
+            response_line: 3,
+            log_sinks: &["console.error"],
+            secret_sources: &["env", "config", "secret_manager"],
+        },
+        DetectionCase {
+            name: "wrapped_secret_manager",
+            source: "export async function GET() {\n  const key = secretManager\n    .get(\"API_KEY\");\n  console.error(key);\n  return Response.json({ ok: true });\n}\n",
+            line_count: 6,
+            response_line: 5,
+            log_sinks: &["console.error"],
+            secret_sources: &["env", "config", "secret_manager"],
+        },
+        DetectionCase {
+            name: "arguments_split_across_lines",
+            source: "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(\n    apiKey\n  );\n  return Response.json({ ok: true });\n}\n",
+            line_count: 7,
+            response_line: 6,
+            log_sinks: &["console.error"],
+            secret_sources: &["env"],
+        },
     ];
 
-    for (name, source, line_count, response_line, log_sinks, secret_sources) in cases {
+    for case in cases {
+        let DetectionCase {
+            name,
+            source,
+            line_count,
+            response_line,
+            log_sinks,
+            secret_sources,
+        } = case;
         let repo_root = temp_repo(&format!("phase5_added_{name}"));
         write_route(&repo_root, "app/api/secrets/route.ts", source);
         let payload = run_check_repo(secret_exposure_request_full(

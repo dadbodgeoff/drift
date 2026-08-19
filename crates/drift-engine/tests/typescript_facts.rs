@@ -1,4 +1,23 @@
-use drift_engine::{FactKind, extract_typescript_facts};
+use drift_engine::{
+    AcceptedPhase5Contract, FactKind, extract_security_facts_with_phase5, extract_typescript_facts,
+};
+
+/// A phase-5 contract that accepts every secret source and one log sink.
+///
+/// Sink candidates are gated on an accepted contract - see `sink_candidate_facts` - so an
+/// extractor test for them has to supply one, the same way the `secret_read` tests do.
+fn accepting_phase5() -> AcceptedPhase5Contract {
+    AcceptedPhase5Contract {
+        sensitive_response_fields: Vec::new(),
+        response_serializers: Vec::new(),
+        secret_sources: vec![
+            "env".to_string(),
+            "config".to_string(),
+            "secret_manager".to_string(),
+        ],
+        log_sinks: vec!["console.error".to_string()],
+    }
+}
 
 #[test]
 fn extracts_api_route_imports_exports_calls_and_roles() {
@@ -539,8 +558,14 @@ fn sink_facts_are_positioned_at_the_callee_and_need_no_receiver() {
 }
 "#;
 
-    let facts =
-        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let facts = extract_security_facts_with_phase5(
+        "app/api/secrets/route.ts",
+        source,
+        &[],
+        &[],
+        Some(&accepting_phase5()),
+    )
+    .expect("security facts");
     let sinks = facts
         .iter()
         .filter(|fact| fact.kind == FactKind::SinkCandidateCalled)
@@ -579,8 +604,14 @@ fn sink_identifiers_exclude_comments_and_strings_on_the_same_line() {
 }
 "#;
 
-    let facts =
-        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let facts = extract_security_facts_with_phase5(
+        "app/api/secrets/route.ts",
+        source,
+        &[],
+        &[],
+        Some(&accepting_phase5()),
+    )
+    .expect("security facts");
     let identifiers = |line: usize| -> Vec<String> {
         facts
             .iter()

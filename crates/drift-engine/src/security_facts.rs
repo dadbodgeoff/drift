@@ -639,6 +639,15 @@ fn extract_security_facts_with_policy_and_phase5(
         &source_lines,
         accepted_phase5,
     ));
+    // Sink candidates ride the same gate as `secret_read`: they exist only where a phase-5
+    // contract has been accepted, because that is the only thing that consumes them. See
+    // `sink_candidate_facts` for what emitting them from the base walk cost.
+    if accepted_phase5.is_some() {
+        security_facts.extend(crate::facts::sink_candidate_facts(
+            &normalized_file_path,
+            source,
+        )?);
+    }
 
     Ok(security_facts)
 }

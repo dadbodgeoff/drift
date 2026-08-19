@@ -497,7 +497,6 @@ fn walk_node(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fac
         "call_expression" => {
             extract_call(node, source, file_path, facts);
             extract_secret_source_read(node, source, file_path, facts);
-            extract_sink_candidate(node, source, file_path, facts);
         }
         "member_expression" | "subscript_expression" => {
             extract_secret_source_read(node, source, file_path, facts)
@@ -727,6 +726,45 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         start_column: node.start_position().column + 1,
         end_column: node.end_position().column + 1,
     });
+}
+
+/// Every sink candidate in a file, for callers that have a reason to want them.
+///
+/// NOT part of the base walk, and the reason is measured. One fact per call site is an enormous
+/// number of call sites: emitting these from `extract_typescript_facts` took a `packages/` scan
+/// from 33,808 facts to 63,951 (+89%) and from 1.80s to 3.05s (+69%), for a fact that only the
+/// secret-exposure proof reads. Nothing else consumes it and nothing needs it on the wire.
+///
+/// So it is gated exactly the way `secret_read` already is: produced only where an accepted
+/// phase-5 contract exists to give it a consumer. Scan mode passes `accepted_phase5: None` and
+/// gets none of these, which is why a scan stream holds zero `secret_read` facts today too.
+///
+/// The cost is a second parse of the file. That is paid only for files a phase-5 convention is
+/// actually scoped to, against a base walk that already parses every file in the repository.
+pub(crate) fn sink_candidate_facts(
+    file_path: &str,
+    source: &str,
+) -> Result<Vec<Fact>, FactExtractError> {
+    let (tree, _) = parse_with_best_grammar(file_path, source)?;
+    let root = tree.root_node();
+    if exceeds_max_depth(root, MAX_AST_DEPTH) {
+        return Err(FactExtractError::TooDeep {
+            depth_limit: MAX_AST_DEPTH,
+        });
+    }
+    let mut facts = Vec::new();
+    walk_sink_candidates(root, source.as_bytes(), file_path, &mut facts);
+    Ok(facts)
+}
+
+fn walk_sink_candidates(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {
+    if node.kind() == "call_expression" {
+        extract_sink_candidate(node, source, file_path, facts);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        walk_sink_candidates(child, source, file_path, facts);
+    }
 }
 
 /// F5, S6-06. A call, positioned at its CALLEE, with the identifiers it references.
