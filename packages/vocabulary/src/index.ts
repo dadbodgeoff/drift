@@ -42,6 +42,7 @@ export const FACT_KINDS = [
   "response_emits_field",
   "serializer_called",
   "secret_read",
+  "secret_source_read",
   "data_model_declared",
   "data_model_field_declared",
   "data_model_relation_declared",

@@ -52,6 +52,15 @@ pub const RUNTIME_USE_SIDE_EFFECT: &str = "side_effect";
 /// binding roots), and it must never collide with a real binding in any of them.
 pub const SIDE_EFFECT_IMPORT_BINDING: &str = "(side-effect)";
 
+/// F5, S6-01. The `name` of a `secret_source_read` fact: which source the read came from.
+///
+/// These are the three strings a phase-5 contract's `secret_sources` list is written in, so the
+/// walk names the source in the contract's own words and `security_facts.rs` can gate on it by
+/// equality rather than by re-deciding the shape.
+pub const SECRET_SOURCE_ENV: &str = "env";
+pub const SECRET_SOURCE_CONFIG: &str = "config";
+pub const SECRET_SOURCE_SECRET_MANAGER: &str = "secret_manager";
+
 struct ImportBinding {
     imported_name: String,
     local_name: String,
@@ -485,7 +494,13 @@ fn walk_node(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fac
         "lexical_declaration" | "variable_declaration" => {
             extract_runtime_imports(node, source, file_path, facts)
         }
-        "call_expression" => extract_call(node, source, file_path, facts),
+        "call_expression" => {
+            extract_call(node, source, file_path, facts);
+            extract_secret_source_read(node, source, file_path, facts);
+        }
+        "member_expression" | "subscript_expression" => {
+            extract_secret_source_read(node, source, file_path, facts)
+        }
         "export_statement" => extract_export(node, source, file_path, facts),
         _ => {}
     }
@@ -711,6 +726,94 @@ fn extract_call(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<
         start_column: node.start_position().column + 1,
         end_column: node.end_position().column + 1,
     });
+}
+
+/// F5, S6-01. Where a secret source is *read*, as a position in the tree.
+///
+/// The phase-5 scanner used to find these by splitting the raw line on `"process.env."`,
+/// `"config."` and `"secretManager.get("`, which is why `// const shadow = process.env.KEY;`
+/// produced a `secret_read` fact indistinguishable from the real one. A read is a
+/// `member_expression`, a `subscript_expression` or a `.get()` call in the tree or it is not a
+/// read, and a comment is none of those.
+///
+/// The fact deliberately carries NO key text, hash or expression: only the source kind and the
+/// span. `secret_read`'s whole reason for hashing its key is that env key names should not travel
+/// in scan payloads, and a base fact is streamed on every scan of every repo. The redacted form is
+/// still built in `security_facts.rs`, from the source text under this span - which is code by
+/// construction now, rather than a line that merely contained it.
+fn extract_secret_source_read(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    facts: &mut Vec<Fact>,
+) {
+    let Some(source_kind) = secret_source_kind(node, source) else {
+        return;
+    };
+    facts.push(Fact {
+        kind: FactKind::SecretSourceRead,
+        file_path: file_path.to_string(),
+        name: source_kind.to_string(),
+        value: None,
+        imported_name: None,
+        runtime_use: None,
+        start_line: node.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+        start_column: node.start_position().column + 1,
+        end_column: node.end_position().column + 1,
+    });
+}
+
+/// Which accepted secret source this node reads, if any.
+///
+/// The three shapes are exactly the three the line scan recognised - `process.env.X`,
+/// `process.env["X"]`, `config.X` and `secretManager.get("X")` - so this narrows *where* a read can
+/// be found without widening *what* counts as one. `config["X"]` is left out for that reason: the
+/// scan required a literal `config.`, and admitting the subscript form here would be a detection
+/// change wearing a correctness fix's clothes.
+fn secret_source_kind(node: Node<'_>, source: &[u8]) -> Option<&'static str> {
+    match node.kind() {
+        "member_expression" => match receiver_text(node, source)?.as_str() {
+            "process.env" => Some(SECRET_SOURCE_ENV),
+            "config" => Some(SECRET_SOURCE_CONFIG),
+            _ => None,
+        },
+        "subscript_expression" => {
+            (receiver_text(node, source)? == "process.env").then_some(SECRET_SOURCE_ENV)
+        }
+        "call_expression" => {
+            let function = node.child_by_field_name("function")?;
+            if function.kind() != "member_expression" {
+                return None;
+            }
+            let property = node_text(function.child_by_field_name("property")?, source)?;
+            if property != "get" {
+                return None;
+            }
+            matches!(
+                receiver_text(function, source)?.as_str(),
+                "secretManager" | "secret_manager"
+            )
+            .then_some(SECRET_SOURCE_SECRET_MANAGER)
+        }
+        _ => None,
+    }
+}
+
+/// The `object` of a member or subscript expression with whitespace removed.
+///
+/// `process\n  .env.API_KEY` is one expression the moment it is parsed, but its object's source
+/// text carries the newline and the indentation. Comparing the compacted form is what lets the
+/// wrapped spelling be recognised as the same read - the same problem `data_operation_shape`
+/// solves by trimming its store segment.
+fn receiver_text(node: Node<'_>, source: &[u8]) -> Option<String> {
+    let object = node_text(node.child_by_field_name("object")?, source)?;
+    Some(
+        object
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect(),
+    )
 }
 
 fn extract_export(node: Node<'_>, source: &[u8], file_path: &str, facts: &mut Vec<Fact>) {

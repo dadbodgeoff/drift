@@ -2,6 +2,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
+use crate::facts::{SECRET_SOURCE_CONFIG, SECRET_SOURCE_ENV, SECRET_SOURCE_SECRET_MANAGER};
 use crate::security_control_flow::validated_input_uses;
 use crate::security_patterns::{
     AcceptedAuthHelper, AcceptedPhase5Contract, AcceptedRequestValidator,
@@ -634,6 +635,7 @@ fn extract_security_facts_with_policy_and_phase5(
     ));
     security_facts.extend(secret_read_facts(
         &normalized_file_path,
+        &facts,
         &source_lines,
         accepted_phase5,
     ));
@@ -641,79 +643,115 @@ fn extract_security_facts_with_policy_and_phase5(
     Ok(security_facts)
 }
 
+/// F5, S6-01. `secret_read` facts, one per `secret_source_read` the tree-sitter walk found.
+///
+/// This used to iterate `lines` and split each one on `"process.env."`, `"config."` and
+/// `"secretManager.get("`. Nothing in a line scan can tell a read from a comment about a read, so
+/// `// const shadow = process.env.API_KEY;` produced a fact with a real line number - and a
+/// `secret_read` on a line that also reads as a sink is a `MissingProof`. The walk now decides
+/// WHERE a read is; this decides whether the contract accepts that source and what class it is.
+///
+/// The key still never leaves this function unhashed, and the base fact never carried it at all:
+/// the key is recovered from the source text under the fact's span, which is an expression rather
+/// than a line.
 fn secret_read_facts(
     file_path: &str,
+    facts: &[Fact],
     lines: &[&str],
     accepted_phase5: Option<&AcceptedPhase5Contract>,
 ) -> Vec<Fact> {
     let Some(accepted) = accepted_phase5 else {
         return Vec::new();
     };
-    let mut facts = Vec::new();
-    for (index, line) in lines.iter().enumerate() {
-        let line_number = index + 1;
-        if accepted.secret_sources.iter().any(|source| source == "env")
-            && let Some(key) = process_env_key(line)
-        {
-            let secret_class = classify_secret(&key);
-            if secret_class == "unknown" {
-                continue;
-            }
-            facts.push(secret_read_fact(
-                file_path,
-                line_number,
-                secret_class,
-                "env",
-                Some(redacted_hash(&key)),
-            ));
-        }
-        if accepted
+    let mut secret_facts = Vec::new();
+    for fact in facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+    {
+        let source = fact.name.as_str();
+        if !accepted
             .secret_sources
             .iter()
-            .any(|source| source == "config")
-            && line.contains("config.")
+            .any(|accepted_source| accepted_source == source)
         {
-            let key = line
-                .split("config.")
-                .nth(1)
-                .and_then(|part| {
-                    part.split(|c: char| !is_identifier_char(c))
-                        .find(|part| !part.is_empty())
-                })
-                .unwrap_or("unknown");
-            let secret_class = classify_secret(key);
-            if secret_class == "unknown" {
-                continue;
-            }
-            facts.push(secret_read_fact(
-                file_path,
-                line_number,
-                secret_class,
-                "config",
-                None,
-            ));
+            continue;
         }
-        if accepted
-            .secret_sources
-            .iter()
-            .any(|source| source == "secret_manager")
-            && (line.contains("secretManager.get(") || line.contains("secret_manager.get("))
-        {
-            let key = quoted_value_after(line, "get(").unwrap_or_else(|| "unknown".to_string());
-            let secret_class = classify_secret(&key);
-            if secret_class == "unknown" {
-                continue;
-            }
-            facts.push(secret_read_fact(
-                file_path,
-                line_number,
-                secret_class,
-                "secret_manager",
-                Some(redacted_hash(&key)),
-            ));
+        let expression = span_text(lines, fact);
+        // `config` reads carry no `env_key_hash`, exactly as before: a config path is not an env
+        // key, and inventing a hash for it would put a new field on an existing fact shape.
+        let (key, hashed) = match source {
+            SECRET_SOURCE_ENV => (process_env_key(&expression), true),
+            SECRET_SOURCE_CONFIG => (config_key(&expression), false),
+            SECRET_SOURCE_SECRET_MANAGER => (quoted_value_after(&expression, "get("), true),
+            _ => (None, false),
+        };
+        let Some(key) = key else {
+            continue;
+        };
+        let secret_class = classify_secret(&key);
+        if secret_class == "unknown" {
+            continue;
         }
+        secret_facts.push(secret_read_fact(
+            file_path,
+            fact.start_line,
+            secret_class,
+            source,
+            hashed.then(|| redacted_hash(&key)),
+        ));
     }
-    facts
+    secret_facts
+}
+
+/// The config path segment a `config.X` read names.
+///
+/// Split out of the old line scan unchanged, and now applied to the expression the walk found
+/// rather than to the whole line - which is the entire difference between reading `config.password`
+/// and reading a sentence that mentions it.
+fn config_key(expression: &str) -> Option<String> {
+    expression
+        .split("config.")
+        .nth(1)
+        .and_then(|part| {
+            part.split(|character: char| !is_identifier_char(character))
+                .find(|part| !part.is_empty())
+        })
+        .map(ToString::to_string)
+}
+
+/// The source text a fact's span covers.
+///
+/// Columns are byte offsets within their row, which is what tree-sitter reports and what `&str`
+/// slicing takes, so the two agree without a conversion. A span that does not land on a character
+/// boundary yields nothing rather than panicking - `get` rather than `[..]` - because a malformed
+/// span should cost one fact, not the scan of the file.
+fn span_text(lines: &[&str], fact: &Fact) -> String {
+    let start_row = fact.start_line.saturating_sub(1);
+    let end_row = fact.end_line.saturating_sub(1);
+    let start = fact.start_column.saturating_sub(1);
+    let end = fact.end_column.saturating_sub(1);
+    if start_row == end_row {
+        return lines
+            .get(start_row)
+            .and_then(|line| line.get(start..end))
+            .unwrap_or_default()
+            .to_string();
+    }
+    let mut segments = Vec::new();
+    for row in start_row..=end_row {
+        let Some(line) = lines.get(row) else {
+            break;
+        };
+        let segment = if row == start_row {
+            line.get(start..)
+        } else if row == end_row {
+            line.get(..end)
+        } else {
+            Some(*line)
+        };
+        segments.push(segment.unwrap_or_default());
+    }
+    segments.join("\n")
 }
 
 fn secret_read_fact(

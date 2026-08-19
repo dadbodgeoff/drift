@@ -306,6 +306,138 @@ fn security_phase5_get_contract_does_not_block_post_leak_in_same_route_file() {
     );
 }
 
+/// F5, S6-01, end to end: the AST-sourced `secret_read` reaches the proof, not just the extractor.
+///
+/// The route logs a status code and mentions the env key it deliberately does NOT log, in a
+/// trailing comment. The line scan read that comment as a secret read, and a secret read on a line
+/// that is also a log sink is a direct exposure, so this route was `missing_proof` and blocked -
+/// for a comment.
+///
+/// The sink on this line is real code either way, which is what isolates S6-01 from S6-02: only the
+/// read moved to the AST here.
+#[test]
+fn a_secret_name_in_a_trailing_comment_is_not_a_secret_read() {
+    let repo_root = temp_repo("phase5_trailing_comment_secret");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const status = 200;\n  console.error(status); // never log process.env.API_KEY\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_trailing_comment",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a secret name in a comment is not a secret read: {payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+}
+
+/// The control for the test above: the same shape with the read as real code still blocks.
+///
+/// Without this, "no finding" would be satisfied by a secret-exposure check that stopped working.
+#[test]
+fn a_secret_read_on_a_real_log_sink_line_still_blocks() {
+    let repo_root = temp_repo("phase5_real_log_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const status = 200;\n  console.error(process.env.API_KEY);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_real_log_sink",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    let findings = payload["findings"].as_array().expect("findings");
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(
+        findings[0]["rule_id"], "api_route_forbids_secret_exposure",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "{payload:#?}"
+    );
+}
+
+/// The scan facts a secret-exposure check needs for one GET route in `app/api/secrets/route.ts`,
+/// plus the accepted phase-5 contract that turns `env` into an accepted secret source and
+/// `console.error` into a log sink.
+///
+/// `response_line` is where `Response.json(` sits, because the route-returns-response fact is what
+/// makes the route a route as far as the check is concerned.
+fn secret_exposure_request(
+    repo_id: &str,
+    repo_root: &std::path::Path,
+    line_count: usize,
+    response_line: usize,
+) -> Value {
+    json!({
+        "repo": {
+            "repo_id": repo_id,
+            "repo_root": repo_root.to_string_lossy()
+        },
+        "scan": {
+            "scan_id": "scan_phase5_secret",
+            "facts": [
+                fact_for_path("app/api/secrets/route.ts", "file_role_detected", "api_route", 1, line_count, None, None),
+                fact_for_path("app/api/secrets/route.ts", "route_declared", "GET", 1, line_count, None, None),
+                fact_for_path("app/api/secrets/route.ts", "symbol_called", "json", response_line, response_line, Some("Response"), None)
+            ]
+        },
+        "contract": {
+            "contract_id": "contract_phase5_secret",
+            "contract_schema_version": 1,
+            "conventions": [{
+                "id": "security_api_secret_exposure",
+                "kind": "api_route_forbids_secret_exposure",
+                "matcher": {
+                    "methods": ["GET"],
+                    "applies_to_file_roles": ["api_route"]
+                },
+                "scope": {
+                    "path_globs": ["/api/secrets/*"]
+                },
+                "requires": {
+                    "secret_sources": ["env"],
+                    "log_sinks": ["console.error"]
+                },
+                "severity": "error",
+                "enforcement_mode": "block",
+                "enforcement_capability": "deterministic_check"
+            }]
+        },
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    })
+}
+
+fn secret_exposure_proof_status(payload: &Value) -> &str {
+    payload["security_boundary_proofs"]
+        .as_array()
+        .expect("proofs")
+        .iter()
+        .find(|proof| proof["route"]["route_id"] == "route:app/api/secrets/route.ts:GET")
+        .expect("secrets route proof")["result"]["proof_status"]
+        .as_str()
+        .expect("proof status")
+}
+
 fn fact(
     kind: &str,
     name: &str,

@@ -959,5 +959,19 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       SELECT 1;
     `
+  },
+  {
+    // F5, S6-01. `secret_source_read` enters the vocabulary here.
+    //
+    // The tree-sitter walk now emits where a secret source is read, so that `secret_read` stops
+    // being decided by a line scan that cannot tell `process.env.API_KEY` from a comment about it.
+    // No column changes, and for exactly the reason 034 spells out it still has to be a migration:
+    // `FactRecordSchema.kind` is a closed enum, so a database holding rows of this kind throws on
+    // every `listFacts` in a build that does not know it. Bumping the count makes that an up-front
+    // refusal naming the version instead.
+    id: "035_secret_source_read_fact_kind",
+    sql: `
+      SELECT 1;
+    `
   }
 ];

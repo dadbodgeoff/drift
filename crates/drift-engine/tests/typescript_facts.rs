@@ -414,3 +414,68 @@ export async function GET() {
             .any(|fact| fact.kind == FactKind::ImportUsed && fact.name == "db")
     );
 }
+
+/// F5, S6-01. A comment cannot read a secret, and neither can a string.
+///
+/// `secret_read_facts` used to be a pure line scan - `line.split("process.env.")` - with nothing
+/// between it and a `//` two columns to the left. Every commented-out `process.env.API_KEY` and
+/// every documentation string that spells one out produced a `secret_read` fact, and a
+/// `secret_read` fact on a line that also reads as a sink line is a finding. A secret-source read
+/// is a `member_expression` or a `subscript_expression` in the AST or it is not a read at all, so
+/// this pins that the fact comes off the tree-sitter walk.
+///
+/// The three decoys are the three shapes the line scan could not tell from the real read: a line
+/// comment, a block comment, and a string literal.
+#[test]
+fn secret_read_facts_come_from_the_ast_not_the_line() {
+    let source = r#"
+export async function GET() {
+  const apiKey = process.env.API_KEY;
+  // const shadow = process.env.SHADOW_KEY;
+  /* const blocked = process.env.BLOCKED_KEY; */
+  const doc = "read process.env.DOC_KEY at boot";
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .collect::<Vec<_>>();
+
+    assert_eq!(reads.len(), 1, "one real secret source read: {facts:#?}");
+    assert_eq!(reads[0].name, "env", "{reads:#?}");
+    assert_eq!(reads[0].start_line, 3, "{reads:#?}");
+}
+
+/// The other two accepted secret sources reach the walk through different node kinds:
+/// `config.password` is a bare `member_expression` and `secretManager.get("K")` is a
+/// `call_expression`. Both are decoyed the same way.
+#[test]
+fn config_and_secret_manager_reads_also_come_from_the_ast() {
+    let source = r#"
+export async function GET() {
+  const password = config.password;
+  const key = secretManager.get("PRIVATE_KEY");
+  // const shadow = config.password;
+  const doc = "secretManager.get('PRIVATE_KEY') is the accessor";
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        reads,
+        vec![("config", 3), ("secret_manager", 4)],
+        "{facts:#?}"
+    );
+}

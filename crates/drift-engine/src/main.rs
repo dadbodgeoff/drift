@@ -1091,7 +1091,7 @@ mod emittable_fact_kind_tests {
     /// manifest itself, which is what a reviewer reads.
     #[test]
     fn every_vocabulary_member_is_declared() {
-        assert_eq!(FactKind::ALL.len(), 36);
+        assert_eq!(FactKind::ALL.len(), 37);
         assert_eq!(GraphNodeKind::ALL.len(), 18);
         assert_eq!(GraphEdgeKind::ALL.len(), 21);
     }
