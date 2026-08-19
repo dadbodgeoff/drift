@@ -606,6 +606,144 @@ fn a_comment_on_a_real_sink_line_is_not_a_reference() {
     );
 }
 
+/// B4, S6-08. Response wins over log when one line holds both kinds of sink.
+///
+/// `sink_kinds_by_line` inserts whichever sink it meets first and then OVERRIDES with `response`.
+/// The walk meets the outer `console.error` before the inner `Response.json`, so without that
+/// override this line reports `log`. A doc comment claimed the precedence; nothing measured it, and
+/// deleting the override left the whole Rust suite green.
+///
+/// `sink_kind` is not cosmetic - it is what the finding tells a reader the secret escaped THROUGH,
+/// and "we logged it" and "we returned it to the caller" are different incidents.
+#[test]
+fn a_line_that_is_both_sinks_reports_the_response() {
+    let repo_root = temp_repo("phase5_sink_precedence");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  return console.error(Response.json({ apiKey }));\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_precedence",
+        &repo_root,
+        4,
+        3,
+    ));
+
+    assert_eq!(
+        secret_sinks(&payload),
+        vec![("response".to_string(), 3)],
+        "response must win over log on a line holding both: {payload:#?}"
+    );
+}
+
+/// B4, S6-08. The contract's `secret_sources` allowlist is the only thing that means anything here.
+///
+/// `secret_read_facts` gates each `secret_source_read` on the accepted list. Deleting that gate
+/// left the entire Rust suite green while making a contract that accepts ONLY `env` start flagging
+/// `config.password` - a route going from `proven` to `missing_proof` because an allowlist stopped
+/// being an allowlist. Nothing pinned it.
+#[test]
+fn a_source_the_contract_did_not_accept_is_not_a_secret() {
+    let repo_root = temp_repo("phase5_sources_gate");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const pw = config.password;\n  console.error(pw);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    // The contract accepts `env` and says nothing about `config`.
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_sources_gate",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "config is not an accepted secret source here: {payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+}
+
+/// B4, S6-08. The key comes from the READ's span, not from its line.
+///
+/// `span_text` was the newest and trickiest code in this sprint - byte-offset slicing with a
+/// non-char-boundary fallback - and had no test at all. Replacing its single-line branch with "the
+/// whole line" kept the suite green while losing a true finding, because both reads on the line
+/// below then resolve to the FIRST key on it:
+///
+///     console.error(process.env.PORT, process.env.API_KEY);
+///
+/// `PORT` classifies as `unknown` and is dropped, so a whole-line `span_text` drops `API_KEY` too
+/// and the route reports `proven`. That is a line scan growing back inside the fix for a line scan.
+#[test]
+fn a_second_secret_on_a_line_is_read_from_its_own_span() {
+    let repo_root = temp_repo("phase5_span_text");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  console.error(process.env.PORT, process.env.API_KEY);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_span_text",
+        &repo_root,
+        4,
+        3,
+    ));
+
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "the second read on the line is its own read: {payload:#?}"
+    );
+    assert_eq!(
+        secret_sinks(&payload),
+        vec![("log".to_string(), 2)],
+        "{payload:#?}"
+    );
+}
+
+/// B4, S6-08. The response predicate is exactly `json`, and widening it is a detection change.
+///
+/// `res.send(apiKey)` is a real leak that neither the pre-PR engine nor this one reports, because
+/// the predicate has always been the `.json(` catch-all and nothing else. Widening it to
+/// `json | send` passed the whole suite while turning this route from `proven` to `missing_proof`.
+///
+/// This test does not argue that the false negative is GOOD. It argues that changing it is a
+/// detection change, which needs its own evidence and its own eval numbers, and must not ride
+/// along inside a false-positive fix. Deleting this test is the honest way to widen the predicate.
+#[test]
+fn the_response_predicate_does_not_reach_beyond_json() {
+    let repo_root = temp_repo("phase5_response_predicate");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET(req, res) {\n  const apiKey = process.env.API_KEY;\n  res.send(apiKey);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_response_predicate",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "`send` is not part of the response predicate: {payload:#?}"
+    );
+}
+
 /// S6-04. The parser-gap scanners stay text-based ON PURPOSE, and this pins that they did.
 ///
 /// S6-02 moved the SINK test off the line and onto the AST, which is why the commented-out
