@@ -67,8 +67,4 @@ jobs:
         run: pnpm build:engine
 
       - name: Verify
-        # beta-validation(22-p22-03/05): PROTECTED SIMULATION — force branch detection to "main"
-        # via the ledger's own supported override, without touching real main. Will be reverted.
-        env:
-          DRIFT_LEDGER_BRANCH: main
         run: pnpm verify:ci
