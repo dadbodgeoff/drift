@@ -744,6 +744,142 @@ fn the_response_predicate_does_not_reach_beyond_json() {
     );
 }
 
+// ---------------------------------------------------------------------------------------------
+// B5, S6-09. The detection changes, pinned.
+//
+// Moving secret exposure off a line scan and onto the tree was described as a false-positive fix.
+// It is not only that. Measured case by case against the pre-PR engine at check-repo, this branch
+// REMOVES three findings and ADDS six, and every one of the six is a true positive the text scan
+// missed rather than a widened predicate. Neither number was in the original write-up, and a
+// detection change nobody wrote down is how an eval baseline moves without anyone deciding it
+// should. They are pinned here so that they are decisions rather than side effects.
+// ---------------------------------------------------------------------------------------------
+
+/// REMOVAL. A token elsewhere on a sink's line is not an argument to that sink.
+///
+/// This is the same mechanism as the comment fix and it reaches further than comments and strings:
+/// the old test asked whether the LINE contained the token, so a second statement sharing the line
+/// was attributed to the sink. `console.error("boot")` does not log `apiKey` merely because an
+/// unrelated assignment sits after the semicolon.
+///
+/// Worth pinning because it is the one removal that is not obviously about comments, and because
+/// the neighbouring case - `const x = apiKey; console.error(x);` on one line - must still fire.
+#[test]
+fn a_token_elsewhere_on_a_sink_line_is_not_an_exposure() {
+    let repo_root = temp_repo("phase5_token_elsewhere");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(\"boot\"); const other = apiKey;\n  return Response.json({ ok: true });\n}\n",
+    );
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_token_elsewhere",
+        &repo_root,
+        5,
+        4,
+    ));
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+
+    // The neighbour: assigned on the same line and then genuinely logged, which must still block.
+    let repo_root = temp_repo("phase5_token_same_line_logged");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  const copy = apiKey; console.error(copy);\n  return Response.json({ ok: true });\n}\n",
+    );
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_token_same_line_logged",
+        &repo_root,
+        5,
+        4,
+    ));
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "a secret copied and then logged on one line is still logged: {payload:#?}"
+    );
+}
+
+/// ADDED. Every one of these was `proven` before and is `missing_proof` now, and every one is a
+/// real leak the text scan could not see.
+///
+///   - `logger?.error(x)` - the line does not contain the literal `logger.error`
+///   - `Response.json ({ x })` - the line does not contain the literal `.json(`
+///   - a second statement on a line whose FIRST secret classified `unknown`; the old scanner
+///     `continue`d and abandoned the whole line
+///   - `secretManager\n  .get("K")` - the accessor is split across lines
+///   - arguments split across lines - the sink's line did not contain the token
+///
+/// They are one test because they are one decision: a tree sees a call however it is spelled, and
+/// the alternative to accepting these is to reintroduce formatting sensitivity on purpose.
+#[test]
+fn detections_the_line_scan_missed_now_fire() {
+    let cases: &[(&str, &str, usize, usize, &[&str], &[&str])] = &[
+        (
+            "optional_chain",
+            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  logger?.error(apiKey);\n  return Response.json({ ok: true });\n}\n",
+            5,
+            4,
+            &["logger.error"],
+            &["env"],
+        ),
+        (
+            "space_before_paren",
+            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  return Response.json ({ apiKey });\n}\n",
+            4,
+            3,
+            &["console.error"],
+            &["env"],
+        ),
+        (
+            "second_statement_after_unknown",
+            "export async function GET() {\n  const port = process.env.PORT; const pw = config.password; console.error(pw);\n  return Response.json({ ok: true });\n}\n",
+            4,
+            3,
+            &["console.error"],
+            &["env", "config", "secret_manager"],
+        ),
+        (
+            "wrapped_secret_manager",
+            "export async function GET() {\n  const key = secretManager\n    .get(\"API_KEY\");\n  console.error(key);\n  return Response.json({ ok: true });\n}\n",
+            6,
+            5,
+            &["console.error"],
+            &["env", "config", "secret_manager"],
+        ),
+        (
+            "arguments_split_across_lines",
+            "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(\n    apiKey\n  );\n  return Response.json({ ok: true });\n}\n",
+            7,
+            6,
+            &["console.error"],
+            &["env"],
+        ),
+    ];
+
+    for (name, source, line_count, response_line, log_sinks, secret_sources) in cases {
+        let repo_root = temp_repo(&format!("phase5_added_{name}"));
+        write_route(&repo_root, "app/api/secrets/route.ts", source);
+        let payload = run_check_repo(secret_exposure_request_full(
+            &format!("repo_phase5_added_{name}"),
+            &repo_root,
+            *line_count,
+            *response_line,
+            log_sinks,
+            secret_sources,
+        ));
+        assert_eq!(
+            secret_exposure_proof_status(&payload),
+            "missing_proof",
+            "{name} must be detected: {payload:#?}"
+        );
+    }
+}
+
 /// S6-04. The parser-gap scanners stay text-based ON PURPOSE, and this pins that they did.
 ///
 /// S6-02 moved the SINK test off the line and onto the AST, which is why the commented-out
@@ -845,7 +981,29 @@ fn secret_exposure_request_with_sinks(
     response_line: usize,
     log_sinks: &[&str],
 ) -> Value {
+    secret_exposure_request_full(
+        repo_id,
+        repo_root,
+        line_count,
+        response_line,
+        log_sinks,
+        &["env"],
+    )
+}
+
+fn secret_exposure_request_full(
+    repo_id: &str,
+    repo_root: &std::path::Path,
+    line_count: usize,
+    response_line: usize,
+    log_sinks: &[&str],
+    secret_sources: &[&str],
+) -> Value {
     let log_sinks = log_sinks.iter().map(|sink| json!(sink)).collect::<Vec<_>>();
+    let secret_sources = secret_sources
+        .iter()
+        .map(|source| json!(source))
+        .collect::<Vec<_>>();
     json!({
         "repo": {
             "repo_id": repo_id,
@@ -873,7 +1031,7 @@ fn secret_exposure_request_with_sinks(
                     "path_globs": ["/api/secrets/*"]
                 },
                 "requires": {
-                    "secret_sources": ["env"],
+                    "secret_sources": secret_sources,
                     "log_sinks": log_sinks
                 },
                 "severity": "error",

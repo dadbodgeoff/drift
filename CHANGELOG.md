@@ -7,6 +7,26 @@ behind them instead of trying to reconstruct a log after the fact.
 ## Unreleased
 
 ### Fixed
+- Secret-exposure proofs no longer read comments and string literals as code. Adding
+  `// console.error(apiKey);` to a route, or a trailing `// ... process.env.API_KEY` to a line that
+  already logs something, used to turn it from `Proven` to `MissingProof`. Secret reads and secret
+  sinks both come from the tree-sitter walk now.
+
+  This is a DETECTION CHANGE, not only a false-positive fix. Measured case by case against the
+  previous engine at the `check-repo` surface, it removes 3 findings and adds 6:
+
+  - Removed: a commented-out sink; a sink named inside a string literal; a token elsewhere on a
+    sink's line that the sink does not actually reference (`console.error("boot"); const x = apiKey;`).
+  - Added, all true positives the line scan could not see: `logger?.error(x)`;
+    `Response.json ({ x })` with a space before the paren; a second statement on a line whose first
+    secret classified `unknown`, which the old scanner abandoned wholesale; `secretManager\n.get(k)`
+    split across lines; a second `process.env` read on one line; and call arguments split across
+    lines.
+
+  Text scanning is deliberately retained in the parser-gap scanners, which emit
+  `blocks_enforcement: true` — there, over-firing refuses to enforce, which is the conservative
+  direction. The taint fixpoint also still reads raw lines; a string literal mentioning a secret
+  variable can still mark what that line assigns as carrying the secret.
 - `Cargo.toml` claimed `UNLICENSED` while the rest of the repo is MIT — aligned.
 - The product-scope "V1" language in README/CONTRIBUTING/SECURITY collided with "v1" meaning the
   first architecture generation once the version history became public. Renamed to "core wedge";
