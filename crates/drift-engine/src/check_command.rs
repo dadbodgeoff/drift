@@ -1478,6 +1478,7 @@ fn security_helpers_from_requires(
     convention: &crate::protocol::CheckConvention,
     key: &str,
 ) -> Vec<AcceptedSecurityHelper> {
+    let identities = helper_module_identities(convention);
     convention
         .requires
         .as_ref()
@@ -1486,10 +1487,14 @@ fn security_helpers_from_requires(
         .into_iter()
         .flatten()
         .filter_map(|helper| {
+            let symbol = helper.get("symbol")?.as_str()?.to_string();
             Some(AcceptedSecurityHelper {
                 helper_id: helper.get("helper_id")?.as_str()?.to_string(),
                 module: helper.get("module")?.as_str()?.to_string(),
-                symbol: helper.get("symbol")?.as_str()?.to_string(),
+                // Keyed by the list this helper came from, so a symbol two lists share cannot
+                // borrow the other list's resolution.
+                identity: identities.get(&(key.to_string(), symbol.clone())).cloned(),
+                symbol,
             })
         })
         .collect()

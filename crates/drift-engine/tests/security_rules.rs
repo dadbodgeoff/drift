@@ -1,20 +1,23 @@
 use drift_engine::{
-    AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedPhase5Contract,
-    AcceptedRequestValidator, AcceptedResponseSerializer, AcceptedSensitiveResponseField,
-    AcceptedTenantHelper, AuthGuardBehavior, AuthorizationHelperBehavior, AuthorizationHelperKind,
-    AuthorizationMissingReason, Phase4SecurityPolicy, RequestValidatorBehavior,
-    RequestValidatorKind, ResponseSerializerPolicy, SecurityAuthContract,
-    SecurityAuthorizationContract, SecurityContractCapability, SecurityEnforcementMode,
-    SecurityFindingResult, SecurityMiddlewareContract, SecurityParserGapCode,
-    SecurityPhase5Contract, SecurityProofStatus, SecurityRequestValidationContract,
-    SecurityTenantScopeContract, TenantMissingReason, build_phase4_security_proof_with_policy,
-    build_request_validation_proof, build_response_shape_proof, build_secret_exposure_proof,
+    AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedOutboundUrlHelper,
+    AcceptedPhase5Contract, AcceptedRequestValidator, AcceptedResponseSerializer,
+    AcceptedSecurityHelper, AcceptedSensitiveResponseField, AcceptedTenantHelper,
+    AuthGuardBehavior, AuthorizationHelperBehavior, AuthorizationHelperKind,
+    AuthorizationMissingReason, HelperModuleIdentity, HelperResolutionMode, Phase4SecurityPolicy,
+    RequestValidatorBehavior, RequestValidatorKind, ResponseSerializerPolicy, SecurityAuthContract,
+    SecurityAuthorizationContract, SecurityContractCapability, SecurityCsrfContract,
+    SecurityEnforcementMode, SecurityFindingResult, SecurityMiddlewareContract,
+    SecurityParserGapCode, SecurityPhase5Contract, SecurityProofStatus,
+    SecurityRequestValidationContract, SecuritySsrfContract, SecurityTenantScopeContract,
+    TenantMissingReason, build_phase4_security_proof_with_policy, build_request_validation_proof,
+    build_response_shape_proof, build_secret_exposure_proof,
     evaluate_api_route_forbids_secret_exposure,
-    evaluate_api_route_forbids_sensitive_response_fields, evaluate_api_route_requires_auth_helper,
+    evaluate_api_route_forbids_sensitive_response_fields,
+    evaluate_api_route_forbids_untrusted_ssrf, evaluate_api_route_requires_auth_helper,
     evaluate_api_route_requires_auth_helper_with_middleware,
-    evaluate_api_route_requires_authorization, evaluate_api_route_requires_request_validation,
-    evaluate_api_route_requires_tenant_scope, evaluate_middleware_must_cover_routes,
-    extract_security_facts, static_middleware_coverage,
+    evaluate_api_route_requires_authorization, evaluate_api_route_requires_csrf_for_mutation,
+    evaluate_api_route_requires_request_validation, evaluate_api_route_requires_tenant_scope,
+    evaluate_middleware_must_cover_routes, extract_security_facts, static_middleware_coverage,
 };
 
 #[test]
@@ -1885,4 +1888,155 @@ export async function GET() {
         findings.is_empty(),
         "candidate-only heuristic middleware evidence must not block: {findings:#?}"
     );
+}
+
+/// S4-03 RED: `as` is not a different helper.
+///
+/// `accepted_helper_called` demanded `fact.name == helper.symbol` AND
+/// `fact.imported_name == helper.symbol`, which is the same demand written twice for a plain
+/// import and an impossible one for a renamed import: after `import { assertCsrf as checkCsrf }`
+/// the local name is `checkCsrf` and the imported name is `assertCsrf`, and no single symbol
+/// equals both. So a route that imports the accepted CSRF guard, calls it, and is in every sense
+/// compliant was reported as having no CSRF proof at all - purely for renaming the binding.
+///
+/// The imported name is the identity. The local name is how this file spells it, and the call
+/// site is what has to be looked for under that spelling.
+#[test]
+fn renamed_import_of_the_accepted_csrf_helper_satisfies() {
+    let source = r#"
+import { assertCsrf as checkCsrf } from "@/security/csrf";
+
+export async function POST(request: Request) {
+  checkCsrf(request);
+  return Response.json({ ok: true });
+}
+"#;
+
+    let findings = evaluate_api_route_requires_csrf_for_mutation(
+        "app/api/settings/route.ts",
+        source,
+        &csrf_contract(vec![AcceptedSecurityHelper {
+            helper_id: "csrf".to_string(),
+            module: "@/security/csrf".to_string(),
+            symbol: "assertCsrf".to_string(),
+            // No table needed: a rename is not a question about modules, and this must be fixed
+            // for a contract the CLI never resolved as much as for one it did.
+            identity: None,
+        }]),
+    )
+    .expect("security findings");
+
+    assert!(
+        findings.is_empty(),
+        "renaming the binding must not withdraw the CSRF proof: {findings:#?}"
+    );
+}
+
+/// S4-03 RED: the same defect on the SSRF allowlist, which asked the same impossible question and
+/// then looked for the accepted symbol's name in the source text - a name this file never writes.
+///
+/// The fixture reassigns `target` in place rather than introducing a second variable, and that is
+/// deliberate. Assigning to a fresh name breaks the taint chain to the outbound sink, so the route
+/// produces no unvalidated outbound use and the rule returns clean whatever the contract says -
+/// a test written that way passes with an EMPTY helper list and proves nothing about helpers at
+/// all. Here the sink really is reached by a request-derived variable, so the allowlist proof is
+/// the only thing standing between this route and a finding.
+#[test]
+fn renamed_import_of_the_ssrf_allowlist_helper_satisfies() {
+    let source = r#"
+import { requireAllowedOutboundUrl as allowOutbound } from "@/security/outbound";
+
+export async function GET(request: Request) {
+  let target = request.nextUrl.searchParams.get("target");
+  target = allowOutbound(target);
+  await fetch(target);
+  return Response.json({ ok: true });
+}
+"#;
+
+    let contract = |accepted_allowlist_helpers| SecuritySsrfContract {
+        contract_id: "security_api_no_ssrf".to_string(),
+        capability: SecurityContractCapability::DeterministicCheck,
+        enforcement_mode: SecurityEnforcementMode::Block,
+        accepted_allowlist_helpers,
+    };
+
+    // The negative control, first: with no accepted helper this route IS a finding. Without it
+    // the assertion below could be satisfied by a rule that never fires on this source.
+    let unprotected = evaluate_api_route_forbids_untrusted_ssrf(
+        "app/api/proxy/route.ts",
+        source,
+        &contract(Vec::new()),
+    )
+    .expect("security findings");
+    assert_eq!(
+        unprotected.len(),
+        1,
+        "fixture must reach the outbound sink with request-derived input: {unprotected:#?}"
+    );
+
+    let findings = evaluate_api_route_forbids_untrusted_ssrf(
+        "app/api/proxy/route.ts",
+        source,
+        &contract(vec![AcceptedOutboundUrlHelper {
+            helper_id: "outbound_allowlist".to_string(),
+            module: "@/security/outbound".to_string(),
+            symbol: "requireAllowedOutboundUrl".to_string(),
+            identity: None,
+        }]),
+    )
+    .expect("security findings");
+
+    assert!(
+        findings.is_empty(),
+        "renaming the binding must not withdraw the outbound allowlist proof: {findings:#?}"
+    );
+}
+
+/// S4-03 RED: F3 again, on the CSRF guard rather than the auth helper.
+///
+/// The contract names `@/security/csrf`; this route reaches the same file relatively. The
+/// resolved identity says the accepted helper IS `security/csrf.ts`, and normalising the relative
+/// spelling against the importing file lands on it.
+#[test]
+fn relative_spelling_of_the_csrf_helper_satisfies() {
+    let source = r#"
+import { assertCsrf } from "../../../security/csrf";
+
+export async function POST(request: Request) {
+  assertCsrf(request);
+  return Response.json({ ok: true });
+}
+"#;
+
+    let findings = evaluate_api_route_requires_csrf_for_mutation(
+        "app/api/settings/route.ts",
+        source,
+        &csrf_contract(vec![AcceptedSecurityHelper {
+            helper_id: "csrf".to_string(),
+            module: "@/security/csrf".to_string(),
+            symbol: "assertCsrf".to_string(),
+            identity: Some(HelperModuleIdentity {
+                specifier: "@/security/csrf".to_string(),
+                mode: HelperResolutionMode::RepoResolved,
+                files: vec!["security/csrf.ts".to_string()],
+                package_specifier_resolves_in_repo: false,
+            }),
+        }]),
+    )
+    .expect("security findings");
+
+    assert!(
+        findings.is_empty(),
+        "a relative spelling of the accepted helper's module must still prove CSRF: {findings:#?}"
+    );
+}
+
+fn csrf_contract(accepted_csrf_helpers: Vec<AcceptedSecurityHelper>) -> SecurityCsrfContract {
+    SecurityCsrfContract {
+        contract_id: "security_api_csrf".to_string(),
+        capability: SecurityContractCapability::DeterministicCheck,
+        enforcement_mode: SecurityEnforcementMode::Block,
+        accepted_csrf_helpers,
+    }
 }
