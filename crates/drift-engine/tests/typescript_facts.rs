@@ -450,6 +450,73 @@ export async function GET() {
     assert_eq!(reads[0].start_line, 3, "{reads:#?}");
 }
 
+/// B3, S6-07. A qualified secret source is still a secret source.
+///
+/// The line scan matched `line.contains("config.")`, `line.split("process.env.")` and
+/// `line.contains("secretManager.get(")` - substrings, so any prefix in front of them was
+/// irrelevant. S6-01 replaced that with an equality test on the receiver, which quietly stopped
+/// recognising `this.config.apiKey`, `globalThis.process.env.API_KEY` and
+/// `this.secretManager.get(...)`. All three are ordinary spellings - `this.config` in particular is
+/// how every class-based service reads config - and all three lost a real finding.
+///
+/// The receiver is therefore matched by SUFFIX, which is what "any prefix is irrelevant" means
+/// once you are working on a tree instead of a line.
+#[test]
+fn a_qualified_receiver_is_still_a_secret_source() {
+    let source = r#"
+export async function GET() {
+  const a = this.config.apiKey;
+  const b = globalThis.process.env.API_KEY;
+  const c = this.secretManager.get("PRIVATE_KEY");
+  const d = deps.config.password;
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .map(|fact| (fact.name.as_str(), fact.start_line))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        reads,
+        vec![
+            ("config", 3),
+            ("env", 4),
+            ("secret_manager", 5),
+            ("config", 6)
+        ],
+        "{facts:#?}"
+    );
+}
+
+/// A suffix match is not a substring match: `appConfig` does not end in `.config`.
+///
+/// Without this the fix for the test above would be free to reach for `contains`, which would make
+/// every identifier ending in the letters "config" a secret source.
+#[test]
+fn a_receiver_that_merely_ends_in_the_word_is_not_a_secret_source() {
+    let source = r#"
+export async function GET() {
+  const a = appConfig.password;
+  const b = myprocess.env.API_KEY;
+  return Response.json({ ok: true });
+}
+"#;
+
+    let facts =
+        extract_typescript_facts("app/api/secrets/route.ts", source).expect("typescript facts");
+    let reads = facts
+        .iter()
+        .filter(|fact| fact.kind == FactKind::SecretSourceRead)
+        .collect::<Vec<_>>();
+
+    assert!(reads.is_empty(), "{reads:#?}");
+}
+
 /// F5, S6-06. A sink fact is positioned at its CALLEE, and does not need a receiver.
 ///
 /// `symbol_called` cannot carry either. Measured on the chain below, it reports

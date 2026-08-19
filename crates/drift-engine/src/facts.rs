@@ -896,13 +896,18 @@ fn extract_secret_source_read(
 /// change wearing a correctness fix's clothes.
 fn secret_source_kind(node: Node<'_>, source: &[u8]) -> Option<&'static str> {
     match node.kind() {
-        "member_expression" => match receiver_text(node, source)?.as_str() {
-            "process.env" => Some(SECRET_SOURCE_ENV),
-            "config" => Some(SECRET_SOURCE_CONFIG),
-            _ => None,
-        },
+        "member_expression" => {
+            let receiver = receiver_text(node, source)?;
+            if receiver_is(&receiver, "process.env") {
+                Some(SECRET_SOURCE_ENV)
+            } else if receiver_is(&receiver, "config") {
+                Some(SECRET_SOURCE_CONFIG)
+            } else {
+                None
+            }
+        }
         "subscript_expression" => {
-            (receiver_text(node, source)? == "process.env").then_some(SECRET_SOURCE_ENV)
+            receiver_is(&receiver_text(node, source)?, "process.env").then_some(SECRET_SOURCE_ENV)
         }
         "call_expression" => {
             let function = node.child_by_field_name("function")?;
@@ -913,14 +918,26 @@ fn secret_source_kind(node: Node<'_>, source: &[u8]) -> Option<&'static str> {
             if property != "get" {
                 return None;
             }
-            matches!(
-                receiver_text(function, source)?.as_str(),
-                "secretManager" | "secret_manager"
-            )
-            .then_some(SECRET_SOURCE_SECRET_MANAGER)
+            let receiver = receiver_text(function, source)?;
+            (receiver_is(&receiver, "secretManager") || receiver_is(&receiver, "secret_manager"))
+                .then_some(SECRET_SOURCE_SECRET_MANAGER)
         }
         _ => None,
     }
+}
+
+/// Whether a receiver names the given accessor, at any qualification.
+///
+/// B3. The line scan tested `line.contains("config.")`, so `this.config.apiKey` and
+/// `globalThis.process.env.API_KEY` matched: any prefix in front was irrelevant to a substring
+/// test. S6-01 replaced that with `receiver == "config"`, which silently stopped recognising both -
+/// and `this.config` is how every class-based service reads its configuration.
+///
+/// A SUFFIX on a dot boundary is the tree-shaped spelling of "any prefix is irrelevant". It is
+/// deliberately not `contains`, which would make `appConfig.password` a secret read because the
+/// letters happen to line up, and not equality, which is the narrowing this repairs.
+fn receiver_is(receiver: &str, accessor: &str) -> bool {
+    receiver == accessor || receiver.ends_with(&format!(".{accessor}"))
 }
 
 /// The `object` of a member or subscript expression with whitespace removed.
