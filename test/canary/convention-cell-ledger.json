@@ -1,6 +1,6 @@
 {
   "$comment": [
-    "The 0b canary ledger (TDD docs/tdd-ground-truth-remediation.md §4.2).",
+    "The 0b canary ledger (TDD docs/tdd-ground-truth-remediation.md \u00a74.2).",
     "",
     "A P0 shipped in which api_route_forbids_sensitive_response_fields was structurally",
     "incapable of firing while looking covered: both halves of the seam had tests, and both",
@@ -28,7 +28,7 @@
     "lacked in `missing_evidence`; that list is the next audit's worklist.",
     "",
     "WHO EDITS THIS. Track C owns the structure and the enumeration, and the initial states its",
-    "own evidence supports. State TRANSITIONS are made by the lead at integration time (§4.2),",
+    "own evidence supports. State TRANSITIONS are made by the lead at integration time (\u00a74.2),",
     "never speculatively on the strength of another track's in-flight work.",
     "",
     "CI enforcement (scripts/convention-cell-ledger.mjs) activates on the INTEGRATION BRANCH",
@@ -50,7 +50,7 @@
       "main"
     ],
     "override_env": "DRIFT_LEDGER_ENFORCE",
-    "note": "On any other branch the checker reports and exits 0. See §4.2 'Scope of that CI rule'.",
+    "note": "On any other branch the checker reports and exits 0. See \u00a74.2 'Scope of that CI rule'.",
     "needs_review_strict_env": "DRIFT_LEDGER_STRICT_NEEDS_REVIEW",
     "needs_review_note": "`needs-review` is a PASSING state by default. docs/decisions/ledger-needs-review.md proposes tightening it, and ships the mechanism: with DRIFT_LEDGER_STRICT_NEEDS_REVIEW=1 on an enforcing branch, a needs-review cell whose `receipt_evidence.reached` is not true becomes a failure. Default OFF because all six of today's needs-review cells would fail it, and the flip is a human call about whether an unmeasured kind may ship - not a change to make as a side effect of building the measurement."
   },
@@ -61,7 +61,7 @@
       "enforcement_path": "materialized_and_graph",
       "dispatch": "check_command.rs:152 (match arm, ConventionKind::ApiRouteNoDirectDataAccess)",
       "state": "firing",
-      "canary": "test/e2e/gt-canary.test.ts > data-access materialized+graph path fires",
+      "canary": null,
       "evidence": "gt-data-access: 6 findings, including all four genuine data-access routes; 0 on the near-miss negatives route-prismatic.ts and route-utils.ts. next-api-direct-db: exactly 1 finding, on the one violating route.",
       "missing_evidence": null,
       "citation": null
@@ -227,7 +227,7 @@
       "dispatch": "check_command.rs:294 (match arm, ConventionKind::ApiRouteForbidsSensitiveResponseFields)",
       "state": "firing",
       "canary": "test/e2e/gt-canary.test.ts :: phase-5 sensitive-response-fields path fires, on both provenance routes",
-      "evidence": "D1 shipped. Both fixtures obtain the convention from the proposer via `drift start` -> `drift conventions accept` and never inject it: gt-sensitive-fields-schema (marker path) and gt-sensitive-fields (inference path) each yield exactly 1 finding on pages/api/route-leak.ts and 0 on pages/api/route-safe.ts. Transition applied by the lead at integration per §4.2, after re-running the suite and verifying the tests were red at ea9e774c for assertion reasons.",
+      "evidence": "D1 shipped. Both fixtures obtain the convention from the proposer via `drift start` -> `drift conventions accept` and never inject it: gt-sensitive-fields-schema (marker path) and gt-sensitive-fields (inference path) each yield exactly 1 finding on pages/api/route-leak.ts and 0 on pages/api/route-safe.ts. Transition applied by the lead at integration per \u00a74.2, after re-running the suite and verifying the tests were red at ea9e774c for assertion reasons.",
       "missing_evidence": null,
       "citation": null
     },
@@ -249,7 +249,7 @@
       "dispatch": "check_command.rs:351 (three-variant phase-4 arm, shared)",
       "state": "firing",
       "canary": "test/e2e/gt-canary.test.ts > phase-4 tenant-scope path fires, and the helper-scoped siblings pass",
-      "evidence": "gt-tenant-scope: the proposer emits exactly one candidate of this kind (required_calls [requireTenantScope]; scope.path_globs the literal proposer set, **/app/api/**/route.ts included), accepted through `conventions accept --severity error --mode block`. 3 findings — app/api/projects/route.ts:4 with actual_layer tenant_predicate_missing and enforcement_result block, plus the two §4.3 near-miss routes that call throwIfTenantScopeMismatch. 0 findings on the two routes that call the accepted helper, and those two carry phase-4 proofs with tenant.required=true and tenant.proven=true, so they were evaluated and passed rather than skipped. Exit 2 over a diff of all five routes; exit 0 over a diff of the two scoped routes. Required one engine fix: security_proof.rs's untrusted-tenant-source clause counted a scoped_helper predicate as a route-supplied tenant value, which made this kind able to report a violation but never a pass.",
+      "evidence": "gt-tenant-scope: the proposer emits exactly one candidate of this kind (required_calls [requireTenantScope]; scope.path_globs the literal proposer set, **/app/api/**/route.ts included), accepted through `conventions accept --severity error --mode block`. 3 findings \u2014 app/api/projects/route.ts:4 with actual_layer tenant_predicate_missing and enforcement_result block, plus the two \u00a74.3 near-miss routes that call throwIfTenantScopeMismatch. 0 findings on the two routes that call the accepted helper, and those two carry phase-4 proofs with tenant.required=true and tenant.proven=true, so they were evaluated and passed rather than skipped. Exit 2 over a diff of all five routes; exit 0 over a diff of the two scoped routes. Required one engine fix: security_proof.rs's untrusted-tenant-source clause counted a scoped_helper predicate as a route-supplied tenant value, which made this kind able to report a violation but never a pass.",
       "missing_evidence": null,
       "citation": null
     },
