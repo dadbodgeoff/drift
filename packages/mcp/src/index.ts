@@ -2533,3 +2533,11 @@ function countBy<T, K extends string>(
   }
   return counts;
 }
+
+// beta-validation(22-p22-19): DELIBERATE, will be reverted. Violates the committed
+// agent_contract "drift_mcp_must_not_import_cli" (drift.lock), which forbids mcp_module
+// source files from importing @drift/cli.
+import { runCli } from "@drift/cli";
+export function __betaValidationForbiddenImportProbe() {
+  return typeof runCli;
+}
