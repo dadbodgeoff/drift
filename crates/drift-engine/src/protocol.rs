@@ -605,10 +605,20 @@ pub struct CheckMatcher {
 ///     the module that exports the symbol - but the filter compares symbol NAMES, so a barrel
 ///     re-exporting one name from two modules yields both. `files` means "modules that plausibly
 ///     supply this helper", not "modules proven to be it".
-///   - `external` - a bare package specifier that resolved to nothing, which is not a failure:
-///     `resolve_import` filters to paths inside the scan snapshot, so `next-auth` and everything
-///     else under `node_modules` never produces an edge. `files` is empty and always will be.
-///     Match on the exact specifier, plus a local-shadow check.
+///   - `external` - a specifier the CLI's `isBarePackageSpecifier` accepted, which resolved to
+///     nothing. Usually that is a real package: `resolve_import` filters to paths inside the scan
+///     snapshot, so `next-auth` and everything else under `node_modules` never produces an edge,
+///     and an empty `files` there is by design rather than by failure.
+///
+///     Read the name narrowly, though. That predicate rejects only `.`, `/`, `@/`, `~` and `#`
+///     starts, so a scoped path alias (`@app/auth`), a `$lib/...` alias, or an ordinary `baseUrl`
+///     import that failed to resolve all land here too. `external` therefore means "bare-LOOKING,
+///     and resolved to nothing" - it is not a guarantee that the module lives outside the repo,
+///     and must not be read as one.
+///
+///     Matching is exact-specifier equality, which is what this engine did for every helper
+///     before Sprint 4, so nothing in this mode can accept an import that was not already
+///     accepted or reject one that was.
 ///   - `unresolved` - a repo-relative specifier that resolved to nothing. Also empty `files`, but
 ///     this one is a degradation and belongs in the proof as one.
 ///
@@ -636,8 +646,16 @@ pub struct AcceptedHelperModuleFiles {
     ///
     /// A fact, not a verdict. It is the tsconfig-paths hijack shape, and equally the shape of a
     /// pnpm workspace package or a scoped path alias (`"@app/*": ["src/*"]`) - the same mechanism,
-    /// different intent, and nothing available here separates them. Input to the local-shadow check
-    /// the `External` mode calls for, never a finding on its own.
+    /// different intent, and nothing available here separates them.
+    ///
+    /// It is NOT input to a check on the `external` path, and the earlier comment saying so was
+    /// wrong twice over: `external` matching is exact-specifier equality with nothing else in it,
+    /// and the CLI sets this field only in its `repo_resolved` branch, so it is absent under
+    /// `external` by construction and could never have been that input.
+    ///
+    /// What it is for: the engine carries it into the emitted proof, next to the mode, so a
+    /// reader can see that a package-shaped specifier resolved to a file this repo controls.
+    /// Surfacing it is the whole job - deciding what it means is a person's.
     #[serde(default)]
     pub package_specifier_resolves_in_repo: Option<bool>,
 }
@@ -648,7 +666,9 @@ pub struct AcceptedHelperModuleFiles {
 pub enum AcceptedHelperResolutionMode {
     /// Resolved inside the repo; `files` is the identity.
     RepoResolved,
-    /// A bare package specifier that resolved to nothing - by design, not by failure.
+    /// A bare-LOOKING specifier that resolved to nothing - usually a real package, and by design
+    /// rather than by failure. Not a guarantee the module is outside the repo; see the mode list
+    /// on `AcceptedHelperModuleFiles`.
     External,
     /// A repo-relative specifier that resolved to nothing. A degradation, and belongs in the proof.
     Unresolved,

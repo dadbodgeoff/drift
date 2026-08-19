@@ -910,6 +910,142 @@ fn barrel_contract_matches_the_module_it_reexports() {
     }
 }
 
+/// The join is `(requires_key, symbol)`, and here is the input that can tell.
+///
+/// Six requires lists can each carry the same name. Keyed by symbol alone, whichever entry the
+/// table happened to list last would win, and an `external` CSRF helper would overwrite an auth
+/// helper that had a resolved file identity - silently downgrading it to specifier matching, which
+/// is precisely the tier-1 behaviour this sprint removes. Nothing about the resulting run looks
+/// wrong; the route just quietly starts being reported again.
+///
+/// So the table below carries `requireUser` twice, under two lists, with the `csrf_helpers` entry
+/// second and deliberately `external`. The route uses a relative spelling, which only a
+/// `repo_resolved` identity accepts. If the entries collapse, the auth helper inherits `external`,
+/// the spelling stops matching and the route is a finding.
+#[test]
+fn a_symbol_two_requires_lists_share_keeps_two_identities() {
+    let repo_root = temp_repo("phase4_cross_list_symbol");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+            Some(json!([
+                {
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib/auth",
+                    "mode": "repo_resolved",
+                    "files": ["lib/auth.ts"]
+                },
+                {
+                    // Same name, different list, and listed second so a symbol-only key would
+                    // hand its mode to the auth helper above.
+                    "requires_key": "csrf_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "next-auth",
+                    "mode": "external",
+                    "files": []
+                }
+            ])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let trusted = payload["security_boundary_proofs"][0]["session_trust"]["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "repo_resolved",
+        "the auth helper must keep its own resolution: {payload:#?}"
+    );
+    assert_eq!(
+        trusted[0]["helper_resolution"]["specifier"], "@/lib/auth",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// The third mode's turn in the proof.
+///
+/// `unresolved` is a repo-relative specifier the CLI could not resolve - the graph could not
+/// answer, and the match fell back to comparing strings. That is the mode a reader most needs to
+/// see, because it is the one where a passing proof rests on the weakest evidence, and it was the
+/// only one of the three the emitted proof was never checked to report.
+#[test]
+fn unresolved_mode_reaches_the_proof_too() {
+    let repo_root = temp_repo("phase4_unresolved_mode");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "../../../lib/auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "requireUser",
+                "specifier": "../../../lib/auth",
+                "mode": "unresolved",
+                "files": []
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let trusted = payload["security_boundary_proofs"][0]["session_trust"]["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "unresolved",
+        "{payload:#?}"
+    );
+}
+
 /// A `session_object_must_come_from_trusted_helper` contract with one accepted auth helper, and
 /// optionally the resolved-identity table the CLI ships beside it.
 fn session_trust_contract(helper: Value, helper_module_files: Option<Value>) -> Value {

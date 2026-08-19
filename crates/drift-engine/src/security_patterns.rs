@@ -57,8 +57,15 @@ pub struct AcceptedHelperImport {
 pub enum HelperResolutionMode {
     /// Resolved inside the repo. `files` is the identity and matching compares resolved modules.
     RepoResolved,
-    /// A bare package specifier that resolved to nothing - by design, not by failure. Matching
-    /// stays on the exact specifier.
+    /// A bare-LOOKING specifier that resolved to nothing. Usually a real package, and empty
+    /// `files` there is by design rather than by failure.
+    ///
+    /// Do not read this as "the module is outside the repo". The CLI's `isBarePackageSpecifier`
+    /// rejects only `.`, `/`, `@/`, `~` and `#` starts, so a scoped path alias (`@app/auth`), a
+    /// `$lib/...` alias and an unresolved `baseUrl` import all arrive here as well. Matching is
+    /// exact-specifier equality - byte for byte what this engine did before Sprint 4 - so the
+    /// mode's imprecision costs nothing in behaviour; it costs only a reader who takes the label
+    /// literally, which is why the label is spelled out here.
     External,
     /// A repo-relative specifier that resolved to nothing. Matching stays on the exact specifier
     /// too, but this one is a degradation and the proof says so.
