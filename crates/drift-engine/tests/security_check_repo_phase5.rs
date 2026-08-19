@@ -501,6 +501,58 @@ fn a_secret_returned_in_a_response_still_blocks() {
     );
 }
 
+/// S6-04. The parser-gap scanners stay text-based ON PURPOSE, and this pins that they did.
+///
+/// S6-02 moved the SINK test off the line and onto the AST, which is why the commented-out
+/// `console.error(value)` below is no longer a secret sink. `indirect_secret_flow_parser_gaps` in
+/// security_control_flow.rs still reads it as one, and that is correct: it emits
+/// `blocks_enforcement: true`, so over-firing REFUSES TO ENFORCE. A gap that fires when it need
+/// not costs a refusal; a gap that stops firing costs a silent pass on a helper flow the engine
+/// cannot follow. Those are not symmetric, and the conservative side is where this belongs.
+///
+/// So this test asserts the over-firing survived, deliberately, on exactly the input the sink fix
+/// made safe elsewhere in the same file. If someone later "fixes" the gap scanner to skip comments
+/// for consistency with S6-02, this goes red and asks them to argue for it rather than assume it.
+#[test]
+fn parser_gaps_still_fire_on_the_same_inputs() {
+    let repo_root = temp_repo("phase5_parser_gap_pin");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "function getApiKey() {\n  return process.env.API_KEY;\n}\n\nexport async function GET() {\n  const value = getApiKey();\n  // console.error(value);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_parser_gap",
+        &repo_root,
+        9,
+        8,
+    ));
+
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "parser_gap",
+        "the indirect-helper gap must still fire on a commented sink: {payload:#?}"
+    );
+
+    let proof = payload["security_boundary_proofs"]
+        .as_array()
+        .expect("proofs")
+        .iter()
+        .find(|proof| proof["route"]["route_id"] == "route:app/api/secrets/route.ts:GET")
+        .expect("secrets route proof");
+    let gaps = proof["parser_gaps"].as_array().expect("parser gaps");
+    assert_eq!(gaps.len(), 1, "{payload:#?}");
+    assert_eq!(
+        gaps[0]["code"], "unsupported_dynamic_control_flow",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        gaps[0]["blocks_enforcement"], true,
+        "an over-firing gap is only conservative while it blocks: {payload:#?}"
+    );
+}
+
 /// The scan facts a secret-exposure check needs for one GET route in `app/api/secrets/route.ts`,
 /// plus the accepted phase-5 contract that turns `env` into an accepted secret source and
 /// `console.error` into a log sink.
