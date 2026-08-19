@@ -104,6 +104,16 @@ pub struct SessionTrustBoundaryProof {
     pub variable: String,
     pub trust: String,
     pub derived_from: String,
+    /// S4-01: WHICH accepted auth helper made this session trusted.
+    ///
+    /// Carried so the emitted proof can say how that helper's module was identified - resolved
+    /// file, external package, or unresolved. A reader who cannot tell those apart cannot tell a
+    /// tier-2 answer from the tier-1 string comparison this sprint replaced. The join back to the
+    /// contract's identity table is `("auth_helpers", helper_symbol)`, and the symbol is the only
+    /// half of that key the proof did not already have.
+    ///
+    /// `None` for a session whose fact carries no imported name.
+    pub helper_symbol: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1495,6 +1505,9 @@ fn build_session_trust_proof_from_facts(facts: &[Fact]) -> SessionTrustProof {
                     variable,
                     trust: "trusted".to_string(),
                     derived_from: "auth_guard".to_string(),
+                    // The accepted helper's symbol, stamped onto the SessionRead fact by
+                    // `extract_security_facts_with_policy_and_phase5` when it matched the helper.
+                    helper_symbol: fact.imported_name.clone(),
                 });
             }
             (source, Some("untrusted")) => {

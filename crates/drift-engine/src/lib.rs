@@ -60,10 +60,11 @@ pub use security_patterns::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedHelperImport, AcceptedPhase5Contract,
     AcceptedRequestValidator, AcceptedResponseSerializer, AcceptedSensitiveResponseField,
     AcceptedTenantHelper, AuthGuardBehavior, AuthorizationHelperBehavior, AuthorizationHelperKind,
-    Phase4SecurityPolicy, RequestValidatorBehavior, RequestValidatorKind, ResponseSerializerPolicy,
-    SCHEMA_METHOD_VALIDATOR_SYMBOLS, SENSITIVE_FIELD_CLASSIFICATIONS, SENSITIVE_FIELD_SOURCES,
+    HelperModuleIdentity, HelperResolutionMode, Phase4SecurityPolicy, RequestValidatorBehavior,
+    RequestValidatorKind, ResponseSerializerPolicy, SCHEMA_METHOD_VALIDATOR_SYMBOLS,
+    SENSITIVE_FIELD_CLASSIFICATIONS, SENSITIVE_FIELD_SOURCES,
     accepted_phase5_contract_from_requires, accepted_response_serializer_for_call,
-    dynamic_middleware_matcher_line, is_schema_method_validator_symbol,
+    dynamic_middleware_matcher_line, helper_module_matches, is_schema_method_validator_symbol,
     is_validation_candidate_symbol, sensitive_response_field_rejections,
 };
 pub use security_phase6::{

@@ -12,22 +12,22 @@ use drift_engine::{
     AuthorizationHelperBehavior, AuthorizationHelperKind, AuthorizationMissingReason,
     BaselineStatus, BaselineViolation, ConventionDispatch, ConventionKind, DiffFile, DiffScope,
     DirectDataAccessRule, EnforcementMode, Fact, FactKind, FindingStatus, GraphEdgeKind,
-    GraphNodeKind, ParsedDiff, Phase4SecurityPolicy, Phase6AcceptedHelper, Phase6CorsContract,
-    Phase6RawSqlContract, Phase6SecurityContract, Phase6SecurityProof, Phase6SsrfContract,
-    RequestValidatorBehavior, RequestValidatorKind, RouteSecurityBoundaryProof, RuleFinding,
-    ScanCapability, SecurityBoundaryProof, SecurityProofStatus, SessionTrustReason, Severity,
-    TenantMissingReason, accepted_phase5_contract_from_requires,
-    build_auth_boundary_proofs_for_file, build_phase4_security_proof_with_policy,
-    build_phase6_security_proofs_for_file, classify_findings_against_diff,
-    materialize_direct_data_access_findings_with_sources, phase6_proof_to_json,
-    sensitive_field_source_is_trusted, sensitive_response_field_rejections,
+    GraphNodeKind, HelperModuleIdentity, HelperResolutionMode, ParsedDiff, Phase4SecurityPolicy,
+    Phase6AcceptedHelper, Phase6CorsContract, Phase6RawSqlContract, Phase6SecurityContract,
+    Phase6SecurityProof, Phase6SsrfContract, RequestValidatorBehavior, RequestValidatorKind,
+    RouteSecurityBoundaryProof, RuleFinding, ScanCapability, SecurityBoundaryProof,
+    SecurityProofStatus, SessionTrustReason, Severity, TenantMissingReason,
+    accepted_phase5_contract_from_requires, build_auth_boundary_proofs_for_file,
+    build_phase4_security_proof_with_policy, build_phase6_security_proofs_for_file,
+    classify_findings_against_diff, materialize_direct_data_access_findings_with_sources,
+    phase6_proof_to_json, sensitive_field_source_is_trusted, sensitive_response_field_rejections,
 };
 use serde_json::json;
 
 use crate::protocol::{
-    CheckBaselineViolation, CheckEvidence, CheckFact, CheckFinding, CheckGraphData, CheckRequest,
-    CheckResult, ENGINE_CHECK_RESULT_SCHEMA_VERSION, EngineCompleteness, GraphEdge, GraphNode,
-    adapter_versions, capability_stats, engine_stats,
+    AcceptedHelperResolutionMode, CheckBaselineViolation, CheckEvidence, CheckFact, CheckFinding,
+    CheckGraphData, CheckRequest, CheckResult, ENGINE_CHECK_RESULT_SCHEMA_VERSION,
+    EngineCompleteness, GraphEdge, GraphNode, adapter_versions, capability_stats, engine_stats,
 };
 
 pub fn check_repo(request: CheckRequest) -> CheckResult {
@@ -2328,9 +2328,54 @@ fn accepted_auth_helpers_for_convention(
     helpers.into_values().collect()
 }
 
+/// The resolved-identity table the CLI ships on the matcher, keyed the way it was built.
+///
+/// **`(requires_key, symbol)`, never `symbol` alone.** The six requires lists can each carry the
+/// same name, and this engine already reads them separately -
+/// `accepted_auth_helpers_for_convention`, `phase6_helpers_from_requires` and
+/// `security_helpers_from_requires` each build their own map, so a symbol is unique within one
+/// list and never across them. Collapsing the key destroys a mode: an auth helper with a resolved
+/// file identity, overwritten by an `external` serializer of the same name, silently downgrades
+/// the auth helper back to specifier matching.
+///
+/// Absent for an older CLI, and absent for a helper whose contract gave no module at all. Both
+/// leave the matchers at their pre-Sprint-4 behaviour rather than at some invented default.
+fn helper_module_identities(
+    convention: &crate::protocol::CheckConvention,
+) -> BTreeMap<(String, String), HelperModuleIdentity> {
+    convention
+        .matcher
+        .accepted_helper_module_files
+        .iter()
+        .flatten()
+        .map(|entry| {
+            (
+                (entry.requires_key.clone(), entry.symbol.clone()),
+                HelperModuleIdentity {
+                    specifier: entry.specifier.clone(),
+                    mode: match entry.mode {
+                        AcceptedHelperResolutionMode::RepoResolved => {
+                            HelperResolutionMode::RepoResolved
+                        }
+                        AcceptedHelperResolutionMode::External => HelperResolutionMode::External,
+                        AcceptedHelperResolutionMode::Unresolved => {
+                            HelperResolutionMode::Unresolved
+                        }
+                    },
+                    files: entry.files.clone(),
+                    package_specifier_resolves_in_repo: entry
+                        .package_specifier_resolves_in_repo
+                        .unwrap_or(false),
+                },
+            )
+        })
+        .collect()
+}
+
 fn phase4_policy_for_convention(
     convention: &crate::protocol::CheckConvention,
 ) -> Phase4SecurityPolicy {
+    let identities = helper_module_identities(convention);
     let mut helpers = BTreeMap::<String, AcceptedAuthHelper>::new();
     let mut helper_imports = BTreeMap::<String, AcceptedHelperImport>::new();
     if let Some(auth_helpers) = convention
@@ -2380,6 +2425,9 @@ fn phase4_policy_for_convention(
                             .or_else(|| helper.get("import_source"))
                             .and_then(|value| value.as_str())
                             .map(str::to_string),
+                        identity: identities
+                            .get(&("auth_helpers".to_string(), symbol.to_string()))
+                            .cloned(),
                     },
                 );
             }
@@ -3747,6 +3795,7 @@ fn phase4_proof_json(
     convention: &crate::protocol::CheckConvention,
     finding_id: &str,
 ) -> serde_json::Value {
+    let identities = helper_module_identities(convention);
     let missing_code = phase4_missing_code(proof, &convention.kind);
     let missing_proof_ids = if proof.result.proof_status == SecurityProofStatus::Proven {
         Vec::new()
@@ -3858,12 +3907,38 @@ fn phase4_proof_json(
         "session_trust": {
             "required": proof.session_trust.required,
             "proven": proof.session_trust.proven,
-            "trusted_sessions": proof.session_trust.trusted_sessions.iter().map(|session| json!({
-                "fact_id": session.fact_id,
-                "variable": session.variable,
-                "trust": session.trust,
-                "source": session.derived_from
-            })).collect::<Vec<_>>(),
+            "trusted_sessions": proof.session_trust.trusted_sessions.iter().map(|session| {
+                let mut object = serde_json::Map::new();
+                object.insert("fact_id".to_string(), json!(session.fact_id));
+                object.insert("variable".to_string(), json!(session.variable));
+                object.insert("trust".to_string(), json!(session.trust));
+                object.insert("source".to_string(), json!(session.derived_from));
+                // S4-01: how the helper behind this session was identified. Omitted entirely when
+                // the CLI shipped no table, which is what an older CLI looks like - an absent key
+                // says "not asked", where a defaulted one would claim an answer nobody gave.
+                //
+                // On `trusted_sessions[]` specifically because that is the one object in this
+                // document both consumer schemas parse with `.passthrough()`
+                // (packages/core/src/security.ts, packages/engine-contract/src/index.ts). Every
+                // other slot strips unknown keys, so a field added there would reach the wire and
+                // then be deleted on the way to storage - present in the engine's output, absent
+                // from anything a user can read, which is the "wired to nothing" shape this
+                // refactor keeps finding.
+                if let Some(identity) = session
+                    .helper_symbol
+                    .as_ref()
+                    .and_then(|symbol| identities.get(&("auth_helpers".to_string(), symbol.clone())))
+                {
+                    object.insert("helper_resolution".to_string(), json!({
+                        "symbol": session.helper_symbol,
+                        "specifier": identity.specifier,
+                        "mode": identity.mode.as_wire(),
+                        "files": identity.files,
+                        "package_specifier_resolves_in_repo": identity.package_specifier_resolves_in_repo
+                    }));
+                }
+                serde_json::Value::Object(object)
+            }).collect::<Vec<_>>(),
             "missing_trust": proof.session_trust.missing_trust.iter().map(|missing| json!({
                 "fact_id": missing.fact_id,
                 "variable": missing.variable,

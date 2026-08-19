@@ -612,3 +612,233 @@ fn session_trust_reason_is_a_member_of_the_wire_enum() {
         );
     }
 }
+
+/// S4-01 RED: a barrel is the same helper, spelled shorter.
+///
+/// The contract names `@/lib/auth`. The route reaches the identical module through `@/lib`, the
+/// barrel that re-exports it. Tier-1 matching compares the two spellings as bytes, decides they
+/// are different helpers, and reports a compliant route as having no trusted session - which is
+/// F3, reproduced here end to end through the real `check-repo` dispatch rather than against
+/// `helper_import_matches` in isolation.
+///
+/// The table is what makes the two spellings comparable: it says the accepted helper's module IS
+/// `lib/auth.ts`, and `@/lib` is the directory that module lives under.
+#[test]
+fn barrel_imported_auth_helper_satisfies_session_trust() {
+    let repo_root = temp_repo("phase4_barrel_specifier");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '@/lib';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("@/lib"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "requireUser",
+                "specifier": "@/lib/auth",
+                "mode": "repo_resolved",
+                "files": ["lib/auth.ts"]
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+    assert_eq!(
+        session_trust["trusted_sessions"]
+            .as_array()
+            .expect("trusted_sessions")
+            .len(),
+        1,
+        "{payload:#?}"
+    );
+    assert!(
+        session_trust["missing_trust"]
+            .as_array()
+            .expect("missing_trust")
+            .is_empty(),
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// S4-01 RED: `../../../lib/auth` and `@/lib/auth` are one file, and tier 1 says otherwise.
+///
+/// Nothing about this route differs from a conforming one except how its author spelled the path.
+/// The table resolves the accepted helper to `lib/auth.ts`; normalising the relative spelling
+/// against the importing file reaches the same place.
+#[test]
+fn relative_spelling_satisfies_session_trust() {
+    let repo_root = temp_repo("phase4_relative_specifier");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "requireUser",
+                "specifier": "@/lib/auth",
+                "mode": "repo_resolved",
+                "files": ["lib/auth.ts"]
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+    assert_eq!(
+        session_trust["trusted_sessions"]
+            .as_array()
+            .expect("trusted_sessions")
+            .len(),
+        1,
+        "{payload:#?}"
+    );
+    assert!(
+        session_trust["missing_trust"]
+            .as_array()
+            .expect("missing_trust")
+            .is_empty(),
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// S4-01 RED: `external` is an answer, and the proof has to say so.
+///
+/// `next-auth` resolves to nothing because the resolver only resolves into the scan snapshot -
+/// by design, not by failure. Matching therefore stays on the specifier and this route passes
+/// exactly as it did before. What must change is that the proof records WHICH rule decided it:
+/// a reader who cannot tell "matched a resolved module" from "matched a string" cannot tell a
+/// tier-2 answer from the tier-1 answer this sprint exists to replace.
+///
+/// This is also the assertion that makes "dispatch on mode, never on whether `files` is empty"
+/// checkable: `files` is empty here and the helper still matches.
+#[test]
+fn external_mode_records_its_degradation_in_the_proof() {
+    let repo_root = temp_repo("phase4_external_mode");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { getServerSession } from 'next-auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await getServerSession(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "getServerSession", 1, 1, Some("next-auth"), Some("getServerSession")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "getServerSession", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "getServerSession", "import": "next-auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "getServerSession",
+                "specifier": "next-auth",
+                "mode": "external",
+                "files": []
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+    let trusted = session_trust["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "external",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        trusted[0]["helper_resolution"]["specifier"], "next-auth",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// A `session_object_must_come_from_trusted_helper` contract with one accepted auth helper, and
+/// optionally the resolved-identity table the CLI ships beside it.
+fn session_trust_contract(helper: Value, helper_module_files: Option<Value>) -> Value {
+    let mut matcher = json!({ "applies_to_file_roles": ["api_route"] });
+    if let Some(table) = helper_module_files {
+        matcher["accepted_helper_module_files"] = table;
+    }
+    json!({
+        "contract_id": "contract_phase4",
+        "contract_schema_version": 1,
+        "conventions": [{
+            "id": "security_session_trust",
+            "kind": "session_object_must_come_from_trusted_helper",
+            "matcher": matcher,
+            "requires": { "auth_helpers": [helper] },
+            "severity": "error",
+            "enforcement_mode": "block",
+            "enforcement_capability": "deterministic_check"
+        }]
+    })
+}
