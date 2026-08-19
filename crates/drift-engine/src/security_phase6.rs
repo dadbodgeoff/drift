@@ -3,9 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::json;
 
 use crate::{
-    AcceptedSecurityHelper, Fact, FactExtractError, FactKind, SecurityParserGap,
-    SecurityParserGapCode, SecurityProofResult, SecurityProofStatus, extract_typescript_facts,
-    next_routes::next_api_route_identity,
+    AcceptedSecurityHelper, Fact, FactExtractError, FactKind, HelperModuleIdentity,
+    SecurityParserGap, SecurityParserGapCode, SecurityProofResult, SecurityProofStatus,
+    extract_typescript_facts, helper_module_matches, next_routes::next_api_route_identity,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,6 +13,9 @@ pub struct Phase6AcceptedHelper {
     pub helper_id: String,
     pub module: String,
     pub symbol: String,
+    /// S4: what the CLI resolved `module` to, and how. `None` keeps the pre-Sprint-4 behaviour -
+    /// the exact specifier and nothing else.
+    pub identity: Option<HelperModuleIdentity>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -715,6 +718,12 @@ fn classify_outbound_argument(
     }
 }
 
+/// The accepted allowlist helpers this file imports, keyed by the LOCAL name it binds them to.
+///
+/// The key was already the local binding, which is why a renamed import never confused this path
+/// the way it confused `security_rules.rs`. What was wrong was the module test: an exact string
+/// comparison, so a route reaching the accepted helper by a relative path or through a barrel was
+/// not importing it as far as this map was concerned, and the guard it called did not count.
 fn accepted_imports(
     facts: &[Fact],
     helpers: &[Phase6AcceptedHelper],
@@ -725,8 +734,13 @@ fn accepted_imports(
         .filter(|fact| fact.kind == FactKind::ImportUsed)
     {
         for helper in helpers {
-            if fact.value.as_deref() == Some(helper.module.as_str())
-                && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+            if fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+                && helper_module_matches(
+                    &fact.file_path,
+                    fact.value.as_deref(),
+                    &helper.module,
+                    helper.identity.as_ref(),
+                )
             {
                 imports.insert(fact.name.clone(), helper.clone());
             }
@@ -735,6 +749,7 @@ fn accepted_imports(
     imports
 }
 
+/// The CSRF and rate-limit equivalent of `accepted_imports`, over the other helper type.
 fn accepted_security_imports(
     facts: &[Fact],
     helpers: &[AcceptedSecurityHelper],
@@ -745,8 +760,13 @@ fn accepted_security_imports(
         .filter(|fact| fact.kind == FactKind::ImportUsed)
     {
         for helper in helpers {
-            if fact.value.as_deref() == Some(helper.module.as_str())
-                && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+            if fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+                && helper_module_matches(
+                    &fact.file_path,
+                    fact.value.as_deref(),
+                    &helper.module,
+                    helper.identity.as_ref(),
+                )
             {
                 imports.insert(fact.name.clone(), helper.clone());
             }

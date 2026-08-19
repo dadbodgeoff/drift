@@ -498,6 +498,7 @@ fn phase6_ssrf_contract() -> Phase6SecurityContract {
             helper_id: "outbound_allowlist".to_string(),
             module: "@/security/outbound".to_string(),
             symbol: "requireAllowedOutboundUrl".to_string(),
+            identity: None,
         }],
     })
 }
