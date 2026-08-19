@@ -17,6 +17,7 @@ use crate::{
     },
 };
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecurityBoundaryProof {
@@ -930,7 +931,8 @@ pub fn build_secret_exposure_proof(
         .iter()
         .filter_map(|secret| secret.variable.clone())
         .collect::<Vec<_>>();
-    let direct_exposures = secret_sink_exposures(source, &secret_reads, &accepted_phase5.log_sinks);
+    let direct_exposures =
+        secret_sink_exposures(&facts, source, &secret_reads, &accepted_phase5.log_sinks);
     let exposed_secrets = direct_exposures
         .into_iter()
         .map(|exposure| ExposedSecretProof {
@@ -1683,11 +1685,13 @@ fn response_spread_variables(lines: &[&str]) -> Vec<String> {
 }
 
 fn secret_sink_exposures(
+    facts: &[Fact],
     source: &str,
     secret_reads: &[SecretReadValue],
     log_sinks: &[String],
 ) -> Vec<SecretExposureCandidate> {
     let lines = source.lines().collect::<Vec<_>>();
+    let sink_kinds = sink_kinds_by_line(facts, log_sinks);
     let mut tainted = secret_reads
         .iter()
         .filter_map(|secret| {
@@ -1724,14 +1728,7 @@ fn secret_sink_exposures(
     let mut exposures = Vec::new();
     for (index, line) in lines.iter().enumerate() {
         let line_number = index + 1;
-        let sink_kind = if is_response_sink_line(line) {
-            Some("response")
-        } else if log_sinks.iter().any(|sink| line.contains(sink)) {
-            Some("log")
-        } else {
-            None
-        };
-        let Some(sink_kind) = sink_kind else {
+        let Some(sink_kind) = sink_kinds.get(&line_number).copied() else {
             continue;
         };
         if let Some(secret) = secret_reads
@@ -1776,10 +1773,54 @@ fn secret_sink_exposures(
     exposures
 }
 
-fn is_response_sink_line(line: &str) -> bool {
-    line.contains("Response.json(")
-        || line.contains("NextResponse.json(")
-        || line.contains(".json(")
+/// F5, S6-02. Which lines hold a secret sink, decided from calls rather than from text.
+///
+/// This replaces `is_response_sink_line` - three `.contains()` calls on the raw line - and the
+/// matching `log_sinks.iter().any(|sink| line.contains(sink))` beside it. Between them they made
+///
+///     // console.error(apiKey);
+///
+/// a sink, so commenting a log call OUT flipped a route from `Proven` to `MissingProof`. A string
+/// literal naming a sink did the same. A call is a `symbol_called` fact off the tree-sitter walk,
+/// and neither a comment nor a string produces one.
+///
+/// The PREDICATES are deliberately unchanged, only what they are asked about. A response sink is
+/// still any member call named `json` - the old `.contains(".json(")` catch-all, which also
+/// matches `await request.json()` and has since before this change; narrowing it is a detection
+/// question, not this fix. A log sink is still a substring test against the contract's configured
+/// sink strings, now applied to the call's qualified callee (`console.error`) rather than to the
+/// whole line. Response wins over log where a line is both, as before.
+///
+/// The one narrowing worth naming: a bare reference that names a sink without calling it -
+/// `wrap(console.error)` - is no longer a sink line. It has no call of its own for the walk to
+/// see. That is a consequence of asking about calls, and it is what asking about calls is for.
+///
+/// Receiver text is used raw, newlines and all. `logger\n  .error(x)` did not match the line scan
+/// and does not match here; compacting it would ADD findings on real repositories, which is a
+/// detection change and does not belong in a false-positive fix.
+fn sink_kinds_by_line(facts: &[Fact], log_sinks: &[String]) -> BTreeMap<usize, &'static str> {
+    let mut sinks: BTreeMap<usize, &'static str> = BTreeMap::new();
+    for fact in facts
+        .iter()
+        .filter(|fact| fact.kind == crate::FactKind::SymbolCalled)
+    {
+        let Some(receiver) = fact.value.as_deref() else {
+            continue;
+        };
+        let qualified = format!("{receiver}.{}", fact.name);
+        let sink_kind = if fact.name == "json" {
+            "response"
+        } else if log_sinks.iter().any(|sink| qualified.contains(sink)) {
+            "log"
+        } else {
+            continue;
+        };
+        let entry = sinks.entry(fact.start_line).or_insert(sink_kind);
+        if sink_kind == "response" {
+            *entry = "response";
+        }
+    }
+    sinks
 }
 
 fn file_path_string(facts: &[Fact]) -> String {

@@ -375,6 +375,132 @@ fn a_secret_read_on_a_real_log_sink_line_still_blocks() {
     );
 }
 
+/// F5, S6-02. The defect as reported: adding a comment creates a security finding.
+///
+/// `is_response_sink_line` was three `.contains()` calls and the log-sink test was
+/// `log_sinks.iter().any(|sink| line.contains(sink))`, so commenting a log call OUT was
+/// indistinguishable from leaving it in. This route reads a secret and never logs it; the only
+/// `console.error` in the file is behind a `//`.
+#[test]
+fn a_commented_out_log_call_is_not_a_secret_sink() {
+    let repo_root = temp_repo("phase5_commented_log_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  // console.error(apiKey);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_commented_log",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a commented-out log call is not a sink: {payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+}
+
+/// The same hole through a string literal rather than a comment.
+///
+/// A line that merely SPELLS a sink is not a sink. Documentation strings that name the thing they
+/// tell you not to do are the common shape, and the substring test could not tell one from a call.
+///
+/// The response on the last line is deliberately free of both `apiKey` and `hint`. A string
+/// literal can still TAINT a variable - `line_uses_identifier` reads raw lines, so the `apiKey`
+/// token inside this string marks `hint` as carrying the secret - and that lives in the taint
+/// fixpoint, which is not this sprint. Written the other way this test would be measuring the
+/// fixpoint instead of the sink test it is named for.
+#[test]
+fn a_secret_name_inside_a_string_literal_is_not_a_secret_sink() {
+    let repo_root = temp_repo("phase5_string_literal_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  const hint = \"never console.error(apiKey) in a handler\";\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_string_literal",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "a sink named inside a string is not a sink: {payload:#?}"
+    );
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "proven",
+        "{payload:#?}"
+    );
+}
+
+/// Control for the log-sink rewrite: a secret assigned to a variable and then genuinely logged
+/// still blocks. This is the taint path rather than the same-line path, so it covers the half of
+/// `secret_sink_exposures` the two tests above do not.
+#[test]
+fn a_secret_variable_logged_on_a_real_call_still_blocks() {
+    let repo_root = temp_repo("phase5_tainted_log_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  console.error(apiKey);\n  return Response.json({ ok: true });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_tainted_log",
+        &repo_root,
+        5,
+        4,
+    ));
+
+    let findings = payload["findings"].as_array().expect("findings");
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "{payload:#?}"
+    );
+}
+
+/// Control for the response-sink rewrite: a secret returned in the body still blocks.
+#[test]
+fn a_secret_returned_in_a_response_still_blocks() {
+    let repo_root = temp_repo("phase5_response_sink");
+    write_route(
+        &repo_root,
+        "app/api/secrets/route.ts",
+        "export async function GET() {\n  const apiKey = process.env.API_KEY;\n  return Response.json({ apiKey });\n}\n",
+    );
+
+    let payload = run_check_repo(secret_exposure_request(
+        "repo_phase5_response_sink",
+        &repo_root,
+        4,
+        3,
+    ));
+
+    let findings = payload["findings"].as_array().expect("findings");
+    assert_eq!(findings.len(), 1, "{payload:#?}");
+    assert_eq!(
+        secret_exposure_proof_status(&payload),
+        "missing_proof",
+        "{payload:#?}"
+    );
+}
+
 /// The scan facts a secret-exposure check needs for one GET route in `app/api/secrets/route.ts`,
 /// plus the accepted phase-5 contract that turns `env` into an accepted secret source and
 /// `console.error` into a log sink.
