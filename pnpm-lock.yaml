@@ -141,9 +141,6 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@drift/cli':
-        specifier: workspace:*
-        version: link:../cli
       '@drift/core':
         specifier: workspace:*
         version: link:../core
