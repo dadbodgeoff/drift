@@ -64,6 +64,7 @@ export async function GET(request: Request) {
                 helper_id: "outbound_allowlist".to_string(),
                 module: "@/security/outbound".to_string(),
                 symbol: "requireAllowedOutboundUrl".to_string(),
+                identity: None,
             }],
         },
     )
@@ -497,6 +498,7 @@ fn phase6_ssrf_contract() -> Phase6SecurityContract {
             helper_id: "outbound_allowlist".to_string(),
             module: "@/security/outbound".to_string(),
             symbol: "requireAllowedOutboundUrl".to_string(),
+            identity: None,
         }],
     })
 }
@@ -522,6 +524,7 @@ fn phase6_csrf_contract() -> Phase6SecurityContract {
             helper_id: "csrf".to_string(),
             module: "@/security/csrf".to_string(),
             symbol: "requireCsrf".to_string(),
+            identity: None,
         }],
     }
 }
@@ -533,6 +536,7 @@ fn phase6_rate_limit_contract() -> Phase6SecurityContract {
             helper_id: "rate_limit".to_string(),
             module: "@/security/rate-limit".to_string(),
             symbol: "requireRateLimit".to_string(),
+            identity: None,
         }],
         route_paths: vec!["/api/login".to_string()],
     }

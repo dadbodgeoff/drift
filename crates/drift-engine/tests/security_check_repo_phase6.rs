@@ -356,6 +356,165 @@ fn check_repo_links_phase6_rate_limit_proof_to_normalized_entrypoint() {
     );
 }
 
+/// S4-04 RED: F3 on the CSRF guard, through the dispatch a user's run actually takes.
+///
+/// This route imports the accepted guard, calls it before the response, and is compliant. It
+/// reaches `@/security/csrf` by a relative path, and `accepted_security_imports` compared that
+/// spelling to the contract's as bytes, found them different, built an empty guard map and
+/// reported a missing CSRF proof.
+///
+/// Everything here is real: `scan-repo` produces the facts, `check-repo` evaluates them, and the
+/// helper table travels on the matcher exactly as the CLI sends it.
+#[test]
+fn check_repo_csrf_proof_survives_a_relative_spelling_of_the_helper_module() {
+    let source = [
+        r#"import { requireCsrf } from "../../../security/csrf";"#,
+        "export async function POST(request: Request) {",
+        "  requireCsrf(request);",
+        "  return Response.json({ ok: true });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let payload = run_phase6_fixture(
+        "csrf_relative",
+        "app/api/settings/route.ts",
+        &source,
+        csrf_convention(Some(json!([{
+            "requires_key": "csrf_helpers",
+            "symbol": "requireCsrf",
+            "specifier": "@/security/csrf",
+            "mode": "repo_resolved",
+            "files": ["security/csrf.ts"]
+        }]))),
+    );
+
+    assert_eq!(
+        payload["security_boundary_proofs"][0]["csrf"]["proven"],
+        json!(true),
+        "{payload:#?}"
+    );
+    assert_eq!(payload["findings"], json!([]), "{payload:#?}");
+}
+
+/// S4-04 RED: the same on the SSRF allowlist, which reads its helpers through `accepted_imports`.
+#[test]
+fn check_repo_ssrf_allowlist_survives_a_relative_spelling_of_the_helper_module() {
+    let source = [
+        r#"import { requireAllowedOutboundUrl } from "../../../security/outbound";"#,
+        "export async function GET(request: Request) {",
+        r#"  const target = request.nextUrl.searchParams.get("target");"#,
+        "  const safeTarget = requireAllowedOutboundUrl(target);",
+        "  await fetch(safeTarget);",
+        "  return Response.json({ ok: true });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let convention = |table: Value| {
+        json!({
+            "id": "security_api_no_ssrf",
+            "kind": "api_route_forbids_untrusted_ssrf",
+            "matcher": {
+                "applies_to_file_roles": ["api_route"],
+                "methods": ["GET"],
+                "accepted_helper_module_files": table
+            },
+            "requires": {
+                "outbound_url_allowlist_helpers": [{
+                    "helper_id": "outbound_allowlist",
+                    "module": "@/security/outbound",
+                    "symbol": "requireAllowedOutboundUrl"
+                }]
+            },
+            "severity": "error",
+            "enforcement_mode": "block",
+            "enforcement_capability": "deterministic_check"
+        })
+    };
+
+    let payload = run_phase6_fixture(
+        "ssrf_relative",
+        "app/api/proxy/route.ts",
+        &source,
+        convention(json!([{
+            "requires_key": "outbound_url_allowlist_helpers",
+            "symbol": "requireAllowedOutboundUrl",
+            "specifier": "@/security/outbound",
+            "mode": "repo_resolved",
+            "files": ["security/outbound.ts"]
+        }])),
+    );
+
+    assert_eq!(
+        payload["security_boundary_proofs"][0]["ssrf"]["proven"],
+        json!(true),
+        "{payload:#?}"
+    );
+    assert_eq!(payload["findings"], json!([]), "{payload:#?}");
+}
+
+/// A characterization, GREEN before this sprint and pinned so it stays that way.
+///
+/// The plan expected F4 - renamed imports producing findings on compliant routes - to be live
+/// here. It is not, and this is the test that says so: `accepted_security_imports` has always
+/// keyed its map by the LOCAL binding and matched on `imported_name`, so `as` never confused it.
+/// The rename defect was real only in `security_rules.rs`, which nothing in `src/` calls.
+///
+/// Pinned rather than deleted because the fix in the previous commit moved code on both sides of
+/// this question, and "the real path was already right" is worth exactly as much as the test that
+/// would notice it stopping being right.
+#[test]
+fn check_repo_csrf_proof_already_survived_a_renamed_import() {
+    let source = [
+        r#"import { requireCsrf as checkCsrf } from "@/security/csrf";"#,
+        "export async function POST(request: Request) {",
+        "  checkCsrf(request);",
+        "  return Response.json({ ok: true });",
+        "}",
+        "",
+    ]
+    .join("\n");
+    let payload = run_phase6_fixture(
+        "csrf_renamed",
+        "app/api/settings/route.ts",
+        &source,
+        csrf_convention(None),
+    );
+
+    assert_eq!(
+        payload["security_boundary_proofs"][0]["csrf"]["proven"],
+        json!(true),
+        "{payload:#?}"
+    );
+    assert_eq!(payload["findings"], json!([]), "{payload:#?}");
+}
+
+fn csrf_convention(helper_module_files: Option<Value>) -> Value {
+    let mut matcher = json!({
+        "applies_to_file_roles": ["api_route"],
+        "methods": ["POST"]
+    });
+    if let Some(table) = helper_module_files {
+        matcher["accepted_helper_module_files"] = table;
+    }
+    json!({
+        "id": "security_api_csrf",
+        "kind": "api_route_requires_csrf_for_mutation",
+        "matcher": matcher,
+        "requires": {
+            "csrf_helpers": [{
+                "helper_id": "csrf",
+                "module": "@/security/csrf",
+                "symbol": "requireCsrf"
+            }]
+        },
+        "severity": "error",
+        "enforcement_mode": "block",
+        "enforcement_capability": "deterministic_check"
+    })
+}
+
 fn run_phase6_fixture(name: &str, file_path: &str, source: &str, convention: Value) -> Value {
     let repo_root = temp_repo(name);
     let route_path = repo_root.join(file_path);

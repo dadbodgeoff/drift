@@ -33,6 +33,71 @@ impl Phase4SecurityPolicy {
 pub struct AcceptedHelperImport {
     pub symbol: String,
     pub import_source: Option<String>,
+    /// S4: what the CLI resolved this helper's specifier to, and how it got there.
+    ///
+    /// `None` means the CLI shipped no table for this helper - an older CLI, or a helper the
+    /// contract gave no module for at all. Matching then behaves exactly as it did before this
+    /// sprint, which is what makes the whole change revertible by reverting the TypeScript field
+    /// (`unresolved_mode_falls_back_and_says_so`).
+    pub identity: Option<HelperModuleIdentity>,
+}
+
+/// How an accepted helper's module identity was arrived at.
+///
+/// The engine mirror of `protocol::AcceptedHelperResolutionMode`. Separate from the wire type on
+/// purpose: `protocol` is what deserialises, this is what the matchers reason over, and the
+/// matchers live in a module that must not depend on request shapes.
+///
+/// **Dispatch on this, never on whether `files` is empty.** `resolve_import` only resolves into
+/// the scan snapshot, so every helper that legitimately lives in `node_modules` - `next-auth`,
+/// `@clerk/nextjs`, the most common real-world auth contract there is - arrives with an empty
+/// `files` and always will. "Empty table, fall back to strings" would therefore retain the tier-1
+/// semantics this sprint exists to remove, permanently and silently, for exactly those helpers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HelperResolutionMode {
+    /// Resolved inside the repo. `files` is the identity and matching compares resolved modules.
+    RepoResolved,
+    /// A bare-LOOKING specifier that resolved to nothing. Usually a real package, and empty
+    /// `files` there is by design rather than by failure.
+    ///
+    /// Do not read this as "the module is outside the repo". The CLI's `isBarePackageSpecifier`
+    /// rejects only `.`, `/`, `@/`, `~` and `#` starts, so a scoped path alias (`@app/auth`), a
+    /// `$lib/...` alias and an unresolved `baseUrl` import all arrive here as well. Matching is
+    /// exact-specifier equality - byte for byte what this engine did before Sprint 4 - so the
+    /// mode's imprecision costs nothing in behaviour; it costs only a reader who takes the label
+    /// literally, which is why the label is spelled out here.
+    External,
+    /// A repo-relative specifier that resolved to nothing. Matching stays on the exact specifier
+    /// too, but this one is a degradation and the proof says so.
+    Unresolved,
+}
+
+impl HelperResolutionMode {
+    /// The spelling this mode takes in an emitted proof - the same one the CLI sent.
+    pub fn as_wire(self) -> &'static str {
+        match self {
+            HelperResolutionMode::RepoResolved => "repo_resolved",
+            HelperResolutionMode::External => "external",
+            HelperResolutionMode::Unresolved => "unresolved",
+        }
+    }
+}
+
+/// One accepted helper's resolved module identity.
+///
+/// `files` means "modules that plausibly supply this helper", NOT "modules proven to be it": the
+/// re-export closure that produced it compares symbol NAMES, so a barrel re-exporting one name
+/// from two modules contributes both.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HelperModuleIdentity {
+    /// The specifier as the contract typed it. What `External` and `Unresolved` match on.
+    pub specifier: String,
+    pub mode: HelperResolutionMode,
+    pub files: Vec<String>,
+    /// A package-shaped specifier that resolves to a repo file. A fact, not a verdict - it is the
+    /// tsconfig-paths hijack shape and equally the shape of a workspace package or a scoped alias.
+    /// Carried into the proof so a reader can see it; never a finding on its own.
+    pub package_specifier_resolves_in_repo: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,8 +150,7 @@ pub fn accepted_phase4_auth_helper_for_call<'a>(
                     policy
                         .auth_helper_imports
                         .iter()
-                        .find(|contract| contract.symbol == helper.symbol)
-                        .and_then(|contract| contract.import_source.as_deref()),
+                        .find(|contract| contract.symbol == helper.symbol),
                 )
         })
     })
@@ -466,12 +530,232 @@ fn imported_symbol_matches_with_source(
         fact.kind == FactKind::ImportUsed
             && fact.name == local_name
             && fact.imported_name.as_deref() == Some(accepted_symbol)
-            && helper_import_matches(fact, import_source)
+            && import_source.is_none_or(|expected| {
+                // No identity is available on this path: `AcceptedAuthorizationHelper` carries a
+                // specifier of its own and `authorization_helpers` is not one of the requires
+                // lists the CLI resolves, so there is nothing to dispatch on. Tier 1, honestly.
+                helper_module_matches(&fact.file_path, fact.value.as_deref(), expected, None)
+            })
     })
 }
 
-fn helper_import_matches(fact: &Fact, import_source: Option<&str>) -> bool {
-    import_source.is_none_or(|expected| fact.value.as_deref() == Some(expected))
+fn helper_import_matches(fact: &Fact, contract: Option<&AcceptedHelperImport>) -> bool {
+    let Some(contract) = contract else {
+        return true;
+    };
+    let Some(expected) = contract.import_source.as_deref() else {
+        return true;
+    };
+    helper_module_matches(
+        &fact.file_path,
+        fact.value.as_deref(),
+        expected,
+        contract.identity.as_ref(),
+    )
+}
+
+/// Does this import spelling name the accepted helper's module?
+///
+/// The one question every accepted-helper matcher in this engine asks, and the one it used to
+/// answer with `spelling == expected`. That answer is right only when the contract's spelling and
+/// the route author's spelling are the same string, which is why `../../lib/auth` and `@/lib/auth`
+/// - one file - were two different helpers, and why a barrel was a third.
+///
+/// The rules, dispatched on `mode` and never on whether `files` is empty:
+///
+///   - no identity, `External`, `Unresolved`: exact specifier equality. Byte for byte what this
+///     engine did before Sprint 4, so none of those three can produce a finding that did not
+///     already exist, and none can accept an import that was not already accepted.
+///   - `RepoResolved`: exact equality, or the spelling denotes one of the resolved `files`.
+///
+/// Callers pass the accepted specifier and the identity separately because the identity is
+/// optional and the specifier is not: an accepted helper always has a spelling to fall back to.
+pub fn helper_module_matches(
+    importing_file: &str,
+    spelling: Option<&str>,
+    expected_specifier: &str,
+    identity: Option<&HelperModuleIdentity>,
+) -> bool {
+    let Some(spelling) = spelling else {
+        return false;
+    };
+    if spelling == expected_specifier {
+        return true;
+    }
+    match identity {
+        Some(identity) if identity.mode == HelperResolutionMode::RepoResolved => {
+            // The mapping is derived ONCE, from the whole (specifier, files) pair, and then used
+            // to read the spelling. Deriving it per candidate file instead made the re-export
+            // closure unreachable: `files` for a contract naming `@/lib` is
+            // `["lib/auth.ts", "lib/index.ts"]`, and `lib/auth.ts` - the entry the closure exists
+            // to supply - shares no trailing segment with `@/lib`, so the per-file derivation
+            // found no mapping and refused a file it was literally holding in the list.
+            let Some(candidate) = candidate_module_path(
+                importing_file,
+                spelling,
+                expected_specifier,
+                &identity.files,
+            ) else {
+                return false;
+            };
+            identity
+                .files
+                .iter()
+                .any(|file| module_key(file) == candidate)
+        }
+        _ => false,
+    }
+}
+
+/// Read `spelling`, written in `importing_file`, as a repo path - or refuse.
+///
+/// Two spellings, two ways to read them:
+///
+///   - relative (`../../lib/auth`): pure path arithmetic against the importing file. Exact, and
+///     it needs nothing the engine does not have.
+///   - anything else (`@/lib/auth`, `~/lib`): the engine has no tsconfig and cannot resolve an
+///     alias. What it does have is the contract's own specifier next to the files that specifier
+///     resolved to - see `contract_alias_mapping`. A spelling in a different namespace than the
+///     contract's has no such example and is refused.
+///
+/// The answer is then compared to `files` by EQUALITY, and only equality.
+///
+/// There used to be a second relation here: the spelling naming a DIRECTORY that a resolved file
+/// lives under, so `@/lib` would reach `lib/auth.ts` through the barrel at `lib/index.ts`. It is
+/// gone, and it is worth saying why, because the argument for it sounded reasonable.
+///
+/// It was defended as widening in the safe direction - the ROUTE's spelling wider than the
+/// contract's, never the reverse - and as costing one narrow residual. Both halves were wrong.
+/// The reach was every ancestor directory, so a contract at `@/src/server/auth/session` was
+/// satisfied by `@/src`; and the cost was not a residual but a true positive. Put
+/// `export { requireUser } from "./no-op-auth";` in `lib/index.ts` and a route importing `@/lib`
+/// gets a helper that authenticates nobody, which `main` reports and that relation did not.
+/// Removing a finding from a security check is the one direction a false-positive fix must not
+/// move, and "probably the same helper" is not a proof however few cases it is wrong in.
+///
+/// Nothing available here could have bounded it. `files` is the OUTBOUND closure - what the
+/// contract's module re-exports - so a barrel that re-exports INTO it appears nowhere in the
+/// evidence, and no amount of string arithmetic invents it.
+///
+/// The barrel case is not lost, it just needs the contract to name the barrel: then `files` is
+/// the closure `["lib/auth.ts", "lib/index.ts"]` and equality carries every spelling of both,
+/// with evidence. `barrel_contract_matches_the_module_it_reexports` pins that. The remaining
+/// shape - contract names the narrow module, route imports a barrel above it - wants the INBOUND
+/// closure, which is computable only where the whole graph lives, in the CLI.
+fn candidate_module_path(
+    importing_file: &str,
+    spelling: &str,
+    expected_specifier: &str,
+    files: &[String],
+) -> Option<String> {
+    let candidate = if is_relative_specifier(spelling) {
+        repo_path_for_relative_specifier(importing_file, spelling)?
+    } else {
+        let (head, root) = contract_alias_mapping(expected_specifier, files)?;
+        module_key(spelling)
+            .strip_prefix(head.as_str())
+            .map(|tail| format!("{root}{tail}"))?
+    };
+    (!candidate.is_empty()).then_some(candidate)
+}
+
+fn is_relative_specifier(specifier: &str) -> bool {
+    specifier.starts_with("./") || specifier.starts_with("../")
+}
+
+/// A module path with the parts that are spelling rather than identity removed: the extension,
+/// and the `/index` that a directory import resolves through.
+fn module_key(path: &str) -> String {
+    let path = path.replace('\\', "/");
+    let stripped = [
+        ".d.ts", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs",
+    ]
+    .iter()
+    .find_map(|extension| path.strip_suffix(extension))
+    .unwrap_or(path.as_str());
+    stripped
+        .strip_suffix("/index")
+        .unwrap_or(stripped)
+        .to_string()
+}
+
+/// `app/api/projects/route.ts` + `../../../lib/auth` = `lib/auth`.
+///
+/// `None` when the specifier climbs out of the repo root, which cannot denote a file the CLI
+/// resolved inside it.
+fn repo_path_for_relative_specifier(importing_file: &str, spelling: &str) -> Option<String> {
+    let importing_file = importing_file.replace('\\', "/");
+    let directory = importing_file.rsplit_once('/').map_or("", |(head, _)| head);
+    let mut parts: Vec<&str> = Vec::new();
+    for segment in directory.split('/').chain(spelling.split('/')) {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                parts.pop()?;
+            }
+            segment => parts.push(segment),
+        }
+    }
+    Some(module_key(&parts.join("/")))
+}
+
+/// What the contract's alias head corresponds to in repo-path space, as `(head, root)`.
+///
+/// The engine has no tsconfig and cannot resolve an alias. What it has is the contract's own
+/// specifier beside the files that specifier resolved to, which is a worked example of the
+/// mapping: `@/lib/auth` next to `lib/auth.ts` says `@/` and the repo root are the same place.
+///
+/// **One mapping, derived from the whole list, not one per candidate.** `files` is a re-export
+/// closure, and its members are chosen by what they EXPORT, not by what they are called - so for
+/// a contract naming `@/lib` the list is `["lib/auth.ts", "lib/index.ts"]` and only the second
+/// has anything in common with the specifier. Asking each file in turn to explain the alias, and
+/// refusing the ones that cannot, threw away every closure member: `@/lib/auth` denotes
+/// `lib/auth.ts`, `lib/auth.ts` is right there in `files`, and the route was still reported as
+/// using an unknown helper - while the same file spelled `../../../lib/auth` was accepted, which
+/// is the one-module-two-verdicts defect this sprint exists to remove, reintroduced one layer
+/// down.
+///
+/// The anchor is whichever file shares the LONGEST trailing run of segments with the specifier.
+/// Longest rather than first because a closure can contain a decoy: for `@/server/auth` over
+/// `["server/auth.ts", "vendor/auth.ts"]` both share `auth`, and only the first shares
+/// `server/auth`. Ties keep the earlier file, and `files` arrives sorted, so the answer is stable.
+///
+/// `None` when no file shares a segment with the specifier. That means the contract's spelling
+/// and the repo's paths have nothing in common - a bare package name against an unrelated path -
+/// and there is no example to reason from, so no non-relative spelling matches.
+fn contract_alias_mapping(expected_specifier: &str, files: &[String]) -> Option<(String, String)> {
+    let specifier_key = module_key(expected_specifier);
+    let mut best: Option<(usize, String, String)> = None;
+    for file in files {
+        let target = module_key(file);
+        let shared = shared_path_suffix(&specifier_key, &target);
+        if shared.is_empty() {
+            continue;
+        }
+        let segments = shared.split('/').count();
+        if best.as_ref().is_none_or(|(best, _, _)| segments > *best) {
+            best = Some((
+                segments,
+                specifier_key[..specifier_key.len() - shared.len()].to_string(),
+                target[..target.len() - shared.len()].to_string(),
+            ));
+        }
+    }
+    best.map(|(_, head, root)| (head, root))
+}
+
+/// The longest suffix the two paths share, cut at a `/` boundary.
+fn shared_path_suffix(left: &str, right: &str) -> String {
+    let left_parts = left.split('/').collect::<Vec<_>>();
+    let right_parts = right.split('/').collect::<Vec<_>>();
+    let mut shared = 0;
+    while shared < left_parts.len()
+        && shared < right_parts.len()
+        && left_parts[left_parts.len() - 1 - shared] == right_parts[right_parts.len() - 1 - shared]
+    {
+        shared += 1;
+    }
+    right_parts[right_parts.len() - shared..].join("/")
 }
 
 fn receiver_root(receiver: &str) -> &str {
@@ -747,5 +1031,248 @@ mod tests {
         .expect("accepted serializer");
         assert_eq!(serializer.serializer_id, "serializePublicUser");
         assert_eq!(serializer.filtered_fields, ["user.email"]);
+    }
+
+    fn identity(mode: HelperResolutionMode, files: &[&str]) -> HelperModuleIdentity {
+        identity_for("@/lib/auth", mode, files)
+    }
+
+    fn identity_for(
+        specifier: &str,
+        mode: HelperResolutionMode,
+        files: &[&str],
+    ) -> HelperModuleIdentity {
+        HelperModuleIdentity {
+            specifier: specifier.to_string(),
+            mode,
+            files: files.iter().map(|file| (*file).to_string()).collect(),
+            package_specifier_resolves_in_repo: false,
+        }
+    }
+
+    /// B1: the alias mapping comes from the file that best explains the specifier, not from
+    /// whichever file happens to share a segment with it.
+    ///
+    /// `files` is a re-export closure and can hold a decoy: `vendor/auth.ts` shares `auth` with
+    /// `@/server/auth`, and `server/auth.ts` shares `server/auth`. Anchoring on the decoy makes
+    /// the head `@/server/` and the root `vendor/`, a mapping that explains the contract's own
+    /// specifier only by accident and refuses every other spelling in the namespace - including
+    /// `@/vendor/auth`, which names a file sitting in `files`.
+    ///
+    /// This is the assertion the `>`-to-`<` mutation on the anchor comparison survived when the
+    /// first round of these tests went in, which is why it is here.
+    #[test]
+    fn the_anchor_is_the_file_that_best_explains_the_specifier() {
+        let route = "app/api/projects/route.ts";
+        let decoyed = identity_for(
+            "@/server/auth",
+            HelperResolutionMode::RepoResolved,
+            &["server/auth.ts", "vendor/auth.ts"],
+        );
+        assert!(
+            helper_module_matches(
+                route,
+                Some("@/vendor/auth"),
+                "@/server/auth",
+                Some(&decoyed)
+            ),
+            "a closure member must be reachable through the mapping the specifier really licenses"
+        );
+        assert!(
+            helper_module_matches(
+                route,
+                Some("@/server/auth"),
+                "@/server/auth",
+                Some(&decoyed)
+            ),
+            "the contract's own specifier must still match"
+        );
+    }
+
+    /// S4-02: the guarantee that makes this sprint revertible by reverting the CLI field alone.
+    ///
+    /// With no table, matching is byte-for-byte what it was before Sprint 4: the exact specifier
+    /// and nothing else. Every spelling the resolved path accepts is refused here, so a repo whose
+    /// CLI stops sending the field goes back to the old answers rather than to some third
+    /// behaviour that exists in neither version.
+    ///
+    /// `Unresolved` is the same fallback, said out loud rather than inferred. The two cases with a
+    /// deliberately NON-empty `files` are the important half of this test: they are contradictory
+    /// input - a mode that resolved nothing, carrying resolved files - and they are here because
+    /// dispatching on `files.is_empty()` instead of on `mode` would pass every other assertion in
+    /// this suite while silently retaining tier-1 matching for every external helper. Only a case
+    /// where the two disagree can tell those implementations apart.
+    #[test]
+    fn unresolved_mode_falls_back_and_says_so() {
+        let route = "app/api/projects/route.ts";
+        for (label, supplied) in [
+            ("no table at all", None),
+            (
+                "unresolved, with files it has no business having",
+                Some(identity(HelperResolutionMode::Unresolved, &["lib/auth.ts"])),
+            ),
+            (
+                "external, with files it has no business having",
+                Some(identity(HelperResolutionMode::External, &["lib/auth.ts"])),
+            ),
+        ] {
+            assert!(
+                helper_module_matches(route, Some("@/lib/auth"), "@/lib/auth", supplied.as_ref()),
+                "{label}: the exact specifier must still match"
+            );
+            assert!(
+                !helper_module_matches(
+                    route,
+                    Some("../../../lib/auth"),
+                    "@/lib/auth",
+                    supplied.as_ref()
+                ),
+                "{label}: a relative spelling must not match without a repo_resolved identity"
+            );
+        }
+
+        // The same three modes over the CLOSURE shape, which is the one the equality relation
+        // licenses and therefore the one that discriminates the modes now that the ancestor guess
+        // is gone. `files` here is deliberately non-empty for the two non-resolved modes, because
+        // an implementation dispatching on `files.is_empty()` rather than on `mode` passes every
+        // other assertion in this file and only fails where the two disagree.
+        for (label, mode) in [
+            ("unresolved", HelperResolutionMode::Unresolved),
+            ("external", HelperResolutionMode::External),
+        ] {
+            let supplied = identity_for("@/lib", mode, &["lib/auth.ts", "lib/index.ts"]);
+            assert!(
+                helper_module_matches(route, Some("@/lib"), "@/lib", Some(&supplied)),
+                "{label}: the exact specifier must still match"
+            );
+            assert!(
+                !helper_module_matches(route, Some("@/lib/auth"), "@/lib", Some(&supplied)),
+                "{label}: a closure member must not be reachable without a repo_resolved identity"
+            );
+        }
+    }
+
+    /// The spellings with the identity that licenses them. Without this the test above passes
+    /// trivially on an implementation that never matches anything.
+    #[test]
+    fn repo_resolved_identity_is_what_licenses_the_other_spellings() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        assert!(helper_module_matches(
+            route,
+            Some("@/lib/auth"),
+            "@/lib/auth",
+            Some(&resolved)
+        ));
+        assert!(helper_module_matches(
+            route,
+            Some("../../../lib/auth"),
+            "@/lib/auth",
+            Some(&resolved)
+        ));
+        // The closure shape, which is what makes a barrel work: the contract names the barrel and
+        // the route names the module the barrel re-exports.
+        let barrel = identity_for(
+            "@/lib",
+            HelperResolutionMode::RepoResolved,
+            &["lib/auth.ts", "lib/index.ts"],
+        );
+        assert!(helper_module_matches(
+            route,
+            Some("@/lib/auth"),
+            "@/lib",
+            Some(&barrel)
+        ));
+    }
+
+    /// B2: an ancestor directory is not evidence, and the relation that said otherwise reached
+    /// much further than the one-level barrel it was written for.
+    ///
+    /// For a contract at `@/src/server/auth/session` the accepting spellings numbered as many as
+    /// the module had ancestor directories - `@/src` among them, which accepts any `requireUser`
+    /// imported from anywhere under the source root. Nothing checked that a module existed at the
+    /// named directory, that it was a barrel, or that it re-exported the accepted symbol;
+    /// `candidate_module_path` is string arithmetic and has nothing to check with.
+    ///
+    /// The equality relation that remains does not need this bound written down, because it never
+    /// had this reach. It is pinned because the deleted relation was defended in a comment as
+    /// covering one case, and a bound argued in prose is not a bound.
+    #[test]
+    fn an_ancestor_directory_is_not_evidence_of_anything() {
+        let route = "app/api/projects/route.ts";
+        let deep = identity_for(
+            "@/src/server/auth/session",
+            HelperResolutionMode::RepoResolved,
+            &["src/server/auth/session.ts"],
+        );
+        for spelling in [
+            "@/src",
+            "@/src/server",
+            "@/src/server/auth",
+            "../../../src",
+            "../../../src/server",
+            "../../../src/server/auth",
+        ] {
+            assert!(
+                !helper_module_matches(
+                    route,
+                    Some(spelling),
+                    "@/src/server/auth/session",
+                    Some(&deep)
+                ),
+                "{spelling} names a directory above the helper and proves nothing about it"
+            );
+        }
+        // The module itself, by either spelling, still matches.
+        assert!(helper_module_matches(
+            route,
+            Some("@/src/server/auth/session"),
+            "@/src/server/auth/session",
+            Some(&deep)
+        ));
+        assert!(helper_module_matches(
+            route,
+            Some("../../../src/server/auth/session"),
+            "@/src/server/auth/session",
+            Some(&deep)
+        ));
+    }
+
+    /// The acceptance is not widened downwards, in any mode.
+    ///
+    /// A helper accepted at `@/lib/auth` covers `@/lib/auth`. It does not cover
+    /// `@/lib/auth/attacker-controlled`, and it does not cover a sibling that merely shares a
+    /// parent. That relation - the specifier plus everything beneath it - belongs to the FORBIDDEN
+    /// import path, where widening only ever bans more. Reused here it would mean any module a
+    /// caller can add under an accepted prefix becomes an accepted auth helper.
+    #[test]
+    fn an_accepted_helper_does_not_absorb_the_modules_beneath_it() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        for spelling in [
+            "@/lib/auth/attacker-controlled",
+            "../../../lib/auth/attacker-controlled",
+            "@/lib/auth-lookalike",
+            "../../../lib/authorization",
+        ] {
+            assert!(
+                !helper_module_matches(route, Some(spelling), "@/lib/auth", Some(&resolved)),
+                "{spelling} must not satisfy a helper accepted at @/lib/auth"
+            );
+        }
+    }
+
+    /// A spelling that climbs out of the repo cannot denote a file the CLI resolved inside it, and
+    /// a spelling in a namespace the contract never demonstrated has nothing to be read against.
+    #[test]
+    fn spellings_the_repo_cannot_account_for_do_not_match() {
+        let route = "app/api/projects/route.ts";
+        let resolved = identity(HelperResolutionMode::RepoResolved, &["lib/auth.ts"]);
+        for spelling in ["../../../../../lib/auth", "~/lib/auth", "some-package/auth"] {
+            assert!(
+                !helper_module_matches(route, Some(spelling), "@/lib/auth", Some(&resolved)),
+                "{spelling} must not match"
+            );
+        }
     }
 }

@@ -2,12 +2,12 @@ use crate::{
     AcceptedAuthHelper, AcceptedAuthorizationHelper, AcceptedPhase5Contract,
     AcceptedRequestValidator, AcceptedTenantHelper, AuthorizationHelperBehavior,
     AuthorizationHelperKind, AuthorizationMissingReason, Fact, FactExtractError, FactKind,
-    Phase4SecurityPolicy, RequestValidationProofScope, SecurityProofStatus, TenantMissingReason,
-    UndominatedSinkReason, build_auth_boundary_proof, build_middleware_coverage_proof,
-    build_phase4_security_proof_with_policy, build_request_validation_proof_with_scope,
-    build_response_shape_proof, build_secret_exposure_proof,
-    extract_security_facts_with_validation, extract_typescript_facts,
-    next_routes::next_api_route_identity,
+    HelperModuleIdentity, Phase4SecurityPolicy, RequestValidationProofScope, SecurityProofStatus,
+    TenantMissingReason, UndominatedSinkReason, build_auth_boundary_proof,
+    build_middleware_coverage_proof, build_phase4_security_proof_with_policy,
+    build_request_validation_proof_with_scope, build_response_shape_proof,
+    build_secret_exposure_proof, extract_security_facts_with_validation, extract_typescript_facts,
+    helper_module_matches, next_routes::next_api_route_identity,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -116,6 +116,9 @@ pub struct AcceptedSecurityHelper {
     pub helper_id: String,
     pub module: String,
     pub symbol: String,
+    /// S4: what the CLI resolved `module` to, and how. `None` keeps the pre-Sprint-4 behaviour -
+    /// the exact specifier and nothing else.
+    pub identity: Option<HelperModuleIdentity>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -123,6 +126,8 @@ pub struct AcceptedOutboundUrlHelper {
     pub helper_id: String,
     pub module: String,
     pub symbol: String,
+    /// See `AcceptedSecurityHelper::identity`.
+    pub identity: Option<HelperModuleIdentity>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -825,6 +830,20 @@ fn is_mutation_method(source: &str) -> bool {
     )
 }
 
+/// Is one of the accepted helpers imported here and called?
+///
+/// Two things were wrong with the way this used to ask.
+///
+/// It required `fact.name == helper.symbol` AND `fact.imported_name == helper.symbol`. For a plain
+/// import those are the same test written twice; for `import { assertCsrf as checkCsrf }` they are
+/// a test no import can pass, because the local name is `checkCsrf` and the imported name is
+/// `assertCsrf`. It then looked for a call to `helper.symbol` - a name a renaming file never
+/// writes. So a route that imported the accepted guard, called it, and was compliant in every
+/// respect was reported as having no proof, for renaming a binding.
+///
+/// The imported name is the identity; the local name is this file's spelling of it, and the call
+/// site has to be looked for under that spelling. And the module is now a place rather than a
+/// string - see `helper_module_matches`.
 fn accepted_helper_called(
     file_path: &std::path::Path,
     source: &str,
@@ -835,16 +854,23 @@ fn accepted_helper_called(
     }
     let facts = extract_typescript_facts(file_path, source)?;
     Ok(helpers.iter().any(|helper| {
-        let imported = facts.iter().any(|fact| {
-            fact.kind == FactKind::ImportUsed
-                && fact.name == helper.symbol
-                && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
-                && fact.value.as_deref() == Some(helper.module.as_str())
-        });
-        let called = facts
+        facts
             .iter()
-            .any(|fact| fact.kind == FactKind::SymbolCalled && fact.name == helper.symbol);
-        imported && called
+            .filter(|fact| {
+                fact.kind == FactKind::ImportUsed
+                    && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+                    && helper_module_matches(
+                        &fact.file_path,
+                        fact.value.as_deref(),
+                        &helper.module,
+                        helper.identity.as_ref(),
+                    )
+            })
+            .any(|import| {
+                facts
+                    .iter()
+                    .any(|fact| fact.kind == FactKind::SymbolCalled && fact.name == import.name)
+            })
     }))
 }
 
@@ -872,19 +898,27 @@ fn ssrf_allowlist_proves_outbound_urls(
     }
     let base_facts = extract_typescript_facts(file_path, source)?;
     let security_facts = extract_security_facts_with_validation(file_path, source, &[], &[])?;
-    let imported_helpers = contract
-        .accepted_allowlist_helpers
-        .iter()
-        .filter(|helper| {
-            base_facts.iter().any(|fact| {
-                fact.kind == FactKind::ImportUsed
-                    && fact.name == helper.symbol
-                    && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
-                    && fact.value.as_deref() == Some(helper.module.as_str())
-            })
-        })
-        .collect::<Vec<_>>();
-    if imported_helpers.is_empty() {
+    // The LOCAL names the accepted helpers are bound to in this file, not the names the contract
+    // uses. `import { requireAllowedOutboundUrl as allowOutbound }` writes `allowOutbound(` at the
+    // call site and never writes the accepted symbol at all, so searching for the accepted symbol
+    // found nothing and withdrew the proof from a route that had one.
+    let mut allowed_locals = Vec::new();
+    for helper in &contract.accepted_allowlist_helpers {
+        for fact in &base_facts {
+            if fact.kind == FactKind::ImportUsed
+                && fact.imported_name.as_deref() == Some(helper.symbol.as_str())
+                && helper_module_matches(
+                    &fact.file_path,
+                    fact.value.as_deref(),
+                    &helper.module,
+                    helper.identity.as_ref(),
+                )
+            {
+                allowed_locals.push(fact.name.clone());
+            }
+        }
+    }
+    if allowed_locals.is_empty() {
         return Ok(false);
     }
     let lines = source.lines().collect::<Vec<_>>();
@@ -892,9 +926,9 @@ fn ssrf_allowlist_proves_outbound_urls(
         .iter()
         .filter_map(|line| {
             let assigned = assigned_variable_for_rule(line)?;
-            imported_helpers
+            allowed_locals
                 .iter()
-                .any(|helper| line.contains(&format!("{}(", helper.symbol)))
+                .any(|local| line.contains(&format!("{local}(")))
                 .then_some(assigned)
         })
         .collect::<Vec<_>>();

@@ -560,22 +560,17 @@ pub struct CheckMatcher {
     /// `Option<Value>`, so a CLI derivation placed there would both blur contract with derivation
     /// and lose its shape on the way. Typed here, a rename fails the build instead of shipping.
     ///
-    /// Accepted and ignored as of this sprint: nothing reads it, and no engine behaviour depends on
-    /// it. It exists so the next sprint can replace name-only and specifier-string helper matching
-    /// with resolved module identity.
+    /// Read as of Sprint 4 by `helper_module_identities` (`check_command.rs`), which keys it by
+    /// `(requires_key, symbol)` and hands each helper's identity to the matchers. The
+    /// `allow(dead_code)` that held this field inert for one sprint is gone with its consumer's
+    /// arrival, which is exactly the signal it was left here to give.
     ///
-    /// `allow(dead_code)` is load-bearing rather than lazy, and it is temporary. `lint:engine` runs
-    /// clippy with `-D warnings`, so an unread field fails the build - correctly, in general. Here
-    /// the field is deliberately inert for exactly one sprint: shipping the wire shape first means
-    /// the consumer lands against a field the CLI already populates over a round trip that is
-    /// already exercised, rather than both arriving together untested. That the CLI really does
-    /// populate it on a real run is pinned by `accepted-helper-identity-dispatch.test.ts`, which
-    /// reads the JSON that actually crossed this boundary - the first wiring of this field went to
-    /// a dispatch loop whose only kind carries no helpers, so it was never emitted at all, and no
-    /// unit test of the request builder could see that. Delete this attribute when helper matching
-    /// starts reading the field; if it is still here after that, the consumer never landed.
+    /// That the CLI really does populate it on a real run is pinned by
+    /// `accepted-helper-identity-dispatch.test.ts`, which reads the JSON that actually crossed this
+    /// boundary. That the ENGINE really reads it on a real run is pinned by
+    /// `barrel_imported_auth_helper_satisfies_session_trust` and its neighbours, which drive the
+    /// `check-repo` binary rather than any inner function.
     #[serde(default)]
-    #[allow(dead_code)]
     pub accepted_helper_module_files: Option<Vec<AcceptedHelperModuleFiles>>,
     // `allowed_delegate_imports` was here, read by nothing. It was the only configurable field
     // of api_route_requires_service_delegation's matcher, and that kind's evaluator took it as
@@ -610,18 +605,26 @@ pub struct CheckMatcher {
 ///     the module that exports the symbol - but the filter compares symbol NAMES, so a barrel
 ///     re-exporting one name from two modules yields both. `files` means "modules that plausibly
 ///     supply this helper", not "modules proven to be it".
-///   - `external` - a bare package specifier that resolved to nothing, which is not a failure:
-///     `resolve_import` filters to paths inside the scan snapshot, so `next-auth` and everything
-///     else under `node_modules` never produces an edge. `files` is empty and always will be.
-///     Match on the exact specifier, plus a local-shadow check.
+///   - `external` - a specifier the CLI's `isBarePackageSpecifier` accepted, which resolved to
+///     nothing. Usually that is a real package: `resolve_import` filters to paths inside the scan
+///     snapshot, so `next-auth` and everything else under `node_modules` never produces an edge,
+///     and an empty `files` there is by design rather than by failure.
+///
+///     Read the name narrowly, though. That predicate rejects only `.`, `/`, `@/`, `~` and `#`
+///     starts, so a scoped path alias (`@app/auth`), a `$lib/...` alias, or an ordinary `baseUrl`
+///     import that failed to resolve all land here too. `external` therefore means "bare-LOOKING,
+///     and resolved to nothing" - it is not a guarantee that the module lives outside the repo,
+///     and must not be read as one.
+///
+///     Matching is exact-specifier equality, which is what this engine did for every helper
+///     before Sprint 4, so nothing in this mode can accept an import that was not already
+///     accepted or reject one that was.
 ///   - `unresolved` - a repo-relative specifier that resolved to nothing. Also empty `files`, but
 ///     this one is a degradation and belongs in the proof as one.
 ///
 /// Reading an empty `files` as "this helper matches nothing" would therefore flag every route that
 /// correctly uses an external auth helper - the most common real-world contract there is.
-/// Inert for one sprint by design - see `CheckMatcher::accepted_helper_module_files`.
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 pub struct AcceptedHelperModuleFiles {
     /// Which `requires` list this helper came from - `auth_helpers`, `csrf_helpers`, and so on.
     ///
@@ -643,20 +646,29 @@ pub struct AcceptedHelperModuleFiles {
     ///
     /// A fact, not a verdict. It is the tsconfig-paths hijack shape, and equally the shape of a
     /// pnpm workspace package or a scoped path alias (`"@app/*": ["src/*"]`) - the same mechanism,
-    /// different intent, and nothing available here separates them. Input to the local-shadow check
-    /// the `External` mode calls for, never a finding on its own.
+    /// different intent, and nothing available here separates them.
+    ///
+    /// It is NOT input to a check on the `external` path, and the earlier comment saying so was
+    /// wrong twice over: `external` matching is exact-specifier equality with nothing else in it,
+    /// and the CLI sets this field only in its `repo_resolved` branch, so it is absent under
+    /// `external` by construction and could never have been that input.
+    ///
+    /// What it is for: the engine carries it into the emitted proof, next to the mode, so a
+    /// reader can see that a package-shaped specifier resolved to a file this repo controls.
+    /// Surfacing it is the whole job - deciding what it means is a person's.
     #[serde(default)]
     pub package_specifier_resolves_in_repo: Option<bool>,
 }
 
 /// How a helper's module identity was arrived at. See `AcceptedHelperModuleFiles::mode`.
-#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-#[allow(dead_code)]
 pub enum AcceptedHelperResolutionMode {
     /// Resolved inside the repo; `files` is the identity.
     RepoResolved,
-    /// A bare package specifier that resolved to nothing - by design, not by failure.
+    /// A bare-LOOKING specifier that resolved to nothing - usually a real package, and by design
+    /// rather than by failure. Not a guarantee the module is outside the repo; see the mode list
+    /// on `AcceptedHelperModuleFiles`.
     External,
     /// A repo-relative specifier that resolved to nothing. A degradation, and belongs in the proof.
     Unresolved,

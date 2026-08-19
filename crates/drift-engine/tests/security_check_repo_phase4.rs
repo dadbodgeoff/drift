@@ -612,3 +612,458 @@ fn session_trust_reason_is_a_member_of_the_wire_enum() {
         );
     }
 }
+
+/// B2 RED: a module the contract did not name, and nothing says it supplies the helper.
+///
+/// This test replaces an assertion I wrote earlier in this sprint that said the opposite. The
+/// first round accepted `@/lib` for a contract naming `@/lib/auth` on the theory that a barrel
+/// above the resolved module is probably the same helper. Probably is not a proof, and nothing in
+/// the engine can promote it to one: the CLI's closure runs OUTWARD from the contract's module,
+/// recording what that module re-exports, and never records who re-exports INTO it. So `@/lib`
+/// appears nowhere in the evidence, and accepting it was string arithmetic wearing the costume of
+/// module identity.
+///
+/// What it cost, concretely: put `export { requireUser } from "./no-op-auth";` in `lib/index.ts`
+/// and this route imports a helper that authenticates nobody. `main` calls that a finding. The
+/// first round of this sprint did not - a true positive removed from a security check, which is
+/// the one direction a false-positive fix must never move.
+///
+/// The sibling case is here for the same reason: `@/lib/other` shares a directory with the
+/// resolved module and that is all it shares.
+///
+/// This is a known limitation, not a closed question. The right answer needs the INBOUND closure -
+/// which modules re-export the accepted symbol into the helper's module - and that is computable
+/// only where the whole graph lives, which is the CLI. Until it ships, a contract whose routes
+/// import through a barrel should name the barrel: `barrel_contract_matches_the_module_it_reexports`
+/// shows that shape working, with evidence rather than a guess.
+#[test]
+fn a_barrel_the_contract_did_not_name_is_not_evidence() {
+    for spelling in ["@/lib", "@/lib/other"] {
+        let repo_root = temp_repo(&format!(
+            "phase4_unproven_{}",
+            spelling.replace(['@', '/'], "_")
+        ));
+        write_route(
+            &repo_root,
+            "app/api/projects/route.ts",
+            &[
+                &format!("import {{ requireUser }} from '{spelling}';"),
+                "export async function GET(request: Request) {",
+                "  const session = await requireUser(request);",
+                "  return Response.json({ ok: Boolean(session) });",
+                "}",
+                "",
+            ],
+        );
+
+        let payload = run_check_repo(json!({
+            "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+            "scan": { "scan_id": "scan_phase4", "facts": [
+                fact("file_role_detected", "api_route", 1, 5, None, None),
+                fact("import_used", "requireUser", 1, 1, Some(spelling), Some("requireUser")),
+                fact("route_declared", "GET", 2, 5, None, None),
+                fact("symbol_called", "requireUser", 3, 3, None, None),
+                fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+            ]},
+            "contract": session_trust_contract(
+                json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+                Some(json!([{
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib/auth",
+                    "mode": "repo_resolved",
+                    "files": ["lib/auth.ts"]
+                }])),
+            ),
+            "baseline": [],
+            "diff": { "mode": "full", "files": [] }
+        }));
+
+        assert_eq!(
+            payload["security_boundary_proofs"][0]["session_trust"]["proven"],
+            json!(false),
+            "spelling {spelling}: {payload:#?}"
+        );
+        assert_eq!(
+            payload["findings"].as_array().expect("findings").len(),
+            1,
+            "spelling {spelling}: {payload:#?}"
+        );
+    }
+}
+
+/// S4-01 RED: `../../../lib/auth` and `@/lib/auth` are one file, and tier 1 says otherwise.
+///
+/// Nothing about this route differs from a conforming one except how its author spelled the path.
+/// The table resolves the accepted helper to `lib/auth.ts`; normalising the relative spelling
+/// against the importing file reaches the same place.
+#[test]
+fn relative_spelling_satisfies_session_trust() {
+    let repo_root = temp_repo("phase4_relative_specifier");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "requireUser",
+                "specifier": "@/lib/auth",
+                "mode": "repo_resolved",
+                "files": ["lib/auth.ts"]
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+    assert_eq!(
+        session_trust["trusted_sessions"]
+            .as_array()
+            .expect("trusted_sessions")
+            .len(),
+        1,
+        "{payload:#?}"
+    );
+    assert!(
+        session_trust["missing_trust"]
+            .as_array()
+            .expect("missing_trust")
+            .is_empty(),
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// S4-01 RED: `external` is an answer, and the proof has to say so.
+///
+/// `next-auth` resolves to nothing because the resolver only resolves into the scan snapshot -
+/// by design, not by failure. Matching therefore stays on the specifier and this route passes
+/// exactly as it did before. What must change is that the proof records WHICH rule decided it:
+/// a reader who cannot tell "matched a resolved module" from "matched a string" cannot tell a
+/// tier-2 answer from the tier-1 answer this sprint exists to replace.
+///
+/// This is also the assertion that makes "dispatch on mode, never on whether `files` is empty"
+/// checkable: `files` is empty here and the helper still matches.
+#[test]
+fn external_mode_records_its_degradation_in_the_proof() {
+    let repo_root = temp_repo("phase4_external_mode");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { getServerSession } from 'next-auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await getServerSession(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "getServerSession", 1, 1, Some("next-auth"), Some("getServerSession")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "getServerSession", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "getServerSession", "import": "next-auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "getServerSession",
+                "specifier": "next-auth",
+                "mode": "external",
+                "files": []
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+    let trusted = session_trust["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "external",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        trusted[0]["helper_resolution"]["specifier"], "next-auth",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// B1 RED: a contract that names a barrel must match the module the barrel re-exports.
+///
+/// `files` is a re-export CLOSURE. When the contract names `@/lib`, the CLI resolves that to
+/// `lib/index.ts` and then follows the re-exports that carry `requireUser` onward, so `files` is
+/// `["lib/auth.ts", "lib/index.ts"]` - and `lib/auth.ts`, the entry that matters, shares no
+/// trailing path segment with the specifier `@/lib` at all. Deriving the alias mapping from each
+/// candidate file in turn therefore fails on exactly the closure members the closure exists to
+/// supply: `shared_path_suffix("@/lib", "lib/auth")` compares `lib` against `auth`, finds nothing,
+/// and gives up.
+///
+/// The two spellings below denote one file and are asserted together, because the whole claim of
+/// this sprint is that one module cannot have two verdicts. Before the fix the relative spelling
+/// was proven and the aliased one - naming a file literally present in `files` - was not.
+#[test]
+fn barrel_contract_matches_the_module_it_reexports() {
+    for spelling in ["@/lib/auth", "../../../lib/auth"] {
+        let repo_root = temp_repo(&format!(
+            "phase4_barrel_contract_{}",
+            spelling.replace(['@', '/', '.'], "_")
+        ));
+        write_route(
+            &repo_root,
+            "app/api/projects/route.ts",
+            &[
+                &format!("import {{ requireUser }} from '{spelling}';"),
+                "export async function GET(request: Request) {",
+                "  const session = await requireUser(request);",
+                "  return Response.json({ ok: Boolean(session) });",
+                "}",
+                "",
+            ],
+        );
+
+        let payload = run_check_repo(json!({
+            "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+            "scan": { "scan_id": "scan_phase4", "facts": [
+                fact("file_role_detected", "api_route", 1, 5, None, None),
+                fact("import_used", "requireUser", 1, 1, Some(spelling), Some("requireUser")),
+                fact("route_declared", "GET", 2, 5, None, None),
+                fact("symbol_called", "requireUser", 3, 3, None, None),
+                fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+            ]},
+            "contract": session_trust_contract(
+                json!({ "symbol": "requireUser", "import": "@/lib", "behavior": "returns_session" }),
+                Some(json!([{
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib",
+                    "mode": "repo_resolved",
+                    // The closure, exactly as `resolvedHelperIdentities` builds it: the module the
+                    // specifier names, plus the module a re-export carries the symbol to.
+                    "files": ["lib/auth.ts", "lib/index.ts"]
+                }])),
+            ),
+            "baseline": [],
+            "diff": { "mode": "full", "files": [] }
+        }));
+
+        let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
+        let trusted = session_trust["trusted_sessions"]
+            .as_array()
+            .expect("trusted_sessions");
+        assert_eq!(trusted.len(), 1, "spelling {spelling}: {payload:#?}");
+        assert_eq!(
+            payload["findings"].as_array().expect("findings").len(),
+            0,
+            "spelling {spelling}: {payload:#?}"
+        );
+        // The gap the first round left: `helper_resolution` was asserted for `external` only, so
+        // nothing pinned that a repo-resolved helper reports its files and mode at all.
+        assert_eq!(
+            trusted[0]["helper_resolution"]["mode"], "repo_resolved",
+            "spelling {spelling}: {payload:#?}"
+        );
+        assert_eq!(
+            trusted[0]["helper_resolution"]["files"],
+            json!(["lib/auth.ts", "lib/index.ts"]),
+            "spelling {spelling}: {payload:#?}"
+        );
+    }
+}
+
+/// The join is `(requires_key, symbol)`, and here is the input that can tell.
+///
+/// Six requires lists can each carry the same name. Keyed by symbol alone, whichever entry the
+/// table happened to list last would win, and an `external` CSRF helper would overwrite an auth
+/// helper that had a resolved file identity - silently downgrading it to specifier matching, which
+/// is precisely the tier-1 behaviour this sprint removes. Nothing about the resulting run looks
+/// wrong; the route just quietly starts being reported again.
+///
+/// So the table below carries `requireUser` twice, under two lists, with the `csrf_helpers` entry
+/// second and deliberately `external`. The route uses a relative spelling, which only a
+/// `repo_resolved` identity accepts. If the entries collapse, the auth helper inherits `external`,
+/// the spelling stops matching and the route is a finding.
+#[test]
+fn a_symbol_two_requires_lists_share_keeps_two_identities() {
+    let repo_root = temp_repo("phase4_cross_list_symbol");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+            Some(json!([
+                {
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib/auth",
+                    "mode": "repo_resolved",
+                    "files": ["lib/auth.ts"]
+                },
+                {
+                    // Same name, different list, and listed second so a symbol-only key would
+                    // hand its mode to the auth helper above.
+                    "requires_key": "csrf_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "next-auth",
+                    "mode": "external",
+                    "files": []
+                }
+            ])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let trusted = payload["security_boundary_proofs"][0]["session_trust"]["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "repo_resolved",
+        "the auth helper must keep its own resolution: {payload:#?}"
+    );
+    assert_eq!(
+        trusted[0]["helper_resolution"]["specifier"], "@/lib/auth",
+        "{payload:#?}"
+    );
+    assert_eq!(
+        payload["findings"].as_array().expect("findings").len(),
+        0,
+        "{payload:#?}"
+    );
+}
+
+/// The third mode's turn in the proof.
+///
+/// `unresolved` is a repo-relative specifier the CLI could not resolve - the graph could not
+/// answer, and the match fell back to comparing strings. That is the mode a reader most needs to
+/// see, because it is the one where a passing proof rests on the weakest evidence, and it was the
+/// only one of the three the emitted proof was never checked to report.
+#[test]
+fn unresolved_mode_reaches_the_proof_too() {
+    let repo_root = temp_repo("phase4_unresolved_mode");
+    write_route(
+        &repo_root,
+        "app/api/projects/route.ts",
+        &[
+            "import { requireUser } from '../../../lib/auth';",
+            "export async function GET(request: Request) {",
+            "  const session = await requireUser(request);",
+            "  return Response.json({ ok: Boolean(session) });",
+            "}",
+            "",
+        ],
+    );
+
+    let payload = run_check_repo(json!({
+        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+        "scan": { "scan_id": "scan_phase4", "facts": [
+            fact("file_role_detected", "api_route", 1, 5, None, None),
+            fact("import_used", "requireUser", 1, 1, Some("../../../lib/auth"), Some("requireUser")),
+            fact("route_declared", "GET", 2, 5, None, None),
+            fact("symbol_called", "requireUser", 3, 3, None, None),
+            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+        ]},
+        "contract": session_trust_contract(
+            json!({ "symbol": "requireUser", "import": "../../../lib/auth", "behavior": "returns_session" }),
+            Some(json!([{
+                "requires_key": "auth_helpers",
+                "symbol": "requireUser",
+                "specifier": "../../../lib/auth",
+                "mode": "unresolved",
+                "files": []
+            }])),
+        ),
+        "baseline": [],
+        "diff": { "mode": "full", "files": [] }
+    }));
+
+    let trusted = payload["security_boundary_proofs"][0]["session_trust"]["trusted_sessions"]
+        .as_array()
+        .expect("trusted_sessions");
+    assert_eq!(trusted.len(), 1, "{payload:#?}");
+    assert_eq!(
+        trusted[0]["helper_resolution"]["mode"], "unresolved",
+        "{payload:#?}"
+    );
+}
+
+/// A `session_object_must_come_from_trusted_helper` contract with one accepted auth helper, and
+/// optionally the resolved-identity table the CLI ships beside it.
+fn session_trust_contract(helper: Value, helper_module_files: Option<Value>) -> Value {
+    let mut matcher = json!({ "applies_to_file_roles": ["api_route"] });
+    if let Some(table) = helper_module_files {
+        matcher["accepted_helper_module_files"] = table;
+    }
+    json!({
+        "contract_id": "contract_phase4",
+        "contract_schema_version": 1,
+        "conventions": [{
+            "id": "security_session_trust",
+            "kind": "session_object_must_come_from_trusted_helper",
+            "matcher": matcher,
+            "requires": { "auth_helpers": [helper] },
+            "severity": "error",
+            "enforcement_mode": "block",
+            "enforcement_capability": "deterministic_check"
+        }]
+    })
+}
