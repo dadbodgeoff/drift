@@ -591,45 +591,50 @@ pub fn helper_module_matches(
             ) else {
                 return false;
             };
-            identity.files.iter().any(|file| {
-                let target = module_key(file);
-                target == candidate || target.starts_with(&format!("{candidate}/"))
-            })
+            identity
+                .files
+                .iter()
+                .any(|file| module_key(file) == candidate)
         }
         _ => false,
     }
 }
 
-/// Does `spelling`, written in `importing_file`, denote the module at `file`?
+/// Read `spelling`, written in `importing_file`, as a repo path - or refuse.
 ///
-/// Two spellings, two relations, and they are not the same question:
+/// Two spellings, two ways to read them:
 ///
 ///   - relative (`../../lib/auth`): pure path arithmetic against the importing file. Exact, and
 ///     it needs nothing the engine does not have.
 ///   - anything else (`@/lib/auth`, `~/lib`): the engine has no tsconfig and cannot resolve an
-///     alias. What it does have is the contract's OWN specifier next to the file that specifier
-///     resolved to, which is a worked example of the alias mapping: `@/lib/auth` beside
-///     `lib/auth.ts` says `@/` and the repo root are the same place. `spelling` is rewritten
-///     through that correspondence and compared as a path. A spelling in a different namespace
-///     than the contract's shares no such example and does not match.
+///     alias. What it does have is the contract's own specifier next to the files that specifier
+///     resolved to - see `contract_alias_mapping`. A spelling in a different namespace than the
+///     contract's has no such example and is refused.
 ///
-/// Either way, two path relations count, and the second is the one to be careful about:
+/// The answer is then compared to `files` by EQUALITY, and only equality.
 ///
-///   - **equal**: the spelling names the resolved module. Nothing is widened.
-///   - **ancestor**: the spelling names a DIRECTORY the resolved module lives under - the barrel
-///     case, `@/lib` reaching `lib/auth.ts` through `lib/index.ts`. This is the one deliberately
-///     broadened acceptance in this sprint, and it is broadened in the safe direction only:
-///     the route's spelling is wider than the contract's, never the other way round. It is NOT
-///     the subpath relation the forbidden-import path uses. That one widens the CONTRACT, so a
-///     helper accepted at `@/lib` would absorb `@/lib/attacker-controlled` and any module a
-///     caller can add under that prefix becomes an accepted helper. Here the contract still names
-///     exactly one module and the question is only whether the author reached it through a
-///     barrel above it.
+/// There used to be a second relation here: the spelling naming a DIRECTORY that a resolved file
+/// lives under, so `@/lib` would reach `lib/auth.ts` through the barrel at `lib/index.ts`. It is
+/// gone, and it is worth saying why, because the argument for it sounded reasonable.
 ///
-///     The residual it does admit, stated rather than assumed away: if `lib/index.ts` re-exports
-///     some OTHER `requireUser` - not the one in `lib/auth.ts` - this accepts it. A contract that
-///     names the barrel itself does better, because then the CLI's re-export closure supplies the
-///     real answer in `files` and the equality relation carries it.
+/// It was defended as widening in the safe direction - the ROUTE's spelling wider than the
+/// contract's, never the reverse - and as costing one narrow residual. Both halves were wrong.
+/// The reach was every ancestor directory, so a contract at `@/src/server/auth/session` was
+/// satisfied by `@/src`; and the cost was not a residual but a true positive. Put
+/// `export { requireUser } from "./no-op-auth";` in `lib/index.ts` and a route importing `@/lib`
+/// gets a helper that authenticates nobody, which `main` reports and that relation did not.
+/// Removing a finding from a security check is the one direction a false-positive fix must not
+/// move, and "probably the same helper" is not a proof however few cases it is wrong in.
+///
+/// Nothing available here could have bounded it. `files` is the OUTBOUND closure - what the
+/// contract's module re-exports - so a barrel that re-exports INTO it appears nowhere in the
+/// evidence, and no amount of string arithmetic invents it.
+///
+/// The barrel case is not lost, it just needs the contract to name the barrel: then `files` is
+/// the closure `["lib/auth.ts", "lib/index.ts"]` and equality carries every spelling of both,
+/// with evidence. `barrel_contract_matches_the_module_it_reexports` pins that. The remaining
+/// shape - contract names the narrow module, route imports a barrel above it - wants the INBOUND
+/// closure, which is computable only where the whole graph lives, in the CLI.
 fn candidate_module_path(
     importing_file: &str,
     spelling: &str,
@@ -1109,10 +1114,6 @@ mod tests {
                 "{label}: the exact specifier must still match"
             );
             assert!(
-                !helper_module_matches(route, Some("@/lib"), "@/lib/auth", supplied.as_ref()),
-                "{label}: a barrel must not match without a repo_resolved identity"
-            );
-            assert!(
                 !helper_module_matches(
                     route,
                     Some("../../../lib/auth"),
@@ -1122,10 +1123,30 @@ mod tests {
                 "{label}: a relative spelling must not match without a repo_resolved identity"
             );
         }
+
+        // The same three modes over the CLOSURE shape, which is the one the equality relation
+        // licenses and therefore the one that discriminates the modes now that the ancestor guess
+        // is gone. `files` here is deliberately non-empty for the two non-resolved modes, because
+        // an implementation dispatching on `files.is_empty()` rather than on `mode` passes every
+        // other assertion in this file and only fails where the two disagree.
+        for (label, mode) in [
+            ("unresolved", HelperResolutionMode::Unresolved),
+            ("external", HelperResolutionMode::External),
+        ] {
+            let supplied = identity_for("@/lib", mode, &["lib/auth.ts", "lib/index.ts"]);
+            assert!(
+                helper_module_matches(route, Some("@/lib"), "@/lib", Some(&supplied)),
+                "{label}: the exact specifier must still match"
+            );
+            assert!(
+                !helper_module_matches(route, Some("@/lib/auth"), "@/lib", Some(&supplied)),
+                "{label}: a closure member must not be reachable without a repo_resolved identity"
+            );
+        }
     }
 
-    /// The same three spellings, with the identity that licenses two of them. Without this the
-    /// test above passes trivially on an implementation that never matches anything.
+    /// The spellings with the identity that licenses them. Without this the test above passes
+    /// trivially on an implementation that never matches anything.
     #[test]
     fn repo_resolved_identity_is_what_licenses_the_other_spellings() {
         let route = "app/api/projects/route.ts";
@@ -1138,15 +1159,75 @@ mod tests {
         ));
         assert!(helper_module_matches(
             route,
-            Some("@/lib"),
-            "@/lib/auth",
-            Some(&resolved)
-        ));
-        assert!(helper_module_matches(
-            route,
             Some("../../../lib/auth"),
             "@/lib/auth",
             Some(&resolved)
+        ));
+        // The closure shape, which is what makes a barrel work: the contract names the barrel and
+        // the route names the module the barrel re-exports.
+        let barrel = identity_for(
+            "@/lib",
+            HelperResolutionMode::RepoResolved,
+            &["lib/auth.ts", "lib/index.ts"],
+        );
+        assert!(helper_module_matches(
+            route,
+            Some("@/lib/auth"),
+            "@/lib",
+            Some(&barrel)
+        ));
+    }
+
+    /// B2: an ancestor directory is not evidence, and the relation that said otherwise reached
+    /// much further than the one-level barrel it was written for.
+    ///
+    /// For a contract at `@/src/server/auth/session` the accepting spellings numbered as many as
+    /// the module had ancestor directories - `@/src` among them, which accepts any `requireUser`
+    /// imported from anywhere under the source root. Nothing checked that a module existed at the
+    /// named directory, that it was a barrel, or that it re-exported the accepted symbol;
+    /// `candidate_module_path` is string arithmetic and has nothing to check with.
+    ///
+    /// The equality relation that remains does not need this bound written down, because it never
+    /// had this reach. It is pinned because the deleted relation was defended in a comment as
+    /// covering one case, and a bound argued in prose is not a bound.
+    #[test]
+    fn an_ancestor_directory_is_not_evidence_of_anything() {
+        let route = "app/api/projects/route.ts";
+        let deep = identity_for(
+            "@/src/server/auth/session",
+            HelperResolutionMode::RepoResolved,
+            &["src/server/auth/session.ts"],
+        );
+        for spelling in [
+            "@/src",
+            "@/src/server",
+            "@/src/server/auth",
+            "../../../src",
+            "../../../src/server",
+            "../../../src/server/auth",
+        ] {
+            assert!(
+                !helper_module_matches(
+                    route,
+                    Some(spelling),
+                    "@/src/server/auth/session",
+                    Some(&deep)
+                ),
+                "{spelling} names a directory above the helper and proves nothing about it"
+            );
+        }
+        // The module itself, by either spelling, still matches.
+        assert!(helper_module_matches(
+            route,
+            Some("@/src/server/auth/session"),
+            "@/src/server/auth/session",
+            Some(&deep)
+        ));
+        assert!(helper_module_matches(
+            route,
+            Some("../../../src/server/auth/session"),
+            "@/src/server/auth/session",
+            Some(&deep)
         ));
     }
 

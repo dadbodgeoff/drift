@@ -613,76 +613,83 @@ fn session_trust_reason_is_a_member_of_the_wire_enum() {
     }
 }
 
-/// S4-01 RED: a barrel is the same helper, spelled shorter.
+/// B2 RED: a module the contract did not name, and nothing says it supplies the helper.
 ///
-/// The contract names `@/lib/auth`. The route reaches the identical module through `@/lib`, the
-/// barrel that re-exports it. Tier-1 matching compares the two spellings as bytes, decides they
-/// are different helpers, and reports a compliant route as having no trusted session - which is
-/// F3, reproduced here end to end through the real `check-repo` dispatch rather than against
-/// `helper_import_matches` in isolation.
+/// This test replaces an assertion I wrote earlier in this sprint that said the opposite. The
+/// first round accepted `@/lib` for a contract naming `@/lib/auth` on the theory that a barrel
+/// above the resolved module is probably the same helper. Probably is not a proof, and nothing in
+/// the engine can promote it to one: the CLI's closure runs OUTWARD from the contract's module,
+/// recording what that module re-exports, and never records who re-exports INTO it. So `@/lib`
+/// appears nowhere in the evidence, and accepting it was string arithmetic wearing the costume of
+/// module identity.
 ///
-/// The table is what makes the two spellings comparable: it says the accepted helper's module IS
-/// `lib/auth.ts`, and `@/lib` is the directory that module lives under.
+/// What it cost, concretely: put `export { requireUser } from "./no-op-auth";` in `lib/index.ts`
+/// and this route imports a helper that authenticates nobody. `main` calls that a finding. The
+/// first round of this sprint did not - a true positive removed from a security check, which is
+/// the one direction a false-positive fix must never move.
+///
+/// The sibling case is here for the same reason: `@/lib/other` shares a directory with the
+/// resolved module and that is all it shares.
+///
+/// This is a known limitation, not a closed question. The right answer needs the INBOUND closure -
+/// which modules re-export the accepted symbol into the helper's module - and that is computable
+/// only where the whole graph lives, which is the CLI. Until it ships, a contract whose routes
+/// import through a barrel should name the barrel: `barrel_contract_matches_the_module_it_reexports`
+/// shows that shape working, with evidence rather than a guess.
 #[test]
-fn barrel_imported_auth_helper_satisfies_session_trust() {
-    let repo_root = temp_repo("phase4_barrel_specifier");
-    write_route(
-        &repo_root,
-        "app/api/projects/route.ts",
-        &[
-            "import { requireUser } from '@/lib';",
-            "export async function GET(request: Request) {",
-            "  const session = await requireUser(request);",
-            "  return Response.json({ ok: Boolean(session) });",
-            "}",
-            "",
-        ],
-    );
+fn a_barrel_the_contract_did_not_name_is_not_evidence() {
+    for spelling in ["@/lib", "@/lib/other"] {
+        let repo_root = temp_repo(&format!(
+            "phase4_unproven_{}",
+            spelling.replace(['@', '/'], "_")
+        ));
+        write_route(
+            &repo_root,
+            "app/api/projects/route.ts",
+            &[
+                &format!("import {{ requireUser }} from '{spelling}';"),
+                "export async function GET(request: Request) {",
+                "  const session = await requireUser(request);",
+                "  return Response.json({ ok: Boolean(session) });",
+                "}",
+                "",
+            ],
+        );
 
-    let payload = run_check_repo(json!({
-        "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
-        "scan": { "scan_id": "scan_phase4", "facts": [
-            fact("file_role_detected", "api_route", 1, 5, None, None),
-            fact("import_used", "requireUser", 1, 1, Some("@/lib"), Some("requireUser")),
-            fact("route_declared", "GET", 2, 5, None, None),
-            fact("symbol_called", "requireUser", 3, 3, None, None),
-            fact("route_returns_response", "json", 4, 4, Some("Response"), None)
-        ]},
-        "contract": session_trust_contract(
-            json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
-            Some(json!([{
-                "requires_key": "auth_helpers",
-                "symbol": "requireUser",
-                "specifier": "@/lib/auth",
-                "mode": "repo_resolved",
-                "files": ["lib/auth.ts"]
-            }])),
-        ),
-        "baseline": [],
-        "diff": { "mode": "full", "files": [] }
-    }));
+        let payload = run_check_repo(json!({
+            "repo": { "repo_id": "repo_phase4", "repo_root": repo_root.to_string_lossy() },
+            "scan": { "scan_id": "scan_phase4", "facts": [
+                fact("file_role_detected", "api_route", 1, 5, None, None),
+                fact("import_used", "requireUser", 1, 1, Some(spelling), Some("requireUser")),
+                fact("route_declared", "GET", 2, 5, None, None),
+                fact("symbol_called", "requireUser", 3, 3, None, None),
+                fact("route_returns_response", "json", 4, 4, Some("Response"), None)
+            ]},
+            "contract": session_trust_contract(
+                json!({ "symbol": "requireUser", "import": "@/lib/auth", "behavior": "returns_session" }),
+                Some(json!([{
+                    "requires_key": "auth_helpers",
+                    "symbol": "requireUser",
+                    "specifier": "@/lib/auth",
+                    "mode": "repo_resolved",
+                    "files": ["lib/auth.ts"]
+                }])),
+            ),
+            "baseline": [],
+            "diff": { "mode": "full", "files": [] }
+        }));
 
-    let session_trust = &payload["security_boundary_proofs"][0]["session_trust"];
-    assert_eq!(
-        session_trust["trusted_sessions"]
-            .as_array()
-            .expect("trusted_sessions")
-            .len(),
-        1,
-        "{payload:#?}"
-    );
-    assert!(
-        session_trust["missing_trust"]
-            .as_array()
-            .expect("missing_trust")
-            .is_empty(),
-        "{payload:#?}"
-    );
-    assert_eq!(
-        payload["findings"].as_array().expect("findings").len(),
-        0,
-        "{payload:#?}"
-    );
+        assert_eq!(
+            payload["security_boundary_proofs"][0]["session_trust"]["proven"],
+            json!(false),
+            "spelling {spelling}: {payload:#?}"
+        );
+        assert_eq!(
+            payload["findings"].as_array().expect("findings").len(),
+            1,
+            "spelling {spelling}: {payload:#?}"
+        );
+    }
 }
 
 /// S4-01 RED: `../../../lib/auth` and `@/lib/auth` are one file, and tier 1 says otherwise.
