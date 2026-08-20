@@ -3755,7 +3755,15 @@ function graphForEngineCheck(
     // T100: without these the engine cannot follow a barrel to the module it re-exports, so
     // `import { prisma } from "@/lib/barrel"` passed while the direct import blocked. The edges
     // exist in the scan; they were simply filtered out before the engine saw them.
-    "MODULE_REEXPORTS_MODULE"
+    "MODULE_REEXPORTS_MODULE",
+    // R8-11, and the same lesson a second time. Widening the Rust walker to follow
+    // `MODULE_ALIASES_MODULE` does nothing at all unless the edges reach it: this filter is what
+    // the engine's graph is, and an edge kind missing from here is an edge kind that does not
+    // exist as far as `forbidden_graph_import_target` is concerned. Measured on
+    // `test/fixtures/bypass-binding-alias`: with BOTH walkers widened and this list unchanged, the
+    // check reported the barrel and the direct import and nothing else - all five binding-laundered
+    // routes passed, so the fix would have measured as "it does not work".
+    "MODULE_ALIASES_MODULE"
   ]);
   const keptEdges = checkData.graph_edges.filter((edge) => {
     if (!edgeKindsForCheck.has(edge.kind)) {
@@ -3834,11 +3842,18 @@ interface GraphIndex {
   resolvedSymbolEdgesByFrom: Map<string, ScanData["graph_edges"]>;
   endpointNodesByFile: Map<string, ScanData["graph_nodes"]>;
   dataOperationNodesByFile: Map<string, ScanData["graph_nodes"]>;
-  reexportTargets: Map<string, string[]>;
+  /**
+   * module id -> the modules its exported surface depends on, over BOTH edge kinds that carry
+   * that relation. The ban side; see `moduleDependencyTargets`.
+   */
+  dependencyTargets: Map<string, string[]>;
   /**
    * Re-export edges WITH the name each one carries: a symbol for `export { x } from "./m"`, `"*"`
-   * for a flattening `export * from "./m"`. `reexportTargets` above drops that name, which is
+   * for a flattening `export * from "./m"`. `dependencyTargets` above drops that name, which is
    * exactly what made the accepted-helper closure symbol-blind.
+   *
+   * `MODULE_REEXPORTS_MODULE` ONLY, and deliberately narrower than `dependencyTargets`. This is
+   * the acceptance side - see the fence in `accepted-helper-identity.test.ts`.
    */
   reexportEdgesByFrom: Map<string, Array<{ to: string; exportedName: string | undefined }>>;
   /** module node id -> the symbol names it directly exports, from `MODULE_EXPORTS_SYMBOL`. */
@@ -3914,7 +3929,7 @@ function graphIndexFor(checkData: ScanData): GraphIndex {
     resolvedSymbolEdgesByFrom,
     endpointNodesByFile,
     dataOperationNodesByFile,
-    reexportTargets: moduleReexportTargets(checkData),
+    dependencyTargets: moduleDependencyTargets(checkData),
     reexportEdgesByFrom: moduleReexportEdges(checkData),
     exportedSymbolsByModule: exportedSymbolsByModule(checkData),
     resolvedModuleFilesByKey: new Map(),
@@ -3924,7 +3939,13 @@ function graphIndexFor(checkData: ScanData): GraphIndex {
   return index;
 }
 
-function graphImportResolvesToForbidden(
+/**
+ * The TypeScript chain walker's entry point, exported for `scripts/chain-walker-parity.test.mjs`.
+ *
+ * Exported rather than reimplemented in the gate: a parity gate that compares this walk against a
+ * third copy of the same BFS would pass while both real walkers disagreed.
+ */
+export function graphImportResolvesToForbidden(
   checkData: ScanData,
   filePath: string,
   importUsed: ReturnType<typeof importFactsForFile>[number],
@@ -3933,7 +3954,7 @@ function graphImportResolvesToForbidden(
   if (forbiddenImports.length === 0) {
     return false;
   }
-  const { nodesById, importNodeByKey, resolvedModuleEdgesByFrom, reexportTargets } =
+  const { nodesById, importNodeByKey, resolvedModuleEdgesByFrom, dependencyTargets } =
     graphIndexFor(checkData);
   const importNode = importNodeByKey.get(importFactGraphKey(filePath, importUsed));
   if (!importNode) {
@@ -3962,8 +3983,9 @@ function graphImportResolvesToForbidden(
       if (forbiddenFiles.has(resolvedPath)) {
         return true;
       }
-      // A barrel that re-exports the client is still a dependency on the client.
-      if (reachesForbiddenViaReexport(edge.to, reexportTargets, nodesById, forbiddenFiles)) {
+      // A barrel that re-exports the client is still a dependency on the client - and so is a
+      // module that binds it locally and republishes the binding.
+      if (reachesForbiddenViaExportedSurface(edge.to, dependencyTargets, nodesById, forbiddenFiles)) {
         return true;
       }
       // Retained for bare package names that resolve to no local file.
@@ -4476,11 +4498,36 @@ function exportedSymbolsByModule(checkData: ScanData): Map<string, Set<string>> 
   return exported;
 }
 
-/** module id -> modules it re-exports, for chain walking. */
-function moduleReexportTargets(checkData: ScanData): Map<string, string[]> {
+/**
+ * module id -> the modules its EXPORTED SURFACE depends on, for chain walking.
+ *
+ * Two edge kinds carry that relation, and the difference between them is one token of syntax:
+ *
+ *   export { db } from "./db";                      MODULE_REEXPORTS_MODULE
+ *   import { db } from "./db"; export { db };       MODULE_ALIASES_MODULE  (alias)
+ *   import { db } from "./db"; export const c = db; MODULE_ALIASES_MODULE  (alias)
+ *   import { db } from "./db";
+ *   export function get() { return db; }            MODULE_ALIASES_MODULE  (wrap)
+ *
+ * A route importing any of these holds the same runtime dependency on `./db`. Only the first
+ * used to produce an edge either walker followed, so the other three passed a check that blocked
+ * the first - measured, D-2 in the 2026-08-19 benchmark.
+ *
+ * `MODULE_IMPORTS_MODULE` is NOT here and must not be added. Every one of those laundering
+ * modules already has such an edge to the data layer, and so does every legitimate service
+ * module in every repo: "a service imports the data layer" is precisely what the convention
+ * exists to permit. The relation indexed here is narrower by construction - this module's
+ * exported SURFACE is that module's binding.
+ *
+ * Renamed from `moduleReexportTargets` when the second kind landed. The old name would have gone
+ * on describing one of the two edges it indexes, and the next reader would have to open the body
+ * to find out which - which is how `reexportEdgesByFrom` (a DIFFERENT index, on the acceptance
+ * side, deliberately still re-export only) gets widened by mistake.
+ */
+function moduleDependencyTargets(checkData: ScanData): Map<string, string[]> {
   const targets = new Map<string, string[]>();
   for (const edge of checkData.graph_edges) {
-    if (edge.kind !== "MODULE_REEXPORTS_MODULE") {
+    if (edge.kind !== "MODULE_REEXPORTS_MODULE" && edge.kind !== "MODULE_ALIASES_MODULE") {
       continue;
     }
     targets.set(edge.from, [...(targets.get(edge.from) ?? []), edge.to]);
@@ -4488,10 +4535,17 @@ function moduleReexportTargets(checkData: ScanData): Map<string, string[]> {
   return targets;
 }
 
-/** Does a re-export chain from `moduleId` reach one of the forbidden files? */
-function reachesForbiddenViaReexport(
+/**
+ * Does a chain of exported-surface dependencies from `moduleId` reach one of the forbidden files?
+ *
+ * The Rust twin is `forbidden_graph_import_target` (`check_command.rs`), which runs the same BFS
+ * over the same two edge kinds and must return the same verdict. The two are pinned in agreement
+ * by `scripts/chain-walker-parity.test.mjs`; changing the edge-kind filter here without changing
+ * it there is the failure that gate exists for.
+ */
+function reachesForbiddenViaExportedSurface(
   moduleId: string,
-  reexportTargets: Map<string, string[]>,
+  dependencyTargets: Map<string, string[]>,
   nodesById: Map<string, ScanData["graph_nodes"][number]>,
   forbiddenFiles: Set<string>
 ): boolean {
@@ -4503,7 +4557,7 @@ function reachesForbiddenViaReexport(
       continue;
     }
     seen.add(current);
-    for (const next of reexportTargets.get(current) ?? []) {
+    for (const next of dependencyTargets.get(current) ?? []) {
       const node = nodesById.get(next);
       const path = node ? stringMetadata(node.metadata, "file_path") : undefined;
       if (path && forbiddenFiles.has(path)) {
