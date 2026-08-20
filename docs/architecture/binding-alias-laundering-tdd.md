@@ -413,21 +413,71 @@ across the seven repos. Any other cell moving is a regression, not a bonus.
 
 ## R8-13 — pin every deliberate miss
 
-Every negative from R8-04 and R8-07 that represents real laundering — not a negative control —
-becomes a `known_evasion: true` cell:
+**[RECONCILED against what execution actually pinned.]** The table below originally listed six
+shapes and said nothing about where any of them lived. Two of its rows were wrong, two shapes were
+missing, and the distinction that decides which column a shape belongs in was never stated. All
+four are corrected here.
 
-| shape | why it stays open |
-|---|---|
-| `export const q = db.user` | member expression; the fact model has no member path, and a claim about which member would be invented |
-| `export const api = { db }` | property laundering; needs an object-shape relation |
-| `export async function getClient() { return db }` | returns a Promise; resolving it is a claim about types |
-| `return cond ? db : other` | conditional return; needs the control-flow tier (R4) |
-| `export const client = ns.db` | namespace member; same gap as row 1 |
-| re-assignment through `let` | needs flow-sensitive binding state |
+**The classifying question is what the ROUTE receives at runtime**, not whether the engine emits a
+fact:
 
-This is the report's recommendation 6 generalised: a shape nobody pinned is folklore. Rows 1 and 5
-are the strongest remaining laundering paths and are the natural R9; rows 3–4 belong to the R4
-control-flow spike, not here.
+- the route **does** receive the data layer and Drift does not flag it → a **recall gap**. It is
+  real laundering, it is a `known_evasion: true` catch cell, and it is recorded, never hidden.
+- the route **provably does not** receive the data layer → a **negative control**. A finding here
+  is a false positive, so it is a `silent` cell and a fire is a FAIL.
+
+The plan conflated these under "deliberate miss". They are opposite failure modes and the fixture
+already treated them as such; only the doc did not.
+
+### Where a shape can be pinned
+
+| tier | file | what it proves |
+|---|---|---|
+| **fact** | `crates/drift-engine/src/facts.rs`, `mod export_alias_analysis_tests` | no `export_aliases_import` / `export_wraps_import` is emitted for the source |
+| **e2e** | `test/fixtures/bypass-binding-alias` + `packages/cli/test/binding-alias-laundering.test.ts` | a real `drift check` over a real contract does or does not flag the route |
+| **parity** | `scripts/chain-walker-parity.test.mjs` (same fixture) | the two chain walkers agree about the shape |
+| **corpus** | `scripts/evasion-matrix.mjs` + `scripts/evasion-baseline.json` | the shape's verdict on all seven eval repos, per repo |
+
+### Still open — real laundering, deliberately not caught
+
+| shape | pinned | why it stays open |
+|---|---|---|
+| `export const q = db.user` | fact, e2e (`member`), corpus (`S22`) | member expression; the fact model has no member path, and a claim about which member would be invented |
+| `import * as ns; export const client = ns.db` | fact, corpus (`S23`) | namespace member; same gap as row 1, with a whole module as the table entry. **Prose-only in the e2e fixture** |
+| `export const api = { db }` | fact, corpus (`S24`) | property laundering; needs an object-shape relation. **Prose-only in the e2e fixture** |
+| `export async function getClient() { return db }` | fact, e2e (`asyncfn`), corpus (`S25`) | returns a Promise; the route does receive the client after awaiting, but saying so is a claim about types this engine does not make |
+| `if (f) return db; return other` | fact, e2e (`conditional`), corpus (`S26`) | conditional return; "sometimes the data layer" needs the control-flow tier (R4) |
+| `export const a = db, b = db` | fact, corpus (`S27`) | multi-declarator; the alias rule takes exactly one declarator so a partially-matching statement cannot emit a half-true fact. **Prose-only in the e2e fixture** |
+| `export let c = other; c = db` | corpus (`S28`) | reassignment *toward* the import; the rule disqualifies any reassigned binding, which gives this away for free. Closing it needs flow-sensitive binding state. **Not pinned at the fact tier** |
+| `export const { db } = deps` | fact | destructuring pattern; a shape the pass cannot describe. **Prose-only elsewhere** |
+| `export function* g() { return db }` | fact | generator; the caller receives an iterator, not the binding |
+| `export class C { static x = db }` | — | class static field. **PROSE ONLY — pinned nowhere.** Found in review, after the fact tests were written |
+
+### Negative controls — NOT laundering; a finding here is a false positive
+
+These are the rows a fix loose enough to close the table above would break first.
+
+| shape | pinned | why a finding would be wrong |
+|---|---|---|
+| `export let c = db; c = other` | fact, e2e (`reassigned`), corpus (`S19`) | the importer receives the replacement; the alias claim is false by the time the module finishes evaluating |
+| `function g() { const db = local(); return db }` | fact, e2e (`shadowed`), corpus (`S20`) | same spelling, different binding |
+| `function g() { xs.forEach(() => { return db }) }` | fact, e2e (`nested`), corpus (`S21`) | the return belongs to the callback; the exported function returns `undefined` |
+| `import { db } from "drizzle-orm"; export const c = db` | e2e (`external`) | the specifier resolves nowhere in the snapshot, and absence is not evidence about what a package contains |
+| `export type { Db }` / `export { type Db }` | fact | type-erased; nothing exists at runtime to launder |
+
+### Two corrections to the original table
+
+1. **`let` was one row and is two.** `export let client = db` that is never reassigned **is
+   caught** — measured against the release binary. Reassignment *away* from the import is a
+   negative control (`S19`), reassignment *toward* it is the evasion (`S28`). The single row
+   "re-assignment through `let` — needs flow-sensitive binding state" described neither
+   accurately and would have read as a known miss on a shape the product actually blocks.
+2. **The multi-declarator shape was missing entirely** and is real laundering.
+
+This is the report's recommendation 6 generalised: a shape nobody pinned is folklore. Member
+expression and namespace member are the strongest remaining laundering paths and are the natural
+R9; async and conditional return belong to the R4 control-flow spike, not here. The class static
+field is pinned nowhere and is the one row of this table that is still folklore.
 
 ## R8-14 — precision sweep on the real corpus
 
