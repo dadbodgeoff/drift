@@ -1,20 +1,21 @@
-//! R8-01. What the engine sees today when a data-layer import is laundered through a local
-//! binding, pinned before anything is changed.
+//! R8-01, R8-05, R8-07. What the engine sees when a data-layer import is laundered through a
+//! local binding.
 //!
 //! The four modules below are the same import (`db` from `./db`) published four ways. Only the
-//! first carries a `from` clause on its export statement, and that single syntactic difference is
-//! the whole of what the current pipeline keys on: `extract_export` tests
+//! first carries a `from` clause on its export statement, and that single syntactic difference
+//! used to be the whole of what the pipeline keyed on: `extract_export` tests
 //! `node.child_by_field_name("source")`, and only the branch behind that test emits
 //! `re_export_used` - which is the only fact `main.rs` projects onto a
 //! `MODULE_REEXPORTS_MODULE` edge, which is the only edge either chain walker follows.
 //!
-//! So the census below is not a description of the fixture, it is a description of the gap:
-//! one edge, for the one module that wrote `from`. The other three launder the same binding and
-//! the graph says nothing about them.
+//! `apply_export_alias_analysis` closes the fact half of that gap. The three laundering modules
+//! now say what they are doing, and the edge census below is unchanged - which is the point of
+//! this file at this step. R8-05 and R8-07 are inert by construction: the facts exist, nothing
+//! projects them, and no verdict moves. "No behaviour change" is the claim those steps make, and
+//! a claim nobody measured is what this workstream keeps finding.
 //!
-//! This file exists so that the emitters added in R8-04/R8-07 show up as a diff in a committed
-//! expectation rather than as a claim in a commit message, and so that a later regression is
-//! attributable to the step that caused it.
+//! Committed at R8-01 asserting the pre-change census, so the emitters landed as a diff in an
+//! expectation rather than as a sentence in a commit message.
 
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
@@ -178,8 +179,9 @@ fn only_the_module_that_wrote_from_reexports_the_data_layer() {
     );
 }
 
-/// Per-module fact census. The three laundering modules are indistinguishable from an ordinary
-/// consumer: an import, and an exported name with no stated relationship between them.
+/// Per-module fact census. Before R8-05/R8-07 the three laundering modules were
+/// indistinguishable from an ordinary consumer: an import, and an exported name with no stated
+/// relationship between them. The new facts are the stated relationship.
 #[test]
 fn laundering_modules_emit_an_import_and_an_unrelated_exported_symbol() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -200,12 +202,13 @@ fn laundering_modules_emit_an_import_and_an_unrelated_exported_symbol() {
         ]),
     );
 
-    // E04. `client` IS `db`, and no fact says so.
+    // E04. `client` IS `db`, and now one fact says so.
     assert_eq!(
         result.facts_by_file.get("lib/alias.ts"),
         Some(&vec![
             "import_used(db, value=./db, imported_name=db)".to_string(),
             "exported_symbol(client)".to_string(),
+            "export_aliases_import(client, value=./db, imported_name=db)".to_string(),
         ]),
     );
 
@@ -216,16 +219,33 @@ fn laundering_modules_emit_an_import_and_an_unrelated_exported_symbol() {
         Some(&vec![
             "import_used(db, value=./db, imported_name=db)".to_string(),
             "exported_symbol(db)".to_string(),
+            "export_aliases_import(db, value=./db, imported_name=db)".to_string(),
         ]),
     );
 
-    // E05. Every return of `getClient` is the import, and the exported symbol says only that a
-    // function named `getClient` exists.
+    // E05. Every return of `getClient` is the import. The `exported_symbol` fact still says only
+    // that a function of that name exists; the wrap fact is what says what it hands back.
     assert_eq!(
         result.facts_by_file.get("lib/factory.ts"),
         Some(&vec![
             "import_used(db, value=./db, imported_name=db)".to_string(),
             "exported_symbol(getClient)".to_string(),
+            "export_wraps_import(getClient, value=./db, imported_name=db)".to_string(),
         ]),
+    );
+}
+
+/// The new facts move no edge. Reverting the walkers later returns the product to today's
+/// verdicts while leaving the relation measurable in the fact stream - a useful state, not a
+/// broken one.
+#[test]
+fn the_new_facts_do_not_yet_reach_the_graph() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write_laundering_fixture(dir.path());
+    let result = scan(dir.path());
+
+    assert_eq!(
+        edges_of_kind(&result, "MODULE_ALIASES_MODULE"),
+        Vec::<String>::new(),
     );
 }
