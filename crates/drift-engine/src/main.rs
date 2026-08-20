@@ -1659,6 +1659,48 @@ fn graph_for_file(
                     }
                 }
             }
+            // D3. Both laundering fact kinds project onto ONE edge kind. The graph question -
+            // "does this module's exported surface depend on that module" - is the same for an
+            // alias and for a wrapper; the fact kind is what preserves the D2 distinction, and
+            // `alias_kind` carries it onto the edge so a consumer can gate on it without a second
+            // enum member and a second arm in each of the two chain walkers.
+            //
+            // No new node kind: this runs module -> module over ids that already exist.
+            //
+            // `resolve_import` is the same resolver the `re_export_used` arm above calls. It is
+            // called, not reimplemented - see the comment at `check_command.rs:4215-4227` for what
+            // a second copy of a resolution path has already cost this codebase twice.
+            "export_aliases_import" | "export_wraps_import" => {
+                let Some(source) = fact.value.as_deref() else {
+                    continue;
+                };
+                // An unresolvable specifier (`drizzle-orm`) is outside the scan snapshot, and
+                // absence from the snapshot is not evidence about what it contains. No edge -
+                // the same silence the re-export arm keeps.
+                let Some(resolved) = resolve_import(&fact.file_path, source, resolver) else {
+                    continue;
+                };
+                let resolved_module = module_id(&resolved);
+                let alias_kind = if fact.kind == "export_aliases_import" {
+                    "alias"
+                } else {
+                    "wrap"
+                };
+                insert_edge(
+                    &mut edges,
+                    GraphEdgeKind::ModuleAliasesModule,
+                    &module_node,
+                    &resolved_module,
+                    vec![evidence_id],
+                    BTreeMap::from([
+                        ("source".to_string(), json!(source)),
+                        ("exported_name".to_string(), json!(fact.name)),
+                        ("alias_kind".to_string(), json!(alias_kind)),
+                        ("resolved_file_path".to_string(), json!(resolved)),
+                        ("resolved_module_id".to_string(), json!(resolved_module)),
+                    ]),
+                );
+            }
             "exported_symbol" => {
                 let symbol_node = symbol_id(&fact.file_path, "function", &fact.name);
                 insert_node(

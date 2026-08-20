@@ -1,5 +1,5 @@
-//! R8-01, R8-05, R8-07. What the engine sees when a data-layer import is laundered through a
-//! local binding.
+//! R8-01, R8-05, R8-07, R8-10. What the engine sees when a data-layer import is laundered
+//! through a local binding.
 //!
 //! The four modules below are the same import (`db` from `./db`) published four ways. Only the
 //! first carries a `from` clause on its export statement, and that single syntactic difference
@@ -8,14 +8,18 @@
 //! `re_export_used` - which is the only fact `main.rs` projects onto a
 //! `MODULE_REEXPORTS_MODULE` edge, which is the only edge either chain walker follows.
 //!
-//! `apply_export_alias_analysis` closes the fact half of that gap. The three laundering modules
-//! now say what they are doing, and the edge census below is unchanged - which is the point of
-//! this file at this step. R8-05 and R8-07 are inert by construction: the facts exist, nothing
-//! projects them, and no verdict moves. "No behaviour change" is the claim those steps make, and
-//! a claim nobody measured is what this workstream keeps finding.
+//! `apply_export_alias_analysis` closes the fact half of that gap, and R8-10 projects both new
+//! fact kinds onto a single `MODULE_ALIASES_MODULE` edge (D3) carrying `alias_kind` (D2). The
+//! three laundering modules now say what they are doing in the fact stream AND in the graph.
 //!
-//! Committed at R8-01 asserting the pre-change census, so the emitters landed as a diff in an
-//! expectation rather than as a sentence in a commit message.
+//! R8-10 is still inert as far as *verdicts* go: neither chain walker follows the new edge yet,
+//! so no finding moves. What this file pins is that the edge exists, that it is not conflated
+//! with `MODULE_REEXPORTS_MODULE` (whose census stays at exactly one), and that an unresolvable
+//! specifier produces the fact and no edge - because absence from the scan snapshot is not
+//! evidence about what a package contains.
+//!
+//! Committed at R8-01 asserting the pre-change census, so the emitters and the projection landed
+//! as diffs in a committed expectation rather than as sentences in commit messages.
 
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
@@ -161,6 +165,33 @@ fn edges_of_kind(result: &ScanResult, kind: &str) -> Vec<String> {
     matching
 }
 
+/// `MODULE_ALIASES_MODULE` edges rendered with the `alias_kind` they carry.
+///
+/// D3 puts both fact kinds on one edge kind, so the edge alone cannot say whether the module
+/// aliased a binding or wrapped it in a function. `alias_kind` is where that distinction survives,
+/// and asserting the edge without it would pass just as happily if the projection hard-coded one
+/// value for both arms.
+fn alias_edges(result: &ScanResult) -> Vec<String> {
+    let mut matching = result
+        .edges
+        .iter()
+        .filter(|edge| edge["kind"] == "MODULE_ALIASES_MODULE")
+        .map(|edge| {
+            format!(
+                "{} -> {} [{}] {}",
+                edge["from"].as_str().unwrap_or(""),
+                edge["to"].as_str().unwrap_or(""),
+                edge["metadata"]["alias_kind"].as_str().unwrap_or("<none>"),
+                edge["metadata"]["exported_name"]
+                    .as_str()
+                    .unwrap_or("<none>"),
+            )
+        })
+        .collect::<Vec<_>>();
+    matching.sort();
+    matching
+}
+
 /// The whole-scan re-export census: one edge, and it belongs to the module that wrote `from`.
 ///
 /// `MODULE_IMPORTS_MODULE` is deliberately not asserted here. All four laundering modules already
@@ -235,17 +266,67 @@ fn laundering_modules_emit_an_import_and_an_unrelated_exported_symbol() {
     );
 }
 
-/// The new facts move no edge. Reverting the walkers later returns the product to today's
-/// verdicts while leaving the relation measurable in the fact stream - a useful state, not a
-/// broken one.
+/// R8-10. The three laundering modules now reach the graph, on an edge of their own.
+///
+/// One edge per module, module -> module, over ids that already existed (D3: no new node kind).
+/// `factory.ts` is the only `wrap`; the other two are identity claims about a binding.
 #[test]
-fn the_new_facts_do_not_yet_reach_the_graph() {
+fn each_laundering_module_aliases_the_data_layer_module() {
     let dir = tempfile::tempdir().expect("tempdir");
     write_laundering_fixture(dir.path());
     let result = scan(dir.path());
 
     assert_eq!(
-        edges_of_kind(&result, "MODULE_ALIASES_MODULE"),
-        Vec::<String>::new(),
+        alias_edges(&result),
+        vec![
+            "module:lib/alias.ts -> module:lib/db.ts [alias] client".to_string(),
+            "module:lib/detached.ts -> module:lib/db.ts [alias] db".to_string(),
+            "module:lib/factory.ts -> module:lib/db.ts [wrap] getClient".to_string(),
+        ],
     );
+}
+
+/// The new edge is not the old edge wearing a different name.
+///
+/// The re-export census is still exactly one. If a later refactor ever routes the alias facts
+/// through the `re_export_used` arm - which D1 rejected precisely because the evidence span would
+/// point at source text containing no `from` - this is the assertion that notices.
+#[test]
+fn the_alias_edge_does_not_inflate_the_reexport_census() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write_laundering_fixture(dir.path());
+    let result = scan(dir.path());
+
+    assert_eq!(edges_of_kind(&result, "MODULE_REEXPORTS_MODULE").len(), 1);
+    assert_eq!(edges_of_kind(&result, "MODULE_ALIASES_MODULE").len(), 3);
+}
+
+/// A specifier that resolves nowhere in the snapshot produces the fact and no edge.
+///
+/// `drizzle-orm` is a package, not a file. The projection resolves through the same
+/// `resolve_import` the re-export arm uses, which filters to snapshot paths, and silence is the
+/// designed answer: the engine has not read that package and has nothing to say about what it
+/// contains. The fact still records what the module did, so the miss is measurable rather than
+/// invisible.
+#[test]
+fn an_unresolvable_specifier_produces_a_fact_but_no_edge() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let lib = dir.path().join("lib");
+    fs::create_dir_all(&lib).expect("create lib dir");
+    fs::write(
+        lib.join("external.ts"),
+        "import { db } from \"drizzle-orm\";\nexport const client = db;\n",
+    )
+    .expect("write external");
+    let result = scan(dir.path());
+
+    assert_eq!(
+        result.facts_by_file.get("lib/external.ts"),
+        Some(&vec![
+            "import_used(db, value=drizzle-orm, imported_name=db)".to_string(),
+            "exported_symbol(client)".to_string(),
+            "export_aliases_import(client, value=drizzle-orm, imported_name=db)".to_string(),
+        ]),
+    );
+    assert_eq!(alias_edges(&result), Vec::<String>::new());
 }
