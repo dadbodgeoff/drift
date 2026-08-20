@@ -191,6 +191,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -395,6 +607,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -599,6 +1023,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -804,6 +1440,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/web/app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "apps/web/app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "apps/web/app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -999,6 +1847,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": "warn",
+        "attributed_files": [
+          "app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "warned",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -1185,6 +2245,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   },
@@ -1389,6 +2661,218 @@
         ],
         "outcome": "refused",
         "verdict": "PASS"
+      },
+      {
+        "id": "S14-alias-const-binding",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s14/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s14/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S15-alias-detached-clause",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s15/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s15/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S16-alias-renamed-clause",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s16/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s16/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S17-wrap-function-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s17/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s17/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S18-wrap-arrow-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s18/route.ts",
+        "caught": true,
+        "findings_count": 1,
+        "exit": 2,
+        "check_status": "fail",
+        "enforcement": "block",
+        "attributed_files": [
+          "apps/dashboard/src/app/api/drift-evasion-s18/route.ts"
+        ],
+        "outcome": "blocked",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S19-alias-reassigned-away",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s19/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S20-wrap-shadowed-local",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s20/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S21-wrap-nested-callback",
+        "class": "silent",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s21/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "silent",
+        "verdict": "PASS"
+      },
+      {
+        "id": "S22-alias-member-expression",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s22/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S23-alias-namespace-member",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s23/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S24-alias-object-literal",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s24/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S25-wrap-async-function",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s25/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S26-wrap-conditional-return",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s26/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S27-alias-multi-declarator",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s27/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
+      },
+      {
+        "id": "S28-alias-let-reassigned-to-import",
+        "class": "catch",
+        "route": "apps/dashboard/src/app/api/drift-evasion-s28/route.ts",
+        "caught": false,
+        "findings_count": 0,
+        "exit": 0,
+        "check_status": "pass",
+        "enforcement": null,
+        "attributed_files": [],
+        "outcome": "evaded",
+        "verdict": "KNOWN_EVASION",
+        "known_evasion": true
       }
     ]
   }
