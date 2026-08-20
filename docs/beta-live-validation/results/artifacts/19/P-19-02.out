@@ -1,0 +1,6 @@
+EXIT=0
+STDOUT:
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"drift-local","version":"0.1.0"}}}
+
+STDERR:
+

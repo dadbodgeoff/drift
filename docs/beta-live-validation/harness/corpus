@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Stratify the eval corpus, so results state what they generalize to.
+
+    corpus classify [--json]        corpus coverage
+
+Seven repos is a convenience set, not a sample. Without strata, "precision 0.96 across the corpus"
+is an average over an unknown population, and nobody can say whether it holds for the shape of repo
+a given user actually has. This classifies each repo along the axes that plausibly change Drift's
+behaviour, and reports which cells of that space have NO representative - because an uncovered cell
+is a claim the corpus cannot support.
+"""
+import json, os, re, subprocess, sys, collections
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+REPOS = os.environ.get("DRIFT_EVAL_REPOS") or os.path.expanduser("~/drift-falsification/repos")
+
+def size_bucket(n): return "small(<500)" if n < 500 else "medium(<5k)" if n < 5000 else "large(>=5k)"
+
+def classify(repo):
+    p = os.path.join(REPOS, repo)
+    ts = subprocess.run(["bash","-c",
+        f"find '{p}' -name '*.ts' -o -name '*.tsx' | grep -v node_modules | wc -l"],
+        capture_output=True, text=True).stdout.strip()
+    n = int(ts or 0)
+    out = subprocess.run([os.path.join(H,"route-oracle"),"static",p,"--json"],
+                         capture_output=True, text=True)
+    o = json.loads(out.stdout) if out.returncode == 0 else {"routes": [], "next_apps": ["."], "page_extensions": []}
+    routes = [r for r in o["routes"] if r["kind"] == "api_route"]
+    app = sum(1 for r in routes if r["router"] == "app")
+    pages = sum(1 for r in routes if r["router"] == "pages")
+    tsconfig = os.path.join(p, "tsconfig.json")
+    strict = None
+    if os.path.exists(tsconfig):
+        txt = open(tsconfig, encoding="utf-8", errors="ignore").read()
+        strict = bool(re.search(r'"strict"\s*:\s*true', txt))
+    lock = next((l for l in ("pnpm-lock.yaml","yarn.lock","package-lock.json","bun.lockb")
+                 if os.path.exists(os.path.join(p, l))), None)
+    return {"repo": repo, "ts_files": n, "size": size_bucket(n),
+            "monorepo": o.get("next_apps", ["."]) != ["."],
+            "next_apps": len(o.get("next_apps", [])),
+            "router": "both" if app and pages else "app" if app else "pages" if pages else "none",
+            "api_routes": len(routes), "route_density": round(len(routes)/n, 4) if n else 0,
+            "middleware": any(r["kind"] == "middleware" for r in o["routes"]),
+            "custom_page_extensions": sorted(set(o.get("page_extensions", []))) != ["js","jsx","ts","tsx"],
+            "ts_strict": strict, "package_manager": lock}
+
+AXES = ["size", "router", "monorepo", "ts_strict", "middleware", "custom_page_extensions"]
+if not os.path.isdir(REPOS): sys.exit(f"no corpus at {REPOS}")
+rows = [classify(r) for r in sorted(os.listdir(REPOS)) if os.path.isdir(os.path.join(REPOS, r))]
+cmd = sys.argv[1] if len(sys.argv) > 1 else "classify"
+if "--json" in sys.argv: print(json.dumps(rows, indent=1)); sys.exit(0)
+if cmd == "classify":
+    print(f"  {'repo':<12} {'ts':>6} {'size':<12} {'router':<7} {'mono':<5} {'apps':>4} "
+          f"{'api':>5} {'dens':>6} {'mw':<3} {'strict':<6} {'pm'}")
+    for r in rows:
+        print(f"  {r['repo']:<12} {r['ts_files']:>6} {r['size']:<12} {r['router']:<7} "
+              f"{str(r['monorepo']):<5} {r['next_apps']:>4} {r['api_routes']:>5} "
+              f"{r['route_density']:>6} {str(r['middleware'])[:3]:<3} {str(r['ts_strict'])[:5]:<6} "
+              f"{r['package_manager']}")
+    print(f"\n  {len(rows)} repos · {sum(r['api_routes'] for r in rows)} api routes · "
+          f"{sum(r['ts_files'] for r in rows):,} TS files")
+if cmd == "coverage" or cmd == "classify":
+    print("\n  stratum coverage:")
+    for a in AXES:
+        c = collections.Counter(str(r[a]) for r in rows)
+        thin = [k for k, v in c.items() if v == 1]
+        print(f"    {a:<24} " + "  ".join(f"{k}={v}" for k, v in sorted(c.items()))
+              + (f"   [n=1: {', '.join(thin)}]" if thin else ""))
+    missing = []
+    for a in AXES:
+        vals = {str(r[a]) for r in rows}
+        if a in ("monorepo","middleware","custom_page_extensions","ts_strict") and len(vals) < 2:
+            missing.append(f"{a}: only {vals} represented")
+    if missing:
+        print("\n  CELLS WITH NO REPRESENTATIVE — the corpus cannot speak to these:")
+        for m in missing: print("    " + m)
+    single = [r["repo"] for r in rows if r["router"] == "pages"]
+    if not single:
+        print("    router=pages: no pages-router-only repo in the corpus, so every pages-router")
+        print("      claim rests on repos that also have an app router")

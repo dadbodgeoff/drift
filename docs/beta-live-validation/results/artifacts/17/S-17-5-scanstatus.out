@@ -1,0 +1,56 @@
+{
+  "error": {
+    "message": "Unknown repo repo_probe. Run drift scan --repo-root <path> first.",
+    "type": "error",
+    "code": "cli_error"
+  },
+  "failure": {
+    "code": "cli_error",
+    "surface": "cli",
+    "severity": "error",
+    "safe_to_retry": false,
+    "user_action": "Read the diagnostic message and rerun with corrected inputs.",
+    "recovery_commands": [
+      "drift --help"
+    ],
+    "diagnostics": [
+      "Unknown repo repo_probe. Run drift scan --repo-root <path> first."
+    ]
+  },
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "blocked_by_policy",
+    "surface": "cli-error",
+    "read_only": true,
+    "policy": {
+      "allowed": false,
+      "surface": "cli-preflight",
+      "reason": "Unknown repo repo_probe. Run drift scan --repo-root <path> first."
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": false,
+      "latest_scan_id": null
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": false,
+      "mode": "denied",
+      "reason": "Unknown repo repo_probe. Run drift scan --repo-root <path> first.",
+      "max_snippet_chars": 0,
+      "approved_snippet_chars": 0,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "denied"
+    },
+    "diagnostics": [
+      "Unknown repo repo_probe. Run drift scan --repo-root <path> first."
+    ]
+  }
+}

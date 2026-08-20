@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""Propose ground-truth labels from mechanical evidence, for a human to adjudicate.
+
+    gt-propose <repo> --discover                       what wrappers do this repo's routes use?
+    gt-propose <repo> --kind KIND --helper A,B,C [--helper-module SPEC] [--out FILE]
+    gt-propose <repo> --kind api_route_no_direct_data_access --data-module @/lib/prisma
+
+Labeling 50 routes per kind across two labelers is person-days, which is why the ground-truth
+corpus is empty and recall on real code is unmeasured. This does not replace the human - it moves
+them from "read 500 files" to "adjudicate the 30% that are genuinely ambiguous".
+
+Every proposal is CONSERVATIVE and carries the lines that produced it:
+  * a clear positive (helper imported from the named module AND invoked)      -> compliant, high
+  * a clear negative (no such import anywhere in the file)                    -> violating, high
+  * anything else - imported but not obviously called, called via an alias,
+    re-exported, wrapped, dynamic                                             -> uncertain, low
+
+**Absence of a named helper is not presence of a violation.** An earlier version of this tool
+proposed 464 `violating` labels for dub because it was told about `withAdmin` and dub actually uses
+eight different wrappers. `violating` is therefore only ever proposed when a handler is exported
+bare - no wrapper of any shape - AND the file imports nothing from the helper module. Every other
+negative goes to the human. Run `--discover` first: it reports the wrapper distribution, which is
+how you decide what the convention should accept before labeling anything against it.
+
+`uncertain` is never written as a label. It is written as a work queue. A proposal is stamped
+`labeler: machine-proposed:<rule>` and `gt` will not score against it until `gt-adjudicate` has
+turned it into a human decision - because a corpus that grades a tool using labels the tool's own
+heuristics produced measures nothing.
+"""
+import json, os, re, subprocess, sys
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+
+a = sys.argv[1:]
+if not a: sys.exit(__doc__)
+repo = os.path.abspath(a[0])
+def opt(n, d=None): return a[a.index(n)+1] if n in a else d
+if "--discover" in a:
+    import collections
+    ro = subprocess.run([os.path.join(H, "route-oracle"), "static", repo, "--json"],
+                        capture_output=True, text=True)
+    rts = [r["file"] for r in json.loads(ro.stdout)["routes"] if r["kind"] == "api_route"]
+    WRAP = re.compile(r"^export\s+(?:const|async\s+function|function)\s+"
+                      r"(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s*=?\s*([A-Za-z_$][\w$]*)?", re.M)
+    wraps, bare, mods = collections.Counter(), 0, collections.Counter()
+    for f in rts:
+        try: src = open(os.path.join(repo, f), encoding="utf-8", errors="ignore").read()
+        except OSError: continue
+        hit = False
+        for m in WRAP.finditer(src):
+            g = m.group(1)
+            if g and g not in ("async",): wraps[g] += 1; hit = True
+            else: bare += 1
+        if not hit: pass
+        for im in re.finditer(r'from\s+["\']([^"\']+)["\']', src):
+            mods[im.group(1)] += 1
+    print(f"── wrapper discovery · {os.path.basename(repo)} · {len(rts)} api routes")
+    print(f"   handlers exported through a wrapper:")
+    for w, n in wraps.most_common(15): print(f"     {n:>5}  {w}")
+    print(f"   {bare} handler(s) exported with no wrapper at all")
+    print(f"\n   most-imported modules across route files:")
+    for m_, n in mods.most_common(10): print(f"     {n:>5}  {m_}")
+    print(f"\n   Pick the accepted set from this list, then re-run with --helper A,B,C.")
+    print(f"   A convention accepted against ONE of these mislabels every route using another.")
+    sys.exit(0)
+
+kind = opt("--kind") or sys.exit("--kind is required")
+helper = opt("--helper")
+helpers = [h.strip() for h in helper.split(",")] if helper else []
+helper_mod = opt("--helper-module")
+# Default is an exact module match, because module identity is exactly what sprint S5 is about.
+# `--module-family` opts into matching the subtree (`@/lib/auth` also accepting `@/lib/auth/admin`),
+# which is right for LABELING - a helper imported from `@/lib/auth/workspace` is genuinely the
+# accepted helper - and is recorded in each justification so the widening is never silent.
+family_ok = "--module-family" in a
+data_mod = opt("--data-module")
+out = opt("--out")
+if not helper and not data_mod: sys.exit("--helper or --data-module is required")
+
+ro = subprocess.run([os.path.join(H, "route-oracle"), "static", repo, "--json"],
+                    capture_output=True, text=True)
+o = json.loads(ro.stdout)
+routes = [r for r in o["routes"] if r["kind"] == "api_route"]
+sha = subprocess.run(["git","-C",repo,"rev-parse","HEAD"], capture_output=True, text=True).stdout.strip()
+
+IMPORT = re.compile(r'^\s*import\s+(?P<clause>[^;]*?)\s+from\s+["\'](?P<spec>[^"\']+)["\']', re.M)
+
+def analyze(path):
+    src = open(os.path.join(repo, path), encoding="utf-8", errors="ignore").read()
+    lines = src.splitlines()
+    imports = []
+    for m in IMPORT.finditer(src):
+        line = src[:m.start()].count("\n") + 1
+        imports.append({"line": line, "clause": m.group("clause"), "spec": m.group("spec"),
+                        "text": lines[line-1] if line-1 < len(lines) else ""})
+    return src, lines, imports
+
+def bindings(clause):
+    """Local names a clause introduces, and whether each was renamed."""
+    out = []
+    m = re.search(r"\{([^}]*)\}", clause)
+    if m:
+        for part in m.group(1).split(","):
+            part = part.strip()
+            if not part: continue
+            if " as " in part:
+                orig, loc = [x.strip() for x in part.split(" as ")]
+                out.append((loc, orig, True))
+            else:
+                out.append((part, part, False))
+    d = re.match(r"^\s*([A-Za-z_$][\w$]*)\s*(?:,|$)", clause)
+    if d and not clause.strip().startswith("{"): out.append((d.group(1), "default", False))
+    ns = re.search(r"\*\s+as\s+([A-Za-z_$][\w$]*)", clause)
+    if ns: out.append((ns.group(1), "*", False))
+    return out
+
+proposals, queue = [], []
+for r in routes:
+    path = r["file"]
+    try: src, lines, imports = analyze(path)
+    except OSError: continue
+    target = ",".join(helpers) if helpers else data_mod
+    hits, renamed, ns_import = [], False, False
+    for imp in imports:
+        if helper_mod:
+            exact = imp["spec"] == helper_mod
+            fam = family_ok and imp["spec"].startswith(helper_mod.rstrip("/") + "/")
+            if not (exact or fam): continue
+        if data_mod and imp["spec"] != data_mod: continue
+        for loc, orig, was_renamed in bindings(imp["clause"]):
+            if helpers and orig not in helpers and loc not in helpers: continue
+            hits.append({"line": imp["line"], "local": loc, "spec": imp["spec"], "text": imp["text"]})
+            renamed |= was_renamed
+            ns_import |= (orig == "*")
+
+    used_lines = []
+    for h in hits:
+        for i, l in enumerate(lines, 1):
+            if i == h["line"]: continue
+            if re.search(r"\b" + re.escape(h["local"]) + r"\s*\(", l) or \
+               re.search(r"\b" + re.escape(h["local"]) + r"\b", l):
+                used_lines.append(i)
+    used_lines = sorted(set(used_lines))[:4]
+
+    WRAPPED = re.compile(r"^export\s+(?:const|async\s+function|function)\s+"
+                         r"(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s*=\s*([A-Za-z_$][\w$]*)\s*\(", re.M)
+    other_wrappers = sorted({m.group(1) for m in WRAPPED.finditer(src)} - set(helpers))
+    module_family = helper_mod.rsplit("/", 1)[0] if helper_mod else None
+    touches_family = bool(module_family) and any(
+        i["spec"] == helper_mod or i["spec"].startswith(module_family + "/") for i in imports)
+
+    reason, label, conf = None, None, None
+    if not hits:
+        anywhere = helpers and any(re.search(r"\b" + re.escape(h) + r"\b", src) for h in helpers)
+        if anywhere:
+            reason = (f"an accepted helper name appears but not via an import of "
+                      f"{helper_mod or 'the named module'}")
+            label, conf = None, "low"
+        elif helpers and other_wrappers:
+            # THE defect this rule exists to prevent: a route wrapped in a DIFFERENT helper is not
+            # a violation, it is a question about what the convention should accept.
+            reason = (f"handler is wrapped in {', '.join(other_wrappers[:3])}, which is not in the "
+                      f"accepted set - absence of an accepted helper is not presence of a violation")
+            label, conf = None, "low"
+        elif helpers and touches_family:
+            reason = (f"no accepted helper, but the file imports from the {module_family} family - "
+                      f"a human must say whether that counts")
+            label, conf = None, "low"
+        elif helpers:
+            label, conf = "violating", "high"
+            reason = (f"handler exported with no wrapper of any shape, and nothing imported from "
+                      f"{helper_mod or 'the helper module'} - unambiguous absence")
+        else:
+            label, conf = "compliant", "high"
+            reason = f"no import of {data_mod}"
+    elif renamed or ns_import:
+        reason = "imported under an alias or namespace - identity needs a human"
+        label, conf = None, "low"
+    elif not used_lines:
+        reason = f"{target} imported at line {hits[0]['line']} but no use found - may be dead or re-exported"
+        label, conf = None, "low"
+    else:
+        label = "compliant" if helper else "violating"
+        conf = "high"
+        via = ("exact module" if hits[0]["spec"] == helper_mod else f"module family under {helper_mod}")
+        reason = (f"{hits[0]['local']} imported from {hits[0]['spec']} ({via}) at line "
+                  f"{hits[0]['line']} and used at line(s) {', '.join(map(str, used_lines))}") if helpers else \
+                 (f"{data_mod} imported at line {hits[0]['line']} and used at line(s) "
+                  f"{', '.join(map(str, used_lines))} directly inside a route handler")
+
+    ev = [[h["line"], h["line"]] for h in hits] or [[1, min(len(lines), 20)]]
+    ev += [[u, u] for u in used_lines]
+    rec = {"id": f"{os.path.basename(repo)}::{path}::{kind}",
+           "repo": os.path.basename(repo), "repo_sha": sha, "file": path, "kind": kind,
+           "justification": reason, "evidence_lines": ev,
+           "labeler": f"machine-proposed:{'helper' if helper else 'data-module'}",
+           "confidence": conf or "low", "adjudicated_by": None}
+    if label:
+        rec["label"] = label; proposals.append(rec)
+    else:
+        rec["label"] = "uncertain"; queue.append(rec)
+
+doc = {"kind": kind, "repo": os.path.basename(repo), "repo_sha": sha,
+       "target": helper or data_mod, "module": helper_mod or data_mod,
+       "proposed": proposals, "needs_human": queue}
+if out:
+    json.dump(doc, open(out, "w"), indent=1)
+n = len(proposals) + len(queue)
+print(f"── gt-propose · {kind} · {os.path.basename(repo)}")
+print(f"   {n} routes examined")
+print(f"   {len(proposals)} high-confidence proposals ({100*len(proposals)/n if n else 0:.0f}%)")
+print(f"   {len(queue)} need a human ({100*len(queue)/n if n else 0:.0f}%)")
+import collections
+c = collections.Counter(p["label"] for p in proposals)
+print(f"   proposed: " + ", ".join(f"{k}={v}" for k, v in c.items()))
+if queue:
+    print(f"\n   work queue (the ambiguity is the point - these are where a tool would guess):")
+    for q in collections.Counter(x["justification"].split(" - ")[0].split(" but ")[0] for x in queue).most_common(5):
+        print(f"     {q[1]:>4}  {q[0][:88]}")
+if out: print(f"\n   written to {out}")
+print(f"\n   NOTHING here is ground truth yet. Run gt-adjudicate before any of it is scored against.")

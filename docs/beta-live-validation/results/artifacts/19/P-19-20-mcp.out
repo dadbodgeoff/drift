@@ -1,0 +1,54 @@
+{
+ "response_schema": "drift.required_check_executions.v1",
+ "repo_id": "repo_68a494d2b8491ebb",
+ "policy": {
+  "allowed": true,
+  "surface": "log",
+  "mode": "local_only",
+  "reason": "metadata-only local preflight packet",
+  "max_snippet_chars": 1200,
+  "approved_snippet_chars": 1200
+ },
+ "governance": {
+  "read_only": true,
+  "agent_can_mutate": false,
+  "allowed_agent_actions": [
+   "read_context",
+   "request_preflight",
+   "propose_resolution"
+  ],
+  "human_approval_required_for": [
+   "accept_convention",
+   "reject_convention",
+   "edit_convention",
+   "add_exception",
+   "add_contract_waiver",
+   "mark_needs_review",
+   "suppress_finding",
+   "accept_drift",
+   "mark_false_positive",
+   "change_policy",
+   "grant_agent_permission",
+   "export_contract",
+   "import_contract",
+   "create_backup",
+   "restore_backup"
+  ]
+ },
+ "filters": {
+  "command": null,
+  "scan_id": null,
+  "repo_contract_id": null
+ },
+ "summary": {
+  "repo_contract_id": "contract_68a494d2b8491ebb",
+  "total_count": 0,
+  "returned_count": 0,
+  "limit": 50,
+  "offset": 0,
+  "latest_passed_count": 0,
+  "latest_failed_count": 0
+ },
+ "latest_by_command": [],
+ "executions": []
+}

@@ -1,0 +1,9 @@
+{
+ "exit": 0,
+ "elapsed_s": 94.62,
+ "response_n_lines": 1,
+ "response_bytes": 5175237,
+ "one_line": true,
+ "ok_json": true,
+ "inner_payload_chars": 4782727
+}

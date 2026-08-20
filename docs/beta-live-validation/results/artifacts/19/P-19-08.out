@@ -1,0 +1,67 @@
+{
+ "very_long_line": {
+  "exit": 0,
+  "n_out_lines": 1,
+  "responses_summary": [
+   {
+    "id": 1,
+    "ok": false,
+    "err": "Unknown repo repo_x."
+   }
+  ],
+  "stderr": ""
+ },
+ "embedded_newline_escaped": {
+  "exit": 0,
+  "n_out_lines": 1,
+  "responses_summary": [
+   {
+    "id": 2,
+    "ok": false,
+    "err": "Unknown repo repo_x."
+   }
+  ],
+  "stderr": ""
+ },
+ "crlf_endings": {
+  "exit": 0,
+  "n_out_lines": 1,
+  "responses_summary": [
+   {
+    "id": 3,
+    "ok": true,
+    "err": null
+   }
+  ],
+  "stderr": ""
+ },
+ "two_objects_one_line": {
+  "exit": 0,
+  "n_out_lines": 1,
+  "responses_summary": [
+   {
+    "id": null,
+    "ok": false,
+    "err": "Unexpected non-whitespace character after JSON at position 51 (line 1 column 52)"
+   }
+  ],
+  "stderr": "Drift MCP rejected an invalid JSON-RPC line.\n"
+ },
+ "split_object_two_lines": {
+  "exit": 0,
+  "n_out_lines": 2,
+  "responses_summary": [
+   {
+    "id": null,
+    "ok": false,
+    "err": "Unexpected end of JSON input"
+   },
+   {
+    "id": null,
+    "ok": false,
+    "err": "Unexpected non-whitespace character after JSON at position 1 (line 1 column 2)"
+   }
+  ],
+  "stderr": "Drift MCP rejected an invalid JSON-RPC line.\nDrift MCP rejected an invalid JSON-RPC line.\n"
+ }
+}

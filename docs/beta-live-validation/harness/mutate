@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Mutation-test the EVAL SUITE. Not Drift — the thing that is supposed to notice when Drift breaks.
+
+    mutate list                       mutate check
+    mutate run <id> -- <gate cmd>     mutate run-all [--build CMD] -- <gate cmd>
+    mutate report
+
+Every eval in this repo asks "does Drift catch violations?" The question none of them ask is
+"if Drift stopped working, would we find out?" This answers it: inject a known fault into the
+engine, run the gate, and see whether the gate goes red.
+
+  KILLED   the gate caught the fault. That eval is doing its job.
+  SURVIVED the fault shipped and every gate stayed green. That is an eval gap, and it is a
+           precise one: this exact defect can reach main today.
+
+Surviving mutants are the highest-value output of the entire validation program, because each one
+names a real hole in the safety net rather than a hypothetical.
+
+SAFETY: refuses to run against the read-only freeze or a dirty tree. Mutation needs its own
+writable clone, and mutants are pinned by the sha256 of the exact text they replace, so a mutant
+whose anchor has drifted fails loudly instead of silently patching the wrong code.
+"""
+import hashlib, json, os, subprocess, sys, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+
+MANIFEST = os.environ.get("DRIFT_BETA_MUTANTS") or os.path.join(H, "mutants.json")
+TREE = os.environ.get("DRIFT_MUTATE_TREE")   # a WRITABLE clone; never the freeze
+LEDGER = lambda: os.path.join(os.environ["DRIFT_BETA_LEDGER"], "mutation.jsonl")
+
+def sha(s): return hashlib.sha256(s.encode()).hexdigest()
+def mutants(): return json.load(open(MANIFEST))["mutants"]
+
+def guard():
+    if not TREE: sys.exit("set DRIFT_MUTATE_TREE to a writable clone (never the freeze)")
+    if not os.path.isdir(TREE): sys.exit(f"DRIFT_MUTATE_TREE does not exist: {TREE}")
+    fr = os.environ.get("DRIFT_BETA_FREEZE", "")
+    if fr and os.path.abspath(TREE).startswith(os.path.abspath(os.path.join(fr, "src"))):
+        sys.exit("refusing to mutate the frozen subject — clone it first")
+    d = subprocess.run(["git","-C",TREE,"status","--porcelain"], capture_output=True, text=True).stdout
+    if d.strip(): sys.exit(f"mutation tree is dirty; revert before mutating:\n{d}")
+
+def locate(m):
+    p = os.path.join(TREE, m["file"])
+    if not os.path.exists(p): return (None, f"file missing: {m['file']}")
+    src = open(p).read()
+    n = src.count(m["find"])
+    if n == 0: return (None, f"anchor text not found in {m['file']}")
+    if n > 1 and not m.get("allow_multiple"):
+        return (None, f"anchor text appears {n}x in {m['file']}; make it unique or set allow_multiple")
+    if sha(m["find"]) != m["anchor_sha256"]:
+        return (None, "anchor_sha256 mismatch — the manifest is stale, re-pin it deliberately")
+    return (src, None)
+
+def cmd_check():
+    bad = 0
+    for m in mutants():
+        src, err = locate(m)
+        print(f"  {'ok ' if not err else 'STALE'} {m['id']:<34} {m['file']}" + (f"   {err}" if err else ""))
+        bad += bool(err)
+    print(f"\n  {len(mutants())} mutants, {bad} stale")
+    sys.exit(1 if bad else 0)
+
+def apply(m):
+    p = os.path.join(TREE, m["file"]); src, err = locate(m)
+    if err: sys.exit(f"cannot apply {m['id']}: {err}")
+    open(p, "w").write(src.replace(m["find"], m["replace"], 1 if not m.get("allow_multiple") else -1))
+
+def revert():
+    subprocess.run(["git","-C",TREE,"checkout","--","."], check=True)
+
+def run_one(m, gate, build_cmd="pnpm build:engine"):
+    print(f"── mutant {m['id']}: {m['rationale']}", flush=True)
+    apply(m)
+    t0 = time.time()
+    if build_cmd:
+        build = subprocess.run(build_cmd, shell=True, cwd=TREE, capture_output=True, text=True)
+        if build.returncode != 0:
+            revert()
+            print("── build failed — the mutant does not compile; it tests nothing", flush=True)
+            return {"id": m["id"], "outcome": "NON_COMPILING", "seconds": round(time.time()-t0,1)}
+    r = subprocess.run(gate, cwd=TREE, capture_output=True, text=True)
+    revert()
+    outcome = "KILLED" if r.returncode != 0 else "SURVIVED"
+    row = {"id": m["id"], "file": m["file"], "rationale": m["rationale"],
+           "gate": gate, "gate_exit": r.returncode, "outcome": outcome,
+           "kills_expected": m.get("kills_expected", []),
+           "seconds": round(time.time()-t0,1), "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    if os.environ.get("DRIFT_BETA_LEDGER"):
+        os.makedirs(os.path.dirname(LEDGER()), exist_ok=True)
+        with open(LEDGER(),"a") as f: f.write(json.dumps(row)+"\n")
+    print(f"── {outcome}  (gate exited {r.returncode}, {row['seconds']}s)", flush=True)
+    if outcome == "SURVIVED":
+        print(f"──   THIS DEFECT CAN REACH MAIN TODAY. Expected to be caught by: "
+              f"{', '.join(m.get('kills_expected',[])) or '(nothing declared)'}")
+    return row
+
+def cmd_report():
+    p = LEDGER()
+    if not os.path.exists(p): sys.exit("no mutation ledger yet")
+    rows = [json.loads(l) for l in open(p)]
+    last = {r["id"]: r for r in rows}
+    killed = [r for r in last.values() if r["outcome"]=="KILLED"]
+    surv   = [r for r in last.values() if r["outcome"]=="SURVIVED"]
+    nc     = [r for r in last.values() if r["outcome"]=="NON_COMPILING"]
+    testable = len(killed)+len(surv)
+    print(f"── mutation score: {len(killed)}/{testable} killed"
+          f"  ({100*len(killed)/testable:.0f}%)" if testable else "── no testable mutants")
+    if nc: print(f"   {len(nc)} mutant(s) did not compile and tested nothing: "
+                 + ", ".join(r["id"] for r in nc))
+    if surv:
+        print(f"\n   SURVIVED — each is a defect the gates would not catch:")
+        for r in surv:
+            print(f"     {r['id']:<34} {r['rationale']}")
+            print(f"       expected to be caught by: {', '.join(r['kills_expected']) or '(nothing)'}")
+    else:
+        print("\n   no survivors — every injected fault was caught")
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]
+if c == "list":
+    for m in mutants(): print(f"  {m['id']:<34} {m['file']:<48} {m['rationale']}")
+elif c == "check": guard(); cmd_check()
+elif c == "report": cmd_report()
+elif c in ("run","run-all"):
+    guard()
+    if "--" not in sys.argv: sys.exit("missing -- before the gate command")
+    gate = sys.argv[sys.argv.index("--")+1:]
+    pre = sys.argv[:sys.argv.index("--")]
+    build_cmd = pre[pre.index("--build")+1] if "--build" in pre else "pnpm build:engine"
+    sel = mutants() if c=="run-all" else [m for m in mutants() if m["id"]==sys.argv[2]]
+    if not sel: sys.exit(f"no mutant {sys.argv[2]}")
+    for m in sel: run_one(m, gate, build_cmd)
+    cmd_report()
+else: sys.exit(f"unknown subcommand {c}")

@@ -1,0 +1,692 @@
+{
+  "repo_id": "repo_68a494d2b8491ebb",
+  "topic": "what conventions apply to api routes",
+  "target_path": null,
+  "generated_at": "2026-08-19T15:45:27.264Z",
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "safe_to_edit",
+    "surface": "cli-preflight",
+    "read_only": true,
+    "policy": {
+      "allowed": true,
+      "surface": "cli-preflight",
+      "reason": "metadata-only local preflight packet"
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": true,
+      "latest_scan_id": "scan_bd29d7752c0dd3a8"
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": true,
+      "mode": "local_only",
+      "reason": "metadata-only local preflight packet",
+      "max_snippet_chars": 1200,
+      "approved_snippet_chars": 1200,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "metadata_only"
+    },
+    "diagnostics": []
+  },
+  "answer": {
+    "source": "deterministic_local_state",
+    "summary": "Matched 1 accepted convention, 4 open findings, and 8 relevant files."
+  },
+  "policy": {
+    "allowed": true,
+    "surface": "cli-preflight",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "contract": {
+    "id": "contract_68a494d2b8491ebb",
+    "schema_version": 1,
+    "updated_at": "2026-08-19T15:36:07.933Z",
+    "ready": true,
+    "source": "accepted_contract"
+  },
+  "summary": {
+    "matched_convention_count": 1,
+    "open_finding_count": 4,
+    "relevant_file_count": 8,
+    "scan_stale": true,
+    "contract_ready": true,
+    "candidate_count": 2
+  },
+  "scan_status": {
+    "response_schema": "drift.scan.status.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "repo_root": "/tmp/drift-beta.19.setup.46JxIf/repo",
+    "current_branch": "main",
+    "latest_scan": {
+      "id": "scan_bd29d7752c0dd3a8",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "branch": "main",
+      "commit": "adab025e172273d9367207f3f40a257316a089e7",
+      "dirty": false,
+      "scanner_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      },
+      "rule_engine_version": "0.1.0",
+      "status": "completed",
+      "file_count": 132,
+      "fact_count": 1850,
+      "finding_count": 0,
+      "started_at": "2026-08-19T15:36:07.933Z",
+      "completed_at": "2026-08-19T15:36:07.933Z"
+    },
+    "scan_fingerprint": "7c51a68fcacc9e2072865da749a028a6f27ae5c146e1368814764807b6725334",
+    "stored_fact_count": 1850,
+    "indexed_file_count": 132,
+    "source_change_count": 1,
+    "scan_count": 1,
+    "latest_scan_change_summary": {
+      "added": 132,
+      "modified": 0,
+      "deleted": 0,
+      "unchanged": 0,
+      "total": 132
+    },
+    "governance": {
+      "read_only": true,
+      "agent_can_mutate": false,
+      "allowed_agent_actions": [
+        "read_context",
+        "request_preflight",
+        "propose_resolution"
+      ],
+      "human_approval_required_for": [
+        "accept_convention",
+        "reject_convention",
+        "edit_convention",
+        "add_exception",
+        "add_contract_waiver",
+        "mark_needs_review",
+        "suppress_finding",
+        "accept_drift",
+        "mark_false_positive",
+        "change_policy",
+        "grant_agent_permission",
+        "export_contract",
+        "import_contract",
+        "create_backup",
+        "restore_backup"
+      ]
+    },
+    "summary": {
+      "latest_scan_id": "scan_bd29d7752c0dd3a8",
+      "scan_count": 1,
+      "indexed_file_count": 132,
+      "source_change_count": 1,
+      "stale": true,
+      "invalidation_count": 0,
+      "audit_valid": true
+    },
+    "audit_integrity": {
+      "repo_id": "repo_68a494d2b8491ebb",
+      "valid": true,
+      "event_count": 4,
+      "verified_count": 4,
+      "head_event_hash": "7c62732c913c6bb586f2273d1694aae08df79f54b9dfbc288d4aefcd2ea1ef17",
+      "broken_at_event_id": null,
+      "reasons": []
+    },
+    "stale": true,
+    "invalidation_reasons": [],
+    "changes": {
+      "added": [],
+      "modified": [
+        "app/api/webhooks/stripe/route.ts"
+      ],
+      "deleted": []
+    },
+    "parser_gaps": {
+      "total_count": 6,
+      "by_kind": {
+        "unresolved_import": 6
+      },
+      "confidence_impact": {
+        "lowers_flow": 6
+      },
+      "by_capability": {},
+      "by_contract_kind": {},
+      "records": [
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_3653aad5ce0c6b26",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        },
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_2de9bed0b26cd4ae",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        },
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_6592ee64457a94e9",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(docs)/guides/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        },
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_2f834db9dc81a509",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(marketing)/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        },
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_1f2e81f068148caf",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        },
+        {
+          "schema_version": "drift.parser_gap.v1",
+          "gap_id": "parser_gap_73ef92be6841f6cd",
+          "repo_id": "repo_68a494d2b8491ebb",
+          "scan_id": "scan_bd29d7752c0dd3a8",
+          "kind": "unresolved_import",
+          "file_path": "app/(marketing)/blog/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "confidence_impact": "lowers_flow",
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/page.tsx.",
+          "evidence_refs": [],
+          "created_at": "2026-08-19T15:36:07.933Z"
+        }
+      ]
+    },
+    "parser_gap_quality": {
+      "schema_version": "drift.parser_gap_quality.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "surface": "scan_status",
+      "total_count": 6,
+      "blocking_count": 0,
+      "advisory_count": 6,
+      "by_kind": {
+        "unresolved_import": 6
+      },
+      "by_capability": {},
+      "by_contract_kind": {},
+      "top_actions": [
+        {
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "count": 6
+        }
+      ],
+      "sample_gaps": [
+        {
+          "parser_gap_id": "parser_gap_3653aad5ce0c6b26",
+          "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_2de9bed0b26cd4ae",
+          "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_6592ee64457a94e9",
+          "file_path": "app/(docs)/guides/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_2f834db9dc81a509",
+          "file_path": "app/(marketing)/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_1f2e81f068148caf",
+          "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx."
+        }
+      ],
+      "decision": "advisory_only",
+      "user_action": "Review advisory parser gaps; blocking enforcement remains limited to complete evidence."
+    },
+    "readiness": {
+      "schema_version": "drift.readiness.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "surface": "scan_status",
+      "graph_available": true,
+      "graph_complete": true,
+      "parser_gap_count": 6,
+      "parser_gaps_by_kind": {
+        "unresolved_import": 6
+      },
+      "confidence": 0.82,
+      "decision": "advisory_only",
+      "reasons": [
+        "parser_gaps_present"
+      ],
+      "required_capabilities": [
+        "fact_graph"
+      ],
+      "missing_capabilities": []
+    },
+    "capability_report": {
+      "schema_version": "drift.scan_capability_report.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "engine_source": "rust",
+      "engine_version": null,
+      "scanner_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      },
+      "certified_capabilities": [
+        "auth_boundary_facts",
+        "candidate_inference",
+        "control_flow_guard_dominance",
+        "data_operation_detection",
+        "direct_data_access_check",
+        "file_discovery",
+        "graph_stream",
+        "import_resolution",
+        "route_detection",
+        "route_flow",
+        "security_facts",
+        "static_imports",
+        "symbol_linking",
+        "syntax_facts"
+      ],
+      "required_capabilities": [
+        "file_discovery",
+        "graph_stream",
+        "syntax_facts"
+      ],
+      "missing_capabilities": [],
+      "completeness": [
+        {
+          "scope": "repo",
+          "complete": true,
+          "can_block": true,
+          "reasons": []
+        }
+      ],
+      "parser_gap_count": 7,
+      "parser_gap_kinds": {
+        "unresolved_import": 7
+      },
+      "fallback_used": false,
+      "enforcement_degraded": false,
+      "engine_resolution": "env_override",
+      "engine_build_profile": "release",
+      "created_at": "2026-08-19T15:36:07.933Z"
+    },
+    "security_capabilities": [],
+    "machine_contract_versions": {
+      "schema_version": "drift.machine_contract_versions.v1",
+      "cli_version": "0.1.0",
+      "core_version": "0.1.0",
+      "storage_schema_version": 36,
+      "contract_schema_version": 1,
+      "engine_contract_versions": {
+        "scan_request": "engine.scan.request.v1",
+        "scan_result": "engine.scan.result.v1",
+        "check_request": "engine.check.request.v1",
+        "check_result": "engine.check.result.v1",
+        "candidates_result": "engine.candidates.result.v1",
+        "stream_event": "engine.stream.event.v1"
+      },
+      "factgraph_schema_version": "factgraph.v2",
+      "scanner_version": "0.1.0",
+      "rule_engine_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      }
+    },
+    "next_command": "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+    "next_commands": [
+      "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+      "drift doctor --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json"
+    ]
+  },
+  "freshness_requirement": {
+    "required": false,
+    "satisfied": false,
+    "next_command": "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+    "invalidation_reasons": []
+  },
+  "conventions": [
+    {
+      "id": "convention_572bf7b306010298",
+      "kind": "api_route_no_direct_data_access",
+      "statement": "API routes should not import data-access clients directly.",
+      "severity": "error",
+      "enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "scope": {
+        "path_globs": [
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_no_direct_data_access",
+        "forbidden_imports": [
+          "@/lib/db"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "exceptions": [],
+      "agent_instruction": "When editing API route files, do not import data-access clients directly. Forbidden imports: @/lib/db. Delegate through the repo's accepted service/data-access layer and run drift check before finishing.",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "conforming_examples_reason": null,
+      "rationale": {
+        "derivation": "Detected API route imports that look like database/data-access clients.",
+        "reason": "Route modules are transport: they parse a request, delegate, and serialize a response. Reaching into the data layer from a route couples the HTTP surface to storage, so auth, validation, and query shape stop being enforceable in one place."
+      },
+      "migration_sentence": "4 existing violations are baselined and do not block; new code is held to this rule."
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_2fd0e7eb4e26bb28",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "first_evidence": {
+        "file_path": "app/api/webhooks/stripe/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_6188425b3aaa7a47",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "first_evidence": {
+        "file_path": "app/api/posts/[postId]/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_c2998d096c586c08",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "first_evidence": {
+        "file_path": "app/api/posts/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    },
+    {
+      "id": "finding_dd9c147fa5b8e5dd",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn",
+      "first_evidence": {
+        "file_path": "app/api/users/[userId]/route.ts",
+        "start_line": 5,
+        "import_source": "@/lib/db",
+        "symbol": "db"
+      }
+    }
+  ],
+  "relevant_files": [
+    {
+      "path": "app/api/og/route.tsx",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/posts/[postId]/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/posts/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/users/[userId]/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/users/stripe/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/webhooks/stripe/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "pages/api/auth/[...nextauth].ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: api"
+      ]
+    },
+    {
+      "path": "app/api/auth/[...nextauth]/_route.ts",
+      "roles": [],
+      "reasons": [
+        "task token: api"
+      ]
+    }
+  ],
+  "redactions": {
+    "denied_globs": [
+      "**/.env",
+      "**/.env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/*.crt",
+      "**/*.p12",
+      "**/id_rsa",
+      "**/id_ed25519"
+    ],
+    "snippets_included": false,
+    "source_content_included": false,
+    "context_truncated": false
+  },
+  "next_commands": [
+    "drift prepare \"what conventions apply to api routes\" --repo repo_68a494d2b8491ebb --json",
+    "drift check --repo repo_68a494d2b8491ebb --diff main...HEAD --scope changed-hunks --json"
+  ]
+}

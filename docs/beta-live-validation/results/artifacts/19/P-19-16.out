@@ -1,0 +1,3 @@
+{"stale": true, "source_change_count": 1}
+{"code": -32000, "message": "Scan is stale for repo_68a494d2b8491ebb. Run drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json; omit require_fresh to inspect stale context.", "data": {"code": "stale_scan", "user_action": "Refresh the scan or rerun without --require-fresh for read-only stale context.", "safe_to_retry": true, "recovery_commands": ["drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json"]}}
+without require_fresh - stale disclosed: True

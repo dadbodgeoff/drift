@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Re-run one recorded probe verbatim, or print what it did.
+
+    replay <charter> <probe-id>          # show the recorded row + full output
+    replay <charter> <probe-id> --rerun  # execute it again and diff the stdout hash
+
+Investigating one bad probe should not mean re-running a six-hour agent.
+"""
+import json, os, subprocess, sys, hashlib
+charter, probe = sys.argv[1], sys.argv[2]
+rerun = "--rerun" in sys.argv
+led = os.environ["DRIFT_BETA_LEDGER"]
+rows = [json.loads(l) for l in open(os.path.join(led, charter + ".jsonl"))]
+hits = [r for r in rows if r["probe"] == probe]
+if not hits: sys.exit(f"no ledger row for {charter}/{probe}")
+r = hits[-1]
+print(json.dumps(r, indent=1))
+if not rerun:
+    print("\n── recorded stdout ──"); print(open(r["stdout_path"]).read())
+    sys.exit(0)
+p = subprocess.run(r["command"], capture_output=True)
+h = hashlib.sha256(p.stdout).hexdigest()
+print(f"\nrerun exit={p.returncode} (was {r['exit_code']})")
+print(f"stdout sha {'MATCHES' if h == r['stdout_sha256'] else 'DIFFERS from'} the recorded run")

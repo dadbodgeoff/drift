@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Record whether this machine is in a state where a timing measurement means anything.
+
+    machine-state [--assert]
+
+Charter 16's grid is invalid if the machine is throttling, on battery, or loaded by another agent.
+--assert exits nonzero rather than letting a benchmark start on a machine that will lie to it.
+"""
+import json, os, re, shutil, subprocess, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _probelib import ledger_append
+
+def sh(*c):
+    try: return subprocess.run(c, capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception: return ""
+
+st = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "platform": sh("uname", "-a")}
+la = os.getloadavg(); st["loadavg"] = [round(x, 2) for x in la]
+st["ncpu"] = os.cpu_count()
+st["load_per_cpu"] = round(la[0] / (os.cpu_count() or 1), 2)
+
+if sys.platform == "darwin":
+    batt = sh("pmset", "-g", "batt")
+    st["on_ac"] = "AC Power" in batt
+    st["battery"] = batt.splitlines()[1].strip() if len(batt.splitlines()) > 1 else batt
+    therm = sh("pmset", "-g", "therm")
+    m = re.search(r"CPU_Speed_Limit\s*=\s*(\d+)", therm)
+    st["cpu_speed_limit_pct"] = int(m.group(1)) if m else None
+    st["thermal_raw"] = therm
+    st["low_power_mode"] = "1" in sh("pmset", "-g", "|", "grep", "lowpowermode")[-2:]
+    vm = sh("vm_stat"); free = re.search(r"Pages free:\s+(\d+)", vm)
+    st["free_pages"] = int(free.group(1)) if free else None
+st["disk_free_gb"] = round(shutil.disk_usage(os.environ.get("DRIFT_BETA_FREEZE", "/")).free / 1e9, 1)
+
+drift_procs = sh("sh", "-c", "ps ax -o comm= | grep -c 'drift-engine' || true")
+st["concurrent_drift_engine"] = max(0, int(drift_procs or 0) - 1)
+
+problems = []
+if st.get("on_ac") is False:                     problems.append("on battery — CPU will be throttled")
+if (st.get("cpu_speed_limit_pct") or 100) < 100: problems.append(f"CPU speed limited to {st['cpu_speed_limit_pct']}% — thermal throttling active")
+if st["load_per_cpu"] > 0.5:                     problems.append(f"load {st['loadavg'][0]} across {st['ncpu']} cpus — something else is running")
+if st["concurrent_drift_engine"] > 0:            problems.append(f"{st['concurrent_drift_engine']} other drift-engine process(es) running")
+if st["disk_free_gb"] < 10:                      problems.append(f"only {st['disk_free_gb']}GB free")
+st["problems"] = problems
+st["timing_trustworthy"] = not problems
+
+if os.environ.get("DRIFT_BETA_LEDGER"):
+    ledger_append("machine", st, name="state.jsonl")
+
+print(f"── machine-state  load={st['loadavg'][0]}/{st['ncpu']}cpu  "
+      f"ac={st.get('on_ac')}  speed_limit={st.get('cpu_speed_limit_pct')}%  "
+      f"free={st['disk_free_gb']}GB  other_engines={st['concurrent_drift_engine']}")
+for p in problems: print("──   PROBLEM: " + p)
+print("── " + ("timings are trustworthy" if not problems else "TIMINGS FROM THIS MACHINE ARE NOT TRUSTWORTHY"))
+if "--assert" in sys.argv and problems: sys.exit(1)

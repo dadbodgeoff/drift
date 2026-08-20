@@ -1,0 +1,68 @@
+{
+ "exit": 0,
+ "n_responses": 12,
+ "n_calls": 12,
+ "errors": 0,
+ "results": {
+  "get_runtime_info": {
+   "ok": true,
+   "schema": null,
+   "bytes": 984
+  },
+  "get_capabilities": {
+   "ok": true,
+   "schema": null,
+   "bytes": 7447
+  },
+  "get_audit_status": {
+   "ok": true,
+   "schema": "drift.audit.status.v1",
+   "bytes": 1488
+  },
+  "get_scan_status": {
+   "ok": true,
+   "schema": "drift.scan.status.v1",
+   "bytes": 9969
+  },
+  "get_repo_contract": {
+   "ok": true,
+   "schema": "drift.repo.contract.v1",
+   "bytes": 5516
+  },
+  "get_repo_map": {
+   "ok": true,
+   "schema": "drift.repo.map.v1",
+   "bytes": 102442
+  },
+  "get_security_context": {
+   "ok": true,
+   "schema": "drift.security.context.v2",
+   "bytes": 18643
+  },
+  "get_task_preflight": {
+   "ok": true,
+   "schema": "drift.task.preflight.v1",
+   "bytes": 53610
+  },
+  "get_conventions": {
+   "ok": true,
+   "schema": "drift.conventions.accepted.v1",
+   "bytes": 3426
+  },
+  "get_findings": {
+   "ok": true,
+   "schema": "drift.findings.list.v1",
+   "bytes": 14629
+  },
+  "get_required_check_executions": {
+   "ok": true,
+   "schema": "drift.required_check_executions.v1",
+   "bytes": 977
+  },
+  "get_allowed_context": {
+   "ok": true,
+   "schema": "drift.allowed-context.v1",
+   "bytes": 12810
+  }
+ }
+}

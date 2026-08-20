@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Start, watch and wait on a long-running job — with liveness you can actually trust.
+
+    job start <id> [--timeout S] -- <command...>
+    job status <id>          job wait <id> [--poll S]      job list      job kill <id>
+
+Built because a `pgrep -f 'thing.sh'` liveness check matched the polling shell's OWN command line
+and reported a dead job as alive for an hour. Liveness here is a pid recorded at launch plus
+`kill -0`, never a pattern match against a process table that contains the watcher.
+
+`start` returns immediately and fails loudly if the command never launched - the failure that
+produced the hour, since a missing script silently created no process and no log.
+"""
+import json, os, signal, subprocess, sys, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+
+ROOT = os.environ.get("DRIFT_BETA_JOBS") or os.path.join(
+    os.environ.get("DRIFT_BETA_FREEZE", "/tmp"), "jobs")
+def d(i): 
+    p = os.path.join(ROOT, i); os.makedirs(p, exist_ok=True); return p
+def meta(i, **kw):
+    p = os.path.join(d(i), "job.json")
+    m = json.load(open(p)) if os.path.exists(p) else {}
+    m.update(kw); json.dump(m, open(p, "w"), indent=1); return m
+def read(i):
+    p = os.path.join(d(i), "job.json")
+    return json.load(open(p)) if os.path.exists(p) else None
+def alive(pid):
+    try: os.kill(pid, 0); return True
+    except (ProcessLookupError, PermissionError): return False
+    except Exception: return False
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]
+
+if c == "start":
+    if "--" not in sys.argv: sys.exit("missing -- before the command")
+    jid = sys.argv[2]
+    pre = sys.argv[3:sys.argv.index("--")]
+    cmd = sys.argv[sys.argv.index("--")+1:]
+    timeout = float(pre[pre.index("--timeout")+1]) if "--timeout" in pre else None
+    if not cmd: sys.exit("no command given")
+    # Refuse to "launch" something that cannot run. This is the whole point.
+    exe = cmd[0]
+    if "/" in exe and not os.path.exists(exe):
+        sys.exit(f"job {jid}: {exe} does not exist - nothing was started")
+    log = os.path.join(d(jid), "out.log")
+    with open(log, "wb") as f:
+        try:
+            p = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT,
+                                 stdin=subprocess.DEVNULL, start_new_session=True)
+        except FileNotFoundError:
+            sys.exit(f"job {jid}: {exe} not found on PATH - nothing was started")
+    meta(jid, id=jid, pid=p.pid, command=cmd, log=log, timeout=timeout,
+         started=time.strftime("%Y-%m-%dT%H:%M:%S%z"), started_epoch=time.time(), state="running")
+    time.sleep(0.4)
+    if not alive(p.pid) and p.poll() not in (0, None):
+        print(f"job {jid}: exited immediately with {p.poll()} - see {log}", file=sys.stderr)
+    print(f"job {jid} started · pid {p.pid} · log {log}")
+
+elif c in ("status", "wait"):
+    jid = sys.argv[2]; m = read(jid) or sys.exit(f"no job {jid}")
+    poll = float(sys.argv[sys.argv.index("--poll")+1]) if "--poll" in sys.argv else 15.0
+    while True:
+        up = alive(m["pid"])
+        el = time.time() - m["started_epoch"]
+        if not up:
+            meta(jid, state="finished", elapsed_s=round(el, 1))
+            print(f"job {jid}: FINISHED after {el:.0f}s · log {m['log']}")
+            sys.exit(0)
+        if m.get("timeout") and el > m["timeout"]:
+            print(f"job {jid}: RUNNING but past its {m['timeout']:.0f}s timeout ({el:.0f}s)")
+            sys.exit(2)
+        if c == "status":
+            tail = ""
+            if os.path.exists(m["log"]):
+                lines = open(m["log"], errors="replace").read().splitlines()
+                tail = lines[-1][:100] if lines else "(no output yet)"
+            print(f"job {jid}: RUNNING pid {m['pid']} · {el:.0f}s · {tail}")
+            sys.exit(0)
+        time.sleep(poll)
+
+elif c == "list":
+    if not os.path.isdir(ROOT): sys.exit("no jobs")
+    for jid in sorted(os.listdir(ROOT)):
+        m = read(jid)
+        if not m: continue
+        st = "RUNNING" if alive(m["pid"]) else "finished"
+        print(f"  {jid:<24} {st:<8} pid={m['pid']:<7} {round(time.time()-m['started_epoch'])}s")
+
+elif c == "kill":
+    jid = sys.argv[2]; m = read(jid) or sys.exit(f"no job {jid}")
+    try:
+        os.killpg(os.getpgid(m["pid"]), signal.SIGKILL); print(f"job {jid}: killed process group")
+    except Exception as e:
+        print(f"job {jid}: {e}")
+    meta(jid, state="killed")
+else: sys.exit(f"unknown subcommand {c}")

@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Bisect a NUMBER, not a test. Turns "presence recall dropped" into a sha.
+
+    bisect-metric --tree DIR --good SHA --bad SHA --threshold N [--direction below|above]
+                  [--build CMD] [--timeout S] -- <command that prints one number on stdout>
+
+`git bisect run` needs a script that exits 0/1. Metrics are continuous, so every regression hunt
+gets a throwaway wrapper written from memory, usually without a build step and usually without
+handling the commit that will not compile. This is that wrapper, once:
+
+  * builds at each step (skippable), and reports a non-building commit as `skip` (125) rather than
+    silently scoring it as good - a commit that cannot build has no metric, and calling it good is
+    how a bisect lands on the wrong sha
+  * parses the last number the command prints
+  * records every probe to the ledger, so the bisect itself is auditable afterwards
+
+Direction: `below` means the metric FALLING past the threshold is the regression (recall, precision,
+catch rate). `above` means RISING past it is (latency, findings-count, memory).
+"""
+import json, os, re, subprocess, sys, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+
+a = sys.argv[1:]
+if "--" not in a: sys.exit(__doc__)
+opts, cmd = a[:a.index("--")], a[a.index("--")+1:]
+def opt(n, d=None): return opts[opts.index(n)+1] if n in opts else d
+tree = opt("--tree") or sys.exit("--tree is required (a writable clone, never the freeze)")
+good, bad = opt("--good"), opt("--bad")
+if not good or not bad: sys.exit("--good and --bad are required")
+thr = float(opt("--threshold") or sys.exit("--threshold is required"))
+direction = opt("--direction", "below")
+build = opt("--build", "pnpm build:engine")
+timeout = float(opt("--timeout", "1800"))
+
+fr = os.environ.get("DRIFT_BETA_FREEZE", "")
+if fr and os.path.abspath(tree).startswith(os.path.abspath(os.path.join(fr, "src"))):
+    sys.exit("refusing to bisect inside the frozen subject - clone it first")
+if subprocess.run(["git","-C",tree,"status","--porcelain"], capture_output=True, text=True).stdout.strip():
+    sys.exit("bisect tree is dirty")
+
+LED = os.environ.get("DRIFT_BETA_LEDGER")
+def record(row):
+    if not LED: return
+    os.makedirs(LED, exist_ok=True)
+    with open(os.path.join(LED, "bisect.jsonl"), "a") as f: f.write(json.dumps(row) + "\n")
+
+def measure():
+    sha = subprocess.run(["git","-C",tree,"rev-parse","HEAD"], capture_output=True, text=True).stdout.strip()
+    if build:
+        b = subprocess.run(build, shell=True, cwd=tree, capture_output=True, text=True, timeout=timeout)
+        if b.returncode != 0:
+            record({"sha": sha, "outcome": "SKIP", "reason": "build failed"})
+            print(f"   {sha[:12]}  build failed -> skip"); return 125
+    try:
+        r = subprocess.run(cmd, cwd=tree, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        record({"sha": sha, "outcome": "SKIP", "reason": "metric command timed out"})
+        print(f"   {sha[:12]}  metric timed out -> skip"); return 125
+    nums = re.findall(r"-?\d+(?:\.\d+)?", r.stdout)
+    if not nums:
+        record({"sha": sha, "outcome": "SKIP", "reason": "no number on stdout", "stdout": r.stdout[-400:]})
+        print(f"   {sha[:12]}  no number printed -> skip"); return 125
+    v = float(nums[-1])
+    regressed = (v < thr) if direction == "below" else (v > thr)
+    record({"sha": sha, "metric": v, "threshold": thr, "direction": direction,
+            "outcome": "BAD" if regressed else "GOOD", "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")})
+    print(f"   {sha[:12]}  metric={v}  threshold={thr} ({direction}) -> "
+          f"{'BAD' if regressed else 'GOOD'}")
+    return 1 if regressed else 0
+
+if os.environ.get("BISECT_METRIC_STEP") == "1":
+    sys.exit(measure())
+
+print(f"── bisect-metric  {good[:12]}..{bad[:12]}  threshold {thr} ({direction})")
+print(f"   tree: {tree}\n   metric: {' '.join(cmd)}\n   build: {build or '(none)'}")
+subprocess.run(["git","-C",tree,"bisect","reset"], capture_output=True)
+subprocess.run(["git","-C",tree,"bisect","start"], check=True)
+subprocess.run(["git","-C",tree,"bisect","good",good], check=True)
+subprocess.run(["git","-C",tree,"bisect","bad",bad], check=True)
+env = dict(os.environ, BISECT_METRIC_STEP="1")
+me = os.path.abspath(__file__)
+run = subprocess.run(["git","-C",tree,"bisect","run", sys.executable, me, *a], env=env,
+                     capture_output=True, text=True)
+print(run.stdout[-4000:])
+m = re.search(r"([0-9a-f]{40}) is the first bad commit", run.stdout)
+if m:
+    sha = m.group(1)
+    log = subprocess.run(["git","-C",tree,"log","-1","--format=%h %an %ad %s", sha],
+                         capture_output=True, text=True).stdout.strip()
+    print(f"\n── FIRST BAD COMMIT\n   {log}")
+    record({"result": "first_bad_commit", "sha": sha, "summary": log})
+else:
+    print("\n── no single first-bad commit identified; see the log above "
+          "(usually every candidate was skipped, which means the metric was never measurable)")
+subprocess.run(["git","-C",tree,"bisect","reset"], capture_output=True)

@@ -514,8 +514,12 @@ Any new finding must be hand-adjudicated before this lands. A true positive is a
 reporting; a false positive means the R8-04/R8-07 conditions are too loose and the offending clause
 is removed and re-pinned as `known_evasion`, not softened.
 
-Add a latency delta to the bench row: the new pass is one extra whole-file traversal per file, and
-`eval:bench` is the only place that would notice.
+**[CORRECTED — this understated the cost and named the wrong instrument.]** Measured: openstatus
+scan median **3.63s -> 4.25s, +17%**, 5 runs each, ranges non-overlapping (3.60-3.67 vs 4.23-4.30).
+`eval:bench` does NOT notice — it carries no timing field and passes. The cost is only visible by
+timing the binary directly, which means the repo has no gate on it. That is a finding about the
+gate, not just about this change: R8-15 should state the number, and a latency ratchet remains
+unbuilt (benchmark report recommendation 8).
 
 ## R8-15 — ship gate
 
@@ -531,7 +535,8 @@ Add a latency delta to the bench row: the new pass is one extra whole-file trave
 # PART 5 — RISK, ROLLBACK, AND WHAT THIS IS NOT
 
 **Blast radius.** One new post-pass in `facts.rs`, one new arm in `main.rs`, one widened filter in
-each walker, one edge kind added to `edgeKindsForCheck`, and one no-op storage migration. No storage migration, no new dependency, no new process, no change to the resolver, no
+each walker, one edge kind added to `edgeKindsForCheck`, and one no-op storage migration
+(`037_binding_alias_fact_kinds`). No new dependency, no new process, no change to the resolver, no
 change to how findings are attributed or messaged. Evidence class stays `deterministic_ast`, so the
 new relation is blocking-eligible under `adapter-certification.md` — unlike anything sourced from an
 external type checker, which lands in `external_tool` and is capped at "depends on certification."

@@ -1,0 +1,11 @@
+CONNECTED_OK
+SERVER_VERSION: {"name":"drift-local","version":"0.1.0"}
+SERVER_CAPS: {"tools":{}}
+TOOLS_COUNT: 12
+TOOL_NAMES: ["get_allowed_context","get_audit_status","get_capabilities","get_conventions","get_findings","get_repo_contract","get_repo_map","get_required_check_executions","get_runtime_info","get_scan_status","get_security_context","get_task_preflight"]
+CALL_get_runtime_info_isError: false
+CALL_get_runtime_info_content_type: text
+CALL_get_scan_status_isError: false
+CALL_get_scan_status_repo_id_matches: true
+UNKNOWN_TOOL_THREW: true MCP error -32000: Unknown read-only Drift MCP tool: get_totally_unknown_tool
+CLOSED_OK

@@ -1,0 +1,1 @@
+Command is not an approved safe command: drift check --diff main...HEAD --repo repo_68a494d2b8491ebb --scope changed-hunks --json

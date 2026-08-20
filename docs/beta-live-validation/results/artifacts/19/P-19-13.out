@@ -1,0 +1,14 @@
+{
+ "security_context_schema": "drift.security.context.v2",
+ "security_context_has_repo_security_contracts": true,
+ "allowed_context_decision": {
+  "allowed": false,
+  "surface": "mcp",
+  "mode": "denied",
+  "reason": "full file content is denied by repo policy",
+  "max_snippet_chars": 0,
+  "approved_snippet_chars": 0
+ },
+ "allowed_context_denies_full_file_by_default": true,
+ "no_source_text_field": false
+}

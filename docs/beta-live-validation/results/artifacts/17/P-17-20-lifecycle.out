@@ -1,0 +1,10 @@
+storage lifecycle: 32 tables, 9 orphaned method(s) (3 writer, 6 reader), 9 baselined.
+  r getScanManifest (scan_manifests)
+  r listCheckRuns (check_runs)
+  r listFrameworkAdapters (framework_adapters)
+  r listGraphCompleteness (graph_completeness)
+  r listModuleDependents (module_dependents)
+  r listSymbolOccurrences (symbol_occurrences)
+  W upsertParserGapV2 (parser_gaps)
+  W upsertSecurityBoundaryProofs (security_boundary_proofs)
+  W upsertSymbolIdentities (symbol_identities)

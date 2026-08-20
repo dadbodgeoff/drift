@@ -1,0 +1,9 @@
+{
+ "exit": 0,
+ "n_requests": 1000,
+ "n_responses": 1000,
+ "n_ok": 1000,
+ "total_elapsed_s": 32.07,
+ "avg_ms_per_call": 32.07,
+ "throughput_calls_per_s": 31.2
+}

@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Mechanical checks over the probe ledgers. No model tokens required.
+
+    ledger-sweep                  # all charters
+    ledger-sweep 03 05            # specific ones
+
+Three things a model should never be asked to do by reading:
+  1. completeness  - which probes named by a charter never ran
+  2. contradiction - the same command with different exit codes in different charters
+  3. hygiene       - timeouts, exit 127, binary stdout, zero-byte results, absurd durations
+"""
+import hashlib, json, os, re, sys, collections
+
+SENTINELS = [x for x in os.environ.get("DRIFT_BETA_REDACT", "").split(":") if x]
+def redact(t):
+    for x in SENTINELS: t = t.replace(x, "[REDACTED:%s]" % hashlib.sha256(x.encode()).hexdigest()[:8])
+    return t
+led = os.environ["DRIFT_BETA_LEDGER"]
+want = sys.argv[1:]
+charters = sorted(f[:-6] for f in os.listdir(led) if f.endswith(".jsonl"))
+if want: charters = [c for c in charters if c in want]
+
+rows_by_charter, by_cmd = {}, collections.defaultdict(list)
+for c in charters:
+    rows = [json.loads(l) for l in open(os.path.join(led, c + ".jsonl"))]
+    rows = [r for r in rows if "probe" in r]   # defensive: never crash the between-wave sweep
+    rows_by_charter[c] = rows
+    for r in rows: by_cmd[" ".join(r["command"])].append(r)
+
+print("── completeness ──")
+spec_dir = os.path.join(os.environ.get("DRIFT_BETA_SRC",""), "docs/beta-live-validation")
+for c in charters:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _probelib import canonical_probe_id
+    ran = {canonical_probe_id(r["probe"]) for r in rows_by_charter[c]}
+    named = set()
+    for fn in os.listdir(spec_dir) if os.path.isdir(spec_dir) else []:
+        if fn.startswith(c + "-"):
+            named = set(re.findall(r"\bP-%s-[0-9a-z]+\b" % c, open(os.path.join(spec_dir, fn)).read()))
+    missing = sorted(named - ran)
+    extra   = sorted(ran - named) if named else []
+    status = "ok" if named and not missing else ("NO SPEC" if not named else "INCOMPLETE")
+    print(f"  {c}: {len(ran)} ran / {len(named)} named  [{status}]"
+          + (f"  missing: {', '.join(missing[:8])}" + (" …" if len(missing) > 8 else "") if missing else "")
+          + (f"  unlisted: {', '.join(extra[:5])}" if extra else ""))
+
+print("── contradictions ──")
+n = 0
+for cmd, rs in by_cmd.items():
+    cs = {r["charter"] for r in rs}
+    if len(cs) < 2: continue
+    codes = {r["exit_code"] for r in rs}
+    if len(codes) > 1:
+        n += 1
+        print(f"  EXIT DIVERGENCE {sorted(codes)} across charters {sorted(cs)}")
+        print("    " + redact(cmd[:140]))
+        for r in rs: print(f"      {r['charter']}/{r['probe']} exit={r['exit_code']} {r['stdout_path']}")
+        # Offer the environment difference FIRST. An identical command that read different inputs is
+        # the commonest explanation of a contradiction, and the least visible from the command text.
+        envs = {r["charter"] + "/" + r["probe"]: (r.get("env") or {}) for r in rs}
+        keys = sorted({k for e in envs.values() for k in e})
+        differing = [k for k in keys if len({str(e.get(k)) for e in envs.values()}) > 1]
+        cwds = {r.get("cwd") for r in rs}
+        if differing or len(cwds) > 1:
+            print("      LIKELY CAUSE - these runs did not read the same inputs:")
+            for k in differing:
+                for lbl, e in sorted(envs.items()): print(f"        {lbl}: {k}={e.get(k)}")
+            if len(cwds) > 1:
+                for r in rs: print(f"        {r['charter']}/{r['probe']}: cwd={r.get('cwd')}")
+        elif not any(envs.values()):
+            print("      (no environment on these rows - re-run with a current run-probe)")
+    else:
+        hs = {r["stdout_sha256"] for r in rs}
+        if len(hs) > 1:
+            n += 1
+            print(f"  OUTPUT DIVERGENCE (same exit {codes.pop()}) across {sorted(cs)}")
+            print("    " + redact(cmd[:140]))
+if not n: print("  none")
+
+print("── hygiene ──")
+flags = collections.Counter()
+for c, rows in rows_by_charter.items():
+    for r in rows:
+        if r.get("timed_out"):                 flags[f"{c}: TIMEOUT {r['probe']}"] += 1
+        if r["exit_code"] == 127:              flags[f"{c}: COMMAND NOT FOUND {r['probe']}"] += 1
+        if r.get("exit_matched") is False:     flags[f"{c}: EXIT MISMATCH {r['probe']}"] += 1
+        if r["exit_code"] == 0 and r["stdout_bytes"] == 0 and r["stderr_bytes"] == 0:
+            flags[f"{c}: SILENT SUCCESS {r['probe']}"] += 1
+        if r["duration_ms"] > 300_000:         flags[f"{c}: >5min {r['probe']}"] += 1
+shas = {r.get("sha_under_test") for rows in rows_by_charter.values() for r in rows}
+if len(shas) > 1:
+    print(f"  !! PROBES SPAN {len(shas)} SUBJECTS: {sorted(x or 'unset' for x in shas)}")
+    print("     the program measured more than one build - results are not comparable")
+for k in sorted(flags): print("  " + k)
+if not flags and len(shas) <= 1: print("  clean")

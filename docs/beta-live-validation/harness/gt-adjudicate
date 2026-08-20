@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Turn machine proposals into human ground truth, and measure how much the machine can be trusted.
+
+    gt-adjudicate <proposals.json> --sample N --labeler NAME [--out reviewed.json]
+    gt-adjudicate <proposals.json> --accept-all --labeler NAME    (only after a clean sample)
+
+The honest way to use a proposer: adjudicate a random sample by hand, compute agreement between
+the human and the machine, and let that kappa decide whether the rest can be accepted in bulk.
+Accepting proposals wholesale without measuring that is how a corpus ends up grading a tool against
+its own assumptions.
+
+Prints the sample with its evidence lines so a human can rule on each without opening the repo.
+"""
+import hashlib, json, os, sys
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+a = sys.argv[1:]
+if not a: sys.exit(__doc__)
+doc = json.load(open(a[0]))
+def opt(n, d=None): return a[a.index(n)+1] if n in a else d
+labeler = opt("--labeler") or sys.exit("--labeler is required: a label needs an author")
+props = doc["proposed"]
+
+if "--sample" in a:
+    n = int(opt("--sample"))
+    # Deterministic sample: reproducible, and not cherry-picked.
+    if "--sample-stratified" in a:
+        # Skewed samples cannot prove agreement (see the kappa note below). Draw evenly per class.
+        byl = {}
+        for p_ in sorted(props, key=lambda p: hashlib.sha256(p["id"].encode()).hexdigest()):
+            byl.setdefault(p_["label"], []).append(p_)
+        ordered, i = [], 0
+        while len(ordered) < n and any(byl.values()):
+            for lab in list(byl):
+                if byl[lab] and len(ordered) < n: ordered.append(byl[lab].pop(0))
+            i += 1
+    else:
+        ordered = sorted(props, key=lambda p: hashlib.sha256(p["id"].encode()).hexdigest())[:n]
+    print(f"── adjudication sample · {len(ordered)} of {len(props)} proposals · kind={doc['kind']}\n")
+    for i, p in enumerate(ordered, 1):
+        print(f"[{i}] {p['file']}")
+        print(f"    machine says: {p['label']}  ({p['confidence']})")
+        print(f"    because: {p['justification']}")
+        print(f"    evidence lines: {p['evidence_lines']}")
+        print(f"    your call (violating|compliant|not-applicable): ______\n")
+    print("Record your calls as a JSON array of {\"id\":..., \"label\":...} and re-run with --verdicts.")
+    sys.exit(0)
+
+if "--verdicts" in a:
+    human = {v["id"]: v["label"] for v in json.load(open(opt("--verdicts")))}
+    pairs = [(p["label"], human[p["id"]]) for p in props if p["id"] in human]
+    if not pairs: sys.exit("no overlap between proposals and verdicts")
+    import collections
+    m, hm = [x[0] for x in pairs], [x[1] for x in pairs]
+    k = S.cohen_kappa(m, hm)
+    agree = sum(1 for x, y in pairs if x == y) / len(pairs)
+    pabak = 2 * agree - 1                      # prevalence-adjusted, bias-adjusted kappa
+    dist = collections.Counter(hm)
+    skew = max(dist.values()) / len(pairs)
+    print(f"── machine vs human over {len(pairs)} adjudicated proposals")
+    print(f"   human label distribution: " + ", ".join(f"{k_}={v}" for k_, v in dist.most_common()))
+    print(f"   raw agreement: {agree:.3f}    Cohen's kappa: {k:.3f}    PABAK: {pabak:.3f}")
+    if skew > 0.8 and k is not None and k < 0.8 <= pabak:
+        print(f"   NOTE: {skew:.0%} of the sample is one class. Cohen's kappa is deflated under that")
+        print( "   skew (the kappa paradox): chance agreement is already high, so a high raw")
+        print( "   agreement scores low. PABAK is the companion statistic that removes the")
+        print( "   prevalence effect. This gate does NOT auto-pass on PABAK - a skewed sample")
+        print( "   genuinely carries less information, and the right response is usually to")
+        print( "   over-sample the minority class, not to lower the bar.")
+    for p in props:
+        if p["id"] in human and p["label"] != human[p["id"]]:
+            print(f"   DISAGREE {p['file']}: machine={p['label']} human={human[p['id']]}")
+            print(f"            {p['justification']}")
+    if k is not None and k >= 0.8:
+        print(f"\n   kappa >= 0.8: the remaining {len(props)-len(pairs)} proposals may be accepted in")
+        print( "   bulk, stamped with this sample as their warrant.")
+        sys.exit(0)
+    if skew > 0.8 and pabak >= 0.8:
+        print(f"\n   INCONCLUSIVE: raw agreement is high but the sample is too skewed to prove it.")
+        print(f"   Re-sample with the minority class over-represented "
+              f"(--sample-stratified), then re-run.")
+        sys.exit(2)
+    print(f"\n   kappa < 0.8: the proposer is NOT reliable enough for bulk acceptance on this")
+    print( "   kind. Adjudicate them individually, or fix the proposal rule and re-sample.")
+    sys.exit(1)
+
+if "--accept-all" in a:
+    out = opt("--out") or sys.exit("--out is required")
+    for p in props:
+        p["labeler"] = labeler
+        p["adjudicated_by"] = labeler
+        p["machine_proposal"] = p.get("labeler")
+    json.dump(props, open(out, "w"), indent=1)
+    print(f"wrote {len(props)} adjudicated labels to {out}")
+    print("feed them in with:  gt add < " + out)
+    sys.exit(0)
+sys.exit(__doc__)

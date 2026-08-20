@@ -1,0 +1,81 @@
+{
+  "repo_id": "repo_68a494d2b8491ebb",
+  "kind": "all",
+  "path": null,
+  "policy": {
+    "allowed": true,
+    "surface": "cli-preflight",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "contract": {
+    "id": "contract_68a494d2b8491ebb",
+    "schema_version": 1,
+    "updated_at": "2026-08-19T15:36:07.933Z"
+  },
+  "summary": {
+    "required_count": 1,
+    "safe_count": 0,
+    "total_count": 1,
+    "filtered_count": 1,
+    "listed_count": 1
+  },
+  "pagination": {
+    "limit": null,
+    "offset": 0,
+    "returned_count": 1,
+    "has_more": false,
+    "next_offset": null
+  },
+  "required_checks": [
+    {
+      "command": "drift check --diff main...HEAD --repo repo_68a494d2b8491ebb --scope changed-hunks --json",
+      "applies_to": {
+        "path_globs": [
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "reason": "Block newly introduced deterministic convention violations before code is merged.",
+      "matched_files": []
+    }
+  ],
+  "safe_commands": []
+}

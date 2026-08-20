@@ -1,0 +1,150 @@
+{
+  "response_schema": "drift.scan.status.v1",
+  "repo_id": "repo_abba3c0bac120939",
+  "repo_root": "/tmp/drift-beta.17.P-17-13.K1Brrd/repo",
+  "latest_scan": null,
+  "scan_fingerprint": null,
+  "indexed_file_count": 0,
+  "source_change_count": 0,
+  "latest_scan_change_summary": {
+    "added": 0,
+    "modified": 0,
+    "deleted": 0,
+    "unchanged": 0,
+    "total": 0
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "summary": {
+    "latest_scan_id": null,
+    "scan_count": 0,
+    "indexed_file_count": 0,
+    "source_change_count": 0,
+    "stale": true,
+    "invalidation_count": 1,
+    "audit_valid": true
+  },
+  "audit_integrity": {
+    "repo_id": "repo_abba3c0bac120939",
+    "valid": true,
+    "event_count": 2,
+    "verified_count": 2,
+    "head_event_hash": "1d0cc602807238045611fa6b6852d617399946ae5561abb1283f49994e3b6b74",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "stale": true,
+  "invalidation_reasons": [
+    "scan_missing"
+  ],
+  "changes": {
+    "added": [],
+    "modified": [],
+    "deleted": []
+  },
+  "parser_gaps": {
+    "total_count": 0,
+    "by_kind": {},
+    "confidence_impact": {},
+    "by_capability": {},
+    "by_contract_kind": {},
+    "records": []
+  },
+  "parser_gap_quality": {
+    "schema_version": "drift.parser_gap_quality.v1",
+    "repo_id": "repo_abba3c0bac120939",
+    "scan_id": null,
+    "surface": "scan_status",
+    "total_count": 0,
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "by_kind": {},
+    "by_capability": {},
+    "by_contract_kind": {},
+    "top_actions": [],
+    "sample_gaps": [],
+    "decision": "refuse",
+    "user_action": "No parser gap action required."
+  },
+  "security_capabilities": [],
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_abba3c0bac120939",
+    "scan_id": null,
+    "surface": "scan_status",
+    "graph_available": false,
+    "graph_complete": false,
+    "parser_gap_count": 0,
+    "parser_gaps_by_kind": {},
+    "confidence": 0,
+    "decision": "refuse",
+    "reasons": [
+      "graph_incomplete",
+      "graph_missing",
+      "graph_unavailable",
+      "missing_capability:fact_graph",
+      "missing_capability:scan_manifest",
+      "scan_missing"
+    ],
+    "required_capabilities": [
+      "fact_graph",
+      "scan_manifest"
+    ],
+    "missing_capabilities": [
+      "fact_graph",
+      "scan_manifest"
+    ]
+  },
+  "capability_report": null,
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 36,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0"
+    }
+  },
+  "next_command": "drift scan --repo-root /tmp/drift-beta.17.P-17-13.K1Brrd/repo --json",
+  "next_commands": [
+    "drift scan --repo-root /tmp/drift-beta.17.P-17-13.K1Brrd/repo --json",
+    "drift doctor --repo-root /tmp/drift-beta.17.P-17-13.K1Brrd/repo --json"
+  ]
+}

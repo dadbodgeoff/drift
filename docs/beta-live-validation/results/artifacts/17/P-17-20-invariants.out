@@ -1,0 +1,3 @@
+storage invariants: 24 scan-scoped table(s), 7 upsert(s) checked, 2 stale, 2 baselined.
+  ! security_boundary_proof_runs:1344
+  ! required_check_executions:2198

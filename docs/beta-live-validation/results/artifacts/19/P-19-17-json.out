@@ -1,0 +1,2378 @@
+{
+  "response_schema": "drift.task.preflight.v1",
+  "guidance": {
+    "schema_version": "drift.guidance.v1",
+    "conventions": [
+      {
+        "id": "convention_572bf7b306010298",
+        "kind": "api_route_no_direct_data_access",
+        "statement": "API routes should not import data-access clients directly.",
+        "scope": {
+          "path_globs": [
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
+            "**/pages/api/**/*.ts",
+            "**/pages/api/**/*.tsx",
+            "**/pages/api/**/*.js",
+            "**/pages/api/**/*.jsx"
+          ],
+          "file_roles": [
+            "api_route"
+          ]
+        },
+        "matcher": {
+          "kind": "api_route_no_direct_data_access",
+          "forbidden_imports": [
+            "@/lib/db"
+          ],
+          "applies_to_file_roles": [
+            "api_route"
+          ]
+        },
+        "mode": "warn",
+        "will_this_block": false,
+        "migration_sentence": "4 existing violations are baselined and do not block; new code is held to this rule.",
+        "conforming_examples": [
+          {
+            "file_path": "app/api/og/route.tsx",
+            "role": "api_route"
+          },
+          {
+            "file_path": "app/api/users/stripe/route.ts",
+            "role": "api_route"
+          },
+          {
+            "file_path": "pages/api/auth/[...nextauth].ts",
+            "role": "api_route"
+          }
+        ],
+        "conforming_examples_reason": null,
+        "reason": "Route modules are transport: they parse a request, delegate, and serialize a response. Reaching into the data layer from a route couples the HTTP surface to storage, so auth, validation, and query shape stop being enforceable in one place."
+      }
+    ],
+    "relevant_files": [
+      {
+        "path": "app/api/webhooks/stripe/route.ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "app/api/users/stripe/route.ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "components/theme-provider.tsx",
+        "reason": "task token: the"
+      },
+      {
+        "path": "lib/stripe.ts",
+        "reason": "task token: stripe"
+      },
+      {
+        "path": "app/api/og/route.tsx",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "app/api/posts/[postId]/route.ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "app/api/posts/route.ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "app/api/users/[userId]/route.ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      },
+      {
+        "path": "pages/api/auth/[...nextauth].ts",
+        "reason": "in scope for convention_572bf7b306010298"
+      }
+    ],
+    "required_checks": [
+      {
+        "command": "drift check --diff main...HEAD --repo repo_68a494d2b8491ebb --scope changed-hunks --json",
+        "reason": "Block newly introduced deterministic convention violations before code is merged."
+      }
+    ],
+    "not_covered": "Drift enforces only this kind of rule here: api_route_no_direct_data_access. Everything else - naming, error handling, test style, performance, security beyond the listed matchers - is uncovered: Drift's silence about it is silence, not approval.",
+    "parser_gaps": {
+      "count": 6,
+      "by_code": [
+        {
+          "code": "unresolved_import",
+          "count": 6
+        }
+      ],
+      "full_list_command": "drift scan status --repo repo_68a494d2b8491ebb --json"
+    },
+    "truncated": {
+      "conventions": false,
+      "relevant_files": false,
+      "required_checks": false
+    }
+  },
+  "repo_id": "repo_68a494d2b8491ebb",
+  "task": "add rate limiting to the stripe webhook",
+  "target_path": null,
+  "generated_at": "2026-08-19T15:45:26.901Z",
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "safe_to_edit",
+    "surface": "cli-preflight",
+    "read_only": true,
+    "policy": {
+      "allowed": true,
+      "surface": "cli-preflight",
+      "reason": "metadata-only local preflight packet"
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": true,
+      "latest_scan_id": "scan_bd29d7752c0dd3a8"
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": true,
+      "mode": "local_only",
+      "reason": "metadata-only local preflight packet",
+      "max_snippet_chars": 1200,
+      "approved_snippet_chars": 1200,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "metadata_only"
+    },
+    "diagnostics": [
+      "import_resolution_incomplete",
+      "resolver_dependencies_missing",
+      "route_not_found",
+      "unresolved_import:7"
+    ]
+  },
+  "policy": {
+    "allowed": true,
+    "surface": "cli-preflight",
+    "mode": "local_only",
+    "reason": "metadata-only local preflight packet",
+    "max_snippet_chars": 1200,
+    "approved_snippet_chars": 1200
+  },
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "surface": "prepare",
+    "graph_available": true,
+    "graph_complete": false,
+    "parser_gap_count": 6,
+    "parser_gaps_by_kind": {
+      "unresolved_import": 6
+    },
+    "confidence": 0.6,
+    "decision": "refuse",
+    "reasons": [
+      "graph_incomplete",
+      "import_resolution_incomplete",
+      "parser_gaps_present",
+      "resolver_dependencies_missing"
+    ],
+    "required_capabilities": [
+      "route_flow"
+    ],
+    "missing_capabilities": []
+  },
+  "parser_gap_quality": {
+    "schema_version": "drift.parser_gap_quality.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "surface": "prepare",
+    "total_count": 6,
+    "blocking_count": 0,
+    "advisory_count": 6,
+    "by_kind": {
+      "unresolved_import": 6
+    },
+    "by_capability": {},
+    "by_contract_kind": {},
+    "top_actions": [
+      {
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "count": 6
+      }
+    ],
+    "sample_gaps": [
+      {
+        "parser_gap_id": "parser_gap_3653aad5ce0c6b26",
+        "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_2de9bed0b26cd4ae",
+        "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_6592ee64457a94e9",
+        "file_path": "app/(docs)/guides/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_2f834db9dc81a509",
+        "file_path": "app/(marketing)/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_1f2e81f068148caf",
+        "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx."
+      }
+    ],
+    "decision": "refuse",
+    "user_action": "Restore graph evidence and rerun drift scan before relying on blocking enforcement."
+  },
+  "semantic_coverage": {
+    "schema_version": "drift.semantic_coverage.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "scope": "preflight",
+    "scope_id": "add rate limiting to the stripe webhook",
+    "required_capabilities": [
+      "file_discovery",
+      "graph_stream",
+      "route_flow",
+      "syntax_facts"
+    ],
+    "complete_capabilities": [
+      "file_discovery",
+      "graph_stream",
+      "route_flow",
+      "syntax_facts"
+    ],
+    "partial_capabilities": [],
+    "missing_capabilities": [],
+    "unsupported_capabilities": [],
+    "parser_gap_ids": [
+      "parser_gap_1f2e81f068148caf",
+      "parser_gap_2de9bed0b26cd4ae",
+      "parser_gap_2f834db9dc81a509",
+      "parser_gap_3653aad5ce0c6b26",
+      "parser_gap_6592ee64457a94e9",
+      "parser_gap_73ef92be6841f6cd"
+    ],
+    "unsupported_pattern_ids": [],
+    "confidence": 0.6,
+    "decision": "refuse",
+    "reasons": [
+      "graph_incomplete",
+      "import_resolution_incomplete",
+      "parser_gaps_present",
+      "resolver_dependencies_missing"
+    ],
+    "generated_at": "2026-08-19T15:45:26.901Z"
+  },
+  "contract": {
+    "id": "contract_68a494d2b8491ebb",
+    "schema_version": 1,
+    "updated_at": "2026-08-19T15:36:07.933Z",
+    "ready": true,
+    "source": "accepted_contract"
+  },
+  "summary": {
+    "convention_count": 1,
+    "relevant_file_count": 9,
+    "risky_area_count": 1,
+    "waiver_count": 0,
+    "finding_count": 4,
+    "blocking_finding_count": 0,
+    "required_check_count": 1,
+    "safe_command_count": 0,
+    "baseline_active_count": 4,
+    "scan_stale": true,
+    "contract_ready": true,
+    "candidate_count": 2
+  },
+  "conventions": [
+    {
+      "id": "convention_572bf7b306010298",
+      "kind": "api_route_no_direct_data_access",
+      "statement": "API routes should not import data-access clients directly.",
+      "severity": "error",
+      "enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "scope": {
+        "path_globs": [
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_no_direct_data_access",
+        "forbidden_imports": [
+          "@/lib/db"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "exceptions": [],
+      "agent_instruction": "When editing API route files, do not import data-access clients directly. Forbidden imports: @/lib/db. Delegate through the repo's accepted service/data-access layer and run drift check before finishing.",
+      "conforming_examples": [
+        {
+          "file_path": "app/api/og/route.tsx",
+          "role": "api_route"
+        },
+        {
+          "file_path": "app/api/users/stripe/route.ts",
+          "role": "api_route"
+        },
+        {
+          "file_path": "pages/api/auth/[...nextauth].ts",
+          "role": "api_route"
+        }
+      ],
+      "conforming_examples_reason": null,
+      "rationale": {
+        "derivation": "Detected API route imports that look like database/data-access clients.",
+        "reason": "Route modules are transport: they parse a request, delegate, and serialize a response. Reaching into the data layer from a route couples the HTTP surface to storage, so auth, validation, and query shape stop being enforceable in one place."
+      },
+      "migration_sentence": "4 existing violations are baselined and do not block; new code is held to this rule."
+    }
+  ],
+  "audit_integrity": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "valid": true,
+    "event_count": 4,
+    "verified_count": 4,
+    "head_event_hash": "7c62732c913c6bb586f2273d1694aae08df79f54b9dfbc288d4aefcd2ea1ef17",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "scan_status": {
+    "response_schema": "drift.scan.status.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "repo_root": "/tmp/drift-beta.19.setup.46JxIf/repo",
+    "current_branch": "main",
+    "latest_scan": {
+      "id": "scan_bd29d7752c0dd3a8",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "branch": "main",
+      "commit": "adab025e172273d9367207f3f40a257316a089e7",
+      "dirty": false,
+      "scanner_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      },
+      "rule_engine_version": "0.1.0",
+      "status": "completed",
+      "file_count": 132,
+      "fact_count": 1850,
+      "finding_count": 0,
+      "started_at": "2026-08-19T15:36:07.933Z",
+      "completed_at": "2026-08-19T15:36:07.933Z"
+    },
+    "scan_fingerprint": "7c51a68fcacc9e2072865da749a028a6f27ae5c146e1368814764807b6725334",
+    "stored_fact_count": 1850,
+    "indexed_file_count": 132,
+    "source_change_count": 1,
+    "scan_count": 1,
+    "latest_scan_change_summary": {
+      "added": 132,
+      "modified": 0,
+      "deleted": 0,
+      "unchanged": 0,
+      "total": 132
+    },
+    "governance": {
+      "read_only": true,
+      "agent_can_mutate": false,
+      "allowed_agent_actions": [
+        "read_context",
+        "request_preflight",
+        "propose_resolution"
+      ],
+      "human_approval_required_for": [
+        "accept_convention",
+        "reject_convention",
+        "edit_convention",
+        "add_exception",
+        "add_contract_waiver",
+        "mark_needs_review",
+        "suppress_finding",
+        "accept_drift",
+        "mark_false_positive",
+        "change_policy",
+        "grant_agent_permission",
+        "export_contract",
+        "import_contract",
+        "create_backup",
+        "restore_backup"
+      ]
+    },
+    "summary": {
+      "latest_scan_id": "scan_bd29d7752c0dd3a8",
+      "scan_count": 1,
+      "indexed_file_count": 132,
+      "source_change_count": 1,
+      "stale": true,
+      "invalidation_count": 0,
+      "audit_valid": true
+    },
+    "audit_integrity": {
+      "repo_id": "repo_68a494d2b8491ebb",
+      "valid": true,
+      "event_count": 4,
+      "verified_count": 4,
+      "head_event_hash": "7c62732c913c6bb586f2273d1694aae08df79f54b9dfbc288d4aefcd2ea1ef17",
+      "broken_at_event_id": null,
+      "reasons": []
+    },
+    "stale": true,
+    "invalidation_reasons": [],
+    "changes": {
+      "added": [],
+      "modified": [
+        "app/api/webhooks/stripe/route.ts"
+      ],
+      "deleted": []
+    },
+    "parser_gaps": {
+      "total_count": 6,
+      "by_kind": {
+        "unresolved_import": 6
+      },
+      "confidence_impact": {
+        "lowers_flow": 6
+      },
+      "by_capability": {},
+      "by_contract_kind": {},
+      "records": [],
+      "records_omitted": 6,
+      "records_command": "drift scan status --repo repo_68a494d2b8491ebb --json"
+    },
+    "parser_gap_quality": {
+      "schema_version": "drift.parser_gap_quality.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "surface": "scan_status",
+      "total_count": 6,
+      "blocking_count": 0,
+      "advisory_count": 6,
+      "by_kind": {
+        "unresolved_import": 6
+      },
+      "by_capability": {},
+      "by_contract_kind": {},
+      "top_actions": [
+        {
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "count": 6
+        }
+      ],
+      "sample_gaps": [
+        {
+          "parser_gap_id": "parser_gap_3653aad5ce0c6b26",
+          "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_2de9bed0b26cd4ae",
+          "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_6592ee64457a94e9",
+          "file_path": "app/(docs)/guides/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_2f834db9dc81a509",
+          "file_path": "app/(marketing)/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx."
+        },
+        {
+          "parser_gap_id": "parser_gap_1f2e81f068148caf",
+          "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "unresolved_import",
+          "confidence_impact": "lowers_flow",
+          "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+          "affected_capabilities": [],
+          "affected_contract_kinds": [],
+          "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx."
+        }
+      ],
+      "decision": "advisory_only",
+      "user_action": "Review advisory parser gaps; blocking enforcement remains limited to complete evidence."
+    },
+    "readiness": {
+      "schema_version": "drift.readiness.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "surface": "scan_status",
+      "graph_available": true,
+      "graph_complete": true,
+      "parser_gap_count": 6,
+      "parser_gaps_by_kind": {
+        "unresolved_import": 6
+      },
+      "confidence": 0.82,
+      "decision": "advisory_only",
+      "reasons": [
+        "parser_gaps_present"
+      ],
+      "required_capabilities": [
+        "fact_graph"
+      ],
+      "missing_capabilities": []
+    },
+    "capability_report": {
+      "schema_version": "drift.scan_capability_report.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "engine_source": "rust",
+      "engine_version": null,
+      "scanner_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      },
+      "certified_capabilities": [
+        "auth_boundary_facts",
+        "candidate_inference",
+        "control_flow_guard_dominance",
+        "data_operation_detection",
+        "direct_data_access_check",
+        "file_discovery",
+        "graph_stream",
+        "import_resolution",
+        "route_detection",
+        "route_flow",
+        "security_facts",
+        "static_imports",
+        "symbol_linking",
+        "syntax_facts"
+      ],
+      "required_capabilities": [
+        "file_discovery",
+        "graph_stream",
+        "syntax_facts"
+      ],
+      "missing_capabilities": [],
+      "completeness": [
+        {
+          "scope": "repo",
+          "complete": true,
+          "can_block": true,
+          "reasons": []
+        }
+      ],
+      "parser_gap_count": 7,
+      "parser_gap_kinds": {
+        "unresolved_import": 7
+      },
+      "fallback_used": false,
+      "enforcement_degraded": false,
+      "engine_resolution": "env_override",
+      "engine_build_profile": "release",
+      "created_at": "2026-08-19T15:36:07.933Z"
+    },
+    "security_capabilities": [],
+    "machine_contract_versions": {
+      "schema_version": "drift.machine_contract_versions.v1",
+      "cli_version": "0.1.0",
+      "core_version": "0.1.0",
+      "storage_schema_version": 36,
+      "contract_schema_version": 1,
+      "engine_contract_versions": {
+        "scan_request": "engine.scan.request.v1",
+        "scan_result": "engine.scan.result.v1",
+        "check_request": "engine.check.request.v1",
+        "check_result": "engine.check.result.v1",
+        "candidates_result": "engine.candidates.result.v1",
+        "stream_event": "engine.stream.event.v1"
+      },
+      "factgraph_schema_version": "factgraph.v2",
+      "scanner_version": "0.1.0",
+      "rule_engine_version": "0.1.0",
+      "adapter_versions": {
+        "typescript": "0.1.0",
+        "resolver": "0.1.0",
+        "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+        "engine": "0.1.0"
+      }
+    },
+    "next_command": "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+    "next_commands": [
+      "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+      "drift doctor --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json"
+    ]
+  },
+  "freshness_requirement": {
+    "required": false,
+    "satisfied": false,
+    "next_command": "drift scan --repo-root /tmp/drift-beta.19.setup.46JxIf/repo --json",
+    "invalidation_reasons": []
+  },
+  "graph_context": {
+    "available": true,
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "completeness": {
+      "complete": false,
+      "reasons": [
+        "import_resolution_incomplete",
+        "resolver_dependencies_missing"
+      ]
+    },
+    "route_flows": [
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:GET:app/api/og/route.tsx",
+        "path": "app/api/og/route.tsx",
+        "method": "GET",
+        "route_pattern": "/api/og",
+        "framework_role": "next_app_route",
+        "dynamic_params": [],
+        "complete": true,
+        "route_module_id": "module:app/api/og/route.tsx",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/og/route.tsx:function:GET"
+        ],
+        "service_module_ids": [
+          "module:lib/validations/og.ts"
+        ],
+        "data_access_module_ids": [],
+        "module_path": [
+          "module:app/api/og/route.tsx",
+          "module:lib/validations/og.ts"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "No reachable data-access module was found from this route graph."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:DELETE:app/api/posts/[postId]/route.ts",
+        "path": "app/api/posts/[postId]/route.ts",
+        "method": "DELETE",
+        "route_pattern": "/api/posts/:postId",
+        "framework_role": "next_app_route",
+        "dynamic_params": [
+          "postId"
+        ],
+        "complete": true,
+        "route_module_id": "module:app/api/posts/[postId]/route.ts",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/posts/[postId]/route.ts:function:DELETE"
+        ],
+        "service_module_ids": [
+          "module:env.mjs",
+          "module:lib/auth.ts",
+          "module:lib/validations/post.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:app/api/posts/[postId]/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/validations/post.ts",
+          "module:config/site.ts",
+          "module:env.mjs"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_delete",
+            "operation_kind": "delete",
+            "operation_name": "delete",
+            "store_name": "post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 28
+          },
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 63
+          }
+        ],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:GET:app/api/posts/route.ts",
+        "path": "app/api/posts/route.ts",
+        "method": "GET",
+        "route_pattern": "/api/posts",
+        "framework_role": "next_app_route",
+        "dynamic_params": [],
+        "complete": true,
+        "route_module_id": "module:app/api/posts/route.ts",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/posts/route.ts:function:GET"
+        ],
+        "service_module_ids": [
+          "module:config/subscriptions.ts",
+          "module:env.mjs",
+          "module:lib/auth.ts",
+          "module:lib/exceptions.ts",
+          "module:lib/subscription.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:app/api/posts/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/exceptions.ts",
+          "module:lib/subscription.ts",
+          "module:config/site.ts",
+          "module:env.mjs",
+          "module:config/subscriptions.ts"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "create",
+            "store_name": "post",
+            "file_path": "app/api/posts/route.ts",
+            "start_line": 69
+          }
+        ],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:PATCH:app/api/users/[userId]/route.ts",
+        "path": "app/api/users/[userId]/route.ts",
+        "method": "PATCH",
+        "route_pattern": "/api/users/:userId",
+        "framework_role": "next_app_route",
+        "dynamic_params": [
+          "userId"
+        ],
+        "complete": true,
+        "route_module_id": "module:app/api/users/[userId]/route.ts",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/users/[userId]/route.ts:function:PATCH"
+        ],
+        "service_module_ids": [
+          "module:env.mjs",
+          "module:lib/auth.ts",
+          "module:lib/validations/user.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:app/api/users/[userId]/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/validations/user.ts",
+          "module:config/site.ts",
+          "module:env.mjs"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/users/[userId]/route.ts",
+            "start_line": 33
+          }
+        ],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:GET:app/api/users/stripe/route.ts",
+        "path": "app/api/users/stripe/route.ts",
+        "method": "GET",
+        "route_pattern": "/api/users/stripe",
+        "framework_role": "next_app_route",
+        "dynamic_params": [],
+        "complete": true,
+        "route_module_id": "module:app/api/users/stripe/route.ts",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/users/stripe/route.ts:function:GET"
+        ],
+        "service_module_ids": [
+          "module:config/subscriptions.ts",
+          "module:env.mjs",
+          "module:lib/auth.ts",
+          "module:lib/stripe.ts",
+          "module:lib/subscription.ts",
+          "module:lib/utils.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:app/api/users/stripe/route.ts",
+          "module:config/subscriptions.ts",
+          "module:lib/auth.ts",
+          "module:lib/stripe.ts",
+          "module:lib/subscription.ts",
+          "module:lib/utils.ts",
+          "module:env.mjs",
+          "module:config/site.ts",
+          "module:lib/db.ts"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "route_id": "route:POST:app/api/webhooks/stripe/route.ts",
+        "path": "app/api/webhooks/stripe/route.ts",
+        "method": "POST",
+        "route_pattern": "/api/webhooks/stripe",
+        "framework_role": "next_app_route",
+        "dynamic_params": [],
+        "complete": true,
+        "route_module_id": "module:app/api/webhooks/stripe/route.ts",
+        "route_handler_symbol_ids": [
+          "symbol:app/api/webhooks/stripe/route.ts:function:POST"
+        ],
+        "service_module_ids": [
+          "module:env.mjs",
+          "module:lib/stripe.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:app/api/webhooks/stripe/route.ts",
+          "module:env.mjs",
+          "module:lib/db.ts",
+          "module:lib/stripe.ts"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 35
+          },
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 57
+          }
+        ],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [
+          "route_not_found"
+        ],
+        "path": "pages/api/auth/[...nextauth].ts",
+        "dynamic_params": [],
+        "complete": false,
+        "route_module_id": "module:pages/api/auth/[...nextauth].ts",
+        "route_handler_symbol_ids": [],
+        "service_module_ids": [
+          "module:env.mjs",
+          "module:lib/auth.ts"
+        ],
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "module_path": [
+          "module:pages/api/auth/[...nextauth].ts",
+          "module:lib/auth.ts",
+          "module:config/site.ts",
+          "module:env.mjs",
+          "module:lib/db.ts"
+        ],
+        "unresolved_imports": [],
+        "risk_reasons": [],
+        "next_commands": [
+          "drift repo map --json",
+          "drift findings list --json"
+        ],
+        "recommended_action": "Review whether route data access is delegated through an accepted service layer."
+      }
+    ],
+    "reachable_data_access": [
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/og/route.tsx",
+        "method": "GET",
+        "data_access_module_ids": [],
+        "data_operations": [],
+        "risk_reasons": [],
+        "module_path": [
+          "module:app/api/og/route.tsx",
+          "module:lib/validations/og.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/posts/[postId]/route.ts",
+        "method": "DELETE",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:app/api/posts/[postId]/route.ts:0793f8b58bd5:db.post:delete:28-32",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 28,
+            "operation_kind": "delete",
+            "operation_name": "delete",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:app/api/posts/[postId]/route.ts:0793f8b58bd5:db.post:update:63-71",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 63,
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:app/api/posts/[postId]/route.ts:0793f8b58bd5:db.post:count:85-90",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 85,
+            "operation_kind": "read",
+            "operation_name": "count",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findUnique:32-39",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 32,
+            "operation_kind": "read",
+            "operation_name": "findUnique",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findFirst:84-88",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 84,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_delete",
+            "operation_kind": "delete",
+            "operation_name": "delete",
+            "store_name": "post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 28
+          },
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "post",
+            "file_path": "app/api/posts/[postId]/route.ts",
+            "start_line": 63
+          }
+        ],
+        "module_path": [
+          "module:app/api/posts/[postId]/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/validations/post.ts",
+          "module:config/site.ts",
+          "module:env.mjs"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/posts/route.ts",
+        "method": "GET",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:app/api/posts/route.ts:31f98edf51e7:db.post:findMany:23-33",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/route.ts",
+            "start_line": 23,
+            "operation_kind": "read",
+            "operation_name": "findMany",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:app/api/posts/route.ts:31f98edf51e7:db.post:count:55-59",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/route.ts",
+            "start_line": 55,
+            "operation_kind": "read",
+            "operation_name": "count",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:app/api/posts/route.ts:31f98edf51e7:db.post:create:69-78",
+            "data_store_node_id": "data_store:post",
+            "file_path": "app/api/posts/route.ts",
+            "start_line": 69,
+            "operation_kind": "write",
+            "operation_name": "create",
+            "store_name": "post",
+            "receiver_name": "db.post"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findUnique:32-39",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 32,
+            "operation_kind": "read",
+            "operation_name": "findUnique",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findFirst:84-88",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 84,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/subscription.ts:72454a5a8050:db.user:findFirst:10-20",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/subscription.ts",
+            "start_line": 10,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "create",
+            "store_name": "post",
+            "file_path": "app/api/posts/route.ts",
+            "start_line": 69
+          }
+        ],
+        "module_path": [
+          "module:app/api/posts/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/exceptions.ts",
+          "module:lib/subscription.ts",
+          "module:config/site.ts",
+          "module:env.mjs",
+          "module:config/subscriptions.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/users/[userId]/route.ts",
+        "method": "PATCH",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:app/api/users/[userId]/route.ts:f52e75f34ff2:db.user:update:33-40",
+            "data_store_node_id": "data_store:user",
+            "file_path": "app/api/users/[userId]/route.ts",
+            "start_line": 33,
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findUnique:32-39",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 32,
+            "operation_kind": "read",
+            "operation_name": "findUnique",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findFirst:84-88",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 84,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/users/[userId]/route.ts",
+            "start_line": 33
+          }
+        ],
+        "module_path": [
+          "module:app/api/users/[userId]/route.ts",
+          "module:lib/auth.ts",
+          "module:lib/db.ts",
+          "module:lib/validations/user.ts",
+          "module:config/site.ts",
+          "module:env.mjs"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/users/stripe/route.ts",
+        "method": "GET",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findUnique:32-39",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 32,
+            "operation_kind": "read",
+            "operation_name": "findUnique",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findFirst:84-88",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 84,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/subscription.ts:72454a5a8050:db.user:findFirst:10-20",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/subscription.ts",
+            "start_line": 10,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [],
+        "module_path": [
+          "module:app/api/users/stripe/route.ts",
+          "module:config/subscriptions.ts",
+          "module:lib/auth.ts",
+          "module:lib/stripe.ts",
+          "module:lib/subscription.ts",
+          "module:lib/utils.ts",
+          "module:env.mjs",
+          "module:config/site.ts",
+          "module:lib/db.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/webhooks/stripe/route.ts",
+        "method": "POST",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:app/api/webhooks/stripe/route.ts:c6984f90fdd2:db.user:update:35-47",
+            "data_store_node_id": "data_store:user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 35,
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:app/api/webhooks/stripe/route.ts:c6984f90fdd2:db.user:update:57-67",
+            "data_store_node_id": "data_store:user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 57,
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 35
+          },
+          {
+            "risk_kind": "data_write",
+            "operation_kind": "write",
+            "operation_name": "update",
+            "store_name": "user",
+            "file_path": "app/api/webhooks/stripe/route.ts",
+            "start_line": 57
+          }
+        ],
+        "module_path": [
+          "module:app/api/webhooks/stripe/route.ts",
+          "module:env.mjs",
+          "module:lib/db.ts",
+          "module:lib/stripe.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [
+          "route_not_found"
+        ],
+        "path": "pages/api/auth/[...nextauth].ts",
+        "data_access_module_ids": [
+          "module:lib/db.ts"
+        ],
+        "data_operations": [
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findUnique:32-39",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 32,
+            "operation_kind": "read",
+            "operation_name": "findUnique",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          },
+          {
+            "operation_node_id": "data_operation:lib/auth.ts:0fa7deb8e367:db.user:findFirst:84-88",
+            "data_store_node_id": "data_store:user",
+            "file_path": "lib/auth.ts",
+            "start_line": 84,
+            "operation_kind": "read",
+            "operation_name": "findFirst",
+            "store_name": "user",
+            "receiver_name": "db.user"
+          }
+        ],
+        "risk_reasons": [],
+        "module_path": [
+          "module:pages/api/auth/[...nextauth].ts",
+          "module:lib/auth.ts",
+          "module:config/site.ts",
+          "module:env.mjs",
+          "module:lib/db.ts"
+        ]
+      }
+    ],
+    "affected_files": [
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/og/route.tsx",
+        "files": [
+          "app/api/og/route.tsx"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/posts/[postId]/route.ts",
+        "files": [
+          "app/api/posts/[postId]/route.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/posts/route.ts",
+        "files": [
+          "app/api/posts/route.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/users/[userId]/route.ts",
+        "files": [
+          "app/api/users/[userId]/route.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/users/stripe/route.ts",
+        "files": [
+          "app/api/users/stripe/route.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "app/api/webhooks/stripe/route.ts",
+        "files": [
+          "app/api/webhooks/stripe/route.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "components/theme-provider.tsx",
+        "files": [
+          "app/layout.tsx",
+          "components/theme-provider.tsx"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "lib/stripe.ts",
+        "files": [
+          "app/(dashboard)/dashboard/billing/page.tsx",
+          "app/api/users/stripe/route.ts",
+          "app/api/webhooks/stripe/route.ts",
+          "lib/stripe.ts"
+        ]
+      },
+      {
+        "repo_id": "repo_68a494d2b8491ebb",
+        "scan_id": "scan_bd29d7752c0dd3a8",
+        "freshness": "unknown",
+        "policy": {
+          "surface": "cli-preflight",
+          "local_only": true
+        },
+        "diagnostics": [],
+        "path": "pages/api/auth/[...nextauth].ts",
+        "files": [
+          "pages/api/auth/[...nextauth].ts"
+        ]
+      }
+    ],
+    "diagnostic_summary": {
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "freshness": "unknown",
+      "policy": {
+        "surface": "cli-preflight",
+        "local_only": true
+      },
+      "diagnostics": [],
+      "total_count": 7,
+      "groups": [
+        {
+          "code": "unresolved_import",
+          "severity": "warning",
+          "count": 7,
+          "file_count": 6,
+          "sample_files": [
+            "app/(docs)/docs/[[...slug]]/page.tsx",
+            "app/(docs)/guides/[...slug]/page.tsx",
+            "app/(docs)/guides/page.tsx"
+          ],
+          "sample_messages": [
+            "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx.",
+            "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx.",
+            "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx."
+          ]
+        }
+      ],
+      "completeness_reasons": []
+    },
+    "diagnostics": [
+      "import_resolution_incomplete",
+      "resolver_dependencies_missing",
+      "route_not_found",
+      "unresolved_import:7"
+    ]
+  },
+  "task_model": {
+    "schema_version": "drift.agent_task.v1",
+    "task_id": "agent_task_d565e8cb90839a44",
+    "task_text": "add rate limiting to the stripe webhook",
+    "task_intent": "feature",
+    "target_area": null,
+    "likely_files": [],
+    "likely_entrypoint_kinds": [
+      "webhook_handler"
+    ],
+    "required_context": [
+      "accepted_conventions",
+      "change_impact",
+      "repo_map",
+      "route_flow",
+      "test_intelligence"
+    ],
+    "risky_contracts": [],
+    "required_checks": [
+      "test"
+    ],
+    "forbidden_actions": [
+      "create_waiver",
+      "edit_migrations_without_approval",
+      "modify_repo_contract"
+    ],
+    "human_approval_needed": false
+  },
+  "task_preflight_packet": {
+    "schema_version": "drift.agent_preflight.v2",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "task_model": {
+      "schema_version": "drift.agent_task.v1",
+      "task_id": "agent_task_d565e8cb90839a44",
+      "task_text": "add rate limiting to the stripe webhook",
+      "task_intent": "feature",
+      "target_area": null,
+      "likely_files": [],
+      "likely_entrypoint_kinds": [
+        "webhook_handler"
+      ],
+      "required_context": [
+        "accepted_conventions",
+        "change_impact",
+        "repo_map",
+        "route_flow",
+        "test_intelligence"
+      ],
+      "risky_contracts": [],
+      "required_checks": [
+        "test"
+      ],
+      "forbidden_actions": [
+        "create_waiver",
+        "edit_migrations_without_approval",
+        "modify_repo_contract"
+      ],
+      "human_approval_needed": false
+    },
+    "repo_map_summary": {
+      "relevant_file_count": 9,
+      "route_flow_count": 7,
+      "parser_gap_count": 6
+    },
+    "accepted_conventions": [
+      {
+        "id": "convention_572bf7b306010298",
+        "kind": "api_route_no_direct_data_access",
+        "statement": "API routes should not import data-access clients directly.",
+        "severity": "error",
+        "enforcement_mode": "warn",
+        "enforcement_capability": "deterministic_check",
+        "scope": {
+          "path_globs": [
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
+            "**/pages/api/**/*.ts",
+            "**/pages/api/**/*.tsx",
+            "**/pages/api/**/*.js",
+            "**/pages/api/**/*.jsx"
+          ],
+          "file_roles": [
+            "api_route"
+          ]
+        },
+        "matcher": {
+          "kind": "api_route_no_direct_data_access",
+          "forbidden_imports": [
+            "@/lib/db"
+          ],
+          "applies_to_file_roles": [
+            "api_route"
+          ]
+        },
+        "exceptions": [],
+        "agent_instruction": "When editing API route files, do not import data-access clients directly. Forbidden imports: @/lib/db. Delegate through the repo's accepted service/data-access layer and run drift check before finishing.",
+        "conforming_examples": [
+          {
+            "file_path": "app/api/og/route.tsx",
+            "role": "api_route"
+          },
+          {
+            "file_path": "app/api/users/stripe/route.ts",
+            "role": "api_route"
+          },
+          {
+            "file_path": "pages/api/auth/[...nextauth].ts",
+            "role": "api_route"
+          }
+        ],
+        "conforming_examples_reason": null,
+        "rationale": {
+          "derivation": "Detected API route imports that look like database/data-access clients.",
+          "reason": "Route modules are transport: they parse a request, delegate, and serialize a response. Reaching into the data layer from a route couples the HTTP surface to storage, so auth, validation, and query shape stop being enforceable in one place."
+        },
+        "migration_sentence": "4 existing violations are baselined and do not block; new code is held to this rule."
+      }
+    ],
+    "relevant_files": [
+      {
+        "path": "app/api/webhooks/stripe/route.ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298",
+          "task token: stripe",
+          "task token: webhook"
+        ]
+      },
+      {
+        "path": "app/api/users/stripe/route.ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298",
+          "task token: stripe"
+        ]
+      },
+      {
+        "path": "components/theme-provider.tsx",
+        "roles": [],
+        "reasons": [
+          "task token: the"
+        ]
+      },
+      {
+        "path": "lib/stripe.ts",
+        "roles": [],
+        "reasons": [
+          "task token: stripe"
+        ]
+      },
+      {
+        "path": "app/api/og/route.tsx",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298"
+        ]
+      },
+      {
+        "path": "app/api/posts/[postId]/route.ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298"
+        ]
+      },
+      {
+        "path": "app/api/posts/route.ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298"
+        ]
+      },
+      {
+        "path": "app/api/users/[userId]/route.ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298"
+        ]
+      },
+      {
+        "path": "pages/api/auth/[...nextauth].ts",
+        "roles": [
+          "api_route"
+        ],
+        "reasons": [
+          "in scope for convention_572bf7b306010298"
+        ]
+      }
+    ],
+    "role_layer_proof": [],
+    "change_impact": {
+      "schema_version": "drift.change_impact.v1",
+      "repo_id": "repo_68a494d2b8491ebb",
+      "scan_id": "scan_bd29d7752c0dd3a8",
+      "changed_files": [
+        "app/api/og/route.tsx",
+        "app/api/posts/[postId]/route.ts",
+        "app/api/posts/route.ts",
+        "app/api/users/[userId]/route.ts",
+        "app/api/users/stripe/route.ts",
+        "app/api/webhooks/stripe/route.ts",
+        "components/theme-provider.tsx",
+        "lib/stripe.ts",
+        "pages/api/auth/[...nextauth].ts"
+      ],
+      "changed_symbols": [],
+      "changed_routes": [
+        "app/api/og/route.tsx",
+        "app/api/posts/[postId]/route.ts",
+        "app/api/posts/route.ts",
+        "app/api/users/[userId]/route.ts",
+        "app/api/users/stripe/route.ts",
+        "app/api/webhooks/stripe/route.ts",
+        "pages/api/auth/[...nextauth].ts"
+      ],
+      "changed_tests": [],
+      "changed_contract_surfaces": [
+        "entrypoint"
+      ],
+      "affected_routes": [
+        "GET /api/og",
+        "GET /api/posts",
+        "GET /api/users/stripe",
+        "pages/api/auth/[...nextauth].ts",
+        "POST /api/webhooks/stripe"
+      ],
+      "affected_services": [],
+      "affected_data_ops": [
+        "data_operation:delete"
+      ],
+      "affected_tests": [],
+      "affected_callers": [],
+      "affected_importers": [],
+      "missing_test_candidates": [
+        "GET /api/og",
+        "GET /api/posts",
+        "GET /api/users/stripe",
+        "pages/api/auth/[...nextauth].ts",
+        "POST /api/webhooks/stripe"
+      ]
+    },
+    "test_intelligence": [],
+    "parser_gaps": {
+      "count": 6,
+      "by_code": [
+        {
+          "code": "unresolved_import",
+          "count": 6
+        }
+      ],
+      "full_list_command": "drift scan status --repo repo_68a494d2b8491ebb --json"
+    },
+    "required_checks": [
+      {
+        "command": "drift check --diff main...HEAD --repo repo_68a494d2b8491ebb --scope changed-hunks --json",
+        "applies_to": {
+          "path_globs": [
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/pages/api/**/*.js",
+            "**/pages/api/**/*.jsx",
+            "**/pages/api/**/*.ts",
+            "**/pages/api/**/*.tsx"
+          ],
+          "file_roles": [
+            "api_route"
+          ]
+        },
+        "reason": "Block newly introduced deterministic convention violations before code is merged.",
+        "matched_files": [
+          "app/api/webhooks/stripe/route.ts",
+          "app/api/users/stripe/route.ts",
+          "app/api/og/route.tsx",
+          "app/api/posts/[postId]/route.ts",
+          "app/api/posts/route.ts",
+          "app/api/users/[userId]/route.ts",
+          "pages/api/auth/[...nextauth].ts"
+        ]
+      }
+    ],
+    "forbidden_actions": [
+      "create_waiver",
+      "edit_migrations_without_approval",
+      "modify_repo_contract"
+    ],
+    "context_policy": {
+      "schema_version": "drift.context_policy.v1",
+      "can_read_repo_map": true,
+      "can_read_source_snippets": false,
+      "can_read_contract": true,
+      "can_read_findings": true,
+      "can_execute_commands": false,
+      "can_modify_contract": false,
+      "can_create_waiver": false,
+      "can_request_human_approval": true,
+      "can_access_secret_like_files": false,
+      "can_emit_patch": false,
+      "egress_level": "symbol_only"
+    },
+    "confidence": {
+      "graph_confidence": 0.6,
+      "reasons": [
+        "graph_incomplete",
+        "import_resolution_incomplete",
+        "parser_gaps_present",
+        "resolver_dependencies_missing"
+      ]
+    }
+  },
+  "change_impact": {
+    "schema_version": "drift.change_impact.v1",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "changed_files": [
+      "app/api/og/route.tsx",
+      "app/api/posts/[postId]/route.ts",
+      "app/api/posts/route.ts",
+      "app/api/users/[userId]/route.ts",
+      "app/api/users/stripe/route.ts",
+      "app/api/webhooks/stripe/route.ts",
+      "components/theme-provider.tsx",
+      "lib/stripe.ts",
+      "pages/api/auth/[...nextauth].ts"
+    ],
+    "changed_symbols": [],
+    "changed_routes": [
+      "app/api/og/route.tsx",
+      "app/api/posts/[postId]/route.ts",
+      "app/api/posts/route.ts",
+      "app/api/users/[userId]/route.ts",
+      "app/api/users/stripe/route.ts",
+      "app/api/webhooks/stripe/route.ts",
+      "pages/api/auth/[...nextauth].ts"
+    ],
+    "changed_tests": [],
+    "changed_contract_surfaces": [
+      "entrypoint"
+    ],
+    "affected_routes": [
+      "GET /api/og",
+      "GET /api/posts",
+      "GET /api/users/stripe",
+      "pages/api/auth/[...nextauth].ts",
+      "POST /api/webhooks/stripe"
+    ],
+    "affected_services": [],
+    "affected_data_ops": [
+      "data_operation:delete"
+    ],
+    "affected_tests": [],
+    "affected_callers": [],
+    "affected_importers": [],
+    "missing_test_candidates": [
+      "GET /api/og",
+      "GET /api/posts",
+      "GET /api/users/stripe",
+      "pages/api/auth/[...nextauth].ts",
+      "POST /api/webhooks/stripe"
+    ]
+  },
+  "test_intelligence": [],
+  "test_intelligence_reason": "no_test_files_in_repo",
+  "agent_contract_packet": {
+    "schema_version": "drift.agent.preflight.v3",
+    "repo_id": "repo_68a494d2b8491ebb",
+    "scan_id": "scan_bd29d7752c0dd3a8",
+    "stale": true,
+    "task": "add rate limiting to the stripe webhook",
+    "selected_contracts": [],
+    "selected_contracts_reason": "no_contracts_accepted",
+    "selected_conventions": [
+      {
+        "id": "convention_572bf7b306010298",
+        "contract_id": "contract_68a494d2b8491ebb",
+        "kind": "api_route_no_direct_data_access",
+        "statement": "API routes should not import data-access clients directly.",
+        "rationale": "Detected API route imports that look like database/data-access clients.",
+        "scope": {
+          "path_globs": [
+            "**/app/**/route.ts",
+            "**/app/**/route.tsx",
+            "**/app/**/route.js",
+            "**/app/**/route.jsx",
+            "**/pages/api/**/*.ts",
+            "**/pages/api/**/*.tsx",
+            "**/pages/api/**/*.js",
+            "**/pages/api/**/*.jsx"
+          ],
+          "file_roles": [
+            "api_route"
+          ]
+        },
+        "matcher": {
+          "kind": "api_route_no_direct_data_access",
+          "forbidden_imports": [
+            "@/lib/db"
+          ],
+          "applies_to_file_roles": [
+            "api_route"
+          ]
+        },
+        "severity": "error",
+        "enforcement_mode": "warn",
+        "enforcement_capability": "deterministic_check",
+        "exceptions": [],
+        "accepted_by": "local-user",
+        "accepted_at": "2026-08-19T15:36:07.933Z",
+        "updated_at": "2026-08-19T15:36:07.933Z",
+        "evidence_ref_ids": [
+          "evidence_ref_549fc9152e7e135e",
+          "evidence_ref_c5d3ea4d9aa9a390",
+          "evidence_ref_ceb7543c2272c71d",
+          "evidence_ref_f7188efcfad15e11"
+        ],
+        "counterexample_ref_ids": []
+      }
+    ],
+    "selected_helpers": [],
+    "placement_guidance": [],
+    "import_boundaries": [],
+    "required_flows": [],
+    "required_checks": [],
+    "active_exceptions": [],
+    "active_waivers": [],
+    "agent_instructions": [
+      "API routes should not import data-access clients directly."
+    ],
+    "diagnostics": [
+      "scan is stale; run scan before relying on this packet"
+    ]
+  },
+  "baseline": {
+    "active_count": 4,
+    "resolved_count": 0,
+    "by_convention": [
+      {
+        "convention_id": "convention_572bf7b306010298",
+        "active_count": 4,
+        "resolved_count": 0
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "finding_2fd0e7eb4e26bb28",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn"
+    },
+    {
+      "id": "finding_6188425b3aaa7a47",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn"
+    },
+    {
+      "id": "finding_c2998d096c586c08",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn"
+    },
+    {
+      "id": "finding_dd9c147fa5b8e5dd",
+      "convention_id": "convention_572bf7b306010298",
+      "title": "API route imports data access directly",
+      "severity": "error",
+      "status": "new",
+      "diff_status": "touched_existing",
+      "enforcement_result": "warn"
+    }
+  ],
+  "relevant_files": [
+    {
+      "path": "app/api/webhooks/stripe/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: stripe",
+        "task token: webhook"
+      ]
+    },
+    {
+      "path": "app/api/users/stripe/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298",
+        "task token: stripe"
+      ]
+    },
+    {
+      "path": "components/theme-provider.tsx",
+      "roles": [],
+      "reasons": [
+        "task token: the"
+      ]
+    },
+    {
+      "path": "lib/stripe.ts",
+      "roles": [],
+      "reasons": [
+        "task token: stripe"
+      ]
+    },
+    {
+      "path": "app/api/og/route.tsx",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298"
+      ]
+    },
+    {
+      "path": "app/api/posts/[postId]/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298"
+      ]
+    },
+    {
+      "path": "app/api/posts/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298"
+      ]
+    },
+    {
+      "path": "app/api/users/[userId]/route.ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298"
+      ]
+    },
+    {
+      "path": "pages/api/auth/[...nextauth].ts",
+      "roles": [
+        "api_route"
+      ],
+      "reasons": [
+        "in scope for convention_572bf7b306010298"
+      ]
+    }
+  ],
+  "risky_areas": [
+    {
+      "id": "risk_data_access_api_routes",
+      "path_globs": [
+        "**/app/**/route.ts",
+        "**/app/**/route.tsx",
+        "**/app/**/route.js",
+        "**/app/**/route.jsx",
+        "**/pages/api/**/*.ts",
+        "**/pages/api/**/*.tsx",
+        "**/pages/api/**/*.js",
+        "**/pages/api/**/*.jsx"
+      ],
+      "risk_kind": "data_access",
+      "reason": "API route changes can bypass the accepted data-access layering convention.",
+      "matched_files": [
+        "app/api/webhooks/stripe/route.ts",
+        "app/api/users/stripe/route.ts",
+        "app/api/og/route.tsx",
+        "app/api/posts/[postId]/route.ts",
+        "app/api/posts/route.ts",
+        "app/api/users/[userId]/route.ts",
+        "pages/api/auth/[...nextauth].ts"
+      ]
+    }
+  ],
+  "waivers": [],
+  "required_checks": [
+    {
+      "command": "drift check --diff main...HEAD --repo repo_68a494d2b8491ebb --scope changed-hunks --json",
+      "applies_to": {
+        "path_globs": [
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "reason": "Block newly introduced deterministic convention violations before code is merged.",
+      "matched_files": [
+        "app/api/webhooks/stripe/route.ts",
+        "app/api/users/stripe/route.ts",
+        "app/api/og/route.tsx",
+        "app/api/posts/[postId]/route.ts",
+        "app/api/posts/route.ts",
+        "app/api/users/[userId]/route.ts",
+        "pages/api/auth/[...nextauth].ts"
+      ]
+    }
+  ],
+  "safe_commands": [],
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "context_policy": {
+    "schema_version": "drift.context_policy.v1",
+    "can_read_repo_map": true,
+    "can_read_source_snippets": false,
+    "can_read_contract": true,
+    "can_read_findings": true,
+    "can_execute_commands": false,
+    "can_modify_contract": false,
+    "can_create_waiver": false,
+    "can_request_human_approval": true,
+    "can_access_secret_like_files": false,
+    "can_emit_patch": false,
+    "egress_level": "symbol_only"
+  },
+  "redactions": {
+    "denied_globs": [
+      "**/.env",
+      "**/.env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/*.crt",
+      "**/*.p12",
+      "**/id_rsa",
+      "**/id_ed25519"
+    ],
+    "excluded_file_count": 0,
+    "snippets_included": false,
+    "source_content_included": false,
+    "graph_context_included": true,
+    "context_truncated": false
+  },
+  "next_commands": [
+    "drift check --repo repo_68a494d2b8491ebb --diff main...HEAD --scope changed-hunks --json",
+    "drift findings list --repo repo_68a494d2b8491ebb --json"
+  ]
+}

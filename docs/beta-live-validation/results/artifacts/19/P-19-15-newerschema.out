@@ -1,0 +1,6 @@
+EXIT=0
+STDOUT:
+{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"Drift read-only MCP database has unsupported migrations: 999_future_migration.","data":{"code":"cli_error","user_action":"Read the diagnostic message and rerun with corrected inputs.","safe_to_retry":false,"recovery_commands":["drift --help"]}}}
+
+STDERR:
+
