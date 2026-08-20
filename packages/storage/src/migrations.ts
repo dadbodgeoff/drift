@@ -986,5 +986,23 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       SELECT 1;
     `
+  },
+  {
+    // R8-02. `export_aliases_import` and `export_wraps_import` enter the vocabulary here.
+    //
+    // A module that re-exports an import under a new name, or wraps it in a thin passthrough,
+    // launders the binding: the downstream file imports a local symbol and nothing recorded that it
+    // resolves to the forbidden one. These two facts record the aliasing and the wrapping so the
+    // chain can be walked back to the original import.
+    //
+    // No column changes, and for the reason 034 spells out it still has to be a migration:
+    // `FactRecordSchema.kind` is a closed enum, so a database holding rows of these kinds throws on
+    // every `listFacts` in a build that does not know them - not a degraded read, a throw. Bumping
+    // the count makes an older build refuse this database up front, naming the version, instead of
+    // opening it and failing later on read.
+    id: "037_binding_alias_fact_kinds",
+    sql: `
+      SELECT 1;
+    `
   }
 ];

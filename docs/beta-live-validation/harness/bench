@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Benchmark one command honestly.
+
+    bench <charter> <metric-id> [--trials N] [--warmup N] [--label L]
+          [--timeout S] [--cwd DIR] [--require-exit N] -- <command...>
+
+Every charter says "n trials, report median and p95" and would otherwise get n implementations of
+that, each subtly different. This is the one implementation, and it reports the things that decide
+whether a number is usable:
+
+  * median, p95, min, max, mean, stdev, MAD, coefficient of variation
+  * outliers by modified z-score (median-based, robust)
+  * DRIFT: Spearman rank correlation of duration against trial order, tested for significance at
+    the sample's own n. Monotonic slowdown is the machine throttling, not the code being slow, and
+    a benchmark that cannot tell those apart is worse than no benchmark.
+
+Warmup trials are run and discarded. A trial whose exit code differs from the others aborts the
+measurement rather than being averaged in - a benchmark of a command that started failing halfway
+through is not a benchmark.
+"""
+import json, os, statistics, subprocess, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _probelib import die, redact, ledger_append, artifacts_dir, summarize, drift_signal
+
+argv = sys.argv[1:]
+if "--" not in argv: die("missing -- before the command")
+head, cmd = argv[:argv.index("--")], argv[argv.index("--")+1:]
+if len(head) < 2: die("usage: bench <charter> <metric-id> [opts] -- <cmd...>")
+charter, metric, opts = head[0], head[1], head[2:]
+
+trials, warmup, label, timeout, cwd, need_rc = 10, 2, None, 900.0, None, None
+i = 0
+while i < len(opts):
+    o = opts[i]
+    if   o == "--trials":      trials = int(opts[i+1]); i += 2
+    elif o == "--warmup":      warmup = int(opts[i+1]); i += 2
+    elif o == "--label":       label = opts[i+1]; i += 2
+    elif o == "--timeout":     timeout = float(opts[i+1]); i += 2
+    elif o == "--cwd":         cwd = opts[i+1]; i += 2
+    elif o == "--require-exit": need_rc = int(opts[i+1]); i += 2
+    else: die(f"unknown option {o}")
+
+def once():
+    t0 = time.perf_counter()
+    try:
+        p = subprocess.run(cmd, capture_output=True, timeout=timeout, cwd=cwd)
+        rc = p.returncode
+    except subprocess.TimeoutExpired:
+        return (None, 124)
+    return (round((time.perf_counter() - t0) * 1000), rc)
+
+print(f"── bench {charter}/{metric}" + (f" [{label}]" if label else ""))
+print(redact("──   cmd: " + " ".join(cmd)))
+print(f"──   {warmup} warmup + {trials} measured trials, timeout {timeout:.0f}s")
+
+for w in range(warmup):
+    ms, rc = once()
+    print(f"──   warmup {w+1}/{warmup}: {ms}ms exit={rc}" + ("  (discarded)" if True else ""))
+
+samples, codes, aborted = [], [], None
+for t in range(trials):
+    ms, rc = once()
+    if ms is None:
+        aborted = f"trial {t+1} timed out after {timeout:.0f}s"; break
+    if need_rc is not None and rc != need_rc:
+        aborted = f"trial {t+1} exited {rc}, required {need_rc}"; break
+    if codes and rc != codes[-1]:
+        aborted = f"trial {t+1} exited {rc}, previous trials exited {codes[-1]} - not one measurement"
+        break
+    samples.append(ms); codes.append(rc)
+    print(f"──   trial {t+1}/{trials}: {ms}ms exit={rc}")
+
+stats = summarize(samples) if samples else {}
+drift = drift_signal(samples) if samples else {}
+usable = bool(samples) and not aborted and (drift.get("rho") is None or "STRONG" not in drift["verdict"])
+
+row = {"charter": charter, "metric": metric, "label": label, "command": cmd,
+       "trials_requested": trials, "warmup": warmup, "samples_ms": samples,
+       "exit_codes": codes, "aborted": aborted, "stats": stats, "drift": drift,
+       "usable": usable, "sha_under_test": os.environ.get("DRIFT_BETA_SHA"),
+       "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+ledger_append(charter, row, name="bench.jsonl")
+
+print("──")
+if aborted:
+    print(f"── ABORTED: {aborted}")
+    print("── no number is reported; a partial series is not a measurement")
+    sys.exit(1)
+print(f"── n={stats['n']}  median={stats['median']}ms  p95={stats['p95']}ms  "
+      f"min={stats['min']}  max={stats['max']}")
+print(f"── mean={stats['mean']:.1f}  stdev={stats['stdev']:.1f}  MAD={stats['mad']:.1f}  "
+      f"CV={stats['cv']*100:.1f}%")
+if stats["outliers"]: print(f"── outliers (modified z>3.5): {stats['outliers']}")
+print(f"── drift: rho={drift['rho']} — {drift['verdict']}")
+if stats["cv"] > 0.25:
+    print(f"── WARNING: CV {stats['cv']*100:.0f}% — this sample is too noisy to compare against another")
+print(f"── {'USABLE' if usable else 'NOT USABLE — do not report this number'}")
+sys.exit(0 if usable else 1)

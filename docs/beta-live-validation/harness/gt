@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""Labeled ground-truth corpus — the thing that turns "detection breadth" into recall.
+
+    gt add < example.json          gt validate            gt coverage
+    gt list [--repo R --kind K --label L]                 gt agree A.jsonl B.jsonl
+    gt score <predictions.jsonl> [--kind K] [--repo R]
+
+Today the eval suite measures Drift against fixtures whose answer is known BY CONSTRUCTION, and
+against real repos where nothing is labeled at all. That yields "we detected N things", never "we
+detected N of the M that were there". Recall is unmeasurable without labels, and a tool whose
+recall is unmeasurable cannot be said to enforce anything.
+
+A label here is not an opinion. It carries the source lines that decide it, who decided, and how
+sure they were - so it can be audited, disputed, and re-adjudicated rather than trusted.
+
+Label vocabulary, deliberately three-valued:
+  violating       this file genuinely breaks the convention
+  compliant       this file is genuinely subject to the convention and satisfies it
+  not-applicable  the convention does not apply here at all
+`not-applicable` is separate on purpose: a tool that stays silent on 900 irrelevant files is not
+achieving 100% precision, and collapsing those into `compliant` is how that illusion is built.
+"""
+import json, os, sys, collections, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+STORE = os.environ.get("DRIFT_BETA_GT") or os.path.join(
+    os.environ.get("DRIFT_BETA_FREEZE", "."), "ground-truth.jsonl")
+LABELS = {"violating", "compliant", "not-applicable"}
+REQ = ["id", "repo", "repo_sha", "file", "kind", "label", "justification",
+       "evidence_lines", "labeler", "confidence"]
+
+def load(path=None):
+    p = path or STORE
+    return [json.loads(l) for l in open(p)] if os.path.exists(p) else []
+
+def key(r): return (r["repo"], r["file"], r["kind"])
+
+def cmd_add():
+    doc = json.load(sys.stdin)
+    rows = doc if isinstance(doc, list) else [doc]
+    bad = []
+    for r in rows:
+        for f in REQ:
+            if f not in r or r[f] in (None, "", []): bad.append(f"{r.get('id','?')}: missing {f}")
+        if r.get("label") not in LABELS: bad.append(f"{r.get('id','?')}: label must be one of {sorted(LABELS)}")
+        if r.get("confidence") not in {"high","medium","low"}: bad.append(f"{r.get('id','?')}: confidence")
+        if not isinstance(r.get("evidence_lines"), list) or not r["evidence_lines"]:
+            bad.append(f"{r.get('id','?')}: evidence_lines must cite the lines that decide the label")
+    if bad:
+        print("REJECTED — a label without provenance is an opinion:", file=sys.stderr)
+        for b in bad: print("  - " + b, file=sys.stderr)
+        sys.exit(1)
+    existing = {key(r) for r in load()}
+    os.makedirs(os.path.dirname(STORE) or ".", exist_ok=True)
+    n = 0
+    with open(STORE, "a") as f:
+        for r in rows:
+            if key(r) in existing:
+                print(f"  skip (already labeled): {r['id']}"); continue
+            r.setdefault("labeled_at", time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+            f.write(json.dumps(r) + "\n"); n += 1
+    print(f"added {n} label(s) to {STORE}")
+
+def cmd_validate():
+    rows, bad = load(), []
+    seen = collections.Counter(key(r) for r in rows)
+    for k, c in seen.items():
+        if c > 1: bad.append(f"duplicate label for {k} ({c}x) — adjudicate, do not stack")
+    for r in rows:
+        if r["label"] != "not-applicable" and not r.get("justification", "").strip():
+            bad.append(f"{r['id']}: no justification")
+    print(f"── {len(rows)} labels · {len(seen)} unique (repo,file,kind)")
+    for b in bad: print("   " + b)
+    sys.exit(1 if bad else 0)
+
+def cmd_coverage():
+    rows = load()
+    per = collections.defaultdict(lambda: collections.Counter())
+    for r in rows: per[r["kind"]][r["label"]] += 1
+    print(f"── ground truth coverage · {len(rows)} labels")
+    print(f"   {'kind':<46} {'viol':>5} {'compl':>6} {'n/a':>5}  {'MDE at this n':>14}")
+    for kind in sorted(per):
+        c = per[kind]; judged = c["violating"] + c["compliant"]
+        m = S.mde(0.95, judged) if judged else None
+        print(f"   {kind:<46} {c['violating']:>5} {c['compliant']:>6} {c['not-applicable']:>5}"
+              f"  {('detects a fall to %.3f' % m) if m else 'unmeasurable':>14}")
+    repos = collections.Counter(r["repo"] for r in rows)
+    print(f"\n   repos: " + ", ".join(f"{k}={v}" for k, v in sorted(repos.items())))
+    thin = [k for k, c in per.items() if (c["violating"] + c["compliant"]) < 30]
+    if thin:
+        print(f"\n   UNDERPOWERED (n<30, any precision claim here is close to unfalsifiable):")
+        for k in sorted(thin): print(f"     {k}")
+
+def cmd_agree(a, b):
+    ra = {key(r): r["label"] for r in load(a)}
+    rb = {key(r): r["label"] for r in load(b)}
+    shared = sorted(set(ra) & set(rb))
+    if not shared: sys.exit("the two labelers share no examples — nothing to compare")
+    la, lb = [ra[k] for k in shared], [rb[k] for k in shared]
+    raw = sum(1 for x, y in zip(la, lb) if x == y) / len(shared)
+    k = S.cohen_kappa(la, lb)
+    print(f"── inter-rater agreement over {len(shared)} shared examples")
+    print(f"   raw agreement: {raw:.3f}")
+    print(f"   Cohen's kappa: {k:.3f}  " + (
+        "almost perfect" if k > .8 else "substantial" if k > .6 else
+        "moderate" if k > .4 else "fair" if k > .2 else "POOR — the labeling protocol is ambiguous"))
+    for x, y, kk in ((x, y, kk) for x, y, kk in zip(la, lb, shared) if x != y):
+        print(f"   disagree {kk}: {x} vs {y}")
+    if k <= 0.6:
+        print("\n   kappa at or below 0.6 means the labels are not yet a defensible oracle.")
+        sys.exit(1)
+
+def cmd_score(pred_path, only_kind=None, only_repo=None):
+    """predictions.jsonl: {"repo","file","kind","predicted":"violating"|"compliant"}"""
+    truth = {key(r): r for r in load()
+             if (not only_kind or r["kind"] == only_kind) and (not only_repo or r["repo"] == only_repo)}
+    preds = {key(r): r for r in load(pred_path)}
+    per = collections.defaultdict(lambda: {"tp":0,"fp":0,"fn":0,"tn":0,"na_flagged":0,"unlabeled":0})
+    for k, p in preds.items():
+        t = truth.get(k)
+        if not t: per[k[2]]["unlabeled"] += 1; continue
+        pv = p["predicted"] == "violating"
+        if t["label"] == "not-applicable":
+            if pv: per[k[2]]["na_flagged"] += 1
+            continue
+        tv = t["label"] == "violating"
+        per[k[2]]["tp" if (pv and tv) else "fp" if (pv and not tv) else "fn" if tv else "tn"] += 1
+    for k, t in truth.items():
+        if k not in preds and t["label"] == "violating": per[k[2]]["fn"] += 1
+
+    print(f"── scored against {len(truth)} labels" +
+          (f" · kind={only_kind}" if only_kind else "") + (f" · repo={only_repo}" if only_repo else ""))
+    out = {}
+    for kind in sorted(per):
+        c = per[kind]
+        pr = S.wilson(c["tp"], c["tp"] + c["fp"]) if (c["tp"] + c["fp"]) else None
+        rc = S.wilson(c["tp"], c["tp"] + c["fn"]) if (c["tp"] + c["fn"]) else None
+        f1 = S.f1(pr["p"] if pr else None, rc["p"] if rc else None)
+        out[kind] = {"counts": dict(c), "precision": pr, "recall": rc, "f1": f1}
+        fmt = lambda w: f"{w['p']:.3f} [{w['lo']:.3f},{w['hi']:.3f}]" if w else "n/a (no cases)"
+        print(f"   {kind}")
+        print(f"     tp={c['tp']} fp={c['fp']} fn={c['fn']} tn={c['tn']}"
+              f"  flagged-not-applicable={c['na_flagged']}  unlabeled-predictions={c['unlabeled']}")
+        print(f"     precision {fmt(pr)}")
+        print(f"     recall    {fmt(rc)}")
+        print(f"     F1        {f1:.3f}")
+        if pr and pr["n"] < 30:
+            print(f"     WARNING: n={pr['n']} — the interval is too wide to ratchet on")
+        if c["unlabeled"]:
+            print(f"     {c['unlabeled']} prediction(s) had no label: recall here is a LOWER BOUND, "
+                  f"and precision is unmeasured on those")
+    if os.environ.get("DRIFT_BETA_LEDGER"):
+        from _probelib import ledger_append
+        ledger_append("gt", {"predictions": pred_path, "kind": only_kind, "repo": only_repo,
+                             "scores": out, "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}, name="score.jsonl")
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]; a = sys.argv[2:]
+def opt(n, d=None):
+    return a[a.index(n) + 1] if n in a else d
+if   c == "add":      cmd_add()
+elif c == "validate": cmd_validate()
+elif c == "coverage": cmd_coverage()
+elif c == "agree":    cmd_agree(a[0], a[1])
+elif c == "list":
+    for r in load():
+        if opt("--repo") and r["repo"] != opt("--repo"): continue
+        if opt("--kind") and r["kind"] != opt("--kind"): continue
+        if opt("--label") and r["label"] != opt("--label"): continue
+        print(f"{r['label']:<15} {r['kind']:<44} {r['repo']}/{r['file']}")
+elif c == "score":    cmd_score(a[0], opt("--kind"), opt("--repo"))
+else: sys.exit(f"unknown subcommand {c}")

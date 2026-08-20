@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Compile every ledger into the program's actual deliverable.
+
+    report [--out FILE]
+
+The 23 results files are prose written by models. This is the arithmetic, computed from the
+ledgers the harness wrote: probe verdicts, benchmark tables with spread and drift, ground-truth
+scores with confidence intervals, mutation score, evasion attribution, cost, and provenance.
+
+Nothing here is a judgment. It is the evidence a judgment would have to survive.
+"""
+import collections, json, os, sys, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+LED = os.environ.get("DRIFT_BETA_LEDGER") or sys.exit("source env.sh first")
+def rows(name):
+    p = os.path.join(LED, name)
+    return [json.loads(l) for l in open(p)] if os.path.exists(p) else []
+def probe_ledgers():
+    out = {}
+    for f in sorted(os.listdir(LED)):
+        if not f.endswith(".jsonl") or f.endswith((".bench.jsonl",".state.jsonl",".score.jsonl")): continue
+        if f.startswith(("cost","machine","mutation","gt")): continue
+        out[f[:-6]] = [r for r in rows(f) if "probe" in r]
+    return out
+
+L, W = [], lambda s="": L.append(s)
+W(f"# Drift beta live-validation — compiled evidence\n")
+W(f"Generated {time.strftime('%Y-%m-%dT%H:%M:%S%z')} from `{LED}`.\n")
+
+# ---- provenance first: a number whose subject is unknown is not evidence
+pl = probe_ledgers()
+shas = {r.get("sha_under_test") for rs in pl.values() for r in rs}
+W("## Provenance\n")
+W(f"- subject(s) under test: {', '.join(sorted(str(x) for x in shas)) or 'none recorded'}")
+if len(shas) > 1:
+    W(f"- **INVALID: probes span {len(shas)} different builds. Nothing below is comparable.**")
+st = rows("machine.state.jsonl")
+if st:
+    bad = [s for s in st if not s.get("timing_trustworthy")]
+    W(f"- machine-state samples: {len(st)}, of which {len(bad)} recorded a condition that "
+      f"invalidates timing" + (f" ({bad[0]['problems'][0]})" if bad else ""))
+W()
+
+# ---- probes
+W("## Probe outcomes\n")
+W("| Charter | probes | PASS | FAIL | UNJUDGED | timeouts | median ms |")
+W("|---|---:|---:|---:|---:|---:|---:|")
+tot = collections.Counter()
+for c in sorted(pl):
+    v = collections.Counter(r.get("verdict","UNJUDGED") for r in pl[c])
+    to = sum(1 for r in pl[c] if r.get("timed_out"))
+    ds = sorted(r["duration_ms"] for r in pl[c])
+    med = ds[len(ds)//2] if ds else 0
+    W(f"| {c} | {len(pl[c])} | {v['PASS']} | {v['FAIL']} | {v['UNJUDGED']} | {to} | {med} |")
+    tot.update(v); tot["timeouts"] += to; tot["n"] += len(pl[c])
+W(f"| **all** | **{tot['n']}** | **{tot['PASS']}** | **{tot['FAIL']}** | "
+  f"**{tot['UNJUDGED']}** | **{tot['timeouts']}** | |")
+if tot["UNJUDGED"]:
+    W(f"\n{tot['UNJUDGED']} probe(s) declared no oracle. They are recorded but prove nothing.")
+W()
+
+# ---- benchmarks
+# Scan for bench ledgers directly: a charter that only benchmarks has no probe ledger, and
+# keying off `pl` made those measurements silently invisible in the compiled report.
+bench = [r for f in sorted(os.listdir(LED)) if f.endswith(".bench.jsonl") for r in rows(f)]
+if bench:
+    W("## Benchmarks\n")
+    W("| Charter | metric | label | n | median ms | p95 | CV | drift | usable |")
+    W("|---|---|---|---:|---:|---:|---:|---|---|")
+    for b in bench:
+        s = b.get("stats") or {}
+        W(f"| {b['charter']} | {b['metric']} | {b.get('label') or ''} | {s.get('n','-')} | "
+          f"{s.get('median','-')} | {s.get('p95','-')} | "
+          f"{(str(round(s['cv']*100))+'%') if s.get('cv') is not None else '-'} | "
+          f"{b.get('drift',{}).get('rho','-')} | {'yes' if b.get('usable') else 'NO'} |")
+    unusable = [b for b in bench if not b.get("usable")]
+    if unusable:
+        W(f"\n{len(unusable)} measurement(s) are not usable and must not be quoted:")
+        for b in unusable:
+            W(f"- `{b['charter']}/{b['metric']}` — {b.get('aborted') or b.get('drift',{}).get('verdict')}")
+    W()
+
+# ---- ground truth
+gts = rows("gt.score.jsonl")
+if gts:
+    W("## Detection quality against labeled ground truth\n")
+    W("| kind | tp | fp | fn | precision (95% CI) | recall (95% CI) | F1 | detectable regression |")
+    W("|---|---:|---:|---:|---|---|---:|---|")
+    for k, v in (gts[-1]["scores"] or {}).items():
+        c, pr, rc = v["counts"], v["precision"], v["recall"]
+        f = lambda w: f"{w['p']:.3f} [{w['lo']:.3f}–{w['hi']:.3f}]" if w else "n/a"
+        m = S.mde(pr["p"], pr["n"]) if pr and pr["n"] else None
+        W(f"| {k} | {c['tp']} | {c['fp']} | {c['fn']} | {f(pr)} | {f(rc)} | {v['f1']:.3f} | "
+          f"{('down to %.3f' % m) if m else '—'} |")
+    W("\nThe last column is what this sample size can actually detect. A ratchet tighter than it "
+      "will fire on noise.")
+    W()
+
+# ---- mutation
+mut = rows("mutation.jsonl")
+if mut:
+    last = {r["id"]: r for r in mut}
+    killed = [r for r in last.values() if r["outcome"] == "KILLED"]
+    surv = [r for r in last.values() if r["outcome"] == "SURVIVED"]
+    testable = len(killed) + len(surv)
+    W("## Mutation score — does the eval suite notice when Drift breaks?\n")
+    if testable:
+        w = S.wilson(len(killed), testable)
+        W(f"**{len(killed)}/{testable} injected faults killed** "
+          f"({w['p']:.0%}, 95% CI {w['lo']:.0%}–{w['hi']:.0%}).\n")
+    for r in surv:
+        W(f"- **SURVIVED — `{r['id']}`**: {r['rationale']}")
+        W(f"  - gates that should have caught it: {', '.join(r['kills_expected']) or '(none declared)'}")
+        W(f"  - this defect can reach main today")
+    if not surv and testable: W("No survivors: every injected fault was caught by a gate.")
+    W()
+
+# ---- cost
+cost = rows("cost.jsonl")
+if cost:
+    W("## Program cost\n")
+    by = collections.defaultdict(lambda: [0,0,0.0])
+    for r in cost:
+        a = by[r["stage"]]; a[0]+=r["in_tokens"]; a[1]+=r["out_tokens"]; a[2]+=r["usd"]
+    W("| stage | in | out | USD | share |")
+    W("|---|---:|---:|---:|---:|")
+    t = sum(a[2] for a in by.values())
+    for k,a in sorted(by.items(), key=lambda kv:-kv[1][2]):
+        W(f"| {k} | {a[0]:,} | {a[1]:,} | ${a[2]:.2f} | {100*a[2]/t if t else 0:.0f}% |")
+    W(f"| **total** | | | **${t:.2f}** | |")
+    W()
+
+out = None
+if "--out" in sys.argv: out = sys.argv[sys.argv.index("--out")+1]
+text = "\n".join(L)
+if out: open(out,"w").write(text); print(f"wrote {out} ({len(text)} bytes)")
+else: print(text)

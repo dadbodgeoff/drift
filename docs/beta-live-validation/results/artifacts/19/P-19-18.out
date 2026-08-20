@@ -1,0 +1,8 @@
+{
+ "prepare.redactions.snippets_included": false,
+ "prepare.redactions.source_content_included": false,
+ "ask.redactions.snippets_included": false,
+ "ask.redactions.source_content_included": false,
+ "source_lines_checked": 33,
+ "verbatim_source_hits": []
+}

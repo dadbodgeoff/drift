@@ -914,19 +914,18 @@ fn graph_direct_data_access_findings(
         if is_forbidden_import_source(import_source, &rule.forbidden_imports) {
             continue;
         }
-        let Some((forbidden_module_id, forbidden_path, reexport_chain)) =
-            forbidden_graph_import_target(
-                edge.to.as_str(),
-                import_node,
-                resolved_path,
-                &graph.graph_edges,
-                &module_files,
-                &rule.forbidden_imports,
-                &forbidden_module_paths,
-            )
-        else {
+        let Some(reached) = forbidden_graph_import_target(
+            edge.to.as_str(),
+            import_node,
+            resolved_path,
+            &graph.graph_edges,
+            &module_files,
+            &rule.forbidden_imports,
+            &forbidden_module_paths,
+        ) else {
             continue;
         };
+        let forbidden_path = reached.file_path;
         let file_path = string_metadata(import_node, "file_path")
             .unwrap_or_default()
             .to_string();
@@ -956,9 +955,13 @@ fn graph_direct_data_access_findings(
             import_name,
             import_source,
         )];
-        let message = if reexport_chain.is_empty() {
+        let message = if reached.chain.is_empty() {
             format!(
                 "API route {file_path} imports {import_source}, which resolves to forbidden data-access module {forbidden_path}."
+            )
+        } else if reached.aliased {
+            format!(
+                "API route {file_path} imports {import_source}, which reaches forbidden data-access module {forbidden_path} through a chain of modules that republish its binding."
             )
         } else {
             format!(
@@ -969,9 +972,9 @@ fn graph_direct_data_access_findings(
             edge.from.clone(),
             edge.to.clone(),
             (*owner_module).to_string(),
-            forbidden_module_id.to_string(),
+            reached.module_id.to_string(),
         ];
-        related_node_ids.extend(reexport_chain);
+        related_node_ids.extend(reached.chain);
         related_node_ids.sort();
         related_node_ids.dedup();
         findings.push(PendingFinding {
@@ -4164,6 +4167,20 @@ fn path_is_forbidden_module(resolved_path: &str, forbidden: &str) -> bool {
             .is_some_and(|rest| rest.starts_with('/') || rest.starts_with('.'))
 }
 
+/// What the chain walk found, and by which mechanism.
+///
+/// `aliased` exists so the finding can say a true sentence. A chain assembled entirely from
+/// `export { db } from "./db"` really is a re-export chain; one that traverses a
+/// `MODULE_ALIASES_MODULE` hop is a module that bound the import locally and republished the
+/// binding, and calling that a re-export would describe source text the reader will not find when
+/// they open the file. Same reasoning as D1's refusal to reuse `re_export_used` for the fact.
+struct ForbiddenGraphImport<'a> {
+    module_id: &'a str,
+    file_path: &'a str,
+    chain: Vec<String>,
+    aliased: bool,
+}
+
 fn forbidden_graph_import_target<'a>(
     resolved_module_id: &'a str,
     import_node: &GraphNode,
@@ -4172,23 +4189,44 @@ fn forbidden_graph_import_target<'a>(
     module_files: &BTreeMap<&'a str, &'a str>,
     forbidden_imports: &[String],
     forbidden_module_paths: &BTreeSet<&str>,
-) -> Option<(&'a str, &'a str, Vec<String>)> {
+) -> Option<ForbiddenGraphImport<'a>> {
     if is_forbidden_graph_import(
         import_node,
         resolved_path,
         forbidden_imports,
         forbidden_module_paths,
     ) {
-        return Some((resolved_module_id, resolved_path, Vec::new()));
+        return Some(ForbiddenGraphImport {
+            module_id: resolved_module_id,
+            file_path: resolved_path,
+            chain: Vec::new(),
+            aliased: false,
+        });
     }
     let mut visited = BTreeSet::new();
-    let mut queue = vec![(resolved_module_id, Vec::<String>::new())];
-    while let Some((module_id, chain)) = queue.pop() {
+    let mut queue = vec![(resolved_module_id, Vec::<String>::new(), false)];
+    while let Some((module_id, chain, aliased)) = queue.pop() {
         if !visited.insert(module_id) {
             continue;
         }
+        // R8-11. Two edge kinds carry "this module's exported surface depends on that module",
+        // and the difference between them is one token of syntax: `export { db } from "./db"`
+        // writes a `from` clause and produces the first, while `import { db } from "./db";
+        // export { db };` - or `export const client = db`, or a function returning `db` - produces
+        // the second. A route importing any of them holds the same runtime dependency on `./db`.
+        //
+        // `ModuleImportsModule` is deliberately NOT here. Every laundering module already has one
+        // of those to the data layer, and so does every legitimate service module in every repo.
+        //
+        // The TypeScript twin is `reachesForbiddenViaExportedSurface` (`run-check.ts`). It is a
+        // separate BFS over the same edges and must agree with this one;
+        // `scripts/chain-walker-parity.test.mjs` is the gate that says so, and the comment below
+        // on `is_forbidden_import_source` records what a divergent second copy has already cost.
         for edge in edges.iter().filter(|edge| {
-            edge.kind == GraphEdgeKind::ModuleReexportsModule && edge.from == module_id
+            matches!(
+                edge.kind,
+                GraphEdgeKind::ModuleReexportsModule | GraphEdgeKind::ModuleAliasesModule
+            ) && edge.from == module_id
         }) {
             let Some(target_path) = module_files.get(edge.to.as_str()).copied() else {
                 continue;
@@ -4196,6 +4234,7 @@ fn forbidden_graph_import_target<'a>(
             let mut next_chain = chain.clone();
             next_chain.push(edge.from.clone());
             next_chain.push(edge.to.clone());
+            let next_aliased = aliased || edge.kind == GraphEdgeKind::ModuleAliasesModule;
             // Identity first: a re-export chain ending at the forbidden module's own file is a
             // violation however the intermediate modules are named. Specifier comparison stays as
             // the fallback for bare package names that resolve to no local file.
@@ -4204,9 +4243,14 @@ fn forbidden_graph_import_target<'a>(
                     .iter()
                     .any(|forbidden| path_is_forbidden_module(target_path, forbidden))
             {
-                return Some((edge.to.as_str(), target_path, next_chain));
+                return Some(ForbiddenGraphImport {
+                    module_id: edge.to.as_str(),
+                    file_path: target_path,
+                    chain: next_chain,
+                    aliased: next_aliased,
+                });
             }
-            queue.push((edge.to.as_str(), next_chain));
+            queue.push((edge.to.as_str(), next_chain, next_aliased));
         }
     }
     None

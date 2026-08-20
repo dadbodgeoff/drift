@@ -1,0 +1,58 @@
+{
+  "error": {
+    "message": "disk I/O error",
+    "type": "error",
+    "code": "disk_io_error"
+  },
+  "failure": {
+    "code": "disk_io_error",
+    "surface": "cli",
+    "severity": "error",
+    "safe_to_retry": false,
+    "user_action": "SQLite could not read or write Drift's local database. This usually means the disk is full or failing: check free disk space first, then disk health. Local state may be incomplete.",
+    "recovery_commands": [
+      "drift doctor --repo-root . --json",
+      "drift state size --json",
+      "drift backup list --json"
+    ],
+    "diagnostics": [
+      "disk I/O error"
+    ]
+  },
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "blocked_by_policy",
+    "surface": "cli-error",
+    "read_only": true,
+    "policy": {
+      "allowed": false,
+      "surface": "cli-preflight",
+      "reason": "disk I/O error"
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": false,
+      "latest_scan_id": null
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": false,
+      "mode": "denied",
+      "reason": "disk I/O error",
+      "max_snippet_chars": 0,
+      "approved_snippet_chars": 0,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "denied"
+    },
+    "diagnostics": [
+      "disk I/O error"
+    ]
+  }
+}

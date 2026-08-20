@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""Generate evasion shapes systematically, instead of hand-writing thirteen of them.
+
+    shapes list                          shapes emit <outdir> [--max N] [--axis a=v,...]
+    shapes score <results.jsonl>
+
+`scripts/evasion-matrix.mjs` pins 13 hand-written shapes. Thirteen samples cannot tell you WHERE
+detection degrades - only that it does. This composes independent axes, so the catch rate can be
+read per axis: "resolution survives renaming and namespace imports, and falls off a cliff at
+barrel depth >= 2" is an actionable finding; "7 of 12 caught" is not.
+
+Every emitted shape carries its expected outcome and which axis value is doing the evading, so
+`shapes score` attributes each miss to a mechanism rather than to a filename.
+"""
+import collections, hashlib, itertools, json, os, sys
+
+AXES = {
+ "import_style": {
+   "named":      ('import {{ {sym} }} from "{spec}";', "{sym}"),
+   "renamed":    ('import {{ {sym} as loc }} from "{spec}";', "loc"),
+   "default":    ('import loc from "{spec}";', "loc"),
+   "namespace":  ('import * as ns from "{spec}";', "ns.{sym}"),
+   "require":    ('const {{ {sym} }} = require("{spec}");', "{sym}"),
+   "dynamic":    ('const {{ {sym} }} = await import("{spec}");', "{sym}"),
+ },
+ "specifier": {
+   "alias":        "@/lib/auth",
+   "relative":     "../../lib/auth",
+   "deep_relative":"../../../../lib/auth",
+   "workspace":    "@app/auth",
+   "barrel_1hop":  "@/lib",
+   "barrel_2hop":  "@/lib/index",
+ },
+ "call_site": {
+   "direct":     "  {call}(req);",
+   "via_const":  "  const f = {call};\n  f(req);",
+   "ternary":    "  const f = cond ? {call} : other;\n  f(req);",
+   "callback":   "  handlers.forEach(() => {{ {call}(req); }});",
+   "try_block":  "  try {{ {call}(req); }} catch {{}}",
+ },
+ "noise": {
+   "none":         "",
+   "comment_decoy":"// {call}(req)  <- decoy in a comment, must not count as a use",
+   "string_decoy": 'const s = "{call}(req)";  // decoy in a string literal',
+   "multiline":    "/* a long\n   multi-line comment between the import and the use */",
+ },
+}
+# Axis values believed to defeat resolution. `shapes score` reports whether belief matched reality.
+SUSPECT = {"specifier": {"barrel_1hop", "barrel_2hop", "deep_relative"},
+           "call_site": {"ternary", "callback"},
+           "import_style": {"dynamic", "require"}}
+
+def combos(filt=None):
+    """Deterministically spread, NOT in product order.
+
+    itertools.product varies the last axis fastest, so taking a prefix of it pins every earlier
+    axis to its first value - a --max 60 sample that looks like 60 shapes but only ever exercises
+    one import style. Sorting by a hash of the shape id gives a stable, reproducible sample that
+    covers every axis value in proportion."""
+    keys = list(AXES)
+    out = []
+    for vals in itertools.product(*[list(AXES[k]) for k in keys]):
+        c = dict(zip(keys, vals))
+        if filt and any(c[k] != v for k, v in filt.items()): continue
+        out.append(c)
+    out.sort(key=lambda c: hashlib.sha256(sid(c).encode()).hexdigest())
+    return out
+
+def render(c, sym="assertAuth"):
+    tmpl, callexpr = AXES["import_style"][c["import_style"]]
+    spec = AXES["specifier"][c["specifier"]]
+    imp = tmpl.format(sym=sym, spec=spec)
+    call = callexpr.format(sym=sym)
+    body = AXES["call_site"][c["call_site"]].format(call=call)
+    noise = AXES["noise"][c["noise"]].format(call=call)
+    is_async = c["import_style"] == "dynamic"
+    return (f"{imp}\n{noise}\n\n"
+            f"export {'async ' if is_async else ''}function GET(req: Request) {{\n"
+            f"  const cond = true;\n  const other = (_: Request) => {{}};\n"
+            f"  const handlers = [1];\n{body}\n"
+            f"  return Response.json({{ ok: true }});\n}}\n")
+
+def sid(c): return "-".join(f"{k[:3]}.{c[k]}" for k in AXES)
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+cmd, a = sys.argv[1], sys.argv[2:]
+def opt(n, d=None): return a[a.index(n)+1] if n in a else d
+
+if cmd == "list":
+    total = 1
+    for k, v in AXES.items():
+        total *= len(v); print(f"  {k:<14} {len(v):>2} values: {', '.join(v)}")
+    print(f"\n  {total} shapes in the full cross-product "
+          f"(the committed evasion matrix pins 13)")
+elif cmd == "emit":
+    outdir = a[0]
+    filt = dict(p.split("=") for p in opt("--axis","").split(",") if "=" in p)
+    mx = int(opt("--max", "0") or 0)
+    os.makedirs(outdir, exist_ok=True)
+    man = []
+    for i, c in enumerate(combos(filt)):
+        if mx and i >= mx: break
+        name = f"s{i:04d}"
+        d = os.path.join(outdir, "app", "api", name); os.makedirs(d, exist_ok=True)
+        open(os.path.join(d, "route.ts"), "w").write(render(c))
+        man.append({"id": name, "shape": sid(c), "axes": c,
+                    "route": f"app/api/{name}/route.ts",
+                    "expected": "caught",     # every shape genuinely uses the accepted helper
+                    "suspect_axes": [k for k, v in c.items() if v in SUSPECT.get(k, ())]})
+    json.dump({"axes": AXES, "shapes": man}, open(os.path.join(outdir, "manifest.json"), "w"), indent=1)
+    print(f"emitted {len(man)} shapes to {outdir}  (manifest.json carries expected outcomes)")
+    cov = collections.defaultdict(collections.Counter)
+    for m in man:
+        for k, v in m["axes"].items(): cov[k][v] += 1
+    thin = []
+    for k in AXES:
+        missing = [v for v in AXES[k] if not cov[k][v]]
+        print(f"   {k:<14} " + " ".join(f"{v}={cov[k][v]}" for v in AXES[k]))
+        if missing: thin.append(f"{k}: {', '.join(missing)}")
+    if thin:
+        print("   AXIS VALUES WITH ZERO COVERAGE (raise --max or this sample cannot speak to them):")
+        for t in thin: print("     " + t)
+elif cmd == "score":
+    res = [json.loads(l) for l in open(a[0])]      # {"id","caught":bool}
+    mdir = os.path.dirname(os.path.abspath(a[0]))
+    man = {s["id"]: s for s in json.load(open(os.path.join(mdir, "manifest.json")))["shapes"]}
+    per = collections.defaultdict(lambda: collections.defaultdict(lambda: [0, 0]))
+    miss = []
+    for r in res:
+        s = man.get(r["id"])
+        if not s: continue
+        for k, v in s["axes"].items():
+            per[k][v][1] += 1
+            if r["caught"]: per[k][v][0] += 1
+        if not r["caught"]: miss.append(s)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import _stats as S
+    print(f"── catch rate by axis value  ({len(res)} shapes)")
+    for k in AXES:
+        print(f"   {k}")
+        for v in AXES[k]:
+            c, n = per[k][v]
+            if not n: continue
+            w = S.wilson(c, n)
+            flag = "  <-- suspected" if v in SUSPECT.get(k, ()) else ""
+            print(f"     {v:<15} {c:>3}/{n:<3} {w['p']:.2f} [{w['lo']:.2f},{w['hi']:.2f}]{flag}")
+    if miss:
+        print(f"\n── {len(miss)} evasion(s); attribution by axis value:")
+        att = collections.Counter()
+        for s in miss:
+            for k, v in s["axes"].items(): att[f"{k}={v}"] += 1
+        for kv, n in att.most_common(12):
+            print(f"     {kv:<32} present in {n}/{len(miss)} evasions")
+        unsuspected = [s for s in miss if not s["suspect_axes"]]
+        if unsuspected:
+            print(f"\n   {len(unsuspected)} evasion(s) used NO suspected axis - these are the ones")
+            print( "   nobody predicted, and the most valuable output of this run:")
+            for s in unsuspected[:8]: print(f"     {s['shape']}")
+else: sys.exit(f"unknown subcommand {cmd}")

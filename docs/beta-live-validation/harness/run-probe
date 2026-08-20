@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Run one probe, judge it mechanically, record it. One process.
+
+    run-probe <charter> <probe-id> [assertions] [--timeout N] [--cwd DIR] -- <command...>
+
+Assertions turn an oracle into something computed rather than judged. An agent that declares its
+oracle up front cannot later describe a failure as a pass, and the model spends no tokens deciding
+whether output "looks right".
+
+    --expect-exit N            process exit code
+    --expect-out STR           stdout contains STR
+    --refute-out STR           stdout does NOT contain STR
+    --expect-out-re RE         stdout matches regex
+    --expect-empty             stdout is blank
+    --expect-json-valid        stdout parses as JSON
+    --expect-json PATH=VALUE   .a.b[0] equals VALUE (JSON literal)
+    --expect-json-exists PATH  path is present
+    --expect-json-len PATH=N   len(path) == N
+
+Verdict lands in the ledger as PASS / FAIL / UNJUDGED. UNJUDGED means the probe declared no
+oracle: legitimate for exploratory probes, and counted separately so it cannot masquerade as a pass.
+"""
+import hashlib, json, os, subprocess, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _probelib import die, env, redact, ledger_append, artifacts_dir, evaluate
+
+ASSERTS = {"--expect-exit":"exit", "--expect-exit-any":"exit-any", "--expect-out":"out", "--refute-out":"refute-out",
+           "--expect-out-re":"out-re", "--expect-json":"json", "--expect-json-exists":"json-exists",
+           "--expect-json-len":"json-len"}
+FLAGS = {"--expect-empty":"empty", "--expect-json-valid":"json-valid"}
+
+argv = sys.argv[1:]
+if "--" not in argv: die("missing -- before the command")
+head, cmd = argv[:argv.index("--")], argv[argv.index("--")+1:]
+if len(head) < 2 or not cmd: die("usage: run-probe <charter> <probe> [assertions] -- <cmd...>")
+
+charter, probe, opts = head[0], head[1], head[2:]
+timeout, cwd, asserts, i = 120.0, None, [], 0
+while i < len(opts):
+    o = opts[i]
+    if o == "--timeout":  timeout = float(opts[i+1]); i += 2
+    elif o == "--cwd":    cwd = opts[i+1]; i += 2
+    elif o in ASSERTS:    asserts.append((ASSERTS[o], opts[i+1])); i += 2
+    elif o in FLAGS:      asserts.append((FLAGS[o], None)); i += 1
+    else: die(f"unknown option {o}")
+
+d = artifacts_dir(charter)
+out_p, err_p = os.path.join(d, probe + ".out"), os.path.join(d, probe + ".err")
+
+t0 = time.perf_counter(); timed_out = False
+try:
+    p = subprocess.run(cmd, capture_output=True, timeout=timeout, cwd=cwd)
+    rc, so, se = p.returncode, p.stdout, p.stderr
+except subprocess.TimeoutExpired as e:
+    timed_out, rc, so, se = True, 124, e.stdout or b"", e.stderr or b""
+except FileNotFoundError:
+    rc, so, se = 127, b"", f"command not found: {cmd[0]}\n".encode()
+except PermissionError as e:
+    rc, so, se = 126, b"", f"permission denied: {e}\n".encode()
+ms = round((time.perf_counter() - t0) * 1000)
+
+open(out_p, "wb").write(so); open(err_p, "wb").write(se)
+def text(b):
+    try: return b.decode("utf-8")
+    except UnicodeDecodeError: return None
+so_t, se_t = text(so), text(se)
+
+verdict, checks = evaluate(asserts, rc, so_t, timed_out)
+
+# What the command READ, not just what it was. Two runs of an identical command against an
+# identical subject can differ entirely on these, and without them the ledger cannot say why -
+# which is exactly how a corpus-path difference was mistaken for a fingerprint-scheme change.
+drift_env = {k: v for k, v in sorted(os.environ.items())
+             if k.startswith("DRIFT_") and k not in ("DRIFT_BETA_REDACT",)}
+ledger_append(charter, {
+    "charter": charter, "probe": probe, "command": cmd,
+    "cwd": cwd or os.getcwd(), "env": drift_env,
+    "exit_code": rc, "timed_out": timed_out, "duration_ms": ms,
+    "stdout_path": out_p, "stderr_path": err_p,
+    "stdout_bytes": len(so), "stderr_bytes": len(se),
+    "stdout_sha256": hashlib.sha256(so).hexdigest(),
+    "stdout_binary": so_t is None,
+    "verdict": verdict, "checks": checks,
+    "sha_under_test": os.environ.get("DRIFT_BETA_SHA"),
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")})
+
+mark = {"PASS":"PASS", "FAIL":"FAIL", "UNJUDGED":"----"}[verdict]
+ol = so_t.count("\n") if so_t else 0
+print(f"── [{mark}] {charter}/{probe}  exit={rc}{'  TIMED OUT' if timed_out else ''}  {ms}ms  "
+      f"stdout={ol}L/{len(so)}B  stderr={len(se)}B")
+print(redact("── cmd: " + " ".join(cmd)))
+for c in checks:
+    print(f"──   {'ok ' if c['ok'] else 'NO '} {c['kind']}: {c['detail']}")
+if so_t is None:
+    print(f"── stdout is binary ({len(so)}B) → {out_p}")
+elif so_t:
+    L = so_t.splitlines()
+    for l in L[:12]: print(redact(l))
+    if len(L) > 20:
+        print(f"   [… {len(L)-20} lines elided → {out_p} …]")
+        for l in L[-8:]: print(redact(l))
+if se_t and se_t.strip():
+    print("── stderr:")
+    E = se_t.splitlines()
+    for l in E[:12]: print(redact(l))
+    if len(E) > 12: print(f"   [… {len(E)-12} lines elided → {err_p} …]")
+sys.exit(0 if verdict in ("PASS", "UNJUDGED") else 1)

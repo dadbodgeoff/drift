@@ -181,13 +181,30 @@ function shapesFor(cfg, relSpec) {
   //
   // The first attempt here used `import __data from "..."; export const prisma = __data;`. That
   // compiles, but it is not a re-export, so the chain detection could not follow it and three catch
-  // cells silently became evasions. Laundering through import-then-const-export is a real evasion
-  // shape Drift does not currently catch, and it is worth recording as such - but it is a different
-  // shape from the one these cells pin, and quietly substituting it changed what they measure.
+  // cells silently became evasions - but it is a different shape from the one these cells pin, and
+  // quietly substituting it changed what they measure. That shape is D-2/E04, and R8 closed it; it
+  // now has cells of its own (S14-S18) rather than borrowing these.
   const reexportFromDataLayer = (exportedAs) =>
     cfg.dataImportKind === "default"
       ? `export { default as ${exportedAs} } from "${spec}";\n`
       : `export { ${sym}${exportedAs === sym ? "" : ` as ${exportedAs}`} } from "${spec}";\n`;
+
+  // ------------------------------------------------------------------------------------
+  // R8 / D-2: laundering through a LOCAL BINDING rather than a re-export statement.
+  //
+  // S03-S05 launder through `export { x } from "<data layer>"` - a statement that carries a
+  // `source` field on its AST node, which is the entire reason Drift caught them. Drop the
+  // `from` clause and the same republication became invisible: `export const client = db`,
+  // `export { db }`, `export function get() { return db }` all reached the route at runtime and
+  // all reported a clean pass. S14-S18 pin those now that R8 closed them; S19-S21 pin the
+  // negative controls that a loose fix would break; S22-S28 pin what is still open.
+  //
+  // The laundering module always imports the data layer in the repo's OWN form (papermark
+  // default-exports), so `sym` is the local binding name in every one of these.
+  const launderPrelude = `${dataImport(spec)}\n`;
+  // The namespace member S23 reads. On a default-exporting data layer there is no named member
+  // to reach for, and `__ns.default` is the honest equivalent.
+  const nsMember = cfg.dataImportKind === "default" ? "default" : sym;
   return [
     {
       id: "S01-control-canonical",
@@ -298,6 +315,199 @@ function shapesFor(cfg, relSpec) {
       class: "refuse",
       files: (d) => ({
         [`${d}/route.ts`]: routeBody(dataImport(`${spec}/internal`), use(sym))
+      })
+    },
+
+    // === R8 / D-2, closed: the three shapes plus the two variants that exercise separate code ===
+
+    {
+      // E04. The shape the S03 comment above described as "a real evasion shape Drift does not
+      // currently catch". It is one token from S03 - the `from` clause - and that token decided
+      // whether the product blocked or reported a clean pass.
+      id: "S14-alias-const-binding",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export const helper = ${sym};\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
+      })
+    },
+    {
+      // E04b, the detached clause. `export { db };` with no `from` is handled by a different
+      // extractor branch than `export { db } from "./db"` - it was named in no prior audit and is
+      // one keystroke from S03 for anyone writing the evasion deliberately.
+      id: "S15-alias-detached-clause",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export { ${sym} };\n`,
+        [`${d}/route.ts`]: routeBody(`import { ${sym} } from "./data";`, use(sym))
+      })
+    },
+    {
+      // E04b, renamed. Its own cell for the same reason S05 is separate from S03: the rename is
+      // where the exported name and the source symbol diverge, so it is the only cell that can
+      // catch a fact recording one of the two and losing the other - which would make the export
+      // unresolvable in its target and the chain unwalkable, while S15 stayed green.
+      id: "S16-alias-renamed-clause",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export { ${sym} as helper };\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
+      })
+    },
+    {
+      // E05. An exported function whose every return is the imported binding. Weaker evidence
+      // than an alias - it is a claim about returns, not an identity - and it is the shape whose
+      // conservatism boundary S25/S26 pin the far side of.
+      id: "S17-wrap-function-return",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export function getHelper() {\n  return ${sym};\n}\n`,
+        [`${d}/route.ts`]: routeBody(`import { getHelper } from "./data";`, use("getHelper()"))
+      })
+    },
+    {
+      // E05, concise arrow body. Its own cell because there is no `return` token to collect: the
+      // body IS the single return, which is a separate path through the wrap rule. A regression
+      // that only collected `return_statement` nodes would leave S17 green and this one silent.
+      id: "S18-wrap-arrow-return",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export const getHelper = () => ${sym};\n`,
+        [`${d}/route.ts`]: routeBody(`import { getHelper } from "./data";`, use("getHelper()"))
+      })
+    },
+
+    // === R8 / D-2, negative controls: these are NOT laundering and a finding is a FAIL ===
+    //
+    // The classification rule, applied to every deliberate miss below and in S22-S28: a shape
+    // that IS laundering and is not caught is a `known_evasion` (recall gap, recorded, still a
+    // catch cell); a shape where the route provably does NOT receive the data layer is `silent`
+    // (precision control, a finding is a false positive). The three here are the ones a fix
+    // loose enough to close S22-S28 would break first, which is exactly why they are pinned
+    // alongside rather than after.
+
+    {
+      // The binding is reassigned AWAY from the import before the module finishes evaluating, so
+      // the importer receives the replacement, not the data layer. Note the direction: `export
+      // let helper = <data layer>` that is NEVER reassigned IS caught (measured), and the
+      // reassignment TOWARD the import is S28. Only this direction is a false-positive risk.
+      id: "S19-alias-reassigned-away",
+      class: "silent",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export let helper = ${sym};\nhelper = null as never;\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
+      })
+    },
+    {
+      // The returned identifier is a local declaration that shadows the import. Same spelling,
+      // different binding; the caller gets the local. A wrap rule that matched on name alone
+      // rather than resolving the scope chain would flag this, and it would be wrong.
+      id: "S20-wrap-shadowed-local",
+      class: "silent",
+      files: (d) => ({
+        [`${d}/data.ts`]:
+          `${launderPrelude}export function getHelper() {\n  const ${sym} = { shadowed: true };\n  return ${sym};\n}\n`,
+        [`${d}/route.ts`]: routeBody(`import { getHelper } from "./data";`, use("getHelper()"))
+      })
+    },
+    {
+      // The only `return <binding>` in the file belongs to an inner callback. The exported
+      // function returns undefined, so the route receives undefined. A naive subtree walk over
+      // return statements attributes the inner return to the outer function and flags this.
+      id: "S21-wrap-nested-callback",
+      class: "silent",
+      files: (d) => ({
+        [`${d}/data.ts`]:
+          `${launderPrelude}export function getHelper() {\n  [1].forEach(() => {\n    return ${sym};\n  });\n}\n`,
+        [`${d}/route.ts`]: routeBody(`import { getHelper } from "./data";`, use("getHelper()"))
+      })
+    },
+
+    // === R8-13, still open: real laundering, deliberately not caught, recorded not hidden ===
+    //
+    // Each of these reaches the data layer at the route at runtime. They are catch cells and the
+    // baseline pins them `known_evasion: true`, which is the matrix's way of saying "this is a
+    // miss we can name" rather than filing it where no one looks.
+
+    {
+      // Member expression. The fact model has no member path, so a claim about WHICH member was
+      // republished would be invented. `.constructor` rather than a repo-specific property: it
+      // typechecks on every value in every repo, and the shape under test is the member
+      // expression, not which member.
+      id: "S22-alias-member-expression",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export const helper = ${sym}.constructor;\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
+      })
+    },
+    {
+      // Namespace member. Same gap as S22 with a namespace import in front of it; listed
+      // separately because the binding table entry is a whole module rather than one symbol, so
+      // it is the shape most likely to fall into the alias rule by accident.
+      id: "S23-alias-namespace-member",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `import * as __ns from "${spec}";\nexport const helper = __ns.${nsMember};\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
+      })
+    },
+    {
+      // Property laundering. Closing it needs an object-shape relation - which property of which
+      // literal holds which binding - and that is a different fact model, not a looser rule.
+      id: "S24-alias-object-literal",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export const api = { ${sym} };\n`,
+        [`${d}/route.ts`]: routeBody(`import { api } from "./data";`, use(`api.${nsMember}`))
+      })
+    },
+    {
+      // `async` returns a Promise of the binding, not the binding. The route awaits it and does
+      // receive the data layer, so this is a miss and not a control - but claiming the awaited
+      // value IS the import is a claim about types, and this engine has no type environment.
+      id: "S25-wrap-async-function",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export async function getHelper() {\n  return ${sym};\n}\n`,
+        [`${d}/route.ts`]: routeBody(
+          `import { getHelper } from "./data";`,
+          `  const __h = await getHelper(); void __h;`
+        )
+      })
+    },
+    {
+      // One branch returns the binding and one returns something else. The wrap rule requires
+      // EVERY return to be the same binding, because "sometimes the data layer" cannot be
+      // decided without the control-flow tier.
+      id: "S26-wrap-conditional-return",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]:
+          `${launderPrelude}export function getHelper(flag: boolean) {\n  if (flag) {\n    return ${sym};\n  }\n  return null as never;\n}\n`,
+        [`${d}/route.ts`]: routeBody(`import { getHelper } from "./data";`, use("getHelper(true)"))
+      })
+    },
+    {
+      // Multi-declarator export. The alias rule takes a statement with exactly ONE declarator so
+      // that a partially-matching statement cannot emit a half-true fact; two declarators of the
+      // same binding is real laundering and is missed. Found in review, not in the plan's table.
+      id: "S27-alias-multi-declarator",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export const first = ${sym}, second = ${sym};\n`,
+        [`${d}/route.ts`]: routeBody(`import { first } from "./data";`, use("first"))
+      })
+    },
+    {
+      // Reassignment TOWARD the import - the honest half of the `let` row. The rule disqualifies
+      // any reassigned binding, which is right for S19 and gives this one away for free. Closing
+      // it needs flow-sensitive binding state, not a wider rule.
+      id: "S28-alias-let-reassigned-to-import",
+      class: "catch",
+      files: (d) => ({
+        [`${d}/data.ts`]: `${launderPrelude}export let helper = null as never;\nhelper = ${sym};\n`,
+        [`${d}/route.ts`]: routeBody(`import { helper } from "./data";`, use("helper"))
       })
     }
   ];

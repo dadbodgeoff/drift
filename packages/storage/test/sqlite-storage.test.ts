@@ -119,7 +119,8 @@ describe("SQLite Drift storage", () => {
       "033_convention_candidate_superseded_by",
       "034_declaration_fact_kinds",
       "035_secret_source_read_fact_kind",
-      "036_sink_candidate_fact_kind"
+      "036_sink_candidate_fact_kind",
+      "037_binding_alias_fact_kinds"
     ]);
     storage.close();
   });
@@ -201,7 +202,8 @@ describe("SQLite Drift storage", () => {
       "033_convention_candidate_superseded_by",
       "034_declaration_fact_kinds",
       "035_secret_source_read_fact_kind",
-      "036_sink_candidate_fact_kind"
+      "036_sink_candidate_fact_kind",
+      "037_binding_alias_fact_kinds"
     ]);
     expect(storage.getRepo("repo_abc")?.fingerprint).toBe("repo-fp");
     storage.close();

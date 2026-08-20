@@ -1,0 +1,25 @@
+Drift prepare
+
+Task: add rate limiting to the stripe webhook
+Summary: 1 convention, 9 relevant files, 4 open findings, 1 required check
+Governance: read-only; human approval required for mutations
+
+Parser gaps: 0 blocking, 6 advisory. Action: Restore graph evidence and rerun drift scan before relying on blocking enforcement.
+
+Conventions:
+  convention_572bf7b306010298: API routes should not import data-access clients directly.
+
+Relevant files:
+  app/api/webhooks/stripe/route.ts
+  app/api/users/stripe/route.ts
+  components/theme-provider.tsx
+  lib/stripe.ts
+  app/api/og/route.tsx
+  app/api/posts/[postId]/route.ts
+  app/api/posts/route.ts
+  app/api/users/[userId]/route.ts
+  pages/api/auth/[...nextauth].ts
+
+Next commands:
+  drift check --repo repo_68a494d2b8491ebb --diff main...HEAD --scope changed-hunks --json
+  drift findings list --repo repo_68a494d2b8491ebb --json

@@ -1,0 +1,40 @@
+{
+ "exit": 0,
+ "n_requests": 5,
+ "n_responses": 4,
+ "expect_responses": 4,
+ "responses": [
+  {
+   "jsonrpc": "2.0",
+   "id": 1,
+   "error": {
+    "code": -32601,
+    "message": "Unsupported MCP method: resources/list"
+   }
+  },
+  {
+   "jsonrpc": "2.0",
+   "id": 2,
+   "error": {
+    "code": -32601,
+    "message": "Unsupported MCP method: prompts/list"
+   }
+  },
+  {
+   "jsonrpc": "2.0",
+   "id": 3,
+   "error": {
+    "code": -32601,
+    "message": "Unsupported MCP method: ping"
+   }
+  },
+  {
+   "jsonrpc": "2.0",
+   "id": 5,
+   "error": {
+    "code": -32601,
+    "message": "Unsupported MCP method: completion/complete"
+   }
+  }
+ ]
+}

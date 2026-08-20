@@ -1,0 +1,285 @@
+{
+ "get_scan_status": {
+  "cli_command": "scan status --repo repo_68a494d2b8491ebb --json",
+  "identical": true,
+  "mcp_keys": [
+   "audit_integrity",
+   "capability_report",
+   "changes",
+   "current_branch",
+   "governance",
+   "indexed_file_count",
+   "invalidation_reasons",
+   "latest_scan",
+   "latest_scan_change_summary",
+   "machine_contract_versions",
+   "next_command",
+   "next_commands",
+   "parser_gap_quality",
+   "parser_gaps",
+   "readiness",
+   "repo_id",
+   "repo_root",
+   "response_schema",
+   "scan_count",
+   "scan_fingerprint",
+   "security_capabilities",
+   "source_change_count",
+   "stale",
+   "stored_fact_count",
+   "summary"
+  ],
+  "cli_keys": [
+   "audit_integrity",
+   "capability_report",
+   "changes",
+   "current_branch",
+   "governance",
+   "indexed_file_count",
+   "invalidation_reasons",
+   "latest_scan",
+   "latest_scan_change_summary",
+   "machine_contract_versions",
+   "next_command",
+   "next_commands",
+   "parser_gap_quality",
+   "parser_gaps",
+   "readiness",
+   "repo_id",
+   "repo_root",
+   "response_schema",
+   "scan_count",
+   "scan_fingerprint",
+   "security_capabilities",
+   "source_change_count",
+   "stale",
+   "stored_fact_count",
+   "summary"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": []
+ },
+ "get_repo_contract": {
+  "cli_command": "contract show --repo repo_68a494d2b8491ebb --json",
+  "identical": true,
+  "mcp_keys": [
+   "contract",
+   "contract_fingerprint",
+   "governance",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary"
+  ],
+  "cli_keys": [
+   "contract",
+   "contract_fingerprint",
+   "governance",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": []
+ },
+ "get_repo_map": {
+  "cli_command": "repo map --repo repo_68a494d2b8491ebb --json",
+  "identical": false,
+  "mcp_keys": [
+   "agent_envelope",
+   "canonical_route_fallback",
+   "files",
+   "filters",
+   "framework_entrypoints",
+   "freshness_requirement",
+   "generated_at",
+   "governance",
+   "impact_summary",
+   "latest_scan",
+   "next_commands",
+   "pagination",
+   "parser_gap_quality",
+   "policy",
+   "proof_freshness",
+   "readiness",
+   "redactions",
+   "repo_id",
+   "repo_root",
+   "response_schema",
+   "route_source_summary",
+   "routes",
+   "scan_fingerprint",
+   "scan_status",
+   "summary",
+   "topology"
+  ],
+  "cli_keys": [
+   "agent_envelope",
+   "canonical_route_fallback",
+   "files",
+   "filters",
+   "framework_entrypoints",
+   "freshness_requirement",
+   "generated_at",
+   "governance",
+   "impact_summary",
+   "latest_scan",
+   "next_commands",
+   "pagination",
+   "parser_gap_quality",
+   "policy",
+   "proof_freshness",
+   "readiness",
+   "redactions",
+   "repo_id",
+   "repo_root",
+   "response_schema",
+   "route_source_summary",
+   "routes",
+   "scan_fingerprint",
+   "scan_status",
+   "summary",
+   "topology"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": [],
+  "value_diffs": {
+   "generated_at": {
+    "mcp": "2026-08-19T15:42:52.541Z",
+    "cli": "2026-08-19T15:42:52.737Z"
+   }
+  }
+ },
+ "get_conventions": {
+  "cli_command": "conventions accepted --repo repo_68a494d2b8491ebb --json",
+  "identical": true,
+  "mcp_keys": [
+   "conventions",
+   "filters",
+   "governance",
+   "pagination",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary"
+  ],
+  "cli_keys": [
+   "conventions",
+   "filters",
+   "governance",
+   "pagination",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": []
+ },
+ "get_findings": {
+  "cli_command": "findings list --repo repo_68a494d2b8491ebb --json",
+  "identical": false,
+  "mcp_keys": [
+   "agent_envelope",
+   "filters",
+   "findings",
+   "freshness_requirement",
+   "governance",
+   "pagination",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "review_items",
+   "scan_status",
+   "summary"
+  ],
+  "cli_keys": [
+   "agent_envelope",
+   "filters",
+   "findings",
+   "freshness_requirement",
+   "governance",
+   "pagination",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "review_items",
+   "scan_status",
+   "summary"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": [],
+  "value_diffs": {
+   "findings": {
+    "mcp": "[{'finding_id': 'finding_2fd0e7eb4e26bb28', 'convention_id': 'convention_572bf7b306010298', 'title': 'API route imports data access directly', 'severity': 'error', 'lifecycle': 'new', 'diff_status': '",
+    "cli": "[{'id': 'finding_2fd0e7eb4e26bb28', 'repo_id': 'repo_68a494d2b8491ebb', 'convention_id': 'convention_572bf7b306010298', 'check_id': 'check_e38d17569e709fda', 'repo_contract_id': 'contract_68a494d2b849"
+   },
+   "review_items": {
+    "mcp": "[{'id': 'finding_2fd0e7eb4e26bb28', 'convention_id': 'convention_572bf7b306010298', 'title': 'API route imports data access directly', 'severity': 'error', 'status': 'new', 'diff_status': 'touched_exi",
+    "cli": "[{'id': 'finding_2fd0e7eb4e26bb28', 'convention_id': 'convention_572bf7b306010298', 'title': 'API route imports data access directly', 'severity': 'error', 'status': 'new', 'diff_status': 'touched_exi"
+   }
+  }
+ },
+ "get_audit_status": {
+  "cli_command": "audit verify --repo repo_68a494d2b8491ebb --json",
+  "identical": true,
+  "mcp_keys": [
+   "audit_integrity",
+   "governance",
+   "next_commands",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary",
+   "verification"
+  ],
+  "cli_keys": [
+   "audit_integrity",
+   "governance",
+   "next_commands",
+   "policy",
+   "repo_id",
+   "response_schema",
+   "summary",
+   "verification"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": []
+ },
+ "get_capabilities": {
+  "cli_command": "capabilities --json",
+  "identical": false,
+  "mcp_keys": [
+   "capabilities",
+   "governance",
+   "runtime",
+   "v1_scope"
+  ],
+  "cli_keys": [
+   "capabilities",
+   "claims_manifest",
+   "engine",
+   "governance",
+   "machine_contract_versions",
+   "runtime",
+   "v1_scope"
+  ],
+  "keys_only_in_mcp": [],
+  "keys_only_in_cli": [
+   "claims_manifest",
+   "engine",
+   "machine_contract_versions"
+  ],
+  "value_diffs": {
+   "runtime": {
+    "mcp": "{'mcp_version': '0.1.0', 'core_version': '0.1.0', 'scanner_version': '0.1.0', 'typescript_adapter_version': '0.1.0', 'rule_engine_version': '0.1.0', 'contract_schema_version': 1, 'supported_sqlite_sch",
+    "cli": "{'cli_version': '0.1.0', 'core_version': '0.1.0', 'scanner_version': '0.1.0', 'typescript_adapter_version': '0.1.0', 'rule_engine_version': '0.1.0', 'contract_schema_version': 1, 'supported_sqlite_sch"
+   },
+   "capabilities": {
+    "mcp": "{'read_only_cli': ['doctor', 'version', 'capabilities', 'scan', 'scan status', 'ask', 'prepare', 'repo map', 'conventions list', 'conventions accepted', 'conventions show', 'check', 'findings list', '",
+    "cli": "{'read_only_cli': ['doctor', 'version', 'capabilities', 'scan', 'scan status', 'ask', 'prepare', 'repo map', 'conventions list', 'conventions accepted', 'conventions show', 'check', 'findings list', '"
+   }
+  }
+ }
+}

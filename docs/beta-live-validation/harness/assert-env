@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Refuse to start unless this agent is pointed at the frozen subject.
+
+    assert-env
+
+An agent that runs against the live worktree instead of the freeze produces results that look
+valid and are not. This is the cheapest possible guard against that, and every charter runs it
+as its first command.
+"""
+import hashlib, json, os, subprocess, sys
+fail = []
+def need(k):
+    v = os.environ.get(k)
+    if not v: fail.append(f"{k} is unset - source env.sh"); return None
+    return v
+
+fr  = need("DRIFT_BETA_FREEZE"); sha = need("DRIFT_BETA_SHA")
+src = need("DRIFT_BETA_SRC");   eng = need("DRIFT_ENGINE_BIN")
+need("DRIFT_BETA_ARTIFACTS"); need("DRIFT_BETA_LEDGER")
+
+if src and not os.path.isdir(src): fail.append(f"DRIFT_BETA_SRC missing: {src}")
+if eng and not os.access(eng or "", os.X_OK): fail.append(f"engine not executable: {eng}")
+
+if src and os.path.isdir(src):
+    head = subprocess.run(["git","-C",src,"rev-parse","HEAD"],
+                          capture_output=True, text=True).stdout.strip()
+    if sha and head != sha: fail.append(f"frozen tree is at {head}, expected {sha}")
+    dirty = subprocess.run(["git","-C",src,"status","--porcelain"],
+                           capture_output=True, text=True).stdout.strip()
+    if dirty: fail.append(f"frozen tree is dirty:\n{dirty}")
+    if os.access(src, os.W_OK): fail.append(f"frozen tree is writable - it was not frozen")
+
+man = os.path.join(fr or "", "manifest.json")
+if fr and os.path.exists(man):
+    m = json.load(open(man))
+    got = hashlib.sha256(open(eng,"rb").read()).hexdigest()
+    if got != m.get("engine_sha256"):
+        fail.append("engine binary does not match the freeze manifest - "
+                    "someone rebuilt or re-froze under this run")
+elif fr:
+    fail.append(f"no manifest at {man} - re-run freeze.sh")
+
+# The toolchain the probes will actually invoke. A PATH that lost ~/.cargo/bin produced two
+# "BUILD FAILED" cycles that looked like a broken commit; a PATH that lost node produced a wall of
+# "command not found". Both are cheap to detect here and expensive to diagnose later.
+import shutil
+# A `drift` on PATH that is NOT the frozen subject is the worst kind of contamination: probes look
+# right, run clean, and measure a different product. Charter 05 hit exactly this - the global
+# `drift` here is driftdetect@0.9.48, unrelated to this repo.
+_d = shutil.which("drift")
+if _d and src and not os.path.abspath(_d).startswith(os.path.abspath(src)):
+    fail.append(f"a foreign `drift` shadows the subject at {_d} - probes must invoke "
+                f"`node $DRIFT_BETA_SRC/packages/cli/dist/main.js`, never a bare `drift`")
+
+for tool, why in (("node", "every eval script"), ("pnpm", "build and eval targets"),
+                  ("cargo", "engine builds"), ("git", "subject verification")):
+    if not shutil.which(tool):
+        fail.append(f"{tool} not on PATH - needed for {why}")
+
+# A binary older than the source beside it is the stale-engine trap: TypeScript rebuilt, engine not.
+if src and eng and os.path.isdir(os.path.join(src, "crates")):
+    newest = 0.0
+    for dp, _, fns in os.walk(os.path.join(src, "crates")):
+        for fn in fns:
+            if fn.endswith(".rs"):
+                try: newest = max(newest, os.path.getmtime(os.path.join(dp, fn)))
+                except OSError: pass
+    if newest and os.path.getmtime(eng) < newest:
+        fail.append("engine binary is OLDER than a .rs file beside it - the build is stale")
+
+cwd = os.getcwd()
+if src and cwd.startswith(os.path.dirname(src.rstrip("/"))) is False and "drift" in cwd:
+    pass  # cwd outside the freeze is normal; probes use explicit --repo-root
+
+if fail:
+    print("ENVIRONMENT REFUSED:", file=sys.stderr)
+    for f in fail: print("  - " + f, file=sys.stderr)
+    sys.exit(1)
+print(f"env ok · subject {sha[:12]} · engine {os.path.basename(eng)}")

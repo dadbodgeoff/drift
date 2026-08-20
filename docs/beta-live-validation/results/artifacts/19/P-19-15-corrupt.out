@@ -1,0 +1,6 @@
+EXIT=0
+STDOUT:
+{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"file is not a database","data":{"code":"corrupt_database","user_action":"The local database is unreadable. Restore a backup, or delete the repo's state directory to rebuild it from a fresh scan.","safe_to_retry":false,"recovery_commands":["drift backup list --json","drift doctor --repo-root . --json"]}}}
+
+STDERR:
+

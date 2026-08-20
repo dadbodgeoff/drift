@@ -1,0 +1,17 @@
+{
+  "repo": {
+    "id": "repo_8b460f3716d2bd8b",
+    "root_path": "/tmp/drift-beta.17.P-17-02b.pwhZRt/repo",
+    "fingerprint": "904d67856100406a",
+    "vcs_provider": "git",
+    "remote_url_hash": "0e27e95f6ff162efb1099a4a8708850de3d42405964e908d604d999fc66a099d",
+    "package_manager": "pnpm",
+    "lockfile_hashes": {
+      "pnpm-lock.yaml": "63fa30c5b76bda7f51659a0e120219de0e34d5a96c149d6797e29b2818f0e6ab"
+    },
+    "resolver_input_hash": "e94848190281f993ca392d241584c4ead9ec449b1e78f63b7f3bfa547ae7d025",
+    "created_at": "2026-08-19T15:43:03.777Z",
+    "updated_at": "2026-08-19T15:43:03.777Z"
+  },
+  "database_path": "/tmp/drift-beta.17.P-17-02b.pwhZRt/state/repo_8b460f3716d2bd8b/drift.sqlite"
+}

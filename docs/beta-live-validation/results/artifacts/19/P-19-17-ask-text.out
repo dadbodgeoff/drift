@@ -1,0 +1,29 @@
+Drift answer
+
+Topic: what conventions apply to api routes
+Source: deterministic_local_state
+Matched 1 accepted convention, 4 open findings, and 8 relevant files.
+Governance: read-only; human approval required for mutations
+
+Conventions:
+  convention_572bf7b306010298: API routes should not import data-access clients directly.
+
+Open findings:
+  finding_2fd0e7eb4e26bb28 new - API route imports data access directly
+  finding_6188425b3aaa7a47 new - API route imports data access directly
+  finding_c2998d096c586c08 new - API route imports data access directly
+  finding_dd9c147fa5b8e5dd new - API route imports data access directly
+
+Relevant files:
+  app/api/og/route.tsx
+  app/api/posts/[postId]/route.ts
+  app/api/posts/route.ts
+  app/api/users/[userId]/route.ts
+  app/api/users/stripe/route.ts
+  app/api/webhooks/stripe/route.ts
+  pages/api/auth/[...nextauth].ts
+  app/api/auth/[...nextauth]/_route.ts
+
+Next commands:
+  drift prepare "what conventions apply to api routes" --repo repo_68a494d2b8491ebb --json
+  drift check --repo repo_68a494d2b8491ebb --diff main...HEAD --scope changed-hunks --json

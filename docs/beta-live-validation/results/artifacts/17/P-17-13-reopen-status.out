@@ -1,0 +1,376 @@
+{
+  "response_schema": "drift.scan.status.v1",
+  "repo_id": "repo_abba3c0bac120939",
+  "repo_root": "/tmp/drift-beta.17.P-17-13.K1Brrd/repo",
+  "current_branch": "main",
+  "latest_scan": {
+    "id": "scan_fa85fc0182ec10f3",
+    "repo_id": "repo_abba3c0bac120939",
+    "branch": "main",
+    "commit": "adab025e172273d9367207f3f40a257316a089e7",
+    "dirty": false,
+    "scanner_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+      "engine": "0.1.0"
+    },
+    "rule_engine_version": "0.1.0",
+    "status": "completed",
+    "file_count": 132,
+    "fact_count": 1850,
+    "finding_count": 0,
+    "started_at": "2026-08-19T15:52:25.179Z",
+    "completed_at": "2026-08-19T15:52:25.179Z"
+  },
+  "scan_fingerprint": "2d250b888d30f326b30ff865025c93d5bd96140ef7029f823dd658797c1323d9",
+  "stored_fact_count": 1850,
+  "indexed_file_count": 132,
+  "source_change_count": 0,
+  "scan_count": 1,
+  "latest_scan_change_summary": {
+    "added": 132,
+    "modified": 0,
+    "deleted": 0,
+    "unchanged": 0,
+    "total": 132
+  },
+  "governance": {
+    "read_only": true,
+    "agent_can_mutate": false,
+    "allowed_agent_actions": [
+      "read_context",
+      "request_preflight",
+      "propose_resolution"
+    ],
+    "human_approval_required_for": [
+      "accept_convention",
+      "reject_convention",
+      "edit_convention",
+      "add_exception",
+      "add_contract_waiver",
+      "mark_needs_review",
+      "suppress_finding",
+      "accept_drift",
+      "mark_false_positive",
+      "change_policy",
+      "grant_agent_permission",
+      "export_contract",
+      "import_contract",
+      "create_backup",
+      "restore_backup"
+    ]
+  },
+  "summary": {
+    "latest_scan_id": "scan_fa85fc0182ec10f3",
+    "scan_count": 1,
+    "indexed_file_count": 132,
+    "source_change_count": 0,
+    "stale": false,
+    "invalidation_count": 0,
+    "audit_valid": true
+  },
+  "audit_integrity": {
+    "repo_id": "repo_abba3c0bac120939",
+    "valid": true,
+    "event_count": 18,
+    "verified_count": 18,
+    "head_event_hash": "63cdd5dc13dde794685be6a9cd32b8e6e687a6893045df3ca15378c09754b495",
+    "broken_at_event_id": null,
+    "reasons": []
+  },
+  "stale": false,
+  "invalidation_reasons": [],
+  "changes": {
+    "added": [],
+    "modified": [],
+    "deleted": []
+  },
+  "parser_gaps": {
+    "total_count": 6,
+    "by_kind": {
+      "unresolved_import": 6
+    },
+    "confidence_impact": {
+      "lowers_flow": 6
+    },
+    "by_capability": {},
+    "by_contract_kind": {},
+    "records": [
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_0fe503ddc0122991",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      },
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_c184a65425daff5d",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      },
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_737383521ceaeb72",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(docs)/guides/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      },
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_d6480b5aac91cf3b",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(marketing)/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      },
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_20e2b90a28fc457b",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      },
+      {
+        "schema_version": "drift.parser_gap.v1",
+        "gap_id": "parser_gap_656abdd994fec590",
+        "repo_id": "repo_abba3c0bac120939",
+        "scan_id": "scan_fa85fc0182ec10f3",
+        "kind": "unresolved_import",
+        "file_path": "app/(marketing)/blog/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "confidence_impact": "lowers_flow",
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/page.tsx.",
+        "evidence_refs": [],
+        "created_at": "2026-08-19T15:52:25.179Z"
+      }
+    ]
+  },
+  "parser_gap_quality": {
+    "schema_version": "drift.parser_gap_quality.v1",
+    "repo_id": "repo_abba3c0bac120939",
+    "scan_id": "scan_fa85fc0182ec10f3",
+    "surface": "scan_status",
+    "total_count": 6,
+    "blocking_count": 0,
+    "advisory_count": 6,
+    "by_kind": {
+      "unresolved_import": 6
+    },
+    "by_capability": {},
+    "by_contract_kind": {},
+    "top_actions": [
+      {
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "count": 6
+      }
+    ],
+    "sample_gaps": [
+      {
+        "parser_gap_id": "parser_gap_0fe503ddc0122991",
+        "file_path": "app/(docs)/docs/[[...slug]]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/docs/[[...slug]]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_c184a65425daff5d",
+        "file_path": "app/(docs)/guides/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/[...slug]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_737383521ceaeb72",
+        "file_path": "app/(docs)/guides/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(docs)/guides/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_d6480b5aac91cf3b",
+        "file_path": "app/(marketing)/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/[...slug]/page.tsx."
+      },
+      {
+        "parser_gap_id": "parser_gap_20e2b90a28fc457b",
+        "file_path": "app/(marketing)/blog/[...slug]/page.tsx",
+        "start_line": 1,
+        "end_line": 1,
+        "kind": "unresolved_import",
+        "confidence_impact": "lowers_flow",
+        "suggested_action": "Resolve the import or add resolver configuration, then rerun drift scan.",
+        "affected_capabilities": [],
+        "affected_contract_kinds": [],
+        "message": "Could not resolve import contentlayer/generated from app/(marketing)/blog/[...slug]/page.tsx."
+      }
+    ],
+    "decision": "advisory_only",
+    "user_action": "Review advisory parser gaps; blocking enforcement remains limited to complete evidence."
+  },
+  "readiness": {
+    "schema_version": "drift.readiness.v1",
+    "repo_id": "repo_abba3c0bac120939",
+    "scan_id": "scan_fa85fc0182ec10f3",
+    "surface": "scan_status",
+    "graph_available": true,
+    "graph_complete": true,
+    "parser_gap_count": 6,
+    "parser_gaps_by_kind": {
+      "unresolved_import": 6
+    },
+    "confidence": 0.82,
+    "decision": "advisory_only",
+    "reasons": [
+      "parser_gaps_present"
+    ],
+    "required_capabilities": [
+      "fact_graph"
+    ],
+    "missing_capabilities": []
+  },
+  "capability_report": {
+    "schema_version": "drift.scan_capability_report.v1",
+    "repo_id": "repo_abba3c0bac120939",
+    "scan_id": "scan_fa85fc0182ec10f3",
+    "engine_source": "rust",
+    "engine_version": null,
+    "scanner_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+      "engine": "0.1.0"
+    },
+    "certified_capabilities": [
+      "auth_boundary_facts",
+      "candidate_inference",
+      "control_flow_guard_dominance",
+      "data_operation_detection",
+      "direct_data_access_check",
+      "file_discovery",
+      "graph_stream",
+      "import_resolution",
+      "route_detection",
+      "route_flow",
+      "security_facts",
+      "static_imports",
+      "symbol_linking",
+      "syntax_facts"
+    ],
+    "required_capabilities": [
+      "file_discovery",
+      "graph_stream",
+      "syntax_facts"
+    ],
+    "missing_capabilities": [],
+    "completeness": [
+      {
+        "scope": "repo",
+        "complete": true,
+        "can_block": true,
+        "reasons": []
+      }
+    ],
+    "parser_gap_count": 7,
+    "parser_gap_kinds": {
+      "unresolved_import": 7
+    },
+    "fallback_used": false,
+    "enforcement_degraded": false,
+    "engine_resolution": "env_override",
+    "engine_build_profile": "release",
+    "created_at": "2026-08-19T15:52:25.179Z"
+  },
+  "security_capabilities": [],
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 36,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+      "engine": "0.1.0"
+    }
+  },
+  "next_command": "drift prepare \"task\" --repo repo_abba3c0bac120939 --json",
+  "next_commands": [
+    "drift prepare \"task\" --repo repo_abba3c0bac120939 --json",
+    "drift repo map --repo repo_abba3c0bac120939 --json",
+    "drift audit verify --repo repo_abba3c0bac120939 --json"
+  ]
+}

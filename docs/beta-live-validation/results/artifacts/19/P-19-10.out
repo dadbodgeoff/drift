@@ -1,0 +1,22 @@
+{
+ "stdin_closed_mid_request": {
+  "exit": 0,
+  "stdout": "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Unterminated string in JSON at position 38 (line 1 column 39)\"}}\n",
+  "stderr": "Drift MCP rejected an invalid JSON-RPC line.\n"
+ },
+ "no_initialize_first_tools_call": {
+  "exit": 0,
+  "stdout": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"runtime\\\":{\\\"mcp_version\\\":\\\"0.1.0\\\",\\\"core_version\\\":\\\"0.1.0\\\",\\\"scanner_version\\\":\\\"0.1.0\\\",\\\"typescript_adapter_version\\\":\\\"0.1.0\\\",\\\"rule_engine_version\\\":\\\"0.1.0\\\",\\\"contract_schema_version\\\":1,\\\"supported_sqlite_schema_version\\\":36,\\\"storage_driver\\\":\\\"sqlite\\\"},\\\"v1_scope\\\":{\\\"product_mode\\\":\\\"local_first_cli\\\",\\\"primary_wedge\\\":\\\"typescript_api_route_layering\\\",\\\"mutation_model\\\":\\\"human_confirmed_governance_only\\\",\\\"source_mutation\\\":false,\\\"language_adapters\\\":[\\\"typescript\\\"],\\\"deferred\\\":[\\\"desktop_ui\\\",\\\"cloud_sync\\\",\\\"python_adapter\\\",\\\"duplicate_helper_detection\\\"]},\\\"governance\\\":{\\\"read_only\\\":true,\\\"agent_can_mutate\\\":false,\\\"allowed_agent_actions\\\":[\\\"read_context\\\",\\\"request_preflight\\\",\\\"propose_resolution\\\"],\\\"human_approval_required_for\\\":[\\\"accept_convention\\\",\\\"reject_convention\\\",\\\"edit_convention\\\",\\\"add_exception\\\",\\\"add_contract_waiver\\\",\\\"mark_needs_review\\\",\\\"suppress_finding\\\",\\\"accept_drift\\\",\\\"mark_false_positive\\\",\\\"change_policy\\\",\\\"grant_agent_permission\\\",\\\"export_contract\\\",\\\"import_contract\\\",\\\"create_backup\\\",\\\"restore_backup\\\"]}}\"}],\"isError\":false}}\n",
+  "stderr": ""
+ },
+ "sigterm_mid_session": {
+  "returncode": -15,
+  "first_out_prefix": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[{\"name\":\"get_runtime_info\",\"description\":\"Return Drift runtime, schema, support-scope, and read-only governance metadata.\",\"inputSchema\":{\"type\":\"object\",\"pr",
+  "final_stdout_tail": "\",\"ui\"]},\"requested_snippet_chars\":{\"type\":\"number\"},\"request_full_file_content\":{\"type\":\"boolean\"},\"require_fresh\":{\"type\":\"boolean\"}},\"required\":[\"repo_id\",\"path\"],\"additionalProperties\":false}}]}}\n",
+  "stderr": ""
+ },
+ "sigpipe_on_stdout": {
+  "returncode": 1,
+  "stderr": "node:events:486\n      throw er; // Unhandled 'error' event\n      ^\n\nError: write EPIPE\n    at afterWriteDispatched (node:internal/stream_base_commons:159:15)\n    at writeGeneric (node:internal/stream_base_commons:150:3)\n    at Socket._writeGeneric (node:net:966:11)\n    at Socket._write (node:net:978:8)\n    at writeOrBuffer (node:internal/streams/writable:570:12)\n    at _write (node:internal/streams/writable:499:10)\n    at Writable.write (node:internal/streams/writable:508:10)\n    at runReadOnlyM"
+ }
+}

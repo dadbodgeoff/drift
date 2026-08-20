@@ -601,3 +601,81 @@ describe("isBarePackageSpecifier, through the mode it decides", () => {
     expect(mode("@clerk/nextjs")).toBe("external");
   });
 });
+
+/**
+ * R8-08: the acceptance-side fence, written before either chain walker widened.
+ *
+ * R8 adds `MODULE_ALIASES_MODULE` - a module -> module edge emitted when a module republishes an
+ * imported binding without a `from` clause (`export const client = db`, `export { db }`,
+ * `export function getClient() { return db }`). It exists to widen a PROHIBITION: a route that
+ * imports such a module holds a real runtime dependency on whatever the module laundered, and the
+ * forbidden-import walk must follow it.
+ *
+ * `run-check.ts:4033` states the rule that makes this dangerous in the other direction. A
+ * prohibition may be widened safely; an ACCEPTANCE may not. The closure below decides which
+ * modules count as the accepted auth helper, and everything it admits produces a passing auth
+ * proof for any route that imports it. Feeding alias edges into it would let a module alias its
+ * way INTO an acceptance: an attacker edits the accepted barrel to bind a do-nothing `requireUser`
+ * from a module they control, and every route importing that module is now proven authenticated.
+ *
+ * The two indexes are what keeps the directions apart. `dependencyTargets` (the ban) accepts both
+ * edge kinds. `reexportEdgesByFrom` (the acceptance) accepts only `MODULE_REEXPORTS_MODULE`. This
+ * pair of tests is the difference between them, stated as behaviour rather than as a comment: the
+ * control proves the graph is otherwise exactly the shape the closure admits, so the fence test
+ * cannot pass for the accidental reason that the fixture was wrong.
+ */
+describe("an alias edge does not widen the accepted-helper closure", () => {
+  /**
+   * The accepted specifier `@/lib` names `src/lib/index.ts`. That module obtains `requireUser`
+   * from `src/lib/stub.ts` and republishes it under the same name; `kind` is the only thing that
+   * differs between the two graphs, and it is the syntactic difference between
+   *
+   *     export { requireUser } from "./stub";     // MODULE_REEXPORTS_MODULE
+   *     import { requireUser } from "./stub";     // MODULE_ALIASES_MODULE
+   *     export { requireUser };
+   *
+   * The stub really does export the name, so the closure's symbol-name evidence test is satisfied
+   * in both graphs. Only the edge kind can separate them.
+   */
+  const republishing = (kind: "MODULE_REEXPORTS_MODULE" | "MODULE_ALIASES_MODULE") =>
+    graphScanData({
+      nodes: [
+        importNode({ id: "import:barrel", filePath: ROUTE, source: "@/lib" }),
+        moduleNode({ id: "module:index", filePath: "src/lib/index.ts" }),
+        moduleNode({ id: "module:stub", filePath: "src/lib/stub.ts" }),
+        symbolNode({ id: "sym:stub", filePath: "src/lib/stub.ts", name: "requireUser" })
+      ],
+      edges: [
+        graphEdge({ id: "f1", kind: "IMPORT_RESOLVES_TO_MODULE", from: "import:barrel", to: "module:index" }),
+        graphEdge({ id: "f2", kind, from: "module:index", to: "module:stub", exportedName: "requireUser" }),
+        graphEdge({ id: "f3", kind: "MODULE_EXPORTS_SYMBOL", from: "module:stub", to: "sym:stub" })
+      ]
+    });
+
+  const acceptedFiles = (checkData: ReturnType<typeof graphScanData>): string[] | undefined =>
+    identityFor(
+      resolvedHelperIdentities(
+        checkData,
+        conventionRequiring({
+          auth_helpers: [{ guard_id: "auth:requireUser", symbol: "requireUser", import: "@/lib" }]
+        })
+      ),
+      "requireUser"
+    )?.files;
+
+  it("the control: a re-export edge naming the symbol does extend the identity", () => {
+    // Not a bonus assertion. Without it, the fence below passes just as happily against a fixture
+    // the closure would have rejected for some unrelated reason - a missing resolution edge, a
+    // symbol node the closure could not read - and would go on passing after someone added
+    // `MODULE_ALIASES_MODULE` to `moduleReexportEdges`.
+    expect(acceptedFiles(republishing("MODULE_REEXPORTS_MODULE")))
+      .toEqual(["src/lib/index.ts", "src/lib/stub.ts"]);
+  });
+
+  it("an alias edge naming the same symbol does not", () => {
+    // `src/lib/index.ts` stays: it is what the specifier literally names, which is not a claim
+    // about any symbol. `src/lib/stub.ts` is admitted only on re-export evidence, and a local
+    // binding republished without a `from` clause is not that evidence.
+    expect(acceptedFiles(republishing("MODULE_ALIASES_MODULE"))).toEqual(["src/lib/index.ts"]);
+  });
+});

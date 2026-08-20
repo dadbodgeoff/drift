@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""Quantify non-determinism in a GATE. Charter 15 asks this of Drift; nothing asks it of the gates.
+
+    flake run <id> --trials N [--normalize] -- <command...>
+    flake report
+
+A gate that passes 9 times in 10 is not a gate, it is a coin. And a flaky gate is worse than a
+missing one: it trains everyone to re-run until green, which is exactly how a real regression walks
+through.
+
+Reports two numbers, and the gap between them is the point:
+  RAW        outputs differed byte-for-byte
+  NORMALIZED outputs still differed after timestamps, durations, temp paths, and ordering are
+             stripped - i.e. the tool disagreed with itself about something that MATTERS
+A gate that is raw-unstable but normalized-stable is merely noisy in its rendering. One that is
+normalized-unstable is non-deterministic in its verdict.
+"""
+import collections, hashlib, json, os, re, subprocess, sys, time
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+NORMALIZERS = [
+    (r"\d{4}-\d{2}-\d{2}T[\d:.+\-Z]+", "<TS>"),
+    (r"\b\d+(\.\d+)?\s?ms\b", "<MS>"),
+    (r"\b\d+(\.\d+)?\s?s\b", "<S>"),
+    (r"/(?:private/)?(?:tmp|var/folders)/[^\s\"']+", "<TMP>"),
+    (r"\b[0-9a-f]{40}\b", "<SHA>"),
+    (r"\b[0-9a-f]{64}\b", "<SHA256>"),
+    (r"(?m)^\s*$\n", ""),
+]
+def normalize(t):
+    for pat, rep in NORMALIZERS: t = re.sub(pat, rep, t)
+    return "\n".join(sorted(t.splitlines()))     # order-insensitive: reordering is not disagreement
+
+def run(fid, trials, cmd, do_norm):
+    raw, norm, codes, durs = [], [], [], []
+    for i in range(trials):
+        t0 = time.perf_counter()
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        durs.append(round((time.perf_counter()-t0)*1000))
+        codes.append(p.returncode)
+        out = p.stdout + p.stderr
+        raw.append(hashlib.sha256(out.encode()).hexdigest())
+        norm.append(hashlib.sha256(normalize(out).encode()).hexdigest())
+        print(f"──   trial {i+1}/{trials}: exit={p.returncode} {durs[-1]}ms raw={raw[-1][:8]} norm={norm[-1][:8]}")
+    ce, re_, ne = collections.Counter(codes), collections.Counter(raw), collections.Counter(norm)
+    pass_rate = S.wilson(sum(1 for c in codes if c == 0), trials)
+    row = {"id": fid, "command": cmd, "trials": trials,
+           "exit_codes": dict(ce), "distinct_exit_codes": len(ce),
+           "distinct_raw_outputs": len(re_), "distinct_normalized_outputs": len(ne),
+           "pass_rate": pass_rate, "durations_ms": durs,
+           "verdict": ("NON-DETERMINISTIC" if len(ce) > 1 or len(ne) > 1 else
+                       "RENDER-NOISY" if len(re_) > 1 else
+                       "DETERMINISTIC"),
+           "sha_under_test": os.environ.get("DRIFT_BETA_SHA"),
+           "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    if os.environ.get("DRIFT_BETA_LEDGER"):
+        from _probelib import ledger_append
+        ledger_append("flake", row, name="jsonl")
+    print(f"──")
+    print(f"── exit codes: {dict(ce)}   distinct raw outputs: {len(re_)}   "
+          f"distinct normalized: {len(ne)}")
+    print(f"── pass rate: {pass_rate['p']:.2f} [{pass_rate['lo']:.2f},{pass_rate['hi']:.2f}]")
+    print(f"── {row['verdict']}")
+    if row["verdict"] == "NON-DETERMINISTIC":
+        print("──   this gate disagrees with itself about something that is not cosmetic.")
+        print("──   Any ratchet built on it will fire at random, and a real regression can hide in the noise.")
+    elif row["verdict"] == "RENDER-NOISY":
+        print("──   output text varies but the verdict does not: safe to gate on, unsafe to diff.")
+    return 0 if row["verdict"] != "NON-DETERMINISTIC" else 1
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]
+if c == "run":
+    if "--" not in sys.argv: sys.exit("missing -- before the command")
+    fid = sys.argv[2]
+    a = sys.argv[3:sys.argv.index("--")]
+    trials = int(a[a.index("--trials")+1]) if "--trials" in a else 10
+    sys.exit(run(fid, trials, sys.argv[sys.argv.index("--")+1:], "--normalize" in a))
+elif c == "report":
+    p = os.path.join(os.environ["DRIFT_BETA_LEDGER"], "flake.jsonl")
+    if not os.path.exists(p): sys.exit("no flake ledger yet")
+    rows = {r["id"]: r for r in (json.loads(l) for l in open(p))}
+    print(f"── flakiness · {len(rows)} gate(s)")
+    for r in rows.values():
+        print(f"   {r['verdict']:<19} {r['id']:<28} exits={r['exit_codes']} "
+              f"raw={r['distinct_raw_outputs']} norm={r['distinct_normalized_outputs']}")
+    bad = [r for r in rows.values() if r["verdict"] == "NON-DETERMINISTIC"]
+    if bad: print(f"\n   {len(bad)} gate(s) cannot be ratcheted on until this is fixed.")
+else: sys.exit(f"unknown subcommand {c}")

@@ -109,8 +109,8 @@ describe("frozen contracts", () => {
    * add a migration alongside it; if it fails because you added a migration, update both counts.
    */
   it("pins the fact vocabulary to the migration count", () => {
-    expect(FactKindSchema.options).toHaveLength(38);
-    expect(MIGRATIONS).toHaveLength(36);
+    expect(FactKindSchema.options).toHaveLength(40);
+    expect(MIGRATIONS).toHaveLength(37);
     expect(FactKindSchema.options).toContain("data_model_declared");
   });
 

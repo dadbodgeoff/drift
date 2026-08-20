@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Turn mutant-recipes.json into a manifest pinned to the source it was derived from.
+
+    gen-mutants <src-root> [--recipes FILE] > mutants.json
+
+Recipes are DATA, deliberately. Three attempts to maintain them as lambdas inside this generator
+each produced a silently-wrong recipe list - an escape eaten by re.sub, a replacement landing on
+the wrong bracket. A mutation suite that quietly tests less than it claims is the precise failure
+mutation testing exists to catch, so it must not be possible to introduce one by editing a string.
+
+Every recipe is located in the real tree, required to be UNIQUE, and pinned by the sha256 of the
+exact text it replaces. Anything not found is reported and skipped, never guessed.
+"""
+import hashlib, json, os, sys
+root = sys.argv[1]
+rp = sys.argv[sys.argv.index("--recipes")+1] if "--recipes" in sys.argv else \
+     os.path.join(os.path.dirname(os.path.abspath(__file__)), "mutant-recipes.json")
+recipes = json.load(open(rp))["recipes"]
+
+out, problems = [], []
+for r in recipes:
+    p = os.path.join(root, r["file"])
+    if not os.path.exists(p): problems.append(f"{r['id']}: file missing"); continue
+    src = open(p).read()
+    n = src.count(r["find"])
+    if n == 0: problems.append(f"{r['id']}: anchor not found"); continue
+    if n > 1:  problems.append(f"{r['id']}: anchor appears {n}x, must be unique"); continue
+    anchor = r["find"]
+    if r["op"] == "append":   rep = anchor + r["to"]
+    elif r["op"] == "set":    rep = r["to"]
+    elif r["op"] == "replace":rep = anchor.replace(r["from"], r["to"])
+    else: problems.append(f"{r['id']}: unknown op {r['op']}"); continue
+    if rep == anchor: problems.append(f"{r['id']}: mutation is a no-op"); continue
+    out.append({"id": r["id"], "file": r["file"], "find": anchor, "replace": rep,
+                "anchor_sha256": hashlib.sha256(anchor.encode()).hexdigest(),
+                "rationale": r["rationale"], "kills_expected": r["kills_expected"]})
+for p_ in problems: print(f"skipped: {p_}", file=sys.stderr)
+json.dump({"generated_from": root, "recipe_file": rp,
+           "skipped": problems, "mutants": out}, sys.stdout, indent=1)

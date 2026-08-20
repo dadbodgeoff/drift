@@ -1,0 +1,1 @@
+Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema.

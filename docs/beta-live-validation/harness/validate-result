@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Accept or reject one charter's results file, against its spec and its own ledger.
+
+    validate-result <charter> [path-to-results.md]
+
+ORCHESTRATOR.md tells the orchestrator to "send it back" if a result is incomplete. This is the
+mechanism. It checks three things a reader cannot check cheaply by eye:
+
+  1. STRUCTURE  - every section RESULTS-TEMPLATE.md requires is present.
+  2. COVERAGE   - every probe and every suspect the charter names is accounted for.
+  3. FIDELITY   - every exit code and verdict the prose claims matches what the ledger recorded.
+
+(3) is the one that earns its keep. A results file is written by a model from a probe log; the
+ledger is written by the harness from the process itself. Where they disagree, the ledger is right,
+and the disagreement is either a transcription error or a fabricated result. Neither should reach
+a synthesis.
+"""
+import json, os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _probelib import env, canonical_probe_id
+
+charter = sys.argv[1]
+path = sys.argv[2] if len(sys.argv) > 2 else None
+if not path:
+    root = os.environ.get("DRIFT_BETA_RESULTS") or os.path.join(
+        os.environ.get("DRIFT_BETA_SRC", "."), "docs/beta-live-validation/results")
+    hits = [f for f in os.listdir(root) if f.startswith(charter + "-")] if os.path.isdir(root) else []
+    if not hits: sys.exit(f"no results file for charter {charter} in {root}")
+    path = os.path.join(root, hits[0])
+doc = open(path).read()
+
+H = os.path.dirname(os.path.abspath(__file__))
+spec = json.loads(subprocess.run([f"{H}/charter-probes", "--json", charter],
+                                 capture_output=True, text=True).stdout).get(charter, {})
+
+led_dir = env("DRIFT_BETA_LEDGER")
+led_path = os.path.join(led_dir, charter + ".jsonl")
+rows = [json.loads(l) for l in open(led_path)] if os.path.exists(led_path) else []
+by_probe = {}
+for r in rows: by_probe[r["probe"]] = r          # last write wins, as replay does
+
+errors, warnings = [], []
+
+# 1. structure
+for sec in ["## 1. Verdict", "## 2. Probe log", "## 3. Measurements",
+            "## 4. Suspect list disposition", "## 5. Failures and blocks",
+            "## 6. Discovered surface", "## 7. What this charter did not cover"]:
+    if sec.split(". ", 1)[1][:12].lower() not in doc.lower():
+        errors.append(f"missing required section: {sec}")
+for field in ["Commit under test", "Engine binary", "Platform"]:
+    if field.lower() not in doc.lower():
+        errors.append(f"header missing: {field}")
+
+# 2. coverage
+named_probes = set(spec.get("probes", []))
+cited = set(re.findall(r"\bP-%s-[0-9a-z]+\b" % charter, doc))
+ran_canonical = {canonical_probe_id(p) for p in by_probe}
+missing = sorted(named_probes - cited - ran_canonical)
+never_ran = sorted(named_probes - ran_canonical)
+if never_ran:
+    errors.append(f"{len(never_ran)} probe(s) the charter names were NEVER RUN (no ledger row, "
+                  f"under any variant): " + ", ".join(never_ran[:10]))
+if missing:
+    errors.append(f"{len(missing)} probe(s) named by the charter never appear in the results: "
+                  + ", ".join(missing[:10]) + (" …" if len(missing) > 10 else ""))
+# A results file may cite probes at class granularity (P-03-a) while the ledger records them with
+# suffixes (P-03-a-01). Count a ledger probe as cited if either form appears, or the two
+# granularities produce a wall of false "absent from the write-up" warnings.
+def _cited(pid):
+    if pid in doc: return True
+    return canonical_probe_id(pid) in cited
+ran_not_cited = sorted(pid for pid in by_probe if not _cited(pid))
+if ran_not_cited:
+    warnings.append(f"{len(ran_not_cited)} probe(s) in the ledger are absent from the write-up: "
+                    + ", ".join(ran_not_cited[:10]))
+
+named_suspects = set(spec.get("suspects", []))
+DISP = r"(CONFIRMED|REFUTED|NOT[ _]REACHABLE|INCONCLUSIVE)"
+undisposed = []
+for s in sorted(named_suspects):
+    # EVERY occurrence, not the first. A suspect mentioned in the verdict paragraph before it is
+    # dispositioned in section 4 was reported as undispositioned - the gate reading its own prose
+    # order rather than the document.
+    if not any(re.search(DISP, doc[m.end():m.end()+400], re.S)
+               for m in re.finditer(re.escape(s), doc)):
+        undisposed.append(s)
+if undisposed:
+    errors.append(f"{len(undisposed)} suspect(s) with no disposition: " + ", ".join(undisposed))
+
+# 3. fidelity — the prose against the process
+claim_re = re.compile(r"\|\s*(P-%s-[0-9a-z]+)\s*\|(.*?)\|" % charter)
+checked = mismatched = 0
+# Fidelity matches the FULL probe id (suffixes included, e.g. P-03-a-01), unlike the coverage
+# regex above which deliberately collapses to the class the charter names. Without the hyphen
+# here the gate silently cross-checked zero rows and reported "0 mismatched" as if that were clean.
+for m in re.finditer(r"^\|\s*(P-%s-[0-9a-z-]+?)\s*\|(.+)$" % charter, doc, re.M):
+    pid, rest = m.group(1), m.group(2)
+    row = by_probe.get(pid)
+    if not row: continue
+    cells = [c.strip() for c in rest.split("|")]
+    exits = [c for c in cells if re.fullmatch(r"-?\d{1,3}", c)]
+    if exits:
+        checked += 1
+        if int(exits[0]) != row["exit_code"]:
+            mismatched += 1
+            errors.append(f"FIDELITY {pid}: results claim exit {exits[0]}, "
+                          f"ledger recorded exit {row['exit_code']} ({row['stdout_path']})")
+for pid, row in by_probe.items():
+    if row.get("verdict") == "FAIL" and pid in cited:
+        seg = re.search(re.escape(pid) + r"(.{0,300})", doc, re.S)
+        if seg and re.search(r"\byes\b|\bpass(ed)?\b", seg.group(1), re.I) \
+               and not re.search(r"\bno\b|\bfail", seg.group(1), re.I):
+            errors.append(f"FIDELITY {pid}: harness judged FAIL, results read as a pass")
+
+unjudged = [p for p, r in by_probe.items() if r.get("verdict") == "UNJUDGED"]
+if unjudged:
+    warnings.append(f"{len(unjudged)} probe(s) ran with no declared oracle (UNJUDGED): "
+                    + ", ".join(sorted(unjudged)[:8]))
+
+# measurements must carry a trial count
+for m in re.finditer(r"^\|.*?(\d+)\s*ms.*$", doc, re.M):
+    pass
+if "## 3. Measurement" in doc or "Measurements" in doc:
+    bench_path = os.path.join(led_dir, charter + ".bench.jsonl")
+    benched = {json.loads(l)["metric"] for l in open(bench_path)} if os.path.exists(bench_path) else set()
+    if re.search(r"\b(median|p95)\b", doc, re.I) and not benched:
+        warnings.append("results report median/p95 but no bench ledger exists for this charter")
+
+print(f"── validate-result {charter}  ({os.path.basename(path)})")
+print(f"──   spec: {len(named_probes)} probes, {len(named_suspects)} suspects"
+      + (f", {len(spec['repeated']['units'])} {spec['repeated']['prefix']}-steps" if spec.get("repeated") else ""))
+print(f"──   ledger: {len(by_probe)} probes recorded")
+print(f"──   fidelity: {checked} exit-code claims cross-checked, {mismatched} mismatched")
+for w in warnings: print(f"──   warn: {w}")
+if errors:
+    print("── REJECTED")
+    for e in errors: print("      - " + e)
+    sys.exit(1)
+print("── ACCEPTED" + (f" with {len(warnings)} warning(s)" if warnings else ""))

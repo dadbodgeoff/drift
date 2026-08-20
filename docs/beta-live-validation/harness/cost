@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Token accounting, so the model policy can be re-tuned from data instead of belief.
+
+    cost record <charter> <stage> <model> <effort> <in_tokens> <out_tokens> [seconds]
+    cost report [--by charter|stage|model]
+
+The orchestrator calls `record` as each subagent returns. After wave 2 this answers the question
+the model policy is currently only guessing at: which stage actually consumed the budget, and
+whether the Opus escalation stage stayed as small as the design assumed.
+"""
+import json, os, sys, collections, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _probelib import env
+
+# Published per-Mtok rates; override with DRIFT_BETA_RATES='{"model":[in,out]}' if these move.
+RATES = json.loads(os.environ.get("DRIFT_BETA_RATES") or
+    '{"opus":[5,25],"sonnet":[3,15],"haiku":[1,5],"fable":[3,15]}')
+LEDGER = lambda: os.path.join(env("DRIFT_BETA_LEDGER"), "cost.jsonl")
+
+def price(model, i, o):
+    for k, (ri, ro) in RATES.items():
+        if k in (model or "").lower(): return (i / 1e6) * ri + (o / 1e6) * ro
+    return 0.0
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+cmd = sys.argv[1]
+
+if cmd == "record":
+    ch, stage, model, effort, ti, to = sys.argv[2:8]
+    secs = float(sys.argv[8]) if len(sys.argv) > 8 else None
+    row = {"charter": ch, "stage": stage, "model": model, "effort": effort,
+           "in_tokens": int(ti), "out_tokens": int(to), "seconds": secs,
+           "usd": round(price(model, int(ti), int(to)), 4),
+           "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    os.makedirs(os.path.dirname(LEDGER()), exist_ok=True)
+    with open(LEDGER(), "a") as f: f.write(json.dumps(row) + "\n")
+    print(f"recorded {ch}/{stage} {model}/{effort}: {int(ti)+int(to)} tok  ${row['usd']:.3f}")
+    sys.exit(0)
+
+if cmd == "report":
+    key = "charter"
+    if "--by" in sys.argv: key = sys.argv[sys.argv.index("--by") + 1]
+    p = LEDGER()
+    if not os.path.exists(p): sys.exit("no cost ledger yet")
+    rows = [json.loads(l) for l in open(p)]
+    agg = collections.defaultdict(lambda: {"in":0,"out":0,"usd":0.0,"n":0,"secs":0.0})
+    for r in rows:
+        a = agg[r.get(key, "?")]
+        a["in"] += r["in_tokens"]; a["out"] += r["out_tokens"]
+        a["usd"] += r["usd"]; a["n"] += 1; a["secs"] += r.get("seconds") or 0
+    tot_usd = sum(a["usd"] for a in agg.values())
+    tot_tok = sum(a["in"] + a["out"] for a in agg.values())
+    print(f"── cost by {key}   ({len(rows)} agent runs · {tot_tok:,} tok · ${tot_usd:.2f})")
+    for k, a in sorted(agg.items(), key=lambda kv: -kv[1]["usd"]):
+        share = 100 * a["usd"] / tot_usd if tot_usd else 0
+        print(f"  {str(k):<12} {a['n']:>3} runs  in={a['in']:>9,}  out={a['out']:>8,}  "
+              f"${a['usd']:>7.2f}  {share:>5.1f}%")
+    st = collections.defaultdict(float)
+    for r in rows: st[r["stage"]] += r["usd"]
+    esc = st.get("escalate", 0.0)
+    if tot_usd:
+        print(f"\n  escalation stage is {100*esc/tot_usd:.1f}% of spend "
+              f"({'as designed' if esc/tot_usd < 0.35 else 'HIGHER than the design assumed — '
+              'either charters are failing a lot, or cause-tracing is being over-triggered'})")
+    sys.exit(0)
+sys.exit(f"unknown subcommand {cmd}")

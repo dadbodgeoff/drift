@@ -1,0 +1,57 @@
+{
+  "error": {
+    "message": "No repo contract exists for repo_054ce37e4ad825ed.",
+    "type": "refusal",
+    "code": "missing_contract"
+  },
+  "failure": {
+    "code": "missing_contract",
+    "surface": "cli",
+    "severity": "error",
+    "safe_to_retry": true,
+    "user_action": "Accept or import a repo contract before running contract-backed enforcement.",
+    "recovery_commands": [
+      "drift conventions list --status candidate --json",
+      "drift contract import <contract.json> --dry-run --json"
+    ],
+    "diagnostics": [
+      "No repo contract exists for repo_054ce37e4ad825ed."
+    ]
+  },
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "blocked_by_policy",
+    "surface": "cli-error",
+    "read_only": true,
+    "policy": {
+      "allowed": false,
+      "surface": "cli-preflight",
+      "reason": "No repo contract exists for repo_054ce37e4ad825ed."
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": false,
+      "latest_scan_id": null
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": false,
+      "mode": "denied",
+      "reason": "No repo contract exists for repo_054ce37e4ad825ed.",
+      "max_snippet_chars": 0,
+      "approved_snippet_chars": 0,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "denied"
+    },
+    "diagnostics": [
+      "No repo contract exists for repo_054ce37e4ad825ed."
+    ]
+  }
+}

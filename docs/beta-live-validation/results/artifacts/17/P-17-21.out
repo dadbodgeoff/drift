@@ -1,0 +1,56 @@
+{
+  "error": {
+    "message": "Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema.",
+    "type": "error",
+    "code": "cli_error"
+  },
+  "failure": {
+    "code": "cli_error",
+    "surface": "cli",
+    "severity": "error",
+    "safe_to_retry": false,
+    "user_action": "Read the diagnostic message and rerun with corrected inputs.",
+    "recovery_commands": [
+      "drift --help"
+    ],
+    "diagnostics": [
+      "Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema."
+    ]
+  },
+  "agent_envelope": {
+    "schema_version": "agent.envelope.v2",
+    "action": "blocked_by_policy",
+    "surface": "cli-error",
+    "read_only": true,
+    "policy": {
+      "allowed": false,
+      "surface": "cli-preflight",
+      "reason": "Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema."
+    },
+    "scan": {
+      "required_fresh": false,
+      "stale": false,
+      "latest_scan_id": null
+    },
+    "redactions": {
+      "snippets_included": false,
+      "context_truncated": false
+    },
+    "policy_proof": {
+      "schema_version": "policy.proof.v1",
+      "surface": "cli-preflight",
+      "allowed": false,
+      "mode": "denied",
+      "reason": "Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema.",
+      "max_snippet_chars": 0,
+      "approved_snippet_chars": 0,
+      "snippets_included": false,
+      "source_content_included": false,
+      "context_truncated": false,
+      "redaction_state": "denied"
+    },
+    "diagnostics": [
+      "Scan retention is misconfigured: check_runs.scan_id does not exist, so scans referenced by check_runs would be pruned. Fix the retention rule or the schema."
+    ]
+  }
+}

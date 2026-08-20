@@ -1,0 +1,141 @@
+{
+ "exit": 0,
+ "n_calls": 18,
+ "n_responses": 18,
+ "db_sha_before": "c30bef76846630ba7305e6e4d57ab4fa185f2451d2aa67f511dbaf0ab6f9818c",
+ "db_sha_after": "c30bef76846630ba7305e6e4d57ab4fa185f2451d2aa67f511dbaf0ab6f9818c",
+ "db_unchanged": true,
+ "results": [
+  {
+   "tool": "get_runtime_info",
+   "args": {},
+   "ok": true
+  },
+  {
+   "tool": "get_capabilities",
+   "args": {},
+   "ok": true
+  },
+  {
+   "tool": "get_audit_status",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_scan_status",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_repo_contract",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_repo_map",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_security_context",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_task_preflight",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "task": "delete everything"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_conventions",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_findings",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_required_check_executions",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_allowed_context",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "path": "package.json"
+   },
+   "ok": true
+  },
+  {
+   "tool": "get_findings",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "status": "fixed",
+    "mutate": true,
+    "delete": true
+   },
+   "error": "Invalid arguments for get_findings: unexpected field mutate."
+  },
+  {
+   "tool": "get_repo_map",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "path": "../../../../../../etc/passwd"
+   },
+   "error": "Invalid arguments for get_repo_map: field path must be repo-relative."
+  },
+  {
+   "tool": "get_repo_map",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "path": "/etc/passwd"
+   },
+   "error": "Invalid arguments for get_repo_map: field path must be repo-relative."
+  },
+  {
+   "tool": "get_allowed_context",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "path": "../../../../etc/passwd"
+   },
+   "error": "Invalid arguments for get_allowed_context: field path must be repo-relative."
+  },
+  {
+   "tool": "get_scan_status",
+   "args": {
+    "repo_id": "../../../etc/passwd"
+   },
+   "error": "Unknown repo ../../../etc/passwd."
+  },
+  {
+   "tool": "get_scan_status",
+   "args": {
+    "repo_id": "repo_68a494d2b8491ebb",
+    "db": "/etc/passwd"
+   },
+   "error": "Invalid arguments for get_scan_status: unexpected field db."
+  }
+ ]
+}

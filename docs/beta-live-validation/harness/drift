@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# A `drift` that IS the frozen subject.
+#
+# The global `drift` on this machine is driftdetect@0.9.48, an unrelated package. Because the
+# harness dir is first on PATH, this shim wins - so a bare `drift ...` in a probe runs the product
+# under test instead of silently measuring a different one. Charter 05 caught the shadowing and
+# routed around it by hand; this removes the need to.
+exec node "${DRIFT_BETA_SRC:?source env.sh first}/packages/cli/dist/main.js" "$@"

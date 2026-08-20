@@ -1,0 +1,444 @@
+{
+  "repo": {
+    "id": "repo_8b460f3716d2bd8b",
+    "root_path": "/tmp/drift-beta.17.P-17-02b.pwhZRt/repo",
+    "fingerprint": "904d67856100406a",
+    "vcs_provider": "git",
+    "remote_url_hash": "0e27e95f6ff162efb1099a4a8708850de3d42405964e908d604d999fc66a099d",
+    "package_manager": "pnpm",
+    "lockfile_hashes": {
+      "pnpm-lock.yaml": "63fa30c5b76bda7f51659a0e120219de0e34d5a96c149d6797e29b2818f0e6ab"
+    },
+    "resolver_input_hash": "e94848190281f993ca392d241584c4ead9ec449b1e78f63b7f3bfa547ae7d025",
+    "created_at": "2026-08-19T15:43:10.269Z",
+    "updated_at": "2026-08-19T15:43:10.269Z"
+  },
+  "scan": {
+    "id": "scan_4392a2eb3be69fda",
+    "repo_id": "repo_8b460f3716d2bd8b",
+    "branch": "main",
+    "commit": "adab025e172273d9367207f3f40a257316a089e7",
+    "dirty": false,
+    "previous_scan_id": "scan_d3002dfa24a14580",
+    "scanner_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0",
+      "resolver_inputs": "847fb5c3310d9b2d759677969276c8d893522cd9f0897954ac2995fbf730b550",
+      "engine": "0.1.0"
+    },
+    "rule_engine_version": "0.1.0",
+    "status": "completed",
+    "file_count": 132,
+    "fact_count": 1850,
+    "finding_count": 0,
+    "started_at": "2026-08-19T15:43:10.269Z",
+    "completed_at": "2026-08-19T15:43:10.269Z"
+  },
+  "candidates": [
+    {
+      "id": "candidate_728ffa5f22cde5ee",
+      "repo_id": "repo_8b460f3716d2bd8b",
+      "scan_id": "scan_4392a2eb3be69fda",
+      "kind": "api_route_no_direct_data_access",
+      "statement": "API routes should not import data-access clients directly.",
+      "rationale": "Detected API route imports that look like database/data-access clients.",
+      "scope": {
+        "path_globs": [
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_no_direct_data_access",
+        "forbidden_imports": [
+          "@/lib/db"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "suggested_severity": "error",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "confidence_label": "high",
+      "scoring": {
+        "supporting_examples_count": 4,
+        "counterexamples_count": 0,
+        "scope_files_count": 7,
+        "coverage_ratio": 0.5714285714285714,
+        "heuristic_id": "engine-direct-data-access-v1",
+        "coverage_direction": {
+          "violating_files": 4,
+          "scope_files": 7,
+          "violation_ratio": 0.5714285714285714,
+          "threshold": 0.5,
+          "demoted": true
+        }
+      },
+      "evidence_refs": [
+        {
+          "id": "evidence_ref_c5d3ea4d9aa9a390",
+          "kind": "supporting",
+          "file_path": "app/api/posts/[postId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/posts/[postId]/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "0793f8b58bd592378756a6763caf791d336d3232a13ad157dfa56b14f5e1a2e3",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_ceb7543c2272c71d",
+          "kind": "supporting",
+          "file_path": "app/api/posts/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/posts/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "31f98edf51e763bfcd3f119a82593536f8895d54320aebcbdc1212502f798edf",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_549fc9152e7e135e",
+          "kind": "supporting",
+          "file_path": "app/api/users/[userId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/users/[userId]/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "f52e75f34ff2a296b4c92a757d3cdb461e64e1504f68eefdcd63f19b725fa471",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_f7188efcfad15e11",
+          "kind": "supporting",
+          "file_path": "app/api/webhooks/stripe/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/webhooks/stripe/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "c6984f90fdd2aeac6edb262f7dbead6502566fdeb563901168890b846226edd6",
+          "redaction_state": "none"
+        }
+      ],
+      "counterexample_refs": [],
+      "matcher_fingerprint": "15c530fde9ca4330fe7aa6b02bb858c1c7c1b47d7ee7a0334965964df075ffc5",
+      "scope_fingerprint": "a92db4f5776aa781a8fe67553a629839ffcdb1947d4da22a462af46cf417d9db",
+      "graph_fingerprint": "a877c9fe85afd34ea48a9a9e5ef04e390cb5ba0236f3437dec487e811793016a",
+      "evidence_fingerprint": "b7ee1bfe6fb534c7c682f5982418728d5d98fad458a8a7e30a2df9eaae8299c3",
+      "required_capabilities": [
+        "syntax_facts",
+        "import_resolution",
+        "route_detection"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-19T15:43:10.269Z"
+    },
+    {
+      "id": "candidate_59fd445507a30950",
+      "repo_id": "repo_8b460f3716d2bd8b",
+      "scan_id": "scan_4392a2eb3be69fda",
+      "kind": "api_route_requires_service_delegation",
+      "statement": "API routes should delegate business and data-access work through service modules.",
+      "rationale": "Detected direct data-access imports; service delegation should be reviewed before enforcement.",
+      "scope": {
+        "path_globs": [
+          "**/app/**/route.ts",
+          "**/app/**/route.tsx",
+          "**/app/**/route.js",
+          "**/app/**/route.jsx",
+          "**/pages/api/**/*.ts",
+          "**/pages/api/**/*.tsx",
+          "**/pages/api/**/*.js",
+          "**/pages/api/**/*.jsx"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_requires_service_delegation",
+        "allowed_delegate_imports": [
+          "**/services/**",
+          "**/server/**",
+          "**/data-access/**"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "suggested_severity": "warning",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "heuristic_check",
+      "confidence_label": "low",
+      "scoring": {
+        "supporting_examples_count": 0,
+        "counterexamples_count": 4,
+        "scope_files_count": 7,
+        "coverage_ratio": 0,
+        "heuristic_id": "engine-service-delegation-v1"
+      },
+      "evidence_refs": [],
+      "counterexample_refs": [
+        {
+          "id": "evidence_ref_c5d3ea4d9aa9a390",
+          "kind": "counterexample",
+          "file_path": "app/api/posts/[postId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/posts/[postId]/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "0793f8b58bd592378756a6763caf791d336d3232a13ad157dfa56b14f5e1a2e3",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_ceb7543c2272c71d",
+          "kind": "counterexample",
+          "file_path": "app/api/posts/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/posts/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "31f98edf51e763bfcd3f119a82593536f8895d54320aebcbdc1212502f798edf",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_549fc9152e7e135e",
+          "kind": "counterexample",
+          "file_path": "app/api/users/[userId]/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/users/[userId]/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "f52e75f34ff2a296b4c92a757d3cdb461e64e1504f68eefdcd63f19b725fa471",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_f7188efcfad15e11",
+          "kind": "counterexample",
+          "file_path": "app/api/webhooks/stripe/route.ts",
+          "start_line": 5,
+          "end_line": 5,
+          "symbol": "db",
+          "import_source": "@/lib/db",
+          "fact_ids": [
+            "fact:import_used:app/api/webhooks/stripe/route.ts:db:5-5"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "c6984f90fdd2aeac6edb262f7dbead6502566fdeb563901168890b846226edd6",
+          "redaction_state": "none"
+        }
+      ],
+      "matcher_fingerprint": "bc2289c00dfba01ee72712895ef3d96167de331ce42161e28e975fbb96b74ac3",
+      "scope_fingerprint": "a92db4f5776aa781a8fe67553a629839ffcdb1947d4da22a462af46cf417d9db",
+      "graph_fingerprint": "a877c9fe85afd34ea48a9a9e5ef04e390cb5ba0236f3437dec487e811793016a",
+      "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "required_capabilities": [
+        "syntax_facts",
+        "import_resolution",
+        "graph_stream"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-19T15:43:10.269Z"
+    },
+    {
+      "id": "candidate_4742995716512adf",
+      "repo_id": "repo_8b460f3716d2bd8b",
+      "scan_id": "scan_4392a2eb3be69fda",
+      "kind": "api_route_requires_auth_helper",
+      "statement": "API routes appear to use `getServerSession` as an auth helper.",
+      "rationale": "Detected repeated auth-like helper calls in API routes.",
+      "scope": {
+        "path_globs": [
+          "**/app/api/**/route.ts",
+          "**/app/api/**/route.tsx",
+          "**/pages/api/**/*.ts"
+        ],
+        "file_roles": [
+          "api_route"
+        ]
+      },
+      "matcher": {
+        "kind": "api_route_requires_auth_helper",
+        "required_calls": [
+          "getServerSession"
+        ],
+        "applies_to_file_roles": [
+          "api_route"
+        ]
+      },
+      "requires": {
+        "auth_helpers": [
+          {
+            "guard_id": "auth:getServerSession",
+            "import": "next-auth",
+            "symbol": "getServerSession"
+          }
+        ],
+        "dominates": [
+          "data_operation",
+          "response"
+        ]
+      },
+      "suggested_severity": "warning",
+      "suggested_enforcement_mode": "warn",
+      "enforcement_capability": "deterministic_check",
+      "confidence_label": "medium",
+      "scoring": {
+        "supporting_examples_count": 5,
+        "counterexamples_count": 0,
+        "scope_files_count": 7,
+        "coverage_ratio": 0.5714285714285714,
+        "heuristic_id": "security-auth-helper-usage-v1"
+      },
+      "evidence_refs": [
+        {
+          "id": "evidence_ref_947aa663c98ba25c",
+          "kind": "supporting",
+          "file_path": "app/api/posts/[postId]/route.ts",
+          "start_line": 84,
+          "end_line": 84,
+          "symbol": "getServerSession",
+          "fact_ids": [
+            "fact:symbol_called:app/api/posts/[postId]/route.ts:getServerSession:84-84"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "0793f8b58bd592378756a6763caf791d336d3232a13ad157dfa56b14f5e1a2e3",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_a50e670d52a3845d",
+          "kind": "supporting",
+          "file_path": "app/api/posts/route.ts",
+          "start_line": 16,
+          "end_line": 16,
+          "symbol": "getServerSession",
+          "fact_ids": [
+            "fact:symbol_called:app/api/posts/route.ts:getServerSession:16-16"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "31f98edf51e763bfcd3f119a82593536f8895d54320aebcbdc1212502f798edf",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_552708a32b74c64c",
+          "kind": "supporting",
+          "file_path": "app/api/posts/route.ts",
+          "start_line": 43,
+          "end_line": 43,
+          "symbol": "getServerSession",
+          "fact_ids": [
+            "fact:symbol_called:app/api/posts/route.ts:getServerSession:43-43"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "31f98edf51e763bfcd3f119a82593536f8895d54320aebcbdc1212502f798edf",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_9780d11b8bb62d7e",
+          "kind": "supporting",
+          "file_path": "app/api/users/[userId]/route.ts",
+          "start_line": 23,
+          "end_line": 23,
+          "symbol": "getServerSession",
+          "fact_ids": [
+            "fact:symbol_called:app/api/users/[userId]/route.ts:getServerSession:23-23"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "f52e75f34ff2a296b4c92a757d3cdb461e64e1504f68eefdcd63f19b725fa471",
+          "redaction_state": "none"
+        },
+        {
+          "id": "evidence_ref_7db910277a9d73a3",
+          "kind": "supporting",
+          "file_path": "app/api/users/stripe/route.ts",
+          "start_line": 14,
+          "end_line": 14,
+          "symbol": "getServerSession",
+          "fact_ids": [
+            "fact:symbol_called:app/api/users/stripe/route.ts:getServerSession:14-14"
+          ],
+          "scan_id": "scan_4392a2eb3be69fda",
+          "file_hash": "42d1cd2060a289025f2be1e6ef0147103fe1f4ec3fedf71d44c030120ed2cb14",
+          "redaction_state": "none"
+        }
+      ],
+      "counterexample_refs": [],
+      "matcher_fingerprint": "f935c5d326c9cdef9f4603089d6868e4ba7d270d22963dbd0f9f062afadb7ab4",
+      "scope_fingerprint": "0cdd79250cbbddc9664ea726a09348b5dbd87687d2bfa7e0f94161034f2a0d27",
+      "graph_fingerprint": "a877c9fe85afd34ea48a9a9e5ef04e390cb5ba0236f3437dec487e811793016a",
+      "evidence_fingerprint": "ddca9e920b5103e5c9a6f417110793e6bef87b640f6a8e2003dc86342bb6953c",
+      "required_capabilities": [
+        "syntax_facts",
+        "security_auth"
+      ],
+      "reason_not_blocking": "candidate_not_accepted",
+      "status": "candidate",
+      "created_at": "2026-08-19T15:43:10.269Z"
+    }
+  ],
+  "summary": {
+    "files_indexed": 132,
+    "files_skipped": 0,
+    "facts_count": 1850,
+    "diagnostics_count": 7,
+    "candidates_count": 3,
+    "engine_source": "rust",
+    "incremental_changes": {
+      "added": 0,
+      "modified": 0,
+      "deleted": 0,
+      "unchanged": 132,
+      "total": 132
+    },
+    "incremental_plan": {
+      "previous_scan_id": "scan_d3002dfa24a14580",
+      "execution_mode": "incremental_reuse",
+      "reuse_applied": true,
+      "reusable_file_count": 132,
+      "changed_file_count": 0,
+      "blocked_reasons": []
+    }
+  },
+  "database_path": "/tmp/drift-beta.17.P-17-02b.pwhZRt/state/repo_8b460f3716d2bd8b/drift.sqlite"
+}

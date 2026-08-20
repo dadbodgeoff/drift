@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""Independent ground truth for route discovery.
+
+    route-oracle static <repo> [--json]        derive routes from Next.js conventions
+    route-oracle build  <repo> [--json]        derive routes from Next.js's OWN build manifests
+    route-oracle compare <oracle.json> <drift-repo-map.json>
+
+Charter 08 asks "does Drift see every route?" and today the only available answer is a hand-count,
+which is neither reproducible nor trustworthy at 500 routes. This provides an oracle Drift had no
+part in producing.
+
+Two modes, and the difference matters:
+
+  build   Runs `next build` and reads Next's own emitted manifests. This is authoritative - it is
+          literally what the framework decided to route. It needs a buildable repo (env vars,
+          databases, working deps), which most real repos do not offer on a laptop.
+
+  static  Re-implements the App Router and Pages Router file conventions directly from the
+          framework's documented rules. Weaker than `build`, but INDEPENDENT of Drift, always
+          available, and it encodes the cases that actually bite: route groups that do not
+          contribute a path segment, private `_folders` excluded from routing entirely, parallel
+          `@slots`, intercepting `(.)` segments, and `pageExtensions` overrides.
+
+A disagreement is not automatically a Drift bug - it is a question with a definite answer, which
+is exactly what charter 08 lacks today.
+"""
+import json, os, re, subprocess, sys
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+DEFAULT_EXT = ["js", "jsx", "ts", "tsx"]
+SKIP_DIRS = {"node_modules", ".next", ".git", "dist", "build", "out", "coverage", ".turbo"}
+
+def page_extensions(repo, at="."):
+    for name in ("next.config.js", "next.config.mjs", "next.config.ts", "next.config.cjs"):
+        p = os.path.join(repo, at, name)
+        if not os.path.exists(p): continue
+        m = re.search(r"pageExtensions\s*:\s*\[([^\]]*)\]", open(p, encoding="utf-8", errors="ignore").read())
+        if m:
+            return [x.strip().strip("\"'") for x in m.group(1).split(",") if x.strip()]
+    return DEFAULT_EXT
+
+def next_apps(repo, max_depth=4):
+    """Every Next.js application in the tree, not just one at the root.
+
+    Most real repos in the eval corpus are monorepos: calcom, dub and openstatus have no `app/` or
+    `pages/` at their root at all, and an oracle that only looks at the root reports zero routes for
+    them - which is indistinguishable from a repo that genuinely has none. Drift itself detects
+    workspaces only at the exact --repo-root and never looks downward, so this is precisely the
+    disagreement charter 08 needs measured rather than assumed."""
+    apps = []
+    for dp, dns, fns in os.walk(repo):
+        dns[:] = [d for d in dns if d not in SKIP_DIRS and not d.startswith(".")]
+        if len(os.path.relpath(dp, repo).split(os.sep)) > max_depth and dp != repo:
+            dns[:] = []; continue
+        has_cfg = any(f.startswith("next.config.") for f in fns)
+        depends_on_next = False
+        pj = os.path.join(dp, "package.json")
+        if os.path.exists(pj):
+            try:
+                m = json.load(open(pj, encoding="utf-8"))
+                depends_on_next = any("next" in (m.get(k) or {})
+                                      for k in ("dependencies", "devDependencies", "peerDependencies"))
+            except Exception:
+                depends_on_next = False
+        # A bare `pages/` or `app/` directory is NOT evidence of a Next app - MDX content trees and
+        # UI packages have them too. Requiring a next.config or a declared `next` dependency is what
+        # separates an application from a directory that merely looks like one.
+        if has_cfg or depends_on_next:
+            rel = os.path.relpath(dp, repo)
+            apps.append("." if rel == "." else rel)
+            dns[:] = [d for d in dns if d not in ("app", "pages", "src")]
+    return sorted(set(apps)) or ["."]
+
+def app_roots(repo):
+    out = []
+    for a in next_apps(repo):
+        for r in ("app", os.path.join("src", "app")):
+            q = os.path.normpath(os.path.join(a, r))
+            if os.path.isdir(os.path.join(repo, q)): out.append(q)
+    return out
+def pages_roots(repo):
+    out = []
+    for a in next_apps(repo):
+        for r in ("pages", os.path.join("src", "pages")):
+            q = os.path.normpath(os.path.join(a, r))
+            if os.path.isdir(os.path.join(repo, q)): out.append(q)
+    return out
+
+def _segments_to_url(segs):
+    """Apply the App Router segment rules. Returns None if the path is not routable at all."""
+    out = []
+    for s in segs:
+        if s.startswith("_"):            return None          # private folder: excluded from routing
+        if s.startswith("@"):            continue             # parallel route slot: no URL segment
+        if re.fullmatch(r"\(\.{1,3}\)\w*", s): continue        # intercepting marker
+        if s.startswith("(") and s.endswith(")"): continue     # route group: no URL segment
+        out.append(s)
+    return "/" + "/".join(out)
+
+def static_routes(repo):
+    exts = page_extensions(repo)
+    found = []
+    for root in app_roots(repo):
+        base = os.path.join(repo, root)
+        for dp, dns, fns in os.walk(base):
+            dns[:] = [d for d in dns if d not in SKIP_DIRS]
+            rel = os.path.relpath(dp, base)
+            segs = [] if rel == "." else rel.split(os.sep)
+            url = _segments_to_url(segs)
+            if url is None: continue
+            for fn in fns:
+                stem, _, ext = fn.rpartition(".")
+                if ext not in exts: continue
+                if stem == "route":
+                    found.append({"file": os.path.relpath(os.path.join(dp, fn), repo).replace(os.sep, "/"),
+                                  "url": url or "/", "kind": "api_route", "router": "app",
+                                  "why": "app-router route handler"})
+                elif stem == "page":
+                    found.append({"file": os.path.relpath(os.path.join(dp, fn), repo).replace(os.sep, "/"),
+                                  "url": url or "/", "kind": "page", "router": "app",
+                                  "why": "app-router page"})
+    for root in pages_roots(repo):
+        base = os.path.join(repo, root)
+        for dp, dns, fns in os.walk(base):
+            dns[:] = [d for d in dns if d not in SKIP_DIRS]
+            rel = os.path.relpath(dp, base)
+            segs = [] if rel == "." else rel.split(os.sep)
+            if any(s.startswith("_") for s in segs): continue
+            for fn in fns:
+                stem, _, ext = fn.rpartition(".")
+                if ext not in exts: continue
+                if stem.startswith("_"): continue              # _app, _document, _error
+                is_api = bool(segs) and segs[0] == "api"
+                url_segs = segs + ([] if stem == "index" else [stem])
+                found.append({"file": os.path.relpath(os.path.join(dp, fn), repo).replace(os.sep, "/"),
+                              "url": "/" + "/".join(url_segs), "router": "pages",
+                              "kind": "api_route" if is_api else "page",
+                              "why": "pages-router " + ("api route" if is_api else "page")})
+    for root in ("", "src"):
+        for ext in exts:
+            p = os.path.join(repo, root, f"middleware.{ext}")
+            if os.path.exists(p):
+                found.append({"file": os.path.relpath(p, repo).replace(os.sep, "/"),
+                              "url": None, "kind": "middleware", "router": "both",
+                              "why": "middleware entrypoint"})
+    return sorted(found, key=lambda r: r["file"])
+
+def build_routes(repo):
+    if "--no-build" not in sys.argv:
+        subprocess.run(["npx", "next", "build"], cwd=repo, capture_output=True, text=True, timeout=1800)
+    n = os.path.join(repo, ".next")
+    if not os.path.isdir(n):
+        sys.exit(f"next build produced no .next (exit {r.returncode}). "
+                 f"Use `static` mode and say so.\n{r.stderr[-1500:]}")
+    out = []
+    # Next 14 emits `.next/server/app-paths-manifest.json`, keyed by internal app path (which
+    # RETAINS route-group segments) and valued by the compiled file. Older/other versions emit
+    # `app-path-routes-manifest.json` at the .next root, keyed by source and valued by URL. Read
+    # whichever exists rather than assuming one - reading the wrong filename is why an earlier
+    # version of this tool silently reported zero app routes from a successful build.
+    apm = os.path.join(n, "server", "app-paths-manifest.json")
+    if os.path.exists(apm):
+        for app_path, compiled in json.load(open(apm)).items():
+            src = re.sub(r"\.js$", "", compiled)          # app/(marketing)/api/leads/route
+            if src.split("/")[-1] not in ("route", "page"): continue
+            url = "/" + "/".join(
+                seg for seg in app_path.strip("/").split("/")[:-1]
+                if not (seg.startswith("(") and seg.endswith(")")) and not seg.startswith("@"))
+            out.append({"file": src, "url": url or "/", "router": "app",
+                        "kind": "api_route" if src.endswith("/route") else "page",
+                        "why": "server/app-paths-manifest.json"})
+    ap = os.path.join(n, "app-path-routes-manifest.json")
+    if os.path.exists(ap) and not os.path.exists(apm):
+        for src, url in json.load(open(ap)).items():
+            out.append({"file": src, "url": url, "router": "app",
+                        "kind": "api_route" if src.endswith("/route") else "page",
+                        "why": "app-path-routes-manifest.json"})
+    pm = os.path.join(n, "server", "pages-manifest.json")
+    if os.path.exists(pm):
+        for url, dest in json.load(open(pm)).items():
+            if url.startswith("/_") or url == "/404" or url == "/500": continue
+            out.append({"file": dest, "url": url, "router": "pages",
+                        "kind": "api_route" if url.startswith("/api/") else "page",
+                        "why": "pages-manifest.json"})
+    return sorted(out, key=lambda x: x["file"])
+
+def compare(oracle_path, driftmap_path):
+    oracle = json.load(open(oracle_path))
+    routes = oracle["routes"] if isinstance(oracle, dict) else oracle
+    dm = json.load(open(driftmap_path))
+    files = dm.get("files") or dm.get("all_files") or (dm.get("repo_map") or {}).get("files") or []
+    seen = {}
+    for f in files:
+        p = (f.get("path") or "").replace("\\", "/")
+        roles = f.get("roles") or ([f["role"]] if f.get("role") else [])
+        seen[p] = roles
+    truth = {r["file"] for r in routes if r["kind"] == "api_route"}
+    drift_api = {p for p, roles in seen.items() if "api_route" in roles}
+    indexed = set(seen)
+
+    tp = sorted(truth & drift_api)
+    fn = sorted(truth - drift_api)
+    fp = sorted(drift_api - truth)
+    unindexed = sorted(truth - indexed)
+
+    rec = S.wilson(len(tp), len(truth)) if truth else None
+    pre = S.wilson(len(tp), len(drift_api)) if drift_api else None
+    fmt = lambda w: f"{w['p']:.3f} [{w['lo']:.3f},{w['hi']:.3f}] n={w['n']}" if w else "n/a"
+    print(f"── route discovery vs {oracle.get('mode','?') if isinstance(oracle,dict) else '?'} oracle")
+    print(f"   oracle api routes: {len(truth)}   drift api routes: {len(drift_api)}   "
+          f"drift indexed files: {len(indexed)}")
+    print(f"   recall    {fmt(rec)}")
+    print(f"   precision {fmt(pre)}")
+    if unindexed:
+        print(f"\n   {len(unindexed)} route(s) the oracle names that Drift did not INDEX AT ALL "
+              f"(worse than mis-roled: invisible):")
+        for f in unindexed[:20]: print(f"     {f}")
+    missed_roled = [f for f in fn if f not in set(unindexed)]
+    if missed_roled:
+        print(f"\n   {len(missed_roled)} route(s) Drift indexed but did not mark api_route:")
+        for f in missed_roled[:20]:
+            print(f"     {f}   roles={seen.get(f)}")
+    if fp:
+        print(f"\n   {len(fp)} file(s) Drift calls api_route that the oracle does not:")
+        for f in fp[:20]: print(f"     {f}")
+    if os.environ.get("DRIFT_BETA_LEDGER"):
+        from _probelib import ledger_append
+        ledger_append("08", {"oracle": oracle_path, "mode": oracle.get("mode") if isinstance(oracle,dict) else None,
+                             "recall": rec, "precision": pre, "tp": len(tp), "fn": fn, "fp": fp,
+                             "unindexed": unindexed}, name="route-oracle.jsonl")
+    return 1 if (fn or fp) else 0
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]
+if c in ("static", "build"):
+    repo = os.path.abspath(sys.argv[2])
+    routes = static_routes(repo) if c == "static" else build_routes(repo)
+    doc = {"mode": c, "repo": repo, "page_extensions": page_extensions(repo),
+           "next_apps": next_apps(repo),
+           "app_roots": app_roots(repo), "pages_roots": pages_roots(repo), "routes": routes}
+    if "--json" in sys.argv: print(json.dumps(doc, indent=1)); sys.exit(0)
+    k = {}
+    for r in routes: k[r["kind"]] = k.get(r["kind"], 0) + 1
+    print(f"── {c} oracle · {os.path.basename(repo)}")
+    print(f"   next apps found: {', '.join(doc['next_apps'])}")
+    print(f"   app roots: {doc['app_roots'] or 'none'}   pages roots: {doc['pages_roots'] or 'none'}"
+          f"   extensions: {','.join(doc['page_extensions'])}")
+    if doc["next_apps"] != ["."]:
+        print(f"   NOTE: this is a monorepo. Drift detects workspaces only at the exact --repo-root "
+              f"and never looks downward, so running it at the repo root may see none of these.")
+    for kk, v in sorted(k.items()): print(f"   {kk:<12} {v}")
+    if c == "static":
+        print("   NOTE: static mode is an independent re-implementation of Next's conventions, "
+              "not the framework's own answer. Prefer `build` where the repo will build.")
+elif c == "compare":
+    sys.exit(compare(sys.argv[2], sys.argv[3]))
+else: sys.exit(f"unknown subcommand {c}")

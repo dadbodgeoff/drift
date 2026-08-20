@@ -1,0 +1,407 @@
+#!/usr/bin/env python3
+"""Prove the harness works before trusting it with 23 charters and ~680 probes.
+
+    selftest [-v]
+
+Covers every tool that has behaviour: run-probe (assertions, timeout, redaction, elision, binary,
+ledger schema), bench (stats, drift, abort-on-divergence), ledger-sweep (contradiction, subject
+split), validate-result (structure, coverage, FIDELITY), charter-probes, cost, replay, machine-state,
+and the workflow's dispatch policy.
+
+A harness for a validation program that was never itself validated is the failure this whole
+project exists to find. It has already caught four real defects in its own tooling.
+"""
+import json, os, subprocess, sys, tempfile
+H = os.path.dirname(os.path.abspath(__file__))
+SPECS = os.path.abspath(os.path.join(H, ".."))
+V = "-v" in sys.argv
+fails, checks = [], 0
+
+def ok(cond, msg):
+    global checks; checks += 1
+    if not cond: fails.append(msg)
+    elif V: print(f"   ok  {msg}")
+
+T = tempfile.mkdtemp(prefix="harness-selftest.")
+E = dict(os.environ, DRIFT_BETA_ARTIFACTS=f"{T}/artifacts", DRIFT_BETA_LEDGER=f"{T}/ledger",
+         DRIFT_BETA_RESULTS=f"{T}/results", DRIFT_BETA_SPECS=SPECS,
+         DRIFT_BETA_SHA="selftest", DRIFT_BETA_REDACT="sk-SENTINEL-XYZ",
+         PATH=H + ":" + os.environ["PATH"])
+os.makedirs(f"{T}/results", exist_ok=True)
+def run(tool, *a, env=None):
+    return subprocess.run([f"{H}/{tool}", *a], capture_output=True, text=True, env=env or E)
+
+print("── run-probe")
+for name, args, want in [
+    ("clean exit",     ["99","T01","--","echo","ok"], 0),
+    ("large output",   ["99","T03","--","sh","-c","seq 1 5000"], 0),
+    ("timeout",        ["99","T04","--timeout","1","--","sleep","30"], 1),
+    ("missing binary", ["99","T05","--","no-such-binary-xyz"], 0),
+    ("binary stdout",  ["99","T06","--","head","-c","200","/dev/urandom"], 0),
+]:
+    ok(run("run-probe", *args).returncode == want, f"run-probe {name}: wrong shim exit")
+
+r = run("run-probe","99","T10","--expect-exit","3","--refute-out","will not fail CI","--",
+        "sh","-c","echo refusing; exit 3")
+ok(r.returncode == 0 and "[PASS]" in r.stdout, "assertions: satisfied oracle must PASS")
+r = run("run-probe","99","T11","--expect-exit","3","--refute-out","will not fail CI","--",
+        "sh","-c","echo 'exits 0 and will not fail CI'; exit 3")
+ok(r.returncode == 1 and "[FAIL]" in r.stdout, "assertions: violated oracle must FAIL")
+ok("NO  refute-out" in r.stdout, "assertions: the failing check must be named")
+r = run("run-probe","99","T12","--expect-json-valid","--expect-json",".a.b[1]=7",
+        "--expect-json-len",".a.b=3","--expect-json-exists",".a.c","--",
+        "sh","-c",'echo \'{"a":{"b":[1,7,3],"c":null}}\'')
+ok(r.returncode == 0 and "[PASS]" in r.stdout, "json assertions: path/len/exists must all pass")
+r = run("run-probe","99","T13","--expect-json",".a.b=9","--","sh","-c",'echo \'{"a":{"b":1}}\'')
+ok(r.returncode == 1, "json assertions: wrong value must FAIL")
+r = run("run-probe","99","T14","--expect-json-valid","--","echo","not json")
+ok(r.returncode == 1 and "not JSON" in r.stdout, "json-valid must reject non-JSON")
+r = run("run-probe","99","T15","--","echo","ok")
+ok("[----]" in r.stdout, "a probe with no oracle must be marked UNJUDGED, not PASS")
+
+r = run("run-probe","99","T20","--","echo","secret sk-SENTINEL-XYZ here")
+ok("sk-SENTINEL-XYZ" not in r.stdout, "redaction: sentinel must not reach the summary")
+r = run("run-probe","99","T21","--","echo","sk-SENTINEL-XYZ")
+ok("sk-SENTINEL-XYZ" not in r.stdout, "redaction: sentinel in the echoed command must be redacted")
+ok("sk-SENTINEL-XYZ" in open(f"{T}/artifacts/99/T21.out").read(),
+   "redaction: the on-disk artifact must stay unredacted")
+r = run("run-probe","99","T22","--","sh","-c","seq 1 100")
+ok("elided" in r.stdout and len(r.stdout) < 4000, "elision: long output must be bounded")
+
+rows = [json.loads(l) for l in open(f"{T}/ledger/99.jsonl")]
+for k in ("charter","probe","command","exit_code","duration_ms","stdout_sha256",
+          "sha_under_test","verdict","checks"):
+    ok(all(k in r_ for r_ in rows), f"ledger: every row must carry {k}")
+ok({r_["verdict"] for r_ in rows} <= {"PASS","FAIL","UNJUDGED"}, "ledger: verdict vocabulary")
+
+print("── bench")
+r = run("bench","99","B01","--trials","10","--warmup","1","--","sh","-c","exit 0")
+# NOT asserting USABLE: on a loaded or throttling machine, refusing to certify is the CORRECT
+# outcome, and asserting otherwise would make this selftest flaky in exactly the situation the
+# drift detector exists for.
+ok("drift: rho=" in r.stdout, "bench: must always report a drift verdict")
+ok(("USABLE" in r.stdout) or ("NOT USABLE" in r.stdout), "bench: must render a usability verdict")
+b = [json.loads(l) for l in open(f"{T}/ledger/99.bench.jsonl")]
+ok(b[0]["stats"]["n"] == 10 and len(b[0]["samples_ms"]) == 10, "bench: n must match trials")
+ok(b[0]["usable"] is (b[0]["drift"].get("rho") is None or "STRONG" not in b[0]["drift"]["verdict"]),
+   "bench: usability must follow the drift verdict")
+sys.path.insert(0, H); import _probelib as _L
+ok("STRONG" in _L.drift_signal(list(range(10,30,2)))["verdict"],
+   "bench stats: a monotonically rising series must be called STRONG drift")
+ok("noise" in _L.drift_signal([10,12,11,13,10,12,11,10,13,11])["verdict"],
+   "bench stats: a noisy flat series must NOT be called drift")
+ok(_L.summarize([10,11,10,12,40])["outliers"] == [40],
+   "bench stats: modified z-score must flag the outlier")
+for k in ("median","p95","mad","cv","outliers"): ok(k in b[0]["stats"], f"bench stats: {k}")
+r = run("bench","99","B02","--trials","4","--warmup","0","--require-exit","0","--",
+        "sh","-c","test -f %s/flip && exit 3 || (touch %s/flip; exit 0)" % (T,T))
+ok(r.returncode == 1 and "ABORTED" in r.stdout,
+   "bench: a command whose exit code changes mid-series must abort, not average")
+ok("no number is reported" in r.stdout, "bench: an aborted series must refuse to report a number")
+
+print("── ledger-sweep")
+E2 = dict(E, DRIFT_BETA_SHA="other-sha")
+run("run-probe","13","P-13-01","--","sh","-c","exit 0", env=E2)
+p13 = f"{T}/ledger/13.jsonl"
+rs = [json.loads(l) for l in open(p13)]; rs[0]["exit_code"] = 3
+open(p13,"w").write("".join(json.dumps(x)+"\n" for x in rs))
+run("run-probe","03","P-03-a","--","sh","-c","exit 0")
+r = run("ledger-sweep")
+ok(r.returncode == 0, "sweep: must not crash when bench/cost ledgers sit beside probe ledgers:\n" + r.stderr)
+ok("EXIT DIVERGENCE" in r.stdout, "sweep: must find the same command diverging across charters")
+ok("PROBES SPAN" in r.stdout, "sweep: must detect probes run against two different subjects")
+ok("INCOMPLETE" in r.stdout, "sweep: must report charters with unrun named probes")
+
+print("── charter-probes")
+spec = json.loads(run("charter-probes","--json").stdout)
+ok(len(spec) >= 23, f"charter-probes: expected >=23 charters, got {len(spec)}")
+ok(sum(c["probe_count"] for c in spec.values()) > 300, "charter-probes: probe total looks wrong")
+ok(all(c["suspect_count"] > 0 for k,c in spec.items() if k != "00"),
+   "charter-probes: every charter except 00 must name suspects")
+ok(spec["03"]["probes"] and spec["03"]["probes"][0].startswith("P-03-"),
+   "charter-probes: must handle charter 03's lettered probe classes")
+ok(spec["09"]["repeated"]["prefix"] == "L" and spec["10"]["repeated"]["prefix"] == "C",
+   "charter-probes: must handle the L-step and C-step repeated schemes")
+
+print("── validate-result")
+open(f"{T}/results/13-x.md","w").write("""# CHARTER 13 — RESULTS
+**Commit under test:** x
+**Engine binary:** x
+**Platform:** darwin
+## 1. Verdict
+v
+## 2. Probe log
+| Probe | Command | Exit | Observed | Oracle | Match |
+| P-13-01 | `x` | 0 | fine | fine | yes |
+## 3. Measurements
+## 4. Suspect list disposition
+| S-13-1 | c | CONFIRMED | e |
+## 5. Failures and blocks
+## 6. Discovered surface not in the charter
+## 7. What this charter did not cover
+""")
+r = run("validate-result","13")
+ok(r.returncode == 1, "validate-result: an incomplete file must be REJECTED")
+ok("FIDELITY" in r.stdout, "validate-result: must catch a claimed exit code the ledger contradicts")
+ok("never appear" in r.stdout, "validate-result: must catch unrun probes")
+ok("no disposition" in r.stdout, "validate-result: must catch undispositioned suspects")
+
+print("── cost / replay / machine-state")
+run("cost","record","03","execute","sonnet","medium","100000","5000","300")
+run("cost","record","10","escalate","opus","high","50000","4000","200")
+r = run("cost","report","--by","stage")
+ok("escalation stage is" in r.stdout, "cost: must report the escalation share")
+r = run("replay","99","T01")
+ok('"probe": "T01"' in r.stdout, "replay: must print the recorded row")
+r = run("replay","99","T01","--rerun")
+ok("MATCHES the recorded run" in r.stdout, "replay: rerun must compare stdout hashes")
+r = run("machine-state")
+ok("timings are" in r.stdout.lower() or "TRUSTWORTHY" in r.stdout, "machine-state: must render a verdict")
+
+print("── gt / stats")
+import _stats as ST
+ok(abs(ST.wilson(0,10)["hi"] - 0.2775) < 1e-3, "stats: Wilson 0/10 must match the published value")
+ok(ST.wilson(50,50)["lo"] < 1.0, "stats: Wilson must not collapse to a point at p=1")
+ok(ST.mcnemar(0,8)["significant"] and not ST.mcnemar(3,4)["significant"],
+   "stats: McNemar must separate a real paired shift from noise")
+ok(0.85 < ST.mde(0.96,50) < 0.88, "stats: MDE at n=50 should sit near 0.865")
+ok(ST.cohen_kappa(['a','b','a'],['a','b','a']) == 1.0, "stats: kappa must be 1.0 on perfect agreement")
+
+GT = f"{T}/gt.jsonl"; EG = dict(E, DRIFT_BETA_GT=GT)
+bad = subprocess.run([f"{H}/gt","add"], input=json.dumps({"id":"x","repo":"r","repo_sha":"s",
+    "file":"f","kind":"k","label":"violating","justification":"","evidence_lines":[],
+    "labeler":"l","confidence":"high"}), capture_output=True, text=True, env=EG)
+ok(bad.returncode == 1 and "REJECTED" in bad.stderr, "gt: a label with no provenance must be rejected")
+good = [{"id":f"g{i}","repo":"r","repo_sha":"s","file":f"a{i}.ts","kind":"k",
+         "label":"violating" if i<10 else "compliant","justification":"j",
+         "evidence_lines":[[1,2]],"labeler":"l","confidence":"high"} for i in range(30)]
+r = subprocess.run([f"{H}/gt","add"], input=json.dumps(good), capture_output=True, text=True, env=EG)
+ok(r.returncode == 0, "gt: well-formed labels must be accepted")
+r = subprocess.run([f"{H}/gt","add"], input=json.dumps(good), capture_output=True, text=True, env=EG)
+ok("skip (already labeled)" in r.stdout, "gt: re-adding the same (repo,file,kind) must not duplicate")
+preds = f"{T}/preds.jsonl"
+open(preds,"w").write("\n".join(json.dumps({"repo":"r","file":f"a{i}.ts","kind":"k",
+    "predicted":"violating" if i<8 else "compliant"}) for i in range(30)))
+r = subprocess.run([f"{H}/gt","score",preds], capture_output=True, text=True, env=EG)
+ok("precision 1.000" in r.stdout, "gt: 8 correct / 0 false positives must score precision 1.000")
+ok("recall    0.800" in r.stdout, "gt: 8 of 10 violations found must score recall 0.800")
+ok("[" in r.stdout and "]" in r.stdout, "gt: every rate must carry a confidence interval")
+
+print("── mutate / shapes / report")
+r = subprocess.run([f"{H}/mutate","list"], capture_output=True, text=True,
+                   env=dict(E, DRIFT_BETA_MUTANTS=os.path.join(H,"mutants.json")))
+ok(r.returncode == 0 and r.stdout.count("\n") >= 5, "mutate: manifest must list its mutants")
+r = subprocess.run([f"{H}/mutate","check"], capture_output=True, text=True,
+                   env=dict(E, DRIFT_BETA_MUTANTS=os.path.join(H,"mutants.json"), DRIFT_MUTATE_TREE=""))
+ok(r.returncode != 0 and "writable clone" in r.stderr,
+   "mutate: must refuse to run without an explicit writable tree")
+r = subprocess.run([f"{H}/mutate","check"], capture_output=True, text=True,
+                   env=dict(E, DRIFT_BETA_MUTANTS=os.path.join(H,"mutants.json"),
+                            DRIFT_BETA_FREEZE="/tmp/fz", DRIFT_MUTATE_TREE="/tmp/fz/src"))
+ok(r.returncode != 0, "mutate: must refuse to mutate inside the freeze")
+man = json.load(open(os.path.join(H,"mutants.json")))["mutants"]
+import hashlib as _h
+ok(all(_h.sha256(m["find"].encode()).hexdigest() == m["anchor_sha256"] for m in man),
+   "mutate: every mutant must be pinned by the sha256 of its anchor")
+ok(all(m["replace"] != m["find"] for m in man), "mutate: no mutant may be a no-op")
+
+sh = f"{T}/shapes"
+r = subprocess.run([f"{H}/shapes","emit",sh,"--max","60"], capture_output=True, text=True, env=E)
+ok(r.returncode == 0, "shapes: emit must succeed")
+mm = json.load(open(f"{sh}/manifest.json"))
+ok(len(mm["shapes"]) == 60, "shapes: --max must be honoured exactly")
+cov = {k: {v: 0 for v in mm["axes"][k]} for k in mm["axes"]}
+for s_ in mm["shapes"]:
+    for k, v in s_["axes"].items(): cov[k][v] += 1
+ok(all(all(c > 0 for c in cov[k].values()) for k in cov),
+   "shapes: a --max sample must cover EVERY axis value, not a prefix of the product")
+res = f"{T}/res.jsonl"
+open(res,"w").write("\n".join(json.dumps({"id":s_["id"],
+    "caught": not s_["axes"]["specifier"].startswith("barrel")}) for s_ in mm["shapes"]))
+import shutil as _sh; _sh.copy(f"{sh}/manifest.json", f"{T}/manifest.json")
+r = subprocess.run([f"{H}/shapes","score",res], capture_output=True, text=True, env=E)
+ok("barrel_1hop" in r.stdout and "0.00" in r.stdout,
+   "shapes: score must attribute the miss to the barrel axis")
+
+r = subprocess.run([f"{H}/report"], capture_output=True, text=True, env=E)
+ok(r.returncode == 0 and "Provenance" in r.stdout, "report: must compile from the ledgers")
+ok("Benchmarks" in r.stdout, "report: a benchmark-only charter must still appear")
+
+print("── route-oracle")
+RO = f"{T}/nextfix"
+def mk(rel):
+    q = os.path.join(RO, rel); os.makedirs(os.path.dirname(q), exist_ok=True)
+    open(q, "w").write("export function GET(){}\n")
+open(os.path.join(RO_DIR := RO, "x"), "w") if False else None
+os.makedirs(RO, exist_ok=True)
+open(os.path.join(RO, "next.config.js"), "w").write("module.exports={}\n")
+for f in ["app/api/users/route.ts", "app/(marketing)/api/leads/route.ts",
+          "app/(a)/(b)/api/deep/route.ts", "app/api/items/[id]/route.ts",
+          "app/_internal/api/hidden/route.ts", "app/@modal/api/slot/route.ts",
+          "app/route.ts", "app/dashboard/page.tsx",
+          "pages/api/legacy.ts", "pages/_app.tsx", "pages/about.tsx", "middleware.ts"]:
+    mk(f)
+r = subprocess.run([f"{H}/route-oracle","static",RO,"--json"], capture_output=True, text=True, env=E)
+doc = json.loads(r.stdout)
+api = {x["file"]: x["url"] for x in doc["routes"] if x["kind"] == "api_route"}
+ok("app/_internal/api/hidden/route.ts" not in api,
+   "route-oracle: a private _folder is not routable and must be excluded")
+ok(api.get("app/(marketing)/api/leads/route.ts") == "/api/leads",
+   "route-oracle: a route group must contribute no URL segment")
+ok(api.get("app/(a)/(b)/api/deep/route.ts") == "/api/deep",
+   "route-oracle: nested route groups must both collapse")
+ok(api.get("app/@modal/api/slot/route.ts") == "/api/slot",
+   "route-oracle: a parallel @slot must contribute no URL segment")
+ok(api.get("app/route.ts") == "/", "route-oracle: a root-level route handler maps to /")
+ok(api.get("app/api/items/[id]/route.ts") == "/api/items/[id]",
+   "route-oracle: dynamic segments are preserved verbatim")
+ok("pages/_app.tsx" not in api and "app/dashboard/page.tsx" not in api,
+   "route-oracle: _app and pages are not api routes")
+ok(any(x["kind"] == "middleware" for x in doc["routes"]), "route-oracle: middleware must be found")
+ok(len(api) == 7, f"route-oracle: expected 7 api routes in the fixture, got {len(api)}")
+# a bare pages/ dir with no next.config and no next dependency is content, not an app
+os.makedirs(os.path.join(RO, "content", "pages"), exist_ok=True)
+open(os.path.join(RO, "content", "pages", "post.tsx"), "w").write("x\n")
+d2 = json.loads(subprocess.run([f"{H}/route-oracle","static",RO,"--json"],
+                               capture_output=True, text=True, env=E).stdout)
+ok(d2["next_apps"] == ["."],
+   "route-oracle: a stray pages/ dir with no next.config or next dep is not a Next app")
+om = f"{T}/oracle.json"; open(om,"w").write(json.dumps(doc))
+dm = f"{T}/dmap.json"
+open(dm,"w").write(json.dumps({"files":[{"path":f,"roles":["api_route"]} for f in list(api)[:5]]
+                               + [{"path":"lib/x.ts","roles":["api_route"]}]}))
+r = subprocess.run([f"{H}/route-oracle","compare",om,dm], capture_output=True, text=True, env=E)
+ok("recall" in r.stdout and "precision" in r.stdout, "route-oracle: compare must report both rates")
+ok("lib/x.ts" in r.stdout, "route-oracle: compare must name the false positive")
+ok(r.returncode == 1, "route-oracle: compare must exit nonzero on any disagreement")
+
+print("── scope-oracle")
+SRC = os.environ.get("DRIFT_BETA_SRC") or "/Users/geoffreyfernald/drift-w7"
+ES = dict(E, DRIFT_BETA_SRC=SRC)
+r = subprocess.run([f"{H}/scope-oracle","selftest"], capture_output=True, text=True, env=ES)
+ok(r.returncode == 0 and "agrees with the repo" in r.stdout,
+   "scope-oracle: must agree with the repo's own glob-parity canary:\n" + r.stdout)
+g = subprocess.run([f"{H}/scope-oracle","globs"], capture_output=True, text=True, env=ES).stdout.split()
+ok(any("**/app/**/route.ts" == x for x in g),
+   "scope-oracle: must read the CURRENT widened globs from source, not a hard-coded copy")
+def m(pat, path):
+    return subprocess.run([f"{H}/scope-oracle","match",pat,path],
+                          capture_output=True, text=True, env=ES).stdout.strip() == "True"
+ok(m("**/app/**/route.ts", "app/(marketing)/api/leads/route.ts"),
+   "scope-oracle: current globs must cover a route group BEFORE /api/")
+ok(not m("**/app/api/**/route.ts", "app/(marketing)/api/leads/route.ts"),
+   "scope-oracle: the previous globs must NOT have covered it (the defect was real)")
+ok(m("**/app/**/route.ts", "app/route.ts") and not m("**/app/api/**/route.ts", "app/route.ts"),
+   "scope-oracle: root-level route is covered now and was not before")
+ok(m("**/*.pem", "server.pem") and not m("app/api/*/route.ts", "app/api/a/b/route.ts"),
+   "scope-oracle: single-star must not cross a separator")
+ok(m("/api/users/**", "/api/users") and not m("/api/users/*", "/api/users"),
+   "scope-oracle: trailing /** matches the directory itself, /* does not")
+
+print("── gt-propose / gt-adjudicate")
+GP = f"{T}/props.json"
+FX = f"{T}/proprepo"
+for rel, body in [
+    ("next.config.js", "module.exports={}\n"),
+    ("package.json", '{"dependencies":{"next":"14"}}\n'),
+    ("app/api/good/route.ts", 'import { withAuth } from "@/lib/auth";\nexport const GET = withAuth(() => {});\n'),
+    ("app/api/family/route.ts", 'import { withAuth } from "@/lib/auth/admin";\nexport const GET = withAuth(() => {});\n'),
+    ("app/api/bare/route.ts", "export async function GET() { return Response.json({}); }\n"),
+    ("app/api/other/route.ts", 'import { withLogging } from "@/lib/log";\nexport const GET = withLogging(() => {});\n'),
+]:
+    q = os.path.join(FX, rel); os.makedirs(os.path.dirname(q), exist_ok=True); open(q,"w").write(body)
+subprocess.run(["git","init","-q",FX], capture_output=True)
+r = subprocess.run([f"{H}/gt-propose",FX,"--kind","k","--helper","withAuth",
+                    "--helper-module","@/lib/auth","--out",GP], capture_output=True, text=True, env=ES)
+d = json.load(open(GP))
+lab = {x["file"]: x["label"] for x in d["proposed"]}
+q_ = {x["file"] for x in d["needs_human"]}
+ok(lab.get("app/api/good/route.ts") == "compliant", "gt-propose: a clear positive is compliant")
+ok(lab.get("app/api/bare/route.ts") == "violating",
+   "gt-propose: a bare handler with no wrapper and no helper import is violating")
+ok("app/api/other/route.ts" in q_,
+   "gt-propose: a handler wrapped in a DIFFERENT helper must go to the human, never 'violating' "
+   "- absence of an accepted helper is not presence of a violation")
+ok("app/api/family/route.ts" in q_,
+   "gt-propose: a subtree module must NOT match by default (module identity is the point)")
+r = subprocess.run([f"{H}/gt-propose",FX,"--kind","k","--helper","withAuth",
+                    "--helper-module","@/lib/auth","--module-family","--out",GP],
+                   capture_output=True, text=True, env=ES)
+d = json.load(open(GP))
+ok({x["file"]: x["label"] for x in d["proposed"]}.get("app/api/family/route.ts") == "compliant",
+   "gt-propose: --module-family opts into subtree matching")
+ok(any("module family" in x["justification"] for x in d["proposed"]),
+   "gt-propose: the widening must be recorded in the justification, never silent")
+r = subprocess.run([f"{H}/gt-propose",FX,"--discover"], capture_output=True, text=True, env=ES)
+ok("withAuth" in r.stdout and "withLogging" in r.stdout,
+   "gt-propose --discover: must report the real wrapper distribution")
+
+props = json.load(open(GP))["proposed"]
+vg = f"{T}/vg.json"; open(vg,"w").write(json.dumps([{"id":x["id"],"label":x["label"]} for x in props]))
+r = subprocess.run([f"{H}/gt-adjudicate",GP,"--labeler","t","--verdicts",vg],
+                   capture_output=True, text=True, env=ES)
+ok(r.returncode in (0,2), "gt-adjudicate: perfect agreement must not be reported as failure")
+vb = f"{T}/vb.json"
+open(vb,"w").write(json.dumps([{"id":x["id"],
+    "label":"violating" if x["label"]=="compliant" else "compliant"} for x in props]))
+r = subprocess.run([f"{H}/gt-adjudicate",GP,"--labeler","t","--verdicts",vb],
+                   capture_output=True, text=True, env=ES)
+ok(r.returncode == 1, "gt-adjudicate: total disagreement must refuse bulk acceptance")
+r = subprocess.run([f"{H}/gt-adjudicate",GP,"--sample","4","--sample-stratified","--labeler","t"],
+                   capture_output=True, text=True, env=ES)
+ok("machine says" in r.stdout, "gt-adjudicate: stratified sampling must render a sample")
+
+print("── flake / corpus / bisect-metric")
+r = subprocess.run([f"{H}/flake","run","det","--trials","5","--","echo","same"],
+                   capture_output=True, text=True, env=E)
+ok("DETERMINISTIC" in r.stdout and "RENDER" not in r.stdout, "flake: stable output is DETERMINISTIC")
+r = subprocess.run([f"{H}/flake","run","noisy","--trials","6","--",
+                    "sh","-c","echo took $RANDOM ms; echo verdict=pass"],
+                   capture_output=True, text=True, env=E)
+ok("RENDER-NOISY" in r.stdout,
+   "flake: cosmetic-only variance must be RENDER-NOISY, not DETERMINISTIC and not a failure")
+r = subprocess.run([f"{H}/flake","run","coin","--trials","10","--",
+                    "sh","-c","[ $((RANDOM % 2)) -eq 0 ] && echo A || echo B"],
+                   capture_output=True, text=True, env=E)
+ok("NON-DETERMINISTIC" in r.stdout and r.returncode == 1,
+   "flake: a genuinely varying verdict must be NON-DETERMINISTIC and exit nonzero")
+
+W2 = f"{T}/bis"; os.makedirs(W2)
+def g(*c): return subprocess.run(["git","-C",W2,*c], capture_output=True, text=True)
+g("init","-q","."); g("config","user.email","t@t"); g("config","user.name","t")
+for i in range(1, 11):
+    open(os.path.join(W2,"m.py"),"w").write(f"print({0.95 if i < 7 else 0.70})\n")
+    g("add","-A"); g("commit","-qm",f"c{i}")
+good = g("rev-list","--max-parents=0","HEAD").stdout.strip()
+bad  = g("rev-parse","HEAD").stdout.strip()
+r = subprocess.run([f"{H}/bisect-metric","--tree",W2,"--good",good,"--bad",bad,
+                    "--threshold","0.90","--direction","below","--build","","--",
+                    "python3","m.py"], capture_output=True, text=True, env=E)
+ok("FIRST BAD COMMIT" in r.stdout, "bisect-metric: must identify a first bad commit")
+ok("c7" in r.stdout, f"bisect-metric: expected c7 as first bad, got:\n{r.stdout[-400:]}")
+
+r = subprocess.run([f"{H}/corpus","classify"], capture_output=True, text=True,
+                   env=dict(E, DRIFT_EVAL_REPOS=f"{T}/nocorpus"))
+ok(r.returncode != 0, "corpus: must fail loudly when no corpus is present")
+
+print("── workflow")
+wf = os.path.join(SPECS, "workflow", "check-wave.mjs")
+if os.path.exists(wf):
+    r = subprocess.run(["node", wf], capture_output=True, text=True)
+    ok(r.returncode == 0, "workflow: check-wave.mjs failed:\n" + r.stdout + r.stderr)
+else:
+    ok(False, "workflow/check-wave.mjs missing")
+
+subprocess.run(["rm","-rf",T])
+print()
+if fails:
+    print(f"SELFTEST FAILED — {len(fails)} of {checks} checks")
+    for f in fails: print("  - " + f)
+    sys.exit(1)
+print(f"selftest ok · {checks} checks across 20 tools")
+print("   probe layer   assertions, timeout, redaction, elision, binary, ledger schema, replay")
+print("   measurement   bench stats + drift + abort, machine-state, flake verdicts")
+print("   integrity     sweep contradiction + subject split, validate-result FIDELITY, manifest")
+print("   eval quality  Wilson/MDE/McNemar/kappa, gt provenance + scoring, mutation pinning,")
+print("                 shape-axis coverage, route-oracle segment rules, bisect-metric")
+print("   orchestration workflow dispatch policy, escalation gating, exclusivity guard")

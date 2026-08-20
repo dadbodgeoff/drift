@@ -1,0 +1,263 @@
+{
+  "response_schema": "drift.doctor.result.v1",
+  "status": "warn",
+  "repo_root": "/tmp/drift-beta.17.P-17-13.K1Brrd/repo",
+  "database_path": "/tmp/drift-beta.17.P-17-13.K1Brrd/state/repo_abba3c0bac120939/drift.sqlite",
+  "runtime": {
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "scanner_version": "0.1.0",
+    "typescript_adapter_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "contract_schema_version": 1,
+    "supported_sqlite_schema_version": 36,
+    "storage_driver": "sqlite"
+  },
+  "machine_contract_versions": {
+    "schema_version": "drift.machine_contract_versions.v1",
+    "cli_version": "0.1.0",
+    "core_version": "0.1.0",
+    "storage_schema_version": 36,
+    "contract_schema_version": 1,
+    "engine_contract_versions": {
+      "scan_request": "engine.scan.request.v1",
+      "scan_result": "engine.scan.result.v1",
+      "check_request": "engine.check.request.v1",
+      "check_result": "engine.check.result.v1",
+      "candidates_result": "engine.candidates.result.v1",
+      "stream_event": "engine.stream.event.v1"
+    },
+    "factgraph_schema_version": "factgraph.v2",
+    "scanner_version": "0.1.0",
+    "rule_engine_version": "0.1.0",
+    "adapter_versions": {
+      "typescript": "0.1.0",
+      "resolver": "0.1.0"
+    }
+  },
+  "engine": {
+    "status": "available",
+    "source": "env_override",
+    "path": "/tmp/drift-beta-freeze/src/target/release/drift-engine",
+    "command": "/tmp/drift-beta-freeze/src/target/release/drift-engine",
+    "args": [],
+    "cwd": null,
+    "package_name": null,
+    "package_version": null,
+    "target_triple": null,
+    "sha256": "7b91451e28627b8296e5122d2631eb4e3bc74f52f01bfb6fb3eddbf2ce960c2a",
+    "expected_sha256": "7b91451e28627b8296e5122d2631eb4e3bc74f52f01bfb6fb3eddbf2ce960c2a",
+    "checksum_matches": true,
+    "override_active": true,
+    "error": null
+  },
+  "v1_scope": {
+    "product_mode": "local_first_cli",
+    "primary_wedge": "typescript_api_route_layering",
+    "mutation_model": "human_confirmed_governance_only",
+    "source_mutation": false,
+    "language_adapters": [
+      "typescript"
+    ],
+    "deferred": [
+      "desktop_ui",
+      "cloud_sync",
+      "python_adapter",
+      "duplicate_helper_detection"
+    ]
+  },
+  "state_summary": {
+    "exists": true,
+    "compatible": true,
+    "schema_version": 36,
+    "supported_schema_version": 36,
+    "repo_id": "repo_abba3c0bac120939",
+    "applied_migrations": [
+      "001_initial_local_state",
+      "002_scan_facts",
+      "003_repo_contracts_and_conventions",
+      "004_backup_manifests",
+      "005_audit_integrity",
+      "006_fact_graph_artifacts",
+      "007_fact_graph_v2_projections",
+      "008_scan_file_changes",
+      "009_symbol_occurrence_kind",
+      "010_audit_sequence",
+      "011_check_runs_and_finding_context",
+      "012_repo_identity",
+      "013_required_check_executions",
+      "014_fact_quality",
+      "015_parser_gaps",
+      "016_symbol_identities",
+      "017_required_check_state_binding",
+      "018_audit_object_hashes",
+      "019_scan_capability_reports",
+      "020_machine_contract_versions",
+      "021_graph_evidence_confidence",
+      "022_fact_imported_name",
+      "023_security_boundary_proofs",
+      "024_phase7_candidate_election_metadata",
+      "025_security_boundary_proof_runs",
+      "026_framework_entrypoints",
+      "027_parser_gap_v2_metadata",
+      "028_check_runs_refused_status",
+      "029_fact_runtime_use",
+      "030_graph_diagnostic_import_source",
+      "031_scan_capability_engine_provenance",
+      "032_finding_conforming_examples",
+      "033_convention_candidate_superseded_by",
+      "034_declaration_fact_kinds",
+      "035_secret_source_read_fact_kind",
+      "036_sink_candidate_fact_kind"
+    ],
+    "unsupported_migrations": [],
+    "missing_migrations": [],
+    "repo_registered": true,
+    "scan_count": 0,
+    "contract_ready": false,
+    "contract_compatible": false,
+    "contract_schema_version": null,
+    "supported_contract_schema_version": 1,
+    "contract_fingerprint": null,
+    "scan_stale": true,
+    "source_change_count": 0,
+    "scan_invalidation_reasons": [
+      "scan_missing"
+    ],
+    "audit_integrity": {
+      "repo_id": "repo_abba3c0bac120939",
+      "valid": true,
+      "event_count": 2,
+      "verified_count": 2,
+      "head_event_hash": "1d0cc602807238045611fa6b6852d617399946ae5561abb1283f49994e3b6b74",
+      "broken_at_event_id": null,
+      "reasons": []
+    },
+    "backup_count": 0,
+    "backup_problem_count": 0,
+    "backup_artifacts": [],
+    "import_coverage": null,
+    "detail": "registered repo, 0 scans, contract missing"
+  },
+  "checks": [
+    {
+      "id": "repo_root",
+      "label": "Repo root",
+      "status": "ok",
+      "detail": "/tmp/drift-beta.17.P-17-13.K1Brrd/repo"
+    },
+    {
+      "id": "engine",
+      "label": "Rust engine",
+      "status": "ok",
+      "detail": "env_override at /tmp/drift-beta-freeze/src/target/release/drift-engine"
+    },
+    {
+      "id": "git",
+      "label": "Git repo",
+      "status": "ok",
+      "detail": "main @ adab025"
+    },
+    {
+      "id": "repo_identity",
+      "label": "Repo identity",
+      "status": "ok",
+      "detail": "source git_remote, fingerprint 904d67856100406a, github.com/shadcn-ui/taxonomy @ adab025e1722"
+    },
+    {
+      "id": "package_manifest",
+      "label": "Package manifest",
+      "status": "ok",
+      "detail": "package.json found"
+    },
+    {
+      "id": "package_manager",
+      "label": "Package manager",
+      "status": "ok",
+      "detail": "pnpm"
+    },
+    {
+      "id": "workspace",
+      "label": "Workspace",
+      "status": "warn",
+      "detail": "unknown"
+    },
+    {
+      "id": "typescript_files",
+      "label": "TS/JS files",
+      "status": "ok",
+      "detail": "132 indexable files"
+    },
+    {
+      "id": "api_routes",
+      "label": "API routes",
+      "status": "ok",
+      "detail": "7 API route files"
+    },
+    {
+      "id": "local_state",
+      "label": "Local state",
+      "status": "ok",
+      "detail": "existing database at /tmp/drift-beta.17.P-17-13.K1Brrd/state/repo_abba3c0bac120939/drift.sqlite"
+    },
+    {
+      "id": "disk_space",
+      "label": "Disk space",
+      "status": "ok",
+      "detail": "16.0 GB free, about 0.0 GB needed"
+    },
+    {
+      "id": "memory_headroom",
+      "label": "Memory headroom",
+      "status": "ok",
+      "detail": "4.2 GB heap limit, about 0.0 GB needed for 132 files"
+    },
+    {
+      "id": "drift_state",
+      "label": "Drift state",
+      "status": "ok",
+      "detail": "registered repo, 0 scans, contract missing"
+    },
+    {
+      "id": "contract",
+      "label": "Contract",
+      "status": "warn",
+      "detail": "contract missing"
+    },
+    {
+      "id": "scan_freshness",
+      "label": "Scan freshness",
+      "status": "warn",
+      "detail": "0 source changes; scan_missing"
+    },
+    {
+      "id": "audit_integrity",
+      "label": "Audit integrity",
+      "status": "ok",
+      "detail": "valid, 2 events"
+    },
+    {
+      "id": "backup_artifacts",
+      "label": "Backups",
+      "status": "ok",
+      "detail": "0 tracked, 0 problems"
+    },
+    {
+      "id": "import_coverage",
+      "label": "Import coverage",
+      "status": "warn",
+      "detail": "no scan yet"
+    }
+  ],
+  "next_command": "drift start --repo-root /tmp/drift-beta.17.P-17-13.K1Brrd/repo --state-root /tmp/drift-beta.17.P-17-13.K1Brrd/state --accept-defaults",
+  "next_commands": [
+    "drift start --repo-root /tmp/drift-beta.17.P-17-13.K1Brrd/repo --state-root /tmp/drift-beta.17.P-17-13.K1Brrd/state --accept-defaults"
+  ],
+  "repo_identity": {
+    "shallow": false,
+    "source": "git_remote",
+    "fingerprint": "904d67856100406a",
+    "detail": "github.com/shadcn-ui/taxonomy @ adab025e1722"
+  },
+  "import_coverage": null
+}

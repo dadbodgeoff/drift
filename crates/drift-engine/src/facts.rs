@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use crate::next_routes::next_api_route_identity;
@@ -220,6 +220,10 @@ pub fn extract_typescript_facts_with_report(
 
     walk_node(root, source.as_bytes(), &file_path, &mut facts);
     apply_runtime_use_analysis(root, source.as_bytes(), &mut facts);
+    // Strictly after the runtime-use pass, which is what removes the `import_used` facts for
+    // type-erased bindings. The binding table below is built from what survives it, so a
+    // type-only import cannot become the subject of an alias claim.
+    apply_export_alias_analysis(root, source.as_bytes(), &mut facts);
 
     Ok((facts, report))
 }
@@ -381,6 +385,609 @@ fn apply_runtime_use_analysis(root: Node<'_>, source: &[u8], facts: &mut Vec<Fac
         {
             fact.runtime_use = Some(RUNTIME_USE_VALUE_POSITION.to_string());
         }
+    }
+}
+
+/// R8-04, R8-07 (D-2). Say out loud when a module's *exported surface* is another module's binding.
+///
+/// `export { db } from "./db"` carries a `source` field, so `extract_export` emits `re_export_used`
+/// and the graph grows an edge a chain walk can follow. `import { db } from "./db"; export const
+/// client = db;` is the same laundering with the `from` moved one line up, and it produces an
+/// `import_used` and an `exported_symbol` with nothing stating that they are the same value. The
+/// chain walk terminates at the laundering module and the route importing `client` looks clean.
+/// Measured on the Part 0.2 fixture: three of four laundering modules produced zero edges between
+/// their export and the data layer they publish.
+///
+/// This is not type inference and does not want to be. Knowing that `client` has type
+/// `PrismaClient` answers nothing the checker asks; knowing that `client` was *bound from* the `db`
+/// import answers all of it, and that is a syntactic fact.
+///
+/// **Direction of caution.** These facts widen a prohibition, never an acceptance, so the failure
+/// modes are not symmetric: a miss leaves today's silent gap, an over-emission blocks a merge that
+/// should have passed. Every condition below therefore demands positive syntactic proof, and every
+/// shape that cannot supply it is skipped rather than guessed at. The skips are deliberate misses,
+/// pinned as `known_evasion` rows rather than left as folklore:
+///
+/// - **`source` field present** - a re-export, already modelled; emitting here would double-count.
+/// - **Type-only export** (`export type { Db }`, `export { type Db }`) - erased at compile time, so
+///   it cannot carry a value at runtime. Both forms are text-tested exactly as
+///   `extract_local_export_list` tests them, because the grammar gives no field that says so.
+/// - **Binding not from a value import** - the table is built from the `import_used` facts that
+///   survived `apply_runtime_use_analysis`, so a type-only import is absent by construction.
+/// - **`SIDE_EFFECT_IMPORT_BINDING`** - excluded by name, not by the fact that no identifier can
+///   equal `(side-effect)`. That is the filter's default, and a default is not a decision.
+/// - **Two bindings of one local name** - if two `import_used` facts disagree about the specifier
+///   for a name, the module is not making one claim and neither is this pass.
+/// - **Any reassignment of either name** (`export let client = db; client = safeWrapper;`) - the
+///   identity claim is false from the assignment onward, and this pass has no flow sensitivity to
+///   say where. Disqualifies on the exported name *and* on the imported binding.
+/// - **More than one declarator** (`export const a = db, b = db;`) - not needed by any observed
+///   shape, and one declarator is what makes the `name`/`value` pairing unambiguous.
+/// - **Anything that is not a bare identifier** - `export const q = db.user` (member),
+///   `export const api = { db }` (object property), `export const c = ns.db` (namespace member).
+///   The fact model has no member path; naming one would be inventing evidence.
+/// - **`async` or generator functions** - an `async` function returns a Promise and a generator
+///   returns an iterator. Neither *is* the binding, and saying it is would be a claim about types
+///   this engine does not make.
+/// - **A body that declares the returned name** - `export function getClient() { const db =
+///   local(); return db; }` returns a local. Resolving the scope chain properly is the right fix;
+///   bailing out on any same-name declaration anywhere in the function is one condition and cannot
+///   be wrong in the dangerous direction.
+/// - **Returns belonging to a nested function** - only `return`s whose nearest enclosing function
+///   is the candidate are collected, so an inner callback's return is never attributed outward.
+/// - **Disagreeing, absent, or bare `return`s** - every return must be the *same* bare identifier,
+///   and there must be at least one. A concise arrow body counts as that single return.
+///
+/// `name` is the EXPORTED name and `imported_name` is the source symbol in the target module,
+/// mirroring EW-4: `export { db as client }` records `name=client, imported_name=db`, because
+/// recording only the alias makes a renamed export unresolvable in the module it came from. The
+/// span is the export statement, not the import - the laundering line is what the evidence is
+/// about.
+fn apply_export_alias_analysis(root: Node<'_>, source: &[u8], facts: &mut Vec<Fact>) {
+    let bindings = imported_value_bindings(facts);
+    if bindings.is_empty() {
+        return;
+    }
+    // Every fact in this vector belongs to the file being extracted, and `file_detected` is pushed
+    // before the walk starts, so there is always one to read the path from. Taken from the facts
+    // rather than threaded in as a parameter to keep this pass the same shape as
+    // `apply_runtime_use_analysis`, which is the precedent for a whole-file post-pass here.
+    let Some(file_path) = facts.first().map(|fact| fact.file_path.clone()) else {
+        return;
+    };
+
+    let mut reassigned: BTreeSet<String> = BTreeSet::new();
+    collect_reassigned_identifiers(root, source, &mut reassigned);
+
+    let mut emitted = Vec::new();
+    collect_export_alias_facts(
+        root,
+        source,
+        &file_path,
+        &bindings,
+        &reassigned,
+        &mut emitted,
+    );
+    facts.extend(emitted);
+}
+
+/// What an import bound, keyed by the local name it bound it to.
+#[derive(Clone, PartialEq, Eq)]
+struct ImportedBinding {
+    /// The specifier as written (`./db`), which is what the resolver takes.
+    specifier: String,
+    /// The symbol in the target module, which is what has to resolve there.
+    imported_name: Option<String>,
+}
+
+/// The binding table, read off the `import_used` facts already collected for this file.
+///
+/// Deliberately not a second binding tracker. The join this pass needs - exported name to local
+/// binding to specifier - is already half-recorded in `import_used`, and the two divergent copies
+/// of `is_forbidden_import` are what this codebase has already paid for twice.
+fn imported_value_bindings(facts: &[Fact]) -> BTreeMap<String, ImportedBinding> {
+    let mut table: BTreeMap<String, ImportedBinding> = BTreeMap::new();
+    let mut ambiguous: BTreeSet<String> = BTreeSet::new();
+    for fact in facts {
+        if fact.kind != FactKind::ImportUsed {
+            continue;
+        }
+        // S10's sentinel, excluded by name. `(side-effect)` is not a legal identifier so nothing
+        // could match it, but that is the loop's default rather than this pass's decision - see
+        // the same argument at the head of `apply_runtime_use_analysis`'s retain.
+        if fact.name == SIDE_EFFECT_IMPORT_BINDING {
+            continue;
+        }
+        let Some(specifier) = fact.value.clone() else {
+            continue;
+        };
+        let binding = ImportedBinding {
+            specifier,
+            imported_name: fact.imported_name.clone(),
+        };
+        match table.get(&fact.name) {
+            Some(existing) if *existing != binding => {
+                ambiguous.insert(fact.name.clone());
+            }
+            Some(_) => {}
+            None => {
+                table.insert(fact.name.clone(), binding);
+            }
+        }
+    }
+    for name in ambiguous {
+        table.remove(&name);
+    }
+    table
+}
+
+/// Every identifier that is assigned to anywhere in the file.
+///
+/// Whole-file rather than scoped: this pass has no flow sensitivity, so it cannot say whether the
+/// assignment runs before or after the export. Treating any assignment as disqualifying is the
+/// conservative reading, and the shape it exists for - trap 2's `export let client = db; client =
+/// safeWrapper;` - is one where the alias claim is simply false.
+fn collect_reassigned_identifiers(node: Node<'_>, source: &[u8], out: &mut BTreeSet<String>) {
+    if matches!(
+        node.kind(),
+        "assignment_expression" | "augmented_assignment_expression"
+    ) && let Some(left) = node.child_by_field_name("left")
+        && left.kind() == "identifier"
+        && let Some(text) = node_text(left, source)
+    {
+        out.insert(text);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_reassigned_identifiers(child, source, out);
+    }
+}
+
+/// Walk to every `export_statement` and let `push_export_alias_facts` judge it.
+///
+/// Does not descend into an export statement it has already judged: an export nested inside one
+/// is not a second module export, and re-reading its declaration would double-emit.
+fn collect_export_alias_facts(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    bindings: &BTreeMap<String, ImportedBinding>,
+    reassigned: &BTreeSet<String>,
+    out: &mut Vec<Fact>,
+) {
+    if node.kind() == "export_statement" {
+        push_export_alias_facts(node, source, file_path, bindings, reassigned, out);
+        return;
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_export_alias_facts(child, source, file_path, bindings, reassigned, out);
+    }
+}
+
+fn push_export_alias_facts(
+    node: Node<'_>,
+    source: &[u8],
+    file_path: &str,
+    bindings: &BTreeMap<String, ImportedBinding>,
+    reassigned: &BTreeSet<String>,
+    out: &mut Vec<Fact>,
+) {
+    // A `source` field is what makes a statement a re-export, and the branch at the top of
+    // `extract_export` already models those. Nothing here is about them.
+    if node.child_by_field_name("source").is_some() {
+        return;
+    }
+    let Some(statement) = node_text(node, source) else {
+        return;
+    };
+    // `export type { Db };` - the whole clause is erased, and no field on the node says so, only
+    // the text. Same test as `extract_local_export_list`.
+    if statement.trim_start().starts_with("export type") {
+        return;
+    }
+
+    let span = FactSpan {
+        start_line: node.start_position().row + 1,
+        end_line: node.end_position().row + 1,
+        start_column: node.start_position().column + 1,
+        end_column: node.end_position().column + 1,
+    };
+    let is_default_export = is_runtime_default_export_statement(&statement);
+
+    // (b) Detached-clause form: `export { db };` / `export { db as client };`.
+    if let Some(clause) = (0..node.named_child_count())
+        .filter_map(|index| node.named_child(index))
+        .find(|child| child.kind() == "export_clause")
+    {
+        for index in 0..clause.named_child_count() {
+            let Some(specifier) = clause.named_child(index) else {
+                continue;
+            };
+            if specifier.kind() != "export_specifier" {
+                continue;
+            }
+            // The per-specifier type form, `export { value, type Only };`.
+            if node_text(specifier, source)
+                .as_deref()
+                .is_some_and(|text| text.trim_start().starts_with("type "))
+            {
+                continue;
+            }
+            let Some(local_name) = specifier
+                .child_by_field_name("name")
+                .and_then(|child| node_text(child, source))
+            else {
+                continue;
+            };
+            let exported_name = specifier
+                .child_by_field_name("alias")
+                .and_then(|child| node_text(child, source))
+                .unwrap_or_else(|| local_name.clone());
+            push_binding_fact(
+                LaunderingShape::Alias,
+                file_path,
+                &exported_name,
+                &local_name,
+                bindings,
+                reassigned,
+                span,
+                out,
+            );
+        }
+        return;
+    }
+
+    // (c) Default form: `export default db;`. The export node carries the expression on its
+    // `value` field, and only a bare identifier is a binding this pass can name.
+    if is_default_export && let Some(value) = node.child_by_field_name("value") {
+        if value.kind() == "identifier"
+            && let Some(local_name) = node_text(value, source)
+        {
+            push_binding_fact(
+                LaunderingShape::Alias,
+                file_path,
+                "default",
+                &local_name,
+                bindings,
+                reassigned,
+                span,
+                out,
+            );
+        }
+        return;
+    }
+
+    let Some(declaration) = node.child_by_field_name("declaration") else {
+        return;
+    };
+
+    match declaration.kind() {
+        // `export function getClient() { return db; }`, and its default form. A
+        // `generator_function_declaration` is a distinct node kind and deliberately not matched:
+        // calling it returns an iterator, not the binding.
+        "function_declaration" => {
+            let exported_name = if is_default_export {
+                // What importers actually bind, matching how `exported_symbol` names the default
+                // export. The local function name is not importable and would be a name nothing
+                // downstream could resolve.
+                Some("default".to_string())
+            } else {
+                declaration
+                    .child_by_field_name("name")
+                    .and_then(|name| node_text(name, source))
+            };
+            let Some(exported_name) = exported_name else {
+                return;
+            };
+            if let Some(local_name) =
+                wrapped_binding_name(declaration, source, bindings, reassigned)
+            {
+                push_binding_fact(
+                    LaunderingShape::Wrap,
+                    file_path,
+                    &exported_name,
+                    &local_name,
+                    bindings,
+                    reassigned,
+                    span,
+                    out,
+                );
+            }
+        }
+        "lexical_declaration" | "variable_declaration" => {
+            // Exactly one declarator, so that the exported name and the value it was bound from
+            // are a pair rather than a correspondence this pass has to guess at.
+            let declarators = (0..declaration.named_child_count())
+                .filter_map(|index| declaration.named_child(index))
+                .filter(|child| child.kind() == "variable_declarator")
+                .collect::<Vec<_>>();
+            let [declarator] = declarators.as_slice() else {
+                return;
+            };
+            let Some(name_node) = declarator.child_by_field_name("name") else {
+                return;
+            };
+            // A destructuring pattern (`export const { db } = deps;`) binds through a shape this
+            // pass cannot describe, so it is not an identifier and not a candidate.
+            if name_node.kind() != "identifier" {
+                return;
+            }
+            let Some(exported_name) = node_text(name_node, source) else {
+                return;
+            };
+            let Some(value) = declarator.child_by_field_name("value") else {
+                return;
+            };
+            match value.kind() {
+                // (a) Declarator form: `export const client = db;`.
+                "identifier" => {
+                    let Some(local_name) = node_text(value, source) else {
+                        return;
+                    };
+                    push_binding_fact(
+                        LaunderingShape::Alias,
+                        file_path,
+                        &exported_name,
+                        &local_name,
+                        bindings,
+                        reassigned,
+                        span,
+                        out,
+                    );
+                }
+                // `export const getClient = () => db;`. Restricted to `const`, because a `let` or
+                // `var` holding a function can be replaced with a different one, and the wrap
+                // claim is about what this exported name calls.
+                "arrow_function" | "function_expression" if is_const_declaration(declaration) => {
+                    if let Some(local_name) =
+                        wrapped_binding_name(value, source, bindings, reassigned)
+                    {
+                        push_binding_fact(
+                            LaunderingShape::Wrap,
+                            file_path,
+                            &exported_name,
+                            &local_name,
+                            bindings,
+                            reassigned,
+                            span,
+                            out,
+                        );
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The four span numbers, carried together so the emit helper does not take eight arguments.
+#[derive(Clone, Copy)]
+struct FactSpan {
+    start_line: usize,
+    end_line: usize,
+    start_column: usize,
+    end_column: usize,
+}
+
+/// Which of the two laundering relations a candidate proved.
+///
+/// D2: two kinds, not one. Aliasing is an identity claim decidable from a single declarator;
+/// wrapping is a claim about every return of a function, and carries a real conservatism boundary
+/// (nested functions, disagreeing returns, shadowing). Conflating them would make the weaker claim
+/// inherit the stronger one's blocking status, and neither could be gated off alone if a corpus
+/// sweep turned up a false positive on one of them.
+#[derive(Clone, Copy)]
+enum LaunderingShape {
+    /// The exported name IS the imported binding.
+    Alias,
+    /// Every return of the exported function IS the imported binding.
+    Wrap,
+}
+
+impl LaunderingShape {
+    fn fact_kind(self) -> FactKind {
+        match self {
+            LaunderingShape::Alias => FactKind::ExportAliasesImport,
+            LaunderingShape::Wrap => FactKind::ExportWrapsImport,
+        }
+    }
+}
+
+/// Emit one fact, if the local name really is an unreassigned import binding.
+///
+/// The reassignment test covers BOTH names. The imported binding, because an import that is
+/// written over no longer names the module it came from; and the exported name, because
+/// `export let client = db; client = safeWrapper;` publishes something that stopped being `db`.
+#[allow(clippy::too_many_arguments)]
+fn push_binding_fact(
+    shape: LaunderingShape,
+    file_path: &str,
+    exported_name: &str,
+    local_name: &str,
+    bindings: &BTreeMap<String, ImportedBinding>,
+    reassigned: &BTreeSet<String>,
+    span: FactSpan,
+    out: &mut Vec<Fact>,
+) {
+    let Some(binding) = bindings.get(local_name) else {
+        return;
+    };
+    if reassigned.contains(local_name) || reassigned.contains(exported_name) {
+        return;
+    }
+    out.push(Fact {
+        kind: shape.fact_kind(),
+        file_path: file_path.to_string(),
+        name: exported_name.to_string(),
+        value: Some(binding.specifier.clone()),
+        imported_name: binding.imported_name.clone(),
+        runtime_use: None,
+        start_line: span.start_line,
+        end_line: span.end_line,
+        start_column: span.start_column,
+        end_column: span.end_column,
+    });
+}
+
+fn is_const_declaration(declaration: Node<'_>) -> bool {
+    let mut cursor = declaration.walk();
+    declaration
+        .children(&mut cursor)
+        .any(|child| child.kind() == "const")
+}
+
+/// The single imported binding every `return` of this function hands back, if there is one.
+///
+/// `None` the moment the function stops being a pass-through of one binding - which is most
+/// functions, and is meant to be.
+fn wrapped_binding_name(
+    function: Node<'_>,
+    source: &[u8],
+    bindings: &BTreeMap<String, ImportedBinding>,
+    reassigned: &BTreeSet<String>,
+) -> Option<String> {
+    // `async` and `*` are anonymous tokens on the function node rather than fields. An `async`
+    // function returns a Promise and a generator returns an iterator; neither is the binding.
+    let mut cursor = function.walk();
+    if function
+        .children(&mut cursor)
+        .any(|child| matches!(child.kind(), "async" | "*"))
+    {
+        return None;
+    }
+    if matches!(
+        function.kind(),
+        "generator_function" | "generator_function_declaration"
+    ) {
+        return None;
+    }
+
+    let body = function.child_by_field_name("body")?;
+
+    let returned = if body.kind() == "statement_block" {
+        let mut returns = Vec::new();
+        collect_own_return_statements(body, &mut returns);
+        // No return at all is not a wrap of anything.
+        if returns.is_empty() {
+            return None;
+        }
+        let mut single: Option<String> = None;
+        for return_statement in returns {
+            // `return;` has no expression; `return getDb()` and `return db.client` are a call and
+            // a member, neither of which is a bare binding.
+            let expression = return_statement.named_child(0)?;
+            if expression.kind() != "identifier" {
+                return None;
+            }
+            let name = node_text(expression, source)?;
+            match &single {
+                // Two returns of different identifiers means the exported name is not one
+                // binding, and picking either would be a coin toss recorded as evidence.
+                Some(existing) if *existing != name => return None,
+                Some(_) => {}
+                None => single = Some(name),
+            }
+        }
+        single?
+    } else {
+        // A concise arrow body IS the return: `() => db`.
+        if body.kind() != "identifier" {
+            return None;
+        }
+        node_text(body, source)?
+    };
+
+    if !bindings.contains_key(&returned) || reassigned.contains(&returned) {
+        return None;
+    }
+
+    // Trap 3. If anything inside this function declares the same name - a `const`, a parameter, a
+    // catch binding, a nested function, or the function's own name - the returned identifier may
+    // be that local rather than the import. Resolving the scope chain is the correct fix; refusing
+    // to guess is the one that cannot be wrong in the dangerous direction.
+    let mut declared = BTreeSet::new();
+    collect_declared_binding_names(function, source, &mut declared);
+    if declared.contains(&returned) {
+        return None;
+    }
+
+    Some(returned)
+}
+
+/// Every `return` whose NEAREST enclosing function is this one.
+///
+/// Trap 4: a plain subtree walk attributes an inner callback's return to the outer function, so
+/// `export function f() { items.map(() => db); }` would read as returning `db` when it returns
+/// `undefined`. Descent stops at any nested function.
+fn collect_own_return_statements<'tree>(node: Node<'tree>, out: &mut Vec<Node<'tree>>) {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if is_function_like(child.kind()) {
+            continue;
+        }
+        if child.kind() == "return_statement" {
+            out.push(child);
+        }
+        collect_own_return_statements(child, out);
+    }
+}
+
+fn is_function_like(kind: &str) -> bool {
+    matches!(
+        kind,
+        "function_declaration"
+            | "generator_function_declaration"
+            | "function_expression"
+            | "generator_function"
+            | "arrow_function"
+            | "method_definition"
+    )
+}
+
+/// Every name declared anywhere inside a subtree.
+///
+/// Over-collects on purpose: type annotations and parameter defaults contribute identifiers that
+/// are not bindings. Every extra name can only cause the shadowing bail-out above to fire, which
+/// costs recall on a shape nobody has observed and never produces a wrong claim.
+fn collect_declared_binding_names(node: Node<'_>, source: &[u8], out: &mut BTreeSet<String>) {
+    match node.kind() {
+        "variable_declarator"
+        | "function_declaration"
+        | "generator_function_declaration"
+        | "function_expression"
+        | "generator_function"
+        | "class_declaration" => {
+            if let Some(name) = node.child_by_field_name("name") {
+                collect_pattern_identifiers(name, source, out);
+            }
+        }
+        "formal_parameters" => collect_pattern_identifiers(node, source, out),
+        "catch_clause" => {
+            if let Some(parameter) = node.child_by_field_name("parameter") {
+                collect_pattern_identifiers(parameter, source, out);
+            }
+        }
+        _ => {}
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_declared_binding_names(child, source, out);
+    }
+}
+
+fn collect_pattern_identifiers(node: Node<'_>, source: &[u8], out: &mut BTreeSet<String>) {
+    if matches!(
+        node.kind(),
+        "identifier" | "shorthand_property_identifier_pattern"
+    ) && let Some(text) = node_text(node, source)
+    {
+        out.insert(text);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_pattern_identifiers(child, source, out);
     }
 }
 
@@ -1952,5 +2559,375 @@ mod ast_depth_tests {
         let facts = extract_typescript_facts("app/api/users/route.ts", source)
             .expect("ordinary source must parse");
         assert!(facts.iter().any(|fact| fact.kind == FactKind::ImportUsed));
+    }
+}
+
+#[cfg(test)]
+mod export_alias_analysis_tests {
+    use super::*;
+
+    fn facts_of(source: &str) -> Vec<Fact> {
+        extract_typescript_facts("lib/launder.ts", source).expect("fixture must parse")
+    }
+
+    /// The two new kinds, rendered as `kind(name, specifier, imported_name)` so an expectation
+    /// reads the way the fact does.
+    fn laundering(source: &str) -> Vec<String> {
+        facts_of(source)
+            .into_iter()
+            .filter(|fact| {
+                matches!(
+                    fact.kind,
+                    FactKind::ExportAliasesImport | FactKind::ExportWrapsImport
+                )
+            })
+            .map(|fact| {
+                format!(
+                    "{}({}, {}, {})",
+                    fact.kind.as_wire(),
+                    fact.name,
+                    fact.value.unwrap_or_else(|| "-".to_string()),
+                    fact.imported_name.unwrap_or_else(|| "-".to_string()),
+                )
+            })
+            .collect()
+    }
+
+    /// Assert a shape emits nothing, and say why it is a deliberate miss rather than an oversight.
+    fn emits_nothing(reason: &str, source: &str) {
+        assert_eq!(
+            laundering(source),
+            Vec::<String>::new(),
+            "expected no laundering fact ({reason}) for:\n{source}"
+        );
+    }
+
+    // ---- E04: the exported name IS the import -------------------------------------------------
+
+    #[test]
+    fn a_const_bound_to_an_import_is_an_alias() {
+        assert_eq!(
+            laundering("import { db } from \"./db\";\nexport const client = db;\n"),
+            vec!["export_aliases_import(client, ./db, db)"]
+        );
+    }
+
+    /// E04b. One token away from the barrel, and on the wrong side of the `source`-field test.
+    #[test]
+    fn a_detached_export_clause_is_an_alias() {
+        assert_eq!(
+            laundering("import { db } from \"./db\";\nexport { db };\n"),
+            vec!["export_aliases_import(db, ./db, db)"]
+        );
+    }
+
+    /// EW-4's reasoning: the alias is what this module publishes, the source name is what has to
+    /// resolve in the target. Recording only one of them loses a renamed export.
+    #[test]
+    fn a_renamed_detached_export_keeps_both_names() {
+        assert_eq!(
+            laundering("import { db } from \"./db\";\nexport { db as client };\n"),
+            vec!["export_aliases_import(client, ./db, db)"]
+        );
+    }
+
+    #[test]
+    fn a_renamed_import_resolves_to_the_source_symbol_not_the_local_one() {
+        assert_eq!(
+            laundering("import { db as prisma } from \"./db\";\nexport { prisma as client };\n"),
+            vec!["export_aliases_import(client, ./db, db)"]
+        );
+    }
+
+    #[test]
+    fn a_default_export_of_an_import_is_an_alias() {
+        assert_eq!(
+            laundering("import { db } from \"./db\";\nexport default db;\n"),
+            vec!["export_aliases_import(default, ./db, db)"]
+        );
+    }
+
+    /// The span is the EXPORT statement. The import is on line 1 and says nothing about
+    /// laundering; line 2 is the evidence a reader has to be shown.
+    #[test]
+    fn the_span_is_the_laundering_line_not_the_import() {
+        let fact = facts_of("import { db } from \"./db\";\nexport const client = db;\n")
+            .into_iter()
+            .find(|fact| fact.kind == FactKind::ExportAliasesImport)
+            .expect("alias fact");
+        assert_eq!((fact.start_line, fact.end_line), (2, 2));
+        assert_eq!((fact.start_column, fact.end_column), (1, 26));
+    }
+
+    // ---- E05: every return of the exported function IS the import -----------------------------
+
+    #[test]
+    fn a_function_returning_only_the_import_is_a_wrap() {
+        assert_eq!(
+            laundering(
+                "import { db } from \"./db\";\nexport function getClient() {\n  return db;\n}\n"
+            ),
+            vec!["export_wraps_import(getClient, ./db, db)"]
+        );
+    }
+
+    #[test]
+    fn a_const_arrow_returning_only_the_import_is_a_wrap() {
+        assert_eq!(
+            laundering("import { db } from \"./db\";\nexport const getClient = () => db;\n"),
+            vec!["export_wraps_import(getClient, ./db, db)"]
+        );
+    }
+
+    #[test]
+    fn a_const_function_expression_returning_only_the_import_is_a_wrap() {
+        assert_eq!(
+            laundering(
+                "import { db } from \"./db\";\nexport const getClient = function () { return db; };\n"
+            ),
+            vec!["export_wraps_import(getClient, ./db, db)"]
+        );
+    }
+
+    /// Two returns are fine when they are the same binding - the claim is still one identity.
+    #[test]
+    fn several_returns_of_the_same_binding_are_still_a_wrap() {
+        assert_eq!(
+            laundering(
+                "import { db } from \"./db\";\nexport function getClient(flag) {\n  if (flag) { return db; }\n  return db;\n}\n"
+            ),
+            vec!["export_wraps_import(getClient, ./db, db)"]
+        );
+    }
+
+    /// `export default function f()` exports `default`; nothing can import `f` by name, and
+    /// naming it here would produce a symbol no consumer could resolve.
+    #[test]
+    fn a_default_exported_function_is_named_default() {
+        assert_eq!(
+            laundering(
+                "import { db } from \"./db\";\nexport default function f() { return db; }\n"
+            ),
+            vec!["export_wraps_import(default, ./db, db)"]
+        );
+    }
+
+    // ---- Deliberate misses. Each is a shape this pass refuses to claim. -----------------------
+
+    /// Trap 2. The alias claim is true on line 2 and false on line 3, and this pass has no flow
+    /// sensitivity to say which line a consumer reaches.
+    #[test]
+    fn a_reassigned_let_is_not_an_alias() {
+        emits_nothing(
+            "trap 2: the binding is written over later in the file",
+            "import { db } from \"./db\";\nexport let client = db;\nclient = safeWrapper;\n",
+        );
+    }
+
+    /// Trap 3. The returned `db` is the local, not the import.
+    #[test]
+    fn a_shadowed_local_is_not_a_wrap() {
+        emits_nothing(
+            "trap 3: the body declares its own `db`",
+            "import { db } from \"./db\";\nexport function getClient() {\n  const db = local();\n  return db;\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_shadowing_parameter_is_not_a_wrap() {
+        emits_nothing(
+            "trap 3: the parameter shadows the import",
+            "import { db } from \"./db\";\nexport function getClient(db) {\n  return db;\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_member_expression_is_not_an_alias() {
+        emits_nothing(
+            "the fact model has no member path, so naming `user` would be invented evidence",
+            "import { db } from \"./db\";\nexport const q = db.user;\n",
+        );
+    }
+
+    /// Trap 7. A namespace member is the same gap as any other member expression, and must not
+    /// fall through into the declarator rule by accident.
+    #[test]
+    fn a_namespace_member_is_not_an_alias() {
+        emits_nothing(
+            "trap 7: `ns.db` is a member expression, not a bare binding",
+            "import * as ns from \"./db\";\nexport const client = ns.db;\n",
+        );
+    }
+
+    #[test]
+    fn an_object_literal_is_not_an_alias() {
+        emits_nothing(
+            "property laundering needs an object-shape relation this pass does not have",
+            "import { db } from \"./db\";\nexport const api = { db };\n",
+        );
+    }
+
+    /// Trap 5, clause form. Erased at compile time; it cannot carry a value at runtime.
+    #[test]
+    fn a_type_only_export_clause_is_not_an_alias() {
+        emits_nothing(
+            "trap 5: `export type { ... }` is erased",
+            "import { db } from \"./db\";\nexport type { db };\n",
+        );
+    }
+
+    /// Trap 5, per-specifier form.
+    #[test]
+    fn a_type_only_specifier_is_not_an_alias() {
+        emits_nothing(
+            "trap 5: the `type ` prefix erases this specifier",
+            "import { db } from \"./db\";\nexport { type db };\n",
+        );
+    }
+
+    #[test]
+    fn a_plain_local_is_not_an_alias() {
+        emits_nothing(
+            "negative control: nothing was imported",
+            "export const x = 1;\n",
+        );
+    }
+
+    /// A type-only import produces no `import_used` fact at all, so it is absent from the binding
+    /// table by construction rather than by a second exclusion rule.
+    #[test]
+    fn a_binding_from_a_type_only_import_is_not_an_alias() {
+        emits_nothing(
+            "a type-only import cannot launder a value",
+            "import type { Db } from \"./db\";\nexport const client = Db;\n",
+        );
+    }
+
+    #[test]
+    fn an_inline_type_only_import_specifier_is_not_an_alias() {
+        emits_nothing(
+            "the inline `type` specifier is erased just like the statement form",
+            "import { type Db } from \"./db\";\nexport const client = Db;\n",
+        );
+    }
+
+    /// An `async` function returns a Promise. Saying it returns the client is a claim about types
+    /// this engine does not make.
+    #[test]
+    fn an_async_function_is_not_a_wrap() {
+        emits_nothing(
+            "an async function returns a Promise, not the binding",
+            "import { db } from \"./db\";\nexport async function getClient() {\n  return db;\n}\n",
+        );
+    }
+
+    #[test]
+    fn an_async_arrow_is_not_a_wrap() {
+        emits_nothing(
+            "an async arrow returns a Promise, not the binding",
+            "import { db } from \"./db\";\nexport const getClient = async () => db;\n",
+        );
+    }
+
+    #[test]
+    fn a_generator_is_not_a_wrap() {
+        emits_nothing(
+            "a generator returns an iterator, not the binding",
+            "import { db } from \"./db\";\nexport function* getClient() {\n  return db;\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_generator_function_expression_is_not_a_wrap() {
+        emits_nothing(
+            "a generator returns an iterator, not the binding",
+            "import { db } from \"./db\";\nexport const getClient = function* () { return db; };\n",
+        );
+    }
+
+    #[test]
+    fn two_returns_of_different_identifiers_are_not_a_wrap() {
+        emits_nothing(
+            "the exported name is not one binding, and picking either would be a coin toss",
+            "import { db } from \"./db\";\nimport { other } from \"./other\";\nexport function getClient(flag) {\n  if (flag) { return db; }\n  return other;\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_conditional_return_of_something_else_is_not_a_wrap() {
+        emits_nothing(
+            "one branch returns something that is not the binding; that needs the control-flow tier",
+            "import { db } from \"./db\";\nexport function getClient(flag) {\n  if (flag) { return db; }\n  return fallback();\n}\n",
+        );
+    }
+
+    #[test]
+    fn returning_a_call_is_not_a_wrap() {
+        emits_nothing(
+            "`getDb()` is a call; what it returns is not decidable here",
+            "import { db } from \"./db\";\nexport function getClient() {\n  return getDb();\n}\n",
+        );
+    }
+
+    #[test]
+    fn returning_a_member_is_not_a_wrap() {
+        emits_nothing(
+            "`db.client` is a member expression, the same gap as `export const q = db.user`",
+            "import { db } from \"./db\";\nexport function getClient() {\n  return db.client;\n}\n",
+        );
+    }
+
+    /// Trap 4. The `return db` belongs to the callback, not to `getClient`, which returns
+    /// `undefined`. A naive subtree walk claims the opposite.
+    #[test]
+    fn a_return_from_a_nested_callback_only_is_not_a_wrap() {
+        emits_nothing(
+            "trap 4: the return belongs to the inner arrow, not the exported function",
+            "import { db } from \"./db\";\nexport function getClient(items) {\n  items.map(() => db);\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_function_with_no_return_is_not_a_wrap() {
+        emits_nothing(
+            "there is nothing to be a pass-through of",
+            "import { db } from \"./db\";\nexport function getClient() {\n  log(db);\n}\n",
+        );
+    }
+
+    #[test]
+    fn a_bare_return_is_not_a_wrap() {
+        emits_nothing(
+            "`return;` hands back undefined",
+            "import { db } from \"./db\";\nexport function getClient(flag) {\n  if (flag) { return; }\n  return db;\n}\n",
+        );
+    }
+
+    /// A re-export already carries its own `source`, is already modelled as `re_export_used`, and
+    /// emitting here would double-count the same laundering.
+    #[test]
+    fn a_barrel_reexport_is_left_to_the_reexport_branch() {
+        emits_nothing(
+            "the `source` field makes this a re-export, already modelled",
+            "export { db } from \"./db\";\n",
+        );
+    }
+
+    /// Two declarators make the pairing of exported name to bound value something this pass would
+    /// have to guess at, and no observed shape needs it.
+    #[test]
+    fn several_declarators_in_one_statement_are_not_an_alias() {
+        emits_nothing(
+            "one declarator is what makes the name/value pairing unambiguous",
+            "import { db } from \"./db\";\nexport const a = db, b = db;\n",
+        );
+    }
+
+    #[test]
+    fn a_destructuring_pattern_is_not_an_alias() {
+        emits_nothing(
+            "a destructured binding is a shape this pass cannot describe",
+            "import { deps } from \"./db\";\nexport const { db } = deps;\n",
+        );
     }
 }

@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Independent ground truth for convention SCOPE — which routes a contract actually reaches.
+
+    scope-oracle selftest                      check this implementation against the repo's canary
+    scope-oracle globs [--src DIR]             print the scope globs currently in source
+    scope-oracle apply <repo> [--globs A,B]    which of a repo's real routes fall in scope
+    scope-oracle match <pattern> <path>
+
+`route-oracle` settled DISCOVERY: Drift finds the right files. Scope is the separate question, and
+the one charter 08's open suspect lives in - a file can be correctly identified as a route and
+still fall outside every accepted convention's `path_globs`, in which case the convention silently
+enforces nothing on it.
+
+Drift has TWO glob engines that share no code across the CLI/engine process boundary
+(`matchesGlob` in packages/core/src/globs.ts, `path_glob_matches` in check_command.rs). This is a
+third, written from the documented semantics, so a disagreement points at a specific engine instead
+of at "the glob code".
+
+Semantics implemented, matching what the repo's own canary pins:
+  **/     zero or more complete path segments (the zero case is load-bearing)
+  /**     this directory or anything beneath it
+  **      any run of characters, separators included
+  *       any run within a single segment
+  ?       exactly one character, never a separator
+"""
+import json, os, re, sys
+H = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, H)
+import _stats as S
+
+def match(pattern, path):
+    p, s = pattern.encode(), path.encode()
+    def go(pi, si):
+        while True:
+            if pi >= len(p): return si >= len(s)
+            if p[pi:].startswith(b"**/"):
+                rest = pi + 3
+                if go(rest, si): return True
+                for i in range(si, len(s)):
+                    if s[i:i+1] == b"/" and go(rest, i + 1): return True
+                return False
+            if pi + 3 == len(p) and p[pi:] == b"/**":
+                return si >= len(s) or s[si:si+1] == b"/"
+            if p[pi:].startswith(b"**"):
+                rest = pi + 2
+                return any(go(rest, i) for i in range(si, len(s) + 1))
+            c = p[pi:pi+1]
+            if c == b"*":
+                rest, i = pi + 1, si
+                while True:
+                    if go(rest, i): return True
+                    if i >= len(s) or s[i:i+1] == b"/": return False
+                    i += 1
+            if c == b"?":
+                if si >= len(s) or s[si:si+1] == b"/": return False
+                pi, si = pi + 1, si + 1; continue
+            if si >= len(s) or s[si:si+1] != c: return False
+            pi, si = pi + 1, si + 1
+    return go(0, 0)
+
+def source_globs(src=None):
+    src = src or os.environ.get("DRIFT_BETA_SRC") or "."
+    p = os.path.join(src, "packages/core/src/next-routes.ts")
+    if not os.path.exists(p): sys.exit(f"cannot read scope globs: {p} missing")
+    txt = open(p).read()
+    m = re.search(r"API_ROUTE_SCOPE_GLOBS\s*=\s*\[(.*?)\]", txt, re.S)
+    if not m: sys.exit("API_ROUTE_SCOPE_GLOBS not found — the source shape changed")
+    return [x.strip().strip('"\'') for x in m.group(1).split(",") if x.strip()]
+
+def canary_selftest(src=None):
+    src = src or os.environ.get("DRIFT_BETA_SRC") or "."
+    p = os.path.join(src, "test/canary/glob-parity.json")
+    if not os.path.exists(p): sys.exit(f"no canary at {p}")
+    d = json.load(open(p))
+    fails = []
+    sel = set(d["selected"])
+    for f in d["files"]:
+        got = any(match(g, f) for g in d["globs"])
+        if got != (f in sel):
+            fails.append(f"file {f}: this impl says {got}, canary says {f in sel}")
+    for c in d["pattern_cases"]:
+        got = match(c["pattern"], c["path"])
+        if got != c["matches"]:
+            fails.append(f"pattern {c['pattern']!r} vs {c['path']!r}: got {got}, canary says {c['matches']}")
+    n = len(d["files"]) + len(d["pattern_cases"])
+    if fails:
+        print(f"── scope-oracle DISAGREES with the repo's canary on {len(fails)}/{n} cases:")
+        for f in fails: print("     " + f)
+        return 1
+    print(f"── scope-oracle agrees with the repo's own glob-parity canary on all {n} cases")
+    print(f"   ({len(d['files'])} file selections + {len(d['pattern_cases'])} pattern semantics)")
+    return 0
+
+def categorize(path):
+    """Why a route might be interesting for scope, independent of any glob."""
+    pre = path.split("/api/")[0] if "/api/" in path else path
+    tags = []
+    if "/api/" not in path and "/app/" in "/" + path: tags.append("app-route-outside-api")
+    if re.search(r"/\([^)]+\)/", "/" + pre + "/"): tags.append("route-group-before-api")
+    if "/api/" in path and re.search(r"/\([^)]+\)/", path.split("/api/", 1)[1]):
+        tags.append("route-group-after-api")
+    if re.match(r"^app/route\.[jt]sx?$", path) or re.search(r"(^|/)app/route\.[jt]sx?$", path):
+        tags.append("root-level-route")
+    if "@" in path: tags.append("parallel-slot")
+    if "/pages/api/" in "/" + path: tags.append("pages-api")
+    depth = path.count("/")
+    if depth > 8: tags.append("deep-path")
+    return tags or ["plain"]
+
+if len(sys.argv) < 2: sys.exit(__doc__)
+c = sys.argv[1]; a = sys.argv[2:]
+def opt(n, d=None): return a[a.index(n)+1] if n in a else d
+
+if c == "selftest": sys.exit(canary_selftest(opt("--src")))
+elif c == "match":  print(match(a[0], a[1])); sys.exit(0 if match(a[0], a[1]) else 1)
+elif c == "globs":
+    for g in source_globs(opt("--src")): print(g)
+elif c == "apply":
+    repo = os.path.abspath(a[0])
+    globs = opt("--globs")
+    globs = [g.strip() for g in globs.split(",")] if globs else source_globs(opt("--src"))
+    import subprocess
+    ro = subprocess.run([os.path.join(H, "route-oracle"), "static", repo, "--json"],
+                        capture_output=True, text=True)
+    routes = [r for r in json.loads(ro.stdout)["routes"] if r["kind"] == "api_route"]
+    inn, out = [], []
+    for r in routes:
+        (inn if any(match(g, r["file"]) for g in globs) else out).append(r)
+    w = S.wilson(len(inn), len(routes)) if routes else None
+    print(f"── scope coverage · {os.path.basename(repo)}")
+    print(f"   globs: {', '.join(globs)}")
+    print(f"   {len(inn)}/{len(routes)} real api routes fall in scope"
+          + (f"  ({w['p']:.3f} [{w['lo']:.3f},{w['hi']:.3f}])" if w else ""))
+    if out:
+        import collections
+        cat = collections.Counter(t for r in out for t in categorize(r["file"]))
+        print(f"\n   {len(out)} route(s) OUT OF SCOPE — a convention accepted with these globs")
+        print(f"   enforces nothing on them, and reports a pass:")
+        for t, n in cat.most_common(): print(f"     {t:<26} {n}")
+        for r in out[:12]: print(f"       {r['file']}")
+        if len(out) > 12: print(f"       … {len(out)-12} more")
+    if os.environ.get("DRIFT_BETA_LEDGER"):
+        from _probelib import ledger_append
+        ledger_append("08", {"repo": os.path.basename(repo), "globs": globs,
+                             "routes": len(routes), "in_scope": len(inn),
+                             "out_of_scope": [r["file"] for r in out],
+                             "coverage": w}, name="scope-oracle.jsonl")
+    sys.exit(1 if out else 0)
+else: sys.exit(f"unknown subcommand {c}")

@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""Diff two frozen runs. The only honest way to claim a sprint fixed something.
+
+    compare-runs <ledger-dir-A> <ledger-dir-B>
+
+A is usually the pre-sprint freeze, B the post-sprint one. Reports, per probe:
+  FIXED     — judged FAIL in A, PASS in B
+  BROKEN    — PASS in A, FAIL in B          <- the one that must never be silent
+  CHANGED   — same verdict, different exit code or stdout hash
+  NEW/GONE  — probe exists on one side only
+"""
+import json, os, sys, collections
+A, B = sys.argv[1], sys.argv[2]
+def load(d):
+    out = {}
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".jsonl") or fn.startswith(("cost", "machine")): continue
+        for l in open(os.path.join(d, fn)):
+            r = json.loads(l); out[(r["charter"], r["probe"])] = r
+    return out
+a, b = load(A), load(B)
+shas = ({r.get("sha_under_test") for r in a.values()}, {r.get("sha_under_test") for r in b.values()})
+print(f"── A: {len(a)} probes  subject(s) {sorted(x or '?' for x in shas[0])}")
+print(f"── B: {len(b)} probes  subject(s) {sorted(x or '?' for x in shas[1])}")
+buckets = collections.defaultdict(list)
+for k in sorted(set(a) | set(b)):
+    ra, rb = a.get(k), b.get(k)
+    if not rb: buckets["GONE"].append((k, ra, rb)); continue
+    if not ra: buckets["NEW"].append((k, ra, rb)); continue
+    va, vb = ra.get("verdict"), rb.get("verdict")
+    if va == "FAIL" and vb == "PASS": buckets["FIXED"].append((k, ra, rb))
+    elif va == "PASS" and vb == "FAIL": buckets["BROKEN"].append((k, ra, rb))
+    elif ra["exit_code"] != rb["exit_code"] or ra["stdout_sha256"] != rb["stdout_sha256"]:
+        buckets["CHANGED"].append((k, ra, rb))
+for name in ["BROKEN", "FIXED", "CHANGED", "NEW", "GONE"]:
+    rows = buckets[name]
+    print(f"\n── {name}: {len(rows)}")
+    for (ch, pr), ra, rb in rows[:40]:
+        ea = ra["exit_code"] if ra else "-"; eb = rb["exit_code"] if rb else "-"
+        print(f"     {ch}/{pr}  exit {ea} → {eb}"
+              + ("  stdout differs" if ra and rb and ra["stdout_sha256"] != rb["stdout_sha256"] else ""))
+    if len(rows) > 40: print(f"     … {len(rows)-40} more")
+if buckets["BROKEN"]:
+    print(f"\n!! {len(buckets['BROKEN'])} probe(s) that passed before now fail. "
+          "A sprint that fixes one thing and breaks another has not been measured until this is empty.")
+    sys.exit(1)

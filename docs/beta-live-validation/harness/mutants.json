@@ -1,0 +1,107 @@
+{
+ "generated_from": "/var/folders/2c/9qkmgkpj7z55hnzhptcnnxth0000gn/T/tmp.Pp3iuweTfw/tree",
+ "recipe_file": "/Users/geoffreyfernald/drift-w7/docs/beta-live-validation/harness/mutant-recipes.json",
+ "skipped": [],
+ "mutants": [
+  {
+   "id": "alias-fixpoint-off",
+   "file": "crates/drift-engine/src/rules.rs",
+   "find": "for _ in 0..ALIAS_ROUNDS {",
+   "replace": "for _ in 0..0 {",
+   "anchor_sha256": "fe242a5f5a51630895117d4093f2eb475a9b6f3bb181a2dcd239d278a7d8b23e",
+   "rationale": "the alias/barrel fixpoint never runs: every re-exported import goes unresolved",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm eval:evasion",
+    "pnpm eval:breadth"
+   ]
+  },
+  {
+   "id": "alias-one-hop",
+   "file": "crates/drift-engine/src/rules.rs",
+   "find": "const ALIAS_ROUNDS: usize = 8;",
+   "replace": "const ALIAS_ROUNDS: usize = 1;",
+   "anchor_sha256": "2f00c85781fa6c61f3e1a32e9dfc462ce1c89055723347c343931636d53f2c36",
+   "rationale": "barrel resolution stops after one hop: 2-hop re-exports silently escape",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm eval:evasion"
+   ]
+  },
+  {
+   "id": "symbol-identity-off",
+   "file": "crates/drift-engine/src/security_patterns.rs",
+   "find": "fn imported_symbol_matches(facts: &[Fact], local_name: &str, accepted_symbol: &str) -> bool {",
+   "replace": "fn imported_symbol_matches(facts: &[Fact], local_name: &str, accepted_symbol: &str) -> bool {\n    if true { return true; }",
+   "anchor_sha256": "035a2f6b151002867500497ca2ab32dfc4b93989a8a0384459b934fa81c47540",
+   "rationale": "every imported symbol matches the accepted helper: symbol identity disabled",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm test:e2e",
+    "pnpm eval:presence"
+   ]
+  },
+  {
+   "id": "helper-module-any",
+   "file": "crates/drift-engine/src/security_patterns.rs",
+   "find": "fn helper_import_matches(fact: &Fact, contract: Option<&AcceptedHelperImport>) -> bool {",
+   "replace": "fn helper_import_matches(fact: &Fact, contract: Option<&AcceptedHelperImport>) -> bool {\n    if true { return true; }",
+   "anchor_sha256": "24ef8c7aea5fb4d7ffb80e80574dca6a12b03fa32ef4a253d1b88631e5b0b0bb",
+   "rationale": "a helper from ANY module satisfies the contract - the defect S4 fixed, re-injected",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm test:e2e",
+    "pnpm eval:presence"
+   ]
+  },
+  {
+   "id": "helper-spelling-any",
+   "file": "crates/drift-engine/src/security_patterns.rs",
+   "find": "    if spelling == expected_specifier {",
+   "replace": "    if true {",
+   "anchor_sha256": "b5307b2ec2b0067ef71dcb6680a83c2aa1bcefdbc38a3258402ea8db749c777e",
+   "rationale": "any spelling is accepted as the helper's module - S4's module identity disabled",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm eval:presence"
+   ]
+  },
+  {
+   "id": "repo-resolved-any-file",
+   "file": "crates/drift-engine/src/security_patterns.rs",
+   "find": "                .any(|file| module_key(file) == candidate)",
+   "replace": "                .any(|file| true)",
+   "anchor_sha256": "567e7ac8efd69c49bd291bece95ed4c4b9e0c13dfb41dca77a0a0439c28c6582",
+   "rationale": "RepoResolved identity accepts any resolved file, not the one the spelling names",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm eval:presence"
+   ]
+  },
+  {
+   "id": "scope-matches-nothing",
+   "file": "crates/drift-engine/src/check_command.rs",
+   "find": "fn path_glob_matches(pattern: &str, file_path: &str) -> bool {",
+   "replace": "fn path_glob_matches(pattern: &str, file_path: &str) -> bool {\n    if true { return false; }",
+   "anchor_sha256": "a8c21e8b75b6c54e7861eb57b23dfbc14682e80018b61ae79e028cb966a0f1a2",
+   "rationale": "no file ever matches a convention scope: every check runs on zero inputs and passes",
+   "kills_expected": [
+    "pnpm test:e2e",
+    "pnpm check:cell-ledger",
+    "pnpm eval:presence"
+   ]
+  },
+  {
+   "id": "phase5-scope-everything",
+   "file": "crates/drift-engine/src/check_command.rs",
+   "find": "fn phase5_file_scope_matches(file_path: &str, path_globs: &[String]) -> bool {",
+   "replace": "fn phase5_file_scope_matches(file_path: &str, path_globs: &[String]) -> bool {\n    if true { return true; }",
+   "anchor_sha256": "df008cc4455142ff6379a48756caf43c7e80460cf3c1303704d81e9154a91176",
+   "rationale": "every file is in scope for every phase5 convention: precision should collapse",
+   "kills_expected": [
+    "pnpm test:engine",
+    "pnpm eval:presence"
+   ]
+  }
+ ]
+}
