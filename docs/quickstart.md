@@ -123,7 +123,7 @@ file is recognised as a route, so onboarding proposes zero candidates and there 
 accept. `drift start` says so; rescanning does not change it.
 
 The security heuristics are behind `--experimental-security` and are not
-proofs; see [architecture/security-heuristic-audit.md](../internal/architecture/security-heuristic-audit.md).
+proofs; see [architecture/security-heuristic-audit.md](./internal/architecture/security-heuristic-audit.md).
 
 `drift conventions list` also hides candidates below a coverage floor by default. It reports how
 many it withheld and prints the command that shows them — `--include-low-confidence` for the
