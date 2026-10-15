@@ -58,7 +58,7 @@ off — and the second always wins.
 One sharp edge, recorded rather than hidden: a baseline entry is currently a **permanent** waiver
 for that exact violation. Rewriting the violating line, or deleting it and adding it back, stays
 exempt. Whether that is right is an open question — see T18 in
-[autonomous-run/SUMMARY.md](./autonomous-run/SUMMARY.md).
+[autonomous-run/SUMMARY.md](./internal/autonomous-run/SUMMARY.md).
 
 ## Check
 
