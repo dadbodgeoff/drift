@@ -82,6 +82,7 @@ export const SINK_LABELS: Record<string, string> = {
   tls_verify_disabled: "TLS certificate not verified",
   mass_assignment: "Row written from the whole request body",
   dynamic_regex: "Regular expression built from a value",
+  dynamic_key_write: "Property written under a key read off a value",
 };
 
 export const sinkLabel = (k: string) => SINK_LABELS[k] ?? k;

@@ -1424,6 +1424,8 @@ export interface Inventory {
     exceptions: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null }[];
     example: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null };
   }[];
+  /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). */
+  workflows?: { kind: string; path: string; line: number; job: string; detail: string }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
 }
@@ -1432,7 +1434,7 @@ export interface Inventory {
 
 /** What a run found against the security baseline (`.drift/security.lock`). Newer drift. */
 export interface SecurityRatchet {
-  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `leak`): the finding's key (handler, method, route; never a line) and where it is. */
+  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `workflow`, `leak`): the finding's key (handler, method, route; never a line) and where it is. */
   added: Record<string, { key: string; at: string }[]>;
   /** In the baseline and no longer found. */
   gone: { kind: string; key: string }[];

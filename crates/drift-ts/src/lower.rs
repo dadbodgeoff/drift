@@ -11994,6 +11994,22 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
 
     fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
         self.flow_assign(it);
+        // `target[key] = value` under a key read off a parameter of the function
+        // (`o[req.query.k] = req.query.v`): whoever chooses the key chooses which
+        // property is written, `__proto__` among them. Read since the measured
+        // build (the listed reading only).
+        if self.fn_depth >= 1
+            && let AssignmentTarget::ComputedMemberExpression(m) = &it.left
+            && !matches!(
+                peel(&m.expression),
+                Expression::NumericLiteral(_) | Expression::StringLiteral(_)
+            )
+            && self.reads_own_param(&m.expression)
+            && !routes::unmeasured_listing()
+        {
+            self.sinks.insert(signals::kind::KEY_WRITE.into());
+            self.fed_sinks.insert(signals::kind::KEY_WRITE.into());
+        }
         // `res = unauthorized();`
         if self.counting()
             && self.fn_depth <= 1

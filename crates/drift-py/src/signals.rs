@@ -31,6 +31,7 @@ pub mod kind {
     pub const DEBUG: &str = "debug_enabled";
     pub const TLS: &str = "tls_verify_disabled";
     pub const MASS: &str = "mass_assignment";
+    pub const KEY_WRITE: &str = "dynamic_key_write";
 }
 
 /// Calls that open, send or remove the file at the path they are given.
@@ -594,6 +595,16 @@ impl Lowerer<'_> {
             .any(|k| k.arg.is_none() && sent_whole(&k.value))
         {
             out.push(kind::MASS);
+        }
+        // `setattr(target, name, value)` under a name read off a parameter or off
+        // what the request sent: whoever chooses the name chooses which attribute
+        // is written.
+        if matches!(c.func.as_ref(), Expr::Name(n) if n.id.as_str() == "setattr")
+            && let [_, name, _] = &*c.arguments.args
+            && !is_literal_string(name)
+            && col.input_reaches(name, 0)
+        {
+            out.push(kind::KEY_WRITE);
         }
         out
     }

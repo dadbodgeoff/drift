@@ -152,3 +152,36 @@ fn a_ratchet_with_no_baseline_says_how_to_write_one() {
         String::from_utf8_lossy(&out.stderr)
     );
 }
+
+/// A CI workflow that interpolates text of the event into a shell step is a
+/// finding of the inventory and of the baseline.
+#[test]
+fn a_workflow_that_runs_what_an_outsider_wrote_is_a_finding() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, &format!("{HEAD}{BEFORE}"));
+    assert!(
+        drift(root, &["security", "--write-baseline"])
+            .status
+            .success()
+    );
+    let workflow = root.join(".github/workflows/greet.yml");
+    std::fs::create_dir_all(workflow.parent().unwrap()).unwrap();
+    std::fs::write(
+        &workflow,
+        "on: pull_request_target\njobs:\n  greet:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          ref: ${{ github.event.pull_request.head.sha }}\n      - run: echo \"${{ github.event.pull_request.title }}\"\n",
+    )
+    .unwrap();
+    let listed = drift(root, &["security"]);
+    let said = String::from_utf8_lossy(&listed.stdout);
+    assert!(
+        said.contains("CI workflows that run what an outsider wrote"),
+        "{said}"
+    );
+    assert!(said.contains("github.event.pull_request.title"), "{said}");
+    let added = drift(root, &["security", "--ratchet", "--fail-on", "workflow"]);
+    let said = String::from_utf8_lossy(&added.stdout);
+    assert_eq!(added.status.code(), Some(1), "{said}");
+    assert!(said.contains("untrusted_checkout"), "{said}");
+    assert!(said.contains("script_injection"), "{said}");
+}

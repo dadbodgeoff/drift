@@ -38,4 +38,5 @@ pub mod unchecked;
 pub mod verify;
 pub mod vocab;
 pub mod wiring;
+pub mod workflows;
 pub mod workspace;

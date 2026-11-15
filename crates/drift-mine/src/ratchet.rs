@@ -42,6 +42,10 @@ pub const KINDS: &[(&str, &str)] = &[
         "entry point(s) that sign the caller in and check nothing of who they are (no role, no tenant, no owner)",
     ),
     ("risky", "risky operation(s)"),
+    (
+        "workflow",
+        "CI workflow step(s) that run what an outsider wrote",
+    ),
     ("leak", "client file(s) reaching server-only code"),
 ];
 
@@ -128,6 +132,14 @@ pub fn findings(inv: &Inventory) -> Findings {
             format!("{} in {}#{}", s.kind, s.path, s.symbol),
             &s.path,
             s.line,
+        );
+    }
+    for w in &inv.workflows {
+        add(
+            "workflow",
+            format!("{} in {} job {}: {}", w.kind, w.path, w.job, w.detail),
+            &w.path,
+            w.line,
         );
     }
     for l in &inv.client_leaks {

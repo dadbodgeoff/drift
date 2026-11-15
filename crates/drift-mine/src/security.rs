@@ -37,6 +37,7 @@ pub const INPUT_SINKS: &[&str] = &[
     "nosql_injection",
     "mass_assignment",
     "dynamic_regex",
+    "dynamic_key_write",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -3878,6 +3879,13 @@ pub struct Inventory {
     /// serialised when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub scope_gaps: Vec<ScopeGap>,
+    /// What the repository's CI workflows do with what an outsider controls
+    /// ([`crate::workflows`]): a pull request's code checked out where the
+    /// repository's secrets are, text of the event interpolated into a shell step.
+    /// Filled by the caller, which knows where the repository is. Not serialised
+    /// when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub workflows: Vec<crate::workflows::WorkflowFinding>,
     /// What could not be read around the inventory, so a part of it is missing (a
     /// `.drift/conventions.yaml` that does not parse: shared guards are listed without
     /// their conventions). Not serialised when empty.
@@ -7434,6 +7442,24 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     inv.unlisted.extend(unreached);
     inv.unlisted.sort();
     inv.unlisted.dedup();
+    // A property written under a key read off a parameter is a risk where a
+    // request chooses the key. In a helper, the parameter is whatever its callers
+    // pass: the write is listed where an entry point reaches it with a value each
+    // call from the entry point handed on, and nowhere else.
+    const KEY_WRITE: &str = "dynamic_key_write";
+    for e in &mut inv.entry_points {
+        e.reaches.retain(|r| r.kind != KEY_WRITE || r.fed);
+    }
+    let fed_writes: BTreeSet<String> = inv
+        .entry_points
+        .iter()
+        .flat_map(|e| &e.reaches)
+        .filter(|r| r.kind == KEY_WRITE)
+        .filter_map(|r| r.via.last().cloned())
+        .collect();
+    inv.sinks.retain(|s| {
+        s.kind != KEY_WRITE || fed_writes.contains(&format!("{}#{}", s.path, s.symbol))
+    });
     inv.sinks.sort();
     inv.client_leaks = leaks
         .into_iter()
@@ -8698,6 +8724,33 @@ pub fn render_at(
         .iter()
         .filter(|g| only.is_none_or(|o| g.exceptions.iter().any(|e| o.contains(&e.path))))
         .collect();
+    let workflows: Vec<&crate::workflows::WorkflowFinding> = inv
+        .workflows
+        .iter()
+        .filter(|w| only.is_none_or(|o| o.contains(&w.path)))
+        .collect();
+    if !workflows.is_empty() {
+        let _ = writeln!(out, "\nCI workflows that run what an outsider wrote");
+        for w in workflows.iter().take(max_rows) {
+            let what = match w.kind.as_str() {
+                "untrusted_checkout" => {
+                    "checks out the pull request's code where the repository's secrets are"
+                }
+                _ => "interpolates text of the event into a shell step",
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  job {} {what}: {}",
+                sanitize(&w.path, 160),
+                w.line,
+                sanitize(&w.job, 80),
+                sanitize(&w.detail, 120)
+            );
+        }
+        if workflows.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
+        }
+    }
     if !scope_gaps.is_empty() {
         let _ = writeln!(
             out,

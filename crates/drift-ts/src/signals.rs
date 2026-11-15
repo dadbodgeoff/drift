@@ -30,6 +30,7 @@ pub mod kind {
     pub const TLS: &str = "tls_verify_disabled";
     pub const MASS: &str = "mass_assignment";
     pub const REGEX: &str = "dynamic_regex";
+    pub const KEY_WRITE: &str = "dynamic_key_write";
 }
 
 /// HTTP clients whose request functions take the URL first, beside the ones the
