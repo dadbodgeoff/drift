@@ -48,7 +48,7 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
 /// security` and the practice map read.
 fn listed_where_asked(root: &Path, facts: RepoFacts) -> RepoFacts {
     match drift_mine::policy::listed_entry_points(root) {
-        true => facts.listed().into_owned(),
+        true => facts.into_listed(),
         false => facts,
     }
 }

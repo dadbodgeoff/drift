@@ -2401,7 +2401,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .with_context(|| format!("scanning {}", root.display()))?
                     .0;
                 if *listed {
-                    facts = facts.listed().into_owned();
+                    facts = facts.into_listed();
                 }
                 // The yield funnel (study only): counted while `DRIFT_FUNNEL` names a file.
                 drift_mine::funnel::start();
@@ -2457,7 +2457,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 let entries =
                     |f: &RepoFacts| -> usize { f.files.iter().map(|x| x.entry_points.len()).sum() };
                 let measured = entries(&facts);
-                facts = facts.listed().into_owned();
+                facts = facts.into_listed();
                 println!(
                     "Preview (--listed): mined over the {} entry points Drift lists, where the last measured build listed {measured}. The precision of what this proposes was not measured; nothing is written.\n",
                     entries(&facts)

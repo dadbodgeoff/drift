@@ -2555,11 +2555,15 @@ impl RepoFacts {
         if !listed(&self.files) && !listed(&self.context_files) {
             return std::borrow::Cow::Borrowed(self);
         }
-        let mut all = self.clone();
-        for f in all.files.iter_mut().chain(&mut all.context_files) {
+        std::borrow::Cow::Owned(self.clone().into_listed())
+    }
+
+    /// [`RepoFacts::listed`], in place: no copy of the facts is made.
+    pub fn into_listed(mut self) -> RepoFacts {
+        for f in self.files.iter_mut().chain(&mut self.context_files) {
             f.take_listed();
         }
-        std::borrow::Cow::Owned(all)
+        self
     }
 }
 
