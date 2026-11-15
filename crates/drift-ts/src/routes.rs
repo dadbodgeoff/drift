@@ -689,6 +689,50 @@ impl Lowerer<'_> {
         out
     }
 
+    /// Notes the instances a function builds and the members it reads off them
+    /// ([`Lowerer::local_refs`]), from the `const` declarations at the top of its
+    /// body, in the order written: a guard given through one is read by its class.
+    /// What was noted before, for the caller to put back. The last measured build
+    /// read none: as it listed, nothing is noted.
+    fn enter_local_refs(&mut self, body: &[Statement]) -> HashMap<SymbolId, RawRef> {
+        let outer = self.local_refs.clone();
+        let mut noted = false;
+        for st in body {
+            let Statement::VariableDeclaration(v) = st else {
+                continue;
+            };
+            if !v.kind.is_const() {
+                continue;
+            }
+            for d in &v.declarations {
+                let (BindingPattern::BindingIdentifier(id), Some(init)) = (&d.id, &d.init) else {
+                    continue;
+                };
+                let Some(sym) = id.symbol_id.get() else {
+                    continue;
+                };
+                let made = match unwrap_expr(init) {
+                    Expression::NewExpression(n) => self.canon(&n.callee),
+                    Expression::StaticMemberExpression(m) => match unwrap_expr(&m.object) {
+                        Expression::Identifier(of) if self.resolve_ident(of).is_none() => {
+                            self.canon(init)
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if let Some(r) = made {
+                    self.local_refs.insert(sym, r);
+                    noted = true;
+                }
+            }
+        }
+        if noted && unmeasured_listing() {
+            self.local_refs.clone_from(&outer);
+        }
+        outer
+    }
+
     /// Records what `e`, registered on the router `receiver` for `pattern` (`""`:
     /// every route), holds for the readings that list: its calls
     /// ([`Lowerer::position_calls`]), and what has no name, returned as
@@ -1014,6 +1058,7 @@ impl Lowerer<'_> {
         }
         self.scope_prefix.push(prefix.unwrap_or_default());
         let from = self.scope_routes.len();
+        let outer_refs = self.enter_local_refs(&body.statements);
         for st in &body.statements {
             // `routes.forEach((r) => router.get(r.path, r.handler))` is a loop.
             let iterates = matches!(st, Statement::ExpressionStatement(es)
@@ -1052,6 +1097,7 @@ impl Lowerer<'_> {
         }
         self.scope_prefix.pop();
         self.scope -= 1;
+        self.local_refs = outer_refs;
         for (n, _, at) in &routers {
             let own: Vec<RawRef> = self
                 .hooks
@@ -1580,6 +1626,7 @@ impl Lowerer<'_> {
             }
         }
         let outer = std::mem::replace(&mut self.closure_routers, routers.clone());
+        let outer_refs = self.enter_local_refs(body);
         self.scope += 1;
         self.scope_seq += 1;
         self.scope_prefix.push(String::new());
@@ -1622,6 +1669,7 @@ impl Lowerer<'_> {
         self.scope_prefix.pop();
         self.scope -= 1;
         self.closure_routers = outer;
+        self.local_refs = outer_refs;
         for (n, express, hooks, passed, unread, calls) in aside {
             match express {
                 Some(v) => self.express.insert(n.clone(), v),

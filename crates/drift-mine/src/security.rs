@@ -358,6 +358,16 @@ fn unreached_handlers(
     }
     while let Some(node) = queue.pop_front() {
         for c in node.calls() {
+            // A function written in a value and listed under the value's name
+            // (`Handler.show` of a constructor that assigns it on `this`, of an
+            // object) is reached by the reference that names it.
+            let named = crate::mine::norm_ref(c);
+            reached.insert(
+                named
+                    .trim_end_matches("(ref)")
+                    .trim_end_matches("()")
+                    .to_string(),
+            );
             if let Some(next) = index.target(c)
                 && reached.insert(next.key())
             {

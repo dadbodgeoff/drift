@@ -502,6 +502,27 @@ fn repository_value(
         };
     }
     let bound = matches!(d.kind, SymbolKind::Const | SymbolKind::Variable);
+    // A member of an instance the module builds from a class or a constructor of
+    // the repository, and from nothing else (`const session = new Session(db)`,
+    // then `session.required` where a guard goes): the class's own method. Not of
+    // a binding that may be given another value (`let`).
+    if d.kind == SymbolKind::Const
+        && !itself
+        && d.derives_from.is_empty()
+        && let [made] = d.calls.as_slice()
+        && let Some(class) = made.strip_suffix("(new)")
+        && !external(class)
+        && let Some(member) = short
+            .strip_prefix(d.name.as_str())
+            .filter(|m| m.starts_with('.') && !m[1..].contains(['.', '(']))
+    {
+        let method = format!("{}{member}", crate::mine::norm_ref(class));
+        return match value_at(cx, package, &[], &method, depth + 1) {
+            // Named as it is written where it stands.
+            Verdict::Guard(_) => Verdict::Guard(v),
+            other => other,
+        };
+    }
     // The base procedure of a tRPC instance (`t.procedure`): it runs no middleware.
     if bound
         && short.strip_prefix(d.name.as_str()) == Some(".procedure")

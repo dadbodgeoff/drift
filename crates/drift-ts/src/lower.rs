@@ -1253,6 +1253,12 @@ struct Lowerer<'s> {
     /// them, while that function is lowered ([`Lowerer::closure_routes`]): a route
     /// on one is a route of the module's router.
     closure_routers: BTreeSet<String>,
+    /// The locals of the function whose routes are being listed
+    /// ([`Lowerer::closure_routes`]) that hold an instance a class or a constructor
+    /// of the repository makes, or a member read off one: `const session = new
+    /// Session(db)` as `Session`, `const need = session.required` as
+    /// `Session.required`. A name of the module is read as before.
+    local_refs: HashMap<SymbolId, RawRef>,
     /// Router of the module -> every registration on it of what runs before its
     /// routes (`use`, `addHook`, `register`, `param`), but of what never
     /// authenticates: where the call starts, and whether it is a statement of the
@@ -2064,6 +2070,7 @@ impl<'s> Lowerer<'s> {
             test_file: false,
             sql: signals::SqlLocals::default(),
             closure_routers: BTreeSet::new(),
+            local_refs: HashMap::new(),
             guard_sites: BTreeMap::new(),
             handed_routers: BTreeMap::new(),
             lowered_sites: HashSet::new(),
@@ -2255,10 +2262,18 @@ impl<'s> Lowerer<'s> {
             });
         }
         match unwrap_expr(e) {
-            Expression::Identifier(id) => Some(RawRef {
-                base: self.resolve_ident(id)?,
-                member: String::new(),
-            }),
+            Expression::Identifier(id) => match self.resolve_ident(id) {
+                Some(base) => Some(RawRef {
+                    base,
+                    member: String::new(),
+                }),
+                None => id
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.scoping.get_reference(r).symbol_id())
+                    .and_then(|s| self.local_refs.get(&s))
+                    .cloned(),
+            },
             Expression::StaticMemberExpression(m)
                 if matches!(unwrap_expr(&m.object), Expression::ThisExpression(_)) =>
             {
@@ -2988,6 +3003,7 @@ impl<'s> Lowerer<'s> {
                 let name = id.name.to_string();
                 self.record_trpc_function(&name, f);
                 self.lower_function_symbol(&name, f);
+                self.lower_this_methods(&name, f.body.as_deref());
                 vec![name]
             }
             Declaration::ClassDeclaration(c) => {
@@ -3782,6 +3798,65 @@ impl<'s> Lowerer<'s> {
             };
             let member = format!("{name}.{key}");
             if self.out.symbols.iter().any(|s| s.name == member) {
+                continue;
+            }
+            let mut sym =
+                RawSymbol::empty(&member, SymbolKind::Function, self.line_of(f.span().start));
+            sym.in_place = true;
+            sym.is_async = is_async;
+            self.handler_facts(Some(f), &mut sym);
+            self.push_symbol(sym);
+        }
+    }
+
+    /// The functions a constructor function assigns on `this` at the top of its
+    /// body (`function Session(db) { this.required = (req, res, next) => { ... } }`),
+    /// each as a symbol of its own, `<name>.<key>`, as the functions of an object
+    /// are ([`Lowerer::lower_object_methods`]): where one is given as a guard
+    /// (`app.get("/x", session.required, ...)` of `const session = new
+    /// Session(db)`), that function is read. A key assigned more than once is not
+    /// read: which function it holds is not said. Listed since the measured build,
+    /// and never mined ([`RawSymbol::in_place`]).
+    fn lower_this_methods(&mut self, name: &str, body: Option<&FunctionBody>) {
+        let Some(body) = body else {
+            return;
+        };
+        let assigned: Vec<(&str, &Expression)> = body
+            .statements
+            .iter()
+            .filter_map(|st| {
+                let Statement::ExpressionStatement(es) = st else {
+                    return None;
+                };
+                let Expression::AssignmentExpression(a) = unwrap_expr(&es.expression) else {
+                    return None;
+                };
+                let AssignmentTarget::StaticMemberExpression(m) = &a.left else {
+                    return None;
+                };
+                matches!(unwrap_expr(&m.object), Expression::ThisExpression(_))
+                    .then(|| (m.property.name.as_str(), unwrap_expr(&a.right)))
+            })
+            .collect();
+        if !assigned.iter().any(|(_, f)| {
+            matches!(
+                f,
+                Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)
+            )
+        }) || routes::unmeasured_listing()
+        {
+            return;
+        }
+        for (key, f) in &assigned {
+            let is_async = match f {
+                Expression::ArrowFunctionExpression(a) => a.r#async,
+                Expression::FunctionExpression(a) => a.r#async,
+                _ => continue,
+            };
+            let member = format!("{name}.{key}");
+            if assigned.iter().filter(|(k, _)| k == key).count() > 1
+                || self.out.symbols.iter().any(|s| s.name == member)
+            {
                 continue;
             }
             let mut sym =
