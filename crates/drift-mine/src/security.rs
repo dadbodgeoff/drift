@@ -7467,8 +7467,17 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
         .filter(|r| r.kind == KEY_WRITE)
         .filter_map(|r| r.via.last().cloned())
         .collect();
+    // A method that is no symbol of its own is reached as a member of its class
+    // (`path#Class.method`), while its write is a row of the class (`path#Class`).
     inv.sinks.retain(|s| {
-        s.kind != KEY_WRITE || fed_writes.contains(&format!("{}#{}", s.path, s.symbol))
+        let key = format!("{}#{}", s.path, s.symbol);
+        let member = format!("{key}.");
+        s.kind != KEY_WRITE
+            || fed_writes.contains(&key)
+            || fed_writes
+                .range(member.clone()..)
+                .next()
+                .is_some_and(|w| w.starts_with(&member))
     });
     inv.sinks.sort();
     inv.client_leaks = leaks
