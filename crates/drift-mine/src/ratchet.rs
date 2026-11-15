@@ -295,7 +295,11 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         };
         out.push_str(&format!("\n{} new {what} [{kind}]\n", rows.len()));
         for a in rows.iter().take(max) {
-            out.push_str(&format!("  {}  ({})\n", a.key, a.at));
+            out.push_str(&format!(
+                "  {}  ({})\n",
+                crate::report::sanitize(&a.key, 300),
+                crate::report::sanitize(&a.at, 200)
+            ));
         }
         if rows.len() > max {
             out.push_str(&format!("  ... and {} more\n", rows.len() - max));
