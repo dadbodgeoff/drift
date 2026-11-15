@@ -1903,6 +1903,7 @@ impl<'t> Lowerer<'t> {
                 name: f.name.to_string(),
                 calls,
                 sinks: tmp.sinks,
+                since_sinks: tmp.since_sinks,
                 body_checks: tmp.body_checks,
                 throws: tmp.throws,
                 args: tmp.args,

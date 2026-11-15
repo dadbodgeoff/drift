@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 68;
+pub const LOWERING_VERSION: u32 = 69;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -561,6 +561,16 @@ impl<'t> Lowerer<'t> {
             s.throws.dedup();
             s.sinks.sort();
             s.sinks.dedup();
+            s.since_sinks.sort();
+            s.since_sinks.dedup();
+            let read = s.sinks.clone();
+            s.since_sinks.retain(|k| !read.contains(k));
+            for m in &mut s.members {
+                m.since_sinks.sort();
+                m.since_sinks.dedup();
+                let read = m.sinks.clone();
+                m.since_sinks.retain(|k| !read.contains(k));
+            }
             s.methods.sort();
             s.methods.dedup();
             s.body_checks.sort();
@@ -1236,6 +1246,7 @@ impl<'t> Lowerer<'t> {
         m.reads.extend(part.reads);
         m.throws.extend(part.throws);
         m.sinks.extend(part.sinks);
+        m.since_sinks.extend(part.since_sinks);
         m.body_checks.extend(part.body_checks);
         m.responses.extend(part.responses);
         m.log_calls.extend(part.log_calls);
@@ -2394,6 +2405,13 @@ pub(crate) struct Collector<'l, 't> {
     reads: BTreeSet<String>,
     throws: BTreeSet<RawRef>,
     pub(crate) sinks: BTreeSet<String>,
+    /// Sinks the measured build did not read ([`RawSymbol::since_sinks`]).
+    since_sinks: BTreeSet<String>,
+    /// The names the body binds to SQL text (text that holds a keyword), and those
+    /// it binds to SQL text built from a part that is no literal
+    /// ([`Collector::note_sql_binding`]).
+    sql_text: BTreeSet<String>,
+    pub(crate) sql_built: BTreeSet<String>,
     order: Vec<RawRef>,
     /// The body turns its caller away ([`drift_core::controls::REJECTS_CALLER`]) as not
     /// signed in, or as not allowed: what it raises or returns says so
@@ -2604,6 +2622,9 @@ impl<'l, 't> Collector<'l, 't> {
             reads: BTreeSet::new(),
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
+            since_sinks: BTreeSet::new(),
+            sql_text: BTreeSet::new(),
+            sql_built: BTreeSet::new(),
             order: Vec::new(),
             unauthenticated: false,
             forbidden: false,
@@ -2757,6 +2778,7 @@ impl<'l, 't> Collector<'l, 't> {
         sym.reads.extend(self.reads);
         sym.throws.extend(self.throws);
         sym.sinks.extend(self.sinks);
+        sym.since_sinks.extend(self.since_sinks);
         sym.forwards.extend(self.forwards);
         sym.body_checks.extend(self.body_checks);
         sym.raise_checks.extend(self.raise_checks);
@@ -3317,6 +3339,9 @@ impl<'l, 't> Collector<'l, 't> {
         for s in self.l.call_sinks(self, c) {
             self.sinks.insert(s.to_string());
         }
+        for s in self.l.call_sinks_since(self, c) {
+            self.since_sinks.insert(s.to_string());
+        }
         if self.l.is_validation_call(self, c) {
             self.controls.insert("validates".into());
         }
@@ -3551,8 +3576,55 @@ fn schedules(callee: &Expr) -> bool {
     )
 }
 
+impl Collector<'_, '_> {
+    /// Notes a name the statement binds to SQL text, and one it binds to SQL text
+    /// built from a part that is no literal: `q = f"SELECT ... '{name}'"`, `q =
+    /// "SELECT ..." + name`, `q += f" AND owner = '{owner}'"` on a name that holds
+    /// SQL. A query given such a name is given the interpolation
+    /// ([`RawSymbol::since_sinks`]). By name, in the order written: the body of one
+    /// symbol is one set of names.
+    fn note_sql_binding(&mut self, stmt: &Stmt) {
+        let (target, value, added) = match stmt {
+            Stmt::Assign(a) => match a.targets.as_slice() {
+                [Expr::Name(n)] => (n.id.as_str(), a.value.as_ref(), false),
+                _ => return,
+            },
+            Stmt::AnnAssign(a) => match (a.target.as_ref(), a.value.as_deref()) {
+                (Expr::Name(n), Some(v)) => (n.id.as_str(), v, false),
+                _ => return,
+            },
+            Stmt::AugAssign(a) if matches!(a.op, ast::Operator::Add) => match a.target.as_ref() {
+                Expr::Name(n) => (n.id.as_str(), a.value.as_ref(), true),
+                _ => return,
+            },
+            _ => return,
+        };
+        let holds_sql = self.sql_text.contains(target) || self.sql_built.contains(target);
+        let built = match value {
+            // SQL built from built SQL is built.
+            Expr::Name(v) => self.sql_built.contains(v.id.as_str()) && (!added || holds_sql),
+            Expr::BinOp(b)
+                if matches!(b.op, ast::Operator::Add)
+                    && [b.left.as_ref(), b.right.as_ref()].iter().any(
+                        |x| matches!(x, Expr::Name(v) if self.sql_built.contains(v.id.as_str())),
+                    ) =>
+            {
+                true
+            }
+            v if added => holds_sql && signals::interpolates(v),
+            v => signals::interpolated_sql(v) || signals::concatenated_sql(v),
+        };
+        if built {
+            self.sql_built.insert(target.to_string());
+        } else if signals::sql_text(value) {
+            self.sql_text.insert(target.to_string());
+        }
+    }
+}
+
 impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
+        self.note_sql_binding(stmt);
         // A call that is a statement of its own, or bound to a name the body never
         // reads (`checked = verify_access(rule, caller)`): its value is dropped.
         let dropped = match stmt {

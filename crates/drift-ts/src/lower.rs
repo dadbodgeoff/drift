@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 75;
+pub const LOWERING_VERSION: u32 = 76;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -1172,6 +1172,26 @@ struct Lowerer<'s> {
     this_news: std::cell::RefCell<BTreeMap<String, RawRef>>,
     /// The file is a test ([`is_test_file`]): it records the requests its tests make.
     test_file: bool,
+    /// What the file's bindings hold that an SQL sink reads through a name
+    /// ([`signals::SqlLocals`]).
+    sql: signals::SqlLocals,
+    /// The routers of the module a function registers on without being handed
+    /// them, while that function is lowered ([`Lowerer::closure_routes`]): a route
+    /// on one is a route of the module's router.
+    closure_routers: BTreeSet<String>,
+    /// Router of the module -> every registration on it of what runs before its
+    /// routes (`use`, `addHook`, `register`, `param`), but of what never
+    /// authenticates: where the call starts, and whether it is a statement of the
+    /// module itself, run once in the order written ([`routes::RouterSites`]).
+    guard_sites: BTreeMap<String, Vec<(u32, bool)>>,
+    /// Function of the file, by name -> the parameters a call in the file hands a
+    /// router, each with the router's adapter (`configureApp(app, db)` with `app`
+    /// an Express application: parameter 0 of `configureApp` is one, whatever it is
+    /// typed) ([`routes::HandedRouters`]).
+    handed_routers: BTreeMap<String, BTreeMap<u32, &'static str>>,
+    /// The registrations lowered inside a function so far, by where they start:
+    /// none is lowered twice ([`Lowerer::first_visit`]).
+    lowered_sites: HashSet<u32>,
     /// Every function parameter binding of the file, with its name and the in-repo type
     /// it is annotated with (`server: FastifyZodProvider`, `svc: UsersService`).
     params: HashMap<SymbolId, (String, Option<RawRef>)>,
@@ -1958,6 +1978,11 @@ impl<'s> Lowerer<'s> {
             module_news: BTreeMap::new(),
             this_news: std::cell::RefCell::new(BTreeMap::new()),
             test_file: false,
+            sql: signals::SqlLocals::default(),
+            closure_routers: BTreeSet::new(),
+            guard_sites: BTreeMap::new(),
+            handed_routers: BTreeMap::new(),
+            lowered_sites: HashSet::new(),
             params: HashMap::new(),
             param_builtins: HashMap::new(),
         }
@@ -2351,6 +2376,9 @@ impl<'s> Lowerer<'s> {
         self.async_fns = async_functions(program);
         self.builders = refusal_builders(program);
         self.status_consts = status_consts(program);
+        self.sql = signals::SqlLocals::of(program, self.scoping);
+        self.guard_sites = routes::RouterSites::of(self, program);
+        self.handed_routers = routes::HandedRouters::of(self, program);
         self.top_classes = top_level_classes(program);
         self.matcher_polarity(program);
         let mut params = ParamFinder {
@@ -2370,6 +2398,9 @@ impl<'s> Lowerer<'s> {
         // Routers a function builds or is handed: a Fastify plugin's instance, the
         // router of an Express factory, the application a set-up helper is given.
         self.lower_router_functions(program);
+        // And the routes a function registers on a router of the module it is not
+        // handed, or the module registers under a condition.
+        self.lower_closure_routes(program);
         // Fastify `x.route({ method, url, handler })` and `register(plugin, { prefix })`
         // usually live inside plugin functions, so they are found anywhere in the file.
         self.lower_fastify_anywhere(program);

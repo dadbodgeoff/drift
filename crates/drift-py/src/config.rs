@@ -50,6 +50,32 @@ const NO_GUARD_MIDDLEWARE: &[&str] = &[
     "whitenoise.",
     "debug_toolbar.",
     "django_prometheus.",
+    // The request or its user kept where code outside a view reads it
+    // (django-crum, django-currentuser, django-simple-history, django-htmx,
+    // django-user-agents): each sets a value and hands the request on.
+    "crum.",
+    "django_currentuser.",
+    "simple_history.",
+    "django_htmx.",
+    "django_user_agents.",
+    // Request ids, logging, profiling and tracing.
+    "log_request_id.",
+    "request_id.",
+    "django_guid.",
+    "django_structlog.",
+    "request_logging.",
+    "silk.",
+    "querycount.",
+    "nplusone.",
+    "elasticapm.",
+    "ddtrace.",
+    "opentelemetry.",
+    "rollbar.",
+    // Response headers (django-csp, django-permissions-policy) and the
+    // development reloader.
+    "csp.",
+    "django_permissions_policy.",
+    "django_browser_reload.",
 ];
 /// What stands for a middleware of `MIDDLEWARE` that is not read: `unresolved:`, so
 /// the reading of a guard position says unknown.

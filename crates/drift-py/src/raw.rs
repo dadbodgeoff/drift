@@ -166,6 +166,12 @@ pub struct RawSymbol {
     pub reads: Vec<String>,
     pub throws: Vec<RawRef>,
     pub sinks: Vec<String>,
+    /// Sinks the measured build did not read, beside [`Self::sinks`] (Python
+    /// lowering 69): SQL built from input and bound to a name before the query is
+    /// given it (`q = f"SELECT ... {name}"; cursor.execute(q)`). Linked into the
+    /// listed reading only ([`drift_core::Listed`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_sinks: Vec<String>,
     pub order: Vec<RawRef>,
     /// FastAPI dependencies of a function, in parameter order; of a class, its
     /// `__init__`'s (what `Depends(Class)` runs).
@@ -661,6 +667,9 @@ pub struct RawMember {
     pub name: String,
     pub calls: Vec<RawRef>,
     pub sinks: Vec<String>,
+    /// As [`RawSymbol::since_sinks`], of the method's own body.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_sinks: Vec<String>,
     /// The method's own checks that turn the caller away.
     #[serde(default)]
     pub body_checks: Vec<RawBodyCheck>,
@@ -1265,6 +1274,7 @@ impl RawSymbol {
             reads: vec![],
             throws: vec![],
             sinks: vec![],
+            since_sinks: vec![],
             order: vec![],
             deps: vec![],
             call_deps: vec![],

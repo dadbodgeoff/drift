@@ -425,6 +425,25 @@ pub const NEVER_AUTHENTICATES: &[(&str, &str)] = &[
     ("hono/csrf", ""),
     // API documentation.
     ("swagger-ui-express", ""),
+    // Files a package serves itself, and the listing of a directory: `robots.txt`,
+    // `security.txt`, an index page. Each answers its own path and hands every
+    // other request on.
+    ("express-robots-txt", ""),
+    ("express-security.txt", ""),
+    ("serve-index", ""),
+    ("express-static-gzip", ""),
+    ("connect-history-api-fallback", ""),
+    // Response headers, request ids and locales.
+    ("feature-policy", ""),
+    ("permissions-policy", ""),
+    ("nocache", ""),
+    ("express-request-id", ""),
+    ("i18n", "init"),
+    ("i18next-http-middleware", ""),
+    // Metrics and error pages.
+    ("express-prom-bundle", ""),
+    ("express-status-monitor", ""),
+    ("errorhandler", ""),
     // next-safe-action 7: `createSafeActionClient(...)` builds a client with no
     // middleware of its own; what `.use(...)` adds is read where it is added.
     ("next-safe-action", "createSafeActionClient"),

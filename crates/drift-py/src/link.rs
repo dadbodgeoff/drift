@@ -423,6 +423,8 @@ struct Extra {
 /// ([`Linker::links_differently`]): a decorator that is no name.
 fn symbol_unmeasured(s: &RawSymbol) -> bool {
     !s.since_wraps.is_empty()
+        || !s.since_sinks.is_empty()
+        || s.members.iter().any(|m| !m.since_sinks.is_empty())
         || s.drf_reassigned.is_some()
         || !s.wraps_only.is_empty()
         || !s.since_only.is_empty()
@@ -948,6 +950,19 @@ impl<'r> Linker<'r> {
                     self.overridden.contains("*")
                         || self.overridden.contains(&format!("{rel}#{}", s.name))
                 }))
+    }
+
+    /// The sinks of a symbol or a method: those the measured build read, and, but
+    /// when linking what mining reads, those read since
+    /// ([`RawSymbol::since_sinks`]). Sorted.
+    fn sinks_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
+        let mut out = measured.to_vec();
+        if !since.is_empty() && self.since_measured() {
+            out.extend(since.iter().cloned());
+            out.sort();
+            out.dedup();
+        }
+        out
     }
 
     /// Whether the link so far met a listing the measured build did not make.
@@ -4725,7 +4740,7 @@ impl<'r> Linker<'r> {
                     suppressions: s.suppressions.clone(),
                     reads: s.reads.clone(),
                     throws: s.throws.iter().map(|r| self.canon(fi, r)).collect(),
-                    sinks: s.sinks.clone(),
+                    sinks: self.sinks_read(&s.sinks, &s.since_sinks),
                     order: s.order.iter().map(|r| self.canon(fi, r)).collect(),
                     traits: if s.kind == drift_core::SymbolKind::Class {
                         let mut t = s.traits.clone();
@@ -4806,7 +4821,7 @@ impl<'r> Linker<'r> {
                         .map(|m| drift_core::Member {
                             name: m.name.clone(),
                             calls: m.calls.iter().map(|r| self.canon(fi, r)).collect(),
-                            sinks: m.sinks.clone(),
+                            sinks: self.sinks_read(&m.sinks, &m.since_sinks),
                             body_checks: m
                                 .body_checks
                                 .iter()

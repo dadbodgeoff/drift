@@ -157,7 +157,7 @@ fn is_fixed_origin(e: &Expr) -> bool {
 
 /// SQL built by interpolation: an f-string, `%` formatting, `.format()` or `+`
 /// concatenation whose literal text contains SQL keywords.
-fn interpolated_sql(e: &Expr) -> bool {
+pub(crate) fn interpolated_sql(e: &Expr) -> bool {
     let has_sql = |s: &str| {
         let u = s.to_ascii_uppercase();
         SQL_KEYWORDS.iter().any(|k| u.contains(k))
@@ -199,6 +199,60 @@ fn interpolated_sql(e: &Expr) -> bool {
             }
             _ => false,
         },
+        _ => false,
+    }
+}
+
+/// Text written out that holds SQL keywords (`"SELECT * FROM users WHERE 1 = 1"`).
+pub(crate) fn sql_text(e: &Expr) -> bool {
+    string_value(e).is_some_and(|s| {
+        let u = s.to_ascii_uppercase();
+        SQL_KEYWORDS.iter().any(|k| u.contains(k))
+    })
+}
+
+/// SQL built by a chain of `+` of any length (`"SELECT ... '" + name + "'"`): the
+/// text written out holds SQL keywords and an operand is no literal string. The
+/// measured build read a `+` of two operands only ([`interpolated_sql`]).
+pub(crate) fn concatenated_sql(e: &Expr) -> bool {
+    fn parts(e: &Expr, text: &mut String, other: &mut bool) {
+        match e {
+            Expr::BinOp(b) if matches!(b.op, ast::Operator::Add) => {
+                parts(&b.left, text, other);
+                parts(&b.right, text, other);
+            }
+            e => match string_value(e) {
+                Some(s) => text.push_str(&s),
+                None => *other = true,
+            },
+        }
+    }
+    if !matches!(e, Expr::BinOp(b) if matches!(b.op, ast::Operator::Add)) {
+        return false;
+    }
+    let (mut text, mut other) = (String::new(), false);
+    parts(e, &mut text, &mut other);
+    let u = text.to_ascii_uppercase();
+    other && SQL_KEYWORDS.iter().any(|k| u.contains(k))
+}
+
+/// Text built from a part that is no literal: an f-string with an interpolation,
+/// `%` formatting, `.format()` or `+` with an operand that is no literal string.
+pub(crate) fn interpolates(e: &Expr) -> bool {
+    match e {
+        Expr::FString(f) => f.value.iter().any(|part| match part {
+            ast::FStringPartRef::Literal(_) => false,
+            ast::FStringPartRef::FString(fs) => fs
+                .elements
+                .iter()
+                .any(|el| matches!(el, ast::InterpolatedStringElement::Interpolation(_))),
+        }),
+        Expr::BinOp(b) if matches!(b.op, ast::Operator::Mod) => string_value(&b.left).is_some(),
+        Expr::BinOp(b) if matches!(b.op, ast::Operator::Add) => {
+            !(is_literal_string(&b.left) && is_literal_string(&b.right))
+        }
+        Expr::Call(c) => matches!(c.func.as_ref(), Expr::Attribute(a)
+            if a.attr.as_str() == "format" && string_value(&a.value).is_some()),
         _ => false,
     }
 }
@@ -375,6 +429,22 @@ impl Lowerer<'_> {
         }
         out.dedup();
         out
+    }
+
+    /// Sinks one call reaches that the measured build did not read
+    /// ([`crate::raw::RawSymbol::since_sinks`]): a query given a name the body bound
+    /// to SQL built from a part that is no literal ([`Collector::sql_built`]), or a
+    /// chain of `+` written where the query is ([`concatenated_sql`]).
+    pub(crate) fn call_sinks_since(&self, col: &Collector, c: &ast::ExprCall) -> Vec<&'static str> {
+        let first = c.arguments.args.first();
+        let through_name = matches!(first, Some(Expr::Name(n)) if col.sql_built.contains(n.id.as_str()))
+            || first.is_some_and(concatenated_sql);
+        match callee_name(&c.func) {
+            Some(
+                "execute" | "executemany" | "executescript" | "text" | "raw" | "exec_driver_sql",
+            ) if through_name => vec![kind::SQL_INTERP],
+            _ => vec![],
+        }
     }
 
     /// Schema validation: pydantic `model_validate`, DRF `serializer.is_valid()`, `jsonschema.validate`.
