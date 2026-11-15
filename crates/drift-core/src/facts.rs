@@ -1778,6 +1778,15 @@ pub mod controls {
     /// 69) where some site has something that held; on a method the same strings
     /// are in [`crate::facts::Member::unread`]. Mining never proposes it.
     pub const HANDED_AFTER: &str = "handed_after:";
+    /// A function whose every branch that returns early without refusing does so
+    /// for the requests it finds to be about the caller's own record: the test of
+    /// the branch is `==` or `is` between the caller itself, or the key of the
+    /// caller's record, and something else (`if user == current_user: return
+    /// user`). A check that follows ([`crate::not_always::AFTER_CONDITIONAL_RETURN`])
+    /// is asked of every other request: the body serves the caller's own record, or
+    /// what passes the check. Recorded by Python (lowering 69). Mining never
+    /// proposes it.
+    pub const RETURNS_EARLY_FOR_OWN: &str = "returns_early_for_own";
     /// What starts the control that says which rows a statement of the body reads
     /// and by what: `rows:<model>`, canonical, then tab-separated `own`, the key and
     /// the side ([`OWN_SIDE`]) where the statement filters them by the caller

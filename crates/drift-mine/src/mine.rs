@@ -98,6 +98,9 @@ const NON_CONVENTION_CONTROLS: &[&str] = &[
     drift_core::controls::OVERRIDDEN,
     drift_core::controls::HANDS_BACK_PARAM,
     drift_core::controls::KEEPS_VALUE,
+    // For whom a body returns early, read with the checks that follow
+    // (`practices::authz`).
+    drift_core::controls::RETURNS_EARLY_FOR_OWN,
 ];
 /// Rules in one role whose holder sets overlap this much are reported once.
 const NEAR_DUPLICATE: f64 = 0.9;

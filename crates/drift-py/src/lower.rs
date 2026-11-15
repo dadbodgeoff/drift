@@ -2552,6 +2552,10 @@ pub(crate) struct Collector<'l, 't> {
     /// (`if preview: return {...}`): what follows does not run for those. The
     /// condition in words.
     skipped: Option<String>,
+    /// Every branch that has returned so far without refusing did so for the
+    /// requests it found to be about the caller's own record
+    /// ([`Collector::own_test`]): what follows is asked of every other request.
+    skipped_own: bool,
     /// The bodies of the functions being walked, innermost last, and whether the
     /// function about to be walked is one its enclosing body never names again.
     bodies: Vec<&'t [Stmt]>,
@@ -2702,6 +2706,7 @@ impl<'l, 't> Collector<'l, 't> {
             except_names: Vec::new(),
             conds: Vec::new(),
             skipped: None,
+            skipped_own: false,
             bodies: Vec::new(),
             uncalled: false,
             conditional_calls: BTreeSet::new(),
@@ -2993,6 +2998,7 @@ impl<'l, 't> Collector<'l, 't> {
         let continued = std::mem::replace(&mut self.continued, false);
         let conds = std::mem::take(&mut self.conds);
         let skipped = self.skipped.take();
+        let skipped_own = std::mem::replace(&mut self.skipped_own, false);
         let prior = std::mem::take(&mut self.prior);
         if std::mem::take(&mut self.uncalled) {
             self.conds
@@ -3011,7 +3017,14 @@ impl<'l, 't> Collector<'l, 't> {
             guard_paths::Paths::Some => self.rejects_some = true,
         }
         self.conds = conds;
+        // The symbol's own function returns early, without refusing, only for the
+        // requests about the caller's own record.
+        if self.frames.len() == 1 && self.skipped.is_some() && self.skipped_own {
+            self.controls
+                .insert(drift_core::controls::RETURNS_EARLY_FOR_OWN.into());
+        }
         self.skipped = skipped;
+        self.skipped_own = skipped_own;
         if self.frames.len() == 1 {
             self.body_order = self.called_before();
         }
@@ -3308,6 +3321,35 @@ impl<'l, 't> Collector<'l, 't> {
             }),
             _ => false,
         }
+    }
+
+    /// Notes that what follows is skipped for some requests (`skips`: for which, in
+    /// the code's words), and whether those are the requests about the caller's own
+    /// record. The first skip is what the checks that follow say; every one counts
+    /// for whose requests they are.
+    fn note_skip(&mut self, skips: Option<String>, own: bool) {
+        let Some(words) = skips else { return };
+        match self.skipped {
+            None => {
+                self.skipped = Some(words);
+                self.skipped_own = own;
+            }
+            Some(_) => self.skipped_own &= own,
+        }
+    }
+
+    /// The test holds exactly where what the request is about is the caller's own
+    /// record: one side of `==` or `is` is the caller itself or the key of the
+    /// caller's record ([`Collector::caller_self`]), the other is not (`user ==
+    /// current_user`, `user_id == request.user.id`).
+    fn own_test(&self, test: &Expr) -> bool {
+        let Expr::Compare(c) = test else {
+            return false;
+        };
+        let ([ast::CmpOp::Eq | ast::CmpOp::Is], [left, right]) = (&*c.ops, &*c.operands) else {
+            return false;
+        };
+        self.caller_self(left) != self.caller_self(right)
     }
 
     /// The first exit of the block is a `return` that does not turn the caller away:
@@ -4318,6 +4360,7 @@ impl<'a> Collector<'_, 'a> {
                 let mut skips = self
                     .returns_without_refusing(&i.body)
                     .then(|| format!("not when {test}"));
+                let mut skips_own = skips.is_some() && self.own_test(&i.test);
                 let mut after = before || (self.continued && !leaves(&i.body));
                 let mut goes_on = !leaves(&i.body);
                 let mut previous = test;
@@ -4328,8 +4371,8 @@ impl<'a> Collector<'_, 'a> {
                     }
                     // What a later branch does comes after the return of an earlier
                     // one that served the request.
-                    if self.skipped.is_none() && skips.is_some() {
-                        self.skipped = skips.clone();
+                    if skips.is_some() {
+                        self.note_skip(skips.clone(), skips_own);
                     }
                     let own = c.test.as_ref().map(practice::words);
                     let words = match &own {
@@ -4350,6 +4393,11 @@ impl<'a> Collector<'_, 'a> {
                     }
                     if skips.is_none() && self.returns_without_refusing(&c.body) {
                         skips = Some(words.replacen("only when", "not when", 1));
+                        skips_own = c.test.as_ref().is_some_and(|t| self.own_test(t));
+                    } else if self.returns_without_refusing(&c.body) {
+                        // A later branch returns too: for the caller's own only
+                        // where each does.
+                        skips_own &= c.test.as_ref().is_some_and(|t| self.own_test(t));
                     }
                     goes_on |= !leaves(&c.body);
                     if let Some(t) = own {
@@ -4357,9 +4405,7 @@ impl<'a> Collector<'_, 'a> {
                     }
                     after |= self.continued && !leaves(&c.body);
                 }
-                if self.skipped.is_none() {
-                    self.skipped = skips;
-                }
+                self.note_skip(skips, skips_own);
                 self.continued = after;
             }
             Stmt::Assign(a) => {
@@ -4447,9 +4493,7 @@ impl<'a> Collector<'_, 'a> {
                     }),
                     _ => None,
                 };
-                if self.skipped.is_none() {
-                    self.skipped = skips;
-                }
+                self.note_skip(skips, false);
             }
             _ => visitor::walk_stmt(self, stmt),
         }

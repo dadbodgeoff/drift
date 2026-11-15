@@ -3063,7 +3063,8 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         let by_role = roles_are_callers
             && owners
             && c.condition == drift_core::not_always::ROLE_ALTERNATIVE;
-        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role);
+        let own_return = ev.python && returns_for_own(cx, r.node, &c.condition);
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role, own_return);
         ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let requested = |s: &str| s.starts_with("header:") || s.starts_with("param:");
@@ -3079,9 +3080,10 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         };
         // The role that passes in the comparison's place is part of what the check
         // is: said with it.
-        let what = match by_role {
-            true => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
-            false => format!("{}{}", c.source, c.reads),
+        let what = match (by_role, own_return) {
+            (true, _) => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
+            (false, true) => format!("{}{}{OR_OWN}", c.source, c.reads),
+            (false, false) => format!("{}{}", c.source, c.reads),
         };
         // A tenant or an owner counts where the check refuses a caller whose value
         // differs from the one it is compared with ([`refuses_mismatch`]). One that is
@@ -3245,6 +3247,20 @@ fn alternative_roles<'a, 'c>(
     any
 }
 
+/// What the instrument of a check ends with where the body serves the caller's
+/// own record before it ([`returns_for_own`]): the check is "the caller's own, or
+/// this", and says so wherever it is named.
+const OR_OWN: &str = " or the caller's own";
+
+/// Python: the body returns early, without refusing, only for the requests about
+/// the caller's own record ([`drift_core::controls::RETURNS_EARLY_FOR_OWN`]), so a
+/// check after that return is asked of every other request.
+fn returns_for_own(cx: &Cx<'_>, n: Node<'_>, condition: &str) -> bool {
+    cx.context().since_measured()
+        && condition == drift_core::not_always::AFTER_CONDITIONAL_RETURN
+        && n.unread(drift_core::controls::RETURNS_EARLY_FOR_OWN)
+}
+
 /// What the instrument of an owner check ends with where a role of the caller's
 /// passes in the comparison's place ([`beside_role`]): the check is "the owner, or
 /// a role", and says so wherever it is named.
@@ -3257,9 +3273,22 @@ const OR_A_ROLE: &str = " or a role";
 /// every other case it, and the role's own test, are operands of an `and`. Asked
 /// of an owner's comparison only: a role beside a tenant's comparison lets its
 /// holder into every tenant, and stays found, not proven.
-fn beside_role(conditional: bool, kind: &str, roles_are_callers: bool) -> (bool, &str) {
-    use drift_core::not_always::{ALTERNATIVE_ROLE, AND_OPERAND, ROLE_ALTERNATIVE};
+///
+/// A check after a branch that returned for the requests about the caller's own
+/// record only (`own_return`, [`returns_for_own`]) is asked of every other
+/// request: under no condition either, and said with what it stands beside
+/// ([`OR_OWN`]).
+fn beside_role(
+    conditional: bool,
+    kind: &str,
+    roles_are_callers: bool,
+    own_return: bool,
+) -> (bool, &str) {
+    use drift_core::not_always::{
+        AFTER_CONDITIONAL_RETURN, ALTERNATIVE_ROLE, AND_OPERAND, ROLE_ALTERNATIVE,
+    };
     match kind {
+        AFTER_CONDITIONAL_RETURN if own_return => (false, ""),
         ROLE_ALTERNATIVE if roles_are_callers => (false, ""),
         ROLE_ALTERNATIVE | ALTERNATIVE_ROLE => (true, AND_OPERAND),
         _ => (conditional, kind),
@@ -3325,14 +3354,16 @@ fn raised<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             && !names_tenant(&c.reads)
             && !names_tenant(&c.compares)
             && c.condition == drift_core::not_always::ROLE_ALTERNATIVE;
-        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role);
+        let own_return = ev.python && returns_for_own(cx, r.node, &c.condition);
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role, own_return);
         ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let mismatch = refuses_mismatch(&c.op, &c.compares);
         let own = requested(&c.source) && c.reads.is_empty();
-        let what = match by_role {
-            true => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
-            false => format!("{}{}", c.source, c.reads),
+        let what = match (by_role, own_return) {
+            (true, _) => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
+            (false, true) => format!("{}{}{OR_OWN}", c.source, c.reads),
+            (false, false) => format!("{}{}", c.source, c.reads),
         };
         // The value read is the last member of the path: `.caller.org_id` is a
         // tenant, `.get_organization_memberships().data` is not.

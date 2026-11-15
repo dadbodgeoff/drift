@@ -216,6 +216,33 @@ def open_notes(space: str, user: Caller = Depends(current_user), db: Session = D
     return db.query(Note).filter_by(space=space).all()
 
 
+@app.get("/people/{person_id}")
+def person(person_id: int, user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    seat = db.get(Seat, person_id)
+    if person_id == user.id:
+        return seat
+    if not user.is_admin:
+        raise HTTPException(status_code=403)
+    return seat
+
+
+@app.get("/people-or-preview/{person_id}")
+def person_or_preview(
+    person_id: int,
+    preview: bool = False,
+    user: Caller = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    seat = db.get(Seat, person_id)
+    if person_id == user.id:
+        return seat
+    if preview:
+        return seat
+    if not user.is_admin:
+        raise HTTPException(status_code=403)
+    return seat
+
+
 @app.delete("/notes/{note_id}", dependencies=[Depends(admin)])
 def delete_note(note_id: int, user: Caller = Depends(current_user), db: Session = Depends(get_db)):
     note = db.get(Note, note_id)
@@ -286,4 +313,17 @@ fn a_refusal_the_map_cannot_name_changes_nothing_beside_a_proven_check() {
     assert_eq!(got["/notes/{note_id}"], "known role_guard", "{got:?}");
     // Alone, it may be the authorization: unknown, never none and never known.
     assert!(got["/drafts/{note_id}"].starts_with("unknown"), "{got:?}");
+}
+
+#[test]
+fn a_check_after_a_return_for_the_callers_own_record_is_asked_of_everyone_else() {
+    let got = repo();
+    // The caller's own record, or a role: every request is one or passes the other.
+    assert_eq!(got["/people/{person_id}"], "known role_check", "{got:?}");
+    // A second branch returns for a reason that is no caller's: some requests
+    // reach neither the own record nor the role.
+    assert!(
+        got["/people-or-preview/{person_id}"].starts_with("unknown check_not_proven"),
+        "{got:?}"
+    );
 }
