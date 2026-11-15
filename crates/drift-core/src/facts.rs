@@ -2069,7 +2069,17 @@ pub mod controls {
     /// makes more calls than are recorded. Its sides: `caller`, `param <name>
     /// #<position>`, `literal`, `call <callee>` (a value read off what a call of
     /// the body handed back), `unread`.
+    ///
+    /// TypeScript (lowering 82) records a call of one of the body's own
+    /// parameters, given by position, under [`PARAM_CALLED`] and the parameter's
+    /// name, with no member
+    /// (`arg_value:param:handler\t#0\tunread\t#1\tunread\t#2\tcaller` of
+    /// `handler(req, res, user)` in `withUser(handler)`): what a wrapper hands the
+    /// function it was given.
     pub const ARG_VALUE: &str = "arg_value:";
+    /// What the callee of an [`ARG_VALUE`] starts with where the body calls a
+    /// parameter, or a method of what one holds.
+    pub const PARAM_CALLED: &str = "param:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):

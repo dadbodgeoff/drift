@@ -558,6 +558,12 @@ pub(super) struct Taint {
     /// What may give it (sources 5 and 6): a holder's key, a function called with
     /// nothing or with the request.
     via: Vec<RawRef>,
+    /// The caller's by the name of a parameter alone (source 4, undecorated):
+    /// whoever calls the function chose the value, and its name is not what it
+    /// is. Read since the measured build: the listed reading writes such a
+    /// value as the parameter it is read off, for the calls to say what they
+    /// pass ([`Taint::proven_own`]).
+    named: bool,
 }
 
 impl Taint {
@@ -576,6 +582,11 @@ impl Taint {
     /// that only may give one.
     pub(super) fn callers_own(&self) -> bool {
         self.caller && self.via.is_empty()
+    }
+
+    /// [`Taint::callers_own`], and not by the name of a parameter alone.
+    pub(super) fn proven_own(&self) -> bool {
+        self.callers_own() && !self.named
     }
 
     /// Read off a parameter of the function the walk started on.
@@ -600,6 +611,7 @@ impl Taint {
     fn join(&mut self, other: Taint) {
         self.caller |= other.caller;
         self.param |= other.param;
+        self.named |= other.named;
         for v in other.via {
             if !self.via.contains(&v) && self.via.len() < 4 {
                 self.via.push(v);
@@ -644,6 +656,17 @@ pub(super) struct Flow {
     /// The callees of the repository whose call's value the body takes as the
     /// caller (source 1): [`drift_core::controls::CALLER_FROM`].
     pub(super) caller_from: std::cell::RefCell<BTreeSet<RawRef>>,
+    /// Locals bound to what a keyed store of the file handed back under a key
+    /// that is the caller's by its own source (`const cached =
+    /// CACHE.get(JSON.stringify(token))`), by the store
+    /// ([`Collector::kept_read`]).
+    kept_locals: HashMap<SymbolId, String>,
+    /// The stores a `return` hands back such a read of.
+    returns_kept: BTreeSet<String>,
+    /// Each `set` on a keyed store of the file: the store, and whether the key
+    /// is the caller's by its own source and the value a value of the caller
+    /// (`CACHE.set(JSON.stringify(token), session)`).
+    pub(super) keeps: BTreeSet<(String, bool)>,
     /// The locals bound to the caller itself or the key of the caller's record
     /// ([`Collector::caller_self`]) and never bound again, with what may give it.
     self_locals: HashMap<SymbolId, Vec<RawRef>>,
@@ -657,7 +680,16 @@ impl Flow {
     /// The function's own body returns a value of the caller wherever it returns a
     /// value ([`drift_core::controls::RETURNS_CALLER`]).
     pub(super) fn returns_caller(&self) -> bool {
-        self.returns_caller && !self.returns_other
+        self.returns_caller && !self.returns_other && self.returns_kept.is_empty()
+    }
+}
+
+impl Flow {
+    /// The keyed stores of the file whose read under a key of the caller's the
+    /// function hands back, where every other `return` that gives a value gives
+    /// a value of the caller ([`super::RawSymbol::returns_kept`]).
+    pub(super) fn returns_kept(&self) -> impl Iterator<Item = &String> {
+        self.returns_kept.iter().filter(|_| !self.returns_other)
     }
 }
 
@@ -874,6 +906,7 @@ impl<'l, 's> Collector<'l, 's> {
                 caller: true,
                 param: own,
                 via: Vec::new(),
+                named: !self.flow.caller_params.contains(&s),
             };
         }
         if HOLDER_PARAMS.contains(&name) {
@@ -1159,7 +1192,7 @@ impl<'l, 's> Collector<'l, 's> {
         if depth > 6 {
             return None;
         }
-        let whole = |t: Taint| (!t.param && t.of_caller()).then_some(t.via);
+        let whole = |t: Taint| (!t.param && !t.named && t.of_caller()).then_some(t.via);
         match peel(e) {
             Expression::Identifier(id) => {
                 let s = self.symbol_of(id)?;
@@ -1206,7 +1239,7 @@ impl<'l, 's> Collector<'l, 's> {
     /// nothing of a parameter: what may give it ([`Collector::caller_self`]).
     pub(super) fn caller_side(&self, e: &Expression) -> Option<Vec<RawRef>> {
         let t = self.taint(e);
-        (!t.param && t.of_caller()).then_some(t.via)
+        (!t.param && !t.named && t.of_caller()).then_some(t.via)
     }
 
     /// Whose the value a call hands back is.
@@ -1347,7 +1380,55 @@ impl<'l, 's> Collector<'l, 's> {
     }
 
     /// A call: what it is given, and what it is called on.
+    /// The keyed store of the file a call reads or fills: what `get` or `set` is
+    /// called on directly, where that is a top-level declaration of the file
+    /// (`CACHE.get(key)` of `const CACHE = new LRUCache(...)`).
+    fn keyed_store(&self, c: &CallExpression, method: &str) -> Option<String> {
+        let (_, name) = Self::method(&c.callee)?;
+        if name != method {
+            return None;
+        }
+        match self.l.canon_callee(&c.callee)? {
+            RawRef {
+                base: RawBase::Local(store),
+                member,
+            } if member.len() == method.len() + 1 => Some(store),
+            _ => None,
+        }
+    }
+
+    /// `e` is what a keyed store of the file handed back under a key that is the
+    /// caller's by its own source, or a local bound to that: the store. What the
+    /// store holds under such a key is the caller's where every `set` of the
+    /// file puts a value of the caller under one, which linking says
+    /// ([`super::RawSymbol::keeps`]).
+    pub(super) fn kept_read(&self, e: &Expression) -> Option<String> {
+        match peel(e) {
+            Expression::Identifier(id) => self.flow.kept_locals.get(&self.symbol_of(id)?).cloned(),
+            Expression::CallExpression(c) => {
+                let store = self.keyed_store(c, "get")?;
+                let [key] = c.arguments.as_slice() else {
+                    return None;
+                };
+                self.taint_argument(key, 0).proven_own().then_some(store)
+            }
+            _ => None,
+        }
+    }
+
     pub(super) fn flow_call(&mut self, it: &CallExpression) {
+        if let Some(store) = self.keyed_store(it, "set") {
+            let kept = match it.arguments.as_slice() {
+                [key, value] => {
+                    let value = self.taint_argument(value, 0);
+                    self.taint_argument(key, 0).proven_own() && value.caller && !value.named
+                }
+                _ => false,
+            };
+            if self.flow.keeps.len() < 16 {
+                self.flow.keeps.insert((store, kept));
+            }
+        }
         // A value bound on a context: `c.set("depot", claims.depotId)`.
         if let Some(key) = self.holder_call(it, "set") {
             let key = key.to_string();
@@ -1672,13 +1753,17 @@ impl<'l, 's> Collector<'l, 's> {
                     None => self.caller_self(init),
                     Some((last, before)) if RECORD_KEYS.contains(last) => {
                         let t = self.taint_path(init, before, 0);
-                        (!t.param && t.of_caller()).then_some(t.via)
+                        (!t.param && !t.named && t.of_caller()).then_some(t.via)
                     }
                     Some(_) => None,
                 };
                 match whole {
                     Some(givers) => self.flow.self_locals.insert(s, givers),
                     None => self.flow.self_locals.remove(&s),
+                };
+                match path.is_empty().then(|| self.kept_read(init)).flatten() {
+                    Some(store) => self.flow.kept_locals.insert(s, store),
+                    None => self.flow.kept_locals.remove(&s),
                 };
                 let t = self.taint_path(init, path, 0);
                 if t.is_empty() {
@@ -1827,6 +1912,12 @@ impl<'l, 's> Collector<'l, 's> {
             Expression::NullLiteral(_) => return,
             Expression::Identifier(id) if id.name == "undefined" => return,
             _ => {}
+        }
+        // What a keyed store of the file kept under a key of the caller's: the
+        // caller's where the file only ever puts a value of the caller there.
+        if let Some(store) = self.kept_read(e) {
+            self.flow.returns_kept.insert(store);
+            return;
         }
         let t = self.taint(e);
         // What the function hands back of a value of one of its parameters is

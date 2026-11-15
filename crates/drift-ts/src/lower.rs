@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 81;
+pub const LOWERING_VERSION: u32 = 82;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -303,6 +303,19 @@ pub struct RawSymbol {
     /// ([`drift_core::controls::GIVES_CALLER`]). TypeScript lowering 81.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub returns_via: Vec<RawRef>,
+    /// The keyed stores of the file (top-level declarations) whose read under a
+    /// key that is the caller's the function hands back, where every other
+    /// `return` that gives a value gives a value of the caller (`const cached =
+    /// CACHE.get(JSON.stringify(token)); if (cached) return cached`). Linking
+    /// says whether the file only ever keeps a value of the caller there
+    /// ([`Self::keeps`]). TypeScript lowering 82.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub returns_kept: Vec<String>,
+    /// Each `set` the body makes on a keyed store of the file: the store, and
+    /// whether the key is the caller's by its own source and the value a value
+    /// of the caller. TypeScript lowering 82.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keeps: Vec<(String, bool)>,
     /// The class every `return` of the function that gives a value gives an
     /// instance of, built in the body (`const client = new PrismaClient(); ...;
     /// return client`, `() => new Pool(options)`): what the function hands back is
@@ -5089,6 +5102,8 @@ impl RawSymbol {
             in_place: false,
             listed_controls: vec![],
             returns_via: vec![],
+            returns_kept: vec![],
+            keeps: vec![],
             returns_built: None,
             nest_metadata: vec![],
             measured_args: vec![],
@@ -6230,6 +6245,16 @@ impl<'l, 's> Collector<'l, 's> {
                 sym.returns_via.push(giver.clone());
             }
         }
+        for store in flow.returns_kept() {
+            if !sym.returns_kept.contains(store) {
+                sym.returns_kept.push(store.clone());
+            }
+        }
+        for kept in &flow.keeps {
+            if !sym.keeps.contains(kept) {
+                sym.keeps.push(kept.clone());
+            }
+        }
         sym.param_flows |= flow.param_flows;
         for entry in flow.caller_args {
             if !sym.caller_args.contains(&entry) {
@@ -6692,7 +6717,7 @@ impl Collector<'_, '_> {
     /// the caller by its own source, a value read off a parameter of the function,
     /// a literal, or what is not read.
     fn arg_side(&self, e: &Expression) -> String {
-        if self.taint(e).callers_own() {
+        if self.taint(e).proven_own() {
             return "caller".to_string();
         }
         match self.param_root(e) {
@@ -6779,6 +6804,21 @@ impl Collector<'_, '_> {
         members.reverse();
         let path: String = members.iter().map(|m| format!(".{m}")).collect();
         Some(format!("{root}{path}"))
+    }
+
+    /// The name a call of one of the walk's own parameters is written under
+    /// (`param:handler` of `handler(req, res, user)` in `withUser(handler)`): what
+    /// a wrapper hands the function it was given is what that function's
+    /// parameters hold ([`RawSymbol::loose_sides`]). A parameter given by
+    /// position only: one bound out of an object a framework hands in (`({ ctx,
+    /// next })`, then `next({ ctx })`) is the framework's continuation, and what
+    /// it is given is not what the next function's parameters hold.
+    fn own_param_called(&self, callee: &Expression) -> Option<String> {
+        let Expression::Identifier(id) = unwrap_expr(callee) else {
+            return None;
+        };
+        let (name, at) = self.flow.own_at.get(&self.symbol_of(id)?)?;
+        (!at.contains('.')).then(|| format!("{}{name}", drift_core::controls::PARAM_CALLED))
     }
 
     /// The side that says a value is read off what this call handed back: `call
@@ -7064,7 +7104,7 @@ impl Collector<'_, '_> {
                     if depth + 1 < MAX_KEY_DEPTH {
                         self.caller_keys_at(callee, &p.value, &key, depth + 1);
                     }
-                } else if self.taint(&p.value).callers_own() {
+                } else if self.taint(&p.value).proven_own() {
                     self.caller_keys.insert((callee.clone(), key));
                 } else if let Some((name, at)) = self.param_root(&p.value) {
                     self.param_keys
@@ -9867,7 +9907,10 @@ impl Collector<'_, '_> {
             Expression::Identifier(id) if id.name == "undefined" => return,
             _ => {}
         }
-        if self.credential_identity(e) {
+        // What a keyed store of the file kept is what the file put there, not
+        // what was made of the credential it is read under
+        // ([`RawSymbol::returns_kept`]).
+        if self.credential_identity(e) && self.kept_read(e).is_none() {
             self.returns_cred = true;
         } else {
             self.returns_not_cred = true;
@@ -12759,6 +12802,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 if let Some(r) = own {
                     self.note_arg_sides(&r, it);
                 } else if let Some(name) = self.loose_callee(&it.callee) {
+                    self.note_loose_sides(name, it);
+                } else if let Some(name) = self.own_param_called(&it.callee) {
                     self.note_loose_sides(name, it);
                 }
             }

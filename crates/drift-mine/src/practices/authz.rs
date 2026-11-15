@@ -479,11 +479,21 @@ fn read_unit<'a>(
         let unlinked =
             lazy.is_empty() && s.calls.is_empty() && s.controls.iter().any(|c| c == "await");
         bodies.extend(lazy);
-        let mut dependencies: Vec<&str> = around
+        // What builds a handler of the unit from the functions it is given
+        // (`app.get("/notes", withUser(async (req, res, user) => ...))`: the
+        // unit runs what `withUser` handed back, and the function written there).
+        let builders: Vec<&str> = bodies
+            .iter()
+            .flat_map(|b| &b.calls)
+            .filter_map(|c| c.strip_suffix("(ref)")?.strip_suffix("()"))
+            .filter(|r| !common::external(r))
+            .collect();
+        let call_wrappers: Vec<&str> = around
             .iter()
             .filter(|w| w.kind == drift_core::WrapKind::Call)
             .map(|w| w.wrapper.as_str())
             .collect();
+        let mut dependencies: Vec<&str> = call_wrappers.clone();
         // Middleware that runs before the handler turns callers away as a dependency
         // does (a 403 unless the caller is an admin): the application's
         // ([`Symbol::app_middleware`]), and the package's Next.js middleware where it
@@ -601,7 +611,16 @@ fn read_unit<'a>(
                     .map(|d| crate::mine::norm_ref(d).into_owned()),
             )
             .collect();
-        let mut passed_to = passed(cx, &reach, &ev.around);
+        // TypeScript: what the wrappers written around the unit hand the function
+        // they were given.
+        let handed = match !ev.python && cx.context().since_measured() {
+            true => {
+                let wrappers: Vec<&str> = call_wrappers.iter().chain(&builders).copied().collect();
+                handed_by_wrappers(cx, &ev.around, &wrappers)
+            }
+            false => Vec::new(),
+        };
+        let mut passed_to = passed(cx, &reach, &ev.around, &handed);
         ev.reads_unscoped = ev.python
             && reach
                 .nodes
@@ -4396,7 +4415,10 @@ enum Origin {
 ///   keeps (`gives`), is read the same way, and is not read where it is neither.
 /// - A parameter is what the request sent in the unit's own body and in what a
 ///   framework calls for the request (a dependency, a decorator's wrapper, a
-///   hook); below, it is whatever the calling body passed.
+///   hook); below, it is whatever the calling body passed. In the unit's own
+///   body it is the caller's where a wrapper of the repository around the unit
+///   hands the function it was given a value of the caller there
+///   ([`handed_by_wrappers`]: `handler(req, res, user)` in `withUser(handler)`).
 /// - An attribute of `self` is the caller's where the constructor binds it from a
 ///   parameter for which every body around the unit that builds the class passes
 ///   a value of the caller ([`caller_attribute`]).
@@ -4407,10 +4429,17 @@ fn origin<'a>(
     side: &str,
     passed: &[Given],
 ) -> Origin {
-    let request = (r.depth == 0 && !r.quiet) || r.dependency();
+    let own = r.depth == 0 && !r.quiet;
+    let request = own || r.dependency();
     let member = match r.node {
         Node::Member(m) => Some(m),
         Node::Sym(_) => None,
+    };
+    // What the framework calls for the request is passed nothing the facts
+    // hold; the unit's own bodies are passed what its wrappers hand them.
+    let passed = match request && !own {
+        true => &[],
+        false => passed,
     };
     origin_of(cx, around, side, request, member, passed)
 }
@@ -4428,30 +4457,9 @@ type Given = Vec<(String, Origin)>;
 /// where no call of the reach is seen, and where one passes nothing for it (its
 /// default) or unpacks its arguments.
 fn passed_for(side: &str, calls: &[Given]) -> Origin {
-    let mut parts = side.split(' ').skip(1);
-    let name = parts.next().unwrap_or_default();
-    let position = parts.next();
     let given: Vec<Origin> = calls
         .iter()
-        .map(|call| {
-            if let Some((key, o)) = call
-                .iter()
-                .find(|(key, _)| key == name || Some(key.as_str()) == position || key == "*")
-            {
-                return if key == "*" { Origin::Unread } else { *o };
-            }
-            // Read under keys of what the position holds (`#0.userId` of `opts
-            // .userId`, of `({ userId })`), and the call wrote no such key in place:
-            // a member of the value it gave, which is of that value's origin.
-            let mut at = position;
-            while let Some((holder, _)) = at.and_then(|p| p.rsplit_once('.')) {
-                if let Some((_, o)) = call.iter().find(|(key, _)| key == holder) {
-                    return *o;
-                }
-                at = Some(holder);
-            }
-            Origin::Unread
-        })
+        .map(|call| given_at(side, call).unwrap_or(Origin::Unread))
         .collect();
     let resource = |o: &Origin| matches!(o, Origin::Row | Origin::Request | Origin::Handed);
     match given.first() {
@@ -4462,9 +4470,91 @@ fn passed_for(side: &str, calls: &[Given]) -> Origin {
     }
 }
 
+/// What one call passes for the parameter `side` ([`passed_for`]); None where
+/// it passes nothing for it.
+fn given_at(side: &str, call: &Given) -> Option<Origin> {
+    let mut parts = side.split(' ').skip(1);
+    let name = parts.next().unwrap_or_default();
+    let position = parts.next();
+    if let Some((key, o)) = call
+        .iter()
+        .find(|(key, _)| key == name || Some(key.as_str()) == position || key == "*")
+    {
+        return Some(if key == "*" { Origin::Unread } else { *o });
+    }
+    // Read under keys of what the position holds (`#0.userId` of `opts
+    // .userId`, of `({ userId })`), and the call wrote no such key in place:
+    // a member of the value it gave, which is of that value's origin.
+    let mut at = position;
+    while let Some((holder, _)) = at.and_then(|p| p.rsplit_once('.')) {
+        if let Some((_, o)) = call.iter().find(|(key, _)| key == holder) {
+            return Some(*o);
+        }
+        at = Some(holder);
+    }
+    None
+}
+
+/// What the wrappers around a unit hand its own body for the parameter `side`
+/// (`handed`, [`handed_by_wrappers`]): the caller's where one hands a value
+/// there and every one that does hands a value of the caller. A wrapper that
+/// calls what it was given with fewer values (`withErrors(withUser(handler))`
+/// calls the function `withUser` built) is not the one that calls the body.
+fn handed_for(side: &str, handed: &[Given]) -> bool {
+    let mut given = handed
+        .iter()
+        .filter_map(|call| given_at(side, call))
+        .peekable();
+    given.peek().is_some() && given.all(|o| o == Origin::Caller)
+}
+
+/// What each call the wrappers around a unit make of a function they were
+/// given hands it ([`drift_core::controls::PARAM_CALLED`], the parameter itself
+/// called): `handler(req, res, currentUser(req))` in `withUser(handler)`, around
+/// `export const GET = withUser(async (req, res, user) => ...)` and where the
+/// unit runs what the wrapper built (`app.get("/notes", withUser(...))`). The origin of
+/// each value is read in the wrapper's body, whose own parameters are the
+/// functions it wraps and prove nothing.
+fn handed_by_wrappers(cx: &Cx<'_>, around: &[String], wrappers: &[&str]) -> Vec<Given> {
+    let ctx = cx.context();
+    let mut out = Vec::new();
+    for w in wrappers {
+        let w = crate::mine::norm_ref(w);
+        // A function of the repository: what a package built (`t.procedure
+        // .use(...)`) calls what it was given as the package says.
+        let Some(d) = ctx
+            .definition(&w)
+            .filter(|d| d.name == common::short(&w) && d.kind == SymbolKind::Function)
+        else {
+            continue;
+        };
+        for (callee, given) in arg_calls(d.controls.iter()) {
+            if callee
+                .strip_prefix(drift_core::controls::PARAM_CALLED)
+                .is_none_or(|name| name.contains('.'))
+            {
+                continue;
+            }
+            out.push(
+                given
+                    .iter()
+                    .map(|(key, side)| {
+                        (
+                            key.to_string(),
+                            origin_of(cx, around, side, false, None, &[]),
+                        )
+                    })
+                    .collect(),
+            );
+        }
+    }
+    out
+}
+
 /// [`origin`] of a side written in a body whose parameters are what the request
-/// sent (`request`) or what the calls of the reach pass (`passed`), and that is
-/// the method `member` where it is one.
+/// sent (`request`) or what the calls of the reach pass (`passed`; for the
+/// unit's own body, what its wrappers hand it), and that is the method `member`
+/// where it is one.
 fn origin_of(
     cx: &Cx<'_>,
     around: &[String],
@@ -4494,7 +4584,10 @@ fn origin_of(
         "caller" => Origin::Caller,
         "request" => Origin::Request,
         "literal" | "setting" => Origin::Fixed,
-        _ if side.starts_with("param") && request => Origin::Request,
+        _ if side.starts_with("param") && request => match handed_for(side, passed) {
+            true => Origin::Caller,
+            false => Origin::Request,
+        },
         _ if side.starts_with("param") => passed_for(side, passed),
         _ => {
             if let Some(dep) = side.strip_prefix("call via ") {
@@ -4701,7 +4794,15 @@ fn side_is_caller_self(cx: &Cx<'_>, side: &str) -> bool {
 /// body (`assert_same_org(rule, user)`, `service.check(document.org_id,
 /// user.org_id)`). What a calling body passes of its own parameters is what it was
 /// passed in turn; a call around a cycle is not read.
-fn passed<'a>(cx: &Cx<'a>, reach: &Reach<'a>, around: &[String]) -> Vec<Vec<Given>> {
+///
+/// The unit's own bodies are passed what the wrappers around the unit hand them
+/// (`handed`, [`handed_by_wrappers`]).
+fn passed<'a>(
+    cx: &Cx<'a>,
+    reach: &Reach<'a>,
+    around: &[String],
+    handed: &[Given],
+) -> Vec<Vec<Given>> {
     // The calls of the reach into the reach: from, to, what is passed.
     type Edge<'a> = (usize, usize, Vec<(&'a str, &'a str)>);
     let mut edges: Vec<Edge<'a>> = Vec::new();
@@ -4726,11 +4827,15 @@ fn passed<'a>(cx: &Cx<'a>, reach: &Reach<'a>, around: &[String]) -> Vec<Vec<Give
     fn into<'a>(
         cx: &Cx<'a>,
         around: &[String],
+        handed: &[Given],
         reach: &Reach<'a>,
         edges: &[Edge<'a>],
         j: usize,
         stack: &mut Vec<usize>,
     ) -> Vec<Given> {
+        if reach.nodes[j].depth == 0 && !reach.nodes[j].quiet {
+            return handed.to_vec();
+        }
         stack.push(j);
         let mut out = Vec::new();
         for (i, _, given) in edges.iter().filter(|e| e.1 == j) {
@@ -4742,11 +4847,11 @@ fn passed<'a>(cx: &Cx<'a>, reach: &Reach<'a>, around: &[String]) -> Vec<Vec<Give
                     if stack.contains(i) || stack.len() > AUTHZ_HOPS {
                         Origin::Unread
                     } else {
-                        let calls = into(cx, around, reach, edges, *i, stack);
+                        let calls = into(cx, around, handed, reach, edges, *i, stack);
                         passed_for(side, &calls)
                     }
                 } else {
-                    origin(cx, around, r, side, &[])
+                    origin(cx, around, r, side, handed)
                 };
                 call.push((key.to_string(), o));
             }
@@ -4756,7 +4861,7 @@ fn passed<'a>(cx: &Cx<'a>, reach: &Reach<'a>, around: &[String]) -> Vec<Vec<Give
         out
     }
     (0..reach.nodes.len())
-        .map(|j| into(cx, around, reach, &edges, j, &mut Vec::new()))
+        .map(|j| into(cx, around, handed, reach, &edges, j, &mut Vec::new()))
         .collect()
 }
 
@@ -5298,7 +5403,8 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
 /// for that parameter ([`origin`], [`passed`]): `listNotes(req.user.id)` in the
 /// handler, `where: { userId }` in `listNotes(userId)`. A parameter the request
 /// chose (`listNotes(req.params.userId)`), or one no call of the reach is seen to
-/// pass, proves nothing. Every filter of the callee under the key must be so, or
+/// pass, proves nothing. In the unit's own body a parameter is the caller's
+/// where the wrappers around the unit hand it one ([`handed_for`]). Every filter of the callee under the key must be so, or
 /// by the caller's own value written there.
 fn filtered_by_passed<'a>(
     cx: &Cx<'a>,
@@ -5324,7 +5430,6 @@ fn filtered_by_passed<'a>(
         && sides.all(|side| {
             side == "caller"
                 || (side.starts_with("param")
-                    && r.depth > 0
                     && origin(cx, &ev.around, r, side, &ev.passed) == Origin::Caller)
         })
 }
@@ -5742,8 +5847,8 @@ fn narrowed(sides: &[(&str, &str)], good: &dyn Fn(&str) -> bool) -> bool {
 ///   ([`NOT_NARROWING`]), is a value of the caller; a value read off rows another
 ///   call of the body selected by the caller (`where: { bookingId: booking.id }`
 ///   after `booking = findFirst({ where: { userId: session.user.id } })`); or,
-///   below the unit's own bodies, what every calling body passed that is one
-///   ([`origin`]);
+///   below the unit's own bodies, what every calling body passed that is one,
+///   and in them what the wrappers around the unit hand ([`origin`]);
 /// - a call of a database client's model handed no filter selects every row
 ///   (`findMany()`, `findMany({ select })`), unless what it is handed is the row it
 ///   writes (`create({ data })`);
@@ -5776,8 +5881,7 @@ fn ts_unscoped_read<'a>(
     };
     let by_caller = |side: &str| {
         side == "caller"
-            || (r.depth > 0
-                && side.starts_with("param")
+            || (side.starts_with("param")
                 && matches!(origin(cx, around, r, side, passed), Origin::Caller | Origin::Row))
     };
     // The callees every filtered call of which is by the caller.

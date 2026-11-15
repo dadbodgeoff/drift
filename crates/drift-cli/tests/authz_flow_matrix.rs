@@ -747,6 +747,7 @@ const TSCONFIG: &str = r#"{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*
 
 const NEXT_SESSION: &str = r#"import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
 import NextAuth from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { pool } from "./data";
@@ -760,7 +761,7 @@ export const authOptions = { providers: [] };
 export async function getSession(): Promise<Session | null> {
   const raw = (await cookies()).get("session")?.value;
   if (!raw) return null;
-  return JSON.parse(Buffer.from(raw, "base64").toString()) as Session;
+  return jwt.verify(raw, process.env.SESSION_SECRET ?? "") as Session;
 }
 
 export async function currentDepot() {

@@ -961,6 +961,10 @@ pub struct Linker<'r> {
     /// The functions that give the caller by what their body returns
     /// ([`drift_core::controls::GIVES_CALLER`]).
     gives_caller: BTreeSet<String>,
+    /// The functions of the repository, by canonical name: what a body takes for
+    /// the caller by the name of one is verified by its body
+    /// ([`Linker::by_name_only`]).
+    repo_functions: BTreeSet<String>,
     /// Those of them that turn away every request with no caller (a check of
     /// their own body that answers "not signed in", or a throw where what a
     /// callee gave is absent: [`drift_core::controls::REFUSES_WITHOUT`]): what
@@ -1345,6 +1349,7 @@ impl<'r> Linker<'r> {
             modules,
             mount_parents: BTreeMap::new(),
             gives_caller: BTreeSet::new(),
+            repo_functions: BTreeSet::new(),
             refuses_without: BTreeSet::new(),
             handed: Vec::new(),
             registers: BTreeMap::new(),
@@ -1611,10 +1616,11 @@ impl<'r> Linker<'r> {
                     .iter()
                     .filter(|s| {
                         s.kind == drift_core::SymbolKind::Function
-                            && s.listed_controls.iter().any(|c| {
+                            && (s.listed_controls.iter().any(|c| {
                                 c == drift_core::controls::RETURNS_CALLER
                                     || c == drift_core::controls::RETURNS_CREDENTIAL
-                            })
+                            }) || (!s.returns_kept.is_empty()
+                                && s.returns_kept.iter().all(|store| kept_for_caller(f, store))))
                     })
                     .map(move |s| format!("{}#{}", f.rel_path, s.name))
             })
@@ -1670,6 +1676,16 @@ impl<'r> Linker<'r> {
             .filter(|name| gives.contains(name))
             .collect();
         self.gives_caller = gives;
+        self.repo_functions = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| s.kind == drift_core::SymbolKind::Function)
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
         // A holder's key is held where some body binds on it a value that is the
         // caller's by its own source, or that such a function gives.
         self.held = files
@@ -2996,6 +3012,76 @@ impl<'r> Linker<'r> {
         own.chain(every).collect()
     }
 
+    /// The function of the repository a body takes for who calls by its name
+    /// alone ([`drift_core::controls::CALLER_FROM`]: `getUser(req)`,
+    /// `getSession(req)`), where its own body does not give the caller
+    /// ([`drift_core::controls::GIVES_CALLER`]): it may hand back a row the
+    /// request names, or what the request sent. A package's accessor is what its
+    /// package documents, and a method of a binding is the binding's.
+    fn named_giver(&self, controls: &[String]) -> Option<String> {
+        controls
+            .iter()
+            .filter_map(|c| c.strip_prefix(drift_core::controls::CALLER_FROM))
+            .find(|c| self.repo_functions.contains(*c) && !self.gives_caller.contains(*c))
+            .map(str::to_string)
+    }
+
+    /// The listed reading of a body that takes for the caller what a function of
+    /// the repository hands back by its name alone ([`Linker::named_giver`]):
+    /// what the body calls the caller's is what that call handed back, and proves
+    /// nothing of who calls. A filter by it is written with the side `named
+    /// <function>` ([`drift_core::controls::FILTER_VALUE`]), a value handed on
+    /// or compared as `call <function>` ([`drift_core::controls::ARG_VALUE`],
+    /// [`drift_core::controls::SIDES`]), and the keys given the caller itself
+    /// ([`drift_core::controls::FILTER_OWN`],
+    /// [`drift_core::controls::FILTER_EVERY`]) are not written. The whole body:
+    /// which of its values came from that call is not kept apart.
+    fn by_name_only(&self, controls: &mut Vec<String>) -> bool {
+        use drift_core::controls::{ARG_VALUE, FILTER_EVERY, FILTER_OWN, FILTER_VALUE, SIDES};
+        let Some(giver) = self.named_giver(controls) else {
+            return false;
+        };
+        let handed = format!("call {giver}");
+        controls.retain(|c| !c.starts_with(FILTER_OWN) && !c.starts_with(FILTER_EVERY));
+        for c in controls.iter_mut() {
+            if c.starts_with(FILTER_VALUE) {
+                if let Some(rest) = c.strip_suffix("\tcaller") {
+                    *c = format!("{rest}\tnamed {giver}");
+                }
+            } else if c.starts_with(ARG_VALUE) {
+                // `<callee>`, then a key and a side for each value handed.
+                let mut parts: Vec<&str> = c.split('\t').collect();
+                let mut changed = false;
+                for side in parts.iter_mut().skip(2).step_by(2) {
+                    if *side == "caller" {
+                        *side = handed.as_str();
+                        changed = true;
+                    }
+                }
+                if changed {
+                    *c = parts.join("\t");
+                }
+            } else if c.starts_with(SIDES) {
+                // The two sides are the last two fields.
+                let mut parts: Vec<&str> = c.split('\t').collect();
+                let n = parts.len();
+                let mut changed = false;
+                for side in parts.iter_mut().skip(n.saturating_sub(2)) {
+                    if *side == "caller" {
+                        *side = handed.as_str();
+                        changed = true;
+                    }
+                }
+                if changed {
+                    *c = parts.join("\t");
+                }
+            }
+        }
+        controls.sort();
+        controls.dedup();
+        true
+    }
+
     pub fn link(&self, f: &LoweredFile, package: String) -> FileFacts {
         let rel = f.rel_path.as_str();
         let specs = &self.specs[rel];
@@ -3979,6 +4065,12 @@ impl<'r> Linker<'r> {
             || !unwraps.is_empty()
             || !listed_calls.is_empty()
             || !built.is_empty()
+            || facts.symbols.iter().any(|s| {
+                self.named_giver(&s.controls).is_some()
+                    || s.members
+                        .iter()
+                        .any(|m| self.named_giver(&m.unread).is_some())
+            })
         {
             let mut measured = facts.clone();
             for (name, line, types) in attrs {
@@ -4062,6 +4154,14 @@ impl<'r> Linker<'r> {
                     s.controls.extend(controls.iter().cloned());
                     s.controls.sort();
                     s.controls.dedup();
+                }
+            }
+            // What a body takes for the caller by a name alone proves nothing of
+            // who calls ([`Linker::by_name_only`]).
+            for s in facts.symbols.iter_mut() {
+                self.by_name_only(&mut s.controls);
+                for m in s.members.iter_mut() {
+                    self.by_name_only(&mut m.unread);
                 }
             }
             for (name, line, args) in measured_args {
@@ -4168,6 +4268,27 @@ fn check_condition(c: &crate::lower::RawBodyCheck) -> String {
     } else {
         String::new()
     }
+}
+
+/// What the keyed store `store` of the file (a top-level declaration) holds under
+/// a key that is the caller's is a value of the caller: every `set` any body of
+/// the file makes on it puts a value of the caller under such a key
+/// ([`crate::lower::RawSymbol::keeps`]), and no other module can fill it (the
+/// file does not export it). A session kept by the token it was made from
+/// (`CACHE.set(JSON.stringify(token), session)`) is that caller's session.
+fn kept_for_caller(f: &LoweredFile, store: &str) -> bool {
+    let mut fills = f
+        .raw
+        .symbols
+        .iter()
+        .flat_map(|s| s.keeps.iter())
+        .filter(|(filled, _)| filled == store)
+        .peekable();
+    fills.peek().is_some()
+        && fills.all(|(_, kept)| *kept)
+        && !f.raw.exports.iter().any(
+            |e| matches!(&e.target, crate::lower::RawExportTarget::Local(local) if local == store),
+        )
 }
 
 #[cfg(test)]
