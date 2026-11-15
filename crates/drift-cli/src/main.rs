@@ -3845,7 +3845,7 @@ fn baseline_findings(
     facts: &RepoFacts,
     inv: &drift_mine::security::Inventory,
 ) -> anyhow::Result<drift_mine::ratchet::Findings> {
-    let mut found = drift_mine::ratchet::findings(inv);
+    let mut found = drift_mine::ratchet::findings(inv, facts);
     let scope = practices::checked_scope(facts, Some("authz"), None, None)?;
     let report = practices::report_with(root, facts, scope, true)?;
     for c in report.concerns.iter().filter(|c| c.id == "authz") {

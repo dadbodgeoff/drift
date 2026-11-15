@@ -71,8 +71,16 @@ fn row_key(e: &EntryRow) -> String {
     entry_key(&e.path, &e.symbol, e.method.as_deref(), e.route.as_deref())
 }
 
-/// Every finding of `inv` ([`KINDS`]).
-pub fn findings(inv: &Inventory) -> Findings {
+/// Every finding of `inv` ([`KINDS`]), read from `facts`.
+pub fn findings(inv: &Inventory, facts: &drift_core::RepoFacts) -> Findings {
+    // A class's risky operations are those of every member together: each is keyed
+    // by the method that holds it, so one more in another method is one more.
+    let classes: BTreeMap<(&str, &str), &drift_core::Symbol> = facts
+        .files
+        .iter()
+        .flat_map(|f| f.symbols.iter().map(move |s| ((f.path.as_str(), s.name.as_str()), s)))
+        .filter(|(_, s)| !s.members.is_empty())
+        .collect();
     let mut out = Findings::new();
     let mut add = |kind: &str, key: String, path: &str, line: u32| {
         out.entry((kind.to_string(), key))
@@ -127,12 +135,32 @@ pub fn findings(inv: &Inventory) -> Findings {
         }
     }
     for s in &inv.sinks {
-        add(
-            "risky",
-            format!("{} in {}#{}", s.kind, s.path, s.symbol),
-            &s.path,
-            s.line,
-        );
+        let members: Vec<&str> = classes
+            .get(&(s.path.as_str(), s.symbol.as_str()))
+            .map(|c| {
+                c.members
+                    .iter()
+                    .filter(|m| m.sinks.contains(&s.kind))
+                    .map(|m| m.name.as_str())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if members.is_empty() {
+            add(
+                "risky",
+                format!("{} in {}#{}", s.kind, s.path, s.symbol),
+                &s.path,
+                s.line,
+            );
+        }
+        for m in members {
+            add(
+                "risky",
+                format!("{} in {}#{}.{m}", s.kind, s.path, s.symbol),
+                &s.path,
+                s.line,
+            );
+        }
     }
     for w in &inv.workflows {
         add(
@@ -317,5 +345,41 @@ mod tests {
                 .iter()
                 .any(|a| a.key.starts_with("a.py"))
         );
+    }
+
+    #[test]
+    fn a_risky_operation_of_a_class_is_keyed_by_its_method() {
+        let member = |name: &str| drift_core::Member {
+            name: name.into(),
+            sinks: vec!["eval".into()],
+            ..Default::default()
+        };
+        let class = |members: Vec<drift_core::Member>| drift_core::RepoFacts {
+            files: vec![drift_core::FileFacts {
+                path: "a.py".into(),
+                symbols: vec![drift_core::Symbol {
+                    name: "Repo".into(),
+                    members,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let inv = Inventory {
+            sinks: vec![crate::security::SinkUse {
+                kind: "eval".into(),
+                path: "a.py".into(),
+                symbol: "Repo".into(),
+                line: 1,
+                fed: false,
+            }],
+            ..Default::default()
+        };
+        let before = findings(&inv, &class(vec![member("find")]));
+        let after = findings(&inv, &class(vec![member("find"), member("create")]));
+        let lock = parse_lock(&render_lock(&before));
+        let r = compare(&after, &lock);
+        assert_eq!(r.added["risky"][0].key, "eval in a.py#Repo.create");
     }
 }
