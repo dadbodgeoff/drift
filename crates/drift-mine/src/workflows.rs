@@ -316,7 +316,16 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
                     detail: uses.to_string(),
                 });
             }
-            if let Some(run) = step.get("run").and_then(Value::as_str) {
+            // A shell step's script, and the JavaScript `actions/github-script` runs:
+            // an expression is replaced in either before it is read as code.
+            let uses = step.get("uses").and_then(Value::as_str).unwrap_or_default();
+            let script = step.get("run").and_then(Value::as_str).or_else(|| {
+                uses.starts_with("actions/github-script@")
+                    .then(|| step.get("with").and_then(|w| w.get("script")))
+                    .flatten()
+                    .and_then(Value::as_str)
+            });
+            if let Some(run) = script {
                 for e in expressions(run) {
                     if let Some(written) = outsiders_text(e) {
                         out.push(WorkflowFinding {
@@ -329,7 +338,6 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
                     }
                 }
             }
-            let uses = step.get("uses").and_then(Value::as_str).unwrap_or_default();
             // Any checkout: an action whose `with.ref` is what it fetches.
             if privileged
                 && uses
@@ -340,11 +348,7 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
                     .get("with")
                     .and_then(|w| w.get("ref"))
                     .and_then(Value::as_str)
-                && expressions(r).iter().any(|e| {
-                    e.contains("pull_request.head")
-                        || e.contains("github.head_ref")
-                        || e.contains("workflow_run.head")
-                })
+                && expressions(r).iter().any(|e| pull_request_code(e))
             {
                 out.push(WorkflowFinding {
                     kind: "untrusted_checkout".into(),
@@ -354,11 +358,40 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
                     detail: r.trim().to_string(),
                 });
             }
+            // A shell step that fetches the pull request's code itself
+            // (`gh pr checkout ${{ github.event.number }}`, `git fetch origin
+            // pull/${{ ... }}/head`).
+            if privileged
+                && let Some(run) = step.get("run").and_then(Value::as_str)
+                && let Some(line) = run.lines().map(str::trim).find(|l| {
+                    (l.contains("gh pr checkout") || l.contains("pull/${{"))
+                        && expressions(l).iter().any(|e| pull_request_code(e))
+                })
+            {
+                out.push(WorkflowFinding {
+                    kind: "untrusted_checkout".into(),
+                    path: rel.to_string(),
+                    line: line_of(text, line),
+                    job: job.clone(),
+                    detail: line.chars().take(160).collect(),
+                });
+            }
         }
     }
     out.sort();
     out.dedup();
     out
+}
+
+/// An expression names the pull request's code: its head (`pull_request.head.sha`,
+/// `github.head_ref`, `workflow_run.head_sha`), or its number, which names it as
+/// `refs/pull/<number>/head` or `/merge`.
+fn pull_request_code(e: &str) -> bool {
+    e.contains("pull_request.head")
+        || e.contains("github.head_ref")
+        || e.contains("workflow_run.head")
+        || e.contains("pull_request.number")
+        || e.contains("github.event.number")
 }
 
 #[cfg(test)]
@@ -388,6 +421,32 @@ mod tests {
         assert!(
             kinds("on:\n  pull_request_target:\n    types: [opened]\njobs:\n  label:\n    steps:\n      - uses: actions/checkout@v4\n")
                 .is_empty()
+        );
+    }
+
+    #[test]
+    fn a_privileged_checkout_of_the_pull_requests_ref_by_number_is_found() {
+        let found = kinds(
+            "on: pull_request_target\njobs:\n  test:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          ref: refs/pull/${{ github.event.pull_request.number }}/merge\n      - run: gh pr checkout ${{ github.event.number }}\n",
+        );
+        assert_eq!(
+            found.iter().filter(|(k, _)| k == "untrusted_checkout").count(),
+            2,
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn text_of_the_event_in_a_github_script_is_found() {
+        let found = kinds(
+            "on: issues\njobs:\n  greet:\n    steps:\n      - uses: actions/github-script@v7\n        with:\n          script: console.log('${{ github.event.issue.title }}')\n",
+        );
+        assert_eq!(
+            found,
+            vec![(
+                "script_injection".to_string(),
+                "github.event.issue.title".to_string()
+            )]
         );
     }
 
