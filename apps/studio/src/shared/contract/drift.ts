@@ -1409,6 +1409,8 @@ export interface Inventory {
   unchecked?: string[];
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
+  /** Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty). */
+  unlisted?: { path: string; line: number }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
 }

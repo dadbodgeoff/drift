@@ -31,7 +31,7 @@ Drift keeps a cache so the second run is fast. It is only a speed-up, never a so
 
 | Layer | Where | Keyed by |
 | --- | --- | --- |
-| Per-file facts | `.drift/cache/facts-v11/ts-l<N>-<version>/` (TypeScript and JavaScript) and `py-l<N>-<version>/` (Python) | the file's content hash, the facts schema (11 at head), the lowering version (TypeScript 72, Python 65 at head) and the Drift version |
+| Per-file facts | `.drift/cache/facts-v11/ts-l<N>-<version>/` (TypeScript and JavaScript) and `py-l<N>-<version>/` (Python) | the file's content hash, the facts schema (11 at head), the lowering version (TypeScript 76, Python 69 at head) and the Drift version |
 | File stamps | `.drift/cache/index-v11-1/`, `.drift/cache/index-py-v11-5/` | size and modification time, so a later scan reads only files that changed |
 | Derived results | `.drift/cache/derived-v1/` | a digest of the scanned facts, the Drift build, every `DRIFT_*` variable and the settings used; holds the practice map, the keys of the security inventory and what mining finds for `drift card`; the six newest files of each kind stay |
 | Hook session state | `.drift/cache/sessions/` | the agent session |

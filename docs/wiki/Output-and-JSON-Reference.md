@@ -153,6 +153,7 @@ The full inventory. `FILES` does not filter it.
 | `left_out` | `{files, dirs}` | Non-production files (examples, samples, demos, playgrounds, integration-test suites) the inventory leaves out, so leaving them out is never silent. |
 | `unchecked` | list of paths (optional) | Files not parsed for lack of stack: their entry points, risky operations and env reads are unknown. |
 | `skipped` | list of `{path, reason}` (optional) | Source files that were not read (too large, a line too long, nested too deep, not UTF-8). |
+| `unlisted` | list of `{path, line}` (optional) | Registrations written as a route is that no listing of entry points accounts for, in production code: a route there may be served and is not in `entry_points`. |
 | `warnings` | list of text (optional) | What could not be read around the inventory, such as a `.drift/conventions.yaml` that does not parse. |
 
 An entry point row:

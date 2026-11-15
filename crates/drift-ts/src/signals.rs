@@ -738,7 +738,7 @@ impl Lowerer<'_> {
             Some(("jsonwebtoken", "sign" | "verify")) => args.get(1).is_some_and(|e| text(e)),
             Some(("express-session" | "cookie-session", _)) => first
                 .and_then(|o| object_value(o, "secret"))
-                .is_some_and(|v| text(v)),
+                .is_some_and(text),
             Some(("cookie-parser", _)) => first.is_some_and(text),
             _ => false,
         };

@@ -2893,7 +2893,15 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         // "GET")`, in a loop over what the body names, after a branch that returns, as
         // one operand of `and`) does not check the others. It is not the unit's
         // authorization: it is found, not proven, and says why.
-        let (conditional, kind) = beside_role(c.conditional, &c.condition, roles_are_callers);
+        // A role beside an owner's comparison only: beside a tenant's, the role lets
+        // its holder into every tenant, which is what a person must look at.
+        let owners = names_owner(&c.reads)
+            && !names_tenant(&c.reads)
+            && !names_tenant(&c.compares);
+        let by_role = roles_are_callers
+            && owners
+            && c.condition == drift_core::not_always::ROLE_ALTERNATIVE;
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role);
         ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let requested = |s: &str| s.starts_with("header:") || s.starts_with("param:");
@@ -2907,7 +2915,12 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         } else {
             format!("claim:{}", c.reads)
         };
-        let what = format!("{}{}", c.source, c.reads);
+        // The role that passes in the comparison's place is part of what the check
+        // is: said with it.
+        let what = match by_role {
+            true => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
+            false => format!("{}{}", c.source, c.reads),
+        };
         // A tenant or an owner counts where the check refuses a caller whose value
         // differs from the one it is compared with ([`refuses_mismatch`]). One that is
         // only asked for (`if not caller.org_id: raise ...`) scopes nothing: the
@@ -3070,12 +3083,19 @@ fn alternative_roles<'a, 'c>(
     any
 }
 
+/// What the instrument of an owner check ends with where a role of the caller's
+/// passes in the comparison's place ([`beside_role`]): the check is "the owner, or
+/// a role", and says so wherever it is named.
+const OR_A_ROLE: &str = " or a role";
+
 /// How a check that may stand beside a role is read
 /// ([`drift_core::not_always::ROLE_ALTERNATIVE`]): where the role is the caller's
 /// (`roles_are_callers`, [`alternative_roles`]) the comparison runs, and decides,
 /// for every request the role does not decide, so it is under no condition. In
-/// every other case it, and the role's own test, are operands of an `and`.
-fn beside_role<'k>(conditional: bool, kind: &'k str, roles_are_callers: bool) -> (bool, &'k str) {
+/// every other case it, and the role's own test, are operands of an `and`. Asked
+/// of an owner's comparison only: a role beside a tenant's comparison lets its
+/// holder into every tenant, and stays found, not proven.
+fn beside_role(conditional: bool, kind: &str, roles_are_callers: bool) -> (bool, &str) {
     use drift_core::not_always::{ALTERNATIVE_ROLE, AND_OPERAND, ROLE_ALTERNATIVE};
     match kind {
         ROLE_ALTERNATIVE if roles_are_callers => (false, ""),
@@ -3138,12 +3158,20 @@ fn raised<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         let refuses = forbidden || c.status == 404;
         // A check only some requests reach proves nothing of the others: found, not
         // proven ([`checks`]).
-        let (conditional, kind) = beside_role(c.conditional, &c.condition, roles_are_callers);
+        let by_role = roles_are_callers
+            && names_owner(&c.reads)
+            && !names_tenant(&c.reads)
+            && !names_tenant(&c.compares)
+            && c.condition == drift_core::not_always::ROLE_ALTERNATIVE;
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, by_role);
         ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let mismatch = refuses_mismatch(&c.op, &c.compares);
         let own = requested(&c.source) && c.reads.is_empty();
-        let what = format!("{}{}", c.source, c.reads);
+        let what = match by_role {
+            true => format!("{}{}{OR_A_ROLE}", c.source, c.reads),
+            false => format!("{}{}", c.source, c.reads),
+        };
         // The value read is the last member of the path: `.caller.org_id` is a
         // tenant, `.get_organization_memberships().data` is not.
         let read = c.reads.rsplit('.').next().unwrap_or_default();

@@ -21,7 +21,7 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 
 | Framework | Language | What is listed | Checked |
 | --- | --- | --- | --- |
-| Express | TS/JS | Routes registered on an app or router (`app.get("/a", ...)`), with the middleware given on the way | run |
+| Express | TS/JS | Routes registered on an app or router (`app.get("/a", ...)`), with the middleware given on the way; also where a function registers them on a router of its module (`function setup() { app.get(...) }`, `ready.then(() => { ... })`), under a condition at the top of a module, or on a parameter a call in the file hands a router (`configure(app)`) | run |
 | Fastify | TS/JS | Routes on an instance; plugin routes with their prefix | run |
 | Hono | TS/JS | Routes on an app, with `basePath` | run |
 | NestJS | TS/JS | Controller routes (`@Controller` with `@Get`, `@Post`, ...); GraphQL resolvers (`@Query`, `@Mutation`, `@Subscription`, `@ResolveField`); schedules (`@Cron`, `@Interval`, `@Timeout`) | run (HTTP, GraphQL query, cron) |
@@ -35,7 +35,7 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | FastAPI | Python | Routes on an app or `APIRouter`, with prefixes from `include_router`, and the dependencies on them | run |
 | Flask | Python | `@app.route` / `@bp.route` and verb decorators, blueprints and their prefixes, hooks (`before_request`) as guards | run |
 | flask-restx, Flask-RESTful | Python | `Resource` classes on namespaces and APIs | run (flask-restx) |
-| Django | Python | `urlpatterns` reachable from `ROOT_URLCONF` (`path`, `re_path`, `include`, `decorator_include`), the admin as one entry point | run |
+| Django | Python | `urlpatterns` reachable from `ROOT_URLCONF` (`path`, `re_path`, `include`, `decorator_include`, and other pattern lists unpacked in place: `[*cycle_urls, *module_urls]`), the admin as one entry point | run |
 | Django REST framework | Python | `APIView`, `ViewSet` and `@api_view` handlers, with their `permission_classes` | run (`APIView`) |
 | Starlette | Python | `Route` tables, with the middleware of mounts and routes | run |
 | Celery, Dramatiq, rq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run (Celery, Dramatiq) |
@@ -44,7 +44,9 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 
 Entry points carry a kind: `http`, `page`, `server_action`, `rpc`, `graphql`, `job`, `cron`, `consumer`, `cli`, `agent_graph`. A `consumer` takes what a broker hands it, so it is listed apart and counted in no authentication or authorization concern; a `cli` entry point is local and never counted as having no guard.
 
-A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr(views, name)`, a router built from a non-literal) is not listed, or is listed with its path shown as `?`; the card and the inventory say so under what is not known.
+A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr(views, name)`, a router built from a non-literal) is not listed, or is listed with its path shown as `?`; the card and the inventory say so under what is not known. In TypeScript and JavaScript, a registration written as a route is (`x.get("/path", (req, res) => ...)`) that no listing accounts for is counted and named by `drift security` (`N registration(s) written as a route is are NOT LISTED`, `unlisted` in `--json`), so a route Drift missed is said, not silent.
+
+**How a route registered inside a function is guarded.** What the function registers before the route, in the order written, runs before it, as in a module. What is registered on the same router anywhere else (by the module, by another function) may run before it or not, depending on when the function is called: where there is any, the route's guard is unknown (`opaque`), never "no guard found". A route the module registers itself, on a router a function or a condition registers a middleware on, is unknown the same way. A middleware of a package that never authenticates (a logger, a body parser) leaves nothing unknown.
 
 ## Frameworks not listed
 
@@ -87,7 +89,7 @@ Readings worth knowing, one sentence each:
 - **Nest providers, ORM configuration and Next.js configuration** Drift cannot follow make the routes they may reach unknown.
 - **A Next.js page under a layout that turns away whoever is not signed in** reads *guard unknown* (`layout_may_redirect`), naming the layout's file and line: a layout and its page render in parallel and a layout is not re-run on client navigation, so Drift does not count it as guarding the page. Check in the page or its data layer. Route handlers and server actions are not covered by layouts.
 - **A webhook that verifies the sender's signature** (svix or standard-webhooks `Webhook.verify`, Stripe `construct_event` / `webhooks.constructEvent`, Slack `SignatureVerifier.is_valid_request`), for every request, with a failure that leaves the handler, is service authentication, listed by `drift security` under *Entry points that verify a webhook signature (no sign-in by design)*. A verification that is swallowed, only logged, made for some requests only, or whose result is ignored reads `unknown` (`signature_not_proven`), never known. Not yet recognised: TypeScript standard-webhooks and Slack verifiers. A constant-time compare (`timingSafeEqual`, `hmac.compare_digest`) is a check only where its answer decides a refusal.
-- **Lowering versions in this build:** Python 68, TypeScript 75 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
+- **Lowering versions in this build:** Python 69, TypeScript 76 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
 
 ### Known gaps stated in the project's documents
 

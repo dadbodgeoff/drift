@@ -597,6 +597,7 @@ drift security [OPTIONS] [FILES]...
 | `--diff-base <REF>` | Report only what the change since the merge base with this ref introduces: entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, and entry points made internet-facing. Facts for a pull request; exit 0 |  |
 | `--no-cache` | Disable the on-disk fact cache |  |
 | `--github` | With --diff-base: GitHub Actions output (notice annotations, and a job summary when GITHUB_STEP_SUMMARY is set) |  |
+| `--fail-on <KINDS>` | With --diff-base: exit 1 when the change introduces any of these, separated by commas: `unguarded-reaching`, `no-guard`, `guard-gap`, `risky`, `leak`, `public`, or `any`. Off unless given |  |
 | `--max <MAX>` | Rows shown per section in text output (entry points with no wrapper or decorator: always the first 50; exceptions per shared guard: the first 10) | `20` |
 
 **Examples**
@@ -626,7 +627,7 @@ With `--diff-base`, a section 'New entry points where Drift found no guard, or c
 
 **Exit codes**
 
-0 on success, including when it lists findings. 2 on error (for example `--diff-base` outside a git work tree or with a ref Git cannot find).
+0 on success, including when it lists findings. 1 only with `--fail-on`, when the change introduces one of the kinds named (standard error says which). 2 on error (for example `--diff-base` outside a git work tree or with a ref Git cannot find, or a `--fail-on` name that is none of the kinds).
 
 **Notes**
 
