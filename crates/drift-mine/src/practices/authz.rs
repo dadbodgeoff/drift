@@ -4542,7 +4542,10 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         // query the body makes of the same rows is given one
         // ([`given_callers`]).
         let callers = match ev.python {
-            false => filtered_by_caller(n, callee, key),
+            false => {
+                filtered_by_caller(n, callee, key)
+                    || (cx.context().since_measured() && filtered_by_passed(cx, r, ev, callee, key))
+            }
             true => {
                 cx.context().since_measured()
                     && !ev.reads_unscoped
@@ -4618,6 +4621,43 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             }
         }
     }
+}
+
+/// TypeScript: the body filters `callee` under `key` by a value read off one of
+/// its own parameters ([`drift_core::controls::FILTER_VALUE`], side `param ...`),
+/// and every call of the body the unit's bodies make passes a value of the caller
+/// for that parameter ([`origin`], [`passed`]): `listNotes(req.user.id)` in the
+/// handler, `where: { userId }` in `listNotes(userId)`. A parameter the request
+/// chose (`listNotes(req.params.userId)`), or one no call of the reach is seen to
+/// pass, proves nothing. Every filter of the callee under the key must be so, or
+/// by the caller's own value written there.
+fn filtered_by_passed<'a>(
+    cx: &Cx<'a>,
+    r: &Reached<'a>,
+    ev: &Evidence,
+    callee: &str,
+    key: &str,
+) -> bool {
+    let facts: &[String] = match r.node {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    let callee = crate::mine::norm_ref(callee);
+    let mut sides = facts
+        .iter()
+        .filter_map(|f| f.strip_prefix(drift_core::controls::FILTER_VALUE))
+        .filter_map(|rest| {
+            let mut parts = rest.split('\t');
+            (parts.next()? == callee && parts.next()? == key).then(|| parts.next())?
+        })
+        .peekable();
+    sides.peek().is_some()
+        && sides.all(|side| {
+            side == "caller"
+                || (side.starts_with("param")
+                    && r.depth > 0
+                    && origin(cx, &ev.around, r, side, &ev.passed) == Origin::Caller)
+        })
 }
 
 /// Python: every call of `callee` the body makes gives `key` the caller itself

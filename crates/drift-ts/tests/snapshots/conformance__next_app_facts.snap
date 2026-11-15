@@ -677,6 +677,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "arg_value:actions/save.ts#saveLink\t#0\tunread",
             "return_jsx"
           ],
           "string_literals": 0,
@@ -1204,6 +1205,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "arg_value:lib/server-db.ts#sql\t#0\tliteral",
             "no_input"
           ],
           "string_literals": 1,

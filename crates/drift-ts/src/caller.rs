@@ -611,6 +611,9 @@ pub(super) struct Flow {
     locals: HashMap<SymbolId, Taint>,
     /// The parameters of the function the walk started on.
     own_params: HashSet<SymbolId>,
+    /// Each of them by its name and its position in the function's parameters (a
+    /// name bound by a pattern has the pattern's position).
+    pub(super) own_at: HashMap<SymbolId, (String, u32)>,
     /// Parameters decorated to receive the caller.
     caller_params: HashSet<SymbolId>,
     /// The parameters of a method whose body is walked by itself
@@ -682,9 +685,15 @@ impl<'l, 's> Collector<'l, 's> {
             self.flow.own_params.insert(s);
             self.flow.params.insert(s, b.name.to_string());
         }
-        for item in &params.items {
+        for (at, item) in params.items.iter().enumerate() {
             let mut found = Vec::new();
             names(&item.pattern, &mut found);
+            if own {
+                for s in &found {
+                    let name = self.l.scoping.symbol_name(*s).to_string();
+                    self.flow.own_at.insert(*s, (name, at as u32));
+                }
+            }
             let decorated = item.decorators.iter().any(|d| {
                 let e = match unwrap_expr(&d.expression) {
                     Expression::CallExpression(c) => &c.callee,

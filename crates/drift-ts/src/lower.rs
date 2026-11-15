@@ -392,6 +392,18 @@ pub struct RawSymbol {
     /// ([`drift_core::controls::REFUSES_WITHOUT`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refuses_without: Vec<Vec<RawRef>>,
+    /// What each call of the body hands its callee, by position: `caller` (a value
+    /// of the caller by its own source), `param <name> #<position>` (read off a
+    /// parameter of the function), `literal`, or `unread`
+    /// ([`drift_core::controls::ARG_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub arg_sides: Vec<(RawRef, Vec<(String, String)>)>,
+    /// The keys of an object given to a callee whose value is read off a parameter
+    /// of the function: the callee, the key as [`Collector::object_keys`] writes
+    /// it, and the parameter (`param <name> #<position>`,
+    /// [`drift_core::controls::FILTER_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_keys: Vec<(RawRef, String, String)>,
     /// [`drift_core::SymbolCalls::param_flows`].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub param_flows: bool,
@@ -445,6 +457,14 @@ pub struct RawMember {
     /// As [`RawSymbol::caller_args`], for this method alone.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caller_args: Vec<(RawRef, Option<RawRef>)>,
+    /// As [`RawSymbol::caller_keys`], [`RawSymbol::arg_sides`] and
+    /// [`RawSymbol::param_keys`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caller_keys: Vec<(RawRef, String)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub arg_sides: Vec<(RawRef, Vec<(String, String)>)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_keys: Vec<(RawRef, String, String)>,
 }
 
 /// A value a practice fact names before resolution: nothing, a fixed text
@@ -3716,6 +3736,9 @@ impl<'s> Lowerer<'s> {
                         unread
                     },
                     caller_args: tmp.caller_args,
+                    caller_keys: tmp.caller_keys,
+                    arg_sides: tmp.arg_sides,
+                    param_keys: tmp.param_keys,
                 }
             })
             .collect()
@@ -4698,6 +4721,8 @@ impl RawSymbol {
             fed_sinks: vec![],
             param_passes: vec![],
             refuses_without: vec![],
+            arg_sides: vec![],
+            param_keys: vec![],
             made_fed_sinks: vec![],
             made_passes: vec![],
             param_flows: false,
@@ -4781,6 +4806,12 @@ struct Collector<'l, 's> {
     returns_not_cred: bool,
     /// [`RawSymbol::refuses_without`].
     refuses_without: BTreeSet<Vec<RawRef>>,
+    /// [`RawSymbol::arg_sides`], [`RawSymbol::param_keys`].
+    arg_sides: BTreeSet<(RawRef, Vec<(String, String)>)>,
+    param_keys: BTreeSet<(RawRef, String, String)>,
+    /// The locals bound to a value read off one parameter of the walk's own
+    /// function, by that parameter.
+    param_locals: HashMap<SymbolId, (String, u32)>,
     order: Vec<RawRef>,
     /// The callees whose call's value the body returns, outside any callback.
     returns_calls: BTreeSet<RawRef>,
@@ -5104,6 +5135,9 @@ impl<'l, 's> Collector<'l, 's> {
             returns_cred: false,
             returns_not_cred: false,
             refuses_without: BTreeSet::new(),
+            arg_sides: BTreeSet::new(),
+            param_keys: BTreeSet::new(),
+            param_locals: HashMap::new(),
             order: Vec::new(),
             returns_calls: BTreeSet::new(),
             skip_decorators: false,
@@ -5711,6 +5745,8 @@ impl<'l, 's> Collector<'l, 's> {
                 sym.refuses_without.push(site);
             }
         }
+        sym.arg_sides.extend(std::mem::take(&mut self.arg_sides));
+        sym.param_keys.extend(std::mem::take(&mut self.param_keys));
         // Every value the function returns was made of a credential the request
         // carries: what it gives is who the credential says, or nothing.
         if self.returns_cred && !self.returns_not_cred {
@@ -5970,6 +6006,84 @@ impl Collector<'_, '_> {
         names.found
     }
 
+    /// The parameter of the walk's own function a value is read off: the parameter
+    /// itself, a member or an item of it (`user.id`, `req.params.id`), or a local
+    /// bound to one. Its name and its position. None for a call's result, a
+    /// literal, or anything built from more than one value.
+    fn param_root(&self, e: &Expression) -> Option<(String, u32)> {
+        let mut at = peel(e);
+        loop {
+            at = match at {
+                Expression::AwaitExpression(a) => peel(&a.argument),
+                Expression::StaticMemberExpression(m) => peel(&m.object),
+                Expression::ComputedMemberExpression(m) => peel(&m.object),
+                Expression::ChainExpression(c) => match &c.expression {
+                    ChainElement::StaticMemberExpression(m) => peel(&m.object),
+                    ChainElement::ComputedMemberExpression(m) => peel(&m.object),
+                    _ => return None,
+                },
+                Expression::Identifier(id) => {
+                    let s = self.symbol_of(id)?;
+                    return self
+                        .flow
+                        .own_at
+                        .get(&s)
+                        .or_else(|| self.param_locals.get(&s))
+                        .cloned();
+                }
+                _ => return None,
+            };
+        }
+    }
+
+    /// What a call hands its callee, argument by argument
+    /// ([`RawSymbol::arg_sides`]): a value of the caller by its own source, a value
+    /// read off a parameter of the function, a literal, or what is not read.
+    fn note_arg_sides(&mut self, callee: &RawRef, it: &CallExpression) {
+        let given: Vec<(String, String)> = it
+            .arguments
+            .iter()
+            .enumerate()
+            .map(|(i, a)| {
+                let side = match a.as_expression() {
+                    None => "unread".to_string(),
+                    Some(e) if self.taint(e).callers_own() => "caller".to_string(),
+                    Some(e) => match self.param_root(e) {
+                        Some((name, at)) => format!("param {name} #{at}"),
+                        None if literal_text(peel(e)).is_some()
+                            || matches!(
+                                peel(e),
+                                Expression::NumericLiteral(_)
+                                    | Expression::BooleanLiteral(_)
+                                    | Expression::NullLiteral(_)
+                            ) =>
+                        {
+                            "literal".to_string()
+                        }
+                        None => "unread".to_string(),
+                    },
+                };
+                (format!("#{i}"), side)
+            })
+            .collect();
+        // A call given nothing but objects, lists and functions written in place
+        // hands on no value by position: what it is given is read by its keys.
+        let written_in_place = it.arguments.iter().all(|a| {
+            matches!(
+                a.as_expression().map(peel),
+                Some(
+                    Expression::ObjectExpression(_)
+                        | Expression::ArrayExpression(_)
+                        | Expression::ArrowFunctionExpression(_)
+                        | Expression::FunctionExpression(_)
+                )
+            )
+        });
+        if !given.is_empty() && !written_in_place && self.arg_sides.len() < MAX_ORDER * 4 {
+            self.arg_sides.insert((callee.clone(), given));
+        }
+    }
+
     /// Records the keys of an object given to `callee` whose value is a value of
     /// the caller by its own source ([`RawSymbol::caller_keys`]), by the path
     /// [`Collector::object_keys`] writes.
@@ -5994,6 +6108,9 @@ impl Collector<'_, '_> {
                     }
                 } else if self.taint(&p.value).callers_own() {
                     self.caller_keys.insert((callee.clone(), key));
+                } else if let Some((name, at)) = self.param_root(&p.value) {
+                    self.param_keys
+                        .insert((callee.clone(), key, format!("param {name} #{at}")));
                 }
             }
         }
@@ -11034,6 +11151,13 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 self.param_passes.insert(r);
             }
         }
+        // What the callee is handed, where it is code a reader can follow.
+        if self.fn_depth >= 1
+            && let Some(r) = self.l.canon_callee(&it.callee)
+            && !matches!(r.base, RawBase::Global(_))
+        {
+            self.note_arg_sides(&r, it);
+        }
         if given_a_made_parameter {
             self.made_fed_sinks
                 .extend(kinds.iter().map(|k| k.to_string()));
@@ -12249,6 +12373,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 self.cred_locals.insert(sym);
             } else if self.credential_read(init) {
                 self.cred_seeds.insert(sym);
+            }
+            if let Some(of) = self.param_root(init) {
+                self.param_locals.insert(sym, of);
             }
         }
         if let Some(init) = &it.init {

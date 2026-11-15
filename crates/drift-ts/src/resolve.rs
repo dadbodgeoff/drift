@@ -2671,6 +2671,46 @@ impl<'r> Linker<'r> {
             .or_insert_with(|| crate::filerouters::framework_of(&self.resolver.root, package))
     }
 
+    /// What a body hands the repository's code and filters its queries by, as the
+    /// controls write it ([`drift_core::controls::ARG_VALUE`],
+    /// [`drift_core::controls::FILTER_VALUE`]): each call of a callee of the
+    /// repository with what every argument is, and each key of an object given to a
+    /// callee whose value is read off a parameter.
+    fn flow_controls(
+        &self,
+        rel: &str,
+        arg_sides: &[(RawRef, Vec<(String, String)>)],
+        param_keys: &[(RawRef, String, String)],
+    ) -> Vec<String> {
+        let mut out: Vec<String> = arg_sides
+            .iter()
+            .map(|(callee, given)| (self.canon(rel, callee), given))
+            .filter(|(c, _)| {
+                !c.starts_with("global#") && !c.starts_with("pkg:") && !c.starts_with("unresolved:")
+            })
+            .map(|(c, given)| {
+                let mut control = format!("{}{c}", drift_core::controls::ARG_VALUE);
+                for (key, side) in given {
+                    control.push('\t');
+                    control.push_str(key);
+                    control.push('\t');
+                    control.push_str(side);
+                }
+                control
+            })
+            .collect();
+        out.extend(param_keys.iter().map(|(callee, key, side)| {
+            format!(
+                "{}{}\t{key}\t{side}",
+                drift_core::controls::FILTER_VALUE,
+                self.canon(rel, callee)
+            )
+        }));
+        out.sort();
+        out.dedup();
+        out
+    }
+
     pub fn link(&self, f: &LoweredFile, package: String) -> FileFacts {
         let rel = f.rel_path.as_str();
         let specs = &self.specs[rel];
@@ -2835,7 +2875,17 @@ impl<'r> Linker<'r> {
                     .iter()
                     .map(|(r, i, k)| format!("{}@{i}:{k}", self.canon(rel, r)))
                     .collect(),
-                controls: s.controls.clone(),
+                // With what the body hands the repository's code and which of its
+                // parameters its filters read ([`Linker::flow_controls`]): facts of
+                // the body as it is written, the same in both readings, and never
+                // a rule (mining leaves these controls out by their prefix).
+                controls: {
+                    let mut controls = s.controls.clone();
+                    controls.extend(self.flow_controls(rel, &s.arg_sides, &s.param_keys));
+                    controls.sort();
+                    controls.dedup();
+                    controls
+                },
                 string_literals: s.string_literals,
                 suppressions: s.suppressions.clone(),
                 reads: s.reads.clone(),
@@ -2928,7 +2978,23 @@ impl<'r> Linker<'r> {
                             .iter()
                             .map(|(r, i, k)| format!("{}@{i}:{k}", self.canon(rel, r)))
                             .collect(),
-                        unread: m.unread.clone(),
+                        unread: {
+                            // With what the method's own body filters by and hands
+                            // on ([`Linker::flow_controls`]), and the keys it
+                            // filters by a value of the caller.
+                            let mut unread = m.unread.clone();
+                            unread.extend(self.flow_controls(rel, &m.arg_sides, &m.param_keys));
+                            unread.extend(m.caller_keys.iter().map(|(callee, key)| {
+                                format!(
+                                    "{}{}\t{key}\tcaller",
+                                    drift_core::controls::FILTER_VALUE,
+                                    self.canon(rel, callee)
+                                )
+                            }));
+                            unread.sort();
+                            unread.dedup();
+                            unread
+                        },
                         caller_args: self.caller_args(rel, &m.caller_args),
                         // Python records these for a method; TypeScript does not yet.
                         scoped_queries: vec![],

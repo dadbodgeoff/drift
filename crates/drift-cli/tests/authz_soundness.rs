@@ -2114,9 +2114,11 @@ app.get("/plaindrizzle", requireUser, async (req, res) => {
 
 /// [STRICT] `prisma.rule.findMany({ where: { orgId: user.orgId } })` in a method of
 /// an injected NestJS service: the TypeScript facts held no keys for a method's
-/// calls, and the route read `none`. A method now records the keys its calls are
-/// given, so the filter is found (not proven: where its value comes from is not in
-/// the facts). A method that only counts is still a `none`.
+/// calls, and the route read `none`. A method records the keys its calls are
+/// given, and which of its parameters each value is read off; the controller
+/// records what it hands the method (`this.rules.list(req.user)`: the caller). So
+/// the filter is by the caller's tenant: known. A method that only counts is
+/// still a `none`.
 #[test]
 fn a_query_a_nest_service_filters_by_a_tenant_key_is_found() {
     let dir = repo(&[
@@ -2177,11 +2179,7 @@ export class RulesService {
     let c = concern(dir.path(), "authz");
     assert_eq!(
         said(&c, "GET /rules"),
-        (
-            "unknown",
-            Some("check_not_proven"),
-            Some("sides_not_caller_and_resource")
-        ),
+        ("known", Some("tenancy_filter:where.orgId (session)"), None),
     );
     assert_eq!(said(&c, "GET /rules/count"), ("none", None, None),);
 }
@@ -3885,7 +3883,20 @@ export class RulesController {
     ];
     for (what, dir) in &cases {
         let c = concern(dir.path(), "authz");
-        assert_eq!(said(&c, "GET /rules").0, "unknown", "{what}");
+        // Where the facts follow the call (the model's own method, resolved by the
+        // property's type), the value the query is filtered by is followed too:
+        // the controller hands the service the caller, and the service filters by
+        // the caller's tenant. Everywhere else: unknown, never none.
+        // Where the facts follow the call (a model's own method resolved by the
+        // property's type, a service the controller is given under a type that is
+        // imported as one), the value the query is filtered by is followed too:
+        // the controller hands the service the caller, and the service filters by
+        // the caller's tenant. Everywhere else: unknown, never none.
+        let want = match *what {
+            "a model typed `typeof Rule`" | "a service typed with `import type`" => "known",
+            _ => "unknown",
+        };
+        assert_eq!(said(&c, "GET /rules").0, want, "{what}");
     }
     // The control: a service that reads every row, through a property that holds a
     // plain value, is a recorded absence still.
