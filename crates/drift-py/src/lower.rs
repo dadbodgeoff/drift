@@ -2590,6 +2590,8 @@ pub(crate) struct Collector<'l, 't> {
     /// give, and whether one gives anything but `False` or a call
     /// ([`drift_core::controls::RETURNS_ONLY`]).
     held: BTreeSet<(RawHeld, Vec<RawRef>)>,
+    /// [`RawSymbol::rows`].
+    rows: BTreeSet<(RawRef, RawRows)>,
     /// A rejection that counts was a response the body returns, and one that was
     /// raised or made by a call (`abort(401)`), for
     /// [`drift_core::controls::RETURNS_REJECTION`].
@@ -2710,6 +2712,7 @@ impl<'l, 't> Collector<'l, 't> {
             returns_via: Vec::new(),
             returns_else: false,
             held: BTreeSet::new(),
+            rows: BTreeSet::new(),
             rejects_by_return: false,
             rejects_otherwise: false,
             returns_401: false,
@@ -2813,6 +2816,7 @@ impl<'l, 't> Collector<'l, 't> {
         }
         if sym.kind == SymbolKind::Function {
             sym.held = std::mem::take(&mut self.held).into_iter().collect();
+            sym.rows = std::mem::take(&mut self.rows).into_iter().collect();
         }
         sym.forwards.extend(self.forwards);
         sym.body_checks.extend(self.body_checks);
@@ -3806,6 +3810,7 @@ impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
         self.note_fed_binding(stmt);
         self.note_sql_binding(stmt);
+        self.note_rows(stmt);
         if Lowerer::secret_binding(stmt) {
             self.since_sinks.insert(signals::kind::SECRET.to_string());
         }

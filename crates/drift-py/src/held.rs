@@ -285,7 +285,12 @@ impl Walk<'_, '_, '_> {
             Expr::Await(a) => self.lookup(&a.value, state),
             Expr::Named(n) => self.lookup(&n.value, state),
             Expr::Name(n) => state.bound.get(n.id.as_str()).cloned(),
-            Expr::Call(c) => self.callee(&c.func, state),
+            // A query that looks the caller up in what the request names, written
+            // on a value the facts give no name (a session a dependency gives): by
+            // the rows it reads.
+            Expr::Call(c) => self
+                .callee(&c.func, state)
+                .or_else(|| self.c.caller_lookup(e)),
             _ => None,
         }
     }

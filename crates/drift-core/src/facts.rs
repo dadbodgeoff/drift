@@ -1778,6 +1778,28 @@ pub mod controls {
     /// 69) where some site has something that held; on a method the same strings
     /// are in [`crate::facts::Member::unread`]. Mining never proposes it.
     pub const HANDED_AFTER: &str = "handed_after:";
+    /// What starts the control that says which rows a statement of the body reads
+    /// and by what: `rows:<model>`, canonical, then tab-separated `own`, the key and
+    /// the side ([`OWN_SIDE`]) where the statement filters them by the caller
+    /// itself or the key of the caller's record (`select(Item).where(Item.owner_id
+    /// == current_user.id)`, `Seat.objects.filter(holder=request.user)`); `from`
+    /// and the callees or values a filter of it reads its value off
+    /// (`Comment.objects.filter(doc=doc)`); or `any` for anything else (`select(
+    /// Item)`, `session.get(Item, item_id)`). A model is what a statement names
+    /// where rows are read: the class a query method is called on, or a class handed
+    /// to a call. A filter under an `or` or a negation narrows nothing and is not
+    /// read. Recorded by Python (lowering 69); on a method the same strings are in
+    /// [`crate::facts::Member::unread`]. Mining never proposes it.
+    pub const ROWS: &str = "rows:";
+    /// What ends an `own` entry of [`ROWS`] whose statement also filters by a value
+    /// read off a parameter or off what the request sent: the caller is looked up
+    /// in what the request names.
+    pub const ROWS_ASKED: &str = "asked";
+    /// What ends the callee of a site ([`HANDED_AFTER`]) that is such a lookup
+    /// written on a value the facts give no name (`db.query(Seat).filter_by(
+    /// holder_id=user.id, space=space).first()` on a session a dependency gives):
+    /// the model, then this.
+    pub const LOOKUP_OF: &str = "()lookup";
     /// A function whose every `return` that gives a value gives what a call or a
     /// lookup made of a credential the request carries: its `Cookie` or
     /// `Authorization` header, or the cookies a framework parsed

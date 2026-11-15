@@ -822,6 +822,19 @@ fn read_unit<'a>(
                 ev.unknown(UnknownReason::NotFollowed, format!("param:{p}"));
             }
         }
+        // A refusal of a body that the map cannot name (`if user == current_user:
+        // raise HTTPException(403)` behind a role guard) turns more requests away,
+        // never fewer: beside a check every request passes, it changes nothing of
+        // what is proven. Alone, it may be the authorization: unknown, as before.
+        if ev.uses.iter().any(|u| {
+            !matches!(
+                u.mechanism.as_str(),
+                "tenancy_requested" | "tenancy_literal"
+            )
+        }) {
+            ev.unknowns
+                .retain(|(reason, _)| *reason != UnknownReason::Unclassified);
+        }
         ev.unknowns.sort();
         if let Some((reason, instrument)) = ev.unknowns.into_iter().next() {
             return unknown(reason, &instrument);
@@ -2841,7 +2854,18 @@ fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
     // The result of a query that narrows by what it is given (not one that leaves
     // out what matches), every call of which looks the caller up in what the
     // request names.
+    let census = row_census(cx, facts);
     let lookup = |result: &str| {
+        // A lookup the lowering read off the rows of a model
+        // ([`drift_core::controls::LOOKUP_OF`]): every statement of the body that
+        // reads that model is one, by a caller the facts prove.
+        if let Some(model) = result.strip_suffix(drift_core::controls::LOOKUP_OF) {
+            let mut reads = census.iter().filter(|(m, _)| *m == model).peekable();
+            return reads.peek().is_some()
+                && reads.all(|(_, by)| {
+                    matches!(by, RowsBy::Own(_, side, true) if side_is_caller_self(cx, side))
+                });
+        }
         let mut of = queries
             .iter()
             .filter(|(q, _)| {
@@ -4493,6 +4517,30 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             }
         }
     }
+    // Python: the rows a statement reads by the caller itself, whatever the key is
+    // called and however the query is written ([`drift_core::controls::ROWS`]:
+    // `select(Item).where(Item.owner_id == current_user.id)`), where every read of
+    // the unit is by the caller ([`reads_unscoped`]).
+    if ev.python && cx.context().since_measured() && !ev.reads_unscoped {
+        let facts: &[String] = match n {
+            Node::Sym(s) => &s.controls,
+            Node::Member(m) => &m.unread,
+        };
+        for (_, by) in row_census(cx, facts) {
+            // (Under a key named for a tenant the filter is the tenant's, read
+            // above by where its value comes from.)
+            if let RowsBy::Own(key, side, _) = by
+                && side_is_caller_self(cx, side)
+                && !names_tenant(key)
+            {
+                ev.add(
+                    "owner_filter",
+                    &format!("{key} (session)"),
+                    VariantSource::Usage,
+                );
+            }
+        }
+    }
 }
 
 /// Python: every call of `callee` the body makes gives `key` the caller itself
@@ -4531,6 +4579,51 @@ fn query_rows<'c>(cx: &Cx<'_>, callee: &'c str) -> Option<&'c str> {
         && !common::external(callee)
         && data_call(cx, &format!("{module}#{model}")))
     .then_some(rows)
+}
+
+/// By what a statement of a body reads the rows of a model
+/// ([`drift_core::controls::ROWS`]).
+enum RowsBy<'a> {
+    /// By the caller itself, under this key; the side as written; and whether the
+    /// statement also filters by what the request names
+    /// ([`drift_core::controls::ROWS_ASKED`]).
+    Own(&'a str, &'a str, bool),
+    /// By a value read off what these gave.
+    From(Vec<&'a str>),
+    Any,
+}
+
+/// `class` is a model of the repository: a class built on a data library, or on a
+/// base of the repository that a data library made (`class Seat(Base)` with `Base
+/// = declarative_base()`).
+fn is_model(cx: &Cx<'_>, class: &str) -> bool {
+    let ctx = cx.context();
+    ctx.definition(class)
+        .is_some_and(|d| d.kind == SymbolKind::Class)
+        && (data_call(cx, class) || ctx.ancestors(class).iter().any(|a| data_call(cx, a)))
+}
+
+/// The rows a body reads, of the models of the repository
+/// ([`drift_core::controls::ROWS`]).
+fn row_census<'a>(cx: &Cx<'_>, facts: &'a [String]) -> Vec<(&'a str, RowsBy<'a>)> {
+    facts
+        .iter()
+        .filter_map(|f| f.strip_prefix(drift_core::controls::ROWS))
+        .filter_map(|rest| {
+            let mut parts = rest.split('\t');
+            let model = parts.next()?;
+            let by = match parts.next()? {
+                "own" => RowsBy::Own(
+                    parts.next()?,
+                    parts.next()?,
+                    parts.next() == Some(drift_core::controls::ROWS_ASKED),
+                ),
+                "from" => RowsBy::From(parts.collect()),
+                _ => RowsBy::Any,
+            };
+            is_model(cx, model).then_some((model, by))
+        })
+        .collect()
 }
 
 /// Methods of a query, by which a call on a value the facts do not resolve (a
@@ -4637,8 +4730,41 @@ fn reads_unscoped<'a>(cx: &Cx<'a>, r: &Reached<'a>, around: &[String], passed: &
                 })
         })
     };
-    starts.iter().any(|(rows, callee)| {
+    if starts.iter().any(|(rows, callee)| {
         !scoped.contains(rows) && !every(callee, &|given| callers(given) || derived(given))
+    }) {
+        return true;
+    }
+    // The rows the body's statements read by naming a model
+    // ([`drift_core::controls::ROWS`]: `select(Item).where(...)`,
+    // `session.get(Item, item_id)`), where the calls above do not say: each by the
+    // caller itself, or by a value read off rows that are.
+    let census = row_census(cx, facts);
+    let by_call = |model: &str| {
+        starts
+            .iter()
+            .any(|(rows, _)| rows.strip_prefix(model).is_some_and(|x| x.starts_with('.')))
+    };
+    let own = |model: &str| {
+        census
+            .iter()
+            .filter(|(m, _)| *m == model)
+            .all(|(_, by)| matches!(by, RowsBy::Own(_, side, _) if side_is_caller_self(cx, side)))
+            || scoped.iter().any(|rows| {
+                rows.strip_prefix(model).is_some_and(|x| x.starts_with('.'))
+            })
+    };
+    census.iter().any(|(model, by)| {
+        !by_call(model)
+            && match by {
+                RowsBy::Own(_, side, _) => !side_is_caller_self(cx, side),
+                RowsBy::From(givers) => !givers.iter().all(|g| {
+                    census.iter().any(|(m, _)| {
+                        (g == m || g.strip_prefix(m).is_some_and(|x| x.starts_with('.'))) && own(m)
+                    })
+                }),
+                RowsBy::Any => true,
+            }
     })
 }
 

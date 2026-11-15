@@ -1190,6 +1190,48 @@ impl<'r> Linker<'r> {
         }
     }
 
+    /// The rows a body reads as the controls write them
+    /// ([`drift_core::controls::ROWS`]), of what resolves to something of the
+    /// repository.
+    fn rows(&self, fi: usize, rows: &[(RawRef, RawRows)]) -> BTreeSet<String> {
+        let mine = |c: &str| {
+            !c.starts_with("global#") && !c.starts_with("unresolved:") && !c.starts_with("pkg:")
+        };
+        rows.iter()
+            .filter_map(|(model, by)| {
+                let model = self.canon(fi, model);
+                // A class of the repository: a value handed to a call
+                // (`app.register_blueprint(bp)`) is no rows.
+                if !mine(&model)
+                    || !self
+                        .symbol_at(&model)
+                        .is_some_and(|(_, s)| s.kind == drift_core::SymbolKind::Class)
+                {
+                    return None;
+                }
+                let by = match by {
+                    RawRows::Own(key, side, asked) => format!(
+                        "own\t{key}\t{}{}",
+                        self.side(fi, side),
+                        match asked {
+                            true => format!("\t{}", drift_core::controls::ROWS_ASKED),
+                            false => String::new(),
+                        }
+                    ),
+                    RawRows::From(refs) => format!(
+                        "from\t{}",
+                        refs.iter()
+                            .map(|r| self.canon(fi, r))
+                            .collect::<Vec<_>>()
+                            .join("\t")
+                    ),
+                    RawRows::Any => "any".to_string(),
+                };
+                Some(format!("{}{model}\t{by}", drift_core::controls::ROWS))
+            })
+            .collect()
+    }
+
     /// The sites of a body as the controls write them
     /// ([`drift_core::controls::HANDED_AFTER`]): one for each site, the callees
     /// that held there canonical and tab-separated; what resolves to nothing of the
@@ -4781,6 +4823,7 @@ impl<'r> Linker<'r> {
                                 .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
                         );
                         c.extend(self.held(fi, &s.held));
+                        c.extend(self.rows(fi, &s.rows));
                         // What every return of the function reads its value off
                         // ([`drift_core::controls::RETURNS_GIVEN`]): said only where
                         // each dependency stands for something here.
@@ -4964,6 +5007,7 @@ impl<'r> Linker<'r> {
                                         }),
                                 );
                                 unread.extend(self.held(fi, &m.held));
+                                unread.extend(self.rows(fi, &m.rows));
                                 unread.extend(self.origins(
                                     fi,
                                     &m.check_sides,

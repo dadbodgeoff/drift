@@ -1828,9 +1828,11 @@ fn nothing_becomes_known_by_a_value_of_the_caller_in_use() {
     assert_eq!(read("two-request-values").0, "unknown");
     assert_eq!(read("one-arm").0, "unknown");
     assert_eq!(read("one-arm-drizzle").0, "unknown");
-    // (Found, and not proven where the facts do not say whose the session's side
-    // is: unknown before this rule and after it.)
-    assert_eq!(read("checked").0, "unknown");
+    // The row's tenant against the session's is proven, as it was. What made the
+    // route unknown was the other half of the test (`!rule`, a 403 on what names
+    // neither a role, a tenant nor an owner): beside a check every request passes,
+    // a refusal the map cannot name turns more requests away, never fewer.
+    assert_eq!(read("checked").0, "known");
     assert_eq!(read("role").0, "known");
 }
 

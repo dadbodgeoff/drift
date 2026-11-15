@@ -28,6 +28,18 @@ pub struct RawRef {
     pub member: String,
 }
 
+/// By what a statement reads the rows of a model ([`RawSymbol::rows`]).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawRows {
+    /// Filtered by the caller itself or the key of the caller's record, under
+    /// this key; and whether another filter of the statement is by a value read
+    /// off a parameter or off what the request sent.
+    Own(String, RawSide, bool),
+    /// Filtered by a value read off what these gave.
+    From(Vec<RawRef>),
+    Any,
+}
+
 /// What a site of a body is ([`RawSymbol::held`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum RawHeld {
@@ -206,6 +218,10 @@ pub struct RawSymbol {
     /// ([`drift_core::controls::HANDED_AFTER`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub held: Vec<(RawHeld, Vec<RawRef>)>,
+    /// The rows each statement of the body reads, by the class it names, and by
+    /// what ([`drift_core::controls::ROWS`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<(RawRef, RawRows)>,
     /// The risky operations of the body that are given a value read off a
     /// parameter of the function or off what the request sent
     /// ([`drift_core::controls::SINK_FED`]), by kind.
@@ -727,6 +743,9 @@ pub struct RawMember {
     /// As [`RawSymbol::held`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub held: Vec<(RawHeld, Vec<RawRef>)>,
+    /// As [`RawSymbol::rows`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<(RawRef, RawRows)>,
     /// The method's own checks that turn the caller away.
     #[serde(default)]
     pub body_checks: Vec<RawBodyCheck>,
@@ -1334,6 +1353,7 @@ impl RawSymbol {
             since_sinks: vec![],
             returns_given: vec![],
             held: vec![],
+            rows: vec![],
             fed_sinks: vec![],
             param_passes: vec![],
             order: vec![],

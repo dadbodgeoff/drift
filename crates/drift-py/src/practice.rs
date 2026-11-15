@@ -175,6 +175,150 @@ const FILTER_CALLS: &[&str] = &[
     "where",
 ];
 
+/// What one expression reads of rows ([`Collector::note_rows`]).
+struct RowsRead<'c, 'a, 't> {
+    c: &'c Collector<'a, 't>,
+    /// Inside what narrows nothing: an `or`, a negation.
+    narrowing: usize,
+    /// The classes named where rows are read.
+    models: Vec<RawRef>,
+    /// A filter by the caller itself: its key and the side.
+    own: Option<(String, RawSide)>,
+    /// A filter by a value read off a parameter or off what the request sent.
+    asked: bool,
+    /// What the filters that are by no caller read their values off.
+    from: Vec<RawRef>,
+}
+
+impl RowsRead<'_, '_, '_> {
+    /// A class the expression names: a bare or dotted name that is no local of a
+    /// function and no built-in.
+    fn class(&self, e: &Expr) -> Option<RawRef> {
+        matches!(e, Expr::Name(_) | Expr::Attribute(_))
+            .then(|| self.c.canon(e))
+            .flatten()
+            .filter(|r| !matches!(r.base, RawBase::Global(_)))
+    }
+
+    fn filter(&mut self, key: &str, value: &Expr) {
+        if self.narrowing > 0 {
+            return;
+        }
+        let side = self.c.side(value);
+        let caller = matches!(
+            side,
+            RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
+        ) && self.c.caller_self(value);
+        match side {
+            _ if caller => {
+                if self.own.is_none() {
+                    self.own = Some((key.to_string(), RawSide::Own(Box::new(side))));
+                }
+            }
+            RawSide::Call(r) | RawSide::Value(r) => {
+                if !self.from.contains(&r) {
+                    self.from.push(r);
+                }
+            }
+            RawSide::Request | RawSide::Param(..) => self.asked = true,
+            _ => {}
+        }
+    }
+}
+
+impl<'x> Visitor<'x> for RowsRead<'_, '_, '_> {
+    fn visit_expr(&mut self, e: &'x Expr) {
+        match e {
+            Expr::Lambda(_) => {}
+            Expr::BinOp(b) if matches!(b.op, ast::Operator::BitOr) => {
+                self.narrowing += 1;
+                visitor::walk_expr(self, e);
+                self.narrowing -= 1;
+            }
+            Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Invert | ast::UnaryOp::Not) => {
+                self.narrowing += 1;
+                visitor::walk_expr(self, e);
+                self.narrowing -= 1;
+            }
+            Expr::Call(c) => {
+                let name = last_name(&c.func);
+                // The class a query method is called on (`Item.objects.filter(...)`,
+                // `Item.query.all()`), read where the method is one a query has.
+                if let Expr::Attribute(_) = c.func.as_ref()
+                    && name
+                        .is_some_and(|n| RELATION_METHODS.contains(&n) || FILTER_CALLS.contains(&n))
+                {
+                    let mut root = c.func.as_ref();
+                    while let Expr::Attribute(a) = root {
+                        root = &a.value;
+                    }
+                    if let Some(model) = self.class(root)
+                        && !self.models.contains(&model)
+                    {
+                        self.models.push(model);
+                    }
+                }
+                // A class handed to a call that is no built-in (`select(Item)`,
+                // `session.get(Item, item_id)`, `db.query(Item)`).
+                let builtin = matches!(c.func.as_ref(), Expr::Name(_))
+                    && self
+                        .c
+                        .canon(&c.func)
+                        .is_none_or(|r| matches!(r.base, RawBase::Global(_)));
+                if !builtin {
+                    for a in &c.arguments.args {
+                        if let Some(model) = self.class(a)
+                            && !self.models.contains(&model)
+                        {
+                            self.models.push(model);
+                        }
+                    }
+                }
+                let widens = matches!(name, Some("Q" | "or_" | "not_" | "exclude"));
+                let filters = name.is_some_and(|n| FILTER_CALLS.contains(&n) || n == "and_");
+                if filters && !widens {
+                    for k in &c.arguments.keywords {
+                        if let Some(key) = &k.arg {
+                            self.filter(key.as_str(), &k.value);
+                        }
+                    }
+                    for x in &c.arguments.args {
+                        if let Expr::Compare(cmp) = x
+                            && cmp.ops.len() == 1
+                            && matches!(cmp.ops[0], ast::CmpOp::Eq)
+                        {
+                            let (l, r) = (cmp.first_operand(), cmp.second_operand());
+                            // The column is the side that is a member of a class.
+                            let column = |e: &Expr| match e {
+                                Expr::Attribute(a) => {
+                                    self.class(&a.value).is_some().then(|| a.attr.to_string())
+                                }
+                                Expr::Call(call) => match call.arguments.args.first() {
+                                    // `col(Item.owner_id)`
+                                    Some(Expr::Attribute(a)) if call.arguments.args.len() == 1 => {
+                                        self.class(&a.value).is_some().then(|| a.attr.to_string())
+                                    }
+                                    _ => None,
+                                },
+                                _ => None,
+                            };
+                            if let Some(key) = column(l) {
+                                self.filter(&key, r);
+                            } else if let Some(key) = column(r) {
+                                self.filter(&key, l);
+                            }
+                        }
+                    }
+                }
+                self.narrowing += usize::from(widens);
+                visitor::walk_expr(self, e);
+                self.narrowing -= usize::from(widens);
+            }
+            _ => visitor::walk_expr(self, e),
+        }
+    }
+}
+
 /// A traced log receiver ([`Collector::log_recv`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum LogRecv {
@@ -2577,9 +2721,17 @@ impl<'t> Collector<'_, 't> {
         if self.caller_value(e).is_none() {
             return false;
         }
-        // What the key is read off, where it is the key of a record.
+        // What the key is read off, where it is the key of a record: `.id`, `.pk`,
+        // and the same as an item (`user["id"]`, or `claims["sub"]`, the subject a
+        // token names).
         let owner = match e {
             Expr::Attribute(a) if matches!(a.attr.as_str(), "id" | "pk") => a.value.as_ref(),
+            Expr::Subscript(sub)
+                if matches!(sub.slice.as_ref(), Expr::StringLiteral(k)
+                    if matches!(k.value.to_str(), "id" | "pk" | "sub")) =>
+            {
+                sub.value.as_ref()
+            }
             e => e,
         };
         match owner {
@@ -3523,6 +3675,80 @@ impl<'t> Collector<'_, 't> {
             }
         }
         out
+    }
+
+    /// Notes the rows a statement reads and by what ([`RawSymbol::rows`]): of each
+    /// expression the statement itself evaluates (not those of the statements
+    /// inside it), the classes it names where rows are read, and whether a filter of
+    /// it is by the caller itself.
+    pub(crate) fn note_rows(&mut self, stmt: &Stmt) {
+        if self.frames.is_empty() {
+            return;
+        }
+        let mut heads: Vec<&Expr> = Vec::new();
+        match stmt {
+            Stmt::Assign(a) => heads.push(&a.value),
+            Stmt::AnnAssign(a) => heads.extend(a.value.as_deref()),
+            Stmt::AugAssign(a) => heads.push(&a.value),
+            Stmt::Return(r) => heads.extend(r.value.as_deref()),
+            Stmt::Expr(x) => heads.push(&x.value),
+            Stmt::If(i) => {
+                heads.push(&i.test);
+                heads.extend(i.elif_else_clauses.iter().filter_map(|c| c.test.as_ref()));
+            }
+            Stmt::While(w) => heads.push(&w.test),
+            Stmt::For(f) => heads.push(&f.iter),
+            Stmt::With(w) => heads.extend(w.items.iter().map(|i| &i.context_expr)),
+            Stmt::Assert(a) => heads.push(&a.test),
+            Stmt::Raise(r) => heads.extend(r.exc.as_deref()),
+            _ => {}
+        }
+        for e in heads {
+            for row in self.rows_of(e) {
+                self.rows.insert(row);
+            }
+        }
+    }
+
+    /// The rows one expression reads, by the classes it names, and by what.
+    fn rows_of(&self, e: &Expr) -> Vec<(RawRef, RawRows)> {
+        let mut read = RowsRead {
+            c: self,
+            narrowing: 0,
+            models: Vec::new(),
+            own: None,
+            asked: false,
+            from: Vec::new(),
+        };
+        read.visit_expr(e);
+        let (models, own, asked, from) = (read.models, read.own, read.asked, read.from);
+        models
+            .into_iter()
+            .map(|model| {
+                let by = match (&own, from.is_empty()) {
+                    (Some((key, side)), _) => RawRows::Own(key.clone(), side.clone(), asked),
+                    (None, false) => RawRows::From(from.clone()),
+                    (None, true) => RawRows::Any,
+                };
+                (model, by)
+            })
+            .collect()
+    }
+
+    /// `e` looks the caller up in what the request names, on rows of one class: a
+    /// query filtered by the caller itself and by a value read off a parameter or
+    /// off what the request sent ([`drift_core::controls::LOOKUP_OF`]). The class,
+    /// marked as that lookup: what a site of the body is reached after
+    /// ([`super::held`]) where the query is written on a value the facts give no
+    /// name.
+    pub(crate) fn caller_lookup(&self, e: &Expr) -> Option<RawRef> {
+        match self.rows_of(e).as_slice() {
+            [(model, RawRows::Own(_, _, true))] => Some(RawRef {
+                base: model.base.clone(),
+                member: format!("{}{}", model.member, drift_core::controls::LOOKUP_OF),
+            }),
+            _ => None,
+        }
     }
 
     /// Data-access calls whose filter names a tenant-like key ([`RawScoped`]): keyword
