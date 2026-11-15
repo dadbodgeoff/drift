@@ -608,6 +608,20 @@ fn read_unit<'a>(
                 .iter()
                 .zip(&passed_to)
                 .any(|(r, passed)| !r.quiet && reads_unscoped(cx, r, &ev.around, passed));
+        // TypeScript: the first query of the unit's own work that selects rows by
+        // nothing of the caller ([`ts_unscoped_read`]).
+        if !ev.python && cx.context().since_measured() {
+            ev.unscoped_read = reach
+                .nodes
+                .iter()
+                .zip(&passed_to)
+                // (What the callee the unit signs the caller in by reads, and what
+                // that callee calls, is how the caller is identified: a session
+                // looked up by its token is no row of the route's.)
+                .filter(|(r, _)| !r.quiet && !r.signs_in)
+                .filter_map(|(r, passed)| ts_unscoped_read(cx, r, &ev.around, passed))
+                .min();
+        }
         for (i, r) in reach.nodes.iter().enumerate() {
             ev.passed = std::mem::take(&mut passed_to[i]);
             // [STRICT]: what a body only some requests reach checks is found, not
@@ -1299,6 +1313,10 @@ struct Evidence {
     /// ([`reads_unscoped`]): a query filtered by the caller beside it scopes that
     /// query, not what the route reads.
     reads_unscoped: bool,
+    /// TypeScript: the first query of the reach, by callee, that selects rows by
+    /// nothing of the caller ([`ts_unscoped_read`]): a query filtered by the
+    /// caller beside it scopes that query, not what the route reads.
+    unscoped_read: Option<String>,
     /// The unit's own bodies and the dependencies around it, by canonical name:
     /// where an object whose method the unit runs may be built
     /// ([`caller_attribute`]).
@@ -4765,8 +4783,31 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         // ([`given_callers`]).
         let callers = match ev.python {
             false => {
-                filtered_by_caller(n, callee, key)
-                    || (cx.context().since_measured() && filtered_by_passed(cx, r, ev, callee, key))
+                let by_caller = filtered_by_caller(n, callee, key)
+                    || (cx.context().since_measured() && filtered_by_passed(cx, r, ev, callee, key));
+                // [STRICT]: filtered by the caller, and another query of the unit
+                // selects rows by nothing of the caller: this query is scoped, what
+                // the route reads is not proven to be.
+                if by_caller
+                    && (names_tenant(last) || names_owner(last))
+                    && let Some(other) = ev.unscoped_read.clone()
+                {
+                    let mechanism = match names_tenant(last) {
+                        true => "tenancy_filter",
+                        false => "owner_filter",
+                    };
+                    if !names_tenant(last) || scoped.is_empty() {
+                        ev.find(
+                            mechanism,
+                            &format!("{key} (session)"),
+                            obligation::OTHER_READ_UNSCOPED,
+                            &common::short(&other).replace("()", ""),
+                            false,
+                        );
+                    }
+                    continue;
+                }
+                by_caller
             }
             true => {
                 cx.context().since_measured()
@@ -5156,6 +5197,212 @@ fn reads_unscoped<'a>(cx: &Cx<'a>, r: &Reached<'a>, around: &[String], passed: &
                 RowsBy::Any => true,
             }
     })
+}
+
+/// Words of a query's filter under which a value narrows nothing to itself: an
+/// alternative (`OR`), a negation (`NOT`, `none`), a comparison that is no
+/// equality. A value of the caller under one does not say the rows are the
+/// caller's.
+const NOT_NARROWING: &[&str] = &[
+    "OR", "NOT", "not", "none", "notIn", "lt", "lte", "gt", "gte", "$or", "$nor", "$not", "$ne",
+    "$nin", "$lt", "$lte", "$gt", "$gte",
+];
+
+/// The words of a filter that hold alternatives, each an item of a list.
+const ALTERNATIVES: &[&str] = &["OR", "$or"];
+
+/// The filter a call is handed (`sides`: each value by the path of its key, with
+/// the side that says where it comes from) narrows the rows to what `good` says
+/// is the caller's: one value under no alternative or negation
+/// ([`NOT_NARROWING`]) is, or every alternative of one list of them holds one
+/// (`OR: [{ userId }, { teamId: { in: teamIds } }]`, the caller's own or the
+/// caller's teams').
+fn narrowed(sides: &[(&str, &str)], good: &dyn Fn(&str) -> bool) -> bool {
+    // The list of alternatives a path is under, with the item's position, where
+    // nothing else on the path keeps a value from narrowing.
+    let place = |path: &str| -> Option<Option<(String, String)>> {
+        let segs: Vec<&str> = path.split('.').collect();
+        let mut under: Option<(String, String)> = None;
+        let mut i = 0;
+        while i < segs.len() {
+            let seg = segs[i];
+            if ALTERNATIVES.contains(&seg) && under.is_none() {
+                let item = segs.get(i + 1)?;
+                if !item.chars().all(|c| c.is_ascii_digit()) {
+                    return None;
+                }
+                under = Some((segs[..=i].join("."), item.to_string()));
+                i += 2;
+                continue;
+            }
+            if NOT_NARROWING.contains(&seg) {
+                return None;
+            }
+            i += 1;
+        }
+        Some(under)
+    };
+    let placed: Vec<(Option<(String, String)>, bool)> = sides
+        .iter()
+        .filter_map(|(path, side)| place(path).map(|at| (at, good(side))))
+        .collect();
+    if placed.iter().any(|(at, ok)| at.is_none() && *ok) {
+        return true;
+    }
+    // Every item of one list holds a value that is.
+    let lists: Vec<&String> = placed
+        .iter()
+        .filter_map(|(at, _)| at.as_ref().map(|(list, _)| list))
+        .collect();
+    lists.iter().any(|list| {
+        // The items written, by any value under them, narrowing or not.
+        let mut items: Vec<&str> = sides
+            .iter()
+            .filter_map(|(path, _)| {
+                path.strip_prefix(list.as_str())?
+                    .strip_prefix('.')?
+                    .split('.')
+                    .next()
+            })
+            .collect();
+        items.sort_unstable();
+        items.dedup();
+        !items.is_empty()
+            && items.iter().all(|item| {
+                placed.iter().any(|(at, ok)| {
+                    *ok && at
+                        .as_ref()
+                        .is_some_and(|(l, i)| l == *list && i == item)
+                })
+            })
+    })
+}
+
+/// TypeScript: the body runs a query that selects rows by nothing of the caller,
+/// named by its callee. Read from what each call is handed
+/// ([`drift_core::controls::ARG_VALUE`], which the lowering writes for a call of
+/// the repository's code and for a method of what a parameter, `this` or a local
+/// holds):
+///
+/// - a call handed a filter (a key [`query_call`] reads as one: `where.id`, the
+///   object a builder's `where` is given) selects the rows the filter names. It is
+///   by the caller where one value of the filter, under no alternative or negation
+///   ([`NOT_NARROWING`]), is a value of the caller; a value read off rows another
+///   call of the body selected by the caller (`where: { bookingId: booking.id }`
+///   after `booking = findFirst({ where: { userId: session.user.id } })`); or,
+///   below the unit's own bodies, what every calling body passed that is one
+///   ([`origin`]);
+/// - a call of a database client's model handed no filter selects every row
+///   (`findMany()`, `findMany({ select })`), unless what it is handed is the row it
+///   writes (`create({ data })`);
+/// - a body with more calls than the lowering records is not proven to select by
+///   the caller.
+///
+/// A query the facts do not record as one (a builder's chain compared by a
+/// function, SQL as text) is not judged here: the unit is unknown by what reads
+/// those ([`drift_core::controls::SCOPE_UNREAD`], [`ts_use`]).
+fn ts_unscoped_read<'a>(
+    cx: &Cx<'a>,
+    r: &Reached<'a>,
+    around: &[String],
+    passed: &[Given],
+) -> Option<String> {
+    let n = r.node;
+    let facts: &[String] = match n {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    let recorded: Vec<(&str, Vec<(&str, &str)>)> = arg_calls(facts.iter()).collect();
+    if recorded.iter().any(|(c, _)| *c == "*") {
+        return Some(match r.callee.is_empty() {
+            true => drift_core::controls::ARG_VALUE.trim_end_matches(':').to_string(),
+            false => r.callee.clone(),
+        });
+    }
+    // The values a call filters by: under a key of an object it is handed, the key
+    // one that filters.
+    let filter_sides = |callee: &str, given: &[(&'a str, &'a str)]| -> Vec<(&'a str, &'a str)> {
+        given
+            .iter()
+            .filter_map(|(key, side)| {
+                let (_, path) = key.strip_prefix('#')?.split_once('.')?;
+                // (A method named as a Python query's is nothing here: `calendar
+                // .events.get({ eventId })` asks another service.)
+                let method = common::short(callee)
+                    .rsplit('.')
+                    .next()
+                    .unwrap_or_default()
+                    .trim_end_matches("()");
+                let filters = path == "where"
+                    || path.starts_with("where.")
+                    || WHERE_METHODS.contains(&method)
+                    || super::data::instrument_of(cx, callee).is_some();
+                (filter_key(path) && filters && !own_body(cx, n, callee)).then_some((path, *side))
+            })
+            .collect()
+    };
+    let by_caller = |side: &str| {
+        side == "caller"
+            || (r.depth > 0
+                && side.starts_with("param")
+                && matches!(origin(cx, around, r, side, passed), Origin::Caller | Origin::Row))
+    };
+    // The callees every filtered call of which is by the caller.
+    let selections: Vec<(&str, Vec<(&str, &str)>)> = recorded
+        .iter()
+        .map(|(c, given)| (*c, filter_sides(c, given)))
+        .filter(|(_, sides)| !sides.is_empty())
+        .collect();
+    let scoped: Vec<&str> = selections
+        .iter()
+        .map(|(c, _)| *c)
+        .filter(|c| {
+            selections
+                .iter()
+                .filter(|(x, _)| x == c)
+                .all(|(_, sides)| narrowed(sides, &by_caller))
+        })
+        .collect();
+    let derived = |side: &str| {
+        side.strip_prefix("call ")
+            .is_some_and(|from| scoped.contains(&from))
+    };
+    for (callee, sides) in &selections {
+        if !narrowed(sides, &|side| by_caller(side) || derived(side)) {
+            return Some(callee.to_string());
+        }
+    }
+    // A model of a database client called with no filter: every row, unless the
+    // call writes the row it is handed.
+    let model_call = |c: &str| {
+        let path = c.split_once('#').map_or("", |(_, p)| p);
+        !c.ends_with("(ref)")
+            && !c.ends_with("(new)")
+            && !path.contains('(')
+            && path.matches('.').count() >= 2
+            && data_call(cx, c)
+    };
+    for c in n.calls() {
+        let c = c.as_str();
+        if !model_call(c) || selections.iter().any(|(x, _)| *x == c) {
+            continue;
+        }
+        // Every call of it is handed the row it writes, and nothing else.
+        let mut calls = recorded.iter().filter(|(x, _)| *x == c).peekable();
+        let writes_rows = calls.peek().is_some()
+            && calls.all(|(_, given)| {
+                given.iter().any(|(key, _)| {
+                    key.strip_prefix('#')
+                        .and_then(|k| k.split_once('.'))
+                        .and_then(|(_, path)| path.split('.').next())
+                        .is_some_and(|first| super::libraries::WRITTEN_KEYS.contains(&first))
+                })
+            });
+        if !writes_rows {
+            return Some(c.to_string());
+        }
+    }
+    None
 }
 
 /// The body gives `callee` a value of the caller's own under `key`, in a call every

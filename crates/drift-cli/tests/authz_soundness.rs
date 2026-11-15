@@ -3894,8 +3894,12 @@ export class RulesController {
         // imported as one), the value the query is filtered by is followed too:
         // the controller hands the service the caller, and the service filters by
         // the caller's tenant. Everywhere else: unknown, never none.
+        // A method called on `this` hands on what it is given as any call does: a
+        // base class's method is read with the value the subclass passes it.
         let want = match *what {
-            "a model typed `typeof Rule`" | "a service typed with `import type`" => "known",
+            "a model typed `typeof Rule`"
+            | "a service typed with `import type`"
+            | "a base class's method" => "known",
             _ => "unknown",
         };
         assert_eq!(said(&c, "GET /rules").0, want, "{what}");

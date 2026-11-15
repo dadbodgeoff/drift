@@ -1937,6 +1937,17 @@ pub mod controls {
     /// repository\tparam repo #0\tprincipal\tvia <...>#resolve_principal`. On a
     /// method the same strings are in [`crate::facts::Member::unread`]. Recorded by
     /// Python (lowering 62). Mining never proposes it.
+    ///
+    /// TypeScript (lowering 78) writes the argument as `#<position>`, and the
+    /// values of an object written in place by the path of their keys
+    /// (`#0.where.userId`; an item of a list by its position, `#0.where.OR.1
+    /// .teamId.in`), to six objects deep. It records a call whose callee has no
+    /// canonical name by the name it is written under (`param:ctx.prisma.user
+    /// .findUnique`, `local:this.db.note.findMany`, `local:tx.note.update`), a
+    /// package's call where it is handed an object, and `arg_value:*` where a body
+    /// makes more calls than are recorded. Its sides: `caller`, `param <name>
+    /// #<position>`, `literal`, `call <callee>` (a value read off what a call of
+    /// the body handed back), `unread`.
     pub const ARG_VALUE: &str = "arg_value:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own

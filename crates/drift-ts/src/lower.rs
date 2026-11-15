@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 77;
+pub const LOWERING_VERSION: u32 = 78;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -407,6 +407,14 @@ pub struct RawSymbol {
     /// [`drift_core::controls::FILTER_VALUE`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub param_keys: Vec<(RawRef, String, String)>,
+    /// As [`Self::arg_sides`], of a call whose callee has no canonical name: a
+    /// method of what a parameter, `this` or a local holds (`ctx.prisma.user
+    /// .findUnique({ where: { id } })`), by the name the call is written under
+    /// (`param:ctx.prisma.user.findUnique`, `local:this.db.note.findMany`). `*`
+    /// with nothing where more calls were made than are recorded. TypeScript
+    /// lowering 78.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub loose_sides: Vec<(String, Vec<(String, String)>)>,
     /// [`drift_core::SymbolCalls::param_flows`].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub param_flows: bool,
@@ -468,6 +476,8 @@ pub struct RawMember {
     pub arg_sides: Vec<(RawRef, Vec<(String, String)>)>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub param_keys: Vec<(RawRef, String, String)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub loose_sides: Vec<(String, Vec<(String, String)>)>,
 }
 
 /// A value a practice fact names before resolution: nothing, a fixed text
@@ -921,6 +931,9 @@ pub(crate) mod signals;
 const MAX_ORDER: usize = 32;
 /// Deepest nested object key recorded (`where.workspace.id`).
 const MAX_KEY_DEPTH: usize = 3;
+/// Objects read at most, one inside another, for what a call is handed under each
+/// key ([`Collector::object_sides`]: `where.team.members.some.userId`).
+const MAX_SIDE_DEPTH: usize = 6;
 
 /// Name of the pseudo-symbol that collects top-level statements (route registrations etc.).
 pub const MODULE_SYMBOL: &str = "(module)";
@@ -1228,6 +1241,10 @@ struct Lowerer<'s> {
     /// The bindings of the file that hold a plain value
     /// ([`drift_core::traits::PLAIN_VALUE`]), by name, as they are declared.
     plain_values: BTreeSet<String>,
+    /// The top-level bindings of the file that hold an object whose keys are all
+    /// written in place, with those keys: what a spread of one puts in an object
+    /// ([`Collector::object_sides`]).
+    object_keys_of: BTreeMap<String, Vec<String>>,
     /// Top-level `const NAME = "TEXT"` bindings whose text could name an environment
     /// variable ([`env_name`]), for `process.env[NAME]`; and the properties of top-level
     /// object literals of such texts, as `DICT.key`, for `process.env[DICT.key]`.
@@ -2062,6 +2079,7 @@ impl<'s> Lowerer<'s> {
             typescript: false,
             schema_values: BTreeSet::new(),
             plain_values: BTreeSet::new(),
+            object_keys_of: BTreeMap::new(),
             env_consts: BTreeMap::new(),
             env_helpers: BTreeMap::new(),
             env_bound: BTreeSet::new(),
@@ -3771,6 +3789,7 @@ impl<'s> Lowerer<'s> {
                     caller_keys: tmp.caller_keys,
                     arg_sides: tmp.arg_sides,
                     param_keys: tmp.param_keys,
+                    loose_sides: tmp.loose_sides,
                 }
             })
             .collect()
@@ -4189,6 +4208,23 @@ impl<'s> Lowerer<'s> {
                 },
                 args: vec![vec![self.arg_shape(init, 0)]],
             });
+        }
+        if sym.kind == SymbolKind::Const
+            && let Expression::ObjectExpression(o) = peel(init)
+        {
+            let keys: Option<Vec<String>> = o
+                .properties
+                .iter()
+                .map(|p| match p {
+                    ObjectPropertyKind::ObjectProperty(p) if !p.computed => {
+                        key_name(&p.key).map(|k| k.to_string())
+                    }
+                    _ => None,
+                })
+                .collect();
+            if let Some(keys) = keys {
+                self.object_keys_of.insert(name.to_string(), keys);
+            }
         }
         // What builds a plain value: a schema library, or literals and built-ins only.
         // (`Object.keys(tools)` is read as a wrapper of `tools` above; it is plain data.)
@@ -4816,6 +4852,7 @@ impl RawSymbol {
             refuses_without: vec![],
             arg_sides: vec![],
             param_keys: vec![],
+            loose_sides: vec![],
             made_fed_sinks: vec![],
             made_passes: vec![],
             param_flows: false,
@@ -4902,6 +4939,11 @@ struct Collector<'l, 's> {
     /// [`RawSymbol::arg_sides`], [`RawSymbol::param_keys`].
     arg_sides: BTreeSet<(RawRef, Vec<(String, String)>)>,
     param_keys: BTreeSet<(RawRef, String, String)>,
+    /// [`RawSymbol::loose_sides`].
+    loose_sides: BTreeSet<(String, Vec<(String, String)>)>,
+    /// The locals bound to what a call handed back, by the side that says so
+    /// ([`Collector::call_side`]).
+    call_locals: HashMap<SymbolId, String>,
     /// The locals bound to a value read off one parameter of the walk's own
     /// function, by that parameter.
     param_locals: HashMap<SymbolId, (String, String)>,
@@ -5249,6 +5291,8 @@ impl<'l, 's> Collector<'l, 's> {
             refuses_without: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
             param_keys: BTreeSet::new(),
+            loose_sides: BTreeSet::new(),
+            call_locals: HashMap::new(),
             param_locals: HashMap::new(),
             order: Vec::new(),
             returns_calls: BTreeSet::new(),
@@ -5867,6 +5911,8 @@ impl<'l, 's> Collector<'l, 's> {
         }
         sym.arg_sides.extend(std::mem::take(&mut self.arg_sides));
         sym.param_keys.extend(std::mem::take(&mut self.param_keys));
+        sym.loose_sides
+            .extend(std::mem::take(&mut self.loose_sides));
         // Every value the function returns was made of a credential the request
         // carries: what it gives is who the credential says, or nothing.
         if self.returns_cred && !self.returns_not_cred {
@@ -6215,7 +6261,105 @@ impl Collector<'_, '_> {
             {
                 "literal".to_string()
             }
-            None => "unread".to_string(),
+            None => self.row_root(e).unwrap_or_else(|| "unread".to_string()),
+        }
+    }
+
+    /// The side of a value read off what a call of the body handed back (`booking
+    /// .id` after `const booking = await prisma.booking.findFirst(...)`): `call
+    /// <callee>`, the callee as [`Collector::call_side`] writes it. None for
+    /// anything else.
+    fn row_root(&self, e: &Expression) -> Option<String> {
+        let mut at = peel(e);
+        loop {
+            at = match at {
+                Expression::AwaitExpression(a) => peel(&a.argument),
+                Expression::StaticMemberExpression(m) => peel(&m.object),
+                // An item of what the call gave (`records[0].id`).
+                Expression::ComputedMemberExpression(m) => peel(&m.object),
+                Expression::ChainExpression(c) => match &c.expression {
+                    ChainElement::StaticMemberExpression(m) => peel(&m.object),
+                    ChainElement::ComputedMemberExpression(m) => peel(&m.object),
+                    _ => return None,
+                },
+                Expression::Identifier(id) => {
+                    return self.call_locals.get(&self.symbol_of(id)?).cloned();
+                }
+                _ => return None,
+            };
+        }
+    }
+
+    /// The name a call is written under where its callee has no canonical one: a
+    /// method of what a parameter holds (`param:ctx.prisma.user.findUnique`), of
+    /// `this` (`local:this.db.note.findMany`) or of a local (`local:tx.note
+    /// .update`), by at most [`MAX_MEMBER_DEPTH`] static members.
+    fn loose_callee(&self, callee: &Expression) -> Option<String> {
+        let mut members: Vec<&str> = Vec::new();
+        let mut cur = unwrap_expr(callee);
+        let root = loop {
+            match cur {
+                Expression::StaticMemberExpression(m) => {
+                    members.push(m.property.name.as_str());
+                    cur = unwrap_expr(&m.object);
+                }
+                Expression::ChainExpression(c) => match &c.expression {
+                    ChainElement::StaticMemberExpression(m) => {
+                        members.push(m.property.name.as_str());
+                        cur = unwrap_expr(&m.object);
+                    }
+                    _ => return None,
+                },
+                Expression::ThisExpression(_) => break "local:this".to_string(),
+                Expression::Identifier(id) => {
+                    let s = self.symbol_of(id)?;
+                    break match self
+                        .l
+                        .params
+                        .get(&s)
+                        .map(|(name, _)| name)
+                        .or_else(|| self.param_values.get(&s))
+                    {
+                        Some(name) => format!("param:{name}"),
+                        None => format!("local:{}", id.name),
+                    };
+                }
+                _ => return None,
+            }
+        };
+        if members.is_empty() || members.len() > MAX_MEMBER_DEPTH {
+            return None;
+        }
+        members.reverse();
+        let path: String = members.iter().map(|m| format!(".{m}")).collect();
+        Some(format!("{root}{path}"))
+    }
+
+    /// The side that says a value is read off what this call handed back: `call
+    /// <callee>`, the callee a reference linking makes canonical (written as JSON
+    /// until then) or the name of a call that has none
+    /// ([`Collector::loose_callee`]). None of what is no call, and of a built-in's.
+    fn call_side(&self, init: &Expression) -> Option<String> {
+        let mut at = peel(init);
+        while let Expression::AwaitExpression(a) = at {
+            at = peel(&a.argument);
+        }
+        let Expression::CallExpression(c) = at else {
+            return None;
+        };
+        let mut c: &CallExpression = c;
+        // What a promise settles to, read on or guarded (`load().then(rows =>
+        // rows.map(...))`), is of what the call gave.
+        while let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee)
+            && matches!(m.property.name.as_str(), "then" | "catch" | "finally")
+            && let Expression::CallExpression(inner) = peel(&m.object)
+        {
+            c = inner;
+        }
+        match self.l.canon_callee(&c.callee) {
+            Some(r) if matches!(r.base, RawBase::Global(_)) => None,
+            Some(r) => serde_json::to_string(&r).ok().map(|j| format!("call {j}")),
+            None => self.loose_callee(&c.callee).map(|n| format!("call {n}")),
         }
     }
 
@@ -6234,23 +6378,73 @@ impl Collector<'_, '_> {
             return;
         };
         let mut found: Vec<(String, String)> = Vec::new();
+        // What a spread or a computed key may have put under any key written so
+        // far: nothing written before it stands, and the object says so.
+        let unread = |found: &mut Vec<(String, String)>| {
+            found.clear();
+            found.push((under.to_string(), "unread".to_string()));
+        };
         for p in &o.properties {
-            let ObjectPropertyKind::ObjectProperty(p) = p else {
-                return;
+            let p = match p {
+                ObjectPropertyKind::ObjectProperty(p) => p,
+                ObjectPropertyKind::SpreadProperty(spread) => {
+                    // A binding of the file that holds an object of keys written in
+                    // place puts those keys, and no other.
+                    let keys = match self.l.canon(&spread.argument) {
+                        Some(RawRef {
+                            base: RawBase::Local(name),
+                            member,
+                        }) if member.is_empty() => self.l.object_keys_of.get(&name),
+                        _ => None,
+                    };
+                    match keys {
+                        Some(keys) => {
+                            for k in keys {
+                                let key = format!("{under}.{k}");
+                                found.retain(|(x, _)| {
+                                    *x != key && !x.starts_with(&format!("{key}."))
+                                });
+                                found.push((key, "unread".to_string()));
+                            }
+                        }
+                        None => unread(&mut found),
+                    }
+                    continue;
+                }
             };
             let Some(k) = (!p.computed)
                 .then(|| key_name(&p.key))
                 .flatten()
                 .filter(|k| side_key(k))
             else {
-                return;
+                unread(&mut found);
+                continue;
             };
             let key = format!("{under}.{k}");
             // A key written twice holds what was written last.
             found.retain(|(x, _)| *x != key && !x.starts_with(&format!("{key}.")));
             if matches!(peel(&p.value), Expression::ObjectExpression(_)) {
-                if depth + 1 < MAX_KEY_DEPTH {
-                    self.object_sides(&p.value, &key, depth + 1, &mut found);
+                match depth + 1 < MAX_SIDE_DEPTH {
+                    true => self.object_sides(&p.value, &key, depth + 1, &mut found),
+                    // Deeper than is read: what it holds is not known.
+                    false => found.push((key, "unread".to_string())),
+                }
+            } else if let Expression::ArrayExpression(list) = peel(&p.value)
+                && !list.elements.is_empty()
+                && depth + 1 < MAX_SIDE_DEPTH
+            {
+                // A list of objects written in place (`OR: [{ userId }, { teamId:
+                // { in: teamIds } }]`): each item by its position, and `unread`
+                // for one that is no object or whose keys are not read.
+                for (i, item) in list.elements.iter().enumerate() {
+                    let at = format!("{key}.{i}");
+                    let before = found.len();
+                    if let Some(e) = item.as_expression() {
+                        self.object_sides(e, &at, depth + 1, &mut found);
+                    }
+                    if found.len() == before {
+                        found.push((at, "unread".to_string()));
+                    }
                 }
             } else {
                 found.push((key, self.arg_side(&p.value)));
@@ -6263,6 +6457,36 @@ impl Collector<'_, '_> {
     /// ([`RawSymbol::arg_sides`]): a value of the caller by its own source, a value
     /// read off a parameter of the function, a literal, or what is not read.
     fn note_arg_sides(&mut self, callee: &RawRef, it: &CallExpression) {
+        match self.sides_given(it) {
+            Some(given) if self.arg_sides.len() < MAX_ORDER * 4 => {
+                self.arg_sides.insert((callee.clone(), given));
+            }
+            Some(_) => self.sides_cut(),
+            None => {}
+        }
+    }
+
+    /// As [`Collector::note_arg_sides`], of a call whose callee has no canonical
+    /// name ([`RawSymbol::loose_sides`]).
+    fn note_loose_sides(&mut self, callee: String, it: &CallExpression) {
+        match self.sides_given(it) {
+            Some(given) if self.loose_sides.len() < MAX_ORDER * 4 => {
+                self.loose_sides.insert((callee, given));
+            }
+            Some(_) => self.sides_cut(),
+            None => {}
+        }
+    }
+
+    /// More calls than are recorded: the body says so, and nothing is proven of
+    /// what it was not read to hand on.
+    fn sides_cut(&mut self) {
+        self.loose_sides.insert(("*".to_string(), Vec::new()));
+    }
+
+    /// What a call hands its callee ([`RawSymbol::arg_sides`]); None where it
+    /// hands on nothing that is read.
+    fn sides_given(&self, it: &CallExpression) -> Option<Vec<(String, String)>> {
         let mut given: Vec<(String, String)> = it
             .arguments
             .iter()
@@ -6297,12 +6521,7 @@ impl Collector<'_, '_> {
                 )
             )
         });
-        if !given.is_empty()
-            && (!written_in_place || by_key)
-            && self.arg_sides.len() < MAX_ORDER * 4
-        {
-            self.arg_sides.insert((callee.clone(), given));
-        }
+        (!given.is_empty() && (!written_in_place || by_key)).then_some(given)
     }
 
     /// Records the keys of an object given to `callee` whose value is a value of
@@ -11724,6 +11943,29 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if let Some(r) = &named {
                 self.note_arg_sides(r, it);
             }
+            // A method of what a parameter, `this` or a local holds: what it is
+            // handed is recorded under the name it is written by.
+            if named.is_none() && self.fn_depth >= 1 {
+                // A method of the walk's own class called on `this` is that
+                // method, by the class's name.
+                let own = match (unwrap_expr(&it.callee), &self.this_methods) {
+                    (Expression::StaticMemberExpression(m), Some((class, _)))
+                        if self.own_this == 0
+                            && matches!(unwrap_expr(&m.object), Expression::ThisExpression(_)) =>
+                    {
+                        Some(RawRef {
+                            base: RawBase::Local(class.clone()),
+                            member: format!(".{}", m.property.name),
+                        })
+                    }
+                    _ => None,
+                };
+                if let Some(r) = own {
+                    self.note_arg_sides(&r, it);
+                } else if let Some(name) = self.loose_callee(&it.callee) {
+                    self.note_loose_sides(name, it);
+                }
+            }
             // A method of a local or of a value no import names: the call is not
             // recorded, and what it does with the value was not read.
             if named.is_none() && hands_value_on(it) {
@@ -12825,6 +13067,29 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     self.param_locals
                         .insert(sym, (name.clone(), format!("{token}.{k}")));
                 }
+            }
+        }
+        // `const booking = await db.booking.findFirst(...)`, `const { id } = await
+        // load()`: each name holds what the call handed back, or a part of it.
+        if let Some(init) = &it.init
+            && self.const_decl
+            && self.fn_depth > 0
+            && let Some(side) = self.call_side(init)
+        {
+            let mut bound: Vec<SymbolId> = Vec::new();
+            match &it.id {
+                BindingPattern::BindingIdentifier(b) => bound.extend(b.symbol_id.get()),
+                BindingPattern::ObjectPattern(o) if o.rest.is_none() => {
+                    for prop in &o.properties {
+                        if let BindingPattern::BindingIdentifier(b) = &prop.value {
+                            bound.extend(b.symbol_id.get());
+                        }
+                    }
+                }
+                _ => {}
+            }
+            for sym in bound {
+                self.call_locals.insert(sym, side.clone());
             }
         }
         if let Some(init) = &it.init {

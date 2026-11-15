@@ -2680,25 +2680,45 @@ impl<'r> Linker<'r> {
         &self,
         rel: &str,
         arg_sides: &[(RawRef, Vec<(String, String)>)],
+        loose_sides: &[(String, Vec<(String, String)>)],
         param_keys: &[(RawRef, String, String)],
     ) -> Vec<String> {
+        // A value read off what a call handed back names the call by its
+        // canonical callee ([`crate::lower::RawSymbol::loose_sides`]).
+        let side = |side: &str| -> String {
+            match side
+                .strip_prefix("call ")
+                .filter(|j| j.starts_with('{'))
+                .and_then(|j| serde_json::from_str::<RawRef>(j).ok())
+            {
+                Some(r) => format!("call {}", self.canon(rel, &r)),
+                None => side.to_string(),
+            }
+        };
+        let control = |c: &str, given: &[(String, String)]| {
+            let mut control = format!("{}{c}", drift_core::controls::ARG_VALUE);
+            for (key, s) in given {
+                control.push('\t');
+                control.push_str(key);
+                control.push('\t');
+                control.push_str(&side(s));
+            }
+            control
+        };
         let mut out: Vec<String> = arg_sides
             .iter()
             .map(|(callee, given)| (self.canon(rel, callee), given))
-            .filter(|(c, _)| {
-                !c.starts_with("global#") && !c.starts_with("pkg:") && !c.starts_with("unresolved:")
+            // A package's call by what it is handed under the keys of an object
+            // only (`db.note.findMany({ where: { userId } })` through a client
+            // typed by its package): a value handed by position is not followed
+            // into a package.
+            .filter(|(c, given)| {
+                !c.starts_with("global#")
+                    && (!c.starts_with("pkg:") || given.iter().any(|(key, _)| key.contains('.')))
             })
-            .map(|(c, given)| {
-                let mut control = format!("{}{c}", drift_core::controls::ARG_VALUE);
-                for (key, side) in given {
-                    control.push('\t');
-                    control.push_str(key);
-                    control.push('\t');
-                    control.push_str(side);
-                }
-                control
-            })
+            .map(|(c, given)| control(&c, given))
             .collect();
+        out.extend(loose_sides.iter().map(|(c, given)| control(c, given)));
         out.extend(param_keys.iter().map(|(callee, key, side)| {
             format!(
                 "{}{}\t{key}\t{side}",
@@ -2881,7 +2901,12 @@ impl<'r> Linker<'r> {
                 // a rule (mining leaves these controls out by their prefix).
                 controls: {
                     let mut controls = s.controls.clone();
-                    controls.extend(self.flow_controls(rel, &s.arg_sides, &s.param_keys));
+                    controls.extend(self.flow_controls(
+                        rel,
+                        &s.arg_sides,
+                        &s.loose_sides,
+                        &s.param_keys,
+                    ));
                     controls.sort();
                     controls.dedup();
                     controls
@@ -2983,7 +3008,12 @@ impl<'r> Linker<'r> {
                             // on ([`Linker::flow_controls`]), and the keys it
                             // filters by a value of the caller.
                             let mut unread = m.unread.clone();
-                            unread.extend(self.flow_controls(rel, &m.arg_sides, &m.param_keys));
+                            unread.extend(self.flow_controls(
+                                rel,
+                                &m.arg_sides,
+                                &m.loose_sides,
+                                &m.param_keys,
+                            ));
                             unread.extend(m.caller_keys.iter().map(|(callee, key)| {
                                 format!(
                                     "{}{}\t{key}\tcaller",

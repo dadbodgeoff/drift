@@ -1728,7 +1728,9 @@ export type PracticeObligation =
   /** A policy decision computed and not used to refuse (a header, a log): no check (newer drift). */
   | "result_not_refused"
   /** A symbol declared in `.drift/config.yaml` that the unit is not shown to run on every path (newer drift). */
-  | "path_unread";
+  | "path_unread"
+  /** A filter by the caller scopes its own query; another query of the route selects rows by nothing of the caller (newer drift). */
+  | "other_read_unscoped";
 
 /**
  * A check found for a unit that is unknown as `check_not_proven` (authz): what was found and what is not proven of

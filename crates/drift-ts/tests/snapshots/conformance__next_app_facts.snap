@@ -369,6 +369,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "pkg:zod#object@0:url"
           ],
           "controls": [
+            "arg_value:pkg:zod#object\t#0\tunread\t#0.url\tunread",
             "await",
             "reads_input",
             "throw",
@@ -1317,6 +1318,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "arg_value:param:res.json\t#0\tunread\t#0.ok\tliteral",
             "no_input",
             "unread_call"
           ],

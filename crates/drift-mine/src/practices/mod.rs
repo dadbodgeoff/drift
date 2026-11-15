@@ -472,6 +472,9 @@ pub mod obligation {
     /// A policy decision is computed and nothing refuses on it: its result goes to a
     /// header, a log or nowhere.
     pub const RESULT_NOT_REFUSED: &str = "result_not_refused";
+    /// A filter by the caller scopes its own query, and another query of the unit
+    /// selects rows by nothing of the caller.
+    pub const OTHER_READ_UNSCOPED: &str = "other_read_unscoped";
     /// No path on which every request reaches it was read (a symbol a person declared
     /// in `.drift/config.yaml` that the unit is not shown to call on every path).
     pub const PATH_UNREAD: &str = "path_unread";
@@ -574,6 +577,17 @@ pub fn not_proven_line(check: &str, obligation: &str, when: &str) -> String {
             return format!(
                 "unknown: {} was found by its name only (`{name}`): no comparison of the caller with what is asked for was read in it",
                 check_words(mechanism)
+            );
+        }
+        obligation::OTHER_READ_UNSCOPED => {
+            // `when`: the query that selects rows by nothing of the caller.
+            let other = if when.is_empty() {
+                String::new()
+            } else {
+                format!(" (`{when}`)")
+            };
+            return format!(
+                "unknown: a query filtered by the caller was found (`{name}`) but another query of the route selects rows by nothing of the caller{other}"
             );
         }
         obligation::SIDES_NOT_CALLER_AND_RESOURCE if mechanism.ends_with("_filter") => {

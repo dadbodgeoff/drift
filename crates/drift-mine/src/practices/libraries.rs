@@ -327,6 +327,9 @@ pub const NOT_FILTER_KEYS: &[&str] = &[
     "distinct", "skip", "take", "cursor", "defaults",
 ];
 
+/// The keys of [`NOT_FILTER_KEYS`] under which a call is handed the row it writes.
+pub const WRITTEN_KEYS: &[&str] = &["data", "create", "update", "defaults"];
+
 /// A name with an [`OWNER_KEYS`] word.
 pub fn names_owner(s: &str) -> bool {
     // The whole identifier, not a word of it: `created_by`, `user_id`, `ownerId`, never
