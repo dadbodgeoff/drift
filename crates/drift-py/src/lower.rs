@@ -7,7 +7,7 @@
 //! assignments, local imports) shadow module names, following Python's scoping
 //! rules (class bodies are not visible from their methods).
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use drift_core::{SymbolKind, WrapKind};
 use ruff_python_ast::visitor::{self, Visitor};
@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 70;
+pub const LOWERING_VERSION: u32 = 71;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -2587,6 +2587,9 @@ pub(crate) struct Collector<'l, 't> {
     /// had by then returned for some requests
     /// ([`drift_core::controls::UNREAD_EXIT`]).
     pub(crate) claimed: HashMap<TextSize, bool>,
+    /// The exits a check read since the measured build explains
+    /// ([`crate::raw::UNREAD_EXIT_MEASURED`]), by where the statement starts.
+    pub(crate) claimed_since: HashSet<TextSize>,
     /// The callees whose call's value the body returns
     /// ([`drift_core::Symbol::returns_calls`]).
     returns_calls: BTreeSet<RawRef>,
@@ -2728,6 +2731,7 @@ impl<'l, 't> Collector<'l, 't> {
             uncalled: false,
             conditional_calls: BTreeSet::new(),
             claimed: HashMap::new(),
+            claimed_since: HashSet::new(),
             returns_calls: BTreeSet::new(),
             caller_args: BTreeSet::new(),
             returns_caller: None,
@@ -3080,6 +3084,14 @@ impl<'l, 't> Collector<'l, 't> {
             }
         }
         out
+    }
+
+    /// The statements after `stmt` in the body of the function being walked,
+    /// where it is one of that body's own statements.
+    fn following(&self, stmt: &Stmt) -> Option<&'t [Stmt]> {
+        let body = *self.bodies.last()?;
+        let at = body.iter().position(|s| std::ptr::eq(s, stmt))?;
+        Some(&body[at + 1..])
     }
 
     /// A method call on a value whose class the facts know: a parameter annotated with
@@ -4339,7 +4351,7 @@ impl<'a> Collector<'_, 'a> {
                 // before it leaves (`if not token: raise ...` / `elif ...`).
                 use drift_core::not_always::UNDER_BRANCH;
                 let here = self.not_always();
-                self.note_body_checks(&i.test, &i.body, here.clone());
+                self.note_body_checks(&i.test, &i.body, here.clone(), false);
                 // What the branch before an `elif` tested, in words.
                 let mut previous = practice::words(&i.test);
                 let mut goes_on = !leaves(&i.body);
@@ -4360,13 +4372,30 @@ impl<'a> Collector<'_, 'a> {
                             .or_else(|| {
                                 goes_on.then(|| (UNDER_BRANCH, format!("only when not {previous}")))
                             });
-                        self.note_body_checks(t, &c.body, cond);
+                        self.note_body_checks(t, &c.body, cond, false);
                         previous = practice::words(t);
                         if served.is_none() && self.returns_without_refusing(&c.body) {
                             served = Some(format!("not when {previous}"));
                         }
                     }
                     goes_on |= !leaves(&c.body);
+                }
+                // The `else`, and what follows an `if` whose body always leaves:
+                // reached by the requests no test of the `if` held for, so a
+                // refusal there, before anything branches, is the check the tests
+                // make the other way round (`if user.is_authenticated: return
+                // page` / `else: return redirect("login")`).
+                let otherwise: Option<&[Stmt]> = match i.elif_else_clauses.last() {
+                    Some(last) if last.test.is_none() => Some(&last.body),
+                    Some(_) => None,
+                    None if leaves(&i.body) => self.following(stmt),
+                    None => None,
+                };
+                if let Some(rest) = otherwise.filter(|rest| straight_to_exit(rest)) {
+                    let tests: Vec<&Expr> = std::iter::once(i.test.as_ref())
+                        .chain(i.elif_else_clauses.iter().filter_map(|c| c.test.as_ref()))
+                        .collect();
+                    self.note_body_checks(&none_of(&tests), rest, here.clone(), true);
                 }
                 self.test_expr(&i.test, &i.body);
                 let before = self.continued;
@@ -4892,6 +4921,43 @@ impl FrameParams {
                 .collect(),
         }
     }
+}
+
+/// Nothing branches in the block before its first `return` or `raise`, or before
+/// its end: every request that enters it reaches that exit.
+fn straight_to_exit(body: &[Stmt]) -> bool {
+    for s in body {
+        match s {
+            Stmt::Return(_) | Stmt::Raise(_) => return true,
+            Stmt::Expr(_)
+            | Stmt::Assign(_)
+            | Stmt::AnnAssign(_)
+            | Stmt::AugAssign(_)
+            | Stmt::Pass(_) => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
+/// `not (a or b ...)` of the tests of an `if` and its `elif`s: what holds where
+/// its `else` runs.
+pub(crate) fn none_of(tests: &[&Expr]) -> Expr {
+    let inner = match tests {
+        [one] => (*one).clone(),
+        many => Expr::BoolOp(ast::ExprBoolOp {
+            node_index: Default::default(),
+            range: many[0].range(),
+            op: ast::BoolOp::Or,
+            values: many.iter().map(|t| (*t).clone()).collect(),
+        }),
+    };
+    Expr::UnaryOp(ast::ExprUnaryOp {
+        node_index: Default::default(),
+        range: inner.range(),
+        op: ast::UnaryOp::Not,
+        operand: Box::new(inner),
+    })
 }
 
 /// The block always leaves the function: its last statement returns or raises, or is

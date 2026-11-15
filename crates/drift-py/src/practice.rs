@@ -2250,23 +2250,94 @@ impl<'t> Collector<'_, 't> {
     /// `cond`: why the `if` itself does not run for every request, when it does not
     /// ([`Collector::not_always`]). An operand of an effective `and` is conditional on
     /// the others ([`drift_core::not_always::AND_OPERAND`]).
+    ///
+    /// `since`: the block is the `else` of the test, or what follows an `if` whose
+    /// body always leaves, and `test` says when it runs: read since the measured
+    /// build, so what the measured build records of the block is left as it was.
+    ///
+    /// A test that turns away the requests that have a caller
+    /// ([`Collector::without_a_caller`]), or reads nothing but the verb of the
+    /// request ([`Collector::reads_the_verb_alone`]), asks no one to sign in,
+    /// whatever the answer is: marked where the measured build read it, not
+    /// recorded since.
     pub(crate) fn note_body_checks(
         &mut self,
         test: &Expr,
         body: &[Stmt],
         cond: Option<(&'static str, String)>,
+        since: bool,
     ) {
         if !self.counting() || self.frames.is_empty() {
             return;
         }
-        self.claim_exit(test, body);
-        self.note_raise_checks(test, body, &cond);
+        if !since {
+            self.claim_exit(test, body);
+            self.note_raise_checks(test, body, &cond);
+        }
         let Some(outcome) = self.exit_outcome(body) else {
             return;
         };
+        let absent = self.without_a_caller(test, 0);
+        let sign_in = matches!(
+            outcome,
+            CheckOutcome::Unauthenticated | CheckOutcome::SignInRedirect
+        );
+        let backwards = sign_in && (absent == Some(false) || self.reads_the_verb_alone(test, 0));
+        if since && backwards {
+            return;
+        }
+        // Every request without a caller takes the exit: what is asked of it is
+        // the one read of the caller that says so, whatever else the test reads.
+        let read = match absent {
+            Some(true) => self
+                .read_of_the_caller(test, 0, true)
+                .or_else(|| self.read_of_the_caller(test, 0, false)),
+            _ => None,
+        };
+        let word = read.is_some_and(|(read, _)| states_signed_in(read));
+        let asked = read.map(|(read, holds)| match holds {
+            true => read.clone(),
+            false => super::none_of(&[read]),
+        });
+        // A 403 or a 404 for having no caller turns the caller away for not being
+        // signed in, as a 401 does: where the test reads the framework's own word
+        // for being signed in (a value kept for the caller, `session.get("cart")`,
+        // may be there for a visitor who never signed in). It asks nothing more
+        // where that word is all the test reads.
+        let hides = word && matches!(outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound);
+        let presence = hides && read.is_some_and(|(read, _)| std::ptr::eq(read, unnegated(test)));
+        if since
+            && (asked.is_some() || self.reads_every_operand(test))
+            && let Some(exit) = body
+                .iter()
+                .find(|s| matches!(s, Stmt::Raise(_) | Stmt::Return(_)))
+        {
+            self.claimed_since.insert(exit.range().start());
+        }
+        match (&asked, since) {
+            (Some(asked), true) if sign_in => {
+                self.record_checks(asked, outcome, &cond, true, false)
+            }
+            (Some(_), true) if presence => {}
+            _ => self.record_checks(test, outcome, &cond, since, backwards || presence),
+        }
+        if let Some(asked) = asked.filter(|_| hides) {
+            self.record_checks(&asked, CheckOutcome::Unauthenticated, &cond, true, false);
+        }
+    }
+
+    /// One [`RawBodyCheck`] for each condition of the test.
+    fn record_checks(
+        &mut self,
+        test: &Expr,
+        outcome: CheckOutcome,
+        cond: &Option<(&'static str, String)>,
+        since: bool,
+        measured: bool,
+    ) {
         let mut conds = Vec::new();
         self.conditions(test, &mut conds, 0, false);
-        let roles = self.roles_beside(test, &conds, &cond);
+        let roles = self.roles_beside(test, &conds, cond);
         let mut role_sides = roles.iter().flat_map(|(sides, _)| sides.iter().cloned());
         for (((source, reads), compares, subject, compared, op, sides), guard) in conds {
             let role = role_operand(compared, &compares);
@@ -2291,7 +2362,7 @@ impl<'t> Collector<'_, 't> {
             }
             let (condition, unless) = match &roles {
                 Some((_, words)) => why_beside_roles(role, words, guard),
-                None => why(&cond, guard),
+                None => why(cond, guard),
             };
             self.body_checks.insert(RawBodyCheck {
                 source,
@@ -2303,7 +2374,137 @@ impl<'t> Collector<'_, 't> {
                 condition,
                 unless,
                 after: self.called_before(),
+                since,
+                measured,
             });
+        }
+    }
+
+    /// What the test is for a request that has no caller: `Some(true)` where every
+    /// such request passes it (`not request.user.is_authenticated`, a value of
+    /// the caller compared with `None`, the framework's `is_anonymous`),
+    /// `Some(false)` where none does (`request.user.is_authenticated`, a value
+    /// of the caller read for its truth), `None` where that is not read (a
+    /// helper's answer, another attribute of the caller, a comparison with
+    /// anything else). An `and` passes where every operand does and fails where
+    /// one does; an `or` the other way round.
+    fn without_a_caller(&self, test: &Expr, depth: usize) -> Option<bool> {
+        if depth > MAX_DEPTH {
+            return None;
+        }
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => self
+                .without_a_caller(&u.operand, depth + 1)
+                .map(|passes| !passes),
+            Expr::BoolOp(b) => {
+                let each: Vec<Option<bool>> = b
+                    .values
+                    .iter()
+                    .map(|v| self.without_a_caller(v, depth + 1))
+                    .collect();
+                // What settles the whole by one operand, and what it is otherwise
+                // when every operand agrees.
+                let settles = matches!(b.op, ast::BoolOp::Or);
+                match each.contains(&Some(settles)) {
+                    true => Some(settles),
+                    false => each
+                        .iter()
+                        .all(|x| *x == Some(!settles))
+                        .then_some(!settles),
+                }
+            }
+            _ => self.caller_read(test).map(|(_, passes)| passes),
+        }
+    }
+
+    /// The test reads the verb of the request and nothing else
+    /// (`request.method != "POST"`): which verb a request used says nothing of
+    /// who sent it.
+    fn reads_the_verb_alone(&self, test: &Expr, depth: usize) -> bool {
+        if depth > MAX_DEPTH {
+            return false;
+        }
+        let verb = |e: &Expr| matches!(e, Expr::Attribute(a) if a.attr.as_str() == "method" && self.is_request(&a.value));
+        let words = |e: &Expr| match e {
+            Expr::Tuple(ast::ExprTuple { elts, .. })
+            | Expr::List(ast::ExprList { elts, .. })
+            | Expr::Set(ast::ExprSet { elts, .. }) => {
+                elts.iter().all(|x| string_value(x).is_some())
+            }
+            one => string_value(one).is_some(),
+        };
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                self.reads_the_verb_alone(&u.operand, depth + 1)
+            }
+            Expr::BoolOp(b) => b
+                .values
+                .iter()
+                .all(|v| self.reads_the_verb_alone(v, depth + 1)),
+            Expr::Compare(c) if c.ops.len() == 1 => {
+                let (l, r) = (c.first_operand(), c.second_operand());
+                (verb(l) && words(r)) || (words(l) && verb(r))
+            }
+            _ => false,
+        }
+    }
+
+    /// The first read of the caller in the test whose answer for a request that
+    /// has none is known, and that answer ([`Collector::without_a_caller`]).
+    /// `word`: only the framework's own word for being signed in
+    /// ([`states_signed_in`]).
+    fn read_of_the_caller<'e>(
+        &self,
+        test: &'e Expr,
+        depth: usize,
+        word: bool,
+    ) -> Option<(&'e Expr, bool)> {
+        if depth > MAX_DEPTH {
+            return None;
+        }
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                self.read_of_the_caller(&u.operand, depth + 1, word)
+            }
+            Expr::BoolOp(b) => b
+                .values
+                .iter()
+                .find_map(|v| self.read_of_the_caller(v, depth + 1, word)),
+            _ => self
+                .caller_read(test)
+                .filter(|(read, _)| !word || states_signed_in(read)),
+        }
+    }
+
+    /// What one read of the caller is for a request that has none
+    /// ([`Collector::without_a_caller`]), where that is known.
+    fn caller_read<'e>(&self, test: &'e Expr) -> Option<(&'e Expr, bool)> {
+        match test {
+            Expr::Compare(c) => {
+                let [op] = &*c.ops else {
+                    return None;
+                };
+                let (left, right) = (c.first_operand(), c.second_operand());
+                if !matches!(right, Expr::NoneLiteral(_)) || self.caller_value(left).is_none() {
+                    return None;
+                }
+                match op {
+                    ast::CmpOp::Is | ast::CmpOp::Eq => Some((test, true)),
+                    ast::CmpOp::IsNot | ast::CmpOp::NotEq => Some((test, false)),
+                    _ => None,
+                }
+            }
+            // An attribute of the caller: what the framework's user says of being
+            // signed in is known for its anonymous one, another attribute is not.
+            Expr::Attribute(a) if self.caller_value(&a.value).is_some() => match a.attr.as_str() {
+                ANONYMOUS => Some((test, true)),
+                AUTHENTICATED => Some((test, false)),
+                _ => None,
+            },
+            Expr::Name(_) | Expr::Attribute(_) | Expr::Subscript(_) | Expr::Call(_) => {
+                self.caller_value(test).map(|_| (test, false))
+            }
+            _ => None,
         }
     }
 
@@ -2359,18 +2560,22 @@ impl<'t> Collector<'_, 't> {
             self.claimed
                 .insert(exit.range().start(), self.skipped.is_some());
         }
-        let mut conds = Vec::new();
-        self.conditions(test, &mut conds, 0, false);
-        let unread = conds.is_empty()
-            || conds
-                .iter()
-                .any(|(((source, _), compares, _, compared, _, _), _)| {
-                    *source == RawOperand::None && (!compared || *compares == RawOperand::None)
-                });
-        if unread {
+        if !self.reads_every_operand(test) {
             self.controls
                 .insert(drift_core::controls::UNREAD_EXIT.into());
         }
+    }
+
+    /// Every operand of the condition was read ([`Collector::claim_exit`]).
+    fn reads_every_operand(&self, test: &Expr) -> bool {
+        let mut conds = Vec::new();
+        self.conditions(test, &mut conds, 0, false);
+        !conds.is_empty()
+            && !conds
+                .iter()
+                .any(|(((source, _), compares, _, compared, _, _), _)| {
+                    *source == RawOperand::None && (!compared || *compares == RawOperand::None)
+                })
     }
 
     /// A `raise` or an error answer that only some requests reach and that is not the
@@ -2390,8 +2595,11 @@ impl<'t> Collector<'_, 't> {
             None => returned || !self.conds.is_empty(),
         };
         if unread {
-            self.controls
-                .insert(drift_core::controls::UNREAD_EXIT.into());
+            let control = match self.claimed_since.contains(&exit.range().start()) {
+                true => crate::raw::UNREAD_EXIT_MEASURED,
+                false => drift_core::controls::UNREAD_EXIT,
+            };
+            self.controls.insert(control.into());
         }
     }
 
@@ -4793,4 +5001,23 @@ fn literal_value(e: &Expr) -> bool {
             | Expr::NoneLiteral(_)
             | Expr::EllipsisLiteral(_)
     )
+}
+
+/// The test under its `not`s.
+fn unnegated(test: &Expr) -> &Expr {
+    match test {
+        Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => unnegated(&u.operand),
+        other => other,
+    }
+}
+
+/// What the user object of a framework says of being signed in (Django's and
+/// Flask-Login's users both hold the two): `True` for a signed-in user alone, and
+/// `True` for the anonymous one alone.
+const AUTHENTICATED: &str = "is_authenticated";
+const ANONYMOUS: &str = "is_anonymous";
+
+/// The read is the framework's own word for being signed in.
+fn states_signed_in(read: &Expr) -> bool {
+    matches!(read, Expr::Attribute(a) if [AUTHENTICATED, ANONYMOUS].contains(&a.attr.as_str()))
 }

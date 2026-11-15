@@ -2232,6 +2232,7 @@ impl<'t> Lowerer<'t> {
                         [
                             KEEPS_VALUE,
                             UNREAD_EXIT,
+                            crate::raw::UNREAD_EXIT_MEASURED,
                             SCOPE_UNREAD,
                             HANDLER_REJECTS,
                             HANDLER_MAY_REJECT,

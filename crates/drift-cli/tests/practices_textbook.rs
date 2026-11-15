@@ -4364,7 +4364,6 @@ dependencies = ["fastapi", "sqlalchemy"]
         "comprehension",
         "raw_sql",
         "relationship",
-        "handler_return_then_raise",
         "handler_ternary",
     ] {
         assert_eq!(
@@ -4373,6 +4372,16 @@ dependencies = ["fastapi", "sqlalchemy"]
             "{symbol}"
         );
     }
+    // In the handler itself, the refusal that follows an `if` returning for the
+    // caller's own organisation is the comparison made the other way round, and
+    // is read as that check (Python lowering 71).
+    assert_eq!(
+        authz_of(&authz, "handler_return_then_raise"),
+        (
+            "known".to_string(),
+            "tenancy_check:claim:.org_id".to_string()
+        )
+    );
     for symbol in ["missing", "archived", "everything"] {
         assert_eq!(authz_of(&authz, symbol).0, "none", "{symbol}");
     }

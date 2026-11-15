@@ -659,7 +659,26 @@ pub struct RawBodyCheck {
     /// What the function calls before the check ([`drift_core::BodyCheck::after`]).
     #[serde(default)]
     pub after: Vec<RawReceiverCall>,
+    /// Read since the measured build: the refusal is in the `else` of the test,
+    /// or follows an `if` whose body always leaves. Not linked for what mining
+    /// reads.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub since: bool,
+    /// Only the measured build reads it as a check, and links it: the test turns
+    /// away the requests that have a caller, not those that have none (`if
+    /// request.user.is_authenticated: return redirect("login")`); it reads only
+    /// the verb of the request (`if request.method != "POST": return
+    /// redirect("login")`); or it is a 403 or a 404 for having no caller, which
+    /// asks nothing of the caller beyond being signed in.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub measured: bool,
 }
+
+/// In a function's controls, for [`drift_core::controls::UNREAD_EXIT`]: an exit
+/// the measured build did not read, which a check read since explains
+/// ([`RawBodyCheck::since`]). Linked as that control for what mining reads, and
+/// dropped otherwise.
+pub(crate) const UNREAD_EXIT_MEASURED: &str = "unread_exit:measured";
 
 /// A condition whose first exit raises an error class ([`drift_core::RaiseCheck`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]

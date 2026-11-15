@@ -428,6 +428,14 @@ fn symbol_unmeasured(s: &RawSymbol) -> bool {
         || s.drf_reassigned.is_some()
         || !s.wraps_only.is_empty()
         || !s.since_only.is_empty()
+        || s.body_checks.iter().any(|b| b.since || b.measured)
+        || s.members
+            .iter()
+            .any(|m| m.body_checks.iter().any(|b| b.since || b.measured))
+        || s.controls.iter().any(|c| c == UNREAD_EXIT_MEASURED)
+        || s.members
+            .iter()
+            .any(|m| m.unread.iter().any(|c| c == UNREAD_EXIT_MEASURED))
 }
 
 /// Packages whose view classes apply the list `decorators` (Flask's `View`) or
@@ -963,6 +971,33 @@ impl<'r> Linker<'r> {
             out.dedup();
         }
         out
+    }
+
+    /// Whether this link holds a check of a body: one read since the measured
+    /// build is left out of what mining reads, and one that turns away the
+    /// requests that have a caller is kept there only
+    /// ([`RawBodyCheck::since`], [`RawBodyCheck::measured`]).
+    fn reads_check(&self, b: &RawBodyCheck) -> bool {
+        match b.since || b.measured {
+            true => self.since_measured() != b.measured,
+            false => true,
+        }
+    }
+
+    /// An exit only the measured build left unread ([`UNREAD_EXIT_MEASURED`]):
+    /// [`drift_core::controls::UNREAD_EXIT`] for what mining reads, where the
+    /// controls do not hold it already, and nothing otherwise.
+    fn measured_exits(&self, controls: &mut Vec<String>) {
+        let Some(i) = controls.iter().position(|c| c == UNREAD_EXIT_MEASURED) else {
+            return;
+        };
+        let unread = drift_core::controls::UNREAD_EXIT;
+        match self.since_measured() || controls.iter().any(|c| c == unread) {
+            true => {
+                controls.remove(i);
+            }
+            false => controls[i] = unread.to_string(),
+        }
     }
 
     /// Whether the link so far met a listing the measured build did not make.
@@ -4737,6 +4772,7 @@ impl<'r> Linker<'r> {
                     },
                     controls: {
                         let mut c = s.controls.clone();
+                        self.measured_exits(&mut c);
                         // A dependency the repository replaces, since the measured
                         // build.
                         if !self.overridden.is_empty()
@@ -4998,6 +5034,7 @@ impl<'r> Linker<'r> {
                             body_checks: m
                                 .body_checks
                                 .iter()
+                                .filter(|b| self.reads_check(b))
                                 .map(|b| drift_core::BodyCheck {
                                     source: self.operand(fi, &b.source, false),
                                     reads: b.reads.clone(),
@@ -5055,6 +5092,7 @@ impl<'r> Linker<'r> {
                             caller_args: self.caller_args(fi, &m.caller_args),
                             unread: {
                                 let mut unread = m.unread.clone();
+                                self.measured_exits(&mut unread);
                                 unread.extend(
                                     m.fed_sinks
                                         .iter()
@@ -5092,6 +5130,7 @@ impl<'r> Linker<'r> {
                     body_checks: s
                         .body_checks
                         .iter()
+                        .filter(|b| self.reads_check(b))
                         .map(|b| drift_core::BodyCheck {
                             source: self.operand(fi, &b.source, false),
                             reads: b.reads.clone(),

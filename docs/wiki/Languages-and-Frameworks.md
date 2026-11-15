@@ -114,7 +114,7 @@ Readings worth knowing, one sentence each:
 - **Nest providers, ORM configuration and Next.js configuration** Drift cannot follow make the routes they may reach unknown.
 - **A Next.js page under a layout that turns away whoever is not signed in** reads *guard unknown* (`layout_may_redirect`), naming the layout's file and line: a layout and its page render in parallel and a layout is not re-run on client navigation, so Drift does not count it as guarding the page. Check in the page or its data layer. Route handlers and server actions are not covered by layouts.
 - **A webhook that verifies the sender's signature** (svix or standard-webhooks `Webhook.verify`, Stripe `construct_event` / `webhooks.constructEvent`, Slack `SignatureVerifier.is_valid_request`), for every request, with a failure that leaves the handler, is service authentication, listed by `drift security` under *Entry points that verify a webhook signature (no sign-in by design)*. A verification that is swallowed, only logged, made for some requests only, or whose result is ignored reads `unknown` (`signature_not_proven`), never known. Not yet recognised: TypeScript standard-webhooks and Slack verifiers. A constant-time compare (`timingSafeEqual`, `hmac.compare_digest`) is a check only where its answer decides a refusal.
-- **Lowering versions in this build:** Python 70, TypeScript 81 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
+- **Lowering versions in this build:** Python 71, TypeScript 81 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
 
 ### Known gaps stated in the project's documents
 

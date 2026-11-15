@@ -4032,12 +4032,17 @@ def k():
         "/check-under-branch",
         "/call-under-branch",
         "/call-after-preview",
-        // A refusal no check records: found, never none (and not made known here).
-        "/refused-at-the-end",
     ] {
         assert_eq!(answers[&format!("GET {route}")], "unknown", "{route}");
     }
-    for route in ["/login-required", "/check", "/call"] {
+    for route in [
+        "/login-required",
+        "/check",
+        "/call",
+        // The refusal follows an `if` that returns for the caller it found: every
+        // request without one reaches it (Python lowering 71).
+        "/refused-at-the-end",
+    ] {
         assert_eq!(answers[&format!("GET {route}")], "guarded", "{route}");
     }
     assert_eq!(answers["GET /nothing"], "no guard");
