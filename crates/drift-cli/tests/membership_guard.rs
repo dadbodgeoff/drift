@@ -504,3 +504,127 @@ fn rows_found_by_the_caller_itself_are_the_callers_whatever_the_key_is_called() 
         "{got:?}"
     );
 }
+
+/// The route's authorization is proven, by any mechanism. A route whose guard
+/// signs no one in has no authorization unit at all, and is not.
+fn known(permissions: &str) -> bool {
+    let dir = repo(&format!("{HEAD}{permissions}"));
+    authz(dir.path())
+        .get(ROUTE)
+        .is_some_and(|said| said.starts_with("known"))
+}
+
+#[test]
+fn a_lookup_of_the_caller_among_rows_a_literal_picks_is_a_role() {
+    // The caller holds a place no request chose: a seat of level 15 or more,
+    // anywhere.
+    assert_eq!(
+        said(
+            r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(level__gte=15, holder=request.user).exists()
+"#
+        ),
+        "known role_guard"
+    );
+    // Any seat at all: the caller has one, which says nothing of what they may do.
+    assert!(!known(
+        r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(holder=request.user).exists()
+"#
+    ),);
+    // Rows a literal picks, and no caller among what is looked up: whether anyone
+    // holds such a seat.
+    assert!(!known(
+        r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(level__gte=15).exists()
+"#
+    ),);
+    // Some request is let in without the lookup.
+    assert!(!known(
+        r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return Seat.objects.filter(level__gte=15, holder=request.user).exists()
+"#
+    ),);
+}
+
+#[test]
+fn the_caller_is_the_caller_whatever_the_request_parameter_is_annotated_with() {
+    let dir = tempfile::tempdir().unwrap();
+    for (rel, text) in [
+        ("requirements.txt", "django\ndjangorestframework\n"),
+        ("proj/__init__.py", ""),
+        (
+            "proj/settings.py",
+            "INSTALLED_APPS = [\"rest_framework\", \"desk\"]\nROOT_URLCONF = \"proj.urls\"\n",
+        ),
+        (
+            "proj/urls.py",
+            "from django.urls import path\n\nfrom desk import views\n\nurlpatterns = [\n    path(\"plain/<int:pk>/\", views.Plain.as_view()),\n    path(\"annotated/<int:pk>/\", views.Annotated.as_view()),\n    path(\"asked/<int:pk>/\", views.Asked.as_view()),\n]\n",
+        ),
+        ("desk/__init__.py", ""),
+        ("desk/models.py", MODELS),
+        (
+            "desk/views.py",
+            r#"from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from desk.models import Seat
+
+
+class Plain(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        Seat.objects.get(holder=request.user, pk=pk).delete()
+        return Response(status=204)
+
+
+class Annotated(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request, pk: int) -> Response:
+        Seat.objects.get(holder=request.user, pk=pk).delete()
+        return Response(status=204)
+
+
+class Asked(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request, pk: int) -> Response:
+        Seat.objects.get(holder=request.data["holder"], pk=pk).delete()
+        return Response(status=204)
+"#,
+        ),
+    ] {
+        let p = dir.path().join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, text).unwrap();
+    }
+    let got = authz(dir.path());
+    assert_eq!(got["/plain/<int:pk>"], "known owner_filter", "{got:?}");
+    assert_eq!(got["/annotated/<int:pk>"], "known owner_filter", "{got:?}");
+    // What the request sent under the same key, annotated or not.
+    assert!(!got["/asked/<int:pk>"].starts_with("known"), "{got:?}");
+}

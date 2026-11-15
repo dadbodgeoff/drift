@@ -2750,7 +2750,15 @@ impl<'t> Collector<'_, 't> {
             // `request.user`, `g.user`: the member that says the caller, read off
             // what is no value of the caller itself.
             Expr::Attribute(a) => {
-                names_caller(a.attr.as_str()) && self.caller_value(&a.value).is_none()
+                names_caller(a.attr.as_str())
+                    && match self.caller_value(&a.value) {
+                        None => true,
+                        // A parameter whose annotation may name a dependency
+                        // (`request: Request`): the path is the caller's by its
+                        // own source all the same, whatever the annotation is.
+                        Some(Some(RawDep::Alias(_))) => self.caller_value(owner) == Some(None),
+                        Some(_) => false,
+                    }
             }
             _ => false,
         }

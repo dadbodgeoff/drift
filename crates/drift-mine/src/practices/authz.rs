@@ -451,7 +451,7 @@ fn read_unit<'a>(
             // repository is a role guard where its own body answers 403 on a role
             // value for every request; where only its name says so (`RolesGuard`,
             // `adminProcedure`), it is found by its name, not proven.
-            if common::external(g) || role_guard_proven(cx, g) {
+            if common::external(g) || role_guard_proven(cx, g) || role_lookup_guard(cx, g) {
                 ev.add("role_guard", g, VariantSource::Usage);
             } else if membership_guard(cx, g) {
                 // Read from its body, whatever its name says it is for.
@@ -2879,6 +2879,12 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
         ev.add("membership_guard", w, VariantSource::Usage);
         return;
     }
+    // And what lets one through only where the caller is found among rows a
+    // literal picks is a role, read the same way ([`role_lookup_guard`]).
+    if role_lookup_guard(cx, w) {
+        ev.add("role_guard", w, VariantSource::Usage);
+        return;
+    }
     let name = common::short(w).rsplit('.').next().unwrap_or_default();
     if super::libraries::SIGNED_IN_ONLY_CALLEES.contains(&name) {
         return;
@@ -2946,6 +2952,16 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
 /// query the caller is no part of, or that names nothing of the request (any row
 /// of the caller's anywhere).
 fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
+    passes_by(cx, facts, prefix, false)
+}
+
+/// [`passes_by_lookup`], or (`fixed`) a body that lets a request through only where
+/// a lookup found the caller among rows a literal picks, and nothing the request
+/// names: `return InstanceAdmin.objects.filter(role__gte=15, user=request.user)
+/// .exists()`. The caller holds a place no request chose: a role, whatever the
+/// model and the keys are called. A lookup of the caller under no other key (any
+/// row of the caller's) says only that the caller has one.
+fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
     let mut sites = facts
         .iter()
         .filter_map(|f| f.strip_prefix(prefix))
@@ -2968,7 +2984,8 @@ fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
         // reads that model is one, by a caller the facts prove.
         if let Some(model) = result.strip_suffix(drift_core::controls::LOOKUP_OF) {
             let mut reads = census.iter().filter(|(m, _)| *m == model).peekable();
-            return reads.peek().is_some()
+            return !fixed
+                && reads.peek().is_some()
                 && reads.all(|(_, by)| {
                     matches!(by, RowsBy::Own(_, side, true) if side_is_caller_self(cx, side))
                 });
@@ -2988,10 +3005,42 @@ fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
         of.peek().is_some()
             && of.all(|given| {
                 given.iter().any(|(_, side)| side_is_callers(cx, side))
-                    && given.iter().any(|(_, side)| requested(side))
+                    && match fixed {
+                        false => given.iter().any(|(_, side)| requested(side)),
+                        true => {
+                            given.iter().any(|(_, side)| *side == "literal")
+                                && !given.iter().any(|(_, side)| requested(side))
+                        }
+                    }
             })
     };
     sites.all(|site| site.split('\t').any(lookup))
+}
+
+/// A guard of the repository lets a request through only where a lookup found the
+/// caller among rows a literal picks ([`passes_by`]): a role guard read from its
+/// body, at the same places [`membership_guard`] reads.
+fn role_lookup_guard(cx: &Cx<'_>, g: &str) -> bool {
+    use drift_core::controls::{HANDED_AFTER, LEAVES_AFTER, TRUE_AFTER};
+    let ctx = cx.context();
+    if common::external(g) || !ctx.since_measured() {
+        return false;
+    }
+    let Some(d) = ctx.definition(g) else {
+        return false;
+    };
+    match d.kind {
+        SymbolKind::Function => {
+            passes_by(cx, &d.controls, HANDED_AFTER, true)
+                || passes_by(cx, &d.controls, LEAVES_AFTER, true)
+        }
+        SymbolKind::Class => d
+            .members
+            .iter()
+            .find(|m| m.name == "has_permission")
+            .is_some_and(|m| passes_by(cx, &m.unread, TRUE_AFTER, true)),
+        _ => false,
+    }
 }
 
 /// A guard of the repository lets a request through only after a lookup of the
