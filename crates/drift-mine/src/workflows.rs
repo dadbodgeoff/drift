@@ -430,7 +430,10 @@ mod tests {
             "on: pull_request_target\njobs:\n  test:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          ref: refs/pull/${{ github.event.pull_request.number }}/merge\n      - run: gh pr checkout ${{ github.event.number }}\n",
         );
         assert_eq!(
-            found.iter().filter(|(k, _)| k == "untrusted_checkout").count(),
+            found
+                .iter()
+                .filter(|(k, _)| k == "untrusted_checkout")
+                .count(),
             2,
             "{found:?}"
         );

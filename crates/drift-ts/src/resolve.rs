@@ -887,6 +887,20 @@ type MountParent = (
     Vec<drift_core::GuardCall>,
 );
 
+/// A call of a package whose result a router is given where a handler goes
+/// ([`Linker::handed_calls`]).
+struct Handed {
+    file: String,
+    spec: String,
+    node: String,
+    pathed: Vec<(String, String)>,
+}
+
+/// The node [`Linker::mount_chains`] serves the `i`-th such call of `file` by.
+fn handed_node(file: &str, i: usize) -> String {
+    format!("{file}#(handed {i})")
+}
+
 /// Package calls that are handed an application and register nothing on it: they
 /// start a server on it, wrap it for a platform, or drive it in a test.
 const PLAIN_APP_CALLS: &[&str] = &[
@@ -944,6 +958,8 @@ pub struct Linker<'r> {
     /// plugin function): (the router it is mounted on, the prefix, the middleware
     /// active there, outermost first, as canonical ids).
     mount_parents: BTreeMap<String, BTreeSet<MountParent>>,
+    /// The calls of a package whose result a router is given where a handler goes.
+    handed: Vec<Handed>,
     /// What each function of the repository registers on the router it is handed
     /// as its n-th argument ([`crate::lower::RawRegisters`]): the middleware,
     /// canonical, or `None` where some of it is not read.
@@ -1319,6 +1335,7 @@ impl<'r> Linker<'r> {
             specs,
             modules,
             mount_parents: BTreeMap::new(),
+            handed: Vec::new(),
             registers: BTreeMap::new(),
             decorated: BTreeMap::new(),
             register_calls: BTreeMap::new(),
@@ -1388,6 +1405,7 @@ impl<'r> Linker<'r> {
             })
             .collect();
         linker.mount_parents = linker.mounts(files);
+        linker.handed = linker.handed_calls(files);
         linker.trpc = linker.trpc_origins(files);
         let composed = files
             .iter()
@@ -1964,39 +1982,86 @@ impl<'r> Linker<'r> {
                     if parent == node {
                         continue;
                     }
-                    let middleware = m
-                        .middleware
-                        .iter()
-                        .map(|r| self.canon(&f.rel_path, r))
-                        .collect();
-                    let mut hooks: Vec<String> = m
-                        .hooks
-                        .iter()
-                        .map(|r| self.canon(&f.rel_path, r))
-                        .filter(|c| !routers.contains(c) && !self.routers.contains(c))
-                        .collect();
-                    let mut calls: Vec<drift_core::GuardCall> = m
-                        .calls
-                        .iter()
-                        .map(|c| self.guard_call(&f.rel_path, c))
-                        .filter(|c| !self.routers.contains(&c.callee))
-                        .collect();
-                    for (callee, at) in &m.passed {
-                        let callee = self.canon(&f.rel_path, callee);
-                        hooks.extend(self.app_passed(&callee, *at));
-                        calls.extend(self.passed_calls(&callee, *at));
-                    }
-                    parents.entry(node).or_default().insert((
+                    parents.entry(node).or_default().insert(self.mount_parent(
+                        f,
+                        m,
                         parent.clone(),
-                        m.prefix.clone(),
-                        middleware,
-                        hooks,
-                        calls,
+                        &routers,
                     ));
                 }
             }
+            // What a package's call handed back, given where a handler goes: a node
+            // of its own, mounted on the router it was given to.
+            for (i, (m, _)) in f.raw.handed_calls.iter().enumerate() {
+                let parent = format!("{}#{}", f.rel_path, m.parent);
+                parents
+                    .entry(handed_node(&f.rel_path, i))
+                    .or_default()
+                    .insert(self.mount_parent(f, m, parent, &routers));
+            }
         }
         parents
+    }
+
+    /// One mount as [`Linker::mount_chains`] follows it: what the mounting router
+    /// `parent` runs before what it mounts, canonical.
+    fn mount_parent(
+        &self,
+        f: &LoweredFile,
+        m: &crate::lower::RawMount,
+        parent: String,
+        routers: &BTreeSet<String>,
+    ) -> MountParent {
+        let middleware = m
+            .middleware
+            .iter()
+            .map(|r| self.canon(&f.rel_path, r))
+            .collect();
+        let mut hooks: Vec<String> = m
+            .hooks
+            .iter()
+            .map(|r| self.canon(&f.rel_path, r))
+            .filter(|c| !routers.contains(c) && !self.routers.contains(c))
+            .collect();
+        let mut calls: Vec<drift_core::GuardCall> = m
+            .calls
+            .iter()
+            .map(|c| self.guard_call(&f.rel_path, c))
+            .filter(|c| !self.routers.contains(&c.callee))
+            .collect();
+        for (callee, at) in &m.passed {
+            let callee = self.canon(&f.rel_path, callee);
+            hooks.extend(self.app_passed(&callee, *at));
+            calls.extend(self.passed_calls(&callee, *at));
+        }
+        (parent, m.prefix.clone(), middleware, hooks, calls)
+    }
+
+    /// The calls of a package whose result a router is given where a handler goes
+    /// ([`crate::lower::RawFile::handed_calls`]): the file, the package called,
+    /// the node [`Linker::mount_chains`] serves it by, and what the router was
+    /// given for a path that may take some of what the call serves.
+    fn handed_calls(&self, files: &[LoweredFile]) -> Vec<Handed> {
+        let mut out = Vec::new();
+        for f in files {
+            for (i, (m, pathed)) in f.raw.handed_calls.iter().enumerate() {
+                let target = self.canon(&f.rel_path, &m.target);
+                let Some((spec, _)) = target.strip_prefix("pkg:").and_then(|t| t.split_once('#'))
+                else {
+                    continue;
+                };
+                out.push(Handed {
+                    file: f.rel_path.clone(),
+                    spec: spec.to_string(),
+                    node: handed_node(&f.rel_path, i),
+                    pathed: pathed
+                        .iter()
+                        .map(|(pattern, hook)| (pattern.clone(), self.canon(&f.rel_path, hook)))
+                        .collect(),
+                });
+            }
+        }
+        out
     }
 
     /// Every way the router `node` (`module#binding`, or a module) is served: one
@@ -2682,6 +2747,7 @@ impl<'r> Linker<'r> {
         arg_sides: &[(RawRef, Vec<(String, String)>)],
         loose_sides: &[(String, Vec<(String, String)>)],
         param_keys: &[(RawRef, String, String)],
+        check_sides: &[crate::lower::CheckSides],
     ) -> Vec<String> {
         // A value read off what a call handed back names the call by its
         // canonical callee ([`crate::lower::RawSymbol::loose_sides`]).
@@ -2726,6 +2792,22 @@ impl<'r> Linker<'r> {
                 self.canon(rel, callee)
             )
         }));
+        // The sides of each comparison a check makes
+        // ([`crate::lower::RawSymbol::check_sides`]), keyed as the check is written.
+        out.extend(
+            check_sides
+                .iter()
+                .map(|(source, reads, compares, left, right)| {
+                    format!(
+                        "{}{}\t{reads}\t{}\t{}\t{}",
+                        drift_core::controls::SIDES,
+                        self.operand(rel, source, ""),
+                        self.operand(rel, compares, "call:"),
+                        side(left),
+                        side(right)
+                    )
+                }),
+        );
         out.sort();
         out.dedup();
         out
@@ -2906,6 +2988,7 @@ impl<'r> Linker<'r> {
                         &s.arg_sides,
                         &s.loose_sides,
                         &s.param_keys,
+                        &s.check_sides,
                     ));
                     controls.sort();
                     controls.dedup();
@@ -3013,6 +3096,7 @@ impl<'r> Linker<'r> {
                                 &m.arg_sides,
                                 &m.loose_sides,
                                 &m.param_keys,
+                                &m.check_sides,
                             ));
                             unread.extend(m.caller_keys.iter().map(|(callee, key)| {
                                 format!(
@@ -3274,20 +3358,62 @@ impl<'r> Linker<'r> {
                         .strip_prefix(facts.package.as_str())
                         .is_some_and(|rest| rest.starts_with('/'))
             };
-            let unread_before = framework != crate::filerouters::Framework::ReactRouter
-                || self.routers.iter().any(|r| within(r))
-                || self.route_middleware.iter().any(|f| within(f));
+            let route_middleware = self.route_middleware.iter().any(|f| within(f));
+            // A router of the package given the framework's own request handler
+            // serves the routes: what it runs before the handler runs before them.
+            // Given it in one place, by one chain of mounts; any other way, which
+            // of them answers is not read.
+            let handed: Vec<(&Handed, MountChain)> = self
+                .handed
+                .iter()
+                .filter(|h| within(&h.file) && framework.hands_requests(&h.spec))
+                .flat_map(|h| {
+                    self.mount_chains(&h.node, 0)
+                        .into_iter()
+                        .map(move |c| (h, c))
+                })
+                .collect();
+            let through = match handed.as_slice() {
+                [(h, c)] if !c.opaque && !route_middleware => Some((*h, c)),
+                _ => None,
+            };
+            let unread_before = through.is_none()
+                && (framework != crate::filerouters::Framework::ReactRouter
+                    || self.routers.iter().any(|r| within(r))
+                    || route_middleware);
             for e in crate::filerouters::entry_points(&facts, framework) {
                 if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
                     continue;
                 }
+                let route = e.route.clone().unwrap_or_default();
+                let mut wraps = Vec::new();
+                let mut app_middleware = Vec::new();
+                if let Some((h, c)) = through {
+                    wraps.extend(c.middleware.iter().map(|w| Wrap {
+                        wrapper: w.clone(),
+                        kind: drift_core::WrapKind::Call,
+                    }));
+                    app_middleware.extend(c.hooks.iter().cloned());
+                    // What the router was given for a path: for the routes the
+                    // path takes, and as something that may run where that is
+                    // not read.
+                    for (pattern, hook) in &h.pathed {
+                        match crate::lower::routes::hook_covers(pattern, &route) {
+                            Some(true) => app_middleware.push(hook.clone()),
+                            Some(false) => {}
+                            None => app_middleware.push(format!(
+                                "global#a middleware given for {pattern}, which may cover the route"
+                            )),
+                        }
+                    }
+                }
                 facts.mounts.push(drift_core::MountFacts {
                     symbol: e.symbol.clone(),
-                    route: e.route.clone().unwrap_or_default(),
-                    wraps: vec![],
+                    route,
+                    wraps,
                     opaque: unread_before,
                     elsewhere: false,
-                    app_middleware: vec![],
+                    app_middleware,
                 });
                 facts.entry_points.push(e);
             }
@@ -3590,7 +3716,23 @@ impl<'r> Linker<'r> {
             })
             .filter(|(_, _, args, tags)| !args.is_empty() || !tags.is_empty())
             .collect();
+        // The class each property of a class is declared with
+        // ([`crate::lower::RawSymbol::attr_types`]).
+        let attrs: Vec<(&str, u32, Vec<String>)> = raw_symbols
+            .iter()
+            .filter(|s| !s.attr_types.is_empty())
+            .map(|s| {
+                let mut types: Vec<String> = s
+                    .attr_types
+                    .iter()
+                    .map(|(attr, class)| format!("{attr}={}", self.canon(rel, class)))
+                    .collect();
+                types.sort();
+                (s.name.as_str(), s.line, types)
+            })
+            .collect();
         if !in_place.is_empty()
+            || !attrs.is_empty()
             || !listed_controls.is_empty()
             || !flows.is_empty()
             || !measured_args.is_empty()
@@ -3600,6 +3742,15 @@ impl<'r> Linker<'r> {
             || !built.is_empty()
         {
             let mut measured = facts.clone();
+            for (name, line, types) in attrs {
+                for s in facts
+                    .symbols
+                    .iter_mut()
+                    .filter(|s| s.name == name && s.line == line)
+                {
+                    s.attr_types = types.clone();
+                }
+            }
             for (name, line, calls) in listed_calls {
                 for s in facts
                     .symbols

@@ -5751,53 +5751,77 @@ fn decorator_metadata<'a>(
     keys
 }
 
-/// The metadata keys whose presence on a route makes the guard class let it through
-/// ([`drift_core::controls::OPENS_FOR_METADATA`]), each with where the guard reads
-/// it (`handler`, `class`, `any`), and whether the guard reads metadata in a way
-/// that is not read ([`drift_core::controls::METADATA_UNREAD`]). A class with no
-/// `canActivate` of its own runs its base's; a library's class is not read.
+/// What a guard class consults of the route it runs for ([`guard_metadata`]).
+#[derive(Default)]
+struct GuardMetadata<'a> {
+    /// The keys whose presence makes the guard let the route through
+    /// ([`drift_core::controls::OPENS_FOR_METADATA`]), each with where it is read
+    /// (`handler`, `class`, `any`).
+    opens: Vec<(&'a str, &'a str)>,
+    /// The keys it reads and uses in a way that is not read
+    /// ([`drift_core::controls::READS_METADATA`]), the same way.
+    reads: Vec<(&'a str, &'a str)>,
+    /// It reads metadata where neither the key nor the use is read
+    /// ([`drift_core::controls::METADATA_UNREAD`]).
+    unread: bool,
+}
+
+/// What the guard class `guard` consults of a route's metadata. A class with no
+/// `canActivate` of its own runs its base's; a library's class is not read, but for
+/// `@nestjs/passport`'s, whose `canActivate` reads no route metadata: what it calls
+/// of the class (`getRequest`, `handleRequest`) is read with the class.
 fn guard_metadata<'a>(
     ctx: &crate::context::RepoContext<'a>,
     guard: &str,
     depth: usize,
-) -> (Vec<(&'a str, &'a str)>, bool) {
+) -> GuardMetadata<'a> {
     let passport = |r: &str| r.trim_end_matches("()") == PASSPORT_AUTH_GUARD;
     let g = crate::mine::norm_ref(guard);
     let g = g.trim_end_matches("()");
     // A library's class: what it does with a route's metadata is not read.
     let Some(def) = (!external(g)).then(|| ctx.definition(g)).flatten() else {
-        return (Vec::new(), true);
+        return GuardMetadata {
+            unread: true,
+            ..GuardMetadata::default()
+        };
     };
-    let mut opens: Vec<(&str, &str)> = def
-        .controls
-        .iter()
-        .filter_map(|c| c.strip_prefix(drift_core::controls::OPENS_FOR_METADATA))
-        .filter_map(|c| c.split_once(':'))
-        .collect();
-    let mut unread = def.kind != drift_core::SymbolKind::Class
-        || def
-            .controls
+    let keyed = |start: &str| -> Vec<(&'a str, &'a str)> {
+        def.controls
             .iter()
-            .any(|c| c == drift_core::controls::METADATA_UNREAD);
+            .filter_map(|c| c.strip_prefix(start))
+            .filter_map(|c| c.split_once(':'))
+            .collect()
+    };
+    let mut out = GuardMetadata {
+        opens: keyed(drift_core::controls::OPENS_FOR_METADATA),
+        reads: keyed(drift_core::controls::READS_METADATA),
+        unread: def.kind != drift_core::SymbolKind::Class
+            || def
+                .controls
+                .iter()
+                .any(|c| c == drift_core::controls::METADATA_UNREAD),
+    };
     let own = def.members.iter().any(|m| m.name == "canActivate");
     for base in def.wraps.iter().filter(|w| w.kind == WrapKind::Extends) {
         let b = crate::mine::norm_ref(&base.wrapper);
         // `@nestjs/passport`'s `canActivate` reads no route metadata: behind a
-        // `canActivate` of the class's own that was read, it changes nothing.
-        if passport(&b) && own {
+        // `canActivate` of the class's own, or run as the class's, it changes
+        // nothing.
+        if passport(&b) && (own || ctx.since_measured()) {
             continue;
         }
         // Its own `canActivate` may run the base's, or not: what the base consults
         // is this guard's only where the base's method is the one that runs.
         if own || depth >= 3 {
-            unread = true;
+            out.unread = true;
             continue;
         }
-        let (inherited, base_unread) = guard_metadata(ctx, &b, depth + 1);
-        opens.extend(inherited);
-        unread |= base_unread;
+        let inherited = guard_metadata(ctx, &b, depth + 1);
+        out.opens.extend(inherited.opens);
+        out.reads.extend(inherited.reads);
+        out.unread |= inherited.unread;
     }
-    (opens, unread)
+    out
 }
 
 /// The decorators written on a Nest route, each with whether it is written on the
@@ -5860,7 +5884,11 @@ pub fn nest_opt_out<'a>(
     if metadata.is_empty() {
         return NestOptOut::Applies;
     }
-    let (opens, mut unsure) = guard_metadata(ctx, guard, 0);
+    let GuardMetadata {
+        opens,
+        reads,
+        unread: mut unsure,
+    } = guard_metadata(ctx, guard, 0);
     for (decorator, on_class, keys) in &metadata {
         for k in keys {
             if *k == "?" {
@@ -5884,6 +5912,11 @@ pub fn nest_opt_out<'a>(
                     unsure = true;
                 }
             }
+            // A key the guard reads and uses in a way that is not read: what the
+            // decorator sets may change what the guard does for this route.
+            unsure |= reads
+                .iter()
+                .any(|(_, key)| *key == k || key.starts_with('"') != k.starts_with('"'));
         }
         // Written to open the route, by the decorator's name or by the text of a
         // key it sets (`@SetMetadata("isPublic", true)`): something not read may

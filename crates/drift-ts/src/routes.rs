@@ -433,6 +433,73 @@ impl Lowerer<'_> {
         out
     }
 
+    /// What the router `receiver` is given where a handler goes, when it is what a
+    /// call of a package hands back, written in place or bound to a `const` of the
+    /// module ([`RawFile::handed_calls`]). `before`: what is given with it and runs
+    /// first.
+    fn note_handed_call(
+        &mut self,
+        receiver: &str,
+        prefix: &str,
+        before: &[&Expression],
+        last: &Expression,
+    ) {
+        let target = match unwrap_expr(last) {
+            Expression::CallExpression(c) => self.canon(&c.callee),
+            Expression::Identifier(id) => self.module_calls.get(id.name.as_str()).cloned(),
+            _ => None,
+        };
+        let Some(target) = target.filter(|t| matches!(t.base, RawBase::Import { .. })) else {
+            return;
+        };
+        if self.scope != 0 && !self.closure_routers.contains(receiver) {
+            return;
+        }
+        let mut middleware = self.express.get(receiver).cloned().unwrap_or_default();
+        for x in before {
+            self.collect_middleware(x, &mut middleware);
+        }
+        // What the router was given so far: for every route, and for a path, which
+        // linking holds against each route the call serves.
+        let mut hooks: Vec<RawRef> = Vec::new();
+        let mut pathed: Vec<(String, RawRef)> = Vec::new();
+        for (pattern, hook) in self.hooks.get(receiver).into_iter().flatten() {
+            if *hook == target {
+                continue;
+            }
+            match covers_mount(pattern, prefix) {
+                Some(true) if !hooks.contains(hook) => hooks.push(hook.clone()),
+                None => pathed.push((pattern.clone(), hook.clone())),
+                _ => {}
+            }
+        }
+        let mut calls = self.calls_covering(receiver, prefix);
+        let mut given = GuardPosition::default();
+        for x in before {
+            self.guard_position(x, &mut given);
+        }
+        calls.extend(given.calls);
+        hooks.extend(given.unread.iter().map(|how| Self::unread_hook(how)));
+        hooks.extend(given.members.into_iter().map(|(_, member)| member));
+        // What has no name where it was given may be the guard of what follows.
+        for how in self.scope_unread.get(receiver).into_iter().flatten() {
+            hooks.push(Self::unread_hook(how));
+        }
+        self.out.handed_calls.push((
+            RawMount {
+                prefix: prefix.to_string(),
+                target,
+                middleware,
+                parent: receiver.to_string(),
+                tentative: false,
+                hooks,
+                passed: self.passed.get(receiver).cloned().unwrap_or_default(),
+                calls,
+            },
+            pathed,
+        ));
+    }
+
     /// A statement that hands a router of the module to a call (`setupAuth(app)`,
     /// `protect(admin, opts)`): what the call registers on it runs before the
     /// routes and the mounts that follow ([`RawSymbol::app_passed`]).
@@ -2071,6 +2138,9 @@ impl Lowerer<'_> {
                         // What is given for the path may be a middleware of the routes
                         // under it (`app.use("/api/*", requireUser)`) as well as a router:
                         // linking tells which.
+                        if let [_, before @ .., last] = exprs.as_slice() {
+                            self.note_handed_call(&receiver, &prefix, before, last);
+                        }
                         for x in &exprs[1..] {
                             self.note_hook(&receiver, &prefix, "use", x);
                         }
@@ -2118,6 +2188,9 @@ impl Lowerer<'_> {
                             ) {
                                 self.note_hook(&receiver, "", "use", x);
                             }
+                        }
+                        if let [before @ .., last] = exprs.as_slice() {
+                            self.note_handed_call(&receiver, "", before, last);
                         }
                         // `app.use([mw...,] router)`: mounted with no path, if the last
                         // argument is a router, which only the linker can tell. What is
@@ -2252,6 +2325,16 @@ impl Lowerer<'_> {
                         self.route_on(&receiver);
                     }
                     m => {
+                        // `app.all("*", handler)`: every request the router did not
+                        // answer goes to what a package's call handed back.
+                        if m == "all"
+                            && base.is_none()
+                            && let [path, before @ .., last] = exprs.as_slice()
+                            && let Some(pattern) = first_text(path)
+                        {
+                            let prefix = pattern.trim_end_matches('*').trim_end_matches('/');
+                            self.note_handed_call(&receiver, prefix, before, last);
+                        }
                         let mut rest = exprs.clone();
                         // Handlers spread into the registration (`app.get(path,
                         // ...handlers)`): what runs before the last of them is not
@@ -3759,6 +3842,12 @@ fn covers(pattern: &str, path: &str) -> Option<bool> {
         return apart(p, path).then_some(false);
     }
     Some(path_covers(pattern, path))
+}
+
+/// Whether what a router was given for `pattern` runs for the route at `route`,
+/// which the router serves through something else ([`covers`]).
+pub(crate) fn hook_covers(pattern: &str, route: &str) -> Option<bool> {
+    covers(pattern, route)
 }
 
 /// Whether what is given for `pattern` runs for the routes of a router mounted at

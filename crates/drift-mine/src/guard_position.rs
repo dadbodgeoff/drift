@@ -280,6 +280,7 @@ pub fn nest_guard(cx: &Cx<'_>, package: &str, at: &[GuardCall], guard: &str) -> 
             // change for it ([`security::nest_opt_out`]).
             let reads_metadata = d.controls.iter().any(|c| {
                 c.starts_with(drift_core::controls::OPENS_FOR_METADATA)
+                    || c.starts_with(drift_core::controls::READS_METADATA)
                     || c == drift_core::controls::METADATA_UNREAD
             });
             let every = |c: &drift_core::BodyCheck| !c.conditional;

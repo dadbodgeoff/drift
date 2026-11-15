@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 79;
+pub const LOWERING_VERSION: u32 = 80;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -342,6 +342,19 @@ pub struct RawSymbol {
     /// })`), which is a symbol of that reading alone ([`RawSymbol::in_place`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listed_calls: Vec<RawRef>,
+    /// Classes only: the type each property is declared with, where it names a
+    /// class (`public prisma!: PrismaClient`, `constructor(private readonly users:
+    /// UsersService)`): what a method called through the property of an instance
+    /// is a method of (`this.db.prisma.user.findMany`, with `db: DbService`). Linked
+    /// into [`drift_core::Symbol::attr_types`] of the listed reading only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub attr_types: Vec<(String, RawRef)>,
+    /// What each side of a comparison a check's condition makes is read from
+    /// ([`drift_core::controls::SIDES`]): the check's source, member path and what
+    /// it is compared with, as [`RawBodyCheck`] holds them, then the side of each
+    /// as [`RawSymbol::arg_sides`] writes one.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub check_sides: Vec<CheckSides>,
     /// The calls whose shape is recorded ([`drift_core::Listed::guard_calls`]):
     /// those written at a guard position of a route, and those a body makes of an
     /// export of a package on the guard lists ([`drift_core::guard_lists::shaped`]).
@@ -489,7 +502,14 @@ pub struct RawMember {
     pub param_keys: Vec<(RawRef, String, String)>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub loose_sides: Vec<(String, Vec<(String, String)>)>,
+    /// As [`RawSymbol::check_sides`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub check_sides: Vec<CheckSides>,
 }
+
+/// The two sides of one comparison of a check ([`RawSymbol::check_sides`]): source,
+/// member path, compared with, the source's side, the other's side.
+pub type CheckSides = (RawOperand, String, RawOperand, String, String);
 
 /// A value a practice fact names before resolution: nothing, a fixed text
 /// (`param:req`, `header:x-org-id`, `literal`, `*`), or a reference that linking
@@ -768,6 +788,16 @@ pub struct RawFile {
     /// function to `createServer` ([`RawFile::node_listener_refs`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listener_mounts: Vec<(String, RawMount)>,
+    /// A call of a package whose result a router of the module is given where a
+    /// handler goes (`app.use(createRequestHandler({ build }))`, `app.all("*",
+    /// handler)` with `const handler = createRequestHandler(...)`): as a mount of
+    /// whatever the call serves, its target the callee, with what the router runs
+    /// before it. Linking keeps it where the callee is the request handler of the
+    /// package's file-convention router, whose routes are then served through the
+    /// router. Each with what the router was given for a path that may take some
+    /// of those routes: the pattern and what runs.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub handed_calls: Vec<(RawMount, Vec<(String, RawRef)>)>,
 }
 
 /// Middleware applied to the routes of a Nest application beside them: one
@@ -1272,6 +1302,10 @@ struct Lowerer<'s> {
     /// Top-level `const`s bound to `new X(...)`: the class, and whether an argument is
     /// env-derived (`const wh = new Webhooks({ secret: process.env.S })`).
     module_news: BTreeMap<String, (RawRef, bool)>,
+    /// Top-level `const`s bound to what a call of a package hands back (`const
+    /// handler = createRequestHandler({ build })`): the callee
+    /// ([`RawFile::handed_calls`]).
+    module_calls: BTreeMap<String, RawRef>,
     /// Class properties initialised with `new X()` in the class being lowered
     /// (`private readonly logger = new Logger(Svc.name)`): the receiver of a log call
     /// through `this.logger`. Read for log calls only.
@@ -2159,6 +2193,7 @@ impl<'s> Lowerer<'s> {
             env_helpers: BTreeMap::new(),
             env_bound: BTreeSet::new(),
             module_news: BTreeMap::new(),
+            module_calls: BTreeMap::new(),
             this_news: std::cell::RefCell::new(BTreeMap::new()),
             test_file: false,
             sql: signals::SqlLocals::default(),
@@ -3456,6 +3491,12 @@ impl<'s> Lowerer<'s> {
         sym.nest_metadata
             .extend(self.direct_metadata(&class.decorators));
         sym.members = self.class_members(name, class);
+        sym.attr_types = self
+            .this_types
+            .borrow()
+            .iter()
+            .map(|(attr, class)| (attr.clone(), class.clone()))
+            .collect();
         self.push_symbol(sym);
         self.lower_nest_controller(name, class);
         self.lower_nest_configure(name, class);
@@ -3896,6 +3937,7 @@ impl<'s> Lowerer<'s> {
                     arg_sides: tmp.arg_sides,
                     param_keys: tmp.param_keys,
                     loose_sides: tmp.loose_sides,
+                    check_sides: tmp.check_sides,
                 }
             })
             .collect()
@@ -4945,6 +4987,8 @@ impl RawSymbol {
             rejection_goes_on: false,
             listed_unwraps: vec![],
             listed_calls: vec![],
+            attr_types: vec![],
+            check_sides: vec![],
             guard_calls: vec![],
             hands_on: false,
             returns_function: false,
@@ -5084,6 +5128,8 @@ struct Collector<'l, 's> {
     refuses_without: BTreeSet<Vec<RawRef>>,
     /// [`RawSymbol::arg_sides`], [`RawSymbol::param_keys`].
     arg_sides: BTreeSet<(RawRef, Vec<(String, String)>)>,
+    /// [`RawSymbol::check_sides`].
+    check_sides: BTreeSet<CheckSides>,
     param_keys: BTreeSet<(RawRef, String, String)>,
     /// The locals that hold plain data: a value built from literals and built-ins
     /// only, or one read off such a local or off a binding of the file that holds
@@ -5457,6 +5503,7 @@ impl<'l, 's> Collector<'l, 's> {
             returns_not_plain: false,
             refuses_without: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
+            check_sides: BTreeSet::new(),
             param_keys: BTreeSet::new(),
             plain_locals: HashSet::new(),
             loose_sides: BTreeSet::new(),
@@ -6078,6 +6125,8 @@ impl<'l, 's> Collector<'l, 's> {
             }
         }
         sym.arg_sides.extend(std::mem::take(&mut self.arg_sides));
+        sym.check_sides
+            .extend(std::mem::take(&mut self.check_sides));
         sym.param_keys.extend(std::mem::take(&mut self.param_keys));
         sym.loose_sides
             .extend(std::mem::take(&mut self.loose_sides));
@@ -8592,6 +8641,50 @@ impl Collector<'_, '_> {
         }
     }
 
+    /// What each side of the equalities a check's condition makes is read from
+    /// ([`RawSymbol::check_sides`]), by the operands [`Collector::condition`]
+    /// records for the same comparison: a value of the caller, what is read off a
+    /// parameter, what a call handed back, a literal.
+    fn comparison_sides(&self, e: &Expression, out: &mut Vec<CheckSides>, depth: usize) {
+        if depth > 8 {
+            return;
+        }
+        match peel(e) {
+            Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
+                self.comparison_sides(&u.argument, out, depth + 1)
+            }
+            Expression::LogicalExpression(l) => {
+                self.comparison_sides(&l.left, out, depth + 1);
+                self.comparison_sides(&l.right, out, depth + 1);
+            }
+            Expression::BinaryExpression(b) if b.operator.is_equality() => {
+                let side = |x: &Expression| {
+                    self.operand(x, 0)
+                        .filter(|(o, _)| !matches!(o, RawOperand::Text(t) if t == ENV_COMPARED))
+                };
+                let (read, other) = match (side(&b.left), side(&b.right)) {
+                    (Some(_), _) => (&b.left, &b.right),
+                    (None, Some(_)) => (&b.right, &b.left),
+                    (None, None) => return,
+                };
+                let Some((source, path)) = side(read) else {
+                    return;
+                };
+                let entry = (
+                    source,
+                    path,
+                    self.compared(other).0,
+                    self.arg_side(read),
+                    self.arg_side(other),
+                );
+                if !out.contains(&entry) {
+                    out.push(entry);
+                }
+            }
+            _ => {}
+        }
+    }
+
     /// The statement leaves by a `return` that does not turn the caller away: no
     /// rejection ([`Collector::exit_outcome`]), no error status, not the call that
     /// hands control on.
@@ -9626,6 +9719,11 @@ impl Collector<'_, '_> {
         }
         let mut found = Vec::new();
         self.condition(&it.test, &mut found, 0, otherwise);
+        let mut sides = Vec::new();
+        self.comparison_sides(&it.test, &mut sides, 0);
+        if self.check_sides.len() < MAX_ORDER * 4 {
+            self.check_sides.extend(sides);
+        }
         // A 404 is a caller check only under a condition that reads something.
         if found.is_empty() && outcome == drift_core::CheckOutcome::NotFound {
             return true;
@@ -11331,6 +11429,13 @@ impl Lowerer<'_> {
                                     ObjectPropertyKind::ObjectProperty(p) if self.env_value(&p.value, 0))))
                     });
                     self.module_news.insert(name.clone(), (class, env));
+                }
+                if let Expression::CallExpression(c) = peel(init)
+                    && let Some(callee) = self.canon(&c.callee)
+                    && matches!(callee.base, RawBase::Import { .. })
+                    && self.module_calls.len() < MAX_ENV_CONSTS
+                {
+                    self.module_calls.insert(name.clone(), callee);
                 }
                 match unwrap_expr(init) {
                     Expression::ArrowFunctionExpression(a) => {

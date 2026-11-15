@@ -1685,6 +1685,16 @@ pub mod controls {
     /// for this guard is not read. Held in the listed reading only; TypeScript
     /// lowering 64. Mining never reads it.
     pub const METADATA_UNREAD: &str = "metadata_unread";
+    /// What starts the control of a NestJS guard class that reads one metadata key
+    /// of the route and does with it what is not read (`request.allowed =
+    /// this.reflector.get(OnlyAllow, context.getHandler())` in `getRequest`): where
+    /// it is read and the key, as [`OPENS_FOR_METADATA`] writes them
+    /// (`reads_metadata:handler:src/auth/only-allow.ts#OnlyAllow`). A decorator
+    /// that sets this key may change what the guard does for the route; one that
+    /// sets another key is nothing the guard reads. A read whose key or target is
+    /// not read stays [`METADATA_UNREAD`]. Held in the listed reading only;
+    /// TypeScript lowering 80. Mining never reads it.
+    pub const READS_METADATA: &str = "reads_metadata:";
     /// The body turns a caller away as not signed in or not allowed, and not every
     /// request: on some path it returns without refusing (or hands control on, or
     /// yields) before it has passed a check that refuses a caller with no identity.

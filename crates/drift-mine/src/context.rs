@@ -225,6 +225,7 @@ fn facts_of(s: &drift_core::Symbol) -> usize {
                     && !c.starts_with(drift_core::controls::BUILTIN_VALUE)
                     && !c.starts_with(drift_core::controls::SETS_METADATA)
                     && !c.starts_with(drift_core::controls::OPENS_FOR_METADATA)
+                    && !c.starts_with(drift_core::controls::READS_METADATA)
                     && !c.starts_with(drift_core::controls::SIDES)
                     && !c.starts_with(drift_core::controls::FILTER_VALUE)
                     && !c.starts_with(drift_core::controls::ARG_VALUE)

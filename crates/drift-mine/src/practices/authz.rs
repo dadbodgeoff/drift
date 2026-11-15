@@ -2479,7 +2479,13 @@ fn resolve_at<'a>(cx: &Cx<'a>, from: Node<'a>, c: &str, hop: usize) -> Callee<'a
             // A method of an attribute `__init__` binds, of a class the facts name
             // ([`Symbol::attr_types`]: `repository.db.commit` with `self.db = db`, `db:
             // AsyncSession`), the class's own or one of the repository it extends.
-            [attr, method] if hop < BINDING_HOPS => {
+            [attr, method @ ..]
+                if hop < BINDING_HOPS
+                    && (method.len() == 1 || (!method.is_empty() && ctx.since_measured())) =>
+            {
+                // What is called on the attribute, a method or a member's
+                // (`service.db.user.findMany`, with `db: PrismaClient`).
+                let method = method.join(".");
                 let of = |s: &'a Symbol| {
                     s.attr_types
                         .iter()
@@ -3335,21 +3341,29 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         // ([`caller_side`]): `req.params.orgId !== req.body.orgId` and `rule.orgId !==
         // req.query.orgId` compare what the request sent with itself or with the row.
         let callers = ev.python || caller_side(c);
+        // TypeScript: the comparison is of a value of the caller with the row's, the
+        // request's or what the body was handed, by where the lowering says each
+        // side comes from ([`python_sides`]; a parameter below the handler is what
+        // the calls of the reach pass for it): `if (userId !== schedule.userId)
+        // throw new ForbiddenException()` in a method the handler hands the
+        // caller's id and the row it loaded.
+        let by_sides = !ev.python
+            && mismatch == Some(true)
+            && python_sides(cx, r, ev, &c.source, &c.reads, &c.compares) == Some(true);
         if tenant && mismatch == Some(true) {
             let own_body = ev.python && r.depth == 0 && !r.quiet;
             // Python: one side read off the caller, the other off the row or the
             // request, by where the lowering says each comes from.
-            let proven = python_sides(cx, r, ev, &c.source, &c.reads, &c.compares)
-                .unwrap_or_else(|| callers && sides(&c.source, &c.reads, &c.compares, own_body));
+            let fallback = callers && sides(&c.source, &c.reads, &c.compares, own_body);
+            let proven = sides_proven(cx, r, ev, c, fallback);
             ev.tenant(&side, proven);
         } else if (tenant || owner) && mismatch == Some(false) {
             if r.depth == 0 && !r.quiet && !c.conditional {
                 ev.unknown(UnknownReason::Unclassified, what);
             }
         } else if c.outcome == CheckOutcome::NotFound {
-            if owner && mismatch == Some(true) {
-                let proven = python_sides(cx, r, ev, &c.source, &c.reads, &c.compares)
-                    .unwrap_or(callers);
+            if (owner || by_sides) && mismatch == Some(true) {
+                let proven = sides_proven(cx, r, ev, c, callers);
                 ev.owner(&what, proven);
             }
         } else if (names_role(&c.reads) && !owner_compared(owner, mismatch, &c.compares))
@@ -3377,9 +3391,12 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             } else {
                 ev.add("role_check", &what, VariantSource::Usage);
             }
+        } else if by_sides {
+            // A value of the caller against the resource's, refused where they
+            // differ: the owner's check, whatever either is called.
+            ev.owner(&what, true);
         } else if owner && mismatch == Some(true) {
-            let proven = python_sides(cx, r, ev, &c.source, &c.reads, &c.compares)
-                .unwrap_or(callers);
+            let proven = sides_proven(cx, r, ev, c, callers);
             ev.owner(&what, proven);
         } else if let Some(mechanism) = answering_check(cx, c) {
             // [STRICT]: the 403 proves that the answer decides, the name says what was
@@ -3391,6 +3408,24 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         }
     }
     ev.cond = outer;
+}
+
+/// A comparison a check makes is of the caller with what is asked for. Python: by
+/// where the lowering says each side comes from ([`python_sides`]), and `fallback`
+/// where it recorded nothing. TypeScript: `fallback` (what a side is read from, by
+/// [`caller_side`]), or the sides where they prove it.
+fn sides_proven<'a>(
+    cx: &Cx<'a>,
+    r: &Reached<'a>,
+    ev: &Evidence,
+    c: &drift_core::BodyCheck,
+    fallback: bool,
+) -> bool {
+    match python_sides(cx, r, ev, &c.source, &c.reads, &c.compares) {
+        Some(proven) if ev.python => proven,
+        Some(proven) => proven || fallback,
+        None => fallback,
+    }
 }
 
 /// A 403 on what an in-repo function answered, where the function is named as a

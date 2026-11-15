@@ -2058,18 +2058,19 @@ const NEST_OPT_OUT_GUARDS: &[(&str, &str, &str, &str)] = &[
         "    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);\n    if (isPublic) return true;\n    return super.canActivate(context);\n",
         "kookkouookk",
     ),
-    // Not the opt-out shape: what a decorator changes for it is not read.
+    // Not the opt-out shape: what a decorator that sets the key it reads changes
+    // for it is not read. A decorator of a key it never reads changes nothing.
     (
         "LateGuard",
         "implements CanActivate",
         "    const request = context.switchToHttp().getRequest();\n    if (!request.headers.authorization) throw new UnauthorizedException();\n    const isPublic = this.reflector.get<boolean>(IS_PUBLIC_KEY, context.getHandler());\n    if (isPublic) return true;\n    return true;\n",
-        "kuuuuuuuuuu",
+        "kuukkuuuukk",
     ),
     (
         "NegatedGuard",
         "implements CanActivate",
         "    const isPublic = this.reflector.get<boolean>(IS_PUBLIC_KEY, context.getHandler());\n    if (!isPublic) {\n      const request = context.switchToHttp().getRequest();\n      if (!request.headers.authorization) throw new UnauthorizedException();\n    }\n    return true;\n",
-        "kuuuuuuuuuu",
+        "kuukkuuuukk",
     ),
     (
         "HelperGuard",
@@ -2188,11 +2189,13 @@ fn nest_opt_out(on_controllers: Option<&str>, module: &str, main: &str) -> Files
 /// this.reflector.getAllAndOverride(IS_PUBLIC_KEY, [context.getHandler(),
 /// context.getClass()]); if (isPublic) return true;`. Then the route is public,
 /// and the guard is not its guard. Under a guard that reads no such key, or reads
-/// metadata in a way that is not followed, a route under a decorator named for a
-/// public route (or one whose key or value is not read) is unknown: never known,
-/// never `none`. A decorator of another key (`@Roles("admin")`) changes nothing
-/// for a guard whose reads are all followed; under a library's guard, whose body
-/// is not read, a route under any metadata decorator is unknown.
+/// one in a way that is not followed, a route under a decorator named for a
+/// public route, or one that sets the key the guard reads (or whose key or value
+/// is not read), is unknown: never known, never `none`. A decorator of a key the
+/// guard never reads (`@Roles("admin")` under a guard that reads `isPublic`)
+/// changes nothing: the guard is the route's as it is a bare route's. So under a
+/// guard that only extends `@nestjs/passport`'s, whose `canActivate` reads no
+/// route metadata, and under one that reads its key in `handleRequest`.
 #[test]
 fn nest_a_public_decorator_opens_a_route_only_to_a_guard_read_to_honour_it() {
     let plain_module =
@@ -2203,8 +2206,8 @@ fn nest_a_public_decorator_opens_a_route_only_to_a_guard_read_to_honour_it() {
         .map(|(name, _, _, want)| (*name, *want))
         .chain([
             ("ChildGuard", "kookkouookk"),
-            ("LibraryGuard", "kuuuuuuuuuu"),
-            ("HandleRequestGuard", "kuuuuuuuuuu"),
+            ("LibraryGuard", "kuukkuuuukk"),
+            ("HandleRequestGuard", "kuukkuuuukk"),
         ]);
     for (guard, want) in guards {
         // (how the guard is attached, the files, the mechanism, the inventory's name)

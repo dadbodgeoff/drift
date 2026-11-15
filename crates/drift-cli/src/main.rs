@@ -3763,7 +3763,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     // result, so that code scanning shows why, under a rule per kind.
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
                         let rule = format!("drift-security/{kind}");
-                        if let Some(rules) = log["runs"][0]["tool"]["driver"]["rules"].as_array_mut()
+                        if let Some(rules) =
+                            log["runs"][0]["tool"]["driver"]["rules"].as_array_mut()
                             && !rules.iter().any(|r| r["id"] == rule.as_str())
                         {
                             rules.push(serde_json::json!({
@@ -3836,9 +3837,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
                             println!(
                                 "::error file={},line={},title={}::{}",
-                                drift_mine::report::github_escape_property(&format!("{prefix}{path}")),
+                                drift_mine::report::github_escape_property(&format!(
+                                    "{prefix}{path}"
+                                )),
                                 drift_mine::report::github_escape_property(line),
-                                drift_mine::report::github_escape_property(&format!("drift security [{kind}]")),
+                                drift_mine::report::github_escape_property(&format!(
+                                    "drift security [{kind}]"
+                                )),
                                 drift_mine::report::github_escape_data(&format!(
                                     "{} is not in the security baseline ({})",
                                     a.key,

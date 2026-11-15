@@ -78,7 +78,11 @@ pub fn findings(inv: &Inventory, facts: &drift_core::RepoFacts) -> Findings {
     let classes: BTreeMap<(&str, &str), &drift_core::Symbol> = facts
         .files
         .iter()
-        .flat_map(|f| f.symbols.iter().map(move |s| ((f.path.as_str(), s.name.as_str()), s)))
+        .flat_map(|f| {
+            f.symbols
+                .iter()
+                .map(move |s| ((f.path.as_str(), s.name.as_str()), s))
+        })
         .filter(|(_, s)| !s.members.is_empty())
         .collect();
     let mut out = Findings::new();

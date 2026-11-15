@@ -7,6 +7,13 @@
 //! body reads guard unknown, never "no guard found". Nothing runs before a React
 //! Router or Remix handler but what the package itself puts there (a server of its
 //! own, a route middleware): without one, its own body decides.
+//!
+//! A server of the package that is given the framework's own request handler (what
+//! a call of one of the framework's packages hands back, written where a handler
+//! goes or bound to a `const` first) serves the routes: what that router runs
+//! before the handler runs before each of them, for the paths it was given for.
+//! Given the handler in two places, or what another package's call hands back,
+//! what runs before a route stays unread.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -176,6 +183,104 @@ fn a_react_router_handler_is_guarded_by_what_its_own_body_calls() {
             ("GET /notes/:id", "none"),
         ],
     );
+}
+
+const RR_SERVED: &str = "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"@react-router/node\": \"7.1.0\", \"@react-router/express\": \"7.1.0\", \"express\": \"4.19.0\" } }\n";
+
+/// A middleware that answers 401 for a request with no caller.
+const RR_GATE: &str = r#"import type { NextFunction, Request, Response } from "express";
+
+declare function seatOf(req: Request): { userId?: string } | null;
+
+export function requireSeat(req: Request, res: Response, next: NextFunction) {
+  const seat = seatOf(req);
+  if (!seat?.userId) {
+    res.status(401).end();
+    return;
+  }
+  next();
+}
+"#;
+
+/// The routes of [`RR_ROUTES`] behind the server `server`, as `drift security`
+/// says them.
+fn served_by(server: &str) -> BTreeMap<String, String> {
+    let mut files = vec![
+        ("package.json", RR_SERVED),
+        ("app/utils/auth.server.ts", RR_AUTH),
+        ("server/gate.ts", RR_GATE),
+        ("server/app.ts", server),
+    ];
+    files.extend_from_slice(RR_ROUTES);
+    let dir = write(&files);
+    let mut got = routes(dir.path());
+    // The server's own catch-all, where it has one: not a route of the files.
+    got.remove("ALL *");
+    got
+}
+
+/// A server that runs nothing before the framework's handler leaves each route to
+/// its own body; a middleware given after the handler runs for none of them.
+#[test]
+fn a_server_given_the_frameworks_handler_puts_nothing_before_the_routes() {
+    for after in ["", "app.use(requireSeat);\n"] {
+        let server = format!(
+            "import {{ createRequestHandler }} from \"@react-router/express\";\nimport express from \"express\";\nimport {{ requireSeat }} from \"./gate\";\n\nexport const app = express();\napp.use(\n  createRequestHandler({{\n    build: () => import(\"virtual:react-router/server-build\"),\n  }}),\n);\n{after}"
+        );
+        expect(
+            &served_by(&server),
+            &[
+                ("GET /join", "none"),
+                ("GET /mine", "guarded"),
+                ("GET /notes/:id", "none"),
+            ],
+        );
+    }
+}
+
+/// What the server runs before the handler runs before every route, the handler
+/// bound to a name first and given for every path as it may be.
+#[test]
+fn what_a_server_runs_before_the_frameworks_handler_guards_the_routes() {
+    let server = "import { createRequestHandler } from \"@react-router/express\";\nimport express from \"express\";\nimport { requireSeat } from \"./gate\";\n\nconst pages = createRequestHandler({\n  build: () => import(\"virtual:react-router/server-build\"),\n});\n\nexport const app = express();\napp.use(requireSeat);\napp.all(\"*\", pages);\n";
+    expect(
+        &served_by(server),
+        &[
+            ("GET /join", "guarded"),
+            ("GET /mine", "guarded"),
+            ("GET /notes/:id", "guarded"),
+        ],
+    );
+}
+
+/// A middleware the server was given for a path runs for the routes under that
+/// path, and for no other.
+#[test]
+fn a_middleware_given_for_a_path_guards_the_routes_under_it() {
+    let server = "import { createRequestHandler } from \"@react-router/express\";\nimport express from \"express\";\nimport { requireSeat } from \"./gate\";\n\nexport const app = express();\napp.use(\"/notes\", requireSeat);\napp.use(\n  createRequestHandler({\n    build: () => import(\"virtual:react-router/server-build\"),\n  }),\n);\n";
+    expect(
+        &served_by(server),
+        &[
+            ("GET /join", "none"),
+            ("GET /mine", "guarded"),
+            ("GET /notes/:id", "guarded"),
+        ],
+    );
+}
+
+/// Two servers given the handler, one behind a guard: which of them answers a
+/// route is not read. Nor is what another package's call hands back taken for the
+/// framework's handler, whatever it is called.
+#[test]
+fn a_handler_given_twice_or_from_another_package_leaves_the_routes_unread() {
+    let twice = "import { createRequestHandler } from \"@react-router/express\";\nimport express from \"express\";\nimport { requireSeat } from \"./gate\";\n\nconst build = () => import(\"virtual:react-router/server-build\");\n\nexport const open = express();\nopen.use(createRequestHandler({ build }));\n\nexport const staff = express();\nstaff.use(requireSeat);\nstaff.use(createRequestHandler({ build }));\n";
+    let other = "import { createRequestHandler } from \"@acme/pages\";\nimport express from \"express\";\n\nexport const app = express();\napp.use(\n  createRequestHandler({\n    build: () => import(\"virtual:react-router/server-build\"),\n  }),\n);\n";
+    for server in [twice, other] {
+        let got = served_by(server);
+        assert_eq!(got["GET /join"], "unknown", "{got:?}");
+        assert_eq!(got["GET /notes/:id"], "unknown", "{got:?}");
+        assert_ne!(got["GET /mine"], "none", "{got:?}");
+    }
 }
 
 /// A package with a server of its own puts its middleware before every route: a

@@ -46,6 +46,25 @@ impl Framework {
     }
 }
 
+/// A package of React Router's framework mode or of Remix: the framework itself,
+/// its build and its server adapters.
+fn react_router_package(name: &str) -> bool {
+    name.starts_with("@remix-run/") || name.starts_with("@react-router/")
+}
+
+impl Framework {
+    /// Whether a call of the package `spec` hands back the framework's own request
+    /// handler, which serves the routes its files declare: a package of the
+    /// framework, for one whose server is an application's own
+    /// (`createRequestHandler` of `@react-router/express`).
+    pub fn hands_requests(self, spec: &str) -> bool {
+        match self {
+            Framework::ReactRouter => react_router_package(spec),
+            Framework::SvelteKit | Framework::Nitro => false,
+        }
+    }
+}
+
 /// The framework a manifest's dependencies name, if one of these.
 fn framework_in(json: &serde_json::Value) -> Option<Framework> {
     let mut found = None;
@@ -57,9 +76,7 @@ fn framework_in(json: &serde_json::Value) -> Option<Framework> {
             let f = match name.as_str() {
                 "@sveltejs/kit" => Framework::SvelteKit,
                 "nuxt" | "nitropack" | "nitro" => Framework::Nitro,
-                n if n.starts_with("@remix-run/") || n.starts_with("@react-router/") => {
-                    Framework::ReactRouter
-                }
+                n if react_router_package(n) => Framework::ReactRouter,
                 _ => continue,
             };
             // Two of them in one manifest: which serves a file is not read.
