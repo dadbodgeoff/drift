@@ -3759,18 +3759,30 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "locations": at(&format!("{prefix}{}", d.path), d.units.first().map_or(1, |u| u.line)),
                         }));
                     }
-                    // What the security baseline does not hold fails the check; it is
-                    // a notification here, as a fact of the run and no convention's
-                    // result.
+                    // What the security baseline does not hold fails the check: a
+                    // result, so that code scanning shows why, under a rule per kind.
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
+                        let rule = format!("drift-security/{kind}");
+                        if let Some(rules) = log["runs"][0]["tool"]["driver"]["rules"].as_array_mut()
+                            && !rules.iter().any(|r| r["id"] == rule.as_str())
+                        {
+                            rules.push(serde_json::json!({
+                                "id": rule,
+                                "shortDescription": { "text": format!("Security finding not in the baseline ({kind})") },
+                                "defaultConfiguration": { "level": "error" },
+                            }));
+                        }
                         for a in rows {
                             let (path, line) =
                                 a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
-                            notes.push(serde_json::json!({
-                                "level": "error",
-                                "message": { "text": format!("Security [{kind}]: {} is not in the security baseline ({}).", a.key, drift_mine::ratchet::SECURITY_LOCK) },
-                                "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
-                            }));
+                            if let Some(results) = log["runs"][0]["results"].as_array_mut() {
+                                results.push(serde_json::json!({
+                                    "ruleId": rule,
+                                    "level": "error",
+                                    "message": { "text": format!("Security [{kind}]: {} is not in the security baseline ({}).", drift_mine::report::sanitize(&a.key, 300), drift_mine::ratchet::SECURITY_LOCK) },
+                                    "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
+                                }));
+                            }
                         }
                     }
                     if !notes.is_empty() {
@@ -3823,9 +3835,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             let (path, line) =
                                 a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
                             println!(
-                                "::error file={prefix}{path},line={line},title=drift security [{kind}]::{} is not in the security baseline ({})",
-                                a.key,
-                                drift_mine::ratchet::SECURITY_LOCK
+                                "::error file={},line={},title={}::{}",
+                                drift_mine::report::github_escape_property(&format!("{prefix}{path}")),
+                                drift_mine::report::github_escape_property(line),
+                                drift_mine::report::github_escape_property(&format!("drift security [{kind}]")),
+                                drift_mine::report::github_escape_data(&format!(
+                                    "{} is not in the security baseline ({})",
+                                    a.key,
+                                    drift_mine::ratchet::SECURITY_LOCK
+                                ))
                             );
                         }
                     }

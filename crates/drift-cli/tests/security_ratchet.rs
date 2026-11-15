@@ -231,6 +231,18 @@ fn drift_check_fails_on_what_the_committed_baseline_does_not_hold() {
         "{}",
         String::from_utf8_lossy(&github.stdout)
     );
+    // In SARIF, a result code scanning shows, not only a notification of the run.
+    let sarif = drift(root, &["check", "--format", "sarif"]);
+    assert_eq!(sarif.status.code(), Some(1));
+    let v: serde_json::Value = serde_json::from_slice(&sarif.stdout).unwrap();
+    assert!(
+        v["runs"][0]["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["ruleId"] == "drift-security/risky"),
+        "{v}"
+    );
     // A check of named files reads no inventory: an editor's check stays quick.
     let named = drift(root, &["check", "app/main.py"]);
     assert!(named.status.success());
