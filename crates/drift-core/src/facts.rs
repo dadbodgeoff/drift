@@ -1765,6 +1765,34 @@ pub mod controls {
     /// what the request sent. TypeScript lowering 76 (listed reading).
     pub const SINK_FED_MADE: &str = "sink_fed_made:";
     pub const PASSES_MADE: &str = "passes_made:";
+    /// What starts the control that says what held where a wrapper hands a request
+    /// on: one control for each call, in a function defined in another, of what the
+    /// outer function was given (`return view_func(request, *args, **kwargs)` in a
+    /// decorator's wrapper), with the callees, canonical and tab-separated, whose
+    /// call's value was true on every path to it: the test of an `if` the call is
+    /// under, the test of an `if` that left the function where it did not hold (`if
+    /// not q.exists(): return Response(status=403)`), a local bound to one, the
+    /// operands of an `and`, what `is not None` is said of. Nothing after the
+    /// prefix where nothing held. What a callee is (a lookup of the caller, say) is
+    /// read where its arguments are ([`ARG_VALUE`]). Recorded by Python (lowering
+    /// 69) where some site has something that held; on a method the same strings
+    /// are in [`crate::facts::Member::unread`]. Mining never proposes it.
+    pub const HANDED_AFTER: &str = "handed_after:";
+    /// What starts a side of [`ARG_VALUE`] that is the caller itself or the key of
+    /// the caller's record (`request.user`, `request.user.id`), before the side it
+    /// is (`own caller`, `own gives <dependency>`): not something read off the
+    /// caller (`request.user.org_id` is `caller`). Recorded by Python (lowering
+    /// 69).
+    pub const OWN_SIDE: &str = "own ";
+    /// As [`HANDED_AFTER`], of where the symbol's own function lets a request
+    /// through: each `return` that does not refuse and the end of its body, in a
+    /// function that refuses somewhere.
+    pub const LEAVES_AFTER: &str = "leaves_after:";
+    /// As [`HANDED_AFTER`], of where the symbol's own function may answer true:
+    /// each `return` that gives anything but `False` or nothing, with what its
+    /// value says held too (`return a and q.exists()`), in a function that answers
+    /// `False` somewhere.
+    pub const TRUE_AFTER: &str = "true_after:";
     /// What starts the control of a function whose every `return` that gives a
     /// value gives one read off what a dependency gave it, each dependency its own
     /// entry (`returns_given:<dependency>`, canonical): `def get_current_user(db:

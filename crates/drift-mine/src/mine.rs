@@ -3271,6 +3271,16 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::DROPS_RESULT_OF)
                     && !c.starts_with(drift_core::controls::EXIT_UNREAD)
                     && !c.starts_with(drift_core::controls::VERIFIES_SIGNATURE)
+                    // What a body does with what it is given, and what its returns
+                    // give: read by `drift security` and the practice map only.
+                    && !c.starts_with(drift_core::controls::SINK_FED)
+                    && !c.starts_with(drift_core::controls::SINK_FED_MADE)
+                    && !c.starts_with(drift_core::controls::PASSES_PARAM)
+                    && !c.starts_with(drift_core::controls::PASSES_MADE)
+                    && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
+                    && !c.starts_with(drift_core::controls::HANDED_AFTER)
+                    && !c.starts_with(drift_core::controls::LEAVES_AFTER)
+                    && !c.starts_with(drift_core::controls::TRUE_AFTER)
                 {
                     out.insert(Rule::Control { value: c.clone() });
                 }

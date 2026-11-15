@@ -453,6 +453,9 @@ fn read_unit<'a>(
             // `adminProcedure`), it is found by its name, not proven.
             if common::external(g) || role_guard_proven(cx, g) {
                 ev.add("role_guard", g, VariantSource::Usage);
+            } else if membership_guard(cx, g) {
+                // Read from its body, whatever its name says it is for.
+                ev.add("membership_guard", g, VariantSource::Usage);
             } else {
                 ev.by_name("role_guard", g);
             }
@@ -599,6 +602,12 @@ fn read_unit<'a>(
             )
             .collect();
         let mut passed_to = passed(cx, &reach, &ev.around);
+        ev.reads_unscoped = ev.python
+            && reach
+                .nodes
+                .iter()
+                .zip(&passed_to)
+                .any(|(r, passed)| !r.quiet && reads_unscoped(cx, r, &ev.around, passed));
         for (i, r) in reach.nodes.iter().enumerate() {
             ev.passed = std::mem::take(&mut passed_to[i]);
             // [STRICT]: what a body only some requests reach checks is found, not
@@ -794,7 +803,11 @@ fn read_unit<'a>(
         let enforced = ev.uses.iter().any(|u| {
             matches!(
                 u.mechanism.as_str(),
-                "tenancy_check" | "tenancy_filter" | "tenancy_guard" | "tenancy_requested"
+                "tenancy_check"
+                    | "tenancy_filter"
+                    | "tenancy_guard"
+                    | "tenancy_requested"
+                    | "membership_guard"
             )
         });
         if !enforced {
@@ -1260,6 +1273,10 @@ struct Evidence {
     /// The calls of the body being read that the bodies of the reach make, with
     /// what each passes ([`passed`]).
     passed: Vec<Given>,
+    /// Python: some body of the reach reads rows by nothing of the caller
+    /// ([`reads_unscoped`]): a query filtered by the caller beside it scopes that
+    /// query, not what the route reads.
+    reads_unscoped: bool,
     /// The unit's own bodies and the dependencies around it, by canonical name:
     /// where an object whose method the unit runs may be built
     /// ([`caller_attribute`]).
@@ -2736,6 +2753,12 @@ fn built<'a>(cx: &Cx<'a>, from: Node<'a>, class: &str, d: &'a Symbol) -> Callee<
 /// or a DRF permission class (DRF answers 403 when `has_permission` is false).
 fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidence) {
     let ctx = cx.context();
+    // What lets a request through only where the caller is found in what the
+    // request names is that check, whatever it is called ([`membership_guard`]).
+    if membership_guard(cx, w) {
+        ev.add("membership_guard", w, VariantSource::Usage);
+        return;
+    }
     let name = common::short(w).rsplit('.').next().unwrap_or_default();
     if super::libraries::SIGNED_IN_ONLY_CALLEES.contains(&name) {
         return;
@@ -2783,6 +2806,88 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
         ev.find(mechanism, w, obligation::NOT_CALLED, "", false);
     } else {
         ev.by_name(mechanism, w);
+    }
+}
+
+/// The sites of a body ([`drift_core::controls::HANDED_AFTER`] and the controls
+/// beside it, by `prefix`) are each reached only after a lookup of the caller in
+/// what the request names found a row: at every site some call held
+/// ([`crate::facts`]) that is the result of a query which, wherever the body makes
+/// it, is given a value of the caller under one key and a value read off a
+/// parameter or off what the request sent under another
+/// ([`drift_core::controls::ARG_VALUE`]). `return Member.objects.filter(member=
+/// request.user, workspace__slug=view.slug).exists()` in a permission test; `if
+/// not Member.objects.filter(member=request.user, workspace__slug=kwargs["slug"])
+/// .exists(): return Response(status=403)` before a wrapper calls the view.
+///
+/// Nothing names the keys, the model or the guard: the shape of the query and the
+/// paths of the body decide. A site nothing held at (`return True` for some
+/// requests, the view called under no test) is no such body, nor is one whose
+/// query the caller is no part of, or that names nothing of the request (any row
+/// of the caller's anywhere).
+fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
+    let mut sites = facts
+        .iter()
+        .filter_map(|f| f.strip_prefix(prefix))
+        .peekable();
+    if sites.peek().is_none() {
+        return false;
+    }
+    // Each query the body makes: the callee, and what each key is given.
+    let queries: Vec<(&str, Vec<(&str, &str)>)> = arg_calls(facts.iter())
+        .filter(|(_, given)| !given.is_empty())
+        .collect();
+    let requested = |side: &str| side.starts_with("param") || side == "request";
+    // The result of a query that narrows by what it is given (not one that leaves
+    // out what matches), every call of which looks the caller up in what the
+    // request names.
+    let lookup = |result: &str| {
+        let mut of = queries
+            .iter()
+            .filter(|(q, _)| {
+                let method = q.rsplit('.').next().unwrap_or_default();
+                QUERY_METHODS.contains(&method)
+                    && method != "exclude"
+                    && result
+                        .strip_prefix(q)
+                        .is_some_and(|rest| rest.is_empty() || rest == "()" || rest.starts_with("()."))
+            })
+            .map(|(_, given)| given)
+            .peekable();
+        of.peek().is_some()
+            && of.all(|given| {
+                given.iter().any(|(_, side)| side_is_callers(cx, side))
+                    && given.iter().any(|(_, side)| requested(side))
+            })
+    };
+    sites.all(|site| site.split('\t').any(lookup))
+}
+
+/// A guard of the repository lets a request through only after a lookup of the
+/// caller in what the request names ([`passes_by_lookup`]), read from its body
+/// whatever it is called: a decorator's wrapper, wherever it calls the view; a
+/// function that refuses, wherever it returns without refusing; a DRF permission
+/// class, wherever its `has_permission` may answer true.
+fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
+    use drift_core::controls::{HANDED_AFTER, LEAVES_AFTER, TRUE_AFTER};
+    let ctx = cx.context();
+    if common::external(g) || !ctx.since_measured() {
+        return false;
+    }
+    let Some(d) = ctx.definition(g) else {
+        return false;
+    };
+    match d.kind {
+        SymbolKind::Function => {
+            passes_by_lookup(cx, &d.controls, HANDED_AFTER)
+                || passes_by_lookup(cx, &d.controls, LEAVES_AFTER)
+        }
+        SymbolKind::Class => d
+            .members
+            .iter()
+            .find(|m| m.name == "has_permission")
+            .is_some_and(|m| passes_by_lookup(cx, &m.unread, TRUE_AFTER)),
+        _ => false,
     }
 }
 
@@ -3834,7 +3939,31 @@ fn caller_attribute(cx: &Cx<'_>, around: &[String], m: &Member, attr: &str) -> b
 
 /// The calls a body records ([`drift_core::controls::ARG_VALUE`]): the callee,
 /// and what each argument is, by keyword or `#<position>` (`*` for an unpacking).
+/// A side that is the caller itself ([`drift_core::controls::OWN_SIDE`]) is the
+/// side it is.
 fn arg_calls<'a>(
+    facts: impl Iterator<Item = &'a String>,
+) -> impl Iterator<Item = (&'a str, Vec<(&'a str, &'a str)>)> {
+    arg_calls_own(facts).map(|(callee, given)| {
+        (
+            callee,
+            given
+                .into_iter()
+                .map(|(key, side)| {
+                    (
+                        key,
+                        side.strip_prefix(drift_core::controls::OWN_SIDE)
+                            .unwrap_or(side),
+                    )
+                })
+                .collect(),
+        )
+    })
+}
+
+/// [`arg_calls`], each side as written: `own <side>` where the value is the
+/// caller itself or the key of the caller's record.
+fn arg_calls_own<'a>(
     facts: impl Iterator<Item = &'a String>,
 ) -> impl Iterator<Item = (&'a str, Vec<(&'a str, &'a str)>)> {
     facts.filter_map(|f| {
@@ -3847,6 +3976,14 @@ fn arg_calls<'a>(
         }
         Some((callee, given))
     })
+}
+
+/// A side of [`drift_core::controls::ARG_VALUE`] is the caller itself or the key
+/// of the caller's record ([`drift_core::controls::OWN_SIDE`]), of a caller the
+/// facts prove ([`side_is_callers`]).
+fn side_is_caller_self(cx: &Cx<'_>, side: &str) -> bool {
+    side.strip_prefix(drift_core::controls::OWN_SIDE)
+        .is_some_and(|inner| side_is_callers(cx, inner))
 }
 
 /// Per body of the reach: the calls of it the bodies of the reach make
@@ -4298,17 +4435,37 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             continue;
         }
         let last = key.rsplit('.').next().unwrap_or(key);
+        // The value the key filters by is the caller's own, by where the lowering
+        // read it. TypeScript: [`drift_core::controls::FILTER_VALUE`], side
+        // `caller`, in a call every request to the body reaches. Python: every
+        // query the body makes of the same rows is given one
+        // ([`given_callers`]).
+        let callers = match ev.python {
+            false => filtered_by_caller(n, callee, key),
+            true => {
+                cx.context().since_measured()
+                    && !ev.reads_unscoped
+                    && given_callers(cx, n, callee, key)
+            }
+        };
         if !names_tenant(last) && !names_owner(last) {
+            // Python: rows filtered by a value of the caller are the caller's,
+            // whatever the key is called (`Seat.objects.filter(holder=
+            // request.user)`): the value says so, not the name.
+            if callers && ev.python {
+                ev.add(
+                    "owner_filter",
+                    &format!("{key} (session)"),
+                    VariantSource::Usage,
+                );
+                continue;
+            }
             let c = crate::mine::norm_ref(callee).into_owned();
             if ev.unsourced.as_ref().is_none_or(|x| c < *x) {
                 ev.unsourced = Some(c);
             }
             continue;
         }
-        // TypeScript: the value the key filters by is the caller's own, by where
-        // the lowering read it ([`drift_core::controls::FILTER_VALUE`], side
-        // `caller`), in a call every request to the body reaches.
-        let callers = !ev.python && filtered_by_caller(n, callee, key);
         if names_tenant(last) {
             // The lowering's scoped queries say more (where the value came from).
             // [STRICT]: a key named for a tenant, with nothing recorded of where
@@ -4336,6 +4493,153 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             }
         }
     }
+}
+
+/// Python: every call of `callee` the body makes gives `key` the caller itself
+/// or the key of the caller's record ([`side_is_caller_self`]): the rows found
+/// are this caller's and no one else's, whatever the key is called. A value read
+/// off the caller (`request.user.org_id`, a claim) says a group or a setting of
+/// the caller: whether the key scopes by it is said by the key
+/// ([`names_tenant`]), not here. Proof of the route only where no body of its
+/// reach reads rows by nothing of the caller ([`reads_unscoped`]).
+fn given_callers(cx: &Cx<'_>, n: Node<'_>, callee: &str, key: &str) -> bool {
+    let facts: &[String] = match n {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    let callee = crate::mine::norm_ref(callee);
+    let mut under = arg_calls_own(facts.iter())
+        .filter(|(c, _)| *c == callee)
+        .map(|(_, given)| {
+            let mut sides = given.iter().filter(|(k, _)| *k == key).peekable();
+            sides.peek().is_some() && sides.all(|(_, side)| side_is_caller_self(cx, side))
+        })
+        .peekable();
+    under.peek().is_some() && under.all(|callers| callers)
+}
+
+/// The rows a query starts from, where `callee` starts one on a model of the
+/// repository: `app/models.py#Doc.objects` of `app/models.py#Doc.objects.filter`.
+/// None of a call made on what another call handed back
+/// (`...filter().order_by`: the query it narrows), and of what is no data call.
+fn query_rows<'c>(cx: &Cx<'_>, callee: &'c str) -> Option<&'c str> {
+    let (rows, method) = callee.rsplit_once('.')?;
+    let (module, path) = rows.split_once('#')?;
+    let model = path.split('.').next()?;
+    (!path.contains('(')
+        && !method.contains('(')
+        && !common::external(callee)
+        && data_call(cx, &format!("{module}#{model}")))
+    .then_some(rows)
+}
+
+/// Methods of a query, by which a call on a value the facts do not resolve (a
+/// local, `self.get_queryset()`, `super()`) is taken for a read of rows of unknown
+/// scope.
+const READ_METHODS: &[&str] = &[
+    "all",
+    "filter",
+    "filter_by",
+    "get",
+    "first",
+    "last",
+    "one",
+    "one_or_none",
+    "scalar",
+    "scalars",
+    "values",
+    "values_list",
+    "get_queryset",
+    "get_object",
+    "execute",
+];
+
+/// Python: the body reads rows by nothing of the caller. Every query it starts on
+/// a model of the repository ([`query_rows`]) must be given, in every call, the
+/// caller itself or the key of the caller's record ([`side_is_caller_self`]), or
+/// a value read off rows the body reads by one (`Comment.objects.filter(doc=doc)`
+/// after `doc = Doc.objects.get(pk=pk, owner=request.user)`); below the unit's
+/// own bodies, also what a calling body passed that is a value of the caller or
+/// of a row ([`origin`]): the rows it was handed are the rows the unit read. And
+/// it must read no rows the facts do not resolve ([`READ_METHODS`] on a local or
+/// on what a method of the class hands back). A row written is no read.
+fn reads_unscoped<'a>(cx: &Cx<'a>, r: &Reached<'a>, around: &[String], passed: &[Given]) -> bool {
+    let n = r.node;
+    let facts: &[String] = match n {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    let recorded: Vec<(&str, Vec<(&str, &str)>)> = arg_calls_own(facts.iter()).collect();
+    let callers = |given: &[(&str, &str)]| {
+        given.iter().any(|(_, side)| {
+            side_is_caller_self(cx, side)
+                || (r.depth > 0
+                    && side.starts_with("param")
+                    && matches!(
+                        origin(cx, around, r, side, passed),
+                        Origin::Caller | Origin::Row
+                    ))
+        })
+    };
+    // The queries the body starts, by the rows each reads.
+    let mut starts: Vec<(&str, &str)> = Vec::new();
+    for c in n.callees() {
+        let c = c.as_str();
+        let method = c
+            .rsplit('.')
+            .next()
+            .unwrap_or_default()
+            .trim_end_matches("()");
+        if let Some(rows) = query_rows(cx, c) {
+            if !writes(c) {
+                starts.push((rows, c));
+            }
+        } else if READ_METHODS.contains(&method)
+            && (c.starts_with("local:") || !c.contains('#') || {
+                // A method of the repository's own code read on (`self.get_queryset()
+                // .filter`): what it hands back is rows of its own scope.
+                c.contains("().") && !common::external(c) && query_rows(cx, c).is_none() && {
+                    let head = c.split("().").next().unwrap_or_default();
+                    query_rows(cx, head).is_none()
+                }
+            })
+        {
+            return true;
+        }
+    }
+    starts.sort_unstable();
+    starts.dedup();
+    // Every recorded call of a callee passes `ok`, and there is one.
+    type Passes<'f> = &'f dyn Fn(&[(&str, &str)]) -> bool;
+    let every = |callee: &str, ok: Passes<'_>| {
+        let mut calls = recorded.iter().filter(|(c, _)| *c == callee).peekable();
+        calls.peek().is_some() && calls.all(|(_, given)| ok(given))
+    };
+    // The rows every query of which is given a value of the caller.
+    let scoped: Vec<&str> = starts
+        .iter()
+        .map(|(rows, _)| *rows)
+        .filter(|rows| {
+            starts
+                .iter()
+                .filter(|(x, _)| x == rows)
+                .all(|(_, callee)| every(callee, &callers))
+        })
+        .collect();
+    let derived = |given: &[(&str, &str)]| {
+        given.iter().any(|(_, side)| {
+            side.strip_prefix("call ")
+                .or_else(|| side.strip_prefix("value "))
+                .is_some_and(|from| {
+                    scoped
+                        .iter()
+                        .any(|rows| rows.strip_prefix(from).is_some_and(|rest| rest.starts_with('.')))
+                })
+        })
+    };
+    starts.iter().any(|(rows, callee)| {
+        !scoped.contains(rows) && !every(callee, &|given| callers(given) || derived(given))
+    })
 }
 
 /// The body gives `callee` a value of the caller's own under `key`, in a call every

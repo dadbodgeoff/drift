@@ -59,6 +59,8 @@ pub const KWARG_INDEX: u32 = 99;
 pub(crate) mod adapters;
 #[path = "guard_paths.rs"]
 pub(crate) mod guard_paths;
+#[path = "held.rs"]
+pub(crate) mod held;
 #[path = "outgoing.rs"]
 pub(crate) mod outgoing;
 #[path = "practice.rs"]
@@ -2530,6 +2532,9 @@ pub(crate) struct Collector<'l, 't> {
     /// dependency where it is what one gives (`venue = get_jwt()["venue_id"]`,
     /// `venue = claims["venue_id"]`).
     pub(crate) caller_locals: BTreeMap<String, Option<RawDep>>,
+    /// Those of [`Self::caller_locals`] bound to the caller itself or the key of
+    /// the caller's record ([`Collector::caller_self`]).
+    pub(crate) self_locals: BTreeSet<String>,
     /// Locals bound to an HMAC, as the key it is keyed with ([`Collector::compare_operand`]).
     hmac_locals: BTreeMap<String, RawOperand>,
     /// Locals bound to a response or an HTTP error (`exc = HTTPException(401)`).
@@ -2581,6 +2586,10 @@ pub(crate) struct Collector<'l, 't> {
     /// ([`drift_core::controls::RETURNS_GIVEN`]).
     returns_via: Vec<RawDep>,
     returns_else: bool,
+    /// The callees whose call's value the returns of the symbol's own function
+    /// give, and whether one gives anything but `False` or a call
+    /// ([`drift_core::controls::RETURNS_ONLY`]).
+    held: BTreeSet<(RawHeld, Vec<RawRef>)>,
     /// A rejection that counts was a response the body returns, and one that was
     /// raised or made by a call (`abort(401)`), for
     /// [`drift_core::controls::RETURNS_REJECTION`].
@@ -2685,6 +2694,7 @@ impl<'l, 't> Collector<'l, 't> {
             param_ops: Vec::new(),
             check_locals: BTreeMap::new(),
             caller_locals: BTreeMap::new(),
+            self_locals: BTreeSet::new(),
             hmac_locals: BTreeMap::new(),
             response_vars: BTreeMap::new(),
             except_names: Vec::new(),
@@ -2699,6 +2709,7 @@ impl<'l, 't> Collector<'l, 't> {
             returns_caller: None,
             returns_via: Vec::new(),
             returns_else: false,
+            held: BTreeSet::new(),
             rejects_by_return: false,
             rejects_otherwise: false,
             returns_401: false,
@@ -2799,6 +2810,9 @@ impl<'l, 't> Collector<'l, 't> {
         sym.param_passes.extend(self.param_passes);
         if !self.returns_else && sym.kind == SymbolKind::Function {
             sym.returns_given = std::mem::take(&mut self.returns_via);
+        }
+        if sym.kind == SymbolKind::Function {
+            sym.held = std::mem::take(&mut self.held).into_iter().collect();
         }
         sym.forwards.extend(self.forwards);
         sym.body_checks.extend(self.body_checks);
@@ -2965,6 +2979,7 @@ impl<'l, 't> Collector<'l, 't> {
         let side_locals = std::mem::take(&mut self.side_locals);
         let either_locals = std::mem::take(&mut self.either_locals);
         let caller_locals = std::mem::take(&mut self.caller_locals);
+        let self_locals = std::mem::take(&mut self.self_locals);
         let hmac_locals = std::mem::take(&mut self.hmac_locals);
         let log_locals = std::mem::take(&mut self.log_locals);
         let response_vars = std::mem::take(&mut self.response_vars);
@@ -2984,6 +2999,7 @@ impl<'l, 't> Collector<'l, 't> {
             self.visit_stmt(s);
         }
         self.bodies.pop();
+        self.note_held(body);
         match self.guard_paths(body) {
             guard_paths::Paths::Silent => {}
             guard_paths::Paths::RefusesAll => self.refuses_all = true,
@@ -3001,6 +3017,7 @@ impl<'l, 't> Collector<'l, 't> {
         self.side_locals = side_locals;
         self.either_locals = either_locals;
         self.caller_locals = caller_locals;
+        self.self_locals = self_locals;
         self.hmac_locals = hmac_locals;
         self.log_locals = log_locals;
         self.response_vars = response_vars;
@@ -3278,7 +3295,7 @@ impl<'l, 't> Collector<'l, 't> {
 
     /// The statement turns the caller away: a `raise`, or a `return` of an error
     /// response.
-    fn refuses(&self, s: &Stmt) -> bool {
+    pub(crate) fn refuses(&self, s: &Stmt) -> bool {
         match s {
             Stmt::Raise(_) => true,
             Stmt::Return(r) => r.value.as_deref().is_some_and(|e| {
@@ -3614,6 +3631,46 @@ fn schedules(callee: &Expr) -> bool {
 }
 
 impl Collector<'_, '_> {
+    /// Notes what held where the function whose body this is hands a request on,
+    /// lets one through or answers true for one ([`held`]). Of a function defined
+    /// in another: where it calls what the outer one was given (a decorator's
+    /// wrapper). Of the symbol's own function: where it returns without a refusal
+    /// when it refuses somewhere, and where it may answer true when it answers
+    /// `False` somewhere. Said only where some site has something that held: a
+    /// body that tests nothing says nothing.
+    fn note_held(&mut self, body: &[Stmt]) {
+        let own = self.frames.len() == 1;
+        let handed: BTreeSet<String> = match self.frames.split_last() {
+            Some(((_, mine), outer)) if !outer.is_empty() => outer
+                .iter()
+                .flat_map(|(_, names)| names)
+                .filter(|n| !mine.contains(*n))
+                .cloned()
+                .collect(),
+            _ => BTreeSet::new(),
+        };
+        if !own && handed.is_empty() {
+            return;
+        }
+        let sites = self.held_sites(body, &handed);
+        let said = |sites: &BTreeSet<Vec<RawRef>>| sites.iter().any(|s| !s.is_empty());
+        if said(&sites.handed) {
+            self.held
+                .extend(sites.handed.into_iter().map(|s| (RawHeld::Handed, s)));
+        }
+        if !own {
+            return;
+        }
+        if sites.answers_false && said(&sites.truthy) {
+            self.held
+                .extend(sites.truthy.into_iter().map(|s| (RawHeld::True, s)));
+        }
+        if said(&sites.leaves) && !matches!(self.guard_paths(body), guard_paths::Paths::Silent) {
+            self.held
+                .extend(sites.leaves.into_iter().map(|s| (RawHeld::Leaves, s)));
+        }
+    }
+
     /// The value of `e` is read off a parameter of the function, off what the
     /// request sent ([`Collector::side`]), or off a local bound to one, or holds
     /// one: a member or an item of it, text built from it, what a method of it or a

@@ -1906,6 +1906,7 @@ impl<'t> Lowerer<'t> {
                 since_sinks: tmp.since_sinks,
                 fed_sinks: tmp.fed_sinks,
                 param_passes: tmp.param_passes,
+                held: tmp.held,
                 body_checks: tmp.body_checks,
                 throws: tmp.throws,
                 args: tmp.args,

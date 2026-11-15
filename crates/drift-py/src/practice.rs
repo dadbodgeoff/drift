@@ -1727,6 +1727,11 @@ impl<'t> Collector<'_, 't> {
                     }
                     // A local bound to a value of the caller is one
                     // ([`Collector::caller_value`]).
+                    if self.caller_self(&a.value) {
+                        self.self_locals.insert(name.clone());
+                    } else {
+                        self.self_locals.remove(&name);
+                    }
                     match self.caller_value(&a.value) {
                         // What a helper may give, under a name that says the
                         // caller: the name decides, as it did (`session =
@@ -1776,6 +1781,7 @@ impl<'t> Collector<'_, 't> {
                         self.response_vars.remove(n);
                         self.check_locals.remove(n);
                         self.caller_locals.remove(n);
+                        self.self_locals.remove(n);
                         // Bound to a part of a value: not read.
                         self.side_locals.insert(n.to_string(), RawSide::Unread);
                     }
@@ -2549,6 +2555,55 @@ impl<'t> Collector<'_, 't> {
         }
     }
 
+    /// The value is the caller itself or the key of the caller's record
+    /// (`request.user`, `request.user.id`, `current_user.pk`, `get_jwt_identity()`,
+    /// a local bound to one), and nothing read off the caller (`request.user
+    /// .org_id`, `get_jwt()["venue_id"]`, `g.venue_id`): rows a query finds by it
+    /// are rows of this caller and of no one else, whatever the key is called.
+    pub(crate) fn caller_self(&self, e: &Expr) -> bool {
+        let e = match e {
+            Expr::Await(a) => a.value.as_ref(),
+            e => e,
+        };
+        // `str(x)`, `int(x)`: the value converted.
+        if let Expr::Call(c) = e
+            && let Expr::Name(n) = c.func.as_ref()
+            && matches!(n.id.as_str(), "str" | "int" | "UUID")
+            && c.arguments.args.len() == 1
+            && c.arguments.keywords.is_empty()
+        {
+            return self.caller_self(&c.arguments.args[0]);
+        }
+        if self.caller_value(e).is_none() {
+            return false;
+        }
+        // What the key is read off, where it is the key of a record.
+        let owner = match e {
+            Expr::Attribute(a) if matches!(a.attr.as_str(), "id" | "pk") => a.value.as_ref(),
+            e => e,
+        };
+        match owner {
+            // `get_jwt_identity()`, `get_current_user()`: called with nothing.
+            Expr::Call(c) => c.arguments.is_empty() && self.caller_value(owner) == Some(None),
+            // A local bound to one; what a dependency gives a parameter; a name the
+            // file imports (`current_user` of flask_login). A name the module
+            // itself binds is a value of the module, whatever it is called.
+            Expr::Name(n) => match self.caller_locals.contains_key(n.id.as_str()) {
+                true => self.self_locals.contains(n.id.as_str()),
+                false => {
+                    matches!(self.operand(owner, 0).0, RawOperand::Dep(..))
+                        || matches!(self.resolve(n.id.as_str()), Some(RawBase::Import { .. }))
+                }
+            },
+            // `request.user`, `g.user`: the member that says the caller, read off
+            // what is no value of the caller itself.
+            Expr::Attribute(a) => {
+                names_caller(a.attr.as_str()) && self.caller_value(&a.value).is_none()
+            }
+            _ => false,
+        }
+    }
+
     /// Where the value of an expression that is compared or filtered by comes from
     /// ([`drift_core::controls::SIDES`]): a value of the caller by the closed list
     /// ([`Collector::caller_value`]), what the request sent, a parameter, an
@@ -2578,7 +2633,23 @@ impl<'t> Collector<'_, 't> {
         // the callee was handed by every call of it.
         let mut given: Vec<(String, RawSide)> = positional
             .chain(keywords)
-            .map(|(key, value)| (key, self.side(value)))
+            .map(|(key, value)| {
+                let side = self.side(value);
+                // The caller itself, or the key of the caller's record: said
+                // apart from what is read off the caller.
+                let own = matches!(
+                    side,
+                    RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
+                ) && self.caller_self(value);
+                (
+                    key,
+                    if own {
+                        RawSide::Own(Box::new(side))
+                    } else {
+                        side
+                    },
+                )
+            })
             .collect();
         let unpacked = c
             .arguments
@@ -2923,6 +2994,17 @@ impl<'t> Collector<'_, 't> {
                     RawOperand::Ref(r) => RawSide::Value(r),
                     RawOperand::Literal => RawSide::Literal,
                     RawOperand::Env => RawSide::Setting,
+                    // What the function was passed beyond its named parameters
+                    // (`kwargs["slug"]` of `def wrapper(request, *args,
+                    // **kwargs)`): a parameter's value as any other.
+                    RawOperand::None
+                        if self.frame_params.last().is_some_and(|f| {
+                            let n = n.id.as_str();
+                            f.all.iter().any(|p| p == n) && !f.named.iter().any(|p| p == n)
+                        }) =>
+                    {
+                        RawSide::Param(n.id.to_string(), None)
+                    }
                     RawOperand::None => RawSide::Unread,
                 }
             }

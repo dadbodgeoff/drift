@@ -78,6 +78,7 @@ const TENANCY_GUARD: &str = "known tenancy_guard";
 #[allow(dead_code)]
 const TENANCY_CHECK: &str = "known tenancy_check";
 #[allow(dead_code)]
+const OWNER_FILTER: &str = "known owner_filter";
 const TENANCY_FILTER: &str = "known tenancy_filter";
 const OWNER_CHECK: &str = "known owner_check";
 
@@ -2761,6 +2762,12 @@ fn for_key(key: &str, want: &'static str, sides: &[&Side], place: &str) -> Optio
                     .contains("org")
         });
     Some(match want {
+        // A query given the caller itself under a keyword (`filter_by(estate_id=
+        // get_jwt_identity())`) finds this caller's rows and no one else's,
+        // whatever the key is called: the value says so, not the name. What is
+        // read off the caller (`current_user.org_id`, a claim) says a group of
+        // the caller, which only a key named for one makes a scope.
+        _ if sides.len() == 1 && sides[0].id == "c_identity" && place == "keyword" => OWNER_FILTER,
         _ if sides.len() == 1 => UNKNOWN,
         TENANCY_CHECK | TENANCY_GUARD if named => want,
         _ if place == "handler" && sides.iter().any(|s| s.id == "f_literal") => ROLE_CHECK,

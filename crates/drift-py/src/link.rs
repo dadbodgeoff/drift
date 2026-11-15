@@ -1190,6 +1190,28 @@ impl<'r> Linker<'r> {
         }
     }
 
+    /// The sites of a body as the controls write them
+    /// ([`drift_core::controls::HANDED_AFTER`]): one for each site, the callees
+    /// that held there canonical and tab-separated; what resolves to nothing of the
+    /// repository or of a package is left out.
+    fn held(&self, fi: usize, sites: &[(RawHeld, Vec<RawRef>)]) -> BTreeSet<String> {
+        sites
+            .iter()
+            .map(|(kind, refs)| {
+                let held: BTreeSet<String> = refs
+                    .iter()
+                    .map(|r| self.canon(fi, r))
+                    .filter(|c| !c.starts_with("global#") && !c.starts_with("unresolved:"))
+                    .collect();
+                format!(
+                    "{}{}",
+                    kind.control(),
+                    held.into_iter().collect::<Vec<_>>().join("\t")
+                )
+            })
+            .collect()
+    }
+
     /// A side of a comparison or the value of a filter as
     /// [`drift_core::controls::SIDES`] writes it.
     fn side(&self, fi: usize, s: &RawSide) -> String {
@@ -1207,6 +1229,21 @@ impl<'r> Linker<'r> {
         };
         match s {
             RawSide::Caller => "caller".into(),
+            RawSide::Own(inner) => {
+                // Said only of what reads as a value of the caller here: a
+                // parameter whose annotation names no dependency is the parameter.
+                let side = self.side(fi, inner);
+                match side.as_str() {
+                    "caller" => format!("{}{side}", drift_core::controls::OWN_SIDE),
+                    s if ["gives ", "via ", "call via "]
+                        .iter()
+                        .any(|p| s.starts_with(p)) =>
+                    {
+                        format!("{}{side}", drift_core::controls::OWN_SIDE)
+                    }
+                    _ => side,
+                }
+            }
             RawSide::Request => "request".into(),
             RawSide::Param(p, at) => param(p, at),
             RawSide::Annotated(d, p, at, called) => {
@@ -4743,6 +4780,7 @@ impl<'r> Linker<'r> {
                                 .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
                                 .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
                         );
+                        c.extend(self.held(fi, &s.held));
                         // What every return of the function reads its value off
                         // ([`drift_core::controls::RETURNS_GIVEN`]): said only where
                         // each dependency stands for something here.
@@ -4925,6 +4963,7 @@ impl<'r> Linker<'r> {
                                             format!("{}{c}", drift_core::controls::PASSES_PARAM)
                                         }),
                                 );
+                                unread.extend(self.held(fi, &m.held));
                                 unread.extend(self.origins(
                                     fi,
                                     &m.check_sides,

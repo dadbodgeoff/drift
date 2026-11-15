@@ -2021,7 +2021,14 @@ def nothing__dropped(rid):
     let dir = repo(&[("app.py", &app)]);
     let authz = concern(dir.path(), "authz");
     for unit in &names {
-        assert_eq!(said(&authz, unit), ("unknown", "unclassified"), "{unit}");
+        // A query given the caller itself (`filter_by(venue_id=
+        // get_jwt_identity())`) finds this caller's rows and no one else's: known,
+        // by the value. Every other source here is something read off the caller.
+        let want = match unit.as_str() {
+            "get_jwt_identity__filter_by" => ("known", "owner_filter:venue_id (session)"),
+            _ => ("unknown", "unclassified"),
+        };
+        assert_eq!(said(&authz, unit), want, "{unit}");
     }
     for unit in ["handed", "compared", "refused", "dropped"] {
         assert_eq!(

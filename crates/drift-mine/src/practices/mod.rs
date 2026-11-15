@@ -501,6 +501,7 @@ fn check_words(mechanism: &str) -> &'static str {
         }
         "role_check" | "role_guard" => "a role check",
         "owner_check" | "owner_filter" => "an owner check",
+        "membership_guard" => "a membership check",
         "policy" => "a policy check",
         "declared" => "the check declared in .drift/config.yaml",
         _ => "an authorization check",

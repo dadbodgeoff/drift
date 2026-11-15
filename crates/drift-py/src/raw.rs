@@ -28,6 +28,30 @@ pub struct RawRef {
     pub member: String,
 }
 
+/// What a site of a body is ([`RawSymbol::held`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum RawHeld {
+    /// A call of the function an enclosing function was given
+    /// ([`drift_core::controls::HANDED_AFTER`]).
+    Handed,
+    /// A `return` that does not refuse, or the end of the body
+    /// ([`drift_core::controls::LEAVES_AFTER`]).
+    Leaves,
+    /// A `return` that may give a true value
+    /// ([`drift_core::controls::TRUE_AFTER`]).
+    True,
+}
+
+impl RawHeld {
+    pub fn control(self) -> &'static str {
+        match self {
+            Self::Handed => drift_core::controls::HANDED_AFTER,
+            Self::Leaves => drift_core::controls::LEAVES_AFTER,
+            Self::True => drift_core::controls::TRUE_AFTER,
+        }
+    }
+}
+
 /// [`RawSymbol::drf_permissions_unread`] of a view class that defines
 /// `get_permissions`: the permissions are what the method returns for the request,
 /// whatever `permission_classes` any class of its chain declares.
@@ -177,6 +201,11 @@ pub struct RawSymbol {
     /// return gives anything else.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub returns_given: Vec<RawDep>,
+    /// Where the body hands a request on, lets one through or answers true for
+    /// one, each with the callees whose call's value was true on the way there
+    /// ([`drift_core::controls::HANDED_AFTER`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub held: Vec<(RawHeld, Vec<RawRef>)>,
     /// The risky operations of the body that are given a value read off a
     /// parameter of the function or off what the request sent
     /// ([`drift_core::controls::SINK_FED`]), by kind.
@@ -525,6 +554,11 @@ pub enum RawSide {
     Call(RawRef),
     /// A module-level name that is no call.
     Value(RawRef),
+    /// A value of the caller that is the caller itself or the key of the caller's
+    /// record (`request.user`, `request.user.id`), not something read off it
+    /// (`request.user.org_id`): written `own <side>`. Recorded of what a call is
+    /// given ([`drift_core::controls::ARG_VALUE`]) only.
+    Own(Box<RawSide>),
     Unread,
 }
 
@@ -690,6 +724,9 @@ pub struct RawMember {
     pub fed_sinks: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub param_passes: Vec<RawRef>,
+    /// As [`RawSymbol::held`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub held: Vec<(RawHeld, Vec<RawRef>)>,
     /// The method's own checks that turn the caller away.
     #[serde(default)]
     pub body_checks: Vec<RawBodyCheck>,
@@ -1296,6 +1333,7 @@ impl RawSymbol {
             sinks: vec![],
             since_sinks: vec![],
             returns_given: vec![],
+            held: vec![],
             fed_sinks: vec![],
             param_passes: vec![],
             order: vec![],
