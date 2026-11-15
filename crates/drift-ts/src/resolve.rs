@@ -3231,6 +3231,10 @@ impl<'r> Linker<'r> {
             .filter(|s| {
                 !s.listed_controls.is_empty()
                     || !s.caller_keys.is_empty()
+                    || !s.fed_sinks.is_empty()
+                    || !s.param_passes.is_empty()
+                    || !s.made_fed_sinks.is_empty()
+                    || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
                     || !s.result_uses.is_empty()
                     || !s.returns_builder.is_empty()
@@ -3305,6 +3309,32 @@ impl<'r> Linker<'r> {
                                 self.canon(rel, callee)
                             )
                         }))
+                        .chain(
+                            s.fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                        )
+                        // Handed on to code of the repository: what a built-in or a
+                        // package does with it is not followed.
+                        .chain(
+                            s.param_passes
+                                .iter()
+                                .map(|callee| self.canon(rel, callee))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
+                        )
+                        .chain(
+                            s.made_fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED_MADE)),
+                        )
+                        .chain(
+                            s.made_passes
+                                .iter()
+                                .map(|callee| self.canon(rel, callee))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_MADE)),
+                        )
                         .chain(metadata)
                         .chain(uses)
                         .chain(built)

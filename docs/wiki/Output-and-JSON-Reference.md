@@ -153,7 +153,9 @@ The full inventory. `FILES` does not filter it.
 | `left_out` | `{files, dirs}` | Non-production files (examples, samples, demos, playgrounds, integration-test suites) the inventory leaves out, so leaving them out is never silent. |
 | `unchecked` | list of paths (optional) | Files not parsed for lack of stack: their entry points, risky operations and env reads are unknown. |
 | `skipped` | list of `{path, reason}` (optional) | Source files that were not read (too large, a line too long, nested too deep, not UTF-8). |
-| `unlisted` | list of `{path, line}` (optional) | Registrations written as a route is that no listing of entry points accounts for, in production code: a route there may be served and is not in `entry_points`. |
+| `unlisted` | list of `{path, line, symbol?}` (optional) | Places that look served and are in no row of `entry_points`: a registration written as a route is, or (with `symbol`) a function that reads a request and answers it that no listed entry point reaches. |
+| `scope_gaps` | list of `{resource, key, members, scoped, exceptions[], example}` (optional) | What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none. |
+| `sinks[].fed`, `entry_points[].reaches[].fed` | boolean (optional) | The operation is given a value read off a parameter of its function, handed on by each call on the way: what the request sent may reach it. Absent when false. |
 | `warnings` | list of text (optional) | What could not be read around the inventory, such as a `.drift/conventions.yaml` that does not parse. |
 
 An entry point row:

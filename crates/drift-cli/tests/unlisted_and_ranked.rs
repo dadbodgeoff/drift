@@ -153,7 +153,7 @@ fn a_registration_no_listing_accounts_for_is_said_to_be_unlisted() {
     );
     let (_, text, _) = drift(r, &["security"]);
     assert!(
-        text.contains("1 registration(s) written as a route is are NOT LISTED")
+        text.contains("1 place(s) that look served are NOT LISTED")
             && text.contains("src/routes.ts:2"),
         "{text}"
     );

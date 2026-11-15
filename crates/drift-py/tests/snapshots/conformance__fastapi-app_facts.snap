@@ -798,6 +798,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "arg_value:app/models.py#Item.model_validate\t#0\tparam body #3",
             "await",
             "param_flows",
+            "passes_param:app/models.py#Item.model_validate",
             "reads_input",
             "returns_unread",
             "shape:app/api/deps.py#Authorizer(lit)",

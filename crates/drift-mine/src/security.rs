@@ -45,6 +45,31 @@ pub struct SinkUse {
     pub path: String,
     pub symbol: String,
     pub line: u32,
+    /// The operation is given a value read off a parameter of the function it is in
+    /// ([`drift_core::controls::SINK_FED`]): of a handler, what the request sent.
+    /// Not serialised when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fed: bool,
+}
+
+/// What a row says of an operation that is given a value read off a parameter.
+pub const FED: &str = " (fed by a parameter)";
+
+/// The symbol's operation of this kind is given a value read off a parameter of
+/// its function ([`drift_core::controls::SINK_FED`]).
+fn sink_fed(s: &Symbol, kind: &str) -> bool {
+    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
+    s.controls.iter().any(|c| {
+        c.strip_prefix(SINK_FED_MADE)
+            .or_else(|| c.strip_prefix(SINK_FED))
+            .is_some_and(|k| k == kind)
+    })
+}
+
+/// The facts of a body that say what it does with its parameters: a symbol's
+/// controls, or a method's own ([`drift_core::Member::unread`]).
+fn flow_facts<'a>(node: &Node<'a>) -> &'a [String] {
+    node.member.map_or(&node.symbol.controls, |m| &m.unread)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -52,6 +77,10 @@ pub struct Reach {
     pub kind: String,
     /// Internal call chain from the entry point to the symbol with the sink, inclusive.
     pub via: Vec<String>,
+    /// The operation is given a value read off a parameter of the function it is in
+    /// ([`SinkUse::fed`]). Not serialised when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fed: bool,
 }
 
 /// Where an entry point is reachable from, as far as the repository says. Ordered as
@@ -84,6 +113,277 @@ impl Exposure {
 pub struct Unlisted {
     pub path: String,
     pub line: u32,
+    /// A function that reads a request and answers it, and that no listed entry
+    /// point reaches ([`unreached_handlers`]): its name. Empty for a registration
+    /// found where it is written. Not serialised when empty.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub symbol: String,
+}
+
+/// The share of the entry points that query one thing and filter it by a value of
+/// the caller, from which the ones that filter it by none are listed ([`ScopeGap`]).
+pub const SCOPE_GAP_SHARE: f64 = 0.7;
+/// The fewest entry points that must query the thing for that to be said.
+pub const SCOPE_GAP_MIN: usize = 5;
+
+/// One entry point named in a [`ScopeGap`].
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct ScopeRef {
+    pub path: String,
+    pub symbol: String,
+    pub line: u32,
+    pub kind: String,
+    pub method: Option<String>,
+    pub route: Option<String>,
+}
+
+/// What the repository does to keep callers to their own rows, learned from the
+/// repository and from nothing else: most of the entry points that query one thing
+/// (`resource`: what the query is called on, as the facts name it) give the query a
+/// value of the caller under one key (`key`: `where.userId`), and some query it and
+/// give it no value of the caller under any key. The exceptions are facts to look
+/// at, not verdicts: an administrator's route, a job and a lookup that a check
+/// follows are among them.
+///
+/// No list says which key scopes or which thing holds rows: the key is whichever
+/// one the repository's own queries fill with the caller's value, and the thing is
+/// whatever they are called on.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct ScopeGap {
+    pub resource: String,
+    pub key: String,
+    /// The entry points that query the resource: those that filter it by the key,
+    /// and the exceptions.
+    pub members: usize,
+    pub scoped: usize,
+    /// The entry points that query it and filter it by no value of the caller.
+    pub exceptions: Vec<ScopeRef>,
+    /// The first entry point (by path) that filters it by the key: one to copy from.
+    pub example: ScopeRef,
+}
+
+/// What a query is called on: the callee without its last member
+/// (`src/db.ts#prisma.note.findMany` -> `src/db.ts#prisma.note`). None for a callee
+/// that is called on nothing (a function).
+fn queried(callee: &str) -> Option<&str> {
+    let (_, path) = callee.split_once('#')?;
+    let cut = path.trim_end_matches("()").rfind('.')?;
+    (cut > 0).then(|| &callee[..callee.len() - path.len() + cut])
+}
+
+/// [`ScopeGap`]s of the repository: for each request entry point, what the bodies it
+/// reaches query and what they filter by a value of the caller
+/// ([`drift_core::controls::FILTER_VALUE`]); then, for each thing queried, the key
+/// most of them filter it by and the entry points that filter it by none.
+fn scope_gaps<'a>(
+    repo: &'a RepoFacts,
+    index: &Index<'a>,
+    cx: &crate::practices::Cx<'a>,
+) -> Vec<ScopeGap> {
+    struct Seen {
+        at: ScopeRef,
+        queried: BTreeSet<String>,
+        scoped: BTreeSet<(String, String)>,
+    }
+    let mut entries: Vec<Seen> = Vec::new();
+    for f in &repo.files {
+        if is_test_path(&f.path) {
+            continue;
+        }
+        for e in &f.entry_points {
+            if !crate::practices::REQUEST_KINDS.contains(&e.kind.as_str()) || e.kind == "job" {
+                continue;
+            }
+            let Some((origin, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let mut seen = Seen {
+                at: ScopeRef {
+                    path: f.path.clone(),
+                    symbol: e.symbol.clone(),
+                    line: s.line,
+                    kind: e.kind.clone(),
+                    method: e.method.clone(),
+                    route: e.route.clone(),
+                },
+                queried: BTreeSet::new(),
+                scoped: BTreeSet::new(),
+            };
+            for node in index.reach_nodes((origin, s)) {
+                let args = node.member.map_or(&node.symbol.args, |m| &m.args);
+                for a in args {
+                    // `<callee>@<index>:<key path>`: a call given an object.
+                    if let Some((callee, _)) = a.rsplit_once('@')
+                        && let Some(r) = queried(callee)
+                    {
+                        seen.queried.insert(r.to_string());
+                    }
+                }
+                for fact in flow_facts(&node) {
+                    let Some(rest) = fact.strip_prefix(drift_core::controls::FILTER_VALUE) else {
+                        continue;
+                    };
+                    let parts: Vec<&str> = rest.split('\t').collect();
+                    let [callee, key, side] = parts.as_slice() else {
+                        continue;
+                    };
+                    let Some(r) = queried(callee) else { continue };
+                    seen.queried.insert(r.to_string());
+                    if crate::practices::side_is_callers(cx, side) {
+                        seen.scoped.insert((r.to_string(), key.to_string()));
+                    }
+                }
+            }
+            if !seen.queried.is_empty() {
+                entries.push(seen);
+            }
+        }
+    }
+    // Each thing queried, and the keys it is filtered by with the caller's value.
+    let mut keys: BTreeMap<&str, BTreeMap<&str, usize>> = BTreeMap::new();
+    for e in &entries {
+        for (r, k) in &e.scoped {
+            *keys.entry(r).or_default().entry(k).or_default() += 1;
+        }
+    }
+    let mut out = Vec::new();
+    for (resource, by_key) in keys {
+        // The key most of them use; the first by name where two tie.
+        let Some((key, _)) = by_key.iter().max_by(|a, b| a.1.cmp(b.1).then(b.0.cmp(a.0))) else {
+            continue;
+        };
+        let with: Vec<&Seen> = entries
+            .iter()
+            .filter(|e| e.scoped.iter().any(|(r, k)| r == resource && k == key))
+            .collect();
+        let mut exceptions: Vec<ScopeRef> = entries
+            .iter()
+            .filter(|e| {
+                e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
+            })
+            .map(|e| e.at.clone())
+            .collect();
+        let members = with.len() + exceptions.len();
+        if exceptions.is_empty()
+            || members < SCOPE_GAP_MIN
+            || (with.len() as f64) < SCOPE_GAP_SHARE * members as f64
+        {
+            continue;
+        }
+        exceptions.sort();
+        let Some(example) = with.iter().map(|e| &e.at).min().cloned() else {
+            continue;
+        };
+        out.push(ScopeGap {
+            resource: resource.to_string(),
+            key: key.to_string(),
+            members,
+            scoped: with.len(),
+            exceptions,
+            example,
+        });
+    }
+    out.sort();
+    out
+}
+
+/// The functions of production code that read what a request sent and answer it
+/// (a response built in their own body), and that nothing listed reaches: no entry
+/// point is one, calls one through any number of the repository's own calls, or
+/// runs one as a wrapper, a decorator or a middleware. Whatever serves such a
+/// function, Drift did not list it: a route of a framework it has no adapter for, a
+/// handler registered where it does not read. Said by what the function does, never
+/// by a name or a framework, so it holds for any of them.
+///
+/// Not a function the inventory would not list as an entry point either: a method
+/// of a class, a test, demonstration code.
+fn unreached_handlers(
+    repo: &RepoFacts,
+    index: &Index<'_>,
+    non_production: &NonProduction,
+) -> Vec<Unlisted> {
+    use drift_core::controls::READS_INPUT;
+    let shaped = |s: &Symbol| {
+        s.kind == drift_core::SymbolKind::Function
+            && !s.responses.is_empty()
+            && s.controls.iter().any(|c| c == READS_INPUT)
+    };
+    let production = |f: &FileFacts| {
+        !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+    };
+    if !repo
+        .files
+        .iter()
+        .any(|f| production(f) && f.symbols.iter().any(shaped))
+    {
+        return Vec::new();
+    }
+    // What the entry points reach: themselves, what runs around them, and every
+    // function of the repository any of those calls.
+    let mut reached: BTreeSet<String> = BTreeSet::new();
+    let mut queue: VecDeque<Node> = VecDeque::new();
+    let mut around: Vec<&str> = Vec::new();
+    for f in &repo.files {
+        for e in &f.entry_points {
+            let Some((origin, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let node = index.start(origin, s);
+            if reached.insert(node.key()) {
+                queue.push_back(node);
+            }
+            reached.insert(format!("{}#{}", origin.path, s.name));
+            around.extend(s.wraps.iter().map(|w| w.wrapper.as_str()));
+            around.extend(s.app_middleware.iter().map(String::as_str));
+            around.extend(s.decorator_args.iter().map(String::as_str));
+        }
+        around.extend(
+            f.mounts
+                .iter()
+                .flat_map(|m| m.wraps.iter().map(|w| w.wrapper.as_str())),
+        );
+        around.extend(
+            f.mounts
+                .iter()
+                .flat_map(|m| m.app_middleware.iter().map(String::as_str)),
+        );
+    }
+    for a in around {
+        if let Some(node) = index.target(a)
+            && reached.insert(node.key())
+        {
+            queue.push_back(node);
+        }
+    }
+    while let Some(node) = queue.pop_front() {
+        for c in node.calls() {
+            if let Some(next) = index.target(c)
+                && reached.insert(next.key())
+            {
+                // A class reached is reached with its methods' own callees.
+                queue.push_back(next);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for f in repo.files.iter().filter(|f| production(f)) {
+        // A file that lists entry points of its own is read: what it holds beside
+        // them is theirs to reach or a helper.
+        if !f.entry_points.is_empty() {
+            continue;
+        }
+        for s in f.symbols.iter().filter(|s| shaped(s)) {
+            let key = format!("{}#{}", f.path, s.name);
+            if !reached.contains(&key) {
+                out.push(Unlisted {
+                    path: f.path.clone(),
+                    line: s.line,
+                    symbol: s.name.clone(),
+                });
+            }
+        }
+    }
+    out
 }
 
 /// Where an entry point that reaches a risky operation stands in the list a person
@@ -91,18 +391,21 @@ pub struct Unlisted {
 /// where it is reachable from (internet-facing, unknown, internal), then whether an
 /// operation it reaches is fed by what a request sent ([`INPUT_SINKS`]). Lower
 /// first. A rank, not a verdict: it orders facts and judges none.
-fn review_rank(e: &EntryRow) -> (u8, Exposure, bool) {
+fn review_rank(e: &EntryRow) -> (u8, Exposure, bool, bool) {
     let guard = match (e.guards.is_empty(), e.opaque.is_empty()) {
         _ if e.local => 3,
         (true, true) => 0,
         (true, false) => 1,
         (false, _) => 2,
     };
-    let fed = e
+    let input = e
         .reaches
         .iter()
         .any(|r| INPUT_SINKS.contains(&r.kind.as_str()));
-    (guard, e.exposure, !fed)
+    // Before all of that kind: one where the operation is given a value read off a
+    // parameter, which for a handler is what the request sent.
+    let fed = e.reaches.iter().any(|r| r.fed);
+    (guard, e.exposure, !fed, !input)
 }
 
 /// One directory and what the repository says about its exposure.
@@ -3570,6 +3873,11 @@ pub struct Inventory {
     /// empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub unlisted: Vec<Unlisted>,
+    /// What most entry points that query it filter by a value of the caller, with
+    /// the entry points that query it and filter by none ([`ScopeGap`]). Sorted; not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub scope_gaps: Vec<ScopeGap>,
     /// What could not be read around the inventory, so a part of it is missing (a
     /// `.drift/conventions.yaml` that does not parse: shared guards are listed without
     /// their conventions). Not serialised when empty.
@@ -6609,23 +6917,71 @@ impl<'a> Index<'a> {
         }
     }
 
+    /// The bodies `start` runs: itself and what it calls, through at most
+    /// [`MAX_HOPS`] internal calls, each once.
+    fn reach_nodes(&self, start: (&'a FileFacts, &'a Symbol)) -> Vec<Node<'a>> {
+        let first = self.start(start.0, start.1);
+        let mut seen: BTreeSet<String> = BTreeSet::from([first.key()]);
+        let mut out = Vec::new();
+        let mut queue: VecDeque<(Node, usize)> = VecDeque::from([(first, 0)]);
+        while let Some((node, hops)) = queue.pop_front() {
+            if hops < MAX_HOPS {
+                for c in node.calls() {
+                    if let Some(next) = self.target(c)
+                        && seen.insert(next.key())
+                    {
+                        let same = std::ptr::eq(next.symbol, node.symbol);
+                        queue.push_back((next, hops + usize::from(!same)));
+                    }
+                }
+            }
+            out.push(node);
+        }
+        out
+    }
+
     /// Sinks reached from `start` through at most [`MAX_HOPS`] internal calls,
     /// one shortest chain per sink kind.
     fn reaches(&self, start: (&'a FileFacts, &'a Symbol)) -> Vec<Reach> {
         let first = self.start(start.0, start.1);
         let entry = format!("{}#{}", start.0.path, start.1.name);
-        let mut found: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        // One chain per kind: the shortest, and before it one whose operation is fed
+        // by a parameter.
+        let mut found: BTreeMap<String, (Vec<String>, bool)> = BTreeMap::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         // Hops are counted between symbols: a call of a sibling method of the same class
         // (`this.fetchFile()` in `download`) is no hop, as it was none while a class was
         // read as a whole.
-        let mut queue: VecDeque<(Node, Vec<String>, usize)> = VecDeque::new();
+        // `carried`: every call on the way handed on a value read off a parameter
+        // ([`drift_core::controls::PASSES_PARAM`]), so what the entry point was sent
+        // may be what the body here is given. A body is read once carried and once
+        // not, the carried reading first where both are met.
+        let mut queue: VecDeque<(Node, Vec<String>, usize, bool)> = VecDeque::new();
+        let mut seen_carried: BTreeSet<String> = BTreeSet::new();
         seen.insert(first.key());
-        queue.push_back((first, vec![entry], 0));
-        while let Some((node, chain, hops)) = queue.pop_front() {
+        seen_carried.insert(first.key());
+        queue.push_back((first, vec![entry], 0, true));
+        while let Some((node, chain, hops, carried)) = queue.pop_front() {
+            let facts = flow_facts(&node);
+            let says = |start: &str, what: &str| {
+                facts
+                    .iter()
+                    .any(|c| c.strip_prefix(start).is_some_and(|x| x == what))
+            };
+            // What the entry point names as its handler may be a function that
+            // makes the handler (`app.post("/login", login())`): the parameters of
+            // what it makes are what the request sent.
+            let made = chain.len() <= 2;
             for k in node.sinks() {
                 if chain.len() == 1 || INPUT_SINKS.contains(&k.as_str()) {
-                    found.entry(k.clone()).or_insert_with(|| chain.clone());
+                    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
+                    let fed = (carried && says(SINK_FED, k)) || (made && says(SINK_FED_MADE, k));
+                    match found.get(k) {
+                        Some((_, was)) if *was || !fed => {}
+                        _ => {
+                            found.insert(k.clone(), (chain.clone(), fed));
+                        }
+                    }
                 }
             }
             if hops >= MAX_HOPS {
@@ -6636,17 +6992,21 @@ impl<'a> Index<'a> {
                     continue;
                 };
                 let key = next.key();
-                if seen.insert(key.clone()) {
+                let passes = (carried && says(drift_core::controls::PASSES_PARAM, c))
+                    || (made && says(drift_core::controls::PASSES_MADE, c));
+                let new = seen.insert(key.clone());
+                let newly_carried = passes && seen_carried.insert(key.clone());
+                if new || newly_carried {
                     let same = std::ptr::eq(next.symbol, node.symbol);
                     let mut chain = chain.clone();
                     chain.push(key);
-                    queue.push_back((next, chain, hops + usize::from(!same)));
+                    queue.push_back((next, chain, hops + usize::from(!same), passes));
                 }
             }
         }
         found
             .into_iter()
-            .map(|(kind, via)| Reach { kind, via })
+            .map(|(kind, (via, fed))| Reach { kind, via, fed })
             .collect()
     }
 }
@@ -6836,6 +7196,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                 f.unlisted_routes.iter().map(|line| Unlisted {
                     path: f.path.clone(),
                     line: *line,
+                    symbol: String::new(),
                 })
             })
             .collect(),
@@ -6867,6 +7228,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                     path: f.path.clone(),
                     symbol: s.name.clone(),
                     line: s.line,
+                    fed: sink_fed(s, k),
                 });
             }
             for r in &s.reads {
@@ -7021,6 +7383,11 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
         }
     }
     inv.guard_gaps = guard_gaps(&inv.entry_points);
+    inv.scope_gaps = scope_gaps(repo, &index, &cx);
+    let unreached = unreached_handlers(repo, &index, &non_production);
+    inv.unlisted.extend(unreached);
+    inv.unlisted.sort();
+    inv.unlisted.dedup();
     inv.sinks.sort();
     inv.client_leaks = leaks
         .into_iter()
@@ -8037,11 +8404,19 @@ pub fn render_at(
         let shown: Vec<String> = unlisted
             .iter()
             .take(5)
-            .map(|u| format!("{}:{}", sanitize(&u.path, 160), u.line))
+            .map(|u| match u.symbol.is_empty() {
+                true => format!("{}:{}", sanitize(&u.path, 160), u.line),
+                false => format!(
+                    "{}:{} {}",
+                    sanitize(&u.path, 160),
+                    u.line,
+                    sanitize(&u.symbol, 60)
+                ),
+            })
             .collect();
         let _ = writeln!(
             out,
-            "{} registration(s) written as a route is are NOT LISTED: what registers them was not read, so a route there may be served and is in no row below: {}{}",
+            "{} place(s) that look served are NOT LISTED (a registration written as a route is, or a function that reads a request and answers it and that no listed entry point reaches): what serves them was not read, so a route there is in no row below: {}{}",
             unlisted.len(),
             shown.join(", "),
             if unlisted.len() > 5 { ", ..." } else { "" }
@@ -8124,10 +8499,11 @@ pub fn render_at(
             for u in uses.iter().take(max_rows) {
                 let _ = writeln!(
                     out,
-                    "    {}:{} {}",
+                    "    {}:{} {}{}",
                     sanitize(&u.path, 160),
                     u.line,
-                    sanitize(&u.symbol, 80)
+                    sanitize(&u.symbol, 80),
+                    if u.fed { FED } else { "" }
                 );
             }
             if uses.len() > max_rows {
@@ -8186,8 +8562,9 @@ pub fn render_at(
                     .collect::<Vec<_>>();
                 let _ = writeln!(
                     out,
-                    "      {}{}",
+                    "      {}{}{}",
                     r.kind,
+                    if r.fed { FED } else { "" },
                     if via.is_empty() {
                         String::new()
                     } else {
@@ -8268,6 +8645,60 @@ pub fn render_at(
         }
         if gaps.len() > max_rows {
             let _ = writeln!(out, "  ... {} more", gaps.len() - max_rows);
+        }
+    }
+    let scope_gaps: Vec<&ScopeGap> = inv
+        .scope_gaps
+        .iter()
+        .filter(|g| only.is_none_or(|o| g.exceptions.iter().any(|e| o.contains(&e.path))))
+        .collect();
+    if !scope_gaps.is_empty() {
+        let _ = writeln!(
+            out,
+            "\nWhat most entry points filter by a value of the caller, and the ones that do not"
+        );
+        for g in scope_gaps.iter().take(max_rows) {
+            let _ = writeln!(
+                out,
+                "  {} by {}: {} of {} entry points that query it give it the caller's own value; {} give it none",
+                sanitize(&g.resource, 160),
+                sanitize(&g.key, 80),
+                g.scoped,
+                g.members,
+                g.exceptions.len()
+            );
+            for e in g.exceptions.iter().take(GAP_EXCEPTIONS) {
+                let what = [e.method.as_deref(), e.route.as_deref()]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                let _ = writeln!(
+                    out,
+                    "      {} {}  {}:{}",
+                    e.kind,
+                    sanitize(&what, 120),
+                    sanitize(&e.path, 160),
+                    e.line
+                );
+            }
+            if g.exceptions.len() > GAP_EXCEPTIONS {
+                let _ = writeln!(
+                    out,
+                    "      ... {} more",
+                    g.exceptions.len() - GAP_EXCEPTIONS
+                );
+            }
+            let _ = writeln!(
+                out,
+                "      to copy: {}:{} {}",
+                sanitize(&g.example.path, 160),
+                g.example.line,
+                sanitize(&g.example.symbol, 80)
+            );
+        }
+        if scope_gaps.len() > max_rows {
+            let _ = writeln!(out, "  ... {} more", scope_gaps.len() - max_rows);
         }
     }
     // Entry points with no guard, then those whose guard cannot be read.

@@ -612,6 +612,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "arg_value:src/mylib/utils/text.py#_private\t#0\tparam s #0",
             "param_flows",
+            "passes_param:src/mylib/utils/text.py#_private",
             "typed_return"
           ],
           "string_literals": 0,

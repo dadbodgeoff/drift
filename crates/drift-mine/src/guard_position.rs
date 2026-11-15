@@ -908,6 +908,36 @@ fn harmless_call(
     if c.ends_with("(new)") {
         return false;
     }
+    // A method of a value the module builds from a package that does not
+    // authenticate (`const counter = new Counter(...)`, `const log = createLogger()`;
+    // then `counter.labels(code).inc()`, `log.info(...)`): a package's call, as one
+    // written through the import is. By what the binding is built from, not by its
+    // name.
+    let binding = callee
+        .split_once('#')
+        .map(|(file, path)| {
+            let name = &path[..path.find(['.', '(']).unwrap_or(path.len())];
+            (format!("{file}#{name}"), path.len() > name.len())
+        })
+        .filter(|(_, member)| *member);
+    if let Some((binding, _)) = binding
+        && cx.context().definition(&binding).is_some_and(|d| {
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
+                && !d.calls.is_empty()
+                && d.calls.iter().all(|c| {
+                    let c = c.trim_end_matches("(ref)").trim_end_matches("(new)");
+                    c.starts_with("pkg:")
+                        && !crate::practices::of_an_auth_library(c)
+                        && !crate::practices::authn_callee(c)
+                        && matches!(
+                            guard_lists::library(c, None),
+                            Library::Unlisted | Library::Never
+                        )
+                })
+        })
+    {
+        return true;
+    }
     // The application or router the body hands the request on to.
     if cx.context().definition(callee).is_some_and(|d| {
         matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)

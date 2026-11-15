@@ -681,6 +681,7 @@ pub(crate) use authn::{
     read_route_middleware,
 };
 pub use authn::{IDENTIFIED, identified_only, verified_signatures};
+pub(crate) use authz::side_is_callers;
 pub(crate) use common::{PARAM_CALLEE, REQUEST_KINDS, file_at, in_skipped, owning_classes};
 pub use depart::{
     AddedEntry, CHECK_LISTED, CHECK_NOTICES, DepartingUnit, Departure, PLACE_SHARE, added_entries,

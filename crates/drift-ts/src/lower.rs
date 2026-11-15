@@ -373,6 +373,20 @@ pub struct RawSymbol {
     /// where the value a query filters by comes from. TypeScript lowering 76.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caller_keys: Vec<(RawRef, String)>,
+    /// The risky operations of the body that are given a value read off a
+    /// parameter of the function ([`drift_core::controls::SINK_FED`]), by kind.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks: Vec<String>,
+    /// The callees the body hands a value read off a parameter of the function
+    /// ([`drift_core::controls::PASSES_PARAM`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes: Vec<RawRef>,
+    /// As [`Self::fed_sinks`] and [`Self::param_passes`], of a parameter of the
+    /// function the body hands back ([`drift_core::controls::SINK_FED_MADE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub made_fed_sinks: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub made_passes: Vec<RawRef>,
     /// [`drift_core::SymbolCalls::param_flows`].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub param_flows: bool,
@@ -2841,6 +2855,16 @@ impl<'s> Lowerer<'s> {
                     m.throws.extend(part.throws);
                     m.after_continuation.extend(part.after_continuation);
                     m.sinks.extend(part.sinks);
+                    for k in part.fed_sinks {
+                        if !m.fed_sinks.contains(&k) {
+                            m.fed_sinks.push(k);
+                        }
+                    }
+                    for r in part.param_passes {
+                        if !m.param_passes.contains(&r) {
+                            m.param_passes.push(r);
+                        }
+                    }
                     m.body_checks.extend(part.body_checks);
                     m.responses.extend(part.responses);
                     m.log_calls.extend(part.log_calls);
@@ -4660,6 +4684,10 @@ impl RawSymbol {
             verifies: vec![],
             caller_args: vec![],
             caller_keys: vec![],
+            fed_sinks: vec![],
+            param_passes: vec![],
+            made_fed_sinks: vec![],
+            made_passes: vec![],
             param_flows: false,
             tags: vec![],
         }
@@ -4714,6 +4742,21 @@ struct Collector<'l, 's> {
     sinks: BTreeSet<String>,
     /// [`RawSymbol::caller_keys`].
     caller_keys: BTreeSet<(RawRef, String)>,
+    /// [`RawSymbol::fed_sinks`].
+    fed_sinks: BTreeSet<String>,
+    /// [`RawSymbol::param_passes`].
+    param_passes: BTreeSet<RawRef>,
+    /// [`RawSymbol::made_fed_sinks`], [`RawSymbol::made_passes`].
+    made_fed_sinks: BTreeSet<String>,
+    made_passes: BTreeSet<RawRef>,
+    /// The parameters of the function the walk's own function hands back (`export
+    /// function login() { return (req, res) => { ... } }`: `req`, `res`), and the
+    /// locals bound to a value read off one: what the function made is called
+    /// with is its input, as a parameter of the function itself is.
+    product_params: HashSet<SymbolId>,
+    /// The locals bound to a value read off a parameter of the walk's own function
+    /// ([`Collector::reads_own_param`]).
+    own_locals: HashSet<SymbolId>,
     order: Vec<RawRef>,
     /// The callees whose call's value the body returns, outside any callback.
     returns_calls: BTreeSet<RawRef>,
@@ -5026,6 +5069,12 @@ impl<'l, 's> Collector<'l, 's> {
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
             caller_keys: BTreeSet::new(),
+            fed_sinks: BTreeSet::new(),
+            param_passes: BTreeSet::new(),
+            made_fed_sinks: BTreeSet::new(),
+            made_passes: BTreeSet::new(),
+            product_params: HashSet::new(),
+            own_locals: HashSet::new(),
             order: Vec::new(),
             returns_calls: BTreeSet::new(),
             skip_decorators: false,
@@ -5625,6 +5674,13 @@ impl<'l, 's> Collector<'l, 's> {
         sym.sinks.extend(std::mem::take(&mut self.sinks));
         sym.caller_keys
             .extend(std::mem::take(&mut self.caller_keys));
+        sym.fed_sinks.extend(std::mem::take(&mut self.fed_sinks));
+        sym.param_passes
+            .extend(std::mem::take(&mut self.param_passes));
+        sym.made_fed_sinks
+            .extend(std::mem::take(&mut self.made_fed_sinks));
+        sym.made_passes
+            .extend(std::mem::take(&mut self.made_passes));
         for r in std::mem::take(&mut self.returns_calls) {
             if !sym.returns_calls.contains(&r) {
                 sym.returns_calls.push(r);
@@ -5803,6 +5859,75 @@ impl<'l, 's> Collector<'l, 's> {
 }
 
 impl Collector<'_, '_> {
+    /// Notes the parameters of a function the walk's own function hands back
+    /// ([`Collector::product_params`]).
+    fn note_product_params(&mut self, f: &Expression) {
+        fn names(p: &BindingPattern, out: &mut HashSet<SymbolId>) {
+            match p {
+                BindingPattern::BindingIdentifier(b) => out.extend(b.symbol_id.get()),
+                BindingPattern::AssignmentPattern(a) => names(&a.left, out),
+                BindingPattern::ObjectPattern(o) => {
+                    for prop in &o.properties {
+                        names(&prop.value, out);
+                    }
+                }
+                BindingPattern::ArrayPattern(a) => {
+                    for el in a.elements.iter().flatten() {
+                        names(el, out);
+                    }
+                }
+            }
+        }
+        let params = match f {
+            Expression::ArrowFunctionExpression(a) => &a.params,
+            Expression::FunctionExpression(a) => &a.params,
+            _ => return,
+        };
+        for item in &params.items {
+            names(&item.pattern, &mut self.product_params);
+        }
+    }
+
+    /// `e` names a parameter of the function the walk's own function hands back,
+    /// or a local bound to a value read off one ([`Collector::product_params`]).
+    fn reads_product_param(&self, e: &Expression) -> bool {
+        !self.product_params.is_empty() && self.names_one(e, &|s| self.product_params.contains(&s))
+    }
+
+    /// `e` names a parameter of the walk's own function, or a local bound to a value
+    /// read off one: whatever the parameter is (the request, a context, a plain
+    /// value), what is read off it is what the function was given.
+    fn reads_own_param(&self, e: &Expression) -> bool {
+        self.names_one(e, &|s| {
+            self.flow.own_param(s) || self.own_locals.contains(&s)
+        })
+    }
+
+    /// Some name written in `e` is a binding `of` holds.
+    fn names_one(&self, e: &Expression, of: &dyn Fn(SymbolId) -> bool) -> bool {
+        struct Names<'x, 's> {
+            scoping: &'s Scoping,
+            of: &'x dyn Fn(SymbolId) -> bool,
+            found: bool,
+        }
+        impl<'a> Visit<'a> for Names<'_, '_> {
+            fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
+                self.found |= it
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.scoping.get_reference(r).symbol_id())
+                    .is_some_and(|s| (self.of)(s));
+            }
+        }
+        let mut names = Names {
+            scoping: self.l.scoping,
+            of,
+            found: false,
+        };
+        names.visit_expression(e);
+        names.found
+    }
+
     /// Records the keys of an object given to `callee` whose value is a value of
     /// the caller by its own source ([`RawSymbol::caller_keys`]), by the path
     /// [`Collector::object_keys`] writes.
@@ -10622,7 +10747,39 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             // `require("x")` is an import, not a call worth recording.
             return walk::walk_call_expression(self, it);
         }
-        for s in self.l.call_sinks(it) {
+        let kinds = self.l.call_sinks(it);
+        // The call is given a value read off a parameter of the function: an
+        // operation fed by it ([`drift_core::controls::SINK_FED`]), a callee it is
+        // handed on to ([`drift_core::controls::PASSES_PARAM`]).
+        fn argument<'b, 'a>(a: &'b Argument<'a>) -> Option<&'b Expression<'a>> {
+            match a {
+                Argument::SpreadElement(s) => Some(&s.argument),
+                other => other.as_expression(),
+            }
+        }
+        let given_a_parameter = it.arguments.iter().any(|a| {
+            argument(a).is_some_and(|e| self.taint(e).of_a_parameter() || self.reads_own_param(e))
+        });
+        // Or off a parameter of the function the body hands back
+        // ([`drift_core::controls::SINK_FED_MADE`]).
+        let given_a_made_parameter = it
+            .arguments
+            .iter()
+            .any(|a| argument(a).is_some_and(|e| self.reads_product_param(e)));
+        if given_a_parameter {
+            self.fed_sinks.extend(kinds.iter().map(|k| k.to_string()));
+            if let Some(r) = self.l.canon_callee(&it.callee) {
+                self.param_passes.insert(r);
+            }
+        }
+        if given_a_made_parameter {
+            self.made_fed_sinks
+                .extend(kinds.iter().map(|k| k.to_string()));
+            if let Some(r) = self.l.canon_callee(&it.callee) {
+                self.made_passes.insert(r);
+            }
+        }
+        for s in kinds {
             self.sinks.insert(s.to_string());
         }
         self.flow_call(it);
@@ -11124,8 +11281,10 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && let Some(body) = it.body.as_expression()
         {
             match unwrap_expr(body) {
-                Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_) => {
+                f
+                @ (Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)) => {
                     self.returns_fn += 1;
+                    self.note_product_params(f);
                 }
                 _ => self.returns_other = true,
             }
@@ -11735,8 +11894,10 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && let Some(arg) = &it.argument
         {
             match unwrap_expr(arg) {
-                Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_) => {
+                f
+                @ (Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)) => {
                     self.returns_fn += 1;
+                    self.note_product_params(f);
                 }
                 _ => self.returns_other = true,
             }
@@ -11809,6 +11970,18 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
     }
 
     fn visit_variable_declarator(&mut self, it: &VariableDeclarator<'a>) {
+        // A local bound to a value read off a parameter of the function made
+        // ([`Collector::product_params`]) is one too.
+        if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&it.id, &it.init)
+            && let Some(sym) = id.symbol_id.get()
+        {
+            if self.reads_product_param(init) {
+                self.product_params.insert(sym);
+            }
+            if self.reads_own_param(init) {
+                self.own_locals.insert(sym);
+            }
+        }
         if let Some(init) = &it.init {
             self.flow_declarator(&it.id, init);
             self.note_binding(&it.id, init);

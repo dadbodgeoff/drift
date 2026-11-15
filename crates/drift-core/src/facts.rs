@@ -1740,6 +1740,31 @@ pub mod controls {
     /// Python (lowering 58), and by TypeScript (lowering 66) in the listed reading
     /// only. Mining never proposes it.
     pub const RETURNS_CALLER: &str = "returns_caller";
+    /// What starts the control that says a risky operation of the body
+    /// ([`crate::Symbol::sinks`]) is given a value read off a parameter of the
+    /// function the body is of: `sink_fed:<kind>`. Of an entry point's handler, a
+    /// parameter is what the request sent; of any other function, what its caller
+    /// passed. The value is followed through the body as a value of the caller is:
+    /// members and items, locals in the order written, templates, objects and arrays
+    /// that hold it. An operation with no such control was given nothing of a
+    /// parameter that the lowering read. TypeScript lowering 76 (listed reading),
+    /// Python lowering 69. Mining never proposes it.
+    pub const SINK_FED: &str = "sink_fed:";
+    /// What starts the control that says the body hands a callee a value read off a
+    /// parameter of its own function: `passes_param:<callee>`, canonical. With
+    /// [`SINK_FED`] it says whether what an entry point was sent reaches an
+    /// operation some calls away: each call on the way hands on a value read off a
+    /// parameter. TypeScript lowering 76 (listed reading), Python lowering 69. On a
+    /// Python method the same strings are in [`crate::facts::Member::unread`].
+    /// Mining never proposes it.
+    pub const PASSES_PARAM: &str = "passes_param:";
+    /// As [`SINK_FED`] and [`PASSES_PARAM`], of a parameter of the function the body
+    /// hands back (`export function login() { return (req, res) => { ... } }`):
+    /// `sink_fed_made:<kind>`, `passes_made:<callee>`. What the function made is
+    /// called with is its input: where an entry point names the maker as its handler,
+    /// what the request sent. TypeScript lowering 76 (listed reading).
+    pub const SINK_FED_MADE: &str = "sink_fed_made:";
+    pub const PASSES_MADE: &str = "passes_made:";
     /// What starts the control of a function whose every `return` that gives a
     /// value gives one read off what a dependency gave it, each dependency its own
     /// entry (`returns_given:<dependency>`, canonical): `def get_current_user(db:

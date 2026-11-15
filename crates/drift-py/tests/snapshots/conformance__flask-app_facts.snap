@@ -898,7 +898,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "reads_input"
+            "reads_input",
+            "sink_fed:dynamic_redirect"
           ],
           "string_literals": 1,
           "sinks": [

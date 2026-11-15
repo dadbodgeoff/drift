@@ -122,6 +122,18 @@ fn gives_caller(cx: &Cx<'_>, giver: &str, holders: bool) -> bool {
     gives_caller_at(cx, giver, holders, 0)
 }
 
+/// A side of a comparison or a filter, as the lowering writes one
+/// ([`drift_core::controls::SIDES`]), is a value of the caller: by its own source,
+/// or given by what gives one ([`gives_caller`]).
+pub(crate) fn side_is_callers(cx: &Cx<'_>, side: &str) -> bool {
+    side == "caller"
+        || side
+            .strip_prefix("call via ")
+            .or_else(|| side.strip_prefix("via "))
+            .or_else(|| side.strip_prefix("gives "))
+            .is_some_and(|giver| gives_caller(cx, giver, true))
+}
+
 /// [`gives_caller`], `depth` dependencies down: a function whose every return
 /// reads its value off what its own dependencies gave it
 /// ([`drift_core::controls::RETURNS_GIVEN`]: `get_current_user`, which loads the

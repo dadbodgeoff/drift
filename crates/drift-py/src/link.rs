@@ -4729,6 +4729,20 @@ impl<'r> Linker<'r> {
                             format!("{}{callee}", drift_core::controls::VERIFIES_SIGNATURE)
                         }));
                         c.extend(self.origins(fi, &s.check_sides, &s.filter_values, &s.arg_sides));
+                        c.extend(
+                            s.fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                        );
+                        // Handed on to code of the repository: what a built-in or a
+                        // package does with it is not followed.
+                        c.extend(
+                            s.param_passes
+                                .iter()
+                                .map(|r| self.canon(fi, r))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
+                        );
                         // What every return of the function reads its value off
                         // ([`drift_core::controls::RETURNS_GIVEN`]): said only where
                         // each dependency stands for something here.
@@ -4895,6 +4909,22 @@ impl<'r> Linker<'r> {
                             caller_args: self.caller_args(fi, &m.caller_args),
                             unread: {
                                 let mut unread = m.unread.clone();
+                                unread.extend(
+                                    m.fed_sinks
+                                        .iter()
+                                        .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                                );
+                                unread.extend(
+                                    m.param_passes
+                                        .iter()
+                                        .map(|r| self.canon(fi, r))
+                                        .filter(|c| {
+                                            !c.starts_with("global#") && !c.starts_with("pkg:")
+                                        })
+                                        .map(|c| {
+                                            format!("{}{c}", drift_core::controls::PASSES_PARAM)
+                                        }),
+                                );
                                 unread.extend(self.origins(
                                     fi,
                                     &m.check_sides,

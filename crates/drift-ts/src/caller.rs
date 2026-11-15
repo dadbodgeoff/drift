@@ -574,6 +574,11 @@ impl Taint {
         self.caller && self.via.is_empty()
     }
 
+    /// Read off a parameter of the function the walk started on.
+    pub(super) fn of_a_parameter(&self) -> bool {
+        self.param
+    }
+
     /// A value of the caller, or of what may give one.
     fn of_caller(&self) -> bool {
         self.caller || !self.via.is_empty()
@@ -625,6 +630,13 @@ impl Flow {
     /// value ([`drift_core::controls::RETURNS_CALLER`]).
     pub(super) fn returns_caller(&self) -> bool {
         self.returns_caller && !self.returns_other
+    }
+}
+
+impl Flow {
+    /// `s` is a parameter of the function the walk started on.
+    pub(super) fn own_param(&self, s: SymbolId) -> bool {
+        self.own_params.contains(&s)
     }
 }
 

@@ -1204,6 +1204,8 @@ export interface PracticeDeparture {
 export interface Reach {
   kind: string;
   via: string[];
+  /** As `SinkUse.fed` (newer drift; absent when false). */
+  fed?: boolean;
 }
 
 /**
@@ -1348,6 +1350,8 @@ export interface SinkUse {
   path: string;
   symbol: string;
   line: number;
+  /** The operation is given a value read off a parameter of its function: of a handler, what the request sent (newer drift; absent when false). */
+  fed?: boolean;
 }
 
 export interface LeakGroup {
@@ -1410,7 +1414,16 @@ export interface Inventory {
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
   /** Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty). */
-  unlisted?: { path: string; line: number }[];
+  unlisted?: { path: string; line: number; symbol?: string }[];
+  /** What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none (newer drift; absent when empty). */
+  scope_gaps?: {
+    resource: string;
+    key: string;
+    members: number;
+    scoped: number;
+    exceptions: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null }[];
+    example: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null };
+  }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
 }

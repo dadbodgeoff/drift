@@ -215,7 +215,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "arg_value:shop/codec.py#dumps\t#0\tparam obj #0\t#1\tunread",
-            "param_flows"
+            "param_flows",
+            "passes_param:shop/codec.py#dumps"
           ],
           "string_literals": 0,
           "order": [
@@ -507,6 +508,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "arg_value:shop/http.py#session.get\t#0\tparam url #0\t*\tunread",
             "param_flows",
+            "passes_param:shop/http.py#session.get",
             "unread_call"
           ],
           "string_literals": 3,
@@ -538,7 +540,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "pkg:requests#post@99:**"
           ],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:dynamic_fetch"
           ],
           "string_literals": 0,
           "sinks": [

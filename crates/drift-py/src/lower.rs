@@ -2407,6 +2407,12 @@ pub(crate) struct Collector<'l, 't> {
     pub(crate) sinks: BTreeSet<String>,
     /// Sinks the measured build did not read ([`RawSymbol::since_sinks`]).
     since_sinks: BTreeSet<String>,
+    /// [`RawSymbol::fed_sinks`], and the names the body binds to a value read off
+    /// a parameter or off what the request sent ([`Collector::input_reaches`]).
+    fed_sinks: BTreeSet<String>,
+    fed_locals: BTreeSet<String>,
+    /// [`RawSymbol::param_passes`].
+    param_passes: BTreeSet<RawRef>,
     /// The names the body binds to SQL text (text that holds a keyword), and those
     /// it binds to SQL text built from a part that is no literal
     /// ([`Collector::note_sql_binding`]).
@@ -2628,6 +2634,9 @@ impl<'l, 't> Collector<'l, 't> {
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
             since_sinks: BTreeSet::new(),
+            fed_sinks: BTreeSet::new(),
+            fed_locals: BTreeSet::new(),
+            param_passes: BTreeSet::new(),
             sql_text: BTreeSet::new(),
             sql_built: BTreeSet::new(),
             order: Vec::new(),
@@ -2786,6 +2795,8 @@ impl<'l, 't> Collector<'l, 't> {
         sym.throws.extend(self.throws);
         sym.sinks.extend(self.sinks);
         sym.since_sinks.extend(self.since_sinks);
+        sym.fed_sinks.extend(self.fed_sinks);
+        sym.param_passes.extend(self.param_passes);
         if !self.returns_else && sym.kind == SymbolKind::Function {
             sym.returns_given = std::mem::take(&mut self.returns_via);
         }
@@ -3346,10 +3357,26 @@ impl<'l, 't> Collector<'l, 't> {
         if self.input_params.is_some() && self.hands_request_on(c) {
             self.input_escapes = true;
         }
-        for s in self.l.call_sinks(self, c) {
+        let (read, since) = (self.l.call_sinks(self, c), self.l.call_sinks_since(self, c));
+        // An operation given a value read off a parameter of the function or off
+        // what the request sent ([`drift_core::controls::SINK_FED`]).
+        if c.arguments
+            .args
+            .iter()
+            .chain(c.arguments.keywords.iter().map(|k| &k.value))
+            .any(|a| self.input_reaches(a, 0))
+        {
+            self.fed_sinks
+                .extend(read.iter().chain(&since).map(|k| k.to_string()));
+            // And handed on to what is called ([`drift_core::controls::PASSES_PARAM`]).
+            if let Some(r) = self.canon(&c.func) {
+                self.param_passes.insert(r);
+            }
+        }
+        for s in read {
             self.sinks.insert(s.to_string());
         }
-        for s in self.l.call_sinks_since(self, c) {
+        for s in since {
             self.since_sinks.insert(s.to_string());
         }
         if self.l.is_validation_call(self, c) {
@@ -3587,6 +3614,92 @@ fn schedules(callee: &Expr) -> bool {
 }
 
 impl Collector<'_, '_> {
+    /// The value of `e` is read off a parameter of the function, off what the
+    /// request sent ([`Collector::side`]), or off a local bound to one, or holds
+    /// one: a member or an item of it, text built from it, what a method of it or a
+    /// call given it hands back, a collection that holds it. Followed as written,
+    /// whatever the names are.
+    fn input_reaches(&self, e: &Expr, depth: usize) -> bool {
+        if depth > 6 {
+            return false;
+        }
+        let any = |es: &mut dyn Iterator<Item = &Expr>| {
+            let mut found = false;
+            for x in es {
+                found |= self.input_reaches(x, depth + 1);
+            }
+            found
+        };
+        match e {
+            Expr::Name(_) | Expr::Attribute(_) | Expr::Subscript(_) => {
+                let mut root = e;
+                while let Expr::Attribute(ast::ExprAttribute { value, .. })
+                | Expr::Subscript(ast::ExprSubscript { value, .. }) = root
+                {
+                    root = value;
+                }
+                match root {
+                    Expr::Name(n) if self.fed_locals.contains(n.id.as_str()) => true,
+                    Expr::Call(_) => self.input_reaches(root, depth + 1),
+                    _ => {
+                        self.param_value(e)
+                            || matches!(self.side(e), RawSide::Request | RawSide::Param(..))
+                    }
+                }
+            }
+            Expr::FString(f) => f.value.iter().any(|part| match part {
+                ast::FStringPartRef::Literal(_) => false,
+                ast::FStringPartRef::FString(fs) => fs.elements.iter().any(|el| match el {
+                    ast::InterpolatedStringElement::Literal(_) => false,
+                    ast::InterpolatedStringElement::Interpolation(i) => {
+                        self.input_reaches(&i.expression, depth + 1)
+                    }
+                }),
+            }),
+            Expr::BinOp(b) => any(&mut [b.left.as_ref(), b.right.as_ref()].into_iter()),
+            Expr::Await(a) => self.input_reaches(&a.value, depth + 1),
+            Expr::Starred(s) => self.input_reaches(&s.value, depth + 1),
+            Expr::Call(c) => {
+                matches!(c.func.as_ref(), Expr::Attribute(a) if self.input_reaches(&a.value, depth + 1))
+                    || any(&mut c
+                        .arguments
+                        .args
+                        .iter()
+                        .chain(c.arguments.keywords.iter().map(|k| &k.value)))
+            }
+            Expr::Dict(d) => any(&mut d.items.iter().map(|i| &i.value)),
+            Expr::List(l) => any(&mut l.elts.iter()),
+            Expr::Tuple(t) => any(&mut t.elts.iter()),
+            _ => false,
+        }
+    }
+
+    /// Notes a name the statement binds to a value read off a parameter or off
+    /// what the request sent ([`Collector::input_reaches`]), in the order written;
+    /// a name bound to anything else afterwards is one no longer.
+    fn note_fed_binding(&mut self, stmt: &Stmt) {
+        let (target, value, added) = match stmt {
+            Stmt::Assign(a) => match a.targets.as_slice() {
+                [Expr::Name(n)] => (n.id.as_str(), a.value.as_ref(), false),
+                _ => return,
+            },
+            Stmt::AnnAssign(a) => match (a.target.as_ref(), a.value.as_deref()) {
+                (Expr::Name(n), Some(v)) => (n.id.as_str(), v, false),
+                _ => return,
+            },
+            Stmt::AugAssign(a) => match a.target.as_ref() {
+                Expr::Name(n) => (n.id.as_str(), a.value.as_ref(), true),
+                _ => return,
+            },
+            _ => return,
+        };
+        if self.input_reaches(value, 0) {
+            self.fed_locals.insert(target.to_string());
+        } else if !added {
+            self.fed_locals.remove(target);
+        }
+    }
+
     /// Notes a name the statement binds to SQL text, and one it binds to SQL text
     /// built from a part that is no literal: `q = f"SELECT ... '{name}'"`, `q =
     /// "SELECT ..." + name`, `q += f" AND owner = '{owner}'"` on a name that holds
@@ -3634,6 +3747,7 @@ impl Collector<'_, '_> {
 
 impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
+        self.note_fed_binding(stmt);
         self.note_sql_binding(stmt);
         if Lowerer::secret_binding(stmt) {
             self.since_sinks.insert(signals::kind::SECRET.to_string());

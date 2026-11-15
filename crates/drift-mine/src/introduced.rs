@@ -616,6 +616,7 @@ mod tests {
         Reach {
             kind: kind.into(),
             via: via.iter().map(|v| v.to_string()).collect(),
+            fed: false,
         }
     }
 
@@ -625,6 +626,7 @@ mod tests {
             path: path.into(),
             symbol: symbol.into(),
             line,
+            fed: false,
         }
     }
 

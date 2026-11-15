@@ -177,6 +177,15 @@ pub struct RawSymbol {
     /// return gives anything else.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub returns_given: Vec<RawDep>,
+    /// The risky operations of the body that are given a value read off a
+    /// parameter of the function or off what the request sent
+    /// ([`drift_core::controls::SINK_FED`]), by kind.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks: Vec<String>,
+    /// The callees the body hands a value read off a parameter of the function or
+    /// off what the request sent ([`drift_core::controls::PASSES_PARAM`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes: Vec<RawRef>,
     pub order: Vec<RawRef>,
     /// FastAPI dependencies of a function, in parameter order; of a class, its
     /// `__init__`'s (what `Depends(Class)` runs).
@@ -675,6 +684,12 @@ pub struct RawMember {
     /// As [`RawSymbol::since_sinks`], of the method's own body.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub since_sinks: Vec<String>,
+    /// As [`RawSymbol::fed_sinks`] and [`RawSymbol::param_passes`], of the method's
+    /// own body.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes: Vec<RawRef>,
     /// The method's own checks that turn the caller away.
     #[serde(default)]
     pub body_checks: Vec<RawBodyCheck>,
@@ -1281,6 +1296,8 @@ impl RawSymbol {
             sinks: vec![],
             since_sinks: vec![],
             returns_given: vec![],
+            fed_sinks: vec![],
+            param_passes: vec![],
             order: vec![],
             deps: vec![],
             call_deps: vec![],
