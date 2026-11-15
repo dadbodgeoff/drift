@@ -45,6 +45,10 @@ pub const KINDS: &[(&str, &str)] = &[
     ),
     ("risky", "risky operation(s)"),
     (
+        "whole-row",
+        "bod(ies) sending rows whole where other code withholds a field",
+    ),
+    (
         "workflow",
         "CI workflow step(s) that run what an outsider wrote",
     ),
@@ -172,6 +176,20 @@ pub fn findings(inv: &Inventory, facts: &drift_core::RepoFacts) -> Findings {
                 s.line,
             );
         }
+    }
+    for w in &inv.whole_rows {
+        add(
+            "whole-row",
+            format!(
+                "{}#{} sends {} whole: {}",
+                w.path,
+                w.symbol,
+                w.rows,
+                w.fields.join(", ")
+            ),
+            &w.path,
+            w.line,
+        );
     }
     for w in &inv.workflows {
         add(

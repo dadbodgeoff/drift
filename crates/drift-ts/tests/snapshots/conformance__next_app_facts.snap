@@ -47,7 +47,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "await",
             "caller_from:lib/auth.ts#requireUser",
-            "reads_input"
+            "reads_input",
+            "returns_whole:lib/auth.ts#requireUser"
           ],
           "string_literals": 0,
           "order": [
@@ -95,7 +96,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
               "gives_caller",
               "reads_input",
               "returns_caller",
-              "returns_data"
+              "returns_data",
+              "returns_whole:lib/auth.ts#requireUser"
             ],
             "string_literals": 0,
             "order": [
@@ -324,7 +326,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           ],
           "controls": [
             "await",
-            "no_input"
+            "no_input",
+            "sends_whole:lib/db.ts#db.link.findMany"
           ],
           "string_literals": 1,
           "order": [
@@ -376,6 +379,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "arg_value:pkg:zod#object\t#0\tunread\t#0.url\tunread",
             "await",
             "reads_input",
+            "sends_whole:pkg:zod#object().parse",
             "throw",
             "try",
             "validates"
@@ -1231,7 +1235,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "arg_value:lib/server-db.ts#sql\t#0\tliteral",
-            "no_input"
+            "no_input",
+            "returns_whole:lib/server-db.ts#sql"
           ],
           "string_literals": 1,
           "order": [
@@ -1463,7 +1468,9 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           ],
           "renders": [],
           "args": [],
-          "controls": [],
+          "controls": [
+            "returns_whole:local:this.repo"
+          ],
           "string_literals": 0,
           "order": [
             "pkg:@nestjs/common#Injectable"
@@ -1474,6 +1481,9 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
               "returns_nonconstant_bool": true,
               "receiver_calls": [
                 "services/user.service.ts#UserService.repo"
+              ],
+              "unread": [
+                "returns_whole:local:this.repo"
               ]
             }
           ]

@@ -531,7 +531,7 @@ enum Command {
         /// (`.drift/security.lock`), and those of it that are gone, with no commit
         /// to compare with. Exits 1 when a finding was added (with --fail-on, only
         /// for the kinds named: `unguarded-reaching`, `no-guard`, `guard-gap`,
-        /// `scope-gap`, `no-authorization`, `risky`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`): what the repository has today
+        /// `scope-gap`, `no-authorization`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`): what the repository has today
         /// is accepted as it is, and nothing more of it comes in unseen.
         #[arg(long, conflicts_with = "diff_base")]
         ratchet: bool,
@@ -2115,6 +2115,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "scope-gap",
                 "no-authorization",
                 "risky",
+                "whole-row",
                 "workflow",
                 "dependency",
                 "kubernetes",
@@ -2132,7 +2133,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 && let Some(k) = fail_on.iter().find(|k| {
                     matches!(
                         k.as_str(),
-                        "scope-gap" | "no-authorization" | "workflow" | "dependency" | "kubernetes"
+                        "scope-gap"
+                            | "no-authorization"
+                            | "whole-row"
+                            | "workflow"
+                            | "dependency"
+                            | "kubernetes"
                     )
                 })
             {

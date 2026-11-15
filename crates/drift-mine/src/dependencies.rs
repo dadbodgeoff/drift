@@ -29,7 +29,10 @@
 //! Read: `package.json` with the npm, Yarn, pnpm and Bun lockfiles, `.npmrc` and
 //! `.yarnrc.yml`; `requirements*.txt` and the files of a `requirements`
 //! directory, `pyproject.toml` (PEP 508 strings, Poetry and uv tables) and
-//! `Pipfile` with their lockfiles; `Cargo.toml` with `Cargo.lock`; Dockerfiles.
+//! `Pipfile` with their lockfiles; `Cargo.toml` with `Cargo.lock`; a `Gemfile`
+//! with `Gemfile.lock`; the repositories of a Maven `pom.xml` and of Gradle build
+//! and settings files; Dockerfiles. A Go module is fixed by `go.sum` and has
+//! nothing of these to say.
 //! A path of the repository itself (`file:`, `workspace:`, `path = "..."`) is the
 //! repository's code and is not listed. Nothing is installed and nothing outside
 //! the repository is read; a file that does not parse is skipped.
@@ -76,6 +79,7 @@ const NODE_LOCKS: &[&str] = &[
 ];
 const PYTHON_LOCKS: &[&str] = &["poetry.lock", "uv.lock", "pdm.lock", "Pipfile.lock"];
 const CARGO_LOCKS: &[&str] = &["Cargo.lock"];
+const RUBY_LOCKS: &[&str] = &["Gemfile.lock"];
 
 /// The scripts of a `package.json` that run when the package is installed.
 const INSTALL_SCRIPTS: &[&str] = &["preinstall", "install", "postinstall", "prepare"];
@@ -127,6 +131,7 @@ pub fn read(root: &Path) -> Vec<DependencyFinding> {
             Manifest::Package => NODE_LOCKS,
             Manifest::Pyproject | Manifest::Pipfile => PYTHON_LOCKS,
             Manifest::Cargo => CARGO_LOCKS,
+            Manifest::Gemfile => RUBY_LOCKS,
             _ => &[],
         };
         if !names.is_empty()
@@ -152,6 +157,9 @@ enum Manifest {
     Pyproject,
     Pipfile,
     Cargo,
+    Gemfile,
+    Maven,
+    Gradle,
     Dockerfile,
 }
 
@@ -168,6 +176,11 @@ fn manifest_kind(path: &Path, name: &str) -> Option<Manifest> {
         "pyproject.toml" => Manifest::Pyproject,
         "Pipfile" => Manifest::Pipfile,
         "Cargo.toml" => Manifest::Cargo,
+        "Gemfile" | "gems.rb" => Manifest::Gemfile,
+        "pom.xml" => Manifest::Maven,
+        "build.gradle" | "build.gradle.kts" | "settings.gradle" | "settings.gradle.kts" => {
+            Manifest::Gradle
+        }
         _ if lower.ends_with(".txt")
             && (lower.starts_with("requirements")
                 || lower.starts_with("constraints")
@@ -231,6 +244,9 @@ pub fn read_text(rel: &str, text: &str, lock: &str) -> Vec<DependencyFinding> {
         Manifest::Pyproject => pyproject(&mut out),
         Manifest::Pipfile => pipfile(&mut out),
         Manifest::Cargo => cargo(&mut out),
+        Manifest::Gemfile => gemfile(&mut out),
+        Manifest::Maven => maven(&mut out),
+        Manifest::Gradle => gradle(&mut out),
         Manifest::Dockerfile => dockerfile(&mut out),
     }
     out.out.sort();
@@ -841,6 +857,127 @@ fn cargo(f: &mut Found) {
     }
 }
 
+/// The strings a line of code writes, in single or double quotes.
+fn quoted(line: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut rest = line;
+    while let Some(at) = rest.find(['"', '\'']) {
+        let quote = rest[at..].chars().next().unwrap_or('"');
+        let Some(end) = rest[at + 1..].find(quote) else {
+            break;
+        };
+        out.push(&rest[at + 1..at + 1 + end]);
+        rest = &rest[at + end + 2..];
+    }
+    out
+}
+
+/// A `Gemfile`: a source over plain HTTP, and a gem given by a repository
+/// (`git:`, `github:`) with no commit named (`ref:`) and none recorded.
+fn gemfile(f: &mut Found) {
+    for (i, raw) in f.text.lines().enumerate() {
+        let line = raw.split(" #").next().unwrap_or(raw).trim();
+        let n = i as u32 + 1;
+        let strings = quoted(line);
+        let word = line.split([' ', '(']).next().unwrap_or_default();
+        // The value of an option, written `key: "value"` or `:key => "value"`.
+        let option = |key: &str| -> Option<&str> {
+            [
+                format!(":{key} =>"),
+                format!(":{key}=>"),
+                format!(" {key}: "),
+                format!(",{key}: "),
+            ]
+            .iter()
+            .find_map(|k| line.split_once(k.as_str()))
+            .and_then(|(_, after)| quoted(after).first().copied())
+        };
+        match word {
+            "source" | "git_source" => {
+                if let Some(url) = strings.first().filter(|u| plain_http(u)) {
+                    f.push("plain_http", n, "", url);
+                }
+            }
+            "gem" => {
+                let Some(name) = strings.first() else {
+                    continue;
+                };
+                if let Some(url) = option("source").filter(|u| plain_http(u)) {
+                    f.push("plain_http", n, name, url);
+                }
+                let repo = option("git")
+                    .map(|url| (repo_path(url), plain_http(url), url))
+                    .or_else(|| option("github").map(|r| (repo_path(r), false, r)));
+                if let Some((repo, plain, written)) = repo {
+                    let source = Source::Git {
+                        repo,
+                        reference: option("ref").map(str::to_string),
+                        plain,
+                    };
+                    f.source(name, &source, written, n, false);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// A Maven `pom.xml`: a repository fetched over plain HTTP.
+fn maven(f: &mut Found) {
+    let mut inside = 0usize;
+    for (i, raw) in f.text.lines().enumerate() {
+        let line = raw.trim();
+        for tag in [
+            "repository",
+            "pluginRepository",
+            "snapshotRepository",
+            "mirror",
+        ] {
+            inside += line.matches(&format!("<{tag}>")).count();
+            if inside > 0
+                && let Some(url) = line
+                    .split_once("<url>")
+                    .and_then(|(_, r)| r.split_once("</url>"))
+                    .map(|(u, _)| u.trim())
+                    .filter(|u| plain_http(u))
+            {
+                f.push("plain_http", i as u32 + 1, "", url);
+                break;
+            }
+        }
+        for tag in [
+            "repository",
+            "pluginRepository",
+            "snapshotRepository",
+            "mirror",
+        ] {
+            inside = inside.saturating_sub(line.matches(&format!("</{tag}>")).count());
+        }
+    }
+}
+
+/// A Gradle build or settings file: a repository fetched over plain HTTP, or one
+/// the build is told to allow it for.
+fn gradle(f: &mut Found) {
+    for (i, raw) in f.text.lines().enumerate() {
+        let line = raw.trim();
+        if line.starts_with("//") {
+            continue;
+        }
+        let n = i as u32 + 1;
+        let allows = line
+            .split_once("llowInsecureProtocol")
+            .is_some_and(|(_, v)| v.trim_start_matches([' ', '=', '(']).starts_with("true"));
+        if allows {
+            f.push("plain_http", n, "", line);
+        } else if line.contains("url")
+            && let Some(url) = quoted(line).into_iter().find(|u| plain_http(u))
+        {
+            f.push("plain_http", n, "", url);
+        }
+    }
+}
+
 /// A Dockerfile: each instruction (a `\` at the end joins the next line).
 fn dockerfile(f: &mut Found) {
     let mut open: Option<(u32, String)> = None;
@@ -1175,6 +1312,83 @@ RUN pip install git+https://example.com/someone/fixed.git@0123456789abcdef012345
                 ("unpinned_url", 5),
                 ("unpinned_url", 7),
             ]
+        );
+    }
+
+    #[test]
+    fn a_gemfile_is_read_with_its_lockfile() {
+        let text = "\
+source \"https://rubygems.org\"
+source 'http://gems.example.com'
+gem \"rails\", \"~> 7.1\"
+gem \"moving\", git: \"https://example.com/someone/moving.git\", branch: \"main\"
+gem 'forked', github: 'someone/forked'
+gem \"pinned\", git: \"https://example.com/someone/pinned.git\", ref: \"0123456789abcdef0123456789abcdef01234567\"
+gem \"old\", :git => \"git://example.com/someone/old.git\"
+gem \"here\", path: \"../here\"
+";
+        assert_eq!(
+            kinds("Gemfile", text, ""),
+            vec![
+                pair("mutable_git", "forked"),
+                pair("mutable_git", "moving"),
+                pair("mutable_git", "old"),
+                pair("plain_http", ""),
+                pair("plain_http", "old"),
+            ]
+        );
+        let lock = "GIT\n  remote: https://example.com/someone/moving.git\n  revision: 0123456789abcdef0123456789abcdef01234567\n  branch: main\n  specs:\n    moving (1.0)\n\nGIT\n  remote: https://github.com/someone/forked.git\n  revision: 0123456789abcdef0123456789abcdef01234567\n";
+        assert_eq!(
+            kinds("Gemfile", text, lock),
+            vec![
+                pair("mutable_git", "old"),
+                pair("plain_http", ""),
+                pair("plain_http", "old"),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_maven_or_gradle_repository_over_plain_http_is_found() {
+        let pom = "\
+<project>
+  <url>http://project.example.com</url>
+  <repositories>
+    <repository>
+      <id>inside</id>
+      <url>http://repo.example.com/maven2</url>
+    </repository>
+    <repository><id>fine</id><url>https://repo.example.com/maven2</url></repository>
+  </repositories>
+</project>
+";
+        let found = read_text("pom.xml", pom, "");
+        assert_eq!(
+            found
+                .iter()
+                .map(|f| (f.kind.as_str(), f.line))
+                .collect::<Vec<_>>(),
+            vec![("plain_http", 6)]
+        );
+        let gradle = "\
+repositories {
+    mavenCentral()
+    maven { url \"http://repo.example.com/releases\" }
+    maven {
+        url = uri(\"https://repo.example.com/snapshots\")
+        isAllowInsecureProtocol = true
+    }
+    // maven { url 'http://commented.example.com' }
+    maven { url 'http://localhost:8081/repository' }
+}
+";
+        let found = read_text("build.gradle.kts", gradle, "");
+        assert_eq!(
+            found
+                .iter()
+                .map(|f| (f.kind.as_str(), f.line))
+                .collect::<Vec<_>>(),
+            vec![("plain_http", 3), ("plain_http", 6)]
         );
     }
 

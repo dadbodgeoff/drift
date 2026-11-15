@@ -39,6 +39,7 @@ pub mod tier;
 pub mod unchecked;
 pub mod verify;
 pub mod vocab;
+pub mod whole_rows;
 pub mod wiring;
 pub mod workflows;
 pub mod workspace;

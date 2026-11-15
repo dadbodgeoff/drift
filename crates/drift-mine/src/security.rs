@@ -3889,6 +3889,11 @@ pub struct Inventory {
     /// serialised when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub scope_gaps: Vec<ScopeGap>,
+    /// The bodies that send rows back whole where other code of the repository
+    /// withholds a field of the same rows ([`crate::whole_rows`]). Sorted; not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub whole_rows: Vec<crate::whole_rows::WholeRow>,
     /// What the repository's CI workflows do with what an outsider controls
     /// ([`crate::workflows`]): a pull request's code checked out where the
     /// repository's secrets are, text of the event interpolated into a shell step.
@@ -7528,6 +7533,13 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     }
     inv.guard_gaps = guard_gaps(&inv.entry_points);
     inv.scope_gaps = scope_gaps(repo, &index, &cx);
+    inv.whole_rows = crate::whole_rows::read(
+        repo,
+        &inv.entry_points
+            .iter()
+            .map(|e| (e.path.clone(), e.symbol.clone()))
+            .collect(),
+    );
     let unreached = unreached_handlers(repo, &index, &non_production);
     inv.unlisted.extend(unreached);
     inv.unlisted.sort();
@@ -8915,6 +8927,37 @@ pub fn render_at(
         }
         if cluster.len() > max_rows {
             let _ = writeln!(out, "  ... and {} more", cluster.len() - max_rows);
+        }
+    }
+    let whole_rows: Vec<&crate::whole_rows::WholeRow> = inv
+        .whole_rows
+        .iter()
+        .filter(|w| only.is_none_or(|o| o.contains(&w.path)))
+        .collect();
+    if !whole_rows.is_empty() {
+        let _ = writeln!(
+            out,
+            "\nRows sent back whole where other code withholds a field of them"
+        );
+        for w in whole_rows.iter().take(max_rows) {
+            let more = match w.withheld_count.saturating_sub(w.withheld_at.len()) {
+                0 => String::new(),
+                n => format!(" and {n} more"),
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {} sends {} rows whole (from {}); withheld elsewhere: {} (by {}{more})",
+                sanitize(&w.path, 160),
+                w.line,
+                sanitize(&w.symbol, 100),
+                sanitize(&w.rows, 60),
+                sanitize(&w.from, 120),
+                sanitize(&w.fields.join(", "), 160),
+                sanitize(&w.withheld_at.join(", "), 240)
+            );
+        }
+        if whole_rows.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", whole_rows.len() - max_rows);
         }
     }
     if !scope_gaps.is_empty() {

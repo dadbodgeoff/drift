@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 83;
+pub const LOWERING_VERSION: u32 = 84;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -395,6 +395,12 @@ pub struct RawSymbol {
     /// [`Collector::row_root`] writes the side of a value read off it.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refuses_absent: Vec<String>,
+    /// What the body withholds of what a call handed back, and the calls whose
+    /// whole result it sends or returns ([`rows`]): `withholds`, `sends_whole` or
+    /// `returns_whole`, the call as [`Collector::row_root`] writes the side of a
+    /// value read off it, and for `withholds` the field, tab-separated.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_uses: Vec<String>,
     /// The callees every call of which the body writes in what a `throw` outside
     /// any `try` throws ([`drift_core::controls::CALLED_LEAVING`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -567,6 +573,9 @@ pub struct RawMember {
     /// As [`RawSymbol::refuses_absent`], for this method alone.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refuses_absent: Vec<String>,
+    /// As [`RawSymbol::row_uses`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_uses: Vec<String>,
     /// As [`RawSymbol::leaving_calls`], for this method alone.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub leaving_calls: Vec<RawRef>,
@@ -1057,6 +1066,8 @@ pub(crate) mod outgoing;
 pub(crate) mod registries;
 #[path = "routes.rs"]
 pub(crate) mod routes;
+#[path = "rows.rs"]
+mod rows;
 #[path = "signals.rs"]
 pub(crate) mod signals;
 
@@ -4035,6 +4046,7 @@ impl<'s> Lowerer<'s> {
                     loose_sides: tmp.loose_sides,
                     check_sides: tmp.check_sides,
                     refuses_absent: tmp.refuses_absent,
+                    row_uses: tmp.row_uses,
                     leaving_calls: tmp.leaving_calls,
                     caller_from: tmp.caller_from,
                     own_keys: tmp.own_keys,
@@ -5152,6 +5164,7 @@ impl RawSymbol {
             attr_types: vec![],
             check_sides: vec![],
             refuses_absent: vec![],
+            row_uses: vec![],
             leaving_calls: vec![],
             caller_from: vec![],
             own_keys: vec![],
@@ -5306,6 +5319,11 @@ struct Collector<'l, 's> {
     check_sides: BTreeSet<CheckSides>,
     /// [`RawSymbol::refuses_absent`].
     refuses_absent: BTreeSet<String>,
+    /// [`RawSymbol::row_uses`].
+    row_uses: BTreeSet<String>,
+    /// The locals that hold the whole of what a call handed back: bound by name
+    /// to a call that does not choose its fields ([`rows`]).
+    whole_locals: HashSet<SymbolId>,
     param_keys: BTreeSet<(RawRef, String, String)>,
     /// The locals that hold plain data: a value built from literals and built-ins
     /// only, or one read off such a local or off a binding of the file that holds
@@ -5699,6 +5717,8 @@ impl<'l, 's> Collector<'l, 's> {
             arg_sides: BTreeSet::new(),
             check_sides: BTreeSet::new(),
             refuses_absent: BTreeSet::new(),
+            row_uses: BTreeSet::new(),
+            whole_locals: HashSet::new(),
             param_keys: BTreeSet::new(),
             plain_locals: HashSet::new(),
             loose_sides: BTreeSet::new(),
@@ -6372,6 +6392,7 @@ impl<'l, 's> Collector<'l, 's> {
             .extend(std::mem::take(&mut self.check_sides));
         sym.refuses_absent
             .extend(std::mem::take(&mut self.refuses_absent));
+        sym.row_uses.extend(std::mem::take(&mut self.row_uses));
         let calls_of = std::mem::take(&mut self.calls_of);
         let keyed_else = std::mem::take(&mut self.keyed_else);
         for ((callee, key), calls) in std::mem::take(&mut self.keyed) {
@@ -6899,6 +6920,11 @@ impl Collector<'_, '_> {
         {
             c = inner;
         }
+        self.callee_side(c)
+    }
+
+    /// [`Collector::call_side`] of the call itself.
+    fn callee_side(&self, c: &CallExpression) -> Option<String> {
         match self.l.canon_callee(&c.callee) {
             Some(r) if matches!(r.base, RawBase::Global(_)) => None,
             Some(r) => serde_json::to_string(&r).ok().map(|j| format!("call {j}")),
@@ -10767,6 +10793,9 @@ impl Collector<'_, '_> {
         let Some((mut resp, via)) = self.response_of(x) else {
             return;
         };
+        if !matches!(via, Some(ResponseVia::Redirect)) {
+            self.note_sent_rows(x);
+        }
         let exit = self.p.exit.filter(|(at, _)| *at == start).map(|(_, v)| v);
         resp.via = match (via, exit) {
             (Some(ResponseVia::Redirect), _) => ResponseVia::Redirect,
@@ -12559,6 +12588,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             return walk::walk_call_expression(self, it);
         }
         self.note_data_callbacks(it);
+        self.note_left_out(it);
         let kinds = self.l.call_sinks(it);
         // The call is given a value read off a parameter of the function: an
         // operation fed by it ([`drift_core::controls::SINK_FED`]), a callee it is
@@ -13225,6 +13255,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         {
             self.flow_return(body);
             self.note_return_credential(body);
+            self.note_returned_rows(body);
         }
         let lost = u32::from(self.lost_fns.contains(&it.span.start));
         self.in_lost += lost;
@@ -13560,8 +13591,14 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         walk::walk_tagged_template_expression(self, it);
     }
 
+    fn visit_unary_expression(&mut self, it: &UnaryExpression<'a>) {
+        self.note_deleted(it);
+        walk::walk_unary_expression(self, it);
+    }
+
     fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
         self.flow_assign(it);
+        self.note_blank_assigned(it);
         // `target[key] = value` under a key read off a parameter of the function
         // (`o[req.query.k] = req.query.v`): whoever chooses the key chooses which
         // property is written, `__proto__` among them. Read since the measured
@@ -13796,6 +13833,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         {
             self.flow_return(arg);
             self.note_return_credential(arg);
+            self.note_returned_rows(arg);
         }
         // `return stripe.webhooks.constructEventAsync(...)`: the promise is the
         // function's value, and what rejects it is the caller's to answer.
@@ -14067,6 +14105,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
         }
         if let Some(init) = &it.init {
+            self.note_row_binding(&it.id, init);
             self.flow_declarator(&it.id, init);
             self.note_binding(&it.id, init);
             self.note_alias(&it.id, init);

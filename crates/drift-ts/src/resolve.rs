@@ -2967,6 +2967,38 @@ impl<'r> Linker<'r> {
         out
     }
 
+    /// What a body withholds of what a call handed back, and the calls whose
+    /// whole result it sends or returns ([`crate::lower::RawSymbol::row_uses`]),
+    /// as the controls write them: the call by its canonical callee, whatever
+    /// it gives.
+    fn row_controls(&self, rel: &str, row_uses: &[String]) -> Vec<String> {
+        row_uses
+            .iter()
+            .filter_map(|u| {
+                let mut parts = u.splitn(3, '\t');
+                let (kind, call) = (parts.next()?, parts.next()?);
+                // A parameter of the function itself stays as it is written.
+                let callee = match call.strip_prefix("call ") {
+                    Some(callee) => match serde_json::from_str::<RawRef>(callee) {
+                        Ok(r) if callee.starts_with('{') => self.canon(rel, &r),
+                        _ => callee.to_string(),
+                    },
+                    None if call.starts_with("param #") => call.to_string(),
+                    None => return None,
+                };
+                let prefix = match kind {
+                    "withholds" => drift_core::controls::WITHHOLDS,
+                    "sends_whole" => drift_core::controls::SENDS_WHOLE,
+                    _ => drift_core::controls::RETURNS_WHOLE,
+                };
+                Some(match parts.next() {
+                    Some(field) => format!("{prefix}{callee}\t{field}"),
+                    None => format!("{prefix}{callee}"),
+                })
+            })
+            .collect()
+    }
+
     /// The callees a body signs the caller in by: what its own checks answer "not
     /// signed in" on, and what it throws without.
     fn signed_by(
@@ -3305,6 +3337,7 @@ impl<'r> Linker<'r> {
                         &s.check_sides,
                         &s.refuses_absent,
                     ));
+                    controls.extend(self.row_controls(rel, &s.row_uses));
                     controls.extend(s.leaving_calls.iter().map(|c| {
                         format!(
                             "{}{}",
@@ -3434,6 +3467,7 @@ impl<'r> Linker<'r> {
                                 &m.check_sides,
                                 &m.refuses_absent,
                             ));
+                            unread.extend(self.row_controls(rel, &m.row_uses));
                             unread.extend(m.leaving_calls.iter().map(|c| {
                                 format!(
                                     "{}{}",

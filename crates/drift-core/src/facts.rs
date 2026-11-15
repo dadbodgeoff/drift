@@ -2095,6 +2095,28 @@ pub mod controls {
     /// the caller's value is proven. TypeScript lowering 83, the listed reading
     /// only; mining never proposes it.
     pub const READS_HELD: &str = "reads_held:";
+    /// What starts the control of a body that takes a field out of what a call
+    /// handed back before it answers: `withholds:<callee>\t<field>`, the callee
+    /// canonical. The call is told to leave it out (`omit: { passwordHash: true
+    /// }`), the field is taken apart from the rest and never read (`const {
+    /// passwordHash, ...safe } = user`), or it is deleted or blanked (`delete
+    /// user.passwordHash`, `{ ...user, passwordHash: undefined }`). Where the
+    /// value is one the function was handed, the callee is `param #<position>`
+    /// (`function toPublic(user) { const { passwordHash, ...rest } = user }`),
+    /// and the calls of the function say which rows those are
+    /// ([`ARG_VALUE`]). No field is withheld by its name. TypeScript lowering
+    /// 84; mining never proposes it.
+    pub const WITHHOLDS: &str = "withholds:";
+    /// What starts the control of a body that hands a response the whole of what
+    /// a call handed back: `sends_whole:<callee>` (`res.json(user)`,
+    /// `NextResponse.json({ user })`). A call that chooses its fields (`select`)
+    /// hands back no whole. TypeScript lowering 84; mining never proposes it.
+    pub const SENDS_WHOLE: &str = "sends_whole:";
+    /// As [`SENDS_WHOLE`], for what the body returns: `returns_whole:<callee>`
+    /// (`return user`, `return db.user.findMany()`). Whether what a function
+    /// returns is sent back is for the reader to say (an entry point's is).
+    /// TypeScript lowering 84; mining never proposes it.
+    pub const RETURNS_WHOLE: &str = "returns_whole:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):

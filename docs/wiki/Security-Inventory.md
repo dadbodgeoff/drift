@@ -245,6 +245,26 @@ drift security --diff-base origin/main --fail-on unguarded-reaching,public
 
 They are listed under "CI workflows that run what an outsider wrote" (`workflows` in `--json`) and are a kind of the baseline (`workflow`). Nothing is run, and no action's own code is read.
 
+### Rows sent back whole
+
+No field is sensitive by its name. What a repository does not send back is what its own code takes out before it answers, and `drift security` reads that from the bodies (TypeScript and JavaScript):
+
+- a query told to leave a field out (`findUnique({ where, omit: { passwordHash: true } })`, `select: { passwordHash: false }`);
+- a field taken apart from the rest and never read (`const { passwordHash, ...safe } = user`);
+- a field deleted or blanked (`delete user.passwordHash`, `user.passwordHash = undefined`, `{ ...user, passwordHash: undefined }`);
+- the same done by a function the row is handed to (`toPublic(user)`).
+
+Where one body withholds a field of the rows a call hands back and another hands the whole of the same rows to a response (`res.json(user)`, `NextResponse.json({ user })`), or is an entry point that returns them (`return users` in a tRPC procedure), the second is listed with the fields it does not withhold:
+
+```
+Rows sent back whole where other code withholds a field of them
+  src/app.ts:18  GET /profile/:id sends user rows whole (from src/db.ts#prisma.user.findUnique); withheld elsewhere: passwordHash, resetToken (by src/users.ts#publicUser, src/users.ts#toPublic)
+```
+
+The rows are named by where they are read: the name before the method of the call (`user` of `prisma.user.findUnique`, of `ctx.db.user.findMany` and of `tx.user.update`), where that name is a member of something or a module's binding. A function of the repository that returns the whole of what such a call gave stands for that call. A query that chooses its fields (`select`), a response built from parts (`{ id: user.id }`) and what a sanitising function gave are not whole. They are `whole_rows` in `--json` and a kind of the baseline (`whole-row`).
+
+A fact for a person to read: a field may be withheld in one place for a reason that does not hold in another (another caller, another purpose). A repository that withholds nothing anywhere lists nothing, and a serializer or a response schema that chooses the fields outside the body is not read, so a framework that strips fields by a schema may be listed for rows it never sends whole. Python is not read for this yet.
+
 ### Dependencies nothing fixes
 
 A dependency named by a version of a registry, with a lockfile that records its digest, is the code that was reviewed every time it installs. `drift security` reads the manifests for what they say instead:
@@ -255,7 +275,7 @@ A dependency named by a version of a registry, with a lockfile that records its 
 - **A second package index beside the first** (`second_index`): `--extra-index-url`. pip takes a name from whichever index has the higher version, so a name meant for one index can be answered by the other.
 - **A download handed to an interpreter** (`piped_download`) in a Dockerfile's `RUN` or in a script `package.json` runs on install (`preinstall`, `install`, `postinstall`, `prepare`).
 
-Read: `package.json` with the npm, Yarn, pnpm and Bun lockfiles, `.npmrc`, `.yarnrc.yml`; `requirements*.txt`, `constraints*.txt` and the files of a `requirements` directory; `pyproject.toml` (PEP 508 strings, Poetry and uv tables) and `Pipfile` with their lockfiles; `Cargo.toml` with `Cargo.lock`; Dockerfiles. A path of the repository (`file:`, `workspace:`, `path = "..."`) is the repository's own code and is not listed. They are listed under "Dependencies installed from a source nothing fixes" (`dependencies` in `--json`) and are a kind of the baseline (`dependency`). Nothing is installed and nothing outside the repository is read: whether a published version is known to be vulnerable is another tool's question.
+Read: `package.json` with the npm, Yarn, pnpm and Bun lockfiles, `.npmrc`, `.yarnrc.yml`; `requirements*.txt`, `constraints*.txt` and the files of a `requirements` directory; `pyproject.toml` (PEP 508 strings, Poetry and uv tables) and `Pipfile` with their lockfiles; `Cargo.toml` with `Cargo.lock`; a `Gemfile` with `Gemfile.lock`; the repositories of a Maven `pom.xml` and of Gradle build and settings files; Dockerfiles. These need no parser of the language, so they are read in a repository whose code Drift does not read (Ruby, Java, Kotlin, Go); a Go module is fixed by `go.sum` and has nothing of these to say. A path of the repository (`file:`, `workspace:`, `path = "..."`) is the repository's own code and is not listed. They are listed under "Dependencies installed from a source nothing fixes" (`dependencies` in `--json`) and are a kind of the baseline (`dependency`). Nothing is installed and nothing outside the repository is read: whether a published version is known to be vulnerable is another tool's question.
 
 ### What the Kubernetes manifests open
 
@@ -278,7 +298,7 @@ drift security --write-baseline   # once, and whenever a finding is accepted
 drift security --ratchet          # in CI: exit 1 when something not in it is found
 ```
 
-`--write-baseline` writes `.drift/security.lock`: one line for every finding the repository has now. A finding is an entry point where Drift found no guard (`no-guard`), one that reaches a risky operation with no guard found (`unguarded-reaching`), one that lacks a guard or a scope its siblings share (`guard-gap`, `scope-gap`), one that signs the caller in and checks nothing of who they are, by the practice map (`no-authorization`), a risky operation (`risky`), a CI workflow step that runs what an outsider wrote (`workflow`), a dependency installed from a source nothing fixes (`dependency`), something a Kubernetes manifest opens (`kubernetes`), a client file reaching server-only code (`leak`). Each is keyed by its handler, method and route, never by its line, so a file that is edited keeps its findings. Entry points whose guard is unknown are not findings: what was not read may be the guard.
+`--write-baseline` writes `.drift/security.lock`: one line for every finding the repository has now. A finding is an entry point where Drift found no guard (`no-guard`), one that reaches a risky operation with no guard found (`unguarded-reaching`), one that lacks a guard or a scope its siblings share (`guard-gap`, `scope-gap`), one that signs the caller in and checks nothing of who they are, by the practice map (`no-authorization`), a risky operation (`risky`), a body that sends rows whole where other code withholds a field (`whole-row`), a CI workflow step that runs what an outsider wrote (`workflow`), a dependency installed from a source nothing fixes (`dependency`), something a Kubernetes manifest opens (`kubernetes`), a client file reaching server-only code (`leak`). Each is keyed by its handler, method and route, never by its line, so a file that is edited keeps its findings. Entry points whose guard is unknown are not findings: what was not read may be the guard.
 
 `--ratchet` reads the inventory again and reports what is found and is not in the file, and what is in the file and is gone. It exits 1 when anything was added (`--fail-on <kinds>` narrows that to the kinds named).
 
