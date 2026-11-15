@@ -176,6 +176,14 @@ enum Command {
         /// package and the unmapped files by reason. With --json, as JSON. Writes nothing.
         #[arg(long)]
         coverage: bool,
+        /// Mine over every entry point Drift lists, not only those the last measured
+        /// build listed: the routes `drift security` and the practice map read
+        /// (registered in a function, by a file-convention router, by a pattern list
+        /// unpacked into `urlpatterns`) become members of the roles conventions are
+        /// mined for. A preview of the next measured round: the precision of what it
+        /// proposes was not measured, and nothing is written.
+        #[arg(long, conflicts_with = "coverage")]
+        listed: bool,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -508,13 +516,25 @@ enum Command {
         /// operation), `leak` (a client leak), `public` (an entry point made
         /// internet-facing), or `any`. Off unless given: without it the run is
         /// facts for review and exits 0.
-        #[arg(
-            long,
-            requires = "diff_base",
-            value_delimiter = ',',
-            value_name = "KINDS"
-        )]
+        #[arg(long, value_delimiter = ',', value_name = "KINDS")]
         fail_on: Vec<String>,
+        /// Write the security baseline (`.drift/security.lock`): every finding of
+        /// the inventory as it is now (entry points with no guard found, entry
+        /// points lacking a guard or a scope their siblings share, entry points that
+        /// check nothing of a signed-in caller, unguarded entry points reaching a
+        /// risky operation, risky operations, client leaks), keyed
+        /// by handler and route, never by line. Commit it: `--ratchet` reports what
+        /// is found later and is not in it.
+        #[arg(long, conflicts_with_all = ["diff_base", "ratchet"])]
+        write_baseline: bool,
+        /// Report the findings that are not in the security baseline
+        /// (`.drift/security.lock`), and those of it that are gone, with no commit
+        /// to compare with. Exits 1 when a finding was added (with --fail-on, only
+        /// for the kinds named: `unguarded-reaching`, `no-guard`, `guard-gap`,
+        /// `scope-gap`, `no-authorization`, `risky`, `leak`, or `any`): what the repository has today
+        /// is accepted as it is, and nothing more of it comes in unseen.
+        #[arg(long, conflicts_with = "diff_base")]
+        ratchet: bool,
         /// Rows shown per section in text output (entry points with no wrapper or
         /// decorator: always the first 50; exceptions per shared guard: the first 10).
         #[arg(long, default_value_t = 20)]
@@ -2085,11 +2105,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             diff_base,
             github,
             fail_on,
+            write_baseline,
+            ratchet,
         } => {
             const FAIL_ON: &[&str] = &[
                 "unguarded-reaching",
                 "no-guard",
                 "guard-gap",
+                "scope-gap",
+                "no-authorization",
                 "risky",
                 "leak",
                 "public",
@@ -2097,6 +2121,23 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             ];
             if let Some(unknown) = fail_on.iter().find(|k| !FAIL_ON.contains(&k.as_str())) {
                 anyhow::bail!("--fail-on: `{unknown}` is none of {}", FAIL_ON.join(", "));
+            }
+            if !fail_on.is_empty() && diff_base.is_none() && !*ratchet {
+                anyhow::bail!("--fail-on needs --diff-base or --ratchet");
+            }
+            if diff_base.is_some()
+                && let Some(k) = fail_on
+                    .iter()
+                    .find(|k| matches!(k.as_str(), "scope-gap" | "no-authorization"))
+            {
+                anyhow::bail!(
+                    "--fail-on {k} is read against the baseline (--ratchet), not against a commit"
+                );
+            }
+            if *ratchet && fail_on.iter().any(|k| k == "public") {
+                anyhow::bail!(
+                    "--fail-on public is read against a commit (--diff-base), not against the baseline"
+                );
             }
             let facts = load_facts(cli, 0)?;
             let mut inv = drift_mine::security::inventory_with(
@@ -2231,6 +2272,82 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 return Ok(ExitCode::SUCCESS);
             }
+            // What the baseline holds of the repository as it is now: the findings
+            // of the inventory, and the entry points the practice map reads as
+            // checking nothing of a signed-in caller.
+            let baseline_findings = || -> anyhow::Result<drift_mine::ratchet::Findings> {
+                let mut found = drift_mine::ratchet::findings(&inv);
+                let scope = practices::checked_scope(&facts, Some("authz"), None, None)?;
+                let report = practices::report_with(root, &facts, scope, true)?;
+                for c in report.concerns.iter().filter(|c| c.id == "authz") {
+                    drift_mine::ratchet::add_unauthorized(&mut found, &c.units);
+                }
+                Ok(found)
+            };
+            if *write_baseline {
+                let found = baseline_findings()?;
+                let path = root.join(drift_mine::ratchet::SECURITY_LOCK);
+                if let Some(dir) = path.parent() {
+                    std::fs::create_dir_all(dir)
+                        .with_context(|| format!("creating {}", dir.display()))?;
+                }
+                std::fs::write(&path, drift_mine::ratchet::render_lock(&found))
+                    .with_context(|| format!("writing {}", path.display()))?;
+                let mut by_kind: BTreeMap<&str, usize> = BTreeMap::new();
+                for (kind, _) in found.keys() {
+                    *by_kind.entry(kind.as_str()).or_default() += 1;
+                }
+                println!(
+                    "Wrote {} ({} finding(s)): {}",
+                    drift_mine::ratchet::SECURITY_LOCK,
+                    found.len(),
+                    drift_mine::ratchet::KINDS
+                        .iter()
+                        .map(|(k, _)| format!("{} {k}", by_kind.get(k).copied().unwrap_or(0)))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+                println!(
+                    "Commit it. `drift security --ratchet` exits 1 when a finding that is not in it appears."
+                );
+                return Ok(ExitCode::SUCCESS);
+            }
+            if *ratchet {
+                let Some(baseline) = drift_mine::ratchet::load(root)
+                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
+                else {
+                    anyhow::bail!(
+                        "no security baseline ({}): write one with `drift security --write-baseline`",
+                        drift_mine::ratchet::SECURITY_LOCK
+                    );
+                };
+                let found = baseline_findings()?;
+                let result = drift_mine::ratchet::compare(&found, &baseline);
+                if *json {
+                    println!("{}", serde_json::to_string_pretty(&result)?);
+                } else {
+                    for w in &inv.warnings {
+                        eprintln!("drift security: {w}");
+                    }
+                    print!("{}", drift_mine::ratchet::render(&result, *max));
+                }
+                let on =
+                    |k: &str| fail_on.is_empty() || fail_on.iter().any(|f| f == k || f == "any");
+                let failing: Vec<String> = result
+                    .added
+                    .iter()
+                    .filter(|(k, rows)| on(k) && !rows.is_empty())
+                    .map(|(k, rows)| format!("{} {k}", rows.len()))
+                    .collect();
+                if !failing.is_empty() {
+                    eprintln!(
+                        "drift security: not in the baseline: {}",
+                        failing.join(", ")
+                    );
+                    return Ok(ExitCode::from(1));
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
             if *json {
                 println!("{}", serde_json::to_string_pretty(&inv)?);
             } else {
@@ -2256,6 +2373,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             test_roles,
             kind_roles,
             coverage,
+            listed,
             cap,
         } => {
             let tests = drift_mine::policy::test_roles(root, *test_roles);
@@ -2292,6 +2410,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 let mut facts = scan(root, &opts)
                     .with_context(|| format!("scanning {}", root.display()))?
                     .0;
+                if *listed {
+                    facts = facts.listed().into_owned();
+                }
                 // The yield funnel (study only): counted while `DRIFT_FUNNEL` names a file.
                 drift_mine::funnel::start();
                 let (mut mined, accepted) = census_mine(root, &facts, *max, shapes);
@@ -2342,6 +2463,16 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 return Ok(ExitCode::SUCCESS);
             }
             let mut facts = load_facts(cli, 0)?;
+            if *listed {
+                let entries =
+                    |f: &RepoFacts| -> usize { f.files.iter().map(|x| x.entry_points.len()).sum() };
+                let measured = entries(&facts);
+                facts = facts.listed().into_owned();
+                println!(
+                    "Preview (--listed): mined over the {} entry points Drift lists, where the last measured build listed {measured}. The precision of what this proposes was not measured; nothing is written.\n",
+                    entries(&facts)
+                );
+            }
             let (mut mined, accepted) = census_mine(root, &facts, *max, shapes);
             let wired = wiring::extend(root, &mut facts, &mut mined)?;
             let python_before = workspace::python_by_package(&mined);

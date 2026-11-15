@@ -25,6 +25,7 @@ pub mod practices;
 pub mod proxies;
 pub mod py_guards;
 pub mod rank;
+pub mod ratchet;
 pub mod report;
 pub mod roles;
 pub mod security;

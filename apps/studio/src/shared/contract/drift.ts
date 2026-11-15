@@ -1428,6 +1428,18 @@ export interface Inventory {
   warnings?: string[];
 }
 
+// ---------- drift security --ratchet --json (crates/drift-mine/src/ratchet.rs `Ratchet`) ----------
+
+/** What a run found against the security baseline (`.drift/security.lock`). Newer drift. */
+export interface SecurityRatchet {
+  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `leak`): the finding's key (handler, method, route; never a line) and where it is. */
+  added: Record<string, { key: string; at: string }[]>;
+  /** In the baseline and no longer found. */
+  gone: { kind: string; key: string }[];
+  /** How many findings of the baseline are still found. */
+  kept: number;
+}
+
 // ---------- drift card <path> --json (crates/drift-mine/src/card.rs `Card`, schema 1) ----------
 
 /** A convention covering the file: accepted or proposed, with its mode as checked. */

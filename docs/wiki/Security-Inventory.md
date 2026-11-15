@@ -234,6 +234,19 @@ drift security --diff-base origin/main --fail-on unguarded-reaching,public
 ```
  `--github` prints notice annotations and a job summary. The merge base is scanned in a temporary checkout, so an entry point that lacked the guard before the change, or was renamed, is not reported. The GitHub Action runs this when asked (`security: "true"`, off by default until the shared-guard precision is measured), as notices that never fail the job; with `security-comment: "true"` (needs `pull-requests: write`) it posts the same text as one comment when the pull request introduces anything. See [Drift in CI](Drift-in-CI).
 
+### The baseline: what is there is accepted, what is added is seen
+
+`--diff-base` needs a commit to compare with. The baseline asks the same question of a file the repository keeps:
+
+```bash
+drift security --write-baseline   # once, and whenever a finding is accepted
+drift security --ratchet          # in CI: exit 1 when something not in it is found
+```
+
+`--write-baseline` writes `.drift/security.lock`: one line for every finding the repository has now. A finding is an entry point where Drift found no guard (`no-guard`), one that reaches a risky operation with no guard found (`unguarded-reaching`), one that lacks a guard or a scope its siblings share (`guard-gap`, `scope-gap`), one that signs the caller in and checks nothing of who they are, by the practice map (`no-authorization`), a risky operation (`risky`), a client file reaching server-only code (`leak`). Each is keyed by its handler, method and route, never by its line, so a file that is edited keeps its findings. Entry points whose guard is unknown are not findings: what was not read may be the guard.
+
+`--ratchet` reads the inventory again and reports what is found and is not in the file, and what is in the file and is gone. It exits 1 when anything was added (`--fail-on <kinds>` narrows that to the kinds named). A finding is a fact for a person to read: it is fixed, or accepted by writing the baseline again. Nothing in the baseline is a verdict on the code it lists; it is what the repository had when a person last looked.
+
 The text output looks like this (`--json` gives the same facts as data):
 
 ```

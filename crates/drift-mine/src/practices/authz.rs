@@ -822,6 +822,15 @@ fn read_unit<'a>(
                 ev.unknown(UnknownReason::NotFollowed, format!("param:{p}"));
             }
         }
+        // Python: a handler that hands back who calls and touches nothing else
+        // serves the caller's own record: there is no one else's to ask about.
+        if ev.uses.is_empty()
+            && ev.python
+            && cx.context().since_measured()
+            && let Some(giver) = serves_own(cx, s, &reach)
+        {
+            ev.add("own_record", &giver, VariantSource::Usage);
+        }
         // A refusal of a body that the map cannot name (`if user == current_user:
         // raise HTTPException(403)` behind a role guard) turns more requests away,
         // never fewer: beside a check every request passes, it changes nothing of
@@ -3245,6 +3254,43 @@ fn alternative_roles<'a, 'c>(
         }
     }
     any
+}
+
+/// Python: the unit's handler hands back what gives the caller, wherever it
+/// returns a value ([`drift_core::controls::RETURNS_GIVEN`],
+/// [`drift_core::controls::RETURNS_CALLER`]: `def read_user_me(current_user:
+/// CurrentUser): return current_user`), and does nothing else that could reach
+/// another's data: its own body is the only one the unit runs, and it calls
+/// nothing of the repository and nothing of a data library. What gives the caller,
+/// for the unit's key. Read from the body: a route is not this by being named
+/// `/me`.
+fn serves_own<'a>(cx: &Cx<'a>, s: &Symbol, reach: &Reach<'a>) -> Option<String> {
+    use drift_core::controls::{RETURNS_CALLER, RETURNS_GIVEN};
+    if s.kind != SymbolKind::Function {
+        return None;
+    }
+    let givers: Vec<&str> = s
+        .controls
+        .iter()
+        .filter_map(|c| c.strip_prefix(RETURNS_GIVEN))
+        .collect();
+    let giver = match givers.as_slice() {
+        [] if s.controls.iter().any(|c| c == RETURNS_CALLER) => "the caller".to_string(),
+        [] => return None,
+        all if all.iter().all(|g| gives_caller(cx, g, true)) => all[0].to_string(),
+        _ => return None,
+    };
+    let alone = reach.nodes.iter().filter(|r| !r.quiet).count() == 1;
+    let harmless = s
+        .calls
+        .iter()
+        .chain(&s.receiver_calls)
+        .map(|c| crate::mine::norm_ref(c))
+        .all(|c| {
+            c.starts_with("global#")
+                || (c.starts_with("pkg:") && super::libraries::data_library(&c).is_none())
+        });
+    (alone && harmless && s.sinks.is_empty()).then_some(giver)
 }
 
 /// What the instrument of a check ends with where the body serves the caller's

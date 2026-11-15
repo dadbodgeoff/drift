@@ -3637,10 +3637,15 @@ impl<'t> Lowerer<'t> {
             }
             // Starlette and FastAPI: `app.mount("/v1", sub)` serves the application
             // `sub` under the path.
+            // A mount under what is written as a URL with a scheme
+            // (`session.mount("https://", adapter)`, a transport of an HTTP client)
+            // serves nothing: a path an application is served under has none.
             "mount" => {
                 if let Some(target) = arg(c, 1, "app") {
                     let prefix = self.path_value(arg(c, 0, "path")).unwrap_or_default();
-                    self.mount_app(parent, prefix, target, locals, None);
+                    if !prefix.contains("://") {
+                        self.mount_app(parent, prefix, target, locals, None);
+                    }
                 }
             }
             // An extension given its application after it is built

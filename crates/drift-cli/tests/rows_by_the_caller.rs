@@ -243,6 +243,17 @@ def person_or_preview(
     return seat
 
 
+@app.get("/me")
+def me(user: Caller = Depends(current_user)):
+    return user
+
+
+@app.get("/me-and-all")
+def me_and_all(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    db.query(Seat).all()
+    return user
+
+
 @app.delete("/notes/{note_id}", dependencies=[Depends(admin)])
 def delete_note(note_id: int, user: Caller = Depends(current_user), db: Session = Depends(get_db)):
     note = db.get(Note, note_id)
@@ -326,4 +337,12 @@ fn a_check_after_a_return_for_the_callers_own_record_is_asked_of_everyone_else()
         got["/people-or-preview/{person_id}"].starts_with("unknown check_not_proven"),
         "{got:?}"
     );
+}
+
+#[test]
+fn a_handler_that_hands_back_who_calls_and_touches_nothing_else_serves_the_callers_own() {
+    let got = repo();
+    assert_eq!(got["/me"], "known own_record", "{got:?}");
+    // It reads rows too: what it does with them is not the caller's own record.
+    assert!(!got["/me-and-all"].starts_with("known"), "{got:?}");
 }
