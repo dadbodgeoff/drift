@@ -2870,6 +2870,15 @@ fn object_check_runs(cx: &Cx<'_>, file: &drift_core::FileFacts, s: &Symbol, bodi
 /// a recorded absence).
 fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
     let outer = ev.cond.clone();
+    let roles_are_callers = alternative_roles(
+        cx,
+        r,
+        ev,
+        r.node
+            .body_checks()
+            .iter()
+            .map(|c| (&c.condition, &c.source, &c.reads, &c.compares)),
+    );
     for c in r.node.body_checks() {
         if !matches!(c.outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound) {
             continue;
@@ -2884,7 +2893,8 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         // "GET")`, in a loop over what the body names, after a branch that returns, as
         // one operand of `and`) does not check the others. It is not the unit's
         // authorization: it is found, not proven, and says why.
-        ev.under(&outer, c.conditional, &c.condition, &c.unless);
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, roles_are_callers);
+        ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let requested = |s: &str| s.starts_with("header:") || s.starts_with("param:");
         let side = if requested(&c.compares) {
@@ -2930,7 +2940,9 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
                     .unwrap_or(callers);
                 ev.owner(&what, proven);
             }
-        } else if names_role(&c.reads) || c.compares == "literal" {
+        } else if (names_role(&c.reads) && !owner_compared(owner, mismatch, &c.compares))
+            || c.compares == "literal"
+        {
             // [STRICT]: a role is the caller's. Compared with another value
             // (`post.ownerId !== req.body.userId`), one side must be the caller's;
             // read off what the request sent (`req.body.role !== "admin"`), it is
@@ -3017,6 +3029,61 @@ fn not_access(name: &str) -> bool {
         || words.iter().any(|w| w == "signature" || w == "hmac")
 }
 
+/// A value named for an owner, compared with another value that is no literal, by
+/// a check that refuses where the two differ (`row.owner_id != caller.id`): the
+/// comparison of a row's owner with the caller, not a test of the caller's role.
+/// `owner` is a role's name as well (`member.role == "owner"`), so a name alone
+/// reads either way; what it is compared with tells them apart.
+fn owner_compared(owner: bool, mismatch: Option<bool>, compares: &str) -> bool {
+    owner && mismatch == Some(true) && !compares.is_empty() && compares != "literal"
+}
+
+/// Whether every role a comparison of the body stands beside
+/// ([`drift_core::not_always::ALTERNATIVE_ROLE`]) is read off the caller, by where
+/// the lowering says it comes from ([`python_role_side`]; in TypeScript, by what it
+/// is read from, [`whose`]): the comparison is then
+/// decided for every request, by the caller's role or by itself. False where the
+/// body has no such role, where one is read off anything else (a row's flag, what
+/// the request sent) and where its source is not recorded: the comparison stays an
+/// operand of an `and`, found and not proven.
+fn alternative_roles<'a, 'c>(
+    cx: &Cx<'a>,
+    r: &Reached<'a>,
+    ev: &Evidence,
+    checks: impl Iterator<Item = (&'c String, &'c String, &'c String, &'c String)>,
+) -> bool {
+    let mut any = false;
+    for (condition, source, reads, compares) in checks {
+        if condition != drift_core::not_always::ALTERNATIVE_ROLE {
+            continue;
+        }
+        any = true;
+        let callers = match ev.python {
+            true => python_role_side(cx, r, ev, source, reads, compares) == Some(true),
+            // TypeScript: by what the role is read from ([`whose`]).
+            false => whose(source, reads) == Whose::Caller,
+        };
+        if !callers {
+            return false;
+        }
+    }
+    any
+}
+
+/// How a check that may stand beside a role is read
+/// ([`drift_core::not_always::ROLE_ALTERNATIVE`]): where the role is the caller's
+/// (`roles_are_callers`, [`alternative_roles`]) the comparison runs, and decides,
+/// for every request the role does not decide, so it is under no condition. In
+/// every other case it, and the role's own test, are operands of an `and`.
+fn beside_role<'k>(conditional: bool, kind: &'k str, roles_are_callers: bool) -> (bool, &'k str) {
+    use drift_core::not_always::{ALTERNATIVE_ROLE, AND_OPERAND, ROLE_ALTERNATIVE};
+    match kind {
+        ROLE_ALTERNATIVE if roles_are_callers => (false, ""),
+        ROLE_ALTERNATIVE | ALTERNATIVE_ROLE => (true, AND_OPERAND),
+        _ => (conditional, kind),
+    }
+}
+
 /// How a check's condition compares its value ([`drift_core::check_op`]): `Some(true)`
 /// where it turns away a caller whose value differs from the other (`a != b`),
 /// `Some(false)` where it compares another way (it refuses a match, or orders the
@@ -3050,6 +3117,15 @@ fn forbids(c: &drift_core::RaiseCheck) -> bool {
 fn raised<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
     let requested = |s: &str| s.starts_with("header:") || s.starts_with("param:");
     let outer = ev.cond.clone();
+    let roles_are_callers = alternative_roles(
+        cx,
+        r,
+        ev,
+        r.node
+            .raise_checks()
+            .iter()
+            .map(|c| (&c.condition, &c.source, &c.reads, &c.compares)),
+    );
     for c in r.node.raise_checks() {
         // [STRICT]: whatever the class raised. A mismatch of a row's tenant that
         // raises `RuleNotFoundError` or `ValueError` may turn the caller away as a
@@ -3062,7 +3138,8 @@ fn raised<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         let refuses = forbidden || c.status == 404;
         // A check only some requests reach proves nothing of the others: found, not
         // proven ([`checks`]).
-        ev.under(&outer, c.conditional, &c.condition, &c.unless);
+        let (conditional, kind) = beside_role(c.conditional, &c.condition, roles_are_callers);
+        ev.under(&outer, conditional, kind, &c.unless);
         ev.late(cx, r, &c.after);
         let mismatch = refuses_mismatch(&c.op, &c.compares);
         let own = requested(&c.source) && c.reads.is_empty();
@@ -3097,7 +3174,9 @@ fn raised<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             ("owner_check", what)
         } else if tenant && mismatch == Some(false) {
             continue;
-        } else if names_role(read) {
+        } else if names_role(read)
+            && !owner_compared(names_owner(&c.reads), mismatch, &c.compares)
+        {
             ("role_check", what)
         } else if (names_owner(&c.reads) || (own && names_owner(&c.source)))
             && mismatch == Some(true)

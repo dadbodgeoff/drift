@@ -135,6 +135,15 @@ pub struct FileFacts {
     /// mining does not read yet change it ([`Listed`]). None for every other file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listed: Option<Box<Listed>>,
+    /// The lines of the registrations written as a route is (`x.get("/path", (req,
+    /// res) => ...)`: a method named for an HTTP verb, a path written out, a handler
+    /// written in place) that no listing of the file's entry points accounts for:
+    /// routes that may be served and are in no inventory. What registers them was not
+    /// read (the receiver is a parameter no call in the file hands a router, or of a
+    /// framework with no adapter). TypeScript lowering 76; sorted; omitted when
+    /// empty. Not test files.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_routes: Vec<u32>,
 }
 
 /// What a file's facts are with every listing of entry points Drift makes
@@ -377,6 +386,20 @@ pub mod not_always {
     /// The right side of an `or`: skipped when the left side holds
     /// (`caller.is_support or check()`).
     pub const BYPASS_OPERAND: &str = "bypass_operand";
+    /// A comparison that is an operand of an effective `and` whose every other
+    /// operand tests that the caller lacks a role (`if not caller.is_superuser and
+    /// row.owner_id != caller.id: raise Forbidden`, `if not (caller.is_admin or
+    /// row.owner_id == caller.id)`): the request is refused unless the caller has
+    /// the role or the comparison holds, so every request is decided, by the role
+    /// or by the comparison. [`BodyCheck::unless`] names the role (`not when
+    /// caller.is_superuser`). A reader that cannot show the role to be the
+    /// caller's reads the comparison as an [`AND_OPERAND`].
+    pub const ROLE_ALTERNATIVE: &str = "role_alternative";
+    /// The test of the role beside a [`ROLE_ALTERNATIVE`] comparison: the caller is
+    /// refused for lacking it only where the comparison fails too. Read as an
+    /// [`AND_OPERAND`]; its sides are recorded so that a reader can say whose the
+    /// role is.
+    pub const ALTERNATIVE_ROLE: &str = "alternative_role";
     /// Inside a `try` with a handler that neither raises nor answers with an error:
     /// its refusal may be caught and the request served all the same. In
     /// TypeScript (lowering 64) also a check that answers "not signed in" in a
@@ -2453,6 +2476,8 @@ impl FileFacts {
     /// Keeps `full`, the same file linked with every listing, beside this one,
     /// linked without the unmeasured ones ([`Listed`]); nothing when they agree.
     pub fn hold(&mut self, full: FileFacts) {
+        // What is not listed is said of every listing made, not of the measured ones.
+        self.unlisted_routes.clone_from(&full.unlisted_routes);
         if self.entry_points == full.entry_points
             && self.mounts == full.mounts
             && self.symbols == full.symbols

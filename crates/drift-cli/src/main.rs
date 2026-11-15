@@ -500,6 +500,21 @@ enum Command {
         /// summary when GITHUB_STEP_SUMMARY is set).
         #[arg(long, requires = "diff_base")]
         github: bool,
+        /// With --diff-base: exit 1 when the change introduces any of these, by
+        /// name, separated by commas: `unguarded-reaching` (an entry point where
+        /// no guard was found reaching a risky operation), `no-guard` (a new entry
+        /// point with no guard found or one that cannot be read), `guard-gap` (an
+        /// entry point lacking a guard its siblings share), `risky` (a risky
+        /// operation), `leak` (a client leak), `public` (an entry point made
+        /// internet-facing), or `any`. Off unless given: without it the run is
+        /// facts for review and exits 0.
+        #[arg(
+            long,
+            requires = "diff_base",
+            value_delimiter = ',',
+            value_name = "KINDS"
+        )]
+        fail_on: Vec<String>,
         /// Rows shown per section in text output (entry points with no wrapper or
         /// decorator: always the first 50; exceptions per shared guard: the first 10).
         #[arg(long, default_value_t = 20)]
@@ -2069,7 +2084,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             max,
             diff_base,
             github,
+            fail_on,
         } => {
+            const FAIL_ON: &[&str] = &[
+                "unguarded-reaching",
+                "no-guard",
+                "guard-gap",
+                "risky",
+                "leak",
+                "public",
+                "any",
+            ];
+            if let Some(unknown) = fail_on.iter().find(|k| !FAIL_ON.contains(&k.as_str())) {
+                anyhow::bail!("--fail-on: `{unknown}` is none of {}", FAIL_ON.join(", "));
+            }
             let facts = load_facts(cli, 0)?;
             let mut inv = drift_mine::security::inventory_with(
                 &facts,
@@ -2176,6 +2204,30 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             Some(&cli.root)
                         )
                     );
+                }
+                // A person asked for the run to fail on what the change introduces
+                // (`--fail-on`): counted by kind, said on stderr, exit 1.
+                let on = |k: &str| fail_on.iter().any(|f| f == k || f == "any");
+                let failing: Vec<(&str, usize)> = [
+                    ("unguarded-reaching", regs.unguarded_reaching.len()),
+                    ("no-guard", regs.added_without_guard.len()),
+                    ("guard-gap", regs.guard_gaps.len()),
+                    ("risky", regs.sinks.len()),
+                    ("leak", regs.leaks.len()),
+                    ("public", regs.now_public.len()),
+                ]
+                .into_iter()
+                .filter(|(k, n)| on(k) && *n > 0)
+                .collect();
+                if !failing.is_empty() {
+                    let said: Vec<String> =
+                        failing.iter().map(|(k, n)| format!("{n} {k}")).collect();
+                    eprintln!(
+                        "drift security: failing as asked (--fail-on {}): this change introduces {}",
+                        fail_on.join(","),
+                        said.join(", ")
+                    );
+                    return Ok(ExitCode::from(1));
                 }
                 return Ok(ExitCode::SUCCESS);
             }

@@ -2106,14 +2106,21 @@ impl<'t> Collector<'_, 't> {
         };
         let mut conds = Vec::new();
         self.conditions(test, &mut conds, 0, false);
-        for (((source, reads), compares, subject, _, op, sides), guard) in conds {
+        let roles = self.roles_beside(test, &conds, &cond);
+        let mut role_sides = roles.iter().flat_map(|(sides, _)| sides.iter().cloned());
+        for (((source, reads), compares, subject, compared, op, sides), guard) in conds {
+            let role = role_operand(compared, &compares);
+            let role_side = match (&roles, role) {
+                (Some(_), true) => role_sides.next(),
+                _ => None,
+            };
             if matches!(outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound) && !subject {
                 continue;
             }
             if matches!(source, RawOperand::Literal | RawOperand::Env) {
                 continue;
             }
-            if let Some((left, right)) = sides {
+            if let Some((left, right)) = sides.or(role_side.map(|s| (s, RawSide::Literal))) {
                 self.check_sides.insert(RawCheckSides {
                     source: source.clone(),
                     reads: reads.clone(),
@@ -2122,7 +2129,10 @@ impl<'t> Collector<'_, 't> {
                     right,
                 });
             }
-            let (condition, unless) = why(&cond, guard);
+            let (condition, unless) = match &roles {
+                Some((_, words)) => why_beside_roles(role, words, guard),
+                None => why(&cond, guard),
+            };
             self.body_checks.insert(RawBodyCheck {
                 source,
                 reads,
@@ -2135,6 +2145,34 @@ impl<'t> Collector<'_, 't> {
                 after: self.called_before(),
             });
         }
+    }
+
+    /// Where a condition refuses a caller unless a role or one comparison holds
+    /// ([`role_alternatives`]), and every operand of it was read as one check: the
+    /// side each role is read off ([`Collector::side`]), in the order written, and
+    /// the roles in the code's own words. None where the condition is another, where
+    /// it stands under a condition of its own (`cond`), and where its operands do
+    /// not read one for one (the checks are then operands of an `and`, as before).
+    fn roles_beside(
+        &self,
+        test: &Expr,
+        conds: &[(Operand, Option<String>)],
+        cond: &Option<(&'static str, String)>,
+    ) -> Option<(Vec<RawSide>, Vec<String>)> {
+        if cond.is_some() {
+            return None;
+        }
+        let roles = role_alternatives(test)?;
+        let read_as_roles = conds
+            .iter()
+            .filter(|((_, compares, _, compared, _, _), _)| role_operand(*compared, compares))
+            .count();
+        (conds.len() == roles.len() + 1 && read_as_roles == roles.len()).then(|| {
+            (
+                roles.iter().map(|e| self.side(e)).collect(),
+                roles.iter().map(|e| words(e)).collect(),
+            )
+        })
     }
 
     /// The first exit of the block turns the caller away: a `raise`, an error answer,
@@ -3055,13 +3093,20 @@ impl<'t> Collector<'_, 't> {
         };
         let mut conds = Vec::new();
         self.conditions(test, &mut conds, 0, false);
+        let roles = self.roles_beside(test, &conds, cond);
+        let mut role_sides = roles.iter().flat_map(|(sides, _)| sides.iter().cloned());
         for (((source, reads), compares, _, compared, op, sides), guard) in conds {
+            let role = role_operand(compared, &compares);
+            let role_side = match (&roles, role) {
+                (Some(_), true) => role_sides.next(),
+                _ => None,
+            };
             if matches!(source, RawOperand::Literal | RawOperand::Env)
                 || (source == RawOperand::None && compares == RawOperand::None)
             {
                 continue;
             }
-            if let Some((left, right)) = sides {
+            if let Some((left, right)) = sides.or(role_side.map(|s| (s, RawSide::Literal))) {
                 self.check_sides.insert(RawCheckSides {
                     source: source.clone(),
                     reads: reads.clone(),
@@ -3070,7 +3115,10 @@ impl<'t> Collector<'_, 't> {
                     right,
                 });
             }
-            let (condition, unless) = why(cond, guard);
+            let (condition, unless) = match &roles {
+                Some((_, words)) => why_beside_roles(role, words, guard),
+                None => why(cond, guard),
+            };
             self.raise_checks.insert(RawRaiseCheck {
                 source,
                 reads,
@@ -4158,6 +4206,91 @@ fn why(cond: &Option<(&'static str, String)>, guard: Option<String>) -> (String,
             clip(format!("only when {g}")),
         ),
         (None, None) => (String::new(), String::new()),
+    }
+}
+
+/// The role tests of a condition that refuses a caller unless a role or one
+/// comparison holds ([`drift_core::not_always::ROLE_ALTERNATIVE`]): an effective
+/// `and` (`a and b`, `not (a or b)`) every operand of which but one tests that a
+/// member is not set or is not a literal (`not user.is_superuser`, `user.role !=
+/// "admin"`, `user.role not in ("admin", "staff")`), the one left being a
+/// comparison. Each role test by the member it reads. None for any other condition.
+fn role_alternatives(test: &Expr) -> Option<Vec<&Expr>> {
+    let (values, negated) = match test {
+        Expr::BoolOp(b) if matches!(b.op, ast::BoolOp::And) => (&b.values, false),
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => match u.operand.as_ref() {
+            Expr::BoolOp(b) if matches!(b.op, ast::BoolOp::Or) => (&b.values, true),
+            _ => return None,
+        },
+        _ => return None,
+    };
+    let roles: Vec<&Expr> = values
+        .iter()
+        .filter_map(|v| role_test(v, negated))
+        .collect();
+    let rest: Vec<&Expr> = values
+        .iter()
+        .filter(|v| role_test(v, negated).is_none())
+        .collect();
+    let comparison = |v: &Expr| match v {
+        Expr::Compare(c) => c.ops.len() == 1,
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => {
+            matches!(u.operand.as_ref(), Expr::Compare(c) if c.ops.len() == 1)
+        }
+        _ => false,
+    };
+    (!roles.is_empty() && rest.len() == 1 && comparison(rest[0])).then_some(roles)
+}
+
+/// The member a value tests to be unset, or to be other than a literal, where the
+/// condition it stands in refuses on it ([`role_alternatives`]); `negated`: the
+/// condition is the negation of what is written.
+fn role_test(v: &Expr, negated: bool) -> Option<&Expr> {
+    let member = |e: &Expr| matches!(e, Expr::Attribute(_));
+    let literal = |e: &Expr| match e {
+        Expr::StringLiteral(_) => true,
+        Expr::Tuple(t) => t.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        Expr::List(l) => l.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        Expr::Set(l) => l.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        _ => false,
+    };
+    let (inner, negated) = match v {
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => (u.operand.as_ref(), !negated),
+        other => (other, negated),
+    };
+    match inner {
+        e if member(e) && negated => Some(e),
+        Expr::Compare(c)
+            if c.ops.len() == 1 && member(c.first_operand()) && literal(c.second_operand()) =>
+        {
+            let differs = matches!(c.ops[0], ast::CmpOp::NotEq | ast::CmpOp::NotIn);
+            let same = matches!(c.ops[0], ast::CmpOp::Eq | ast::CmpOp::In);
+            ((differs && !negated) || (same && negated)).then_some(c.first_operand())
+        }
+        _ => None,
+    }
+}
+
+/// The operand is a role test as [`role_alternatives`] reads one: a test of a value
+/// itself, or a comparison with a literal.
+fn role_operand(compared: bool, compares: &RawOperand) -> bool {
+    !compared || *compares == RawOperand::Literal
+}
+
+/// [`why`] for an operand of a condition whose role tests are `roles`
+/// ([`role_alternatives`]): the comparison is decided by the role or by itself, and
+/// says which role; the role test says it is one. `words`: the roles, as written.
+fn why_beside_roles(role: bool, words: &[String], guard: Option<String>) -> (String, String) {
+    use drift_core::not_always::{ALTERNATIVE_ROLE, ROLE_ALTERNATIVE};
+    match role {
+        true => (
+            ALTERNATIVE_ROLE.to_string(),
+            guard.map_or_else(String::new, |g| clip(format!("only when {g}"))),
+        ),
+        false => (
+            ROLE_ALTERNATIVE.to_string(),
+            clip(format!("not when {}", words.join(" or "))),
+        ),
     }
 }
 

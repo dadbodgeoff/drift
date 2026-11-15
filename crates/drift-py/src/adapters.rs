@@ -2252,6 +2252,22 @@ impl<'t> Lowerer<'t> {
             e => {
                 if let Some(els) = elements(e) {
                     for x in els {
+                        // `urlpatterns = [*cycle_urls, *module_urls]`: each list
+                        // unpacked in place is a pattern list of its own, of this
+                        // module or of another. The measured build read no such
+                        // element, so what one lists is marked.
+                        if let Expr::Starred(starred) = x {
+                            let (mounts, registrations) =
+                                (self.out.mounts.len(), self.out.registrations.len());
+                            self.lower_urlpatterns_at(&starred.value, prefix, depth + 1);
+                            for m in &mut self.out.mounts[mounts..] {
+                                m.unmeasured = true;
+                            }
+                            for r in &mut self.out.registrations[registrations..] {
+                                r.unmeasured = true;
+                            }
+                            continue;
+                        }
                         self.lower_url_entry_at(x, prefix, depth + 1);
                     }
                 } else {

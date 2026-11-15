@@ -647,6 +647,13 @@ fn signal_label(signal: &str) -> String {
             "cookie_without_httponly" => "cookies without httpOnly",
             "cors_any_origin" => "CORS for any origin",
             "unsafe_deserialize" => "unsafe deserialisation (pickle, yaml.load)",
+            "path_traversal" => "files at paths built from values",
+            "template_injection" => "templates built from values",
+            "nosql_injection" => "MongoDB $where built from values",
+            "xml_external_entities" => "XML parsers that resolve external entities",
+            "hardcoded_secret" => "signing secrets written in the code",
+            "debug_enabled" => "servers started in debug mode",
+            "tls_verify_disabled" => "TLS without certificate verification",
             other => other,
         };
         return format!("do not use {what}");

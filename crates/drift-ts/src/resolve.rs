@@ -3048,6 +3048,7 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(rel, l))
                 .collect(),
             truncated: vec![],
+            unlisted_routes: f.raw.unlisted_routes.clone(),
             discovers,
             outgoing: f.raw.outgoing.clone(),
             test_requests: f

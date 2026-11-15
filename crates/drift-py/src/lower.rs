@@ -3625,6 +3625,9 @@ impl Collector<'_, '_> {
 impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
         self.note_sql_binding(stmt);
+        if Lowerer::secret_binding(stmt) {
+            self.since_sinks.insert(signals::kind::SECRET.to_string());
+        }
         // A call that is a statement of its own, or bound to a name the body never
         // reads (`checked = verify_access(rule, caller)`): its value is dropped.
         let dropped = match stmt {

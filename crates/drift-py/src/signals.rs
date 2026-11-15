@@ -21,7 +21,46 @@ pub mod kind {
     pub const COOKIE: &str = "cookie_without_httponly";
     pub const CORS: &str = "cors_any_origin";
     pub const DESERIALIZE: &str = "unsafe_deserialize";
+    // Read since the measured build (Python lowering 69): in the listed reading
+    // only ([`crate::raw::RawSymbol::since_sinks`]).
+    pub const PATH: &str = "path_traversal";
+    pub const TEMPLATE: &str = "template_injection";
+    pub const NOSQL: &str = "nosql_injection";
+    pub const XXE: &str = "xml_external_entities";
+    pub const SECRET: &str = "hardcoded_secret";
+    pub const DEBUG: &str = "debug_enabled";
+    pub const TLS: &str = "tls_verify_disabled";
 }
+
+/// Calls that open, send or remove the file at the path they are given.
+const FILE_FNS: &[&str] = &[
+    "flask.send_file",
+    "flask.helpers.send_file",
+    "starlette.responses.FileResponse",
+    "fastapi.responses.FileResponse",
+    "django.http.FileResponse",
+    "os.remove",
+    "os.unlink",
+    "shutil.rmtree",
+];
+/// Calls that compile or render the template text they are given.
+const TEMPLATE_FNS: &[&str] = &[
+    "flask.render_template_string",
+    "flask.templating.render_template_string",
+    "jinja2.Template",
+    "jinja2.environment.Template",
+    "django.template.Template",
+    "django.template.base.Template",
+    "mako.template.Template",
+];
+/// Calls whose value is where the code is, not what a request sent.
+const PLACE_FNS: &[&str] = &[
+    "os.path.dirname",
+    "os.path.abspath",
+    "os.path.realpath",
+    "os.getcwd",
+    "tempfile.gettempdir",
+];
 
 const SHELL_FNS: &[&str] = &[
     "os.system",
@@ -434,17 +473,117 @@ impl Lowerer<'_> {
     /// Sinks one call reaches that the measured build did not read
     /// ([`crate::raw::RawSymbol::since_sinks`]): a query given a name the body bound
     /// to SQL built from a part that is no literal ([`Collector::sql_built`]), or a
-    /// chain of `+` written where the query is ([`concatenated_sql`]).
+    /// chain of `+` written where the query is ([`concatenated_sql`]); a file at a
+    /// path built from a part that is no constant; template text that is not written
+    /// out; a MongoDB `$where` built from a part that is no literal; an XML parser
+    /// set to resolve external entities; a signing key written in the code; a server
+    /// started in debug mode; a request that does not verify the certificate.
     pub(crate) fn call_sinks_since(&self, col: &Collector, c: &ast::ExprCall) -> Vec<&'static str> {
+        let mut out = Vec::new();
         let first = c.arguments.args.first();
         let through_name = matches!(first, Some(Expr::Name(n)) if col.sql_built.contains(n.id.as_str()))
             || first.is_some_and(concatenated_sql);
-        match callee_name(&c.func) {
-            Some(
-                "execute" | "executemany" | "executescript" | "text" | "raw" | "exec_driver_sql",
-            ) if through_name => vec![kind::SQL_INTERP],
-            _ => vec![],
+        let name = callee_name(&c.func);
+        if matches!(
+            name,
+            Some("execute" | "executemany" | "executescript" | "text" | "raw" | "exec_driver_sql")
+        ) && through_name
+        {
+            out.push(kind::SQL_INTERP);
         }
+        let r = col.canon(&c.func);
+        let d = r.as_ref().and_then(dotted);
+        let d = d.as_deref();
+        let dotted_of = |e: &Expr| col.canon(e).as_ref().and_then(dotted);
+        // A value that is where the code is, or written out: no request decides it.
+        fn fixed(e: &Expr, dotted_of: &dyn Fn(&Expr) -> Option<String>, depth: usize) -> bool {
+            if is_literal_string(e) || is_config(e) {
+                return true;
+            }
+            match e {
+                Expr::Name(n) => n.id.as_str() == "__file__",
+                Expr::Call(c) if depth < 4 => {
+                    dotted_of(&c.func).is_some_and(|d| PLACE_FNS.contains(&d.as_str()))
+                        && c.arguments
+                            .args
+                            .iter()
+                            .all(|a| fixed(a, dotted_of, depth + 1))
+                }
+                _ => false,
+            }
+        }
+        // A path joined or built from a part that is no constant.
+        let built_path = |e: &Expr| match e {
+            Expr::Call(j) => {
+                dotted_of(&j.func).as_deref() == Some("os.path.join")
+                    && j.arguments.args.iter().any(|a| !fixed(a, &dotted_of, 0))
+            }
+            e => interpolates(e),
+        };
+        let global_open = matches!(&r, Some(RawRef { base: RawBase::Global(g), member })
+            if member.is_empty() && g == "open");
+        if (global_open || d.is_some_and(|d| FILE_FNS.contains(&d)))
+            && first.is_some_and(built_path)
+        {
+            out.push(kind::PATH);
+        }
+        if d.is_some_and(|d| TEMPLATE_FNS.contains(&d))
+            && first.is_some_and(|a| !is_literal_string(a))
+        {
+            out.push(kind::TEMPLATE);
+        }
+        // `{"$where": f"this.owner == {owner}"}` in what a query is given.
+        let wheres = |e: &Expr| {
+            matches!(e, Expr::Dict(o) if o.items.iter().any(|i| {
+                i.key.as_ref().and_then(string_value).as_deref() == Some("$where")
+                    && interpolates(&i.value)
+            }))
+        };
+        if c.arguments.args.iter().any(wheres) {
+            out.push(kind::NOSQL);
+        }
+        if name == Some("XMLParser") && is_true(keyword(c, "resolve_entities")) {
+            out.push(kind::XXE);
+        }
+        if name == Some("setFeature")
+            && first.and_then(callee_name) == Some("feature_external_ges")
+            && is_true(c.arguments.args.get(1))
+        {
+            out.push(kind::XXE);
+        }
+        if d == Some("jwt.encode")
+            && arg(c, 1, "key").is_some_and(|k| string_value(k).is_some_and(|s| !s.is_empty()))
+        {
+            out.push(kind::SECRET);
+        }
+        if name == Some("run")
+            && matches!(c.func.as_ref(), Expr::Attribute(_))
+            && is_true(keyword(c, "debug"))
+        {
+            out.push(kind::DEBUG);
+        }
+        if is_false(keyword(c, "verify")) {
+            out.push(kind::TLS);
+        }
+        out
+    }
+
+    /// A secret written in the code where a framework reads the key it signs
+    /// sessions with: `app.secret_key = "..."`, `SECRET_KEY = "..."`,
+    /// `app.config["SECRET_KEY"] = "..."`.
+    pub(crate) fn secret_binding(stmt: &ast::Stmt) -> bool {
+        let ast::Stmt::Assign(a) = stmt else {
+            return false;
+        };
+        if !string_value(&a.value).is_some_and(|s| !s.is_empty()) {
+            return false;
+        }
+        a.targets.iter().any(|t| match t {
+            Expr::Name(n) => n.id.as_str() == "SECRET_KEY",
+            Expr::Attribute(x) => matches!(x.attr.as_str(), "secret_key" | "SECRET_KEY"),
+            Expr::Subscript(s) => string_value(&s.slice).as_deref() == Some("SECRET_KEY"),
+            _ => false,
+        })
     }
 
     /// Schema validation: pydantic `model_validate`, DRF `serializer.is_valid()`, `jsonschema.validate`.

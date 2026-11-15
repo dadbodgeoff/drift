@@ -21,7 +21,44 @@ pub mod kind {
     pub const JWT_DECODE: &str = "jwt_decode_without_verify";
     pub const COOKIE: &str = "cookie_without_httponly";
     pub const CORS: &str = "cors_any_origin";
+    // Read since the measured build (TypeScript lowering 76): in the listed
+    // reading only.
+    pub const PATH: &str = "path_traversal";
+    pub const TEMPLATE: &str = "template_injection";
+    pub const NOSQL: &str = "nosql_injection";
+    pub const SECRET: &str = "hardcoded_secret";
+    pub const TLS: &str = "tls_verify_disabled";
 }
+
+/// Functions of `fs` that read, write or remove the file at the path they are given.
+const FS_FNS: &[&str] = &[
+    "readFile",
+    "readFileSync",
+    "createReadStream",
+    "writeFile",
+    "writeFileSync",
+    "createWriteStream",
+    "appendFile",
+    "appendFileSync",
+    "unlink",
+    "unlinkSync",
+    "rm",
+    "rmSync",
+    "readdir",
+    "readdirSync",
+];
+
+/// Functions that compile or render the template text they are given, by package.
+const TEMPLATE_FNS: &[(&str, &str)] = &[
+    ("ejs", "render"),
+    ("ejs", "compile"),
+    ("pug", "render"),
+    ("pug", "compile"),
+    ("handlebars", "compile"),
+    ("nunjucks", "renderString"),
+    ("mustache", "render"),
+    ("lodash", "template"),
+];
 
 /// Last property name of a member callee (`res.redirect` -> `redirect`).
 fn member_name<'b>(callee: &'b Expression) -> Option<&'b str> {
@@ -244,7 +281,38 @@ impl SqlLocals {
     /// A value no request decides: a literal, deployment configuration, a constant
     /// by its name or by what it is bound to, a number made of anything, a list of
     /// placeholders.
-    fn constant(&self, scoping: &Scoping, e: &Expression) -> bool {
+    /// Text built from a part that is no constant, whatever the text is: a template
+    /// or a chain of `+`.
+    pub(crate) fn builds_text(&self, scoping: &Scoping, e: &Expression) -> bool {
+        self.builds(scoping, e, true)
+    }
+
+    /// A value no request decides where a path is built: a constant, the directory
+    /// of the module (`__dirname`, `__filename`, `import.meta.dirname`), the working
+    /// or the temporary directory.
+    pub(crate) fn fixed_path(&self, scoping: &Scoping, e: &Expression) -> bool {
+        let e = unwrap_expr(e);
+        match e {
+            Expression::Identifier(id)
+                if matches!(id.name.as_str(), "__dirname" | "__filename")
+                    && symbol_of(scoping, id).is_none() =>
+            {
+                true
+            }
+            Expression::StaticMemberExpression(m)
+                if matches!(unwrap_expr(&m.object), Expression::ImportMeta(_)) =>
+            {
+                true
+            }
+            Expression::CallExpression(c) => {
+                matches!(member_name(&c.callee), Some("cwd" | "tmpdir" | "homedir"))
+                    && c.arguments.is_empty()
+            }
+            _ => self.constant(scoping, e),
+        }
+    }
+
+    pub(crate) fn constant(&self, scoping: &Scoping, e: &Expression) -> bool {
         let e = unwrap_expr(e);
         match e {
             Expression::StringLiteral(_)
@@ -548,6 +616,141 @@ impl Lowerer<'_> {
             if any {
                 out.push(kind::CORS);
             }
+        }
+        // What the measured build did not read is in the listed reading only.
+        let since = self.call_sinks_since(c);
+        if !since.is_empty() && !routes::unmeasured_listing() {
+            out.extend(since);
+        }
+        out
+    }
+
+    /// The function of a package a call names: `("fs", "readFile")` for
+    /// `fs.readFile(...)`, `fs.promises.readFile(...)` and a named import of it.
+    fn package_fn(&self, callee: &Expression) -> Option<(String, String)> {
+        let r = self.canon_callee(callee)?;
+        let (spec, name) = import_of(&r)?;
+        let member = r.member.trim_start_matches('.');
+        if member.contains('(') {
+            return None;
+        }
+        let function = match (name, member.rsplit('.').next().filter(|m| !m.is_empty())) {
+            ("default" | "*", Some(m)) => m,
+            // The package itself, called: `session({...})`.
+            ("default" | "*", None) => "default",
+            (n, None) => n,
+            // `promises.readFile` of `import { promises } from "fs"`.
+            (_, Some(m)) => m,
+        };
+        Some((spec.to_string(), function.to_string()))
+    }
+
+    /// Sinks one call reaches that the measured build did not read (TypeScript
+    /// lowering 76): a file at a path built from a part that is no constant,
+    /// template text that is not written out, a MongoDB `$where` built from a part
+    /// that is no constant, Angular's `bypassSecurityTrust*`, a secret written in
+    /// the code where a token is signed or a session is keyed, and a TLS
+    /// connection that does not verify the certificate.
+    fn call_sinks_since(&self, c: &CallExpression) -> Vec<&'static str> {
+        let mut out = Vec::new();
+        let args: Vec<&Expression> = c
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .collect();
+        let first = args.first().copied();
+        let member = member_name(&c.callee);
+        let named = self.package_fn(&c.callee);
+        let named = named.as_ref().map(|(p, f)| (p.as_str(), f.as_str()));
+        let text = |e: &Expression| matches!(unwrap_expr(e), Expression::StringLiteral(l) if !lit(l).is_empty());
+
+        // A path joined or built from a part that is no constant.
+        let built_path = |e: &Expression| -> bool {
+            if let Expression::CallExpression(j) = unwrap_expr(e)
+                && matches!(
+                    self.package_fn(&j.callee)
+                        .as_ref()
+                        .map(|(p, f)| (p.as_str(), f.as_str())),
+                    Some(("path" | "path/posix" | "path/win32", "join" | "resolve"))
+                )
+            {
+                return j.arguments.iter().any(|a| {
+                    !a.as_expression()
+                        .is_some_and(|x| self.sql.fixed_path(self.scoping, x))
+                });
+            }
+            self.sql.builds_text(self.scoping, e)
+        };
+        let reads_file = matches!(named, Some(("fs" | "fs/promises" | "fs-extra", f)) if FS_FNS.contains(&f))
+            || matches!(member, Some("sendFile" | "download"));
+        if reads_file && first.is_some_and(built_path) {
+            out.push(kind::PATH);
+        }
+        if matches!(named, Some(pf) if TEMPLATE_FNS.contains(&pf))
+            && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::TEMPLATE);
+        }
+        if matches!(
+            named,
+            Some((
+                "vm",
+                "runInNewContext" | "runInContext" | "runInThisContext"
+            ))
+        ) && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::EVAL);
+        }
+        // `{ $where: `this.owner == ${owner}` }` in what a query is given.
+        let wheres = |e: &Expression| -> bool {
+            let Expression::ObjectExpression(o) = unwrap_expr(e) else {
+                return false;
+            };
+            o.properties.iter().any(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) => {
+                    p.key
+                        .static_name()
+                        .is_some_and(|k| k.as_str() == Some("$where"))
+                        && self.sql.builds_text(self.scoping, &p.value)
+                }
+                _ => false,
+            })
+        };
+        if args.iter().any(|a| wheres(a)) {
+            out.push(kind::NOSQL);
+        }
+        if matches!(
+            member,
+            Some(
+                "bypassSecurityTrustHtml"
+                    | "bypassSecurityTrustScript"
+                    | "bypassSecurityTrustStyle"
+                    | "bypassSecurityTrustUrl"
+                    | "bypassSecurityTrustResourceUrl"
+            )
+        ) && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::HTML);
+        }
+        // A secret written in the code: the key a token is signed or verified
+        // with, the secret a session or a cookie is signed with.
+        let secret = match named {
+            Some(("jsonwebtoken", "sign" | "verify")) => args.get(1).is_some_and(|e| text(e)),
+            Some(("express-session" | "cookie-session", _)) => first
+                .and_then(|o| object_value(o, "secret"))
+                .is_some_and(|v| text(v)),
+            Some(("cookie-parser", _)) => first.is_some_and(text),
+            _ => false,
+        };
+        if secret {
+            out.push(kind::SECRET);
+        }
+        if args.iter().any(|a| {
+            object_value(a, "rejectUnauthorized").is_some_and(
+                |v| matches!(unwrap_expr(v), Expression::BooleanLiteral(b) if !b.value),
+            )
+        }) {
+            out.push(kind::TLS);
         }
         out
     }

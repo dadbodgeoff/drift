@@ -610,6 +610,10 @@ pub struct RawFile {
     /// Test files: specifiers mocked, and `msw:<route>` ([`drift_core::FileFacts::mocks`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mocks: Vec<String>,
+    /// The lines of the registrations written as a route is that the lowering did
+    /// not list ([`drift_core::FileFacts::unlisted_routes`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_routes: Vec<u32>,
     /// The file as the last measured build listed it, where this lowering lists
     /// what that build did not (a router with a base path, a registration at
     /// several paths): linked beside this one, it is what mining reads, and this
@@ -2407,6 +2411,7 @@ impl<'s> Lowerer<'s> {
         self.lower_nest_application(program);
         self.lower_nest_global_guards(program);
         self.lower_nest_metadata(program);
+        self.out.unlisted_routes = routes::UnlistedRoutes::of(self, program);
         for sym in &mut self.out.symbols {
             if let Some(o) = self.builders.get(&sym.name) {
                 sym.refusal_builder = Some(*o);
@@ -6601,6 +6606,89 @@ type CheckOperand = (
     Option<String>,
 );
 
+/// The operands of an effective `&&`, each with whether the condition tests its
+/// negation: `a && !b`, and `!(a || b)`, which is `!a && !b`. One operand, the
+/// expression itself, for any other condition.
+fn and_operands<'b, 'a>(
+    e: &'b Expression<'a>,
+    negated: bool,
+    depth: usize,
+    out: &mut Vec<(&'b Expression<'a>, bool)>,
+) {
+    let e = peel(e);
+    match e {
+        Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot && depth < 8 => {
+            and_operands(&u.argument, !negated, depth + 1, out)
+        }
+        Expression::LogicalExpression(l)
+            if (l.operator == LogicalOperator::And) != negated
+                && l.operator != LogicalOperator::Coalesce
+                && depth < 8 =>
+        {
+            and_operands(&l.left, negated, depth + 1, out);
+            and_operands(&l.right, negated, depth + 1, out);
+        }
+        _ => out.push((e, negated)),
+    }
+}
+
+/// The role tests of a condition that refuses a caller unless a role or one
+/// comparison holds ([`drift_core::not_always::ROLE_ALTERNATIVE`]): an effective
+/// `&&` every operand of which but one tests that a member is not set or is not a
+/// literal (`!user.isAdmin`, `user.role !== "admin"`), the one left being a
+/// comparison of two values. Each role test by the member it reads. None for any
+/// other condition. `otherwise`: the refusal is in the `else`, so the condition
+/// refuses where it does not hold.
+fn role_alternatives<'b, 'a>(
+    test: &'b Expression<'a>,
+    otherwise: bool,
+) -> Option<Vec<&'b Expression<'a>>> {
+    let mut operands = Vec::new();
+    and_operands(test, otherwise, 0, &mut operands);
+    if operands.len() < 2 {
+        return None;
+    }
+    let member = |e: &Expression| match peel(e) {
+        Expression::StaticMemberExpression(_) => true,
+        Expression::ChainExpression(c) => {
+            matches!(c.expression, ChainElement::StaticMemberExpression(_))
+        }
+        _ => false,
+    };
+    let text = |e: &Expression| matches!(peel(e), Expression::StringLiteral(_));
+    let role = |(e, negated): &(&'b Expression<'a>, bool)| -> Option<&'b Expression<'a>> {
+        match e {
+            e if member(e) && *negated => Some(*e),
+            Expression::BinaryExpression(b) if b.operator.is_equality() => {
+                let equal = matches!(
+                    b.operator,
+                    BinaryOperator::StrictEquality | BinaryOperator::Equality
+                );
+                let read = match (
+                    member(&b.left),
+                    text(&b.right),
+                    member(&b.right),
+                    text(&b.left),
+                ) {
+                    (true, true, _, _) => &b.left,
+                    (_, _, true, true) => &b.right,
+                    _ => return None,
+                };
+                // Refused where the member is not the literal.
+                (equal == *negated).then_some(read)
+            }
+            _ => None,
+        }
+    };
+    let roles: Vec<&Expression> = operands.iter().filter_map(role).collect();
+    let rest: Vec<&(&Expression, bool)> = operands.iter().filter(|o| role(o).is_none()).collect();
+    let comparison = |e: &Expression| {
+        matches!(e, Expression::BinaryExpression(b)
+            if b.operator.is_equality() && !text(&b.left) && !text(&b.right))
+    };
+    (!roles.is_empty() && rest.len() == 1 && comparison(rest[0].0)).then_some(roles)
+}
+
 /// At most [`drift_core::not_always::MAX_WORDS`] characters.
 fn clip_words(s: String) -> String {
     let max = drift_core::not_always::MAX_WORDS;
@@ -8091,14 +8179,40 @@ impl Collector<'_, '_> {
         };
         reassigned.visit_expression(&it.test);
         let reassigned = reassigned.found;
+        // A condition that refuses unless a role or one comparison holds, read one
+        // operand for one check: the roles, in the code's own words
+        // ([`drift_core::not_always::ROLE_ALTERNATIVE`]).
+        let role_shaped = |compares: &RawOperand, op: &str| {
+            (op.is_empty() && *compares == RawOperand::None)
+                || matches!(compares, RawOperand::Text(t) if t == "literal")
+        };
+        let roles: Option<Vec<String>> = role_alternatives(&it.test, otherwise)
+            .filter(|roles| {
+                self.check_condition().is_empty()
+                    && found.len() == roles.len() + 1
+                    && found
+                        .iter()
+                        .filter(|(_, _, (compares, _), op, _)| role_shaped(compares, op))
+                        .count()
+                        == roles.len()
+            })
+            .map(|roles| roles.iter().map(|e| words(e)).collect());
         for (source, reads, (compares, compares_path), op, guard) in found {
             // The enclosing condition first, else the other operands of the `&&`.
-            let (condition, unless) = match (self.check_condition(), guard) {
-                ("", Some(g)) => (
+            let (condition, unless) = match (self.check_condition(), guard, &roles) {
+                ("", Some(g), Some(_)) if role_shaped(&compares, op) => (
+                    drift_core::not_always::ALTERNATIVE_ROLE,
+                    clip_words(format!("only when {g}")),
+                ),
+                ("", Some(_), Some(roles)) => (
+                    drift_core::not_always::ROLE_ALTERNATIVE,
+                    clip_words(format!("not when {}", roles.join(" || "))),
+                ),
+                ("", Some(g), None) => (
                     drift_core::not_always::AND_OPERAND,
                     clip_words(format!("only when {g}")),
                 ),
-                (c, _) => (c, String::new()),
+                (c, _, _) => (c, String::new()),
             };
             let condition = if reassigned && condition.is_empty() {
                 drift_core::not_always::UNREAD_LOCAL

@@ -3373,6 +3373,11 @@ pub(super) fn as_measured(on: bool) {
     AS_MEASURED.set(on);
 }
 
+/// Whether the file is being lowered as the last measured build listed it.
+fn lowering_as_measured() -> bool {
+    AS_MEASURED.get()
+}
+
 /// Whether the lowering since the last call met a listing the last measured build
 /// did not make.
 pub(super) fn take_new_listing() -> bool {
@@ -4948,6 +4953,81 @@ impl<'a> Visit<'a> for HandedRouters<'_, '_> {
                         .or_default()
                         .insert(i, *adapter);
                 }
+            }
+        }
+        walk::walk_call_expression(self, it);
+    }
+}
+
+/// Finds the registrations written as a route is that the lowering did not list
+/// ([`drift_core::FileFacts::unlisted_routes`]): a call of a method named for an
+/// HTTP verb, on anything, with a path written out first and a handler written in
+/// place last (a function of two or three parameters, as a framework calls one).
+/// One is listed where a route of the file was lowered from its line.
+pub(super) struct UnlistedRoutes<'l, 's> {
+    l: &'l Lowerer<'s>,
+    listed: BTreeSet<u32>,
+    found: BTreeSet<u32>,
+}
+
+impl<'l, 's> UnlistedRoutes<'l, 's> {
+    pub(super) fn of(l: &'l Lowerer<'s>, program: &Program) -> Vec<u32> {
+        // The measured reading lists fewer routes: what is not listed is said of
+        // the full one ([`drift_core::FileFacts::hold`]).
+        if l.test_file || lowering_as_measured() {
+            return Vec::new();
+        }
+        let routes: BTreeSet<&str> = l
+            .out
+            .entry_points
+            .iter()
+            .filter(|e| e.kind != "cli")
+            .map(|e| e.symbol.as_str())
+            .collect();
+        let mut pass = UnlistedRoutes {
+            l,
+            listed: l
+                .out
+                .symbols
+                .iter()
+                .filter(|s| routes.contains(s.name.as_str()))
+                .map(|s| s.line)
+                .collect(),
+            found: BTreeSet::new(),
+        };
+        pass.visit_program(program);
+        pass.found.into_iter().collect()
+    }
+}
+
+impl<'a> Visit<'a> for UnlistedRoutes<'_, '_> {
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        let handler = |e: &Expression| match unwrap_expr(e) {
+            Expression::ArrowFunctionExpression(f) => matches!(f.params.items.len(), 2 | 3),
+            Expression::FunctionExpression(f) => matches!(f.params.items.len(), 2 | 3),
+            _ => false,
+        };
+        if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee)
+            && matches!(
+                m.property.name.as_str(),
+                "get" | "post" | "put" | "patch" | "delete"
+            )
+            && it.arguments.len() >= 2
+            && it
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .and_then(string_value)
+                .is_some_and(|p| p.starts_with('/'))
+            && it
+                .arguments
+                .last()
+                .and_then(|a| a.as_expression())
+                .is_some_and(handler)
+        {
+            let line = self.l.line_of(it.span.start);
+            if !self.listed.contains(&line) {
+                self.found.insert(line);
             }
         }
         walk::walk_call_expression(self, it);

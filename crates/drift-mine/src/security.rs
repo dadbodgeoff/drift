@@ -32,6 +32,9 @@ pub const INPUT_SINKS: &[&str] = &[
     "dynamic_redirect",
     "dynamic_fetch",
     "unsafe_deserialize",
+    "path_traversal",
+    "template_injection",
+    "nosql_injection",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -71,6 +74,33 @@ impl Exposure {
             Exposure::Unknown => "unknown",
         }
     }
+}
+
+/// One registration written as a route is that Drift did not list
+/// ([`Inventory::unlisted`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct Unlisted {
+    pub path: String,
+    pub line: u32,
+}
+
+/// Where an entry point that reaches a risky operation stands in the list a person
+/// reads top down ([`render_at`]): the guard (none found, not read, a guard), then
+/// where it is reachable from (internet-facing, unknown, internal), then whether an
+/// operation it reaches is fed by what a request sent ([`INPUT_SINKS`]). Lower
+/// first. A rank, not a verdict: it orders facts and judges none.
+fn review_rank(e: &EntryRow) -> (u8, Exposure, bool) {
+    let guard = match (e.guards.is_empty(), e.opaque.is_empty()) {
+        _ if e.local => 3,
+        (true, true) => 0,
+        (true, false) => 1,
+        (false, _) => 2,
+    };
+    let fed = e
+        .reaches
+        .iter()
+        .any(|r| INPUT_SINKS.contains(&r.kind.as_str()));
+    (guard, e.exposure, !fed)
 }
 
 /// One directory and what the repository says about its exposure.
@@ -3532,6 +3562,12 @@ pub struct Inventory {
     /// serialised when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub skipped: Vec<drift_core::Skipped>,
+    /// Registrations written as a route is that Drift did not list
+    /// ([`drift_core::FileFacts::unlisted_routes`]), in production code: a route in
+    /// one may be served and is not in the inventory. Sorted; not serialised when
+    /// empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unlisted: Vec<Unlisted>,
     /// What could not be read around the inventory, so a part of it is missing (a
     /// `.drift/conventions.yaml` that does not parse: shared guards are listed without
     /// their conventions). Not serialised when empty.
@@ -6788,6 +6824,19 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             skipped.dedup();
             skipped
         },
+        unlisted: repo
+            .files
+            .iter()
+            .filter(|f| {
+                !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+            })
+            .flat_map(|f| {
+                f.unlisted_routes.iter().map(|line| Unlisted {
+                    path: f.path.clone(),
+                    line: *line,
+                })
+            })
+            .collect(),
         ..Inventory::default()
     };
     // Before any entry point is given its service's exposure.
@@ -7981,6 +8030,21 @@ pub fn render_at(
             if skipped.len() > 5 { ", ..." } else { "" }
         );
     }
+    let unlisted: Vec<&Unlisted> = inv.unlisted.iter().filter(|u| keep(&u.path)).collect();
+    if !unlisted.is_empty() {
+        let shown: Vec<String> = unlisted
+            .iter()
+            .take(5)
+            .map(|u| format!("{}:{}", sanitize(&u.path, 160), u.line))
+            .collect();
+        let _ = writeln!(
+            out,
+            "{} registration(s) written as a route is are NOT LISTED: what registers them was not read, so a route there may be served and is in no row below: {}{}",
+            unlisted.len(),
+            shown.join(", "),
+            if unlisted.len() > 5 { ", ..." } else { "" }
+        );
+    }
     let app_only = entries.iter().filter(|e| e.only_app_hooks()).count();
     if app_only > 0 {
         let _ = writeln!(
@@ -8069,7 +8133,13 @@ pub fn render_at(
             }
         }
     }
-    let risky: Vec<&&EntryRow> = entries.iter().filter(|e| !e.reaches.is_empty()).collect();
+    let mut risky: Vec<&&EntryRow> = entries.iter().filter(|e| !e.reaches.is_empty()).collect();
+    // What most needs a person's eye first: an entry point where no guard was found
+    // before one whose guard is not read and one that has a guard, one an outside
+    // caller reaches before one that is internal, and one that reaches an operation
+    // fed by what the request sent before one that does not. Within a rank, the
+    // order they are listed in.
+    risky.sort_by_key(|e| review_rank(e));
     if !risky.is_empty() {
         let _ = writeln!(out, "\nEntry points reaching risky operations");
         for e in risky.iter().take(max_rows) {

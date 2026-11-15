@@ -5049,6 +5049,7 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(fi, l))
                 .collect(),
             truncated: vec![],
+            unlisted_routes: vec![],
             discovers: raw.discovers.clone(),
             outgoing: if test_file {
                 vec![]
