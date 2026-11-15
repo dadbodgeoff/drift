@@ -2382,6 +2382,15 @@ pub struct RepoFacts {
     /// a full scan, where every file is in `files`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub integration_files: Vec<FileRef>,
+    /// The directories a Prisma schema of the repository says its client is
+    /// generated into (`generator client { provider = "prisma-client"; output =
+    /// "./generated/prisma" }`), repo-relative, sorted. The client written there is
+    /// build output, usually not committed: an import that resolves to no file
+    /// below one of them is an import of the database client, as one of
+    /// `@prisma/client` is. Empty, and not serialised, where no schema names an
+    /// output, and in a single-file scan.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub generated_clients: Vec<String>,
 }
 
 /// The keys one file declares, for co-change rules.

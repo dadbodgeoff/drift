@@ -14,6 +14,15 @@
 //!   Numbers and commit ids of the event are not text anyone chooses, and an
 //!   expression handed through `env:` is a value, not script.
 //!
+//! - **An action of another owner named by a tag or a branch, in a job that holds
+//!   secrets or may write** (`uses: someone/deploy@v2` beside `${{ secrets.TOKEN
+//!   }}`, or under `permissions: contents: write`). A tag is whatever its owner
+//!   points it at next: the code that runs with the job's secrets is not the code
+//!   that was reviewed. An action named by a full commit, one of the repository
+//!   itself (`./`) and the platform's own (`actions/`, `github/`) are not listed.
+//! - **A download handed to an interpreter in a shell step** (`curl ... | sh`,
+//!   `bash <(curl ...)`): what the remote server sends that day is what runs.
+//!
 //! Nothing is run and nothing outside the repository is read. A workflow that does
 //! not parse is skipped.
 
@@ -28,12 +37,14 @@ const MAX_BYTES: u64 = 512 * 1024;
 /// One thing a workflow does ([`read`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 pub struct WorkflowFinding {
-    /// `untrusted_checkout` or `script_injection`.
+    /// `untrusted_checkout`, `script_injection`, `unpinned_action` or
+    /// `piped_download`.
     pub kind: String,
     pub path: String,
     pub line: u32,
     pub job: String,
-    /// What was read: the `ref` checked out, or the expression interpolated.
+    /// What was read: the `ref` checked out, the expression interpolated, the
+    /// action as it is named, or the command that downloads.
     pub detail: String,
 }
 
@@ -143,6 +154,113 @@ fn outsiders_text(expression: &str) -> Option<&str> {
     None
 }
 
+/// Programs that fetch what a URL serves, and the interpreters that run what they
+/// are handed on standard input or as a script: the commands themselves, not
+/// names of the repository.
+const DOWNLOADERS: &[&str] = &[
+    "curl",
+    "wget",
+    "iwr",
+    "Invoke-WebRequest",
+    "Invoke-RestMethod",
+];
+const INTERPRETERS: &[&str] = &[
+    "sh",
+    "bash",
+    "zsh",
+    "dash",
+    "ksh",
+    "python",
+    "python3",
+    "node",
+    "perl",
+    "ruby",
+    "pwsh",
+    "powershell",
+    "iex",
+    "Invoke-Expression",
+];
+
+/// The program a shell command starts: its first word, past `sudo`, `env` and
+/// assignments (`FOO=1 sudo -E bash -s`).
+fn program(command: &str) -> &str {
+    command
+        .split_whitespace()
+        .find(|w| {
+            !matches!(*w, "sudo" | "env" | "exec" | "command" | "time")
+                && !w.starts_with('-')
+                && !(w.contains('=') && !w.starts_with('='))
+        })
+        .map(|w| w.rsplit('/').next().unwrap_or(w))
+        .unwrap_or_default()
+}
+
+/// The command of a shell step that hands a download to an interpreter: a pipe
+/// from a downloader into one (`curl -fsSL https://x | sudo bash`), or an
+/// interpreter given what a downloader prints (`bash <(curl ...)`, `sh -c "$(curl
+/// ...)"`). The line it is on, as written.
+fn piped_download(run: &str) -> Option<&str> {
+    for line in run.lines() {
+        let line = line.trim();
+        if line.starts_with('#') {
+            continue;
+        }
+        // A pipe, not `||`.
+        let parts: Vec<&str> = line.split('|').collect();
+        let piped = parts.windows(2).any(|w| {
+            !w[0].is_empty()
+                && !w[1].is_empty()
+                && DOWNLOADERS.contains(&program(w[0].rsplit(['&', ';']).next().unwrap_or(w[0])))
+                && INTERPRETERS.contains(&program(w[1]))
+        });
+        let substituted = INTERPRETERS.contains(&program(line))
+            && DOWNLOADERS
+                .iter()
+                .any(|d| line.contains(&format!("$({d} ")) || line.contains(&format!("<({d} ")));
+        if piped || substituted {
+            return Some(line);
+        }
+    }
+    None
+}
+
+/// The permissions grant a write (`write-all`, or any scope set to `write`).
+fn grants_write(permissions: Option<&Value>) -> bool {
+    match permissions {
+        Some(Value::String(s)) => s == "write-all",
+        Some(Value::Object(o)) => o.values().any(|v| v.as_str() == Some("write")),
+        _ => false,
+    }
+}
+
+/// Some string of the value reads a secret (`${{ secrets.X }}`).
+fn reads_secret(v: &Value) -> bool {
+    match v {
+        Value::String(s) => expressions(s).iter().any(|e| e.contains("secrets.")),
+        Value::Array(a) => a.iter().any(reads_secret),
+        Value::Object(o) => o.values().any(reads_secret),
+        _ => false,
+    }
+}
+
+/// An action as a step names it is another owner's, named by what that owner can
+/// move: not a path of the repository, not the platform's own, not a full commit
+/// and not an image by its digest.
+fn unpinned(uses: &str) -> bool {
+    if uses.is_empty() || uses.starts_with("./") || uses.starts_with("../") {
+        return false;
+    }
+    if let Some(image) = uses.strip_prefix("docker://") {
+        return !image.contains("@sha256:");
+    }
+    let Some((action, version)) = uses.split_once('@') else {
+        return false;
+    };
+    let owner = action.split('/').next().unwrap_or_default();
+    let commit = version.len() == 40 && version.chars().all(|c| c.is_ascii_hexdigit());
+    !commit && !matches!(owner, "actions" | "github")
+}
+
 /// The 1-based line of the first line of `text` that holds `needle`; 1 where none.
 fn line_of(text: &str, needle: &str) -> u32 {
     let needle = needle.lines().next().unwrap_or(needle).trim();
@@ -170,7 +288,34 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
             .and_then(Value::as_array)
             .map(Vec::as_slice)
             .unwrap_or_default();
+        // The job holds something worth taking: a secret it reads, or a token
+        // that may write (its own permissions, else the workflow's).
+        let holds = reads_secret(body)
+            || grants_write(body.get("permissions").or_else(|| doc.get("permissions")));
         for step in steps {
+            if let Some(run) = step.get("run").and_then(Value::as_str)
+                && let Some(command) = piped_download(run)
+            {
+                out.push(WorkflowFinding {
+                    kind: "piped_download".into(),
+                    path: rel.to_string(),
+                    line: line_of(text, command),
+                    job: job.clone(),
+                    detail: command.chars().take(160).collect(),
+                });
+            }
+            if holds
+                && let Some(uses) = step.get("uses").and_then(Value::as_str)
+                && unpinned(uses)
+            {
+                out.push(WorkflowFinding {
+                    kind: "unpinned_action".into(),
+                    path: rel.to_string(),
+                    line: line_of(text, uses),
+                    job: job.clone(),
+                    detail: uses.to_string(),
+                });
+            }
             if let Some(run) = step.get("run").and_then(Value::as_str) {
                 for e in expressions(run) {
                     if let Some(written) = outsiders_text(e) {
@@ -262,6 +407,98 @@ mod tests {
                     "script_injection".to_string(),
                     "github.head_ref".to_string()
                 ),
+            ]
+        );
+    }
+
+    #[test]
+    fn an_action_named_by_a_tag_is_found_where_the_job_holds_a_secret_or_may_write() {
+        let found = kinds(
+            "on: push
+jobs:
+  deploy:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: someone/deploy@v2
+        with:
+          token: ${{ secrets.DEPLOY_TOKEN }}
+      - uses: someone/pinned@0123456789abcdef0123456789abcdef01234567
+      - uses: ./.github/actions/local
+      - uses: docker://ghcr.io/someone/tool:1
+  lint:
+    steps:
+      - uses: someone/lint@v1
+  release:
+    permissions:
+      contents: write
+    steps:
+      - uses: someone/release@main
+",
+        );
+        assert_eq!(
+            found,
+            vec![
+                (
+                    "unpinned_action".to_string(),
+                    "someone/deploy@v2".to_string()
+                ),
+                (
+                    "unpinned_action".to_string(),
+                    "docker://ghcr.io/someone/tool:1".to_string()
+                ),
+                (
+                    "unpinned_action".to_string(),
+                    "someone/release@main".to_string()
+                ),
+            ]
+        );
+        // The workflow's own permissions hold for a job that names none.
+        let found = kinds(
+            "on: push
+permissions: write-all
+jobs:
+  a:
+    steps:
+      - uses: someone/x@v1
+  b:
+    permissions:
+      contents: read
+    steps:
+      - uses: someone/y@v1
+",
+        );
+        assert_eq!(
+            found,
+            vec![("unpinned_action".to_string(), "someone/x@v1".to_string())]
+        );
+    }
+
+    #[test]
+    fn a_download_handed_to_an_interpreter_is_found() {
+        let found = kinds(
+            "on: push
+jobs:
+  a:
+    steps:
+      - run: curl -fsSL https://get.example.com/install.sh | sudo bash -s -- -y
+      - run: |
+          set -e
+          bash <(curl -s https://example.com/x.sh)
+      - run: curl -fsSL https://example.com/x.tgz | tar xz
+      - run: curl -o install.sh https://example.com/x.sh || echo failed
+      - run: cat list.txt | sh
+",
+        );
+        let commands: Vec<&str> = found.iter().map(|(_, d)| d.as_str()).collect();
+        assert!(
+            found.iter().all(|(k, _)| k == "piped_download"),
+            "{found:?}"
+        );
+        assert_eq!(
+            commands,
+            [
+                "curl -fsSL https://get.example.com/install.sh | sudo bash -s -- -y",
+                "bash <(curl -s https://example.com/x.sh)",
             ]
         );
     }

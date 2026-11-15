@@ -164,6 +164,9 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
     into.packages.extend(other.packages);
     into.context_files.extend(other.context_files);
     into.integration_files.extend(other.integration_files);
+    into.generated_clients.extend(other.generated_clients);
+    into.generated_clients.sort();
+    into.generated_clients.dedup();
     into.normalize();
 }
 

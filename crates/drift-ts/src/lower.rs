@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 76;
+pub const LOWERING_VERSION: u32 = 77;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -5087,6 +5087,8 @@ struct Collector<'l, 's> {
     /// same value, read with it).
     object_fns: HashMap<u32, std::rc::Rc<HashSet<String>>>,
     value_methods: Vec<Option<std::rc::Rc<HashSet<String>>>>,
+    /// The declarators being walked are those of a `const` declaration.
+    const_decl: bool,
     /// Locals bound to a value reached from a parameter by its own members and
     /// their methods (`const path = req.url.split("?")[0].toLowerCase()`), by the
     /// parameter's name: a method of one is a method of a value of the parameter.
@@ -5314,6 +5316,7 @@ impl<'l, 's> Collector<'l, 's> {
             object_fns: HashMap::new(),
             value_methods: Vec::new(),
             param_values: HashMap::new(),
+            const_decl: false,
             named_fns: HashMap::new(),
             async_fns: HashSet::new(),
             local_fns: Vec::new(),
@@ -5480,9 +5483,9 @@ impl<'l, 's> Collector<'l, 's> {
     /// (`svc.list(orgId)` after `const svc = services.rules`): a call of what it
     /// names, with its place in the body's order and whether every request makes it
     /// ([`RawReceiverCall::Ref`]). The call ends at `end`.
-    fn note_alias_call(&mut self, callee: &Expression, end: u32) {
+    fn note_alias_call(&mut self, callee: &Expression, end: u32) -> Option<RawRef> {
         if self.aliases.is_empty() {
-            return;
+            return None;
         }
         let mut cur = unwrap_expr(callee);
         let root = loop {
@@ -5490,17 +5493,17 @@ impl<'l, 's> Collector<'l, 's> {
                 Expression::StaticMemberExpression(m) => cur = unwrap_expr(&m.object),
                 Expression::ChainExpression(c) => match &c.expression {
                     ChainElement::StaticMemberExpression(m) => cur = unwrap_expr(&m.object),
-                    _ => return,
+                    _ => return None,
                 },
                 Expression::Identifier(id) => break id,
-                _ => return,
+                _ => return None,
             }
         };
         if !self
             .symbol_of(root)
             .is_some_and(|s| self.aliases.contains_key(&s))
         {
-            return;
+            return None;
         }
         let inner = match unwrap_expr(callee) {
             Expression::ChainExpression(c) => match &c.expression {
@@ -5515,12 +5518,13 @@ impl<'l, 's> Collector<'l, 's> {
             },
             e => self.module_ref(e),
         };
-        let Some(r) = inner else { return };
+        let r = inner?;
         if !self.order.contains(&r) && self.order.len() < MAX_ORDER {
             self.order.push(r.clone());
         }
         self.note_call_why(r.clone(), end);
-        self.receiver_calls.insert(RawReceiverCall::Ref(r));
+        self.receiver_calls.insert(RawReceiverCall::Ref(r.clone()));
+        Some(r)
     }
 
     /// The walk starts in the body of a method of `class`: what is written there is
@@ -11713,10 +11717,16 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             self.note_param_call(&it.callee);
             self.note_this_call(&it.callee);
-            self.note_alias_call(&it.callee, it.span.end);
+            // A call through a local that names a binding or an instance of the
+            // repository is recorded as a call of what it names, with what it
+            // is handed: it is read there.
+            let named = self.note_alias_call(&it.callee, it.span.end);
+            if let Some(r) = &named {
+                self.note_arg_sides(r, it);
+            }
             // A method of a local or of a value no import names: the call is not
             // recorded, and what it does with the value was not read.
-            if hands_value_on(it) {
+            if named.is_none() && hands_value_on(it) {
                 self.controls
                     .insert(drift_core::controls::UNREAD_CALL.into());
             }
@@ -11752,6 +11762,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 // method is a method of that value, as one written on the
                 // parameter's member is.
                 let of_local = member
+                    && named.is_none()
                     && hands_value_on(it)
                     && matches!(root, Expression::Identifier(id)
                         if self.symbol_of(id).is_some_and(|s| !self.param_values.contains_key(&s))
@@ -12763,6 +12774,12 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         }
     }
 
+    fn visit_variable_declaration(&mut self, it: &VariableDeclaration<'a>) {
+        let outer = std::mem::replace(&mut self.const_decl, it.kind.is_const());
+        walk::walk_variable_declaration(self, it);
+        self.const_decl = outer;
+    }
+
     fn visit_variable_declarator(&mut self, it: &VariableDeclarator<'a>) {
         // A local bound to a value read off a parameter of the function made
         // ([`Collector::product_params`]) is one too.
@@ -12814,6 +12831,20 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.flow_declarator(&it.id, init);
             self.note_binding(&it.id, init);
             self.note_alias(&it.id, init);
+            // `const repo = new Repo(db)`: the local is an instance the class
+            // builds, and a method called on it is the class's own
+            // (`<Repo>().find`, as a call on what was built in place is written).
+            if self.const_decl
+                && self.fn_depth > 0
+                && let BindingPattern::BindingIdentifier(b) = &it.id
+                && let Expression::NewExpression(n) = unwrap_expr(init)
+                && let Some(mut made) = self.l.canon(&n.callee)
+                && matches!(made.base, RawBase::Import { .. } | RawBase::Local(_))
+                && let Some(sym) = b.symbol_id.get()
+            {
+                made.member.push_str("()");
+                self.aliases.insert(sym, made);
+            }
         }
         if let BindingPattern::BindingIdentifier(id) = &it.id
             && let Some(init) = &it.init

@@ -8746,6 +8746,10 @@ pub fn render_at(
                 "untrusted_checkout" => {
                     "checks out the pull request's code where the repository's secrets are"
                 }
+                "unpinned_action" => {
+                    "runs another owner's action by a name its owner can move, where it holds secrets or may write"
+                }
+                "piped_download" => "hands a download to an interpreter",
                 _ => "interpolates text of the event into a shell step",
             };
             let _ = writeln!(

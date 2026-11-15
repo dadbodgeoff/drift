@@ -2105,9 +2105,11 @@ app.get("/plaindrizzle", requireUser, async (req, res) => {
         said(&c, "GET /prismaraw"),
         ("unknown", Some("unclassified"), None),
     );
+    // (The builder chain is read as the database library's since the bodies a
+    // route runs are read further; what it filters by is still not classified.)
     assert_eq!(
         said(&c, "GET /drizzle"),
-        ("unknown", Some("body_unreadable"), None),
+        ("unknown", Some("unclassified"), None),
     );
     assert_eq!(said(&c, "GET /plainsql"), ("none", None, None),);
 }

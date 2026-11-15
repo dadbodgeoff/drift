@@ -2411,7 +2411,7 @@ fn resolve_at<'a>(cx: &Cx<'a>, from: Node<'a>, c: &str, hop: usize) -> Callee<'a
         return data_or_opaque();
     }
     let Some(d) = ctx.definition(c) else {
-        return opaque();
+        return data_or_opaque();
     };
     // The symbol is the longest prefix of the reference the facts define: what is left
     // is the member path called on it.
@@ -2535,6 +2535,25 @@ fn resolve_at<'a>(cx: &Cx<'a>, from: Node<'a>, c: &str, hop: usize) -> Callee<'a
                             }
                         })
                     }
+                    // Made by a method of a binding that is itself built from a
+                    // library alone (`const log = logger.getSubLogger({ ... })`
+                    // of `const logger = new Logger(...)`): what a library's
+                    // method hands back is the library's. Not what a framework
+                    // injects, whose type the facts do not give.
+                    _ if !injects(class)
+                        && class.split_once('#').is_some_and(|(_, path)| {
+                            path.contains('.') && !path.contains('(')
+                        })
+                        && ctx.definition(class).is_some_and(|k| {
+                            matches!(k.kind, SymbolKind::Const | SymbolKind::Variable)
+                                && !k.calls.is_empty()
+                                && k.calls
+                                    .iter()
+                                    .all(|x| common::external(x) && !injects(x))
+                        }) =>
+                    {
+                        Callee::Read
+                    }
                     _ => opaque(),
                 },
                 _ => opaque(),
@@ -2605,8 +2624,68 @@ fn handed_back<'a>(cx: &Cx<'a>, f: &'a Symbol, method: &str, hop: usize) -> Opti
 /// repository that only uses a database library in its methods (a repository, a
 /// service) is not: what its method does is in the method.
 fn data_call(cx: &Cx<'_>, callee: &str) -> bool {
+    data_call_at(cx, callee, 0)
+}
+
+/// The reference is into the database client a schema of the repository generates
+/// ([`drift_core::RepoFacts::generated_clients`]): an import that resolves to no
+/// file, written to a path below the directory the schema names (`unresolved:
+/// packages/prisma/generated/prisma/client#PrismaClient`, or as a file wrote it
+/// from beside that directory, `unresolved:../generated/prisma/client`), or a name
+/// a module of the repository hands on from one (`export * from
+/// "../generated/prisma/client"`, `import { PrismaClient } from ...` named again).
+fn generated_client(cx: &Cx<'_>, r: &str) -> bool {
+    let generated = &cx.facts.generated_clients;
+    if generated.is_empty() {
+        return false;
+    }
+    // The path an unresolved import names is below a generated directory: the
+    // whole directory where the import was resolved from the repository's root,
+    // its last segments where it was written relative to the importing file.
+    let below = |spec: &str| {
+        let spec = spec.split('#').next().unwrap_or_default();
+        let written: Vec<&str> = spec
+            .split('/')
+            .filter(|p| !matches!(*p, "" | "." | ".."))
+            .collect();
+        generated.iter().any(|dir| {
+            let dir: Vec<&str> = dir.split('/').collect();
+            let relative = spec.starts_with('.');
+            match relative {
+                false => written.starts_with(&dir),
+                // Every segment written before the client's own files is the end
+                // of the directory's path.
+                true => (1..=dir.len().min(written.len()))
+                    .rev()
+                    .any(|n| written.starts_with(&dir[dir.len() - n..]) && n >= dir.len().min(2)),
+            }
+        })
+    };
+    if let Some(spec) = r.strip_prefix("unresolved:") {
+        return below(spec);
+    }
+    let n = crate::mine::norm_ref(r);
+    let Some((module, path)) = n.split_once('#') else {
+        return false;
+    };
+    let name = path.split(['.', '(']).next().unwrap_or_default();
+    let ctx = cx.context();
+    if ctx.definition(&format!("{module}#{name}")).is_some() {
+        return false;
+    }
+    cx.facts.files.iter().find(|f| f.path == module).is_some_and(|f| {
+        f.imports.iter().any(|i| {
+            i.module
+                .strip_prefix("unresolved:")
+                .is_some_and(&below)
+                && i.names.iter().any(|x| x == name || x == "*")
+        })
+    })
+}
+
+fn data_call_at(cx: &Cx<'_>, callee: &str, depth: usize) -> bool {
     use super::libraries::data_library;
-    if data_library(callee).is_some() {
+    if data_library(callee).is_some() || generated_client(cx, callee) {
         return true;
     }
     if common::external(callee) {
@@ -2618,7 +2697,26 @@ fn data_call(cx: &Cx<'_>, callee: &str) -> bool {
     };
     match d.kind {
         SymbolKind::Const | SymbolKind::Variable => {
-            d.calls.iter().any(|c| data_library(c).is_some())
+            d.calls.iter().any(|c| {
+                data_library(c).is_some()
+                    || generated_client(cx, c)
+                    // Built by a method of a binding of the module that is a
+                    // database client (`base.$extends(...)`): the client still.
+                    || (depth < BINDING_HOPS
+                        && !common::external(c)
+                        && c.split_once('#').is_some_and(|(module, path)| {
+                            let base = path.split(['.', '(']).next().unwrap_or_default();
+                            path.len() > base.len()
+                                && base != d.name
+                                && ctx
+                                    .definition(&format!("{module}#{base}"))
+                                    .is_some_and(|b| {
+                                        matches!(b.kind, SymbolKind::Const | SymbolKind::Variable)
+                                            && b.name == base
+                                    })
+                                && data_call_at(cx, &format!("{module}#{base}"), depth + 1)
+                        }))
+            })
         }
         // A class built on a database library, or one the facts hold as a database
         // model (its columns: `Decision.created_at.asc()` orders a query).
@@ -2930,21 +3028,59 @@ fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
 /// ([`PY_GUARD_RUNS`]), by the order Python looks them up in, or one of those calls
 /// them on `self` on every path: a method nothing calls refuses no one.
 fn role_guard_proven(cx: &Cx<'_>, g: &str) -> bool {
+    role_guard_proven_at(cx, g, 0)
+}
+
+fn role_guard_proven_at(cx: &Cx<'_>, g: &str, depth: usize) -> bool {
+    let own = crate::mine::norm_ref(g).into_owned();
+    let python = own.split_once('#').is_some_and(|(m, _)| m.ends_with(".py"));
     let refuses = |checks: &[drift_core::BodyCheck]| {
         checks.iter().any(|c| {
-            c.outcome == CheckOutcome::Forbidden
-                && !c.conditional
-                && (names_role(&c.reads) || c.compares == "literal")
+            !c.conditional
+                && ((c.outcome == CheckOutcome::Forbidden
+                    && (names_role(&c.reads) || c.compares == "literal"))
+                    // TypeScript: a member of the caller compared with a literal,
+                    // refused as "not signed in" (`if (ctx.user?.role !== "ADMIN")
+                    // throw new TRPCError({ code: "UNAUTHORIZED" })`): a role
+                    // whatever the answer says.
+                    || (!python
+                        && c.outcome == CheckOutcome::Unauthenticated
+                        && c.compares == "literal"
+                        && c.op == drift_core::check_op::REFUSES_MISMATCH
+                        && !c.reads.is_empty()
+                        && whose(&c.source, &c.reads) == Whose::Caller))
         })
     };
     let ctx = cx.context();
     let Some(d) = ctx.definition(g) else {
         return false;
     };
-    let own = crate::mine::norm_ref(g).into_owned();
-    let python_class = d.kind == SymbolKind::Class
+    // TypeScript: a binding built from another by steps that only add to it
+    // (`publicProcedure.use(isAdmin)`, `authedProcedure.use(...)`) refuses as the
+    // functions its steps are given do, and as what it is built from does.
+    if !python
+        && depth < BINDING_HOPS
+        && matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
         && d.name == common::short(&own)
-        && own.split_once('#').is_some_and(|(m, _)| m.ends_with(".py"));
+        && !d.derives_from.is_empty()
+    {
+        let steps = d.calls.iter().filter_map(|c| c.strip_suffix("(ref)"));
+        let base = d
+            .derives_from
+            .split_once('#')
+            .map(|(module, path)| {
+                let name = path.split(['.', '(']).next().unwrap_or_default();
+                format!("{module}#{name}")
+            })
+            .filter(|b| *b != own);
+        if steps
+            .chain(base.as_deref())
+            .any(|x| !common::external(x) && role_guard_proven_at(cx, x, depth + 1))
+        {
+            return true;
+        }
+    }
+    let python_class = d.kind == SymbolKind::Class && d.name == common::short(&own) && python;
     if !python_class || !ctx.since_measured() {
         return refuses(&d.body_checks);
     }
@@ -3051,7 +3187,30 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             .map(|c| (&c.condition, &c.source, &c.reads, &c.compares)),
     );
     for c in r.node.body_checks() {
-        if !matches!(c.outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound) {
+        // A member of the caller compared with a literal asks what the caller is,
+        // whatever the refusal is answered with (`if (ctx.user?.role !== "ADMIN")
+        // throw new TRPCError({ code: "UNAUTHORIZED" })`): a role, though the answer
+        // says "not signed in". A value tested for being there is the sign-in
+        // check and no more, and one read off what the request sent is what any
+        // caller writes.
+        let role_answered_as_sign_in = c.outcome == CheckOutcome::Unauthenticated
+            && c.compares == "literal"
+            // Equal or not equal to it: an order comparison (`exp < now`, a count)
+            // is read as before.
+            && matches!(
+                c.op.as_str(),
+                drift_core::check_op::REFUSES_MISMATCH | drift_core::check_op::REFUSES_MATCH
+            )
+            && !c.reads.is_empty()
+            && match ev.python {
+                true => {
+                    python_role_side(cx, r, ev, &c.source, &c.reads, &c.compares) == Some(true)
+                }
+                false => whose(&c.source, &c.reads) == Whose::Caller,
+            };
+        if !matches!(c.outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound)
+            && !role_answered_as_sign_in
+        {
             continue;
         }
         // The request's HTTP method against a literal (`if (req.method !== "GET")
@@ -3120,7 +3279,7 @@ fn checks<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             if r.depth == 0 && !r.quiet && !c.conditional {
                 ev.unknown(UnknownReason::Unclassified, what);
             }
-        } else if c.outcome != CheckOutcome::Forbidden {
+        } else if c.outcome == CheckOutcome::NotFound {
             if owner && mismatch == Some(true) {
                 let proven = python_sides(cx, r, ev, &c.source, &c.reads, &c.compares)
                     .unwrap_or(callers);

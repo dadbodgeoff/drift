@@ -1426,7 +1426,7 @@ export interface Inventory {
     exceptions: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null }[];
     example: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null };
   }[];
-  /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). */
+  /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). Newer kinds: `unpinned_action` (another owner's action named by a tag, in a job that holds secrets or may write) and `piped_download` (a download handed to an interpreter). */
   workflows?: { kind: string; path: string; line: number; job: string; detail: string }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
